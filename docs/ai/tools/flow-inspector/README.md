@@ -12,7 +12,7 @@ automated and mixed criteria share one evaluator. Current notes, explicit local
 actions and compact Agent context use the same revision-checked state.
 
 Start with the [flow authoring guide](../../../../tools/flow-inspector/flow-files/README.md)
-and [Flow Document Contract](FLOW_DOCUMENT.md). The Stage 1 source-level dashboard
+and [Flow Document Contract](FLOW_DOCUMENT.md). The dashboard
 reuses the existing canvas, puts Rerun/manual actions at the top of the selected
 panel, and folds full evidence and architecture. It reads only selected current
 flow files, including offline writes and live replacements; it never schedules
@@ -20,8 +20,10 @@ product tests on read or refresh. Resolved warnings are replaced after coverage
 validation rather than retained in a mandatory history.
 
 The [adoption plan](plans/flow-inspector-independent-project-adoption-plan.md)
-separates this workflow from Stage 2 installed-package distribution and external
-CI acceptance. npm publication remains paused. Asyra runtime and Asyra Skill do
+tracks the two complete stages. The installed runtime's config, producer and CI
+contracts are specified in [Independent Project Runtime](PROJECT_RUNTIME.md);
+consumer commands and examples are in the [package guide](../../../../tools/flow-inspector/README.md).
+Stage 2 is locally accepted; see the plan for reproducible installed-consumer evidence. npm publication remains paused. Asyra runtime and Asyra Skill do
 not require this tool. Authentication, hosted team coordination, automatic root
 cause analysis and Agent dispatch are not implemented.
 

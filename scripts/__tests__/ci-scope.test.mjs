@@ -1736,3 +1736,106 @@ test('the original collaboration wrapper selects its own E2E producer', () => {
   ])
   assert.deepEqual(selected.unknownPaths, [])
 })
+
+test('independent runtime changes select the installed consumer gate exactly once', () => {
+  const packageRoot = path.join(repositoryRoot, 'tools/flow-inspector')
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')
+  )
+  for (const file of [
+    'flow-files/adapters.cjs',
+    'bin/flow-inspector.cjs',
+    'package.json'
+  ]) {
+    const scope = classifyChanges(
+      ['tools/flow-inspector/' + file],
+      readWorkspaceManifests(repositoryRoot)
+    )
+    const workspace = scope.relationshipMap.workspaceMatrix.find(
+      (w) => w.name === manifest.name
+    )
+    assert.equal(workspace.testSelection.mode, 'full', file)
+    assert.equal(workspace.testTask, 'test:ci')
+    assert.equal(
+      scope.relationshipMap.flowInspectorValidationRequired,
+      false,
+      'Independent runtime does not require Design product proofs'
+    )
+  }
+  assert.equal(
+    manifest.scripts['test:ci']
+      .split('&&')
+      .filter((command) => command.trim() === 'yarn test:installed').length,
+    1,
+    'Workspace CI must execute the actual installed package gate'
+  )
+  const workflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/main.yml'),
+    'utf8'
+  )
+  assert.doesNotMatch(
+    workflow,
+    /yarn workspace @asyra\/flow-inspector test:installed/,
+    'The legacy control-plane job must not duplicate the workspace gate'
+  )
+})
+
+test('Flow Inspector archive contracts have one workspace owner in incremental and full CI', () => {
+  const archiveTest = 'tools/flow-inspector/__tests__/package.test.cjs'
+  const policy = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'scripts/ci-relationships.json'),
+      'utf8'
+    )
+  )
+  const root = JSON.parse(
+    fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
+  )
+  assert.equal(policy.registeredScriptTests.includes(archiveTest), false)
+  assert.equal(root.scripts['test:scripts'].includes(archiveTest), false)
+  for (const group of Object.values(policy.repositoryScriptGroups))
+    assert.equal(group.tests.includes(archiveTest), false)
+  const tool = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'tools/flow-inspector/package.json'),
+      'utf8'
+    )
+  )
+  assert.equal(
+    tool.scripts['test:contracts']
+      .split(' ')
+      .filter((file) => file === '__tests__/package.test.cjs').length,
+    1
+  )
+  const full = classifyChanges(
+    [],
+    manifests,
+    manifests,
+    new Map(),
+    new Map(),
+    ['docs/ai'],
+    ['docs/ai'],
+    { fullValidation: true }
+  )
+  assert.equal(
+    full.relationshipMap.workspaceMatrix.find((w) => w.name === tool.name)
+      .testSelection.mode,
+    'full'
+  )
+  assert.equal(full.executionPlan.checks.repositoryScripts.mode, 'full')
+  for (const input of [
+    'tools/flow-inspector/package.json',
+    '.github/workflows/main.yml',
+    'scripts/ci-scope.mjs',
+    'scripts/ci-relationships.json'
+  ]) {
+    const selected = classifyChanges([input], manifests).executionPlan.checks
+      .repositoryScripts
+    assert.ok(
+      selected.mode === 'full' ||
+        selected.tests.includes('scripts/__tests__/ci-scope.test.mjs'),
+      input
+    )
+    assert.equal(selected.tests?.includes(archiveTest) ?? false, false, input)
+  }
+})

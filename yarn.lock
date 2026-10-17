@@ -343,6 +343,8 @@ __metadata:
     typescript: "npm:^5.7.2"
     vite: "npm:^6.4.3"
     vitest: "npm:^3.2.6"
+  bin:
+    flow-inspector: bin/flow-inspector.cjs
   languageName: unknown
   linkType: soft
 

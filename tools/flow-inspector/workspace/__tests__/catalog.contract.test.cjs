@@ -79,7 +79,8 @@ test('preview artifact is independently versioned and static-only', () => {
   for (const scriptName of ['test', 'test:local', 'test:ci']) {
     assert.equal(
       toolPackage.scripts[scriptName],
-      'yarn test:react && yarn test:contracts && yarn test:flow-files'
+      'yarn test:react && yarn test:contracts && yarn test:flow-files' +
+        (scriptName === 'test:ci' ? ' && yarn test:installed' : '')
     )
   }
 })

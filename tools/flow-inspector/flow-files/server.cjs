@@ -9,7 +9,7 @@ const { architectureFor } = require('./view.cjs')
 const { compactContext } = require('./context.cjs')
 async function startFlowServer(
   root,
-  { directory, url = 'http://127.0.0.1:4318' } = {}
+  { directory, url = 'http://127.0.0.1:4318', projectId } = {}
 ) {
   const address = new URL(url)
   if (
@@ -23,7 +23,7 @@ async function startFlowServer(
     address.password
   )
     throw new Error('Expected loopback HTTP origin with explicit port')
-  const service = createFlowService(root, directory),
+  const service = createFlowService(root, directory, { projectId }),
     capability = randomBytes(32).toString('hex')
   const assets = {
     '/': ['public/index.html', 'text/html'],

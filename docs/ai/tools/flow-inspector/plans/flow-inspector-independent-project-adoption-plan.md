@@ -1,6 +1,6 @@
 # Flow-Based Work Management and Independent Project Adoption
 
-Status: Stage 1 implemented and locally accepted; Stage 2 not started; publication paused.
+Status: Stages 1 and 2 implemented and locally accepted; publication paused.
 Updated: 2026-10-17 (Asia/Taipei).
 Stage 1 base: `1cd4b38a6e3e09a320cb2fa70ba3e8c25e63a724` (merged planning PR #341).
 Owner: Flow Inspector tool maintainer.
@@ -425,6 +425,12 @@ were performed in Stage 1.
 
 ### Stage 2 - Independent installation, CI and release readiness
 
+Implementation contract: [Independent Project Runtime](../PROJECT_RUNTIME.md).
+Base: `e00bdbdc6690cafdcb3d6a4cbea0dfe329a54b67` (merged PR #342).
+The architecture flow extends the existing owners with project admission, current
+bundle transfer and installed distribution. All ten acceptance conditions below
+remain mandatory; publication is excluded.
+
 One complete stage: installed executable, consumer config/catalog/storage,
 distribution of Stage 1 adapters/import APIs, external CI, package assets and
 clean-consumer proof.
@@ -466,9 +472,99 @@ Acceptance:
     exit codes and matching structured results. An optional nonblocking manual
     gate never changes the task/feature verdict to complete.
 
+Stage 2 acceptance record - 2026-10-17:
+
+- The real npm-installed candidate passed manual-only, mixed, custom, Vitest and
+  Playwright scenarios without source links or ancestor runner fallback. The
+  consumer has no Git repository, includes a real nested npm workspace, named
+  projects, duplicate/suffix titles, regex characters, shell-like literal titles
+  and paths containing spaces. Missing runner resolution fails explicitly.
+- A real addition implementation fault was published offline through unchanged
+  tests and selectors. The installed dashboard loaded failure, compact context
+  identified the implementation, and actual preview/confirmation reran the
+  selected case after repair. Source edits alone retained failure. Native Vitest
+  watch published failure and recovery without Inspector; open UI refreshed and
+  restart retained current success and a human note. Screenshots were inspected.
+- Empty discovery was followed by complete matching recovery, not record deletion.
+  Formal producer cases cover partial/duplicate/stale results, cancellation,
+  assertion preservation and raw diagnostic retention. Import cases cover
+  corrupt/missing/duplicate attachments, wrong identity, source/revision conflicts,
+  symlinks and concurrent writers. Occupied-port and stale-preview cases fail
+  without replacing another process or running a stale command.
+- Installed manual CI covered all four structured outcomes. A process/server
+  execution guard proved validate/CI/export perform no executions. The external
+  CI example runs product tests once and evaluates files afterward. Native
+  reporters publish that existing execution; selected actions may collect a test
+  catalog before executing one case, never execute the suite as discovery.
+- Local gates passed: 61 flow-file cases (including preserved Asyra producer
+  contracts), 100 package/viewer/architecture cases, 12 React workspace cases,
+  69 CI-scope cases, 17 naming
+  and test-placement cases, package typecheck, lint and production build. The
+  permanent installed-consumer gate is `yarn workspace @asyra/flow-inspector
+  test:installed`; final execution passed in about 19 seconds using the populated
+  npm cache. No unrelated product suite was rerun locally.
+- Candidate SHA-256:
+  `35e1b5e462db98e52f55f7044ecde7bf12216b27a126b2262c44914bdda7659c`.
+  The 47 installed files under `bin`, `flow-files`, plus README and viewer assets
+  matched source bytes; sorted relative-path/NUL/content SHA-256:
+  `442ad093e1237632af7b547d297dd0c648f77675d7a632d77ce32e7cae65bb41`.
+  Packed package metadata matched source semantically (Yarn formats its JSON).
+  The ignored local evidence lives in `tmp/flow-stage-two/installed/` and is
+  reproducible through the permanent gate; it is not a required runtime archive.
+
+PR #344 review corrections:
+
+- Synchronized CLI bin metadata in the lockfile. The original remote CI stopped
+  before tests at immutable installation; hardened immutable installation now
+  passes locally without changing dependency versions.
+- Native partial runs preserve unexecuted sibling evidence and warnings; selected
+  nodes cannot bypass duplicate selector admission. Playwright retries retain
+  failures while distinct repeated cases remain ambiguous. Runs containing only
+  unmapped files preserve mapped evidence and retain unknown failures at integration.
+- Current bundle replacement removes only superseded, previously referenced tool
+  attachments. Cleanup failure restores the prior documents and attachment bytes.
+- The watch acceptance poll now retries only bounded writer-lock/snapshot-change
+  contention and captures its baseline before starting the watcher; other errors
+  still fail immediately.
+- Six additional formal regression cases first reproduced these behavior defects.
+  The final installed-consumer gate and 47-file source comparison passed again;
+  unaffected React, CI-scope, typecheck and build evidence is retained. Remote CI
+  completion must be checked against the review commit, not inferred from local gates.
+
+Second PR review verified the original CI run succeeded but skipped the installed
+consumer gate because it lived under legacy control-plane-only selection. The
+installed gate now belongs to the tool's `test:ci` entry exactly once; a formal
+selection regression covers flow-file, bin and package changes without selecting
+Design product proofs. The prior duplicate invocation was removed from the legacy
+job. The revised local CI entry passed React, 101 contracts, 61 flow-file cases and
+the installed consumer; existing runtime behavior and supported limits are unchanged.
+
+The package archive contract now has one execution owner: the tool workspace.
+The CI selection contract moved to the repository CI-scope suite. The archive
+contract was removed from both shared script registries and the root test command;
+a new regression verifies incremental and full-mode ownership and preserved CI
+selection coverage. The focused validation passed 69 CI-scope cases and the one
+archive case. This test-only routing correction leaves all 47 accepted runtime/doc
+files and the tool package metadata unchanged, so the installed-runtime evidence
+and recorded candidate above remain applicable without rerunning product tests.
+
+Known limits are unchanged in purpose and explicit in the package guide: Node 24,
+macOS/Linux, node_modules, Vitest 3.2.x and Playwright 1.62.x; project wildcard
+names cannot be represented by exact CLI selection and are rejected. Other test
+systems use the public current-result API. Local actor labels and bundle imports
+are trusted project input, not authenticated team approval. Direct external file
+writers own atomic publication; an interrupted bundle import keeps its lock for
+operator inspection. Old Asyra-only source tools retain their explicit repository
+requirements. No hosted team service, registry publication, runtime upgrade or
+additional third-party dependency was introduced.
+
+The next stage is a separately authorized publication and fresh registry-install
+verification after this PR is reviewed. No Stage 2 implementation slice remains
+pending and no extra feature phase is implied.
+
 Run focused formal gates at complete owner slices and assembled-stage checkpoints;
-do not repeatedly rerun unaffected expensive suites. No tests run for this planning
-edit. Additional dependencies need approval before introduction. Exact schemas,
+do not repeatedly rerun unaffected expensive suites. The original planning-only
+edit ran no tests; the implementation evidence above is the Stage 2 acceptance. Additional dependencies need approval before introduction. Exact schemas,
 runner versions and completion transitions must be reviewed before implementation;
 do not fill missing contracts with fallback behavior.
 

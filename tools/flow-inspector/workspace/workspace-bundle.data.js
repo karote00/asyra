@@ -41796,7 +41796,9 @@
             "purpose": "Validate public data and preserve architecture boundaries.",
             "inputs": [
               "untrusted JSON flow documents",
-              "artifact:update-flow-document-to-admit-flow-document"
+              "artifact:update-flow-document-to-admit-flow-document",
+              "artifact:resolve-flow-project-to-admit-flow-document",
+              "artifact:transfer-flow-current-to-admit-flow-document"
             ],
             "outputs": [
               "artifact:admit-flow-document-to-evaluate-flow-document"
@@ -41863,7 +41865,8 @@
               "tools/flow-inspector/flow-files/__tests__/**"
             ],
             "specRefs": [
-              "docs/ai/tools/flow-inspector/FLOW_DOCUMENT.md#evaluation"
+              "docs/ai/tools/flow-inspector/FLOW_DOCUMENT.md#evaluation",
+              "docs/ai/tools/flow-inspector/PROJECT_RUNTIME.md#headless-and-transfer-boundary"
             ],
             "failureOwnerStepId": "evaluate-flow-document"
           },
@@ -41919,7 +41922,8 @@
             "inputs": [
               "current mapped observation",
               "declared producer scope",
-              "existing architecture"
+              "existing architecture",
+              "artifact:resolve-flow-project-to-produce-flow-results"
             ],
             "outputs": [
               "artifact:produce-flow-results-to-update-flow-document"
@@ -41948,10 +41952,14 @@
               "tools/flow-inspector/control-plane/playwright-results.cjs",
               "tools/flow-inspector/control-plane/observation-files.cjs",
               "tools/flow-inspector/control-plane/node-interactions.cjs",
-              "tools/flow-inspector/flow-files/__tests__/**"
+              "tools/flow-inspector/flow-files/__tests__/**",
+              "tools/flow-inspector/flow-files/adapters.cjs",
+              "tools/flow-inspector/flow-files/portable-runner.cjs",
+              "tools/flow-inspector/flow-files/reporters/**"
             ],
             "specRefs": [
-              "docs/ai/tools/flow-inspector/FLOW_DOCUMENT.md#producer-and-migration-boundary"
+              "docs/ai/tools/flow-inspector/FLOW_DOCUMENT.md#producer-and-migration-boundary",
+              "docs/ai/tools/flow-inspector/PROJECT_RUNTIME.md#portable-producers"
             ],
             "failureOwnerStepId": "produce-flow-results"
           },
@@ -41965,7 +41973,8 @@
             "inputs": [
               "evaluated project snapshot",
               "local action intent",
-              "artifact:evaluate-flow-document-to-present-flow-document"
+              "artifact:evaluate-flow-document-to-present-flow-document",
+              "artifact:resolve-flow-project-to-present-flow-document"
             ],
             "outputs": [
               "artifact:present-flow-document-to-update-flow-document",
@@ -41998,12 +42007,138 @@
               "tools/flow-inspector/src/**",
               "tools/flow-inspector/viewer.js",
               "tools/flow-inspector/viewer.css",
-              "tools/flow-inspector/flow-files/__tests__/**"
+              "tools/flow-inspector/flow-files/__tests__/**",
+              "tools/flow-inspector/bin/**",
+              "tools/flow-inspector/flow-files/api.cjs",
+              "tools/flow-inspector/flow-files/commands.cjs"
             ],
             "specRefs": [
               "docs/ai/tools/flow-inspector/FLOW_DOCUMENT.md#service-and-presentation"
             ],
             "failureOwnerStepId": "present-flow-document"
+          },
+          {
+            "id": "resolve-flow-project",
+            "order": 6,
+            "laneId": "workflow",
+            "title": "Resolve consumer project",
+            "ownerPackage": "@asyra/flow-inspector",
+            "purpose": "Admit explicit consumer configuration and separate installed assets from writable project data.",
+            "inputs": [
+              "explicit local project intent",
+              "artifact:distribute-flow-runtime-to-resolve-flow-project"
+            ],
+            "outputs": [
+              "artifact:resolve-flow-project-to-admit-flow-document",
+              "artifact:resolve-flow-project-to-present-flow-document",
+              "artifact:resolve-flow-project-to-produce-flow-results",
+              "artifact:resolve-flow-project-to-transfer-flow-current"
+            ],
+            "conditions": [
+              "All declared identities, boundaries and version contracts are valid."
+            ],
+            "bypasses": [
+              "Invalid inputs fail explicitly without substituting another project."
+            ],
+            "allowedContributors": [
+              "declared project files",
+              "installed package assets"
+            ],
+            "forbiddenContributors": [
+              "implicit Asyra checkout discovery",
+              "historical state as verdict authority",
+              "unrequested product test execution"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/flow-files/project.cjs",
+              "tools/flow-inspector/flow-files/__tests__/**"
+            ],
+            "specRefs": [
+              "docs/ai/tools/flow-inspector/PROJECT_RUNTIME.md"
+            ],
+            "failureOwnerStepId": "resolve-flow-project"
+          },
+          {
+            "id": "transfer-flow-current",
+            "order": 7,
+            "laneId": "workflow",
+            "title": "Transfer current evidence",
+            "ownerPackage": "@asyra/flow-inspector",
+            "purpose": "Validate portable current bundles and publish revision-safe current project files.",
+            "inputs": [
+              "explicit local project intent",
+              "artifact:resolve-flow-project-to-transfer-flow-current"
+            ],
+            "outputs": [
+              "artifact:transfer-flow-current-to-admit-flow-document"
+            ],
+            "conditions": [
+              "All declared identities, boundaries and version contracts are valid."
+            ],
+            "bypasses": [
+              "Invalid inputs fail explicitly without substituting another project."
+            ],
+            "allowedContributors": [
+              "declared project files",
+              "installed package assets"
+            ],
+            "forbiddenContributors": [
+              "implicit Asyra checkout discovery",
+              "historical state as verdict authority",
+              "unrequested product test execution"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/flow-files/bundles.cjs",
+              "tools/flow-inspector/flow-files/__tests__/**"
+            ],
+            "specRefs": [
+              "docs/ai/tools/flow-inspector/PROJECT_RUNTIME.md"
+            ],
+            "failureOwnerStepId": "transfer-flow-current"
+          },
+          {
+            "id": "distribute-flow-runtime",
+            "order": 8,
+            "laneId": "workflow",
+            "title": "Distribute installed runtime",
+            "ownerPackage": "@asyra/flow-inspector",
+            "purpose": "Ship the runnable CLI, public API, docs and static assets with a verified manifest.",
+            "inputs": [
+              "explicit local project intent"
+            ],
+            "outputs": [
+              "artifact:distribute-flow-runtime-to-resolve-flow-project"
+            ],
+            "conditions": [
+              "All declared identities, boundaries and version contracts are valid."
+            ],
+            "bypasses": [
+              "Invalid inputs fail explicitly without substituting another project."
+            ],
+            "allowedContributors": [
+              "declared project files",
+              "installed package assets"
+            ],
+            "forbiddenContributors": [
+              "implicit Asyra checkout discovery",
+              "historical state as verdict authority",
+              "unrequested product test execution"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "tools/flow-inspector/flow-files/__tests__/**",
+              "tools/flow-inspector/package.json",
+              "tools/flow-inspector/README.md",
+              "tools/flow-inspector/bin/**",
+              "tools/flow-inspector/__tests__/**",
+              ".github/workflows/main.yml"
+            ],
+            "specRefs": [
+              "docs/ai/tools/flow-inspector/PROJECT_RUNTIME.md"
+            ],
+            "failureOwnerStepId": "distribute-flow-runtime"
           }
         ],
         "routes": [
@@ -42056,6 +42191,66 @@
             "producedArtifacts": [
               "artifact:present-flow-document-to-update-flow-document"
             ]
+          },
+          {
+            "id": "distribute-flow-runtime-to-resolve-flow-project",
+            "from": "distribute-flow-runtime",
+            "to": "resolve-flow-project",
+            "kind": "handoff",
+            "predicate": "The owner admitted the requested project input successfully.",
+            "producedArtifacts": [
+              "artifact:distribute-flow-runtime-to-resolve-flow-project"
+            ]
+          },
+          {
+            "id": "resolve-flow-project-to-admit-flow-document",
+            "from": "resolve-flow-project",
+            "to": "admit-flow-document",
+            "kind": "handoff",
+            "predicate": "The owner admitted the requested project input successfully.",
+            "producedArtifacts": [
+              "artifact:resolve-flow-project-to-admit-flow-document"
+            ]
+          },
+          {
+            "id": "resolve-flow-project-to-present-flow-document",
+            "from": "resolve-flow-project",
+            "to": "present-flow-document",
+            "kind": "handoff",
+            "predicate": "The owner admitted the requested project input successfully.",
+            "producedArtifacts": [
+              "artifact:resolve-flow-project-to-present-flow-document"
+            ]
+          },
+          {
+            "id": "resolve-flow-project-to-produce-flow-results",
+            "from": "resolve-flow-project",
+            "to": "produce-flow-results",
+            "kind": "handoff",
+            "predicate": "The owner admitted the requested project input successfully.",
+            "producedArtifacts": [
+              "artifact:resolve-flow-project-to-produce-flow-results"
+            ]
+          },
+          {
+            "id": "resolve-flow-project-to-transfer-flow-current",
+            "from": "resolve-flow-project",
+            "to": "transfer-flow-current",
+            "kind": "handoff",
+            "predicate": "The owner admitted the requested project input successfully.",
+            "producedArtifacts": [
+              "artifact:resolve-flow-project-to-transfer-flow-current"
+            ]
+          },
+          {
+            "id": "transfer-flow-current-to-admit-flow-document",
+            "from": "transfer-flow-current",
+            "to": "admit-flow-document",
+            "kind": "handoff",
+            "predicate": "The owner admitted the requested project input successfully.",
+            "producedArtifacts": [
+              "artifact:transfer-flow-current-to-admit-flow-document"
+            ]
           }
         ],
         "artifacts": [
@@ -42105,6 +42300,54 @@
             "channel": "human and machine presentation",
             "consumerStepIds": [],
             "terminal": true
+          },
+          {
+            "id": "artifact:distribute-flow-runtime-to-resolve-flow-project",
+            "ownerStepId": "distribute-flow-runtime",
+            "channel": "admitted local project context",
+            "consumerStepIds": [
+              "resolve-flow-project"
+            ]
+          },
+          {
+            "id": "artifact:resolve-flow-project-to-admit-flow-document",
+            "ownerStepId": "resolve-flow-project",
+            "channel": "admitted local project context",
+            "consumerStepIds": [
+              "admit-flow-document"
+            ]
+          },
+          {
+            "id": "artifact:resolve-flow-project-to-present-flow-document",
+            "ownerStepId": "resolve-flow-project",
+            "channel": "admitted local project context",
+            "consumerStepIds": [
+              "present-flow-document"
+            ]
+          },
+          {
+            "id": "artifact:resolve-flow-project-to-produce-flow-results",
+            "ownerStepId": "resolve-flow-project",
+            "channel": "admitted local project context",
+            "consumerStepIds": [
+              "produce-flow-results"
+            ]
+          },
+          {
+            "id": "artifact:resolve-flow-project-to-transfer-flow-current",
+            "ownerStepId": "resolve-flow-project",
+            "channel": "admitted local project context",
+            "consumerStepIds": [
+              "transfer-flow-current"
+            ]
+          },
+          {
+            "id": "artifact:transfer-flow-current-to-admit-flow-document",
+            "ownerStepId": "transfer-flow-current",
+            "channel": "admitted local project context",
+            "consumerStepIds": [
+              "admit-flow-document"
+            ]
           }
         ],
         "invariants": [
@@ -42149,6 +42392,28 @@
             ],
             "specRefs": [
               "docs/ai/tools/flow-inspector/FLOW_DOCUMENT.md#acceptance-and-delivery"
+            ]
+          },
+          {
+            "id": "stage-two",
+            "title": "Independent installed project and CI",
+            "stepIds": [
+              "admit-flow-document",
+              "evaluate-flow-document",
+              "update-flow-document",
+              "produce-flow-results",
+              "present-flow-document",
+              "resolve-flow-project",
+              "transfer-flow-current",
+              "distribute-flow-runtime"
+            ],
+            "assertions": [
+              "Installed manual and automated consumers use the same current-file policy.",
+              "Headless CI consumes evidence without rerunning tests.",
+              "Current bundles preserve identities and reject stale or conflicting data."
+            ],
+            "specRefs": [
+              "docs/ai/tools/flow-inspector/PROJECT_RUNTIME.md#delivery-acceptance"
             ]
           }
         ]
