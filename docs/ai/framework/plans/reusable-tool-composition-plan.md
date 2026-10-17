@@ -94,6 +94,24 @@ inventory assertion and every existing invalid-input/cancellation/domain oracle.
 Run the whole action-usage suite and its lint before resuming functional/render
 delivery gates; no product changes or repeated collaboration suite are required.
 
+#### Delivery indexed-query consumer correction
+
+The full functional gate reached the bounded-tier integration case and reproduced
+an unavailable retained owner: the fixture constructed `createDocumentContextAction`
+without its required backing owner and supplied the removed public `result: ids`
+shape. Update only that existing fixture to use the actual Runtime registry,
+`resolve_design_targets` for transient complete identities, the registered mutation
+and normal transaction runner. Preserve the exact tier target, zero parent-children
+reads, visible result and Undo restoration assertions; dispose actual resources.
+This is current-contract integration, not a fallback or compatibility path. Run
+all indexed-query cases and focused lint before continuing the complete functional
+suite. The prior functional run remains failed; five pre-existing gradient
+expected-failure cases are unrelated and unchanged. The same formal file also
+reproduced `Retained query belongs to another request`: its producer omitted the
+request signal while its consumer supplied one. Preserve that rejection and
+synchronize the producer signal plus returned lease at every renewed snapshot;
+retain stale-after-Undo and shared-property conflict/recovery assertions.
+
 
 ## Recorded acceptance - five sequential corrections - 2026-10-17
 
