@@ -497,8 +497,8 @@ Stage 2 acceptance record - 2026-10-17:
   reporters publish that existing execution; selected actions may collect a test
   catalog before executing one case, never execute the suite as discovery.
 - Local gates passed: 61 flow-file cases (including preserved Asyra producer
-  contracts), 101 package/viewer/architecture cases, 12 React workspace cases,
-  67 CI-scope cases, 17 naming
+  contracts), 100 package/viewer/architecture cases, 12 React workspace cases,
+  69 CI-scope cases, 17 naming
   and test-placement cases, package typecheck, lint and production build. The
   permanent installed-consumer gate is `yarn workspace @asyra/flow-inspector
   test:installed`; final execution passed in about 19 seconds using the populated
@@ -538,6 +538,15 @@ selection regression covers flow-file, bin and package changes without selecting
 Design product proofs. The prior duplicate invocation was removed from the legacy
 job. The revised local CI entry passed React, 101 contracts, 61 flow-file cases and
 the installed consumer; existing runtime behavior and supported limits are unchanged.
+
+The package archive contract now has one execution owner: the tool workspace.
+The CI selection contract moved to the repository CI-scope suite. The archive
+contract was removed from both shared script registries and the root test command;
+a new regression verifies incremental and full-mode ownership and preserved CI
+selection coverage. The focused validation passed 69 CI-scope cases and the one
+archive case. This test-only routing correction leaves all 47 accepted runtime/doc
+files and the tool package metadata unchanged, so the installed-runtime evidence
+and recorded candidate above remain applicable without rerunning product tests.
 
 Known limits are unchanged in purpose and explicit in the package guide: Node 24,
 macOS/Linux, node_modules, Vitest 3.2.x and Playwright 1.62.x; project wildcard
