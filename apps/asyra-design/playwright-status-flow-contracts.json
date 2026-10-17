@@ -11,6 +11,17 @@
   "externalInputs": [],
   "workspaceSources": [
     {
+      "name": "@asyra/domain-knowledge",
+      "inputs": [
+        "colors.md",
+        "components.button.md",
+        "design.landing-page.md",
+        "icons.md",
+        "typography.md"
+      ],
+      "entry": null
+    },
+    {
       "name": "@asyra/asyra-design",
       "inputs": ["src/**", "server/**"],
       "entry": null

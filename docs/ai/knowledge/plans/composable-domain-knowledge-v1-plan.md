@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: Implemented; local delivery verification passed. PR delivery and user review pending.
+Status: Implemented; PR #346 open. Local CI integration corrections validated; remote CI and user review pending.
 Owner: Codex in the current task; user owns PR review and merge.
 Base: `origin/main` at `6974bb0d94813a034e35b4598b51fbeb263727df`.
 Branch: `codex/domain-knowledge-v1`.
@@ -361,6 +361,27 @@ Runtime API separately. Provider I/O deadlines remain host-owned. Shared metadat
 and body advice cannot grant privileges. Evolution, Agent extraction/persistence,
 registry publication, merge and deployment are outside this delivery.
 
-The remaining delivery actions are the exact-head Changeset check, fresh-main
-confirmation, push, PR creation and CI observation. User review and plan closeout
-remain distinct from implementation delivery.
+PR #346 is open on the authorized branch. The first CI run exposed two integration
+assumptions: the final scope validator required executable child workspaces, and
+Design source snapshots assumed every dependency had `src/index.ts`. The correction
+admits content-only graph nodes without scheduling executable jobs and explicitly
+captures the five knowledge files through the existing App source declarations.
+Permanent regressions reject content-only entries with executable tasks/dependencies,
+verify content-only consumer selection through final aggregation, and fingerprint
+knowledge bytes in captured source. The selected root suite passes 343 tests with
+one existing skip.
+
+Board verification additionally exposed stale hard-coded test counts, reproduced
+on an isolated unmodified main snapshot. Its assertions now compare scenario and
+failure identities with the existing authoritative contracts, retaining owner and
+history checks. This bounded verification correction changes no product behavior.
+
+Additional validation: 32 Board tests passed with two existing external-service
+skips; Flow UI and selected rerun suites each passed two tests; core proof and
+candidate verification passed. The control-plane run passed 613 tests with 57
+existing skips and found three App fixture admission failures. After adding the
+same authoritative content source declaration to that fixture, all 31 tests in
+the two affected suites passed. Other control-plane inputs remain unchanged.
+
+Exact-head admission, correction push and remote CI observation remain delivery gates.
+User review and plan closeout remain distinct from implementation delivery.

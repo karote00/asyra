@@ -9,5 +9,5 @@ under this same owner when their closeout conditions are satisfied.
   - Active design and implementation task: independent data-only workspace,
     optional Runtime access and initial Asyra Design integration.
   - Shared-content ownership stays here. Framework and App adapters retain their
-    respective owners. Implementation, acceptance evidence and PR review remain
-    pending.
+    respective owners. Implementation and local acceptance evidence are recorded. PR #346 is open;
+    CI integration corrections and user review remain pending.

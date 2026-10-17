@@ -641,6 +641,7 @@ test('formal path owners reach their selected gates through the final aggregate'
     ])
   }
   for (const changedPath of [
+    'domain-knowledge/components.button.md',
     '.changeset/example.md',
     '.github/dependabot.yml',
     '.github/pull_request_template.md',
@@ -670,6 +671,27 @@ test('formal path owners reach their selected gates through the final aggregate'
       `${changedPath}: ${result.blockers.join('; ')}`
     )
     assert.equal(result.producerResults.validate, 'success', changedPath)
+    for (const invalid of [
+      { buildTask: 'build:knowledge' },
+      { dependencies: ['@asyra/ai-agent-runtime'] },
+      { testTask: 'test:ci' }
+    ]) {
+      const forged = structuredClone(scope)
+      Object.assign(
+        forged.relationshipMap.workspaceGraph.find(
+          ({ contentOnly }) => contentOnly
+        ),
+        invalid
+      )
+      forged.relationshipMapDigest = createHash('sha256')
+        .update(JSON.stringify(forged.relationshipMap))
+        .digest('hex')
+      assert.notEqual(
+        aggregate(envelopes(), identity, jobsFor(forged), forged).status,
+        'passed'
+      )
+    }
+
     const selection =
       scope.relationshipMap.executionPlan.checks.repositoryScripts
     if (selection.mode === 'files') {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "domain-knowledge-v1",
-  "revision": 6,
+  "revision": 12,
   "definition": {
     "title": "Composable domain knowledge V1",
     "purpose": "Deliver passive shared knowledge and authorized optional contextual access in Design.",
@@ -152,23 +152,23 @@
         "criterionId": "verified",
         "kind": "automated",
         "status": "passed",
-        "binding": "50ea0dff70124fdbc8842d02ffb0877a4cfc12f95ba194ce452c941ac813bf1e",
+        "binding": "d0feb3574b41204b9074b21cd76ed83e844839f03bd26d8788873b99b9a50ce6",
         "actor": "Codex local gate evidence",
-        "executionId": "c05a5b39-e986-4b4a-856c-94408b25c147",
+        "executionId": "38044212-d99b-4f46-9ba9-282e940decb2",
         "caseId": "knowledge-content",
-        "summary": "126 workspace, CI, content, placement and Changeset-policy tests passed; actual Yarn archive contains five Markdown files and package metadata only. Dependency and Turbo checks passed.",
-        "at": "2026-10-17T20:35:50.242Z"
+        "summary": "343 selected repository/source tests passed, one existing skip. Content-only final aggregation and immutable knowledge source capture regressions passed. Original archive, dependency and Turbo evidence retained; executable tasks and workspace dependencies on content-only graph entries are rejected.",
+        "at": "2026-10-17T20:55:17.129Z"
       },
       {
         "nodeId": "runtime",
         "criterionId": "verified",
         "kind": "automated",
         "status": "passed",
-        "binding": "f4df0b1ee014979834f1a14fba962cffeae0cf13a317458229999256faaf653e",
+        "binding": "7f61c74c0e581eed1092a8c08144f854c90809532822fc60f5bb2de559689af2",
         "actor": "Codex local gate evidence",
         "executionId": "900aeed3-611d-48fc-9a05-45079bc3f9e7",
         "caseId": "knowledge-runtime",
-        "summary": "31 files / 406 tests passed; build and final focused lint passed. Composition, revision, authorization, isolated contexts and resource bounds are covered.",
+        "summary": "31 files / 406 tests passed; build and final focused lint passed. Composition, revision, authorization, isolated contexts and resource bounds are covered. Unchanged Runtime source retains its validated evidence after workspace admission corrections.",
         "at": "2026-10-17T20:35:50.248Z"
       },
       {
@@ -176,20 +176,26 @@
         "criterionId": "verified",
         "kind": "automated",
         "status": "passed",
-        "binding": "9fe8146ce4b6da8cda3b64ce4abfc7c37ecde2d0d669311ad8ea362e1be03ba1",
+        "binding": "79454e7f188b1dc494761b22623e211785f1582fdb8f120cd0dd4dc942b3b23f",
         "actor": "Codex local gate evidence",
-        "executionId": "67724f1e-f66b-4a5d-bf30-53ab8e715465",
+        "executionId": "4275e8e5-c206-4671-8eda-08f96e14d870",
         "caseId": "knowledge-design",
-        "summary": "1296 server tests passed with 2 existing skips; 609 AI tests and 13 backend-boundary tests passed. Final provider/knowledge rerun: 189 passed, 1 existing skip. Typecheck and production build passed.",
-        "at": "2026-10-17T20:35:50.258Z"
+        "summary": "1296 server tests passed with 2 existing skips; 609 AI tests and 13 backend-boundary tests passed. Final provider/knowledge rerun: 189 passed, 1 existing skip. Typecheck and production build passed. Source declarations now capture shared and app knowledge; 31 App task authority tests and 32 Board tests passed (two existing external skips).",
+        "at": "2026-10-17T20:55:17.150Z"
       }
     ],
     "notes": [],
-    "progress": [],
+    "progress": [
+      {
+        "nodeId": "delivery",
+        "status": "in-progress",
+        "reason": "PR #346 created. Local correction gates passed; exact-head push, remote CI and user review remain distinct delivery evidence."
+      }
+    ],
     "sources": [
       {
         "nodeId": "content",
-        "revision": "sha256:cc0b01c71469f826f2e779ef2cae9cc5332ec6e624d9bcdfedd84adad9d6e013"
+        "revision": "sha256:f65ee3682f03c533b1d0a5b33d284442a9f640309e82836d120dfca54ae9c3db"
       },
       {
         "nodeId": "runtime",
@@ -197,7 +203,7 @@
       },
       {
         "nodeId": "design",
-        "revision": "sha256:af712e6b21292763ec7855b1665a3b01a48ffaf13a23dcd0d2669c4ed511c486"
+        "revision": "sha256:0e897a0c4e1cbd574139ddbcb2cc651bf69eacfac89197be96fdf77a956790d5"
       }
     ],
     "warnings": []

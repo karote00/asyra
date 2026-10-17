@@ -1,6 +1,7 @@
 ---
 '@asyra/ai-agent-runtime': patch
 '@asyra/domain-knowledge': minor
+'@asyra/flow-inspector': patch
 ---
 
 Add independently owned advisory knowledge files and optional authorized knowledge
