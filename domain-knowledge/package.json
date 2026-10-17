@@ -1,0 +1,14 @@
+{
+  "name": "@asyra/domain-knowledge",
+  "version": "0.1.0",
+  "description": "Independent composable advisory domain knowledge files",
+  "license": "MIT",
+  "contentOnly": true,
+  "files": [
+    "*.md"
+  ],
+  "exports": {
+    "./*.md": "./*.md",
+    "./package.json": "./package.json"
+  }
+}

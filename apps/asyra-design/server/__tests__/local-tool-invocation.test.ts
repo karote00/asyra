@@ -1,3 +1,4 @@
+import { createLocalKnowledgeTools } from '../local-knowledge'
 import { toolSemantics } from '../../src/ai/tool-contract'
 import {
   createAiToolContract,
@@ -191,6 +192,7 @@ it('preflights every advertised App tool family before its owner executes', asyn
   ).toMatchObject({ effect: 'mutation', resources: ['selection'] })
   expect(designs.definitions[0].lifecycle.output).toBe('request-artifact')
   const owners = [
+    createLocalKnowledgeTools('preflight'),
     designs,
     images,
     operations,

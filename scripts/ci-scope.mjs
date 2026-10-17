@@ -30,7 +30,8 @@ function workspaceEntry(group, slug, manifest) {
   const scripts = manifest.scripts ?? {}
   return {
     name: manifest.name,
-    directory: `${group}/${slug}`,
+    directory: slug ? `${group}/${slug}` : group,
+    contentOnly: manifest.contentOnly === true,
     group,
     buildTask: workspaceBuildTaskCandidates(manifest.name).find(
       (task) => scripts[task]
@@ -290,6 +291,18 @@ function readWorkspaceManifests(root) {
   for (const group of relationshipPolicy.workspaceRoots) {
     const directory = path.join(root, group)
     if (!fs.existsSync(directory)) continue
+    const directManifest = path.join(directory, 'package.json')
+    if (fs.existsSync(directManifest)) {
+      const workspace = workspaceEntry(
+        group,
+        '',
+        JSON.parse(fs.readFileSync(directManifest, 'utf8'))
+      )
+      if (manifests.has(workspace.name))
+        throw new Error(`Duplicate workspace name: ${workspace.name}`)
+      manifests.set(workspace.name, workspace)
+      continue
+    }
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue
       const manifestPath = path.join(directory, entry.name, 'package.json')
@@ -322,13 +335,13 @@ function readWorkspaceManifestsAtCommit(commit, repositoryRoot) {
     .split('\0')
     .filter((file) =>
       relationshipPolicy.workspaceRoots.some((group) =>
-        new RegExp(`^${group}/[^/]+/package\\.json$`).test(file)
+        new RegExp(`^${group}/(?:[^/]+/)?package\\.json$`).test(file)
       )
     )
   const manifests = new Map()
   for (const file of files) {
     const [, group, slug] =
-      file.match(/^([^/]+)\/([^/]+)\/package\.json$/) ?? []
+      file.match(/^([^/]+)\/(?:(.*?)\/)?package\.json$/) ?? []
     if (!group || relationshipPolicy.excludedRoots[group]) continue
     const manifest = JSON.parse(
       execFileSync('git', ['show', `${commit}:${file}`], {
@@ -336,7 +349,7 @@ function readWorkspaceManifestsAtCommit(commit, repositoryRoot) {
         encoding: 'utf8'
       })
     )
-    const workspace = workspaceEntry(group, slug, manifest)
+    const workspace = workspaceEntry(group, slug ?? '', manifest)
     if (manifests.has(workspace.name))
       throw new Error(`Duplicate baseline workspace name: ${workspace.name}`)
     manifests.set(workspace.name, workspace)
@@ -516,11 +529,14 @@ function classifyChanges(
     changedWorkspaceNames.add(name)
     runtimeNames.add(name)
   }
+  const isKnowledgeInput = (file) =>
+    file.startsWith('domain-knowledge/') ||
+    file.startsWith('apps/asyra-design/knowledge/')
   const isRuntime = (file) =>
     !relationshipPolicy.workspaceLocalInputPatterns.some(
       (pattern) => matchesPattern(file, pattern).matched
     ) &&
-    !file.endsWith('.md') &&
+    (!file.endsWith('.md') || isKnowledgeInput(file)) &&
     !testFilePattern.test(file) &&
     !/(?:^|\/)(?:__tests__|e2e|fixtures?|__fixtures__|__mocks__|test-utils)\//.test(
       file
@@ -542,6 +558,7 @@ function classifyChanges(
     // Plans, source-map metadata and README prose are not runtime dependency changes.
     if (
       changedPath.endsWith('.md') &&
+      !isKnowledgeInput(changedPath) &&
       !changedPath.startsWith('docs/public/') &&
       !changedPath.startsWith('apps/asyra-framework-site/') &&
       (allManifestViews.some((view) => workspaceForPath(changedPath, view)) ||
@@ -652,6 +669,7 @@ function classifyChanges(
     .filter(({ name }) => affectedNames.has(name))
     .sort((left, right) => left.name.localeCompare(right.name))
   for (const workspace of affectedWorkspaces) {
+    if (workspace.contentOnly) continue
     if (!workspace.buildTask)
       unknownPaths.push(
         `Workspace has no canonical build task: ${workspace.name}`

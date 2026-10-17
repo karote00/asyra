@@ -754,3 +754,37 @@ Design supplies domain selectors and the optional local provider assessment
 factory. A content-delivery failure is an intermediate event, followed by exactly
 one call settlement. Recording transport timing does not retain transport bytes.
 The local report command supports `--request ID --trace` for Trace Event JSON.
+
+## Advisory knowledge tools
+
+The local provider composes request-owned `design_knowledge` tools through the
+existing tool host, deferred native discovery and input/output validation:
+`discover_knowledge` returns applicable metadata; `read_knowledge` resolves selected
+IDs and context labels. Neither executes a browser action or creates an Undo entry.
+The HTTP provider protocol remains unchanged; other providers may compose the
+optional Runtime knowledge API separately.
+
+`server/local-knowledge.ts` owns file admission and content. The default catalog
+selects five files from the independent `@asyra/domain-knowledge` workspace and
+App-owned `knowledge/design.docs-page.md`. Fixed catalog IDs resolve exported
+package paths; model arguments cannot choose files, credentials or scope.
+This initial loader accepts JSON-compatible YAML frontmatter and rejects other
+syntax, unknown fields and file-defined identity/revision. The Runtime itself
+accepts normalized descriptors and does not impose a parser on other Apps.
+
+For low-level advice, select IDs such as `components.button`. For specialization,
+discover with `docs-page` or `landing-page`, then include the desired composition
+ID in the read. Several distinct reads in one task are supported. The Runtime
+remembers identical delivered contexts only within that request; provider results
+retain earlier advice. Request cleanup disposes access and releases the App's
+content map. Files are loaded lazily once per request, so no shared mutable cache
+or cross-tenant retention is introduced.
+
+Trusted App code may install/remove app-supplied revisions through
+`createDesignKnowledge`; that owner is never registered as an Agent tool. It
+validates replacements before updating metadata and content. No tool can write
+shared sources, persist extracted advice or grant new execution permissions.
+The local adapter uses a request-private principal and a local host scope; a
+multi-tenant deployment must bind its authenticated identities through its own
+Runtime composition. Treat all returned knowledge as untrusted advice, including
+text that claims to grant system or tool authority.

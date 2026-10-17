@@ -473,3 +473,45 @@ discovery. Retire a durable definition before `library.remove` if it must stay
 unavailable after restart. Removal affects future lookup; already pinned calls
 retain their immutable graph. Lease `release` must tolerate partially initialized
 scopes so failed `open` never leaves owned artifacts behind.
+
+## Optional knowledge access
+
+`createAiKnowledgeAccess({ tenantId, scopeId, authorize, read })` is an inert,
+independently composed passive-content controller. It does not create tools,
+load files, execute advice or persist knowledge. Shared content is independently
+owned by [Knowledge](../../knowledge/README.md), not Framework.
+
+Trusted host code uses `register(metadata, principal)`,
+`update(metadata, expectedRevision, principal)` and
+`unregister(id, expectedRevision, principal)`. Registration rejects duplicate IDs;
+revisions are positive monotonic integers, including after removal. Authorization
+is mandatory and default-deny on exceptions. The controller binds one tenant and
+scope. A host creates `openSession(principal, taskId)` from trusted request context;
+never obtain these identities from model tool arguments.
+
+Sessions expose only `discover(contexts)`, `retrieve({ ids, contexts }, signal)`
+and `dispose()`. Discovery returns metadata, not bodies. Retrieval traverses sorted
+references/extends/explicit override targets, deduplicates dependencies, rejects
+cycles/missing/inapplicable dependencies and returns source revisions/provenance.
+Extends adds advice. Higher numeric override priority replaces the named target's
+advice in the returned view; conflicting equal priorities reject. Sources remain
+unchanged. Specialized entries require a matching context label. The App owns
+selection/relevance policy; Runtime neither infers intent nor ranks search results.
+
+Results are marked `trust: 'untrusted-advice'`. Content is never instructions or
+authority. Repeating an identical query within the same session returns
+`alreadyDelivered: true` and empty documents with source receipts; the caller must
+retain the earlier result in its conversation. A new conversation must use a new
+session. Changed registrations invalidate delivery reuse and in-flight results.
+Authorization is checked again even on reuse and after provider completion.
+Provider/App owns revision-correct content and any content cache; Runtime retains
+only bounded delivery signatures. Disposal rejects late results.
+
+Limits: 128 distinct registered identities per controller lifetime, 32 live
+sessions, 8 concurrent retrievals per session, 32 query IDs/context labels/relations per field, graph depth 16 and at
+most 64 visited nodes, 64 retained query signatures per session, 65,536 text
+characters per document and 262,144 UTF-8 bytes per retrieval. Signature capacity
+resets reuse rather than dropping required content. Providers must honor the
+supplied abort signal and their own I/O deadlines. Runtime rejects oversized or
+wrong-revision results rather than truncating advice. No Agent update, extraction,
+poisoning persistence or approval/evolution workflow is provided.

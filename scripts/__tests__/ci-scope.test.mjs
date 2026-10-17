@@ -769,7 +769,13 @@ test('selected CI checks run only planned owners and record declared skips', asy
 test('global compiler and package-manager configuration selects every workspace', () => {
   for (const file of ['tsconfig.json', '.yarnrc.yml', 'scripts/gen-turbo.js']) {
     const result = classifyChanges([file], manifests)
-    assert.deepEqual(names(result), [...manifests.keys()].sort())
+    assert.deepEqual(
+      names(result),
+      [...manifests.values()]
+        .filter((workspace) => !workspace.contentOnly)
+        .map((workspace) => workspace.name)
+        .sort()
+    )
     assert.equal(result.frameworkReleaseRequired, true)
   }
 })
@@ -885,7 +891,13 @@ test('release input and affected package changes select Framework release readin
 
 test('unknown paths select all workspaces and remain an aggregate blocker', () => {
   const result = classifyChanges(['new-unclassified-root/file.txt'], manifests)
-  assert.deepEqual(names(result), [...manifests.keys()].sort())
+  assert.deepEqual(
+    names(result),
+    [...manifests.values()]
+      .filter((workspace) => !workspace.contentOnly)
+      .map((workspace) => workspace.name)
+      .sort()
+  )
   assert.deepEqual(result.unknownPaths, ['new-unclassified-root/file.txt'])
 })
 
@@ -1033,7 +1045,13 @@ test('explicit full validation selects every workspace even when only one App ch
     ['docs/ai'],
     { fullValidation: true }
   )
-  assert.deepEqual(names(result), [...manifests.keys()].sort())
+  assert.deepEqual(
+    names(result),
+    [...manifests.values()]
+      .filter((workspace) => !workspace.contentOnly)
+      .map((workspace) => workspace.name)
+      .sort()
+  )
 })
 
 test('root script edits select script contracts without product builds', () => {
@@ -1145,7 +1163,13 @@ test('root toolchain changes still select all product owners', () => {
       }
     }
   )
-  assert.deepEqual(names(result), [...manifests.keys()].sort())
+  assert.deepEqual(
+    names(result),
+    [...manifests.values()]
+      .filter((workspace) => !workspace.contentOnly)
+      .map((workspace) => workspace.name)
+      .sort()
+  )
   assert.equal(result.executionPlan.checks.e2e.selected.length, 4)
 })
 
@@ -1838,4 +1862,27 @@ test('Flow Inspector archive contracts have one workspace owner in incremental a
     )
     assert.equal(selected.tests?.includes(archiveTest) ?? false, false, input)
   }
+})
+
+test('data-only root knowledge participates in consumer invalidation without a fake build', () => {
+  const discovered = readWorkspaceManifests(repositoryRoot)
+  const knowledge = discovered.get('@asyra/domain-knowledge')
+  assert.equal(knowledge?.directory, 'domain-knowledge')
+  assert.equal(knowledge?.buildTask, undefined)
+  const scope = classifyChanges(
+    ['domain-knowledge/components.button.md'],
+    discovered
+  )
+  assert.ok(names(scope).includes('@asyra/asyra-design'))
+  assert.ok(
+    JSON.stringify(scope).includes(
+      'scripts/__tests__/domain-knowledge.test.mjs'
+    )
+  )
+  assert.ok(!names(scope).includes('@asyra/domain-knowledge'))
+  assert.ok(
+    !JSON.stringify(scope).includes(
+      'Workspace has no canonical build task: @asyra/domain-knowledge'
+    )
+  )
 })

@@ -33,6 +33,7 @@
     "server/__tests__/design-preparation.test.ts",
     "server/__tests__/local-design-tools.test.ts",
     "server/__tests__/local-tool-scheduler.test.ts",
-    "server/__tests__/local-design-workflow.test.ts"
+    "server/__tests__/local-design-workflow.test.ts",
+    "server/__tests__/local-knowledge.test.ts"
   ]
 }

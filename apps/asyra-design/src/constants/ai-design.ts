@@ -1,4 +1,6 @@
 export const AiDesignToolIds = Object.freeze({
+  DISCOVER_KNOWLEDGE: 'discover_knowledge',
+  READ_KNOWLEDGE: 'read_knowledge',
   SUBMIT_TOOL: 'submit_tool',
   INVOKE_TOOL: 'invoke_tool',
   SAVE_TOOL: 'save_tool',

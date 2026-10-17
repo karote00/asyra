@@ -12,6 +12,7 @@ const baseConfigPath = path.join(workspaceRoot, 'turbo.base.json')
 const ignorePackages = ['create-app/*']
 
 const getBuildTask = (pkg) => {
+  if (pkg.contentOnly) return null
   const repoName = pkg.name.split('/').pop()
   const packageBuildTask = `build:${repoName}`
   const task = [packageBuildTask, 'react:build', 'build'].find(
@@ -35,7 +36,9 @@ function getWorkspacePackages() {
     if (ignorePackages.includes(pattern)) continue
 
     const baseDir = pattern.replace('/*', '')
-    const dirs = fs.readdirSync(path.join(workspaceRoot, baseDir))
+    const dirs = pattern.endsWith('/*')
+      ? fs.readdirSync(path.join(workspaceRoot, baseDir))
+      : ['']
 
     for (const dir of dirs) {
       const pkgDir = path.join(workspaceRoot, baseDir, dir)
@@ -46,6 +49,7 @@ function getWorkspacePackages() {
 
       pkgs.push({
         name: pkgJson.name,
+        contentOnly: pkgJson.contentOnly === true,
         dir: path.relative(workspaceRoot, pkgDir),
         scripts: pkgJson.scripts ?? {},
         dependencies: Object.keys({
@@ -65,6 +69,13 @@ function generateTurboJson(packages) {
 
   for (const pkg of packages) {
     const buildCmd = getBuildTask(pkg)
+    if (buildCmd === null) {
+      if (Object.keys(pkg.scripts).length || pkg.dependencies.length)
+        throw new Error(
+          `${pkg.name} content-only workspace cannot declare scripts or workspace dependencies`
+        )
+      continue
+    }
     if (!pkg.scripts[buildCmd]) {
       throw new Error(`${pkg.name} must declare the canonical ${buildCmd} task`)
     }
@@ -72,12 +83,13 @@ function generateTurboJson(packages) {
     tasks[`${pkg.name}#${buildCmd}`] = {
       cache: false,
       outputs: ['dist/**'],
-      dependsOn: pkg.dependencies.map((dep) => {
+      dependsOn: pkg.dependencies.flatMap((dep) => {
         const dependency = packagesByName.get(dep)
         if (!dependency) {
           throw new Error(`${pkg.name} references unknown workspace ${dep}`)
         }
-        return `${dep}#${getBuildTask(dependency)}`
+        const dependencyBuild = getBuildTask(dependency)
+        return dependencyBuild ? [`${dep}#${dependencyBuild}`] : []
       })
     }
   }
