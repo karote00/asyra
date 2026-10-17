@@ -1533,8 +1533,8 @@
         'Canonical projection and collaboration owner handoff flow'
     },
     links: [
-      { id: 'document-publication-contract', kind: 'authority', label: 'Current App document publication contract',
-        href: '../../../docs/ai/apps/asyra-design/modules/collaboration-reference.md#explicit-canonical-document-publications' },
+      { id: 'document-publication-contract', kind: 'reference', label: 'Current App document publication contract',
+        href: '../../../docs/ai/apps/asyra-design/modules/collaboration-reference.md' },
       {
         id: 'realignment-plan',
         kind: 'authority',

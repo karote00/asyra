@@ -467,8 +467,7 @@
               "current Factory replay state and active Feature session"
             ],
             "outputs": [
-              "artifact:execution-receipt",
-              "history settlement and ordinary canonical publications"
+              "artifact:execution-receipt"
             ],
             "conditions": [
               "Browser delivery admits receipt bytes before transmission; oversized output yields an explicit bounded delivery failure preserving known execution settlement and exact batch/action identity. Healthy exchanges continue; broken transport preserves acknowledgement uncertainty. Never replay completed work or certify omitted output. Core export bytes stay with a browser artifact/download owner beyond request cleanup; generation changes cannot relabel a snapshot.",
@@ -19647,9 +19646,9 @@
         "links": [
           {
             "id": "document-publication-contract",
-            "kind": "authority",
+            "kind": "reference",
             "label": "Current App document publication contract",
-            "href": "../../../docs/ai/apps/asyra-design/modules/collaboration-reference.md#explicit-canonical-document-publications"
+            "href": "../../../docs/ai/apps/asyra-design/modules/collaboration-reference.md"
           },
           {
             "id": "realignment-plan",

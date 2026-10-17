@@ -361,10 +361,7 @@
           'issued history intent and registered Feature execution mode',
           'current Factory replay state and active Feature session'
         ],
-        outputs: [
-          'artifact:execution-receipt',
-          'history settlement and ordinary canonical publications'
-        ],
+        outputs: ['artifact:execution-receipt'],
         conditions: [
           'Browser delivery admits receipt bytes before transmission; oversized output yields an explicit bounded delivery failure preserving known execution settlement and exact batch/action identity. Healthy exchanges continue; broken transport preserves acknowledgement uncertainty. Never replay completed work or certify omitted output. Core export bytes stay with a browser artifact/download owner beyond request cleanup; generation changes cannot relabel a snapshot.',
           'Factory alone owns history replay through outer settlement. App history opts into immediate Feature execution, never interaction queue admission. Existing session commit-current finalizes the drag before replay; current async handler settlement is allowed but queued work cannot run ahead or interleave. Repeated history during finalization/replay is ignored without retention; cleanup failure or runtime closure stops replay. No App busy mirror or second history owner. Accepted direction remains immutable.',

@@ -44,6 +44,24 @@ regressions now pass 45/45, and focused lint is clean. No runtime change or full
 release-template regeneration. Continue the remaining delivery checks while
 retaining exact-source evidence for unchanged prerequisites.
 
+#### Delivery Inspector presentation correction
+
+Owner: existing Inspector data and generated catalog only. The full Inspector
+viewer/structure tests reproduced an unresolved descriptive output on `apply`
+and a supplemental publication-document link incorrectly selected as the primary
+specification, producing double fragments. Keep the existing execution receipt,
+Factory/history conditions, canonical publication owner and failure routes. Remove
+the redundant non-artifact output text; classify the supplemental document as a
+reference to its existing file. The declared primary spec and all step anchors
+remain unchanged. Do not alter viewer validation or product runtime. Existing
+viewer structure, all-catalog rendering/link checks and owner contract tests are
+the regression oracles. Regenerate the catalog, verify admission/proof for the
+exact corrected declaration and rerun Inspector/shared plus remaining gates. The
+owner-specific anchor oracle also stripped existing hyphens from real Markdown
+headings, unlike the rendered-link oracle. Preserve heading hyphens in that test;
+the current `Tool-first correction contract` heading remains unchanged.
+
+
 ## Recorded acceptance - five sequential corrections - 2026-10-17
 
 ### Bounded planning contract and evidence

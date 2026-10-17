@@ -16,7 +16,7 @@ test('AI execution architecture resolves current authorities and boundaries', ()
         '#' +
         match[1]
           .toLowerCase()
-          .replace(/[^a-z0-9 ]/g, '')
+          .replace(/[^a-z0-9 -]/g, '')
           .replaceAll(' ', '-')
     )
   )
