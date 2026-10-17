@@ -11,7 +11,7 @@
     "test:contracts": "node --test __tests__/viewer-entry.test.cjs workspace/__tests__/catalog.contract.test.cjs workspace/__tests__/workspace.test.cjs __tests__/package.test.cjs",
     "test": "yarn test:react && yarn test:contracts && yarn test:flow-files",
     "test:local": "yarn test:react && yarn test:contracts && yarn test:flow-files",
-    "test:ci": "yarn test:react && yarn test:contracts && yarn test:flow-files",
+    "test:ci": "yarn test:react && yarn test:contracts && yarn test:flow-files && yarn test:installed",
     "test:flow-files": "node --test flow-files/__tests__/policy.test.cjs flow-files/__tests__/store.test.cjs flow-files/__tests__/service.test.cjs flow-files/__tests__/producers.test.cjs flow-files/__tests__/server.test.cjs flow-files/__tests__/project.test.cjs flow-files/__tests__/gate.test.cjs flow-files/__tests__/adapters.test.cjs flow-files/__tests__/bundles.test.cjs",
     "test:flow-ui": "node --test flow-files/__tests__/browser.test.cjs",
     "test:flow-rerun": "node --test flow-files/__tests__/selected-rerun.test.cjs",

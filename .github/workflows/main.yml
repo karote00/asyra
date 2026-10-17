@@ -276,7 +276,6 @@ jobs:
           yarn workspace @asyra/asyra-design build:collaboration-server
       - name: Test Flow Inspector control-plane contracts
         run: |
-          yarn workspace @asyra/flow-inspector test:installed
           yarn workspace @asyra/flow-inspector test:flow-rerun
           node --test --test-concurrency=1 tools/flow-inspector/control-plane/__tests__/{contracts,observation-files,observation-lifecycle,node-interactions,collaboration-results,localization,localization-runtime,playwright-results,snapshot,runner,evidence,store,service,server,mapping,cli,evolution,ci-context,ci-evidence,operations,agent-contract,agent-provider,agent-transport,agent-task,agent-verifier,pr-review,github-delivery,workflow-results,flow-target,target-evidence}.test.cjs
           node tools/flow-inspector/control-plane/cli.cjs prove

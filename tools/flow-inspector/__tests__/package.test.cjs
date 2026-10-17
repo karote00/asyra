@@ -109,3 +109,47 @@ test('public tool archive retains usable viewer assets without repository runtim
     fs.rmSync(scratch, { recursive: true, force: true })
   }
 })
+
+test('independent runtime changes select the installed consumer gate exactly once', async () => {
+  const { classifyChanges, readWorkspaceManifests } =
+    await import('../../../scripts/ci-scope.mjs')
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')
+  )
+  for (const file of [
+    'flow-files/adapters.cjs',
+    'bin/flow-inspector.cjs',
+    'package.json'
+  ]) {
+    const scope = classifyChanges(
+      ['tools/flow-inspector/' + file],
+      readWorkspaceManifests(repositoryRoot)
+    )
+    const workspace = scope.relationshipMap.workspaceMatrix.find(
+      (w) => w.name === manifest.name
+    )
+    assert.equal(workspace.testSelection.mode, 'full', file)
+    assert.equal(workspace.testTask, 'test:ci')
+    assert.equal(
+      scope.relationshipMap.flowInspectorValidationRequired,
+      false,
+      'Independent runtime does not require Design product proofs'
+    )
+  }
+  assert.equal(
+    manifest.scripts['test:ci']
+      .split('&&')
+      .filter((command) => command.trim() === 'yarn test:installed').length,
+    1,
+    'Workspace CI must execute the actual installed package gate'
+  )
+  const workflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/main.yml'),
+    'utf8'
+  )
+  assert.doesNotMatch(
+    workflow,
+    /yarn workspace @asyra\/flow-inspector test:installed/,
+    'The legacy control-plane job must not duplicate the workspace gate'
+  )
+})

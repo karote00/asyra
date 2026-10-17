@@ -497,14 +497,14 @@ Stage 2 acceptance record - 2026-10-17:
   reporters publish that existing execution; selected actions may collect a test
   catalog before executing one case, never execute the suite as discovery.
 - Local gates passed: 61 flow-file cases (including preserved Asyra producer
-  contracts), 100 package/viewer/architecture cases, 12 React workspace cases,
+  contracts), 101 package/viewer/architecture cases, 12 React workspace cases,
   67 CI-scope cases, 17 naming
   and test-placement cases, package typecheck, lint and production build. The
   permanent installed-consumer gate is `yarn workspace @asyra/flow-inspector
-  test:installed`; final execution passed in about 17 seconds using the populated
+  test:installed`; final execution passed in about 19 seconds using the populated
   npm cache. No unrelated product suite was rerun locally.
 - Candidate SHA-256:
-  `9a12f979af37a5057b71f569df4cda9d3775e138f87d52dfc69c64fd03f099b3`.
+  `35e1b5e462db98e52f55f7044ecde7bf12216b27a126b2262c44914bdda7659c`.
   The 47 installed files under `bin`, `flow-files`, plus README and viewer assets
   matched source bytes; sorted relative-path/NUL/content SHA-256:
   `442ad093e1237632af7b547d297dd0c648f77675d7a632d77ce32e7cae65bb41`.
@@ -530,6 +530,14 @@ PR #344 review corrections:
   The final installed-consumer gate and 47-file source comparison passed again;
   unaffected React, CI-scope, typecheck and build evidence is retained. Remote CI
   completion must be checked against the review commit, not inferred from local gates.
+
+Second PR review verified the original CI run succeeded but skipped the installed
+consumer gate because it lived under legacy control-plane-only selection. The
+installed gate now belongs to the tool's `test:ci` entry exactly once; a formal
+selection regression covers flow-file, bin and package changes without selecting
+Design product proofs. The prior duplicate invocation was removed from the legacy
+job. The revised local CI entry passed React, 101 contracts, 61 flow-file cases and
+the installed consumer; existing runtime behavior and supported limits are unchanged.
 
 Known limits are unchanged in purpose and explicit in the package guide: Node 24,
 macOS/Linux, node_modules, Vitest 3.2.x and Playwright 1.62.x; project wildcard
