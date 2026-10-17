@@ -1,6 +1,7 @@
 import type { SystemContextSnapshot } from '@asyra/utils'
 
 export interface ExecutionConfig {
+  executionMode?: 'queued' | 'immediate'
   priority?: number
   exclusive?: boolean
 }
@@ -10,6 +11,7 @@ export type ExecutionHandler<T = Record<string, unknown>> = (
 ) => T | null | Promise<T | null>
 
 export interface ExecutionParticipant {
+  executionMode: 'queued' | 'immediate'
   featureName: string
   priority: number
   exclusive: boolean

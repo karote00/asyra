@@ -1,3 +1,4 @@
+import { AiToolLibraryPanel } from './ai-tool-library-panel'
 import { AiConversationNavigation } from './ai-conversation-navigation'
 import { AiConnectionStatus } from './ai-connection-status'
 import {
@@ -25,7 +26,6 @@ import type {
 } from '../ai/conversation'
 import {
   canRetryAiTurn,
-  projectAiActivity,
   formatElapsedTime,
   projectAiQuestion,
   summarizeAiTurn,
@@ -348,6 +348,7 @@ const AiConversationPanelLayout = ({
           conversation={conversation}
           onNavigate={navigateConversation}
         />
+        <AiToolLibraryPanel />
         <button
           aria-label="Close Agent panel"
           className="grid h-6 w-6 shrink-0 place-items-center rounded border-0 bg-transparent text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
@@ -517,6 +518,9 @@ const AiConversationFeed = ({
   conversation,
   confirmation
 }: Pick<AiConversationPanelProps, 'conversation' | 'confirmation'>) => {
+  const [expandedHistory, setExpandedHistory] = useState<ReadonlySet<string>>(
+    new Set()
+  )
   const conversationBodyRef = useRef<HTMLElement>(null)
   const followLatestRef = useRef(true)
   const [showJump, setShowJump] = useState(false)
@@ -550,6 +554,8 @@ const AiConversationFeed = ({
       setShowJump(false)
     }
   }, [confirmationSnapshot, conversationSnapshot])
+  // Initial following must run before measuring an already overflowing feed.
+  useLayoutEffect(syncScrollPosition, [expandedHistory, syncScrollPosition])
 
   const submitDrawingDetailChoice = useCallback(
     (turnId: string, optionId: AiDrawingDetailOptionId) => {
@@ -615,7 +621,8 @@ const AiConversationFeed = ({
           if (canAnswer) questionStatus = 'Waiting for your answer'
           const latest = timeline.at(-1)?.turnId === turn.turnId
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
-          const activity = projectAiActivity(turn.progress, {
+          const activity = conversation.getActivity(turn.turnId, {
+            purpose: turn.originalIntent ?? turn.intent,
             outcome: settled?.outcome,
             awaitingAnswer: Boolean(question),
             stopping: Boolean(stopping),
@@ -647,8 +654,16 @@ const AiConversationFeed = ({
                 className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
               >
                 <details
+                  onToggle={(event) => {
+                    const open = event.currentTarget.open
+                    setExpandedHistory((previous) => {
+                      const next = new Set(previous)
+                      if (open) next.add(turn.turnId)
+                      else next.delete(turn.turnId)
+                      return next
+                    })
+                  }}
                   className="mt-2 text-[12px] text-[#96939f]"
-                  onToggle={syncScrollPosition}
                 >
                   <summary
                     aria-label="Work history"
@@ -671,38 +686,52 @@ const AiConversationFeed = ({
                     aria-label="Operational progress"
                     className="my-1 list-none space-y-1 pl-3"
                   >
-                    {activity.entries.flatMap((entry, index) => {
-                      const lines =
-                        entry.message && entry.message !== entry.label
-                          ? [entry.label, entry.message]
-                          : [entry.label]
-                      return lines.map((line, lineIndex) => (
-                        <li
-                          key={`${turn.turnId}:${index}:${lineIndex}`}
-                          aria-current={
-                            !settled &&
-                            entry === activity.current &&
-                            lineIndex === lines.length - 1
-                              ? 'step'
-                              : undefined
-                          }
-                          className="whitespace-pre-wrap break-words py-1"
-                        >
-                          {line}
-                        </li>
-                      ))
-                    })}
+                    {expandedHistory.has(turn.turnId)
+                      ? activity.entries.flatMap((entry, index) => {
+                          const lines =
+                            entry.message && entry.message !== entry.label
+                              ? [entry.label, entry.message]
+                              : [entry.label]
+                          return lines.map((line, lineIndex) => (
+                            <li
+                              key={`${turn.turnId}:${index}:${lineIndex}`}
+                              aria-current={
+                                !settled &&
+                                entry === activity.current &&
+                                lineIndex === lines.length - 1
+                                  ? 'step'
+                                  : undefined
+                              }
+                              className="whitespace-pre-wrap break-words py-1"
+                            >
+                              {line}
+                            </li>
+                          ))
+                        })
+                      : null}
                   </ol>
                 </details>
                 {!settled ? (
                   <div
                     role="status"
                     aria-label="Current activity"
+                    data-activity-mode={activity.mode}
                     className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
                   >
-                    <span>{activity.current.label}</span>
                     {activity.current.message ? (
-                      <span className="block">{activity.current.message}</span>
+                      <span
+                        className="line-clamp-3"
+                        title={activity.current.message}
+                      >
+                        {activity.current.message}
+                      </span>
+                    ) : null}
+                    {activity.current.label ? (
+                      <span>
+                        {activity.mode === 'context' && activity.current.message
+                          ? 'Task context - no App operation executing'
+                          : activity.current.label}
+                      </span>
                     ) : null}
                   </div>
                 ) : null}

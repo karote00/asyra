@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../contexts', () => ({ default: {} }))
-import { createDocumentContextAction } from '../context-action'
+import {
+  createDocumentContextAction,
+  createRegionTargetsAction,
+  createDocumentContextReleaseAction
+} from '../context-action'
 import {
   operationInputIssue,
   nativeToolInputSchema
@@ -11,7 +15,11 @@ describe('document context action', () => {
     const receipt = { available: true, elements: [], nextOffset: null }
     const read = vi.fn(() => receipt)
     const action = createDocumentContextAction(read as never)
-    const query = { scope: 'children' as const, limit: 10 }
+    const query = {
+      scope: 'children' as const,
+      limit: 10,
+      delivery: 'page' as const
+    }
     const signal = new AbortController().signal
     const result = await action.execute(query, { signal } as never)
     expect(result).toBe(receipt)
@@ -37,7 +45,9 @@ it('advertises the same snapshot-only fields to native tools and action admissio
     snapshotId: 'saved',
     offset: 20,
     limit: 10,
-    delivery: 'columns'
+    delivery: 'columns',
+    filter: { name: { prefix: 'tier-3-', suffix: '-window' } },
+    expectedCount: 24
   }
   for (const definition of [schema, nativeToolInputSchema(schema)]) {
     expect(operationInputIssue(valid, definition)).toBeUndefined()
@@ -52,4 +62,86 @@ it('advertises the same snapshot-only fields to native tools and action admissio
       )
     ).toBeDefined()
   }
+})
+
+it('defaults AI queries to retained references without transferring rows and preserves explicit pages', async () => {
+  const read = vi.fn(() => ({ available: true }))
+  const action = createDocumentContextAction(read)
+  const signal = new AbortController().signal
+  await action.execute({ scope: 'selection' }, { signal })
+  expect(read).toHaveBeenLastCalledWith(
+    { scope: 'selection', delivery: 'reference' },
+    signal
+  )
+  await action.execute({ scope: 'selection', delivery: 'columns' }, { signal })
+  expect(read).toHaveBeenLastCalledWith(
+    { scope: 'selection', delivery: 'columns' },
+    signal
+  )
+})
+
+it('separates live query output from explicit release without weakening either input', async () => {
+  const read = vi.fn(() => ({ released: true }))
+  const query = createDocumentContextAction(read)
+  const release = createDocumentContextReleaseAction(read)
+  expect(
+    operationInputIssue(
+      { scope: 'snapshot', snapshotId: 'known', release: true },
+      query.inputSchema
+    )
+  ).toBeDefined()
+  expect(
+    operationInputIssue({ snapshotId: 'known' }, release.inputSchema)
+  ).toBeUndefined()
+  expect(release.composition).toBe('control-plane')
+  const signal = new AbortController().signal
+  expect(await release.execute({ snapshotId: 'known' }, { signal })).toEqual({
+    snapshotId: 'known',
+    released: true
+  })
+  expect(read).toHaveBeenCalledExactlyOnceWith(
+    { scope: 'snapshot', snapshotId: 'known', release: true },
+    signal
+  )
+})
+
+it('keeps transient and retained contracts disjoint through native conversion', () => {
+  const action = createRegionTargetsAction(vi.fn())
+  const query = {
+    scope: 'region',
+    bounds: { x: 0, y: 0, width: 1, height: 1 }
+  }
+  for (const schema of [
+    action.inputSchema,
+    nativeToolInputSchema(action.inputSchema)
+  ]) {
+    expect(operationInputIssue(query, schema)).toBeUndefined()
+    for (const patch of [
+      { allMatches: false },
+      { result: 'elements' },
+      { offset: 0 },
+      { fields: ['x'] },
+      { scope: 'snapshot', snapshotId: 'saved' }
+    ])
+      expect(operationInputIssue({ ...query, ...patch }, schema)).toBeDefined()
+  }
+  const result = {
+    delivery: 'transient',
+    available: true,
+    coordinateSpace: 'parent-local',
+    total: 1,
+    elementIds: ['a'],
+    missingIds: [],
+    elements: [],
+    nextOffset: null
+  }
+  expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
+  expect(
+    operationInputIssue(
+      { ...result, snapshotId: 'fake', leaseId: 'fake' },
+      action.outputSchema
+    )
+  ).toBeDefined()
+  const { delivery: _delivery, ...withoutMode } = result
+  expect(operationInputIssue(withoutMode, action.outputSchema)).toBeDefined()
 })

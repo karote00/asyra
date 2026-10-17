@@ -87,6 +87,8 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
   }
   for (const key of ['items', 'additionalProperties'] as const)
     if (record(result[key])) result[key] = nativeToolInputSchema(result[key])
+  if (Array.isArray(result.prefixItems))
+    result.prefixItems = result.prefixItems.map(nativeToolInputSchema)
   for (const mode of ['oneOf', 'anyOf', 'allOf'] as const) {
     const branches = result[mode]
     if (!Array.isArray(branches)) continue

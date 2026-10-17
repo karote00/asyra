@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from 'node:util'
+import { randomUUID } from 'node:crypto'
 import { operationInputIssue } from './operation-input-schema'
 import { imageRegionSchema } from './local-image-tools'
 
@@ -7,41 +8,85 @@ export interface ReferenceIdentity {
   referenceId: string
   validation?: { width: number; height: number }
 }
+export type ReferencePurpose =
+  'visual' | 'fact' | 'preparation' | 'pixel-comparison'
+export interface ReferenceUseReceipt {
+  requestId: string
+  referenceId: string
+  useId: string
+  revision: number
+  requirementRevision: number
+}
+interface ReferenceUse {
+  id: string
+  criterionId: string
+  unitId?: string
+  purpose: ReferencePurpose
+  region: 'whole' | { x: number; y: number; width: number; height: number }
+  limitations: string[]
+}
 interface ReferenceDecision {
   referenceId: string
   status: 'pending' | 'accepted' | 'restricted' | 'rejected'
   reason: string
-  criterionIds: string[]
-  limitations: string[]
-  sourceRegion?: { x: number; y: number; width: number; height: number }
+  uses: ReferenceUse[]
 }
-export interface RetainedReferenceDecision extends ReferenceDecision {
+export interface RetainedReferenceDecision extends Omit<
+  ReferenceDecision,
+  'uses'
+> {
   author: 'model'
   requirementRevision: number
+  uses: (ReferenceUse & {
+    receipt: ReferenceUseReceipt
+    pixels: { width: number; height: number }
+  })[]
 }
 const decisionText = { type: 'string', minLength: 1, maxLength: 1000 }
+export const referenceUseReceiptSchema = {
+  'x-runtime-value': 'request',
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'requestId',
+    'referenceId',
+    'useId',
+    'revision',
+    'requirementRevision'
+  ],
+  properties: {
+    requestId: decisionText,
+    referenceId: decisionText,
+    useId: decisionText,
+    revision: { type: 'integer', minimum: 1 },
+    requirementRevision: { type: 'integer', minimum: 1 }
+  }
+}
+export const referenceUsesSchema = {
+  type: 'array',
+  uniqueItems: true,
+  items: referenceUseReceiptSchema,
+  description:
+    'Exact current use receipts from select_design_references. Omit only for reference-free work; each receipt must match the consumer purpose and criterion/unit.'
+}
+export const referenceUseDependency = (receipt: ReferenceUseReceipt) =>
+  `reference-use:${JSON.stringify([receipt.referenceId, receipt.useId])}`
 export const referenceDecisionProperties = {
   requirementRevision: {
     type: 'integer',
     minimum: 1,
     description:
-      'Current requirementRevision returned by criteria or reference selection. Required when recording decisions.'
+      'Current saved requirementRevision. Required when recording decisions.'
   },
   referenceDecisions: {
     type: 'array',
     maxItems: 24,
     description:
-      'Batched model assessments of retained candidate images. Use immutable referenceId from import/validation, not a URL or invented ID. Accepted/restricted decisions specify exact criterionIds. Restricted decisions state limitations. Rejected images remain stored but are excluded from comparison.',
+      'Primary-agent assessments, not tool judgments. Accepted/restricted sources require explicit uses. Each use declares exact criterion/unit, purpose, original-pixel region (or whole) and limitations. Decoding alone is not suitability. Retain returned use receipts for consumers.',
     items: {
       type: 'object',
       additionalProperties: false,
-      required: [
-        'referenceId',
-        'status',
-        'reason',
-        'criterionIds',
-        'limitations'
-      ],
+      required: ['referenceId', 'status', 'reason', 'uses'],
       properties: {
         referenceId: decisionText,
         status: {
@@ -49,14 +94,25 @@ export const referenceDecisionProperties = {
           enum: ['pending', 'accepted', 'restricted', 'rejected']
         },
         reason: decisionText,
-        criterionIds: {
+        uses: {
           type: 'array',
-          maxItems: 24,
-          uniqueItems: true,
-          items: decisionText
-        },
-        limitations: { type: 'array', maxItems: 24, items: decisionText },
-        sourceRegion: imageRegionSchema
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['id', 'criterionId', 'purpose', 'region', 'limitations'],
+            properties: {
+              id: decisionText,
+              criterionId: decisionText,
+              unitId: decisionText,
+              purpose: {
+                type: 'string',
+                enum: ['visual', 'fact', 'preparation', 'pixel-comparison']
+              },
+              region: { anyOf: [{ const: 'whole' }, imageRegionSchema] },
+              limitations: { type: 'array', maxItems: 24, items: decisionText }
+            }
+          }
+        }
       }
     }
   }
@@ -67,20 +123,38 @@ const decisionInputSchema = {
   properties: referenceDecisionProperties
 }
 
-/** Semantic applicability only; the image owner retains bytes and decode evidence. */
+/** Semantic scope is authored by the primary agent; bytes belong to the image owner. */
 export const createReferenceDecisions = () => {
+  const requestId = randomUUID()
   let requirements: unknown
   let requirementRevision = 0
+  let useRevision = 0
   let decisions = new Map<string, RetainedReferenceDecision>()
   const identities = new Map<number, ReferenceIdentity>()
-  const applicable = (id: string, criterionId: string) => {
-    const decision = decisions.get(id)
-    return (
-      !!decision &&
-      decision.requirementRevision === requirementRevision &&
-      ['accepted', 'restricted'].includes(decision.status) &&
-      decision.criterionIds.includes(criterionId)
+  const resolve = (
+    receipt: ReferenceUseReceipt,
+    purpose: ReferencePurpose,
+    scope?: { criterionId: string; unitId?: string }
+  ) => {
+    const issue = operationInputIssue(receipt, referenceUseReceiptSchema)
+    if (issue) throw new Error(issue)
+    const decision = decisions.get(receipt.referenceId)
+    const use = decision?.uses.find((item) => item.id === receipt.useId)
+    if (
+      !decision ||
+      !use ||
+      !['accepted', 'restricted'].includes(decision.status) ||
+      receipt.requestId !== requestId ||
+      receipt.requirementRevision !== requirementRevision ||
+      !isDeepStrictEqual(receipt, use.receipt) ||
+      use.purpose !== purpose ||
+      (scope &&
+        (scope.criterionId !== use.criterionId || scope.unitId !== use.unitId))
     )
+      throw new Error(
+        'Reference use is missing, foreign, stale or outside its declared purpose/criterion/unit. Select an explicit current use.'
+      )
+    return structuredClone(use)
   }
   return {
     setRequirements(value: unknown) {
@@ -90,9 +164,9 @@ export const createReferenceDecisions = () => {
       }
     },
     revision: () => requirementRevision,
-    applicable,
+    resolve,
     update(
-      resolve: (referenceIds: string[]) => ReferenceIdentity[],
+      resolveIdentities: (referenceIds: string[]) => ReferenceIdentity[],
       input: unknown
     ) {
       const issue = operationInputIssue(input, decisionInputSchema)
@@ -109,7 +183,9 @@ export const createReferenceDecisions = () => {
         throw new Error(
           `Reference decisions require current requirementRevision ${requirementRevision}.`
         )
-      const known = resolve(additions.map((decision) => decision.referenceId))
+      const known = resolveIdentities(
+        additions.map((decision) => decision.referenceId)
+      )
       const nextIdentities = new Map(identities)
       known.forEach((item) => nextIdentities.set(item.attachmentIndex, item))
       if (
@@ -117,11 +193,14 @@ export const createReferenceDecisions = () => {
         additions.length
       )
         throw new Error('Reference decisions require unique identities.')
-      const criteria = Object.keys(
-        (requirements as Record<string, unknown>) ?? {}
-      )
+      const criteria = (requirements ?? {}) as Record<
+        string,
+        { requiredUnits?: string[] }
+      >
       const next = new Map(decisions)
+      let nextRevision = useRevision
       const changedIds: string[] = []
+      const changedDependencies = new Set<string>()
       for (const decision of additions) {
         const identity = [...nextIdentities.values()].find(
           (item) => item.referenceId === decision.referenceId
@@ -130,51 +209,91 @@ export const createReferenceDecisions = () => {
           throw new Error(
             'Reference decision needs an existing retained image identity.'
           )
+        const eligible = ['accepted', 'restricted'].includes(decision.status)
         if (
           !decision.reason.trim() ||
-          decision.limitations.some((item) => !item.trim()) ||
-          decision.criterionIds.some((id) => !criteria.includes(id)) ||
-          (['accepted', 'restricted'].includes(decision.status) &&
-            !decision.criterionIds.length) ||
-          (decision.status === 'restricted' && !decision.limitations.length)
+          eligible !== decision.uses.length > 0 ||
+          new Set(decision.uses.map((use) => use.id)).size !==
+            decision.uses.length
         )
           throw new Error(
-            'Reference decisions require known criteria, a reason and explicit restricted limitations.'
+            'Eligible reference decisions require explicit unique uses; pending/rejected decisions have no uses.'
           )
-        if (decision.sourceRegion) {
-          const { x, y, width, height } = decision.sourceRegion
+        const prior = decisions.get(decision.referenceId)
+        const uses = decision.uses.map((use) => {
+          const criterion = criteria[use.criterionId]
           if (
-            !identity.validation ||
-            x + width > identity.validation.width ||
-            y + height > identity.validation.height
+            !criterion ||
+            (use.unitId !== undefined &&
+              !criterion.requiredUnits?.includes(use.unitId)) ||
+            (use.unitId === undefined &&
+              (criterion.requiredUnits?.length ?? 0) > 0) ||
+            !use.id.trim() ||
+            use.limitations.some((item) => !item.trim()) ||
+            (decision.status === 'restricted' && !use.limitations.length)
           )
             throw new Error(
-              'Validate the original image before selecting a sourceRegion within its oriented pixel bounds.'
+              'Reference uses require exact known criteria/units and explicit restricted limitations.'
             )
-        }
+          const dimensions = identity.validation
+          if (
+            !dimensions ||
+            (use.region !== 'whole' &&
+              (use.region.x + use.region.width > dimensions.width ||
+                use.region.y + use.region.height > dimensions.height))
+          )
+            throw new Error(
+              'Validate the original image and declare a region within its oriented pixel bounds.'
+            )
+          const old = prior?.uses.find((item) => item.id === use.id)
+          const unchanged =
+            old &&
+            prior?.status === decision.status &&
+            prior.requirementRevision === requirementRevision &&
+            isDeepStrictEqual(
+              { ...old, receipt: undefined, pixels: undefined },
+              { ...use, receipt: undefined, pixels: undefined }
+            )
+          const receipt = unchanged
+            ? old.receipt
+            : {
+                requestId,
+                referenceId: decision.referenceId,
+                useId: use.id,
+                revision: ++nextRevision,
+                requirementRevision
+              }
+          if (!unchanged)
+            changedDependencies.add(referenceUseDependency(receipt))
+          return {
+            ...structuredClone(use),
+            receipt,
+            pixels:
+              use.region === 'whole'
+                ? { width: dimensions.width, height: dimensions.height }
+                : { width: use.region.width, height: use.region.height }
+          }
+        })
+        for (const old of prior?.uses ?? [])
+          if (!uses.some((use) => use.id === old.id))
+            changedDependencies.add(referenceUseDependency(old.receipt))
         const retained: RetainedReferenceDecision = {
           ...structuredClone(decision),
+          uses,
           author: 'model',
           requirementRevision
         }
-        if (!isDeepStrictEqual(next.get(decision.referenceId), retained)) {
+        if (!isDeepStrictEqual(prior, retained)) {
           next.set(decision.referenceId, retained)
           changedIds.push(decision.referenceId)
         }
       }
-      const affectedCriterionIds = [
-        ...new Set(
-          changedIds.flatMap((id) => [
-            ...(decisions.get(id)?.criterionIds ?? []),
-            ...(next.get(id)?.criterionIds ?? [])
-          ])
-        )
-      ]
       decisions = next
+      useRevision = nextRevision
       known.forEach((item) =>
         identities.set(item.attachmentIndex, structuredClone(item))
       )
-      return { changedIds, affectedCriterionIds }
+      return { changedIds, changedDependencies: [...changedDependencies] }
     },
     snapshot() {
       return [...identities.values()].map((identity) => {
@@ -187,8 +306,7 @@ export const createReferenceDecisions = () => {
                 referenceId: identity.referenceId,
                 status: 'pending' as const,
                 reason: 'No model applicability decision recorded.',
-                criterionIds: [],
-                limitations: [],
+                uses: [],
                 author: 'unassigned' as const,
                 requirementRevision
               }),

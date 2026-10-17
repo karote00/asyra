@@ -1238,6 +1238,294 @@ describe('Preset Selection Subscriptions', () => {
     }
   })
 
+  it.each([32, 1024])(
+    'does not reread %i unchanged rows across structural publications',
+    (count) => {
+      const observers = new Map<string, TestDataChannelObserver>()
+      const core = {
+        getSelection: () => undefined,
+        registerDataChannelObserver: (
+          registration: TestDataChannelObserver & { name: string }
+        ) => observers.set(registration.name, registration),
+        unregisterDataChannelObserver: (name: string) => observers.delete(name)
+      } as unknown as PresetCoreAPIs
+      let parentReads = 0
+      const ids = Array.from(
+        { length: count },
+        (_, index) => `existing-${index}`
+      )
+      const initial = Object.fromEntries([
+        ['group', { id: 'group', parentId: 'workspace', children: ids }],
+        ...ids.map((id) => [
+          id,
+          {
+            id,
+            get parentId() {
+              parentReads++
+              return 'group'
+            }
+          }
+        ])
+      ])
+      propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+      propertyRegistry.register('elementDataMap', { defaultValue: {} })
+      uiContext.set('flattenedElementIds', ['group', ...ids])
+      uiContext.set('elementDataMap', initial)
+      const dispose = registerDefaultDataChannelObservers(
+        core,
+        createDeps(),
+        undefined,
+        { uiContext: true }
+      )
+      const append = (id: string, index: number) =>
+        projectSceneChanges([
+          {
+            action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+            data: { id, parentId: 'group' },
+            parentId: 'group',
+            index
+          }
+        ])
+      try {
+        append('first', count)
+        expect(parentReads).toBeGreaterThanOrEqual(count)
+        const before =
+          uiContext.get<Record<string, { children?: string[] }>>(
+            'elementDataMap'
+          )
+        parentReads = 0
+        append('second', count + 1)
+        expect(uiContext.get('flattenedElementIds')).toEqual([
+          'group',
+          ...ids,
+          'first',
+          'second'
+        ])
+        expect(before?.group.children).toEqual([...ids, 'first'])
+        expect(initial.group.children).toEqual(ids)
+        expect(parentReads).toBe(0)
+      } finally {
+        dispose()
+        propertyRegistry.unregister('flattenedElementIds')
+        propertyRegistry.unregister('elementDataMap')
+      }
+    }
+  )
+
+  it.each(['raw', 'computed'] as const)(
+    'matches cold membership over %s edits and invalidates reseeded or retired observers',
+    (owner) => {
+      const core = {
+        getSelection: () => undefined,
+        registerDataChannelObserver: vi.fn(),
+        unregisterDataChannelObserver: vi.fn()
+      } as unknown as PresetCoreAPIs
+      const counters = new Map<string, number>()
+      const unsubscribe = subscribeToDiagnosticCounters((name, value) => {
+        counters.set(name, (counters.get(name) ?? 0) + value)
+      })
+      propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+      propertyRegistry.register('elementDataMap', { defaultValue: {} })
+      const register = () =>
+        registerDefaultDataChannelObservers(core, createDeps(), undefined, {
+          uiContext: true
+        })
+      let dispose = register()
+      const add = (id: string, parentId: string, index: number) => ({
+        action: SCENE_TREE_ACTIONS.ADD_ELEMENT,
+        data: { id, parentId },
+        parentId,
+        index
+      })
+      const sequence = [
+        [add('a', 'workspace', 0), add('b', 'workspace', 1)],
+        [add('x', 'a', 0), add('y', 'a', 1)],
+        [
+          {
+            action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA_BATCH,
+            id: 'x',
+            changes: [{ key: 'name', after: 'Renamed' }]
+          }
+        ],
+        [
+          {
+            action: SCENE_TREE_ACTIONS.MOVE_ELEMENTS,
+            moves: [
+              {
+                elementId: 'x',
+                before: { parentId: 'a', index: 0 },
+                after: { parentId: 'b', index: 0 }
+              }
+            ]
+          }
+        ],
+        [
+          {
+            action: SCENE_TREE_ACTIONS.REMOVE_ELEMENT,
+            data: { id: 'y' },
+            parentId: 'a'
+          }
+        ],
+        [add('y', 'a', 0)],
+        [
+          {
+            action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA_BATCH,
+            id: 'x',
+            changes: [{ key: 'parentId', after: 'a' }]
+          }
+        ],
+        [
+          {
+            action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_COMPUTED_DATA_BATCH,
+            id: 'a',
+            changes: [{ key: 'children', after: ['x', 'y'] }]
+          }
+        ]
+      ]
+      const expected = [
+        ['a', 'b'],
+        ['a', 'x', 'y', 'b'],
+        ['a', 'x', 'y', 'b'],
+        ['a', 'y', 'b', 'x'],
+        ['a', 'b', 'x'],
+        ['a', 'y', 'b', 'x'],
+        ['a', 'y', 'x', 'b'],
+        ['a', 'x', 'y', 'b']
+      ]
+      const run = (cold: boolean) => {
+        uiContext.set('elementDataMap', {})
+        uiContext.set('flattenedElementIds', [])
+        counters.clear()
+        const snapshots = sequence.map((changes, index) => {
+          if (cold) {
+            uiContext.getSubject('elementDataMap')?.next({
+              ...uiContext.get<Record<string, unknown>>('elementDataMap')
+            })
+            uiContext
+              .getSubject('flattenedElementIds')
+              ?.next([
+                ...(uiContext.get<string[]>('flattenedElementIds') ?? [])
+              ])
+          }
+          changes.forEach((change) => {
+            if ('changes' in change && owner === 'computed') {
+              publishEvent({
+                type: EventTypes.UPDATE_COMPUTED_DATA,
+                payload: {
+                  id: change.id,
+                  changes: change.changes.map((entry) => ({
+                    ...entry,
+                    before: undefined,
+                    owner: 'computed' as const
+                  }))
+                }
+              })
+            } else {
+              projectSceneChanges([
+                {
+                  ...change,
+                  ...('changes' in change
+                    ? { action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA }
+                    : {})
+                }
+              ])
+            }
+          })
+          const ids = uiContext.get<string[]>('flattenedElementIds') ?? []
+          expect(ids).toEqual(expected[index])
+          return JSON.stringify({
+            ids,
+            rows: uiContext.get('elementDataMap')
+          })
+        })
+        return {
+          snapshots,
+          preparations: counters.get('ui-context-membership-prepare')
+        }
+      }
+      try {
+        const warm = run(false)
+        expect(warm.preparations).toBe(1)
+        const cold = run(true)
+        expect(cold.preparations).toBe(sequence.length - 1)
+        expect(warm.snapshots).toEqual(cold.snapshots)
+        // Replacing either published identity invalidates the current preparation.
+        counters.clear()
+        uiContext.getSubject('flattenedElementIds')?.next(['a', 'x', 'y', 'b'])
+        projectSceneChanges([add('z', 'b', 0)])
+        expect(counters.get('ui-context-membership-prepare')).toBe(1)
+        counters.clear()
+        dispose()
+        dispose = register()
+        projectSceneChanges([add('next', 'b', 1)])
+        expect(counters.get('ui-context-membership-prepare')).toBe(1)
+        expect(uiContext.get('flattenedElementIds')).toEqual([
+          'a',
+          'x',
+          'y',
+          'b',
+          'z',
+          'next'
+        ])
+        projectSceneChanges([
+          {
+            action: SCENE_TREE_ACTIONS.MOVE_ELEMENTS,
+            moves: [
+              {
+                elementId: 'next',
+                before: { parentId: 'b', index: 1 },
+                after: { parentId: 'b', index: 1 }
+              }
+            ]
+          }
+        ])
+        counters.clear()
+        projectSceneChanges([add('last', 'b', 2)])
+        expect(counters.get('ui-context-membership-prepare') ?? 0).toBe(0)
+
+        // An incomplete derived membership must miss on its next publication,
+        // rather than retain absent child identities as live rows.
+        publishEvent({
+          type: EventTypes.UPDATE_COMPUTED_DATA,
+          payload: {
+            id: 'a',
+            owner: 'computed',
+            key: 'children',
+            before: ['x', 'y'],
+            after: ['x', 'missing', 'y']
+          }
+        })
+        expect(uiContext.get('flattenedElementIds')).toEqual([
+          'a',
+          'x',
+          'y',
+          'b',
+          'z',
+          'next',
+          'last'
+        ])
+        counters.clear()
+        projectSceneChanges([add('final', 'b', 3)])
+        expect(counters.get('ui-context-membership-prepare')).toBe(1)
+        expect(uiContext.get('flattenedElementIds')).toEqual([
+          'a',
+          'x',
+          'y',
+          'b',
+          'z',
+          'next',
+          'last',
+          'final'
+        ])
+      } finally {
+        dispose()
+        unsubscribe()
+        propertyRegistry.unregister('flattenedElementIds')
+        propertyRegistry.unregister('elementDataMap')
+      }
+    }
+  )
+
   it('projects a scalar addition run through one UI membership batch', () => {
     const observers = new Map<string, TestDataChannelObserver>()
     const core = {

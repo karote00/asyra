@@ -282,6 +282,9 @@ Ordered Undo/Redo of raw name/visibility/lock values applies the recorded target
 value even when a later pending producer changed that field. Scene Tree derives
 fresh before evidence from current canonical data. Ordinary command and remote
 stale-evidence validation remains strict; this does not add conflict resolution.
+Declared mutation `options` are caller policy, not raw-data evidence. Canonical
+preflight excludes only those options from exact semantic comparison; identity,
+field order, every before/after value and unknown evidence fields remain checked.
 
 ### Hierarchy validation work
 

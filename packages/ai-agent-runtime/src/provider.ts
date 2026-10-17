@@ -1,3 +1,4 @@
+import type { AiToolContractInput } from './tool-contract.js'
 import type { AiActionDescription, AiJsonValue } from './types.js'
 
 /** Ordered public purpose and observed owner phase, independent of outcome. */
@@ -7,6 +8,8 @@ export interface ExecutionActivity {
   readonly sequence: number
   readonly parentCallId?: string
   readonly scope?: 'request' | 'call'
+  /** Actual dispatched work, not the enclosing tool capability. */
+  readonly effect?: AiToolContractInput['effect'] | 'mixed'
   readonly phase?:
     | 'provider'
     | 'queued'
@@ -35,6 +38,10 @@ export const isExecutionActivity = (
         activity.parentCallId !== activity.callId)) &&
     (activity.scope === undefined ||
       ['request', 'call'].includes(activity.scope)) &&
+    (activity.effect === undefined ||
+      ['read', 'prepare', 'mutation', 'external', 'mixed'].includes(
+        activity.effect
+      )) &&
     (activity.phase === undefined ||
       [
         'provider',

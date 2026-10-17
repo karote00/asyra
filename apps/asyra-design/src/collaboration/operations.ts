@@ -5,7 +5,6 @@ import type {
   HierarchyMove,
   PropertyComponentRawData,
   PropertyComponentValuesUpdate,
-  PropsRestoreSnapshot,
   SceneTreeRestoreSnapshot,
   SharedPublication,
   SharedPublicationBatch,
@@ -28,11 +27,6 @@ type RemoteCanonicalElementRemoval = Extract<
   CanonicalChange,
   { kind: 'element-removal' }
 >['removals'][number]
-
-export interface ClassifiedRemoteRestore {
-  sceneSnapshot: SceneTreeRestoreSnapshot
-  propsSnapshot: PropsRestoreSnapshot
-}
 
 type SharedPublicationSlice = SharedPublication['slices'][number]
 
@@ -82,47 +76,6 @@ const canonicalElementEntriesFromDelivery = (
   return null
 }
 
-export const classifyRemoteRestore = (
-  organization: OrganizedRemotePublication
-): ClassifiedRemoteRestore | undefined => {
-  const { deliveries } = organization
-  const restoreDeliveries = deliveries.filter(
-    ({ channel, delivery }) =>
-      channel === SharedDataChannelNames.SCENE_TREE &&
-      delivery.eventName === EventTypes.CHANGE_SUBTREE &&
-      (delivery.payload as { readonly action?: unknown }).action ===
-        SCENE_TREE_ACTIONS.RESTORE_SUBTREE
-  )
-  if (restoreDeliveries.length === 0) {
-    return
-  }
-  const restoreDelivery = restoreDeliveries[0]?.delivery
-  const restoreIndex = deliveries.findIndex(
-    ({ delivery }) => delivery === restoreDelivery
-  )
-  const propertyDeliveries = deliveries.slice(0, restoreIndex)
-  if (!restoreDelivery) {
-    throw new Error('[collaboration] invalid subtree restore publication')
-  }
-
-  const payload = restoreDelivery.payload as SubtreeChange
-  return {
-    sceneSnapshot: {
-      elementId: payload.elementId as string,
-      removed: payload.removed as SceneTreeRestoreSnapshot['removed'],
-      rootParentChildrenAfter:
-        payload.rootParentChildrenAfter as readonly string[]
-    },
-    propsSnapshot: {
-      components: propertyDeliveries.flatMap(
-        ({ delivery }) =>
-          (delivery.payload as { data: PropsRestoreSnapshot['components'] })
-            .data
-      )
-    }
-  }
-}
-
 const isAddPropertyDelivery = (
   delivery: SharedPublicationDelivery | undefined
 ): delivery is SharedPublicationDelivery<
@@ -138,6 +91,41 @@ const isRemovePropertyDelivery = (
     data: readonly PropertyComponentRawData[]
   }>
 > => Boolean(delivery && delivery.eventName === EventTypes.REMOVE_PROPERTY)
+
+const sceneDeliveryFamily = (delivery: SharedPublicationDelivery): string => {
+  if (
+    delivery.eventName === EventTypes.ADD_ELEMENT ||
+    delivery.eventName === EventTypes.ADD_ELEMENTS
+  )
+    return EventTypes.ADD_ELEMENTS
+  if (
+    delivery.eventName === EventTypes.REMOVE_ELEMENT ||
+    delivery.eventName === EventTypes.REMOVE_ELEMENTS
+  )
+    return EventTypes.REMOVE_ELEMENTS
+  return delivery.eventName
+}
+
+const splitSceneOperationRuns = (
+  batch: SharedPublicationBatch
+): SharedPublicationBatch[] => {
+  if (batch.channel !== SharedDataChannelNames.SCENE_TREE) return [batch]
+  const runs: SharedPublicationDelivery[][] = []
+  let previousFamily: string | undefined
+  for (const delivery of batch.deliveries) {
+    const family = sceneDeliveryFamily(delivery)
+    if (
+      family !== previousFamily ||
+      delivery.eventName === EventTypes.CHANGE_SUBTREE
+    )
+      runs.push([])
+    runs[runs.length - 1].push(delivery)
+    previousFamily = family
+  }
+  return runs.map((deliveries) =>
+    Object.freeze({ ...batch, deliveries: Object.freeze(deliveries) })
+  )
+}
 
 export const organizeRemotePublication = (
   publication: SharedPublication
@@ -160,7 +148,7 @@ export const organizeRemotePublication = (
   }
 
   for (const slice of slices) {
-    const sliceBatches = slice.batches
+    const sliceBatches = slice.batches.flatMap(splitSceneOperationRuns)
     batchesBySlice.set(slice, sliceBatches)
     if (sliceBatches.length === 0) {
       throw new Error(
@@ -373,9 +361,18 @@ const classifyElementDataBatch = (
   )
 }
 
+const hierarchyMoveFromDelivery = (
+  delivery: SharedPublicationDelivery
+): Extract<CanonicalChange, { kind: 'hierarchy-moves' }> =>
+  Object.freeze({
+    kind: 'hierarchy-moves',
+    moves: (delivery.payload as { readonly moves: readonly HierarchyMove[] })
+      .moves
+  })
+
 const classifyHierarchyMoveBatch = (
   batch: SharedPublicationBatch
-): readonly HierarchyMove[] | null => {
+): readonly Extract<CanonicalChange, { kind: 'hierarchy-moves' }>[] | null => {
   if (
     !batch.deliveries.some(
       ({ eventName }) => eventName === EventTypes.MOVE_ELEMENTS
@@ -386,12 +383,7 @@ const classifyHierarchyMoveBatch = (
   if (batch.channel !== SharedDataChannelNames.SCENE_TREE) {
     throw new Error('[collaboration] invalid hierarchy-move batch evidence')
   }
-  return Object.freeze(
-    batch.deliveries.flatMap(
-      ({ payload }) =>
-        (payload as { readonly moves: readonly HierarchyMove[] }).moves
-    )
-  )
+  return Object.freeze(batch.deliveries.map(hierarchyMoveFromDelivery))
 }
 
 const classifySubtreeRemovalBatch = (
@@ -475,12 +467,12 @@ const classifyCanonicalCreationBatch = (
         }
       ).data
   )
-  const elements: ElementRawData[] = []
-  let parentId: string | undefined
-  let insertionIndex: number | undefined
   let observedPropertyOwnerCount = 0
   const sourceEntries: AddRemoveElementEntry[] = []
-  const hierarchyMoves: HierarchyMove[] = []
+  const hierarchyMoves: Extract<
+    CanonicalChange,
+    { kind: 'hierarchy-moves' }
+  >[] = []
   let hierarchyMoveObserved = false
 
   for (const delivery of sceneBatch.deliveries) {
@@ -494,48 +486,31 @@ const classifyCanonicalCreationBatch = (
       return null
     }
     hierarchyMoveObserved = true
-    hierarchyMoves.push(
-      ...(delivery.payload as { readonly moves: readonly HierarchyMove[] })
-        .moves
-    )
+    hierarchyMoves.push(hierarchyMoveFromDelivery(delivery))
   }
-  for (const entry of orderTrustedElementEntries(sourceEntries, sceneBatch)) {
+  const entries = orderTrustedElementEntries(sourceEntries, sceneBatch)
+  for (const entry of entries) {
     const elementData = entry.data as unknown as {
       readonly props: Readonly<Record<string, string>>
     }
 
-    parentId ??= entry.parentId
-    insertionIndex ??= entry.index
     const propertyOwnerIds = Object.values(elementData.props)
     observedPropertyOwnerCount += propertyOwnerIds.length
-    elements.push(entry.data)
   }
 
-  if (
-    elements.length === 0 ||
-    parentId === undefined ||
-    insertionIndex === undefined ||
-    observedPropertyOwnerCount === 0
-  ) {
+  if (entries.length === 0 || observedPropertyOwnerCount === 0) {
     return null
   }
 
   const changes: CanonicalChange[] = [
     Object.freeze({
       kind: 'element-creation',
-      elements: Object.freeze(elements),
-      properties: Object.freeze(properties),
-      parentId,
-      index: insertionIndex
+      entries: Object.freeze(entries),
+      properties: Object.freeze(properties)
     })
   ]
   if (hierarchyMoves.length > 0) {
-    changes.push(
-      Object.freeze({
-        kind: 'hierarchy-moves',
-        moves: Object.freeze(hierarchyMoves)
-      })
-    )
+    changes.push(...hierarchyMoves)
   }
   return Object.freeze({
     changes: Object.freeze(changes),
@@ -558,7 +533,10 @@ const classifyCanonicalRemovalBatch = (
 
   const removals: RemoteCanonicalElementRemoval[] = []
   const sourceEntries: AddRemoveElementEntry[] = []
-  const hierarchyMoves: HierarchyMove[] = []
+  const hierarchyMoves: Extract<
+    CanonicalChange,
+    { kind: 'hierarchy-moves' }
+  >[] = []
   let removalObserved = false
   for (const delivery of sceneBatch.deliveries) {
     const entries = canonicalElementEntriesFromDelivery(delivery, 'remove')
@@ -570,10 +548,7 @@ const classifyCanonicalRemovalBatch = (
     if (removalObserved || delivery.eventName !== EventTypes.MOVE_ELEMENTS) {
       return null
     }
-    hierarchyMoves.push(
-      ...(delivery.payload as { readonly moves: readonly HierarchyMove[] })
-        .moves
-    )
+    hierarchyMoves.push(hierarchyMoveFromDelivery(delivery))
   }
   for (const entry of orderTrustedElementEntries(sourceEntries, sceneBatch)) {
     removals.push(
@@ -605,12 +580,7 @@ const classifyCanonicalRemovalBatch = (
 
   const changes: CanonicalChange[] = []
   if (hierarchyMoves.length > 0) {
-    changes.push(
-      Object.freeze({
-        kind: 'hierarchy-moves',
-        moves: Object.freeze(hierarchyMoves)
-      })
-    )
+    changes.push(...hierarchyMoves)
   }
   changes.push(
     Object.freeze({
@@ -648,6 +618,57 @@ const appendRemoteCanonicalChange = (
   changes.push(change)
 }
 
+const classifySubtreeRestoreBatch = (
+  organization: OrganizedRemotePublication,
+  startBatchIndex: number
+): Readonly<{ change: CanonicalChange; consumedBatchCount: number }> | null => {
+  const { batches, sliceByBatch } = organization
+  const first = batches[startBatchIndex]
+  const sourceSlice = first && sliceByBatch.get(first)
+  const components: PropertyComponentRawData[] = []
+  let index = startBatchIndex
+  while (batches[index]?.channel === SharedDataChannelNames.PROPS) {
+    const batch = batches[index]
+    if (
+      !batch ||
+      sliceByBatch.get(batch) !== sourceSlice ||
+      !batch.deliveries.every(isAddPropertyDelivery)
+    )
+      return null
+    for (const delivery of batch.deliveries) {
+      if (!isAddPropertyDelivery(delivery)) return null
+      components.push(...delivery.payload.data)
+    }
+    index += 1
+  }
+  const scene = batches[index]
+  const delivery = scene?.deliveries[0]
+  if (
+    !scene ||
+    scene.channel !== SharedDataChannelNames.SCENE_TREE ||
+    sliceByBatch.get(scene) !== sourceSlice ||
+    scene.deliveries.length !== 1 ||
+    delivery?.eventName !== EventTypes.CHANGE_SUBTREE ||
+    (delivery.payload as SubtreeChange).action !==
+      SCENE_TREE_ACTIONS.RESTORE_SUBTREE
+  )
+    return null
+  const payload = delivery.payload as SubtreeChange
+  return Object.freeze({
+    change: Object.freeze({
+      kind: 'subtree-restore',
+      sceneSnapshot: {
+        elementId: payload.elementId as string,
+        removed: payload.removed as SceneTreeRestoreSnapshot['removed'],
+        rootParentChildrenAfter:
+          payload.rootParentChildrenAfter as readonly string[]
+      },
+      propsSnapshot: { components }
+    }),
+    consumedBatchCount: index - startBatchIndex + 1
+  })
+}
+
 const createRemoteApplySteps = (
   organization: OrganizedRemotePublication
 ): readonly CanonicalChange[] => {
@@ -655,6 +676,12 @@ const createRemoteApplySteps = (
   const { batches } = organization
   let batchIndex = 0
   while (batchIndex < batches.length) {
+    const restore = classifySubtreeRestoreBatch(organization, batchIndex)
+    if (restore) {
+      changes.push(restore.change)
+      batchIndex += restore.consumedBatchCount
+      continue
+    }
     const creation = classifyCanonicalCreationBatch(organization, batchIndex)
     if (creation) {
       changes.push(...creation.changes)
@@ -697,12 +724,7 @@ const createRemoteApplySteps = (
     }
     const hierarchyMoves = classifyHierarchyMoveBatch(batch)
     if (hierarchyMoves) {
-      changes.push(
-        Object.freeze({
-          kind: 'hierarchy-moves',
-          moves: hierarchyMoves
-        })
-      )
+      changes.push(...hierarchyMoves)
       batchIndex += 1
       continue
     }
@@ -725,18 +747,8 @@ const createRemoteApplySteps = (
 }
 
 export const canonicalChangesFromOrganizedPublication = (
-  organization: OrganizedRemotePublication,
-  restore: ClassifiedRemoteRestore | undefined
-): readonly CanonicalChange[] =>
-  restore
-    ? Object.freeze([
-        Object.freeze({
-          kind: 'subtree-restore' as const,
-          sceneSnapshot: restore.sceneSnapshot,
-          propsSnapshot: restore.propsSnapshot
-        })
-      ])
-    : createRemoteApplySteps(organization)
+  organization: OrganizedRemotePublication
+): readonly CanonicalChange[] => createRemoteApplySteps(organization)
 
 export const organizeSourceSlice = (
   slice: SharedPublicationSlice,
@@ -768,9 +780,12 @@ export const decodeDocumentPublication = (
   publication: SharedPublication
 ): readonly CanonicalChange[] => {
   const organization = organizeRemotePublication(publication)
-  return canonicalChangesFromOrganizedPublication(
-    organization,
-    classifyRemoteRestore(organization)
+  return Object.freeze(
+    organization.sourceSlices.flatMap((slice) =>
+      canonicalChangesFromOrganizedPublication(
+        organizeSourceSlice(slice, organization)
+      )
+    )
   )
 }
 

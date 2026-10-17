@@ -2,6 +2,11 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { IndexedProjectRepository } from '../indexed-db'
 import { encodeProject, type ProjectSnapshot } from '../project-format'
+import {
+  EntityTypes,
+  SCENE_TREE_ACTIONS,
+  SharedDataChannelNames
+} from '@asyra/utils'
 import { restoreJournal } from '../publication-journal'
 import { journalFixture } from './journal-fixture'
 
@@ -115,4 +120,66 @@ it('rejects duplicate publications and unsupported origins during recovery', () 
   expect(() => restoreJournal(snapshot, [invalid as typeof entry])).toThrow(
     'policy'
   )
+})
+
+it('reopens exact reverse-ordered sparse creation entries without changing their canonical batch', async () => {
+  const factory = new IDBFactory()
+  const repository = new IndexedProjectRepository(factory, 'creation-journal')
+  const entry = journalFixture()
+  const entries = [3, 1].map((index) => ({
+    data: {
+      id: `created-${index}`,
+      name: 'Created',
+      type: EntityTypes.ELEMENT,
+      visible: true,
+      lock: false
+    },
+    parentId: 'parent',
+    index
+  }))
+  const source = entry.publication.slices[0].batches[0]
+  const creation = {
+    ...entry,
+    publication: {
+      ...entry.publication,
+      slices: [
+        {
+          ...entry.publication.slices[0],
+          batches: [
+            {
+              ...source,
+              channel: SharedDataChannelNames.SCENE_TREE,
+              deliveries: [
+                {
+                  ...source.deliveries[0],
+                  payload: {
+                    action: SCENE_TREE_ACTIONS.ADD_ELEMENTS,
+                    entries
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+  try {
+    await repository.write(project, null)
+    await repository.append({ ...project, revision: 'b' }, 'a', creation)
+    const stored = await repository.read(project.id)
+    const restored = restoreJournal(snapshot, stored.journal ?? [])
+    if (!restored.replay) throw new Error('Expected persisted canonical replay')
+    expect(restored.replay[0].slices).toEqual([
+      [
+        {
+          kind: 'element-creation',
+          entries,
+          properties: []
+        }
+      ]
+    ])
+  } finally {
+    repository.close()
+  }
 })

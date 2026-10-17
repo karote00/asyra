@@ -1,4 +1,5 @@
 import {
+  SessionCancelPolicies,
   measureBrowserDragAsyncPhase,
   type RawInputEvent,
   type SystemContextSnapshot,
@@ -196,21 +197,32 @@ const registerExecutionEventBinding = (
   }
 
   const manager = sessionManager
-  const inputCallback: InputCallback = async (raw) => {
-    await manager.runAfterCancellingActiveSessions(
-      () => createInputSnapshot(systemContext, raw),
-      (mergedSnapshot) => executionRegistry.execute(eventName, mergedSnapshot),
-      eventName
-    )
-  }
-  inputSystem.on(eventName, inputCallback)
-  eventBindings.set(eventName, {
+  const binding: EventBinding = {
     eventName,
     participantType: 'execution',
     inputSystem,
-    inputCallback,
     cleanupRequested: false
-  })
+  }
+  const inputCallback: InputCallback = async (raw) => {
+    const run =
+      executionRegistry.getHandlers(eventName)[0]?.executionMode === 'immediate'
+        ? manager.runImmediatelyAfterCancellingActiveSessions.bind(manager)
+        : manager.runAfterCancellingActiveSessions.bind(manager)
+    await run(
+      () => {
+        if (binding.cleanupRequested) throw new FeatureRuntimeClosedError()
+        return createInputSnapshot(systemContext, raw)
+      },
+      (mergedSnapshot) =>
+        binding.cleanupRequested
+          ? undefined
+          : executionRegistry.execute(eventName, mergedSnapshot),
+      eventName
+    )
+  }
+  binding.inputCallback = inputCallback
+  inputSystem.on(eventName, inputCallback)
+  eventBindings.set(eventName, binding)
 }
 
 function registerFeatureHandlers(
@@ -223,7 +235,7 @@ function registerFeatureHandlers(
   const {
     priority = 0,
     exclusive = true,
-    cancelPolicy = 'commit-current'
+    cancelPolicy = SessionCancelPolicies.COMMIT_CURRENT
   } = definition
 
   if (!keyConfig) {
@@ -261,7 +273,7 @@ function registerFeatureHandlers(
       executionRegistry.register(
         eventName,
         name,
-        { priority, exclusive },
+        { priority, exclusive, executionMode: definition.executionMode },
         definition.execution
       )
     }
@@ -301,12 +313,37 @@ export function defineFeature<
   const identity = runtimeIdentity
   if (
     definition.session &&
-    definition.cancelPolicy === 'feature-defined' &&
+    definition.cancelPolicy === SessionCancelPolicies.FEATURE_DEFINED &&
     !definition.session.onCancel
   ) {
     throw new Error(
       `Feature ${name} uses feature-defined cancelPolicy without onCancel`
     )
+  }
+
+  if (
+    definition.executionMode === 'immediate' &&
+    (!definition.execution ||
+      definition.session ||
+      !keyConfig ||
+      keyConfig.startsWith('render.'))
+  ) {
+    throw new Error('Immediate execution requires a one-shot input Feature')
+  }
+  if (definition.execution && keyConfig) {
+    const mode = definition.executionMode ?? 'queued'
+    const conflicts =
+      executionRegistry
+        .getHandlers(keyConfig)
+        .some((entry) => entry.executionMode !== mode) ||
+      pendingRegistrations.some(
+        (entry) =>
+          entry.keyConfig === keyConfig &&
+          entry.definition.execution &&
+          (entry.definition.executionMode ?? 'queued') !== mode
+      )
+    if (conflicts)
+      throw new Error(`Execution event ${keyConfig} cannot mix execution modes`)
   }
 
   const api = featureRegistry.register(

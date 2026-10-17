@@ -7,6 +7,10 @@ Provide shared types, ids, registry primitives, and low-level helpers.
 ## Owns
 
 - shared type definitions used across packages
+- `SessionCancelPolicies` and its derived `SessionCancelPolicy` and
+  `SessionCancelOutcome` types. Apps and Framework packages import this pure
+  contract directly from Utils; Feature System owns execution and Factory owns
+  transaction/history settlement. No runtime coordinator is introduced here.
 - canonical `SharedDeliveryMode` timing plus `PositionData`, `Rect`, `Bounds`,
   `GeometryTransformMatrix`, and `RGBAColor` low-level contracts
 - semantic geometry aliases such as `FillGradientHandle` and `GeometryBounds`,

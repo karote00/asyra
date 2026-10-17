@@ -148,6 +148,18 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
 }
 
 describe('Core app runtime facade', () => {
+  it('reads replay admission from the composed Factory without retaining state', () => {
+    const { core } = createCoreForTest()
+    const replaying = vi.fn(() => false)
+    core.deps.factory.isInUndoRedo = replaying
+    expect(core.isInUndoRedo()).toBe(false)
+    replaying.mockReturnValue(true)
+    expect(core.isInUndoRedo()).toBe(true)
+    replaying.mockReturnValue(false)
+    expect(core.isInUndoRedo()).toBe(false)
+    expect(replaying).toHaveBeenCalledTimes(3)
+  })
+
   it('reads metadata and a child page without saving property data or copying the full child list', () => {
     const { core, sceneElement } = createCoreForTest()
     expect(core.getElementMetadata('element-1')).toMatchObject({

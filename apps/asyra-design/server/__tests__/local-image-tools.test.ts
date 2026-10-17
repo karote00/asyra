@@ -265,6 +265,19 @@ describe('local provider image tools', () => {
         { id: 'draw', name: 'insert_vector_composition', arguments: args }
       ]
     })
+    const currentReference = {
+      ...reference,
+      imageArtifactId: source.imageArtifactId
+    }
+    expect(
+      tools.resolveBatch(batch(currentReference)).actions[0].arguments
+    ).toHaveProperty('slices')
+    expect(() =>
+      tools.resolveBatch(batch({ ...currentReference, ovalPathIds: [] }))
+    ).toThrow()
+    expect(
+      tools.resolveBatch(batch(currentReference)).actions[0].arguments
+    ).toHaveProperty('slices')
     expect(() => tools.resolveBatch(batch(reference))).toThrow(/analysis/i)
     expect(() =>
       tools.resolveBatch(
@@ -1035,4 +1048,105 @@ it('validates retained bytes with stable identity and reuses admission evidence'
       signal
     )
   ).rejects.toThrow(/reference/i)
+})
+
+it('recovers an invalid layer source and hands real separated contours to drawing preparation', async () => {
+  const pixels = Buffer.alloc(12 * 12 * 4)
+  for (let y = 0; y < 12; y++)
+    for (let x = 0; x < 12; x++)
+      pixels.set(
+        x >= 4 && x < 8 && y >= 4 && y < 8
+          ? [255, 255, 255, 255]
+          : [0, 136, 0, 255],
+        (y * 12 + x) * 4
+      )
+  const bytes = await sharp(pixels, {
+    raw: { width: 12, height: 12, channels: 4 }
+  })
+    .png()
+    .toBuffer()
+  const tools = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+          mediaType: 'image/png',
+          size: bytes.length
+        }
+      ]
+    }
+  })
+  const input = {
+    attachmentIndex: 0,
+    background: {
+      componentType: 'rect',
+      bounds: { x: 0, y: 0, width: 12, height: 12 },
+      fill: '#008800'
+    },
+    colorTolerance: 0,
+    clipToBackground: true
+  }
+  const signal = new AbortController().signal
+  await expect(
+    tools.call(
+      'vectorize_image_layers',
+      { ...input, attachmentIndex: 9 },
+      signal
+    )
+  ).rejects.toThrow()
+  const result = JSON.parse(
+    await tools.call('vectorize_image_layers', input, signal)
+  )
+  const drawing = tools.resolveBatch({
+    actions: [
+      {
+        name: 'insert_vector_composition',
+        arguments: {
+          imageArtifactId: result.imageArtifactId,
+          compositionRole: 'Layered drawing',
+          bounds: { x: 20, y: 20, width: 120, height: 120 },
+          excludePathIds: []
+        }
+      }
+    ]
+  }).actions[0].arguments
+  const descriptors = (
+    drawing as {
+      slices: {
+        descriptors: { type: string; width: number; height: number }[]
+      }[]
+    }
+  ).slices.flatMap((slice) => slice.descriptors)
+  expect(descriptors[0]).toMatchObject({
+    type: 'rect',
+    width: 120,
+    height: 120
+  })
+  expect(descriptors.length).toBeGreaterThan(1)
+  expect(
+    descriptors
+      .slice(1)
+      .every((item: { type: string }) => item.type === 'vector')
+  ).toBe(true)
+})
+
+it('preserves selected original reference bytes and excludes unselected research images', () => {
+  const user = {
+    dataUrl: 'data:image/png;base64,YQ==',
+    mediaType: 'image/png',
+    size: 1
+  }
+  const research = { ...user, dataUrl: 'data:image/png;base64,Yg==' }
+  const tools = createLocalImageTools({
+    metadata: { imageAttachments: [user] }
+  })
+  const index = tools.addReference(research)
+  expect(tools.referenceImages()).toEqual([
+    { role: 'reference', dataUrl: user.dataUrl }
+  ])
+  expect(tools.referenceImages([index])).toEqual([
+    { role: 'reference', dataUrl: research.dataUrl }
+  ])
+  expect(tools.referenceImages([])).toEqual([])
+  expect(() => tools.referenceImages([2])).toThrow(/existing/)
 })

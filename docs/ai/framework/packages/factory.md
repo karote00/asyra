@@ -99,6 +99,12 @@ infrastructure.
 - computed patch inversion writes top-level keys and record ids as own enumerable
   data properties, so legal special names such as `__proto__` survive undo/redo
   instead of invoking inherited object setters
+- successful replay settles its retained shared-delivery obligation even when the
+  local owner already has the requested value. A local semantic no-op does not
+  prove that the shared projection or remote consumer received that history step;
+  it cannot block changed siblings in the same source slice. Only acknowledged
+  local mutation contributes a rollback restoration plan. Thrown owner failure
+  does not settle the failed shared-delivery obligation.
 - replay does not create another ordinary undo commit
 - rollback, undo, and redo share the same inverse/replay primitives while keeping
   different history and lifecycle effects
@@ -202,11 +208,22 @@ infrastructure.
 - every shared channel implements one exact `appendBatch(...)` /
   `observeBatch(...)` contract; scalar conveniences delegate to batch-of-one
   and do not create a second canonical delivery path
-- `sharedDelivery: 'transaction-end'` buffers delivery until outer commit
+- `sharedDelivery: 'transaction-end'` buffers delivery until outer commit unless a
+  later immediate mutation requires that preceding journal prefix. An immediate
+  boundary drains all earlier eligible shared changes in canonical order, with
+  effective immediate delivery and the same synchronous source slice. It cannot
+  overtake deferred prerequisites. Undo/Redo and compensation retain that effective
+  delivery evidence; pure deferred transactions remain commit-only.
 - `sharedDelivery: 'immediate'` completes local shared-channel delivery and
   optional collaboration publication during the active transaction
 - delivery timing is independent from `undoable`; non-undoable shared changes
   also default to transaction-end unless immediate delivery is explicit
+- separate state-owner handoffs in the same synchronous immediate enqueue
+  window share one source slice. The existing publication microtask or transaction
+  settlement closes that boundary; an await starts a new boundary. Channel batches
+  retain their original order. Undo, Redo and rollback compensation reuse that
+  source boundary rather than treating internal owner handoffs as independent
+  progressive operations
 - all changes made by one synchronous immediate delivery action remain one
   ordered source boundary. Default progressive delivery groups consecutive
   source boundaries from the same transaction into publication windows of at
@@ -464,6 +481,10 @@ reload, forced target resurrection or new conflict-resolution policy.
 
 Sealed group Undo replays all member inverses in reverse order; Redo applies
 members forward. Their recorded source publication boundaries remain ordered.
+An atomic member's contiguous transaction-end batches remain one complete replay
+slice even when they span multiple channels. Internal batch slice IDs are not
+independent progressive boundaries. Explicit progressive slices and immediate
+source-delivery boundaries remain separate; neither can be merged across members.
 A replay failure restores already-applied replay through canonical rollback,
 leaves the source history entry available, and closes the boundary it opened.
 One group replay is one history transition, including progressive replay.

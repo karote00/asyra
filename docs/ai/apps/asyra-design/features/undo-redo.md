@@ -15,6 +15,14 @@
 
 - Shift + Undo shortcut -> redo
 - Undo shortcut without Shift -> undo
+- During Factory Undo/Redo replay, new Undo/Redo shortcuts are ignored before
+  Feature dispatch. They are not queued or replayed after settlement. Ordinary
+  input keeps its existing behavior. The Core facade reads Factory state without
+  a second busy flag; normal and failed settlement release it.
+- The input mapping captures `detail.historyDirection` (`undo` or `redo`) when
+  the shortcut is issued. Immediate execution consumes this immutable intent; later
+  keyboard state or tool changes cannot reverse it. Missing or invalid direction
+  performs no action. Model state is still read at normal Feature execution time.
 - Ordinary history controls await the reusable framework
   render policy, whose default mode is `progressive`.
 - Progressive replay preserves exact recorded progressive boundaries. For
@@ -43,3 +51,14 @@ provider-disabled, unsupported, and zero-mutation AI turns create no new
 actionable history control. While a requested replay is pending, the projection
 rejects a second request; its Undo/Redo direction changes only after the
 canonical completion event. The App shell does not subscribe through a toast.
+
+## Immediate session interruption
+
+History execution never enters the ordinary interaction queue. An idle command
+starts immediately. During an active drag it uses the existing session
+commit-current finalization, then replays Undo against that completed drag.
+An already-running asynchronous session handler must settle before finalization;
+queued unrelated interactions do not run ahead of history. Failed finalization
+stops replay. Repeated history input during finalization or replay is not retained.
+Ordinary mutations cannot interleave with the admitted operation. Runtime closure
+prevents replay after teardown and waits for admitted work to settle.

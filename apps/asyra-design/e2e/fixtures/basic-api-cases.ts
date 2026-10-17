@@ -1,5 +1,6 @@
 import { DEFAULT_ELEMENT_SIZE } from '@asyra/utils'
 import core from '../../src/contexts'
+import { getActiveCollaborationHandle } from '../../src/collaboration/lifecycle'
 import {
   elementApis,
   fillApis,
@@ -15,6 +16,9 @@ import {
   encodeVectorSegmentSelectionId
 } from '@asyra/preset'
 import { createBasicApiActions } from '../../src/ai/basic-api-actions'
+import { observeAiAction } from '../../src/ai/runtime-input'
+import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
+import { observeDesignChanges } from '../../src/common-apis/design-review'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { createAiTransactionRunner } from '../../src/ai/transaction'
 import { operationInputIssue } from '../../server/operation-input-schema'
@@ -49,8 +53,28 @@ const includes = (actual: unknown, value: string) =>
 const defined = (v: unknown) =>
   assert(v !== null && v !== undefined, 'Expected usable owner value')
 
+export const isBasicApiFixtureReady = () => {
+  const id = core.getCurrentWorkspaceId()
+  const session = getActiveCollaborationHandle()?.getSessionState()
+  return (
+    !!id &&
+    !!core.getElementMetadata(id) &&
+    session?.connection === 'connected' &&
+    session.sync === 'synced'
+  )
+}
+
 /** Real browser owners, explicit inputs and semantic oracles. No mocked API methods. */
 export const createBasicApiCases = async () => {
+  const deadline = performance.now() + 10000
+  while (!isBasicApiFixtureReady()) {
+    if (performance.now() > deadline)
+      throw new Error(
+        'The document session did not become ready for fixture creation'
+      )
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  }
+
   // Observe the real Render completion, not an unrelated browser animation frame.
   // Hit-test cases require drawn geometry but intentionally never move the pointer.
   const fixtureRendered = new Promise<void>((resolve) => {
@@ -341,9 +365,6 @@ export const createBasicApiCases = async () => {
     { parentPropertyType: 'fills' },
     has('fill')
   )
-  add('core', 'save', {}, has(rect))
-  add('core', 'propsSaveData', {}, has(paintId))
-  add('core', 'sceneTreeSaveData', {}, has(rect))
   add('core', 'getCanvasBounds', {}, (v) =>
     assert(v.width > 0 && v.height > 0, 'Canvas has no bounds')
   )
@@ -990,11 +1011,16 @@ export const createBasicApiCases = async () => {
   )
 
   equal(Object.keys(cases).sort(), basicApiContracts.map((c) => c.name).sort())
+  const queries = createRetainedDesignContext(core, observeDesignChanges)
   const actions = new Map(
-    createBasicApiActions().map((action) => [action.name, action])
+    createBasicApiActions(undefined, undefined, queries).map((action) => [
+      action.name,
+      action
+    ])
   )
   return {
     names: Object.keys(cases),
+    dispose: () => queries.dispose(),
     async run(name: string) {
       // Restore viewport separately: canvas transform is interaction state.
       viewportApis.zoomToCenter(1, 0, 0)
@@ -1014,12 +1040,89 @@ export const createBasicApiCases = async () => {
         ),
         'Unknown input field admitted'
       )
+      const observed = observeAiAction(action)
+      const beforeRejected = JSON.stringify(await core.save())
+      const selectionBefore = core.getSelectedElementIds().slice()
+      let mutationCalls = 0
+      const reject = async (
+        input: Record<string, unknown>,
+        signal: AbortSignal
+      ) => {
+        let rejected = false
+        try {
+          await observed.execute(input, {
+            signal,
+            runMutation: async (work) => {
+              mutationCalls++
+              return work()
+            }
+          })
+        } catch {
+          rejected = true
+        }
+        assert(rejected, `${name} invalid or cancelled invocation executed`)
+        equal(mutationCalls, 0)
+        equal(JSON.stringify(await core.save()), beforeRejected)
+        equal(core.getSelectedElementIds(), selectionBefore)
+      }
+      await reject(
+        { ...scenario.input, unexpectedOldSnapshot: {} },
+        new AbortController().signal
+      )
+      await reject(scenario.input, AbortSignal.abort())
+      if (
+        [
+          'api_selection_selectElements',
+          'api_selection_toggleSelection'
+        ].includes(name)
+      ) {
+        selectionApis.selectElements([other], { undoable: false })
+        const inputs =
+          name === 'api_selection_selectElements'
+            ? [
+                { elementIds: ['missing-usage-selection'] },
+                { elementIds: [rect, 'missing-usage-selection'] },
+                { elementIds: ['missing-usage-selection', rect] }
+              ]
+            : [{ elementId: 'missing-usage-selection' }]
+        for (const input of inputs) {
+          let failure: unknown
+          try {
+            await createAiTransactionRunner().run(name, (runMutation) =>
+              observed.execute(input, {
+                signal: new AbortController().signal,
+                runMutation
+              })
+            )
+          } catch (error) {
+            failure = error
+          }
+          const causes: Error[] = []
+          while (failure instanceof Error && !causes.includes(failure)) {
+            causes.push(failure)
+            failure = failure.cause
+          }
+          assert(
+            causes.some(
+              (item) =>
+                item.message ===
+                'Selection target does not exist: missing-usage-selection'
+            ),
+            'Missing element selection must be rejected by its canonical owner'
+          )
+          equal(core.getSelectedElementIds(), [other])
+          equal(JSON.stringify(await core.save()), beforeRejected)
+        }
+        selectionApis.selectElements(selectionBefore, { undoable: false })
+      }
       const signal = new AbortController().signal
       const result = (await createAiTransactionRunner().run(
         name,
-        (runMutation) => action.execute(scenario.input, { signal, runMutation })
+        (runMutation) =>
+          observed.execute(scenario.input, { signal, runMutation })
       )) as Value
-      const outputIssue = operationInputIssue(result, action.outputSchema)
+      const { actionObservation: _observation, ...receipt } = result
+      const outputIssue = operationInputIssue(receipt, action.outputSchema)
       assert(!outputIssue, `${name} output: ${outputIssue}`)
       assert(
         result.status !== 'failed' && result.status !== 'partial',

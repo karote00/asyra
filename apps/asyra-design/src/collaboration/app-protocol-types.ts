@@ -1,3 +1,10 @@
+/** App payload carried by the generic publication envelope. */
+export const DocumentPublicationContract = {
+  channel: 'document',
+  event: 'applyCanonicalChanges',
+  version: 1
+} as const
+
 export type AppJsonPrimitive = boolean | null | number | string
 
 export type AppJsonValue =
@@ -196,10 +203,12 @@ export type CanonicalChange =
     }>
   | Readonly<{
       kind: 'element-creation'
-      elements: readonly ElementRawData[]
+      entries: readonly Readonly<{
+        data: ElementRawData
+        parentId: string
+        index: number
+      }>[]
       properties: readonly PropertyComponentRawData[]
-      parentId: string
-      index: number
     }>
   | Readonly<{
       kind: 'element-removal'

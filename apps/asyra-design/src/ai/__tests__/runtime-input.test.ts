@@ -41,7 +41,7 @@ describe('Asyra Design Agent runtime input', () => {
     })
 
     expect(input.options?.failurePolicy).toBe('preserve-progress')
-    expect(input.provider).toBe(provider)
+    expect(input.provider.requestActionBatch).toBeTypeOf('function')
     expect(input.actionDefinitions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -66,11 +66,42 @@ it('exposes the existing vector read, anchor and handle APIs without a dedicated
   expect(names).toContain('api_element_updateVectorAnchorPointHandlePosition')
 })
 
+it('exposes document export instead of raw serializers that can overflow tool delivery', async () => {
+  const input = createAiRuntimeInput({
+    permissionRules: {},
+    provider: {
+      requestActionBatch: async () => ({ batchId: 'empty', actions: [] })
+    }
+  })
+  try {
+    const names = input.actionDefinitions.map((action) => action.name)
+    expect(names).toContain('export_document')
+    expect(names).toContain('download_document_export')
+    expect(names).toContain('release_document_export')
+    expect(names).not.toContain('api_core_save')
+    expect(names).not.toContain('api_core_propsSaveData')
+    expect(names).not.toContain('api_core_sceneTreeSaveData')
+    expect(names).toContain('api_core_getElementData')
+  } finally {
+    for (const owner of input.ownedResources ?? []) await owner.dispose()
+  }
+})
+
 it('owns one shared inspection lifetime and disposes canonical subscriptions with the runtime', async () => {
   const { default: core } = await import('../../contexts')
   const { inspectionApis } = await import('../../common-apis/inspection')
   const originalObserve = core.observeSharedDataChannel
   const originalInspect = inspectionApis.inspect
+  const originalMetadata = core.getElementMetadata
+  core.getElementMetadata = vi.fn((id) => ({
+    id,
+    type: 'rect',
+    name: id,
+    parentId: '',
+    visible: true,
+    lock: false,
+    childCount: 0
+  }))
   const stop = vi.fn()
   core.observeSharedDataChannel = vi.fn(() => stop)
   inspectionApis.inspect = vi.fn(() => ({
@@ -118,6 +149,7 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
     )
     core.observeSharedDataChannel = originalObserve
     inspectionApis.inspect = originalInspect
+    core.getElementMetadata = originalMetadata
   }
 })
 
@@ -229,10 +261,15 @@ it('advertises one complete contract for every browser tool without exposing exe
   try {
     for (const action of input.actionDefinitions) {
       expect(action, action.name).toMatchObject({
-        revision: 1,
+        revision: expect.any(Number),
         outputSchema: expect.any(Object),
         resources: expect.any(Array)
       })
+      expect(Number.isSafeInteger(action.revision) && action.revision > 0).toBe(
+        true
+      )
+      if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+        expect(action.revision).toBe(3)
       expect(action.lifecycle.retry).not.toBe('read-only')
       registry.register(action)
     }
@@ -248,6 +285,66 @@ it('advertises one complete contract for every browser tool without exposing exe
       (input.ownedResources ?? []).map((resource) => resource.dispose())
     )
   }
+})
+
+it('hands canonical flat contracts to the host provider and preserves request options and disposal', async () => {
+  const provider = {
+    requestActionBatch: vi.fn<AiProvider['requestActionBatch']>(async () => ({
+      batchId: 'empty',
+      actions: []
+    })),
+    dispose: vi.fn()
+  }
+  const input = createAiRuntimeInput({ permissionRules: {}, provider })
+  const action = input.actionDefinitions.find(
+    (item) => item.name === AiActionNames.READ_DESIGN_CONTEXT
+  )
+  if (!action) throw new Error('Missing context action')
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const options = {
+    signal: new AbortController().signal,
+    executeBatch: vi.fn(),
+    onProgress: vi.fn()
+  }
+  await input.provider.requestActionBatch(
+    {
+      intent: 'Read context',
+      context: {},
+      attempt: 1,
+      actions: [
+        {
+          name: action.name,
+          description: action.description,
+          inputSchema: action.inputSchema as never
+        }
+      ]
+    },
+    options
+  )
+  expect(provider.requestActionBatch).toHaveBeenCalledWith(
+    expect.objectContaining({ actions: [createAiToolContract(action)] }),
+    options
+  )
+  const sent = provider.requestActionBatch.mock.calls[0][0]
+  expect(sent.actions[0]).not.toHaveProperty('execute')
+  expect(sent.actions[0]).not.toHaveProperty('contract')
+  await expect(
+    input.provider.requestActionBatch(
+      {
+        intent: 'Unknown',
+        context: {},
+        attempt: 1,
+        actions: [{ name: 'unknown', description: 'Unknown', inputSchema: {} }]
+      },
+      options
+    )
+  ).rejects.toThrow()
+  expect(provider.requestActionBatch).toHaveBeenCalledOnce()
+  await input.provider.dispose?.()
+  expect(provider.dispose).toHaveBeenCalledOnce()
+  await Promise.all(
+    (input.ownedResources ?? []).map((resource) => resource.dispose())
+  )
 })
 
 it('rejects malformed successful output after one execution and retains its settlement evidence', async () => {
@@ -303,3 +400,114 @@ it.each([null, false, [], 'invalid'])(
     expect(execute).toHaveBeenCalledOnce()
   }
 )
+
+it('reuses deterministic verdicts through the registered browser action and retires them with its runtime', async () => {
+  const { default: core } = await import('../../contexts')
+  const { SharedDataChannelNames, SCENE_TREE_ACTIONS, PROPS_ACTIONS } =
+    await import('@asyra/utils')
+  const original = {
+    observeSharedDataChannel: core.observeSharedDataChannel,
+    getElementMetadata: core.getElementMetadata,
+    getElementData: core.getElementData,
+    getElementComputedData: core.getElementComputedData,
+    getPropertyOwnerElementIds: core.getPropertyOwnerElementIds
+  }
+  const listeners = new Map<string, Set<(value: unknown) => void>>()
+  core.observeSharedDataChannel = vi.fn((channel, listener) => {
+    const entries = listeners.get(channel) ?? new Set()
+    entries.add(listener)
+    listeners.set(channel, entries)
+    return () => {
+      entries.delete(listener)
+    }
+  })
+  const metadata = (id: string) => ({
+    id,
+    type: 'rectangle',
+    name: id,
+    parentId: id === 'root' ? '' : 'root',
+    visible: true,
+    lock: false,
+    childCount: id === 'root' ? 2 : 0
+  })
+  core.getElementMetadata = vi.fn(metadata)
+  core.getElementData = vi.fn((id) => ({
+    ...metadata(id),
+    children: id === 'root' ? ['a', 'b'] : []
+  })) as typeof original.getElementData
+  let x = 0
+  core.getElementComputedData = vi.fn((id) => ({
+    x: id === 'a' ? x : 0,
+    y: 0,
+    width: id === 'root' ? 100 : 10,
+    height: 100,
+    rotation: 0
+  }))
+  core.getPropertyOwnerElementIds = vi.fn(() => ['a', 'b'])
+  const input = createAiRuntimeInput({
+    provider: { requestActionBatch: vi.fn() },
+    permissionRules: {}
+  })
+  const review = input.actionDefinitions.find(
+    (action) => action.name === AiActionNames.REVIEW_DESIGN
+  )
+  const context = { signal: new AbortController().signal }
+  const emit = (channel: string, value: unknown) => {
+    for (const listener of listeners.get(channel) ?? []) listener(value)
+  }
+  try {
+    if (!review) throw new Error('Missing registered review')
+    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
+      complete: true,
+      observation: { evaluatedNodes: 3 }
+    })
+    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
+      complete: true,
+      observation: { evaluatedNodes: 0, reusedNodes: 3 }
+    })
+    x = 150
+    emit(SharedDataChannelNames.SCENE_TREE, {
+      action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+      id: 'a',
+      key: 'visible',
+      before: false,
+      after: true
+    })
+    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
+      complete: true,
+      findings: [
+        expect.objectContaining({
+          elementId: 'a',
+          kind: 'container-overflow',
+          right: 60
+        })
+      ],
+      observation: { evaluatedNodes: 2, reusedNodes: 1 }
+    })
+    x = 0
+    emit(SharedDataChannelNames.PROPS, {
+      action: PROPS_ACTIONS.UPDATE_PROPERTY,
+      id: 'shared'
+    })
+    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
+      complete: true,
+      findings: [],
+      observation: { evaluatedNodes: 3, reusedNodes: 0 }
+    })
+    expect(core.getPropertyOwnerElementIds).toHaveBeenCalled()
+    await Promise.all(
+      input.ownedResources?.map((resource) => resource.dispose()) ?? []
+    )
+    expect([...listeners.values()].every((entries) => entries.size === 0)).toBe(
+      true
+    )
+    await expect(
+      review.execute({ elementId: 'root' }, context)
+    ).rejects.toThrow(/disposed/)
+  } finally {
+    await Promise.all(
+      input.ownedResources?.map((resource) => resource.dispose()) ?? []
+    )
+    Object.assign(core, original)
+  }
+})

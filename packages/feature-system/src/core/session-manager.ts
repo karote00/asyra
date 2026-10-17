@@ -1,12 +1,13 @@
 import type {
   ActiveSession,
-  SessionCancelOutcome,
-  SessionCancelPolicy,
   SessionHandler,
   SessionParticipant,
   SessionState
 } from '../types/feature.js'
 import {
+  SessionCancelPolicies,
+  type SessionCancelOutcome,
+  type SessionCancelPolicy,
   measureBrowserDragAsyncPhase,
   type SystemContextSnapshot,
   type SystemContextSnapshotWithDetail,
@@ -49,6 +50,7 @@ const setActiveSessionManager = (manager: SessionManager | undefined): void => {
 
 export class SessionManager {
   private readonly enqueue = interactionQueue.createRunner()
+  private readonly runImmediately = interactionQueue.createImmediateRunner()
   private activeSessions = new Map<string, ActiveSession>()
   private sessionHandlers = new Map<string, SessionParticipant[]>()
   private startingFeatureCounts = new Map<string, number>()
@@ -123,7 +125,7 @@ export class SessionManager {
     abortController?: AbortController,
     forcedRollback = false
   ): Promise<CleanupResult> {
-    let outcome: SessionCancelOutcome = 'commit-current'
+    let outcome: SessionCancelOutcome = SessionCancelPolicies.COMMIT_CURRENT
     let failed = false
     let firstError: unknown
 
@@ -135,7 +137,8 @@ export class SessionManager {
 
       try {
         const shouldFinalizeCurrent =
-          !forcedRollback && participant.cancelPolicy === 'commit-current'
+          !forcedRollback &&
+          participant.cancelPolicy === SessionCancelPolicies.COMMIT_CURRENT
         let requestedOutcome: SessionCancelOutcome | undefined
         if (shouldFinalizeCurrent) {
           await this.runWithTimeout(
@@ -158,10 +161,12 @@ export class SessionManager {
         }
 
         let participantOutcome: SessionCancelOutcome
-        if (participant.cancelPolicy === 'feature-defined') {
+        if (
+          participant.cancelPolicy === SessionCancelPolicies.FEATURE_DEFINED
+        ) {
           if (
-            requestedOutcome !== 'rollback' &&
-            requestedOutcome !== 'commit-current'
+            requestedOutcome !== SessionCancelPolicies.ROLLBACK &&
+            requestedOutcome !== SessionCancelPolicies.COMMIT_CURRENT
           ) {
             throw new Error(
               `Feature ${participant.featureName} onCancel must return rollback or commit-current`
@@ -172,15 +177,15 @@ export class SessionManager {
           participantOutcome = participant.cancelPolicy
         }
 
-        if (participantOutcome === 'rollback') {
-          outcome = 'rollback'
+        if (participantOutcome === SessionCancelPolicies.ROLLBACK) {
+          outcome = SessionCancelPolicies.ROLLBACK
         }
       } catch (error) {
         if (!failed) {
           failed = true
           firstError = error
         }
-        outcome = 'rollback'
+        outcome = SessionCancelPolicies.ROLLBACK
       }
     }
 
@@ -223,7 +228,9 @@ export class SessionManager {
 
     const failure = forcedFailure?.failed ? forcedFailure : cleanup.failure
     const shouldRollback =
-      forcedRollback || failure.failed || cleanup.outcome === 'rollback'
+      forcedRollback ||
+      failure.failed ||
+      cleanup.outcome === SessionCancelPolicies.ROLLBACK
     endTransaction(
       shouldRollback
         ? {
@@ -267,7 +274,7 @@ export class SessionManager {
     const cancelPolicy =
       typeof cancelPolicyOrHandler === 'string'
         ? cancelPolicyOrHandler
-        : 'commit-current'
+        : SessionCancelPolicies.COMMIT_CURRENT
     const handler =
       typeof cancelPolicyOrHandler === 'string'
         ? explicitHandler
@@ -275,7 +282,10 @@ export class SessionManager {
     if (!handler) {
       throw new Error(`Feature ${featureName} must provide a session handler`)
     }
-    if (cancelPolicy === 'feature-defined' && !handler.onCancel) {
+    if (
+      cancelPolicy === SessionCancelPolicies.FEATURE_DEFINED &&
+      !handler.onCancel
+    ) {
       throw new Error(
         `Feature ${featureName} uses feature-defined cancelPolicy without onCancel`
       )
@@ -360,6 +370,25 @@ export class SessionManager {
     snapshot: SystemContextSnapshotWithDetail
   ): Promise<void> {
     return this.enqueue(() => this.cancelRuntimeActiveSessionsNow(snapshot))
+  }
+
+  /** Settle only the running handler, then reuse the ordinary session finalizer. */
+  runImmediatelyAfterCancellingActiveSessions<T>(
+    getSnapshot: () => SystemContextSnapshotWithDetail,
+    operation: (snapshot: SystemContextSnapshotWithDetail) => T | Promise<T>,
+    cancelledBy: string
+  ): Promise<T | undefined> {
+    return this.runImmediately((assertOpen) => {
+      const snapshot = getSnapshot()
+      if (!activeSessionManager) return operation(snapshot)
+      return this.cancelRuntimeActiveSessionsNow({
+        ...snapshot,
+        detail: { ...snapshot.detail, cancelled: true, cancelledBy }
+      }).then(() => {
+        assertOpen()
+        return operation(snapshot)
+      })
+    })
   }
 
   runAfterCancellingActiveSessions<T>(

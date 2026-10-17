@@ -16,7 +16,7 @@ test('AI execution architecture resolves current authorities and boundaries', ()
         '#' +
         match[1]
           .toLowerCase()
-          .replace(/[^a-z0-9 ]/g, '')
+          .replace(/[^a-z0-9 -]/g, '')
           .replaceAll(' ', '-')
     )
   )
@@ -47,12 +47,22 @@ test('AI execution architecture resolves current authorities and boundaries', ()
         assert.match(dimension, /request-local/)
       assert.match(step.cacheDimensions.join(' '), /refresh/)
     } else if (step.id === 'apply') {
-      assert.equal(step.cacheDimensions.length, 1)
+      assert.equal(step.cacheDimensions.length, 2)
       assert.match(
         step.cacheDimensions[0],
         /Render runtime, current workspace, projected geometry and hierarchy/
       )
       assert.match(step.cacheDimensions[0], /never viewport pan\/zoom/)
+      assert.match(step.cacheDimensions[1], /observer lifetime and exact immutable published element map and flattened identities/)
+      assert.match(step.cacheDimensions[1], /canonical structural deltas only/)
+    } else if (step.id === 'inspect') {
+      assert.equal(step.cacheDimensions.length, 2)
+      assert.match(step.cacheDimensions[0], /canonical element ID, actual change invalidation/)
+      assert.match(step.cacheDimensions[0], /child dependency IDs/)
+      assert.match(step.cacheDimensions[0], /browser runtime observer lifetime, never an editable scene mirror/)
+      assert.match(step.cacheDimensions[1], /runtime-issued visual receipt/)
+      assert.match(step.cacheDimensions[1], /canonical dependency IDs and regional membership/)
+      assert.match(step.cacheDimensions[1], /request lifetime/)
     } else assert.deepEqual(step.cacheDimensions, [])
   }
 })

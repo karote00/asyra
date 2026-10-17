@@ -135,7 +135,9 @@ export {
   createAiToolContract,
   createAiToolMiddleware,
   describeAiTool,
-  inspectAiToolResult
+  embedAiToolSchema,
+  inspectAiToolResult,
+  selectAiToolResultSchema
 } from './tool-contract.js'
 export type {
   AiToolContract,
@@ -146,6 +148,7 @@ export type {
 
 export type {
   ExecutionRecordOutbox,
+  ExecutionRecordGap,
   ExecutionRecordAcknowledgement,
   ExecutionRecordDeliveryOptions,
   ExecutionRecordDeliveryIssue
@@ -155,6 +158,8 @@ export { admitAiRecipe } from './recipe-admission.js'
 export type {
   AiRecipe,
   AiRecipeBinding,
+  AiRecipeStep,
+  AiRecipeIteration,
   AiRecipeLimits,
   AiRecipeIssue,
   AiRecipeAdmission,
@@ -169,20 +174,31 @@ export type {
   AiToolLibraryOptions
 } from './tool-library.js'
 
-export { createAiRecipeInvoker } from './recipe-execution.js'
+export {
+  createAiRecipeInvoker,
+  createAiRecipeRecoverySchema
+} from './recipe-execution.js'
 export type {
   AiRecipeCallReceipt,
   AiRecipeExecutionResult,
+  AiRecipeRecovery,
   AiRecipeLeaseAdapter,
-  AiRecipeInvokerOptions
+  AiRecipeInvokerOptions,
+  AiRecipeInvocationEvent
 } from './recipe-execution.js'
 
-export { createAiToolPersistence } from './tool-store.js'
+export {
+  createAiToolPersistence,
+  createAiToolStoreManagement
+} from './tool-store.js'
 export type {
   AiToolStore,
   AiToolStoreEntry,
+  AiStoredToolSummary,
   AiToolSaveResult,
   AiToolPersistenceOptions
 } from './tool-store.js'
 
 export { aiRecipeInputSchema } from './recipe-format.js'
+
+export { recordStorageBatchBytes } from './profiler/record-outbox.js'

@@ -1,4 +1,6 @@
 import type {
+  SessionCancelPolicy,
+  SessionCancelOutcome,
   RegistrationDefinitionMetadata,
   SystemContextSnapshot
 } from '@asyra/utils'
@@ -20,11 +22,6 @@ export type SessionEndHandler<T = Record<string, unknown>> = (
   snapshot: SystemContextSnapshot,
   state: T
 ) => void | Promise<void>
-
-export type SessionCancelPolicy =
-  'rollback' | 'commit-current' | 'feature-defined'
-
-export type SessionCancelOutcome = 'rollback' | 'commit-current'
 
 export type SessionCancelHandler<T = Record<string, unknown>> = (
   snapshot: SystemContextSnapshot,
@@ -70,6 +67,8 @@ export interface FeatureDefinition<
   // Static configuration for feature registration
   api?: API
   execution?: ExecutionHandler
+  /** Immediate execution settles the active session without queue admission. */
+  executionMode?: 'queued' | 'immediate'
   session?: SessionHandler<State>
   task?: FeatureTaskHandler<TaskInput, TaskResult>
   // Feature priority for session registration

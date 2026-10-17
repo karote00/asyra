@@ -25,7 +25,9 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('action summary')
     expect(general).toContain('work purpose and target')
     expect(general).toContain('The App supplies the observed execution phase')
-    expect(general).toContain('Public commentary may announce')
+    expect(general).toContain('Before preparing inputs for a new stage')
+    expect(general).toContain('single tool finishes')
+    expect(general).toContain('Do not claim pixels are changing')
     expect(general).not.toContain('current action and target')
     expect(general).toContain('Window reflections')
     expect(general).toContain('conversation language')
@@ -35,6 +37,8 @@ describe('stage-owned App guidance', () => {
   it('reviews reference-dependent ready recipes without requiring a complete geometry inventory', () => {
     expect(general).toContain('Draw each coherent ready part')
     expect(general).toContain('review_prepared_design')
+    expect(general).toContain('It never calls a model')
+    expect(general).toContain('primary agent reviews actual rendered images')
     expect(general).toContain(
       'Direct known-value edits need no prepared-content review'
     )
@@ -46,6 +50,14 @@ describe('stage-owned App guidance', () => {
     )
     expect(general).toContain('Do not accumulate all stages in one draft')
     expect(general).toContain('parentId')
+  })
+  it('assigns reference purpose and pixel scope to the primary agent', () => {
+    expect(general).toContain(
+      'purpose (visual, fact, preparation or pixel-comparison)'
+    )
+    expect(general).toContain('explicitly provide referenceRegion')
+    expect(general).toContain('Tools do not choose the subject')
+    expect(general).toContain('cropping\ncannot add missing detail')
   })
   it('preserves original user intent, verified facts and original resolution', () => {
     expect(general).toContain('original user request remains authoritative')
@@ -68,6 +80,17 @@ describe('stage-owned App guidance', () => {
     expect(AI_OPERATION_INSTRUCTIONS).toContain(
       'Frame bounds do not require background paint'
     )
+  })
+  it('separates capability lookup from external subject research and follows exact native routes', () => {
+    expect(general).toContain(
+      'Tool discovery is separate from reference research'
+    )
+    expect(general).toContain('not subject facts, photographs or source pages')
+    expect(general).toContain('category/query menus')
+    expect(general).toContain(
+      'Execute\nknown tools directly without another lookup'
+    )
+    expect(general).toContain('native tools, not execute_design_batch')
   })
   it('routes missing references without source restrictions or mandatory repeated research', () => {
     expect(general).toContain('Research only missing information')
@@ -142,7 +165,8 @@ describe('stage-owned App guidance', () => {
     const review = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
-    expect(review.description).toContain('final=false')
+    expect(review.description).toContain('final=true (default)')
+    expect(review.description).toContain('without discarding valid local work')
     expect(review.description).toContain('deferredDetails')
     const criteria = requireTestValue(
       designEvidenceDefinitions.find(
@@ -182,3 +206,10 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) throw new Error('Required test fixture is unavailable')
   return value
 }
+
+it('separates remaining-work execution from replay and library availability recovery', () => {
+  expect(general).toContain('new execution segment')
+  expect(general).toContain('only the unresolved steps')
+  expect(general).toContain('resume restores library availability')
+  expect(general).toContain('not a saved execution position')
+})

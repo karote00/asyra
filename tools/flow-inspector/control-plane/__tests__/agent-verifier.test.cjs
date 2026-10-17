@@ -178,7 +178,10 @@ test(
         .filter((value) => value.status === 'failed')
         .map((value) => value.id)
         .sort(),
-      contract.negativeCaseIds.slice().sort()
+      contract.definition.scenarios
+        .find((scenario) => scenario.id === 'inverse-regression')
+        .expectedFailedCaseIds.slice()
+        .sort()
     )
     fs.writeFileSync(
       file,

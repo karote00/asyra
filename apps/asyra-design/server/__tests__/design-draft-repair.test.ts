@@ -29,17 +29,18 @@ it('retains immutable rejected source with exact request-local references', () =
   expect(() => store.repair(repair)).toThrow(/unavailable/)
 })
 
-it('bounds retained source and makes eviction explicit without changing source admission', () => {
+it('refuses new retention at capacity without evicting an existing repair source', () => {
   const store = createDesignDraftRepairStore()
   const first = store.retain({ key: 'first' })
-  for (let index = 0; index < limits.retainedDrafts; index++)
+  for (let index = 1; index < limits.retainedDrafts; index++)
     store.retain({ key: index })
-  expect(() =>
+  expect(store.retain({ key: 'overflow' })).toBeUndefined()
+  expect(
     store.repair({
       draftId: first,
       replacements: [{ path: '/key', value: 'new' }]
     })
-  ).toThrow(/unavailable/)
+  ).toEqual({ key: 'new' })
   expect(
     store.retain({ text: 'x'.repeat(limits.retainedDraftBytes) })
   ).toBeUndefined()

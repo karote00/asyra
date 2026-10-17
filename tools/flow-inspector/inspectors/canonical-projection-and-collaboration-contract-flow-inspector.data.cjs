@@ -121,6 +121,7 @@
         'A cross-owner lifecycle request receives both the complete prepared property mutation and complete prepared Scene mutation before canonical apply authorization.',
         'A direct Scene removal retains Props, while the Core full lifecycle passes the Scene-issued orphan roots and complete retained root property IDs unchanged to the Props prepared exact orphan graph mutation without inspecting the property graph.',
         'Core.createElementsInParent returns only ordered canonical element IDs.',
+        'Canonical creation carries every exact data/parentId/index entry unchanged to Scene preflight; replay order never implies contiguous sibling positions.',
         'For detached canonical creation, Core receives PreparedCanonicalElementInsertion.ownerRelations from Scene and passes them unchanged into the Props create-exact-property-graph operation.',
         'Remote exact element removal uses one origin-neutral canonical-data removal path; Collaboration consumes its Scene and Props batches once without a UsingActiveProperties API or local/remote mode.',
         'Core load completes every owner validate, then Scene.preflightLoadPropertyRelations against detached Props data before any owner apply; version and file-load-complete change only after every apply succeeds.',
@@ -313,6 +314,7 @@
         'Scene.preflightLoadPropertyRelations uses an owner-issued load validation result to compare exact element property slots, component IDs, property types, and registration stability against detached Props validated data with no mutation or artifact consumption.',
         'Ordinary and canonical lifecycles use explicit typed prepared Scene mutations without caller-origin policy.',
         'UPDATE_ELEMENT_DATA is canonical raw Scene evidence for prepared typed name, visibility, and lock mutations.',
+        'Declared mutation options are caller policy, not raw-data semantic evidence; excluding them from exact comparison never relaxes identity, order, field or before/after validation.',
         'The complete prepared mutation validates Scene IDs, parent, index, order, map, hierarchy, and tombstone evidence before mutation.',
         'Apply owns Scene maps, raw element state, parent children, hierarchy order, and ordered Scene evidence only.',
         'Each apply emits one plural Scene event and one shared record per element in order for ADD_ELEMENTS and REMOVE_ELEMENTS; Factory publication slices may group those records but must not split one record or create another Scene mutation or history action.',
@@ -630,15 +632,45 @@
       failureOwnerStepId: 'project-render-state'
     },
     {
+      id: 'prepare-document-publication',
+      order: 0,
+      laneId: 'collaboration-transport',
+      title: 'Prepare explicit document operations',
+      ownerPackage: 'Asyra Design publication adapter',
+      purpose: 'Translate completed Factory evidence once into the document contract before durable local retention and transport.',
+      inputs: ['artifact:shared-publication'],
+      outputs: ['artifact:document-publication', 'artifact:document-preparation-failure'],
+      conditions: [
+        'Filter local-only channels and derive ordered canonical changes only at the publishing App boundary. Heterogeneous Scene batches preserve consecutive operation-family order without changing the source slice. Each source move delivery retains its simultaneous move set; distinct sequential deliveries must not be flattened into one move, including creation/removal-adjacent moves.',
+        'Preserve publication, artifact, transaction, semantic slice and publication-level compensation identity; transmit no duplicate raw owner events.',
+        'Retain the prepared immutable publication for retries. Receivers consume explicit operations without reconstructing source channel adjacency.',
+        'Report preparation failure with original source identity through a required App callback before returning to Factory; observer isolation must not hide the failed handoff.'
+      ],
+      bypasses: ['A publication containing only local channels produces no document publication.', 'Invalid source evidence reports an explicit preparation failure to the App document session; it never reaches transport.'],
+      allowedContributors: ['artifact:shared-publication', 'App document channel filter', 'canonical source classification'],
+      forbiddenContributors: ['receiver-side raw event reconstruction', 'transport batch layout as operation semantics', 'a second history or state owner'],
+      cacheDimensions: [],
+      implementationBoundary: [
+        'apps/asyra-design/src/collaboration/factory-adapter.ts',
+        'apps/asyra-design/src/collaboration/document-publication.ts',
+        'apps/asyra-design/src/collaboration/operations.ts',
+        'apps/asyra-design/src/testing/runtime-access.ts',
+        'apps/asyra-design/src/init/__tests__/collaboration-factory.test.ts',
+        'apps/asyra-design/src/init/__tests__/document-publication.test.ts'
+      ],
+      specRefs: ['#collaboration-provider-contract'],
+      failureOwnerStepId: 'prepare-document-publication'
+    },
+    {
       id: 'publish-shared-publication',
       order: 1,
       laneId: 'collaboration-transport',
       title: 'Publish one shared publication',
       ownerPackage: '@asyra/collaboration',
       purpose:
-        'Preserve each Factory SharedPublication as one ordered transaction batch through one required outbound Provider call and one required async inbound callback.',
+        'Preserve each App-prepared SharedPublication as one ordered transaction batch through one required outbound Provider call and one required async inbound callback.',
       inputs: [
-        'artifact:shared-publication',
+        'artifact:document-publication',
         'artifact:transport-received-publication'
       ],
       outputs: [
@@ -650,7 +682,7 @@
         'Outbound delivery calls the required Provider.sendPublication path once per publication.',
         'Inbound delivery uses the required Provider.onPublication path with one exclusive async consumer.',
         'The inbound consumer promise remains pending until App canonical apply completes or fails.',
-        'Collaboration consumes only Factory-owned SharedPublication artifacts and never derives a publication from generic staged status.',
+        'Collaboration consumes the App-prepared source publication while preserving Factory identity; it never derives operations or publications from generic staged status.',
         'Generic Collaboration owns no wire grouping, concurrency constant, queue watermark, codec, or retry mode.'
       ],
       bypasses: [
@@ -659,7 +691,7 @@
         'Awareness remains a separate ephemeral route.'
       ],
       allowedContributors: [
-        'artifact:shared-publication',
+        'artifact:document-publication',
         'artifact:transport-received-publication',
         'required Provider.sendPublication',
         'required Provider.onPublication',
@@ -761,6 +793,8 @@
       conditions: [
         'One source publication owns exactly one remote Factory transaction and different publications are not merged.',
         'App policy validates the inbound publication before canonical mutation.',
+        'Peer apply validates explicit canonical document operations prepared by the publishing App without deriving semantics from transport batch layout.',
+        'Preserve source publication and semantic slice order, exact insertion entries and publication-level compensation identity. Reject raw event payloads at receiving document boundaries without a fallback or checkpoint advancement.',
         'The App submits one remote canonical request through Core and the same prepared Props and Scene mutations.',
         'The App calls exactly one Core.applyCanonicalChanges with one ordered CanonicalChange request for the accepted publication.',
         'A property-only remote follow-up derives computed state locally before Render.',
@@ -788,8 +822,14 @@
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/collaboration/factory-adapter.ts',
+        'apps/asyra-design/src/collaboration/document-publication.ts',
+        'apps/asyra-design/src/init/__tests__/document-publication.test.ts',
         'apps/asyra-design/src/collaboration/lifecycle.ts',
         'apps/asyra-design/src/collaboration/operations.ts',
+        'apps/asyra-design/src/collaboration/publication-processor.ts',
+        'apps/asyra-design/src/collaboration/app-protocol-types.ts',
+        'apps/asyra-design/server/document-canonical-reducer.ts',
+        'apps/asyra-design/server/__tests__/document-canonical-reducer.test.ts',
         'apps/asyra-design/src/init/__tests__/collaboration-factory.test.ts',
         'apps/asyra-design/src/init/__tests__/collaboration-lifecycle.test.ts',
         'apps/asyra-design/src/init/__tests__/collaboration-operations.test.ts'
@@ -998,11 +1038,26 @@
     {
       id: 'route-factory-publication-to-collaboration',
       from: 'record-and-deliver-transaction-batch',
-      to: 'publish-shared-publication',
+      to: 'prepare-document-publication',
       kind: 'publication',
       predicate:
         'Factory produced an eligible staged slice, committed remainder, Undo, Redo, or rollback compensation as one SharedPublication.',
       producedArtifacts: ['artifact:shared-publication']
+    },
+    {
+      id: 'route-document-preparation-failure',
+      from: 'prepare-document-publication',
+      kind: 'terminal',
+      predicate: 'Preparation failed; the required App document session callback owns durable non-sendable conflict retention and blocks later dependent sends.',
+      producedArtifacts: ['artifact:document-preparation-failure']
+    },
+    {
+      id: 'route-document-publication-to-collaboration',
+      from: 'prepare-document-publication',
+      to: 'publish-shared-publication',
+      kind: 'publication',
+      predicate: 'The publishing App has prepared explicit ordered document operations with original publication identity.',
+      producedArtifacts: ['artifact:document-publication']
     },
     {
       id: 'route-collaboration-to-provider',
@@ -1171,6 +1226,20 @@
       ownerStepId: 'record-and-deliver-transaction-batch',
       channel:
         'Factory required batch shared channel with stable transaction, publication, slice, and compensation identity',
+      consumerStepIds: ['prepare-document-publication'],
+      terminal: false
+    },
+    {
+      id: 'artifact:document-preparation-failure',
+      ownerStepId: 'prepare-document-publication',
+      channel: 'Required App session failure callback with original immutable source and error; durable failure retention belongs to open-socket-authoritative-document-session in the drawing performance flow',
+      consumerStepIds: [],
+      terminal: true
+    },
+    {
+      id: 'artifact:document-publication',
+      ownerStepId: 'prepare-document-publication',
+      channel: 'App canonical operations in the existing immutable SharedPublication envelope',
       consumerStepIds: ['publish-shared-publication'],
       terminal: false
     },
@@ -1464,6 +1533,8 @@
         'Canonical projection and collaboration owner handoff flow'
     },
     links: [
+      { id: 'document-publication-contract', kind: 'reference', label: 'Current App document publication contract',
+        href: '../../../docs/ai/apps/asyra-design/modules/collaboration-reference.md' },
       {
         id: 'realignment-plan',
         kind: 'authority',

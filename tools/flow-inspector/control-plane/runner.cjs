@@ -1,11 +1,80 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs')
 const path = require('node:path')
-const { spawn } = require('node:child_process')
+const childProcess = require('node:child_process')
+const { spawn } = childProcess
 const { createRequire } = require('node:module')
 const { createHash } = require('node:crypto')
+const { performance } = require('node:perf_hooks')
 const { setInterval, clearInterval } = require('node:timers')
 const { executionRolesForAuthority } = require('./snapshot.cjs')
+
+const processCleanupGraceMs = 250
+
+// A denied signal is not proof of either a surviving or an absent group.
+function observeProcessGroup(pid, timeoutMs) {
+  try {
+    const output = childProcess.execFileSync(
+      '/bin/ps',
+      ['-A', '-o', 'pid=,pgid=,stat='],
+      {
+        encoding: 'utf8',
+        timeout: timeoutMs,
+        maxBuffer: 256 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe']
+      }
+    )
+    const rows = output
+      .trim()
+      .split('\n')
+      .map((line) => line.trim().split(/\s+/))
+    if (
+      !rows.every(
+        (row) =>
+          row.length === 3 &&
+          /^\d+$/.test(row[0]) &&
+          /^\d+$/.test(row[1]) &&
+          /^[A-Za-z?+<>-]+$/.test(row[2])
+      )
+    )
+      return {
+        absent: false,
+        observable: false,
+        detail: 'Process table is malformed'
+      }
+    const members = rows.filter((row) => Number(row[1]) === pid)
+    return {
+      absent: members.length === 0,
+      observable: true,
+      detail: members
+        .slice(0, 8)
+        .map((row) => row.join(':'))
+        .join(',')
+    }
+  } catch {
+    return {
+      absent: false,
+      observable: false,
+      detail: 'Process table is unavailable'
+    }
+  }
+}
+
+async function confirmProcessGroupExit(pid) {
+  const deadline = performance.now() + processCleanupGraceMs
+  let observation
+  do {
+    observation = observeProcessGroup(
+      pid,
+      Math.max(1, Math.ceil(deadline - performance.now()))
+    )
+    if (observation.absent || !observation.observable) return observation
+    const remaining = deadline - performance.now()
+    if (remaining <= 0) break
+    await new Promise((resolve) => setTimeout(resolve, Math.min(20, remaining)))
+  } while (performance.now() < deadline)
+  return observation
+}
 
 function runProcess({
   executable,
@@ -35,6 +104,8 @@ function runProcess({
     let outputBytes = 0
     let forceTimer
     let spawnError
+    let cleanupError
+    let cleanupCode
     const child = spawn(executable, args, {
       cwd,
       env,
@@ -46,14 +117,16 @@ function runProcess({
       try {
         process.kill(inheritProcessGroup ? child.pid : -child.pid, signalName)
       } catch (error) {
-        if (error.code !== 'ESRCH') spawnError = error.message
+        if (error.code === 'ESRCH') return
+        cleanupCode = error.code
+        cleanupError = error.message
       }
     }
     const stop = (why) => {
       if (reason) return
       reason = why
       kill('SIGTERM')
-      forceTimer = setTimeout(() => kill('SIGKILL'), 250)
+      forceTimer = setTimeout(() => kill('SIGKILL'), processCleanupGraceMs)
     }
     const cancel = () => stop('cancelled')
     const timer = setTimeout(() => stop('timeout'), timeoutMs)
@@ -73,18 +146,24 @@ function runProcess({
     }
     child.stdout.on('data', collect)
     child.stderr.on('data', collect)
-    child.once('close', (code, exitSignal) => {
+    child.once('close', async (code, exitSignal) => {
       clearTimeout(timer)
       clearTimeout(forceTimer)
       signal?.removeEventListener('abort', cancel)
       // Also settle descendants that outlived a successful leader.
       kill('SIGKILL')
+      if (cleanupCode === 'EPERM') {
+        const observation = await confirmProcessGroupExit(child.pid)
+        if (observation.absent) cleanupError = undefined
+        else cleanupError += ' - ' + observation.detail
+      }
       if (!reason && spawnError) reason = 'spawn-error'
+      if (!reason && cleanupError) reason = 'cleanup-error'
       if (!reason && exitSignal) reason = 'signal'
       resolve({
         code,
         reason,
-        error: spawnError,
+        error: spawnError ?? cleanupError,
         exitSignal,
         output,
         pid: child.pid ?? null

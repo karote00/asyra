@@ -22,7 +22,14 @@ export class ExecutionRegistryClass implements ExecutionRegistry {
     config: ExecutionConfig,
     handler: ExecutionHandler
   ): void {
+    const mode = config.executionMode ?? 'queued'
+    if (
+      this.getHandlers(eventName).some((entry) => entry.executionMode !== mode)
+    ) {
+      throw new Error(`Execution event ${eventName} cannot mix execution modes`)
+    }
     const participant: ExecutionParticipant = {
+      executionMode: mode,
       featureName,
       priority: config.priority ?? 0,
       exclusive: config.exclusive ?? true,

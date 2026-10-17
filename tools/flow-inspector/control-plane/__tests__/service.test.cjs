@@ -104,7 +104,13 @@ test('real baseline, precise cross-flow regression, and recovery retain separate
         .filter((item) => item.status === 'failed')
         .map((item) => item.id)
         .sort(),
-      service.contract().negativeCaseIds.slice().sort()
+      service
+        .contract()
+        .definition.scenarios.find(
+          (scenario) => scenario.id === 'inverse-regression'
+        )
+        .expectedFailedCaseIds.slice()
+        .sort()
     )
     assert.deepEqual(negative.evidence.issues, [])
     const recovered = await service.wait(service.start({}, LOCAL_ACTOR))

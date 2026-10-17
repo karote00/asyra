@@ -70,7 +70,9 @@ const data = {
         'apps/asyra-design/src/toolbar/index.tsx',
         'apps/asyra-design/src/toolbar/tool-button.tsx',
         'apps/asyra-design/src/toolbar/reset-stored-document.ts',
-        'apps/asyra-design/src/toolbar/zoom.tsx'
+        'apps/asyra-design/src/toolbar/zoom.tsx',
+        'apps/asyra-design/src/collaboration/websocket-provider.ts',
+        'apps/asyra-design/src/collaboration/collaboration-transport-worker.ts'
       ],
       specRefs: ['#start-editor'],
       failureOwnerStepId: 'start-editor'
@@ -179,7 +181,8 @@ const data = {
         'apps/asyra-design/src/common-apis/selection.ts',
         'apps/asyra-design/src/controllers/canvas-hierarchy-target.ts',
         'apps/asyra-design/src/contents/contents-panel.tsx',
-        'apps/asyra-design/src/contents/layer-selection.ts'
+        'apps/asyra-design/src/contents/layer-selection.ts',
+        'apps/asyra-design/src/ai/actions.ts'
       ],
       specRefs: ['#select-elements'],
       failureOwnerStepId: 'select-elements'
@@ -689,7 +692,8 @@ const data = {
         'apps/asyra-design/src/app/ai-conversation-panel.tsx',
         'apps/asyra-design/src/app/ai-conversation-navigation.tsx',
         'apps/asyra-design/src/ai/conversation.ts',
-        'apps/asyra-design/src/ai/activity-state.ts'
+        'apps/asyra-design/src/ai/activity-state.ts',
+        'apps/asyra-design/src/ai/tool-library-management.ts'
       ],
       specRefs: ['#present-conversation'],
       failureOwnerStepId: 'present-conversation'
@@ -709,7 +713,8 @@ const data = {
       ],
       outputs: ['artifact:execute-agent-request-outcome'],
       conditions: [
-        'Keep dependent actions in the intended History group and expose actual completion or partial failure.'
+        'Keep dependent actions in the intended History group and expose actual completion or partial failure.',
+        'Explicit document export retains immutable downloadable bytes outside model receipts. Export does not confirm persistence or add history; completion reports durable, local-only and unavailable independently.'
       ],
       bypasses: [
         'Denied, cancelled, unsupported or failed execution does not report completed drawing.'
@@ -724,10 +729,13 @@ const data = {
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'apps/asyra-design/src/ai/document-export.ts',
+        'apps/asyra-design/src/ai/runtime-input.ts',
         'apps/asyra-design/src/features/ai-agent/index.ts',
         'apps/asyra-design/src/ai/startup.ts',
         'apps/asyra-design/src/ai/transaction.ts',
-        'apps/asyra-design/src/ai/design-actions.ts'
+        'apps/asyra-design/src/ai/design-actions.ts',
+        'apps/asyra-design/src/ai/actions.ts'
       ],
       specRefs: ['#execute-agent-request'],
       failureOwnerStepId: 'execute-agent-request'
@@ -806,7 +814,8 @@ const data = {
         'apps/asyra-design/src/ai/prepared-design-admission.ts',
         'apps/asyra-design/src/ai/design-actions.ts',
         'apps/asyra-design/src/ai/design-edit-action.ts',
-        'apps/asyra-design/server/design-preparation.ts'
+        'apps/asyra-design/server/design-preparation.ts',
+        'apps/asyra-design/src/ai/actions.ts'
       ],
       specRefs: ['#apply-prepared-design'],
       failureOwnerStepId: 'apply-prepared-design'
@@ -841,9 +850,14 @@ const data = {
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'apps/asyra-design/server/local-mechanical-checks.ts',
+        'apps/asyra-design/server/local-operation-tools.ts',
+        'apps/asyra-design/src/ai/prescribed-position-action.ts',
         'apps/asyra-design/src/common-apis/inspection.ts',
         'apps/asyra-design/src/common-apis/inspection-evidence.ts',
-        'apps/asyra-design/src/ai/inspection.ts'
+        'apps/asyra-design/src/ai/inspection.ts',
+        'apps/asyra-design/server/local-design-review.ts',
+        'apps/asyra-design/src/ai/review-action.ts'
       ],
       specRefs: ['#inspect-design'],
       failureOwnerStepId: 'inspect-design'
@@ -1199,6 +1213,43 @@ const data = {
       ],
       specRefs: ['#present-layer-hierarchy'],
       failureOwnerStepId: 'present-layer-hierarchy'
+    },
+    {
+      id: 'project-ui-membership',
+      order: 33,
+      laneId: 'framework',
+      title: 'Project canonical UI membership',
+      ownerPackage: '@asyra/preset',
+      purpose:
+        'Publish ordered flattened UI membership from canonical scene changes without rereading unchanged rows.',
+      inputs: [
+        'Canonical element map and flattened identities',
+        'Changed memberships and load/observer lifetime'
+      ],
+      outputs: ['artifact:project-ui-membership-outcome'],
+      conditions: [
+        'Preserve exact membership order through create, Undo, Redo and load; reuse unchanged membership within its valid observer and published-identity lifetime.'
+      ],
+      bypasses: [
+        'Cold, replaced or invalidated canonical sources rebuild membership before reuse.'
+      ],
+      allowedContributors: [
+        'Canonical scene publication and Preset data-channel projection'
+      ],
+      forbiddenContributors: [
+        'Renderer geometry as canonical membership',
+        'Diagnostics as product state'
+      ],
+      cacheDimensions: [
+        'observer lifetime',
+        'published element-map identity',
+        'published flat identity'
+      ],
+      implementationBoundary: [
+        'packages/preset/src/subscriptions/data-channel.ts'
+      ],
+      specRefs: ['#project-ui-membership'],
+      failureOwnerStepId: 'project-ui-membership'
     }
   ],
   routes: [
@@ -1449,6 +1500,14 @@ const data = {
       predicate:
         'The operation settles or explicitly bypasses according to its product contract.',
       producedArtifacts: ['artifact:group-history-members-outcome']
+    },
+    {
+      id: 'project-ui-membership-complete',
+      from: 'project-ui-membership',
+      kind: 'terminal',
+      predicate:
+        'Canonical membership is published or its invalid source is rejected.',
+      producedArtifacts: ['artifact:project-ui-membership-outcome']
     }
   ],
   artifacts: [
@@ -1673,6 +1732,13 @@ const data = {
       id: 'artifact:present-layer-hierarchy-outcome',
       ownerStepId: 'present-layer-hierarchy',
       channel: 'Visible Layers rows and disclosure state',
+      consumerStepIds: [],
+      terminal: true
+    },
+    {
+      id: 'artifact:project-ui-membership-outcome',
+      ownerStepId: 'project-ui-membership',
+      channel: 'Canonical UI context publication',
       consumerStepIds: [],
       terminal: true
     }

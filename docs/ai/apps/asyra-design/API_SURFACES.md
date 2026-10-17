@@ -870,16 +870,33 @@ text overflow can be corrected before another image is captured; read-only revie
 remains available without a cumulative review quota. The model reviews the actual image
 and explains unresolved constraints rather than reporting unconditional success.
 
-The local-only `record_design_review` tool records a pre-mutation plan and a
-post-render assessment. Its published schema requires method, references (an empty
-array is valid), criteria and detailRequired for the plan; structure/visual phases
-require checks and either current inspectionIds, explicit inspections targets, or both (24 total). Capture targets share the inspect_drawing schema. The review owner captures and validates each target before assessment. A failed capture returns successful inspectionIds and exact failedInspections for a corrected retry; it never silently drops a required target. It never mutates the canvas. Criteria express user intent,
-including intentionally rough or minimal results; detailed inspection is conditional.
-Inspection receipts carry opaque IDs and a mutation revision. The backend checks
-current evidence IDs, criterion coverage and pass/fail/unverified judgments before
-admitting a completed report; the model owns semantic assessment. A later mutation
-invalidates the old verdict. Tool/research/review diagnostics share request IDs with
-usage logs; bounded summaries exclude image bytes, geometry, credentials and reasoning.
+The local tools separate criteria declaration (`define_design_criteria`), source
+facts (`record_design_facts`), calculations (`record_design_calculations`), reference
+selection (`select_design_references`) and rendered judgments (`review_drawing`).
+Declare criteria before judging; this is not a gate before the first ready drawing.
+Visual criteria require explicit `requiredUnits`: [] means a whole-view obligation;
+nonempty stable IDs mean regional obligations, with a separate overall criterion.
+Data criteria omit that field. Established obligations cannot shrink after review.
+
+Capture targets share the `inspect_drawing` schema. Capture-only calls return images,
+pending coverage and the next judgment input, without inventing visual approval.
+Failed captures return successful IDs and exact failed targets for retry. Each
+submitted judgment names its own nonempty `inspectionIds` subset of the enclosing
+image menu. Unused menu images are not dependencies and cannot veto local recovery;
+deferred-detail decisions still depend on their enclosing images. Actual referenced
+images must be current. Independent current passes accumulate; changed image,
+criterion or source dependencies reopen only dependent results. `final=true` checks
+all retained obligations and whole-drawing coverage rather than demanding that
+unchanged passes be resubmitted. Mechanical tool passes do not replace primary-agent
+visual judgment; no extra model performs these checks. Review never mutates canvas.
+
+Provider commentary supplies stage context, independent of invocation lifetime.
+Individual call completion retires that call's execution claim. Without active
+calls, retained stage prose is labeled Current task; it does not claim active
+painting. New commentary, retry, saving or terminal outcome replaces/retires context.
+Concurrent calls show actual operations and common live purpose, not the latest
+sibling's purpose. Tool/research/review diagnostics share request IDs with usage
+logs; bounded summaries exclude image bytes, geometry, credentials and reasoning.
 
 Conversation `newConversation()` / `selectConversation(id)` retain document-session
 messages, target hints and turn identities without canvas writes. Active execution
@@ -896,7 +913,7 @@ parameters in signature order. Executors call the existing owner without copying
 geometry or accepting event/history suppression flags. Results retain the owner's
 return value under `value` (including null/false); null is not proof of a successful
 mutation. Existing Runtime permission, confirmation and transaction boundaries apply.
-Deletion contracts require confirmation by default.
+Undoable App operations, including deletion, need no separate confirmation; external/security-sensitive capabilities retain their owner admission policy.
 
 Each Core, Design and Vector API contract has its own named `const`, declared with
 `defineBasicApi({ owner, method, effect, parameters, description, category?, resultKind? })`. The exported
@@ -923,7 +940,7 @@ The local backend exposes `describe_design_apis` from the current admitted
 contracts. No arguments returns categories and counts; `category` returns that
 category's purpose/result menu; `operation` resolves an exact `owner.method`
 identity and current schema in one call. `names` resolves exact action names.
-Optional `query` searches descriptions and returns matching schemas immediately.
+Optional `query` searches descriptions and returns a compact menu by default; request usage/full views explicitly.
 Selectors are mutually exclusive. No lexical match returns the category menu,
 not an unavailable capability or a requirement to scan every API. Existing known
 operations may be executed directly without discovery or a preliminary data read.

@@ -12,7 +12,10 @@
   "workspaceSources": [
     {
       "name": "@asyra/asyra-design",
-      "inputs": ["src/**", "server/**"],
+      "inputs": [
+        "src/**",
+        "server/**"
+      ],
       "entry": null
     }
   ],
@@ -21,7 +24,9 @@
       "id": "collaboration-observe-session-state",
       "title": "Observe session transitions",
       "goal": "Publish connection transitions once without treating initial connection as recovery.",
-      "stepIds": ["observe-session-state"],
+      "stepIds": [
+        "observe-session-state"
+      ],
       "cases": [
         {
           "id": "collaboration.53ef421b45ea",
@@ -42,7 +47,9 @@
       "id": "collaboration-recover-document-session",
       "title": "Recover document session",
       "goal": "Reconcile the file-scoped outbox against the authoritative checkpoint and generation while retaining local edits.",
-      "stepIds": ["recover-document-session"],
+      "stepIds": [
+        "recover-document-session"
+      ],
       "cases": [
         {
           "id": "collaboration.c2714ac930be",
@@ -61,7 +68,7 @@
           "id": "collaboration.9cf96f5aab38",
           "stepId": "recover-document-session",
           "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
-          "testName": "keeps the room live when a retained source publication cannot apply during recovery",
+          "testName": "isolates a blocked local draft while an independent peer continues saving",
           "projectName": "chromium",
           "minimumParticipants": 2,
           "implementationPaths": [
@@ -82,6 +89,58 @@
             "apps/asyra-design/src/collaboration/publication-outbox.ts",
             "apps/asyra-design/src/collaboration/websocket-provider.ts"
           ]
+        },
+        {
+          "id": "collaboration.a7116a039fde",
+          "stepId": "recover-document-session",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "recovers real edits and Undo Redo after preparation failure, reload and retry without overwriting a peer",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/collaboration/publication-outbox.ts",
+            "apps/asyra-design/src/collaboration/websocket-provider.ts"
+          ]
+        },
+        {
+          "id": "collaboration.3b113763b54f",
+          "stepId": "recover-document-session",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "recovers a failed IndexedDB prefix with subsequent real edits and durable reload",
+          "projectName": "chromium",
+          "minimumParticipants": 1,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/collaboration/publication-outbox.ts",
+            "apps/asyra-design/src/collaboration/websocket-provider.ts"
+          ]
+        },
+        {
+          "id": "collaboration.dd8148171106",
+          "stepId": "recover-document-session",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "explicit Reset completes its server barrier from a reopened isolated recovery draft",
+          "projectName": "chromium",
+          "minimumParticipants": 1,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/collaboration/publication-outbox.ts",
+            "apps/asyra-design/src/collaboration/websocket-provider.ts"
+          ]
+        },
+        {
+          "id": "collaboration.9a84bd371b9c",
+          "stepId": "recover-document-session",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "recovers accepted-source cleanup failure and preserves live rejection history after replay",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/lifecycle.ts",
+            "apps/asyra-design/src/collaboration/publication-outbox.ts",
+            "apps/asyra-design/src/collaboration/websocket-provider.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -90,7 +149,9 @@
       "id": "collaboration-publish-history-members",
       "title": "Publish finite History members",
       "goal": "Publish canonical finite members while preserving one local Undo and Redo action.",
-      "stepIds": ["publish-history-members"],
+      "stepIds": [
+        "publish-history-members"
+      ],
       "cases": [
         {
           "id": "collaboration.177573d4138b",
@@ -99,7 +160,9 @@
           "testName": "16-item server response publishes each finite member with one Undo and Redo entry",
           "projectName": "chromium",
           "minimumParticipants": 1,
-          "implementationPaths": ["packages/factory/src/data-transact.ts"]
+          "implementationPaths": [
+            "packages/factory/src/data-transact.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -108,7 +171,9 @@
       "id": "collaboration-apply-remote-publication",
       "title": "Apply remote canonical publication",
       "goal": "Validate received publications and apply canonical slices through Core without adding receiver History or echo publications.",
-      "stepIds": ["apply-remote-publication"],
+      "stepIds": [
+        "apply-remote-publication"
+      ],
       "cases": [
         {
           "id": "collaboration.3f2d3af556ad",
@@ -229,6 +294,18 @@
             "apps/asyra-design/src/collaboration/operations.ts",
             "apps/asyra-design/src/collaboration/lifecycle.ts"
           ]
+        },
+        {
+          "id": "collaboration.ab8b0d66129c",
+          "stepId": "apply-remote-publication",
+          "testFile": "apps/asyra-design/e2e/collaboration.spec.ts",
+          "testName": "rolls back a visible publication through peer compensation and durable reload",
+          "projectName": "chromium",
+          "minimumParticipants": 2,
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/lifecycle.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -237,7 +314,9 @@
       "id": "collaboration-forward-live-publication",
       "title": "Forward live canonical publication",
       "goal": "Forward committed document-channel publications while preserving immediate gesture frames and canonical order.",
-      "stepIds": ["forward-live-publication"],
+      "stepIds": [
+        "forward-live-publication"
+      ],
       "cases": [
         {
           "id": "collaboration.2c9f508bc240",
@@ -269,5 +348,7 @@
   ],
   "defaultNegativeScenario": null,
   "scenarios": [],
-  "observationInputs": ["apps/asyra-design/e2e/collaboration-observation.ts"]
+  "observationInputs": [
+    "apps/asyra-design/e2e/collaboration-observation.ts"
+  ]
 }

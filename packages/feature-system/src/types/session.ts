@@ -9,8 +9,6 @@ export type {
   SessionUpdateHandler,
   SessionEndHandler,
   SessionCancelHandler,
-  SessionCancelOutcome,
-  SessionCancelPolicy,
   SessionState,
   ActiveSession,
   SessionParticipant

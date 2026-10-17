@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { FEATURE_MOVEMENT_THRESHOLD } from '../src/constants/movement-thresholds'
 import {
   createTestDocumentURL,
   createRectangle,
@@ -17,6 +18,7 @@ interface SampledColor {
   g: number
   b: number
   a: number
+  localY: number
 }
 
 const sampleSelectedElementColors = async (
@@ -40,16 +42,22 @@ const sampleSelectedElementColors = async (
     width: Math.max(1, Math.ceil(snapshot.rect.width * snapshot.zoom)),
     height: Math.max(1, Math.ceil(snapshot.rect.height * snapshot.zoom))
   }
-  const imageBuffer = await page.screenshot({ clip })
+  const imageBuffer = await page.screenshot({ clip, scale: 'css' })
   const imageBase64 = imageBuffer.toString('base64')
 
   return page.evaluate(
     async ({
       base64,
-      points
+      points,
+      originY,
+      height,
+      clipY
     }: {
       base64: string
       points: { x: number; y: number }[]
+      originY: number
+      height: number
+      clipY: number
     }) => {
       const response = await fetch(`data:image/png;base64,${base64}`)
       const blob = await response.blob()
@@ -75,12 +83,15 @@ const sampleSelectedElementColors = async (
         )
         const [r, g, b, a] = context.getImageData(x, y, 1, 1).data
 
-        return { r, g, b, a }
+        return { r, g, b, a, localY: (clipY + y + 0.5 - originY) / height }
       })
     },
     {
       base64: imageBase64,
-      points: samplePoints
+      points: samplePoints,
+      originY: snapshot.rect.y * snapshot.zoom + snapshot.viewport.y,
+      height: snapshot.rect.height * snapshot.zoom,
+      clipY: clip.y
     }
   )
 }
@@ -111,7 +122,55 @@ const DEFAULT_TEST_GRADIENT = {
   metadata: {}
 } as const
 
+// Independent oracle for this fixed white/red/black linear ramp. Interior
+// samples interpolate; moving a handle must not pin colors to the shape edges.
+const expectRampSamples = async (
+  page: Page,
+  samples: SampledColor[],
+  expectedHandleY: readonly [number, number]
+) => {
+  const snapshot = await getSelectedGradientSnapshot(page)
+  expect(snapshot?.gradient?.gradientStops).toEqual(
+    DEFAULT_TEST_GRADIENT.gradientStops
+  )
+  if (!snapshot?.gradient) throw new Error('Missing canonical gradient')
+  const handles = snapshot.gradient.gradientHandles
+  expect(handles[0].x).toBeCloseTo(0.5, 2)
+  expect(handles[1].x).toBeCloseTo(0.5, 2)
+  expect(handles[0].y).toBeCloseTo(expectedHandleY[0], 2)
+  expect(handles[1].y).toBeCloseTo(expectedHandleY[1], 2)
+  const span = expectedHandleY[1] - expectedHandleY[0]
+  expect(Math.abs(span)).toBeGreaterThan(0.05)
+  for (const sample of samples) {
+    const phase = Math.min(
+      1,
+      Math.max(0, (sample.localY - expectedHandleY[0]) / span)
+    )
+    expectColorNear(
+      sample,
+      {
+        r: 255 * Math.min(1, 2 - 2 * phase),
+        g: 255 * Math.max(0, 1 - 2 * phase),
+        b: 255 * Math.max(0, 1 - 2 * phase)
+      },
+      12
+    )
+  }
+}
+
 test.describe('Gradient Fill Render', () => {
+  test.afterEach(async ({ page }, testInfo) => {
+    await testInfo.attach('gradient-state', {
+      body: JSON.stringify(await getSelectedGradientSnapshot(page)),
+      contentType: 'application/json'
+    })
+    await page.screenshot({ path: testInfo.outputPath('gradient-canvas.png') })
+    await testInfo.attach('gradient-canvas', {
+      path: testInfo.outputPath('gradient-canvas.png'),
+      contentType: 'image/png'
+    })
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto(createTestDocumentURL())
     await waitForAppReady(page)
@@ -134,10 +193,11 @@ test.describe('Gradient Fill Render', () => {
     await page.waitForTimeout(200)
 
     const [top, bottom] = await sampleSelectedElementColors(page, [
-      { x: 0.25, y: 0.1 },
-      { x: 0.25, y: 0.9 }
+      { x: 0.15, y: 0.1 },
+      { x: 0.85, y: 0.9 }
     ])
 
+    await expectRampSamples(page, [top, bottom], [0, 1])
     expect(top.r).toBeGreaterThan(bottom.r)
     expect(top.g).toBeGreaterThan(bottom.g)
     expect(top.b).toBeGreaterThan(bottom.b)
@@ -147,11 +207,6 @@ test.describe('Gradient Fill Render', () => {
   test('keeps stop colors visually stable while dragging the start handle downward', async ({
     page
   }) => {
-    test.fail(
-      true,
-      'Known bug: slow canvas drag can still invert gradient stop colors during handle movement'
-    )
-
     await createRectangle(page, 0.3, 0.3)
     await openGradientFillEditor(page)
 
@@ -175,18 +230,20 @@ test.describe('Gradient Fill Render', () => {
       const currentY = startHandle.y + (clientDeltaY * step) / 90
       await page.mouse.move(startHandle.x, currentY, { steps: 1 })
       await page.waitForTimeout(8)
+      // The existing Feature treats sub-threshold motion as a click, not a drag.
+      const appliedFraction =
+        (clientDeltaY * step) / (90 * (before?.zoom ?? 1)) >
+        FEATURE_MOVEMENT_THRESHOLD.gradientHandle
+          ? (0.9 * step) / 90
+          : 0
 
+      // Stay outside the center-axis color-stop overlays throughout the drag.
       const [top, bottom] = await sampleSelectedElementColors(page, [
-        { x: 0.25, y: 0.1 },
-        { x: 0.25, y: 0.9 }
+        { x: 0.15, y: 0.1 },
+        { x: 0.85, y: 0.9 }
       ])
 
-      expect(top.r).toBeGreaterThan(220)
-      expect(top.g).toBeGreaterThan(180)
-      expect(top.b).toBeGreaterThan(180)
-      expect(bottom.g).toBeLessThan(60)
-      expect(bottom.b).toBeLessThan(60)
-      expect(getBrightness(top)).toBeGreaterThan(getBrightness(bottom) + 320)
+      await expectRampSamples(page, [top, bottom], [appliedFraction, 1])
     }
 
     await page.mouse.up()
@@ -196,11 +253,6 @@ test.describe('Gradient Fill Render', () => {
   test('renders reversed vertical handles as black-to-white from top to bottom', async ({
     page
   }) => {
-    test.fail(
-      true,
-      'Known bug: reversed gradient handles still render incorrectly on canvas'
-    )
-
     await createRectangle(page, 0.3, 0.3)
     await openGradientFillEditor(page)
 
@@ -214,24 +266,18 @@ test.describe('Gradient Fill Render', () => {
     await page.waitForTimeout(200)
 
     const [top, middle, bottom] = await sampleSelectedElementColors(page, [
-      { x: 0.25, y: 0.1 },
-      { x: 0.25, y: 0.5 },
-      { x: 0.25, y: 0.9 }
+      { x: 0.15, y: 0.1 },
+      { x: 0.15, y: 0.5 },
+      { x: 0.85, y: 0.9 }
     ])
 
-    expectColorNear(top, { r: 0, g: 0, b: 0 }, 28)
-    expectColorNear(middle, { r: 255, g: 0, b: 0 }, 36)
-    expectColorNear(bottom, { r: 255, g: 255, b: 255 }, 28)
+    await expectRampSamples(page, [top, middle, bottom], [1, 0])
+    expect(getBrightness(bottom)).toBeGreaterThan(getBrightness(top) + 500)
   })
 
   test('renders interpolated boundary colors when the start handle begins above the shape', async ({
     page
   }) => {
-    test.fail(
-      true,
-      'Known bug: out-of-bounds gradient handles still collapse stop colors on canvas'
-    )
-
     await createRectangle(page, 0.3, 0.3)
     await openGradientFillEditor(page)
 
@@ -245,24 +291,18 @@ test.describe('Gradient Fill Render', () => {
     await page.waitForTimeout(200)
 
     const [top, middle, bottom] = await sampleSelectedElementColors(page, [
-      { x: 0.25, y: 0.1 },
-      { x: 0.25, y: 0.5 },
-      { x: 0.25, y: 0.9 }
+      { x: 0.15, y: 0.1 },
+      { x: 0.15, y: 0.5 },
+      { x: 0.85, y: 0.9 }
     ])
 
-    expectColorNear(top, { r: 255, g: 153, b: 153 }, 34)
-    expectColorNear(middle, { r: 204, g: 0, b: 0 }, 36)
-    expectColorNear(bottom, { r: 0, g: 0, b: 0 }, 28)
+    await expectRampSamples(page, [top, middle, bottom], [-0.25, 1])
+    expect(getBrightness(top)).toBeGreaterThan(getBrightness(bottom) + 350)
   })
 
   test('keeps stop colors stable while dragging the start handle upward beyond the shape', async ({
     page
   }) => {
-    test.fail(
-      true,
-      'Known bug: dragging the top handle further upward can still invert gradient stop colors'
-    )
-
     await createRectangle(page, 0.3, 0.3)
     await openGradientFillEditor(page)
 
@@ -286,18 +326,20 @@ test.describe('Gradient Fill Render', () => {
       const currentY = startHandle.y - (clientDeltaY * step) / 90
       await page.mouse.move(startHandle.x, currentY, { steps: 1 })
       await page.waitForTimeout(8)
+      // The existing Feature treats sub-threshold motion as a click, not a drag.
+      const appliedFraction =
+        (clientDeltaY * step) / (90 * (before?.zoom ?? 1)) >
+        FEATURE_MOVEMENT_THRESHOLD.gradientHandle
+          ? (0.9 * step) / 90
+          : 0
 
+      // Stay outside the center-axis color-stop overlays throughout the drag.
       const [top, bottom] = await sampleSelectedElementColors(page, [
-        { x: 0.25, y: 0.1 },
-        { x: 0.25, y: 0.9 }
+        { x: 0.15, y: 0.1 },
+        { x: 0.85, y: 0.9 }
       ])
 
-      expect(top.r).toBeGreaterThan(220)
-      expect(top.g).toBeGreaterThan(180)
-      expect(top.b).toBeGreaterThan(180)
-      expect(bottom.g).toBeLessThan(60)
-      expect(bottom.b).toBeLessThan(60)
-      expect(getBrightness(top)).toBeGreaterThan(getBrightness(bottom) + 320)
+      await expectRampSamples(page, [top, bottom], [-appliedFraction, 1])
     }
 
     await page.mouse.up()
@@ -307,11 +349,6 @@ test.describe('Gradient Fill Render', () => {
   test('keeps stop colors stable while dragging the end handle downward beyond the shape', async ({
     page
   }) => {
-    test.fail(
-      true,
-      'Known bug: dragging the bottom handle further downward can still invert gradient stop colors'
-    )
-
     await createRectangle(page, 0.3, 0.3)
     await openGradientFillEditor(page)
 
@@ -335,18 +372,20 @@ test.describe('Gradient Fill Render', () => {
       const currentY = endHandle.y + (clientDeltaY * step) / 90
       await page.mouse.move(endHandle.x, currentY, { steps: 1 })
       await page.waitForTimeout(8)
+      // The existing Feature treats sub-threshold motion as a click, not a drag.
+      const appliedFraction =
+        (clientDeltaY * step) / (90 * (before?.zoom ?? 1)) >
+        FEATURE_MOVEMENT_THRESHOLD.gradientHandle
+          ? (0.9 * step) / 90
+          : 0
 
+      // Stay outside the center-axis color-stop overlays throughout the drag.
       const [top, bottom] = await sampleSelectedElementColors(page, [
-        { x: 0.25, y: 0.1 },
-        { x: 0.25, y: 0.9 }
+        { x: 0.15, y: 0.1 },
+        { x: 0.85, y: 0.9 }
       ])
 
-      expect(top.r).toBeGreaterThan(220)
-      expect(top.g).toBeGreaterThan(180)
-      expect(top.b).toBeGreaterThan(180)
-      expect(bottom.g).toBeLessThan(60)
-      expect(bottom.b).toBeLessThan(60)
-      expect(getBrightness(top)).toBeGreaterThan(getBrightness(bottom) + 320)
+      await expectRampSamples(page, [top, bottom], [0, 1 + appliedFraction])
     }
 
     await page.mouse.up()

@@ -94,6 +94,107 @@ const requiredAt = <T>(values: readonly T[], index: number): T => {
 }
 
 describe('Factory action-level shared publication', () => {
+  it.each(['commit', 'rollback', 'published-rollback'] as const)(
+    'preserves dependent deferred-before-immediate writes through %s and replay',
+    async (settlement) => {
+      const { factory, publications, projected } = createHarness()
+      factory.registerTransactionReplayHandler(
+        EventTypes.UPDATE_PROPERTY,
+        () => true
+      )
+      const values = () =>
+        publications
+          .splice(0)
+          .flatMap(publicationDeliveries)
+          .map(({ payload }) => (payload as { after: number }).after)
+      factory.startTransaction()
+      update(factory, 'same-element', 1)
+      expect(projected).toEqual([])
+      const handle = update(factory, 'same-element', 2, {
+        sharedDelivery: 'immediate'
+      })
+      if (settlement === 'published-rollback') {
+        handle?.setDeliverySequence({
+          mode: 'atomic',
+          batchPublications: false,
+          slices: []
+        })
+      }
+      expect(
+        projected.map((value) => (value as { after: number }).after)
+      ).toEqual([1, 2])
+      update(factory, 'same-element', 3)
+      update(factory, 'same-element', 4, { sharedDelivery: 'immediate' })
+      if (settlement !== 'commit') {
+        await Promise.resolve()
+        factory.endTransaction({ outcome: 'rollback' })
+        expect(values()).toEqual(
+          settlement === 'published-rollback' ? [1, 2, 3, 4, 3, 2, 1, 0] : []
+        )
+        expect(
+          projected.map((value) => (value as { after: number }).after)
+        ).toEqual([1, 2, 3, 4, 3, 2, 1, 0])
+        expect(factory.getUndoHistoryDepth()).toBe(0)
+      } else {
+        factory.endTransaction()
+        expect(values()).toEqual([1, 2, 3, 4])
+        factory.undo()
+        expect(values()).toEqual([3, 2, 1, 0])
+        factory.redo()
+        expect(values()).toEqual([1, 2, 3, 4])
+      }
+      factory.startTransaction()
+      update(factory, 'next-transaction', 1)
+      factory.endTransaction()
+      expect(values()).toEqual([1])
+    }
+  )
+
+  it('restores the delivered prefix when a later immediate channel rejects before append', () => {
+    const { factory, projected, publications } = createHarness()
+    const failure = new Error('Rejected immediate append')
+    const failing = new LocalSharedDataChannel()
+    failing.appendBatch = () => {
+      throw failure
+    }
+    factory.registerSharedDataChannel(SharedDataChannelNames.PROPS, failing)
+    const replayed: number[] = []
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      (event) => {
+        replayed.push((event as { payload: { after: number } }).payload.after)
+        return true
+      }
+    )
+    factory.startTransaction()
+    update(factory, 'deferred', 1)
+    const event = createUpdateEvent('immediate', 2, {
+      sharedDelivery: 'immediate'
+    })
+    expect(() =>
+      factory.updateTransaction({
+        ...event,
+        options: { ...event.options, shared: SharedDataChannelNames.PROPS }
+      })
+    ).toThrow()
+    factory.endTransaction({ outcome: 'rollback' })
+    expect(replayed).toEqual([1, 0])
+    expect(
+      projected.map((value) => (value as { after: number }).after)
+    ).toEqual([1, 0])
+    expect(publications).toEqual([])
+    expect(factory.getUndoHistoryDepth()).toBe(0)
+    expect(factory.isTransactionBoundaryIdle()).toBe(true)
+    factory.startTransaction()
+    update(factory, 'recovered', 1, { sharedDelivery: 'immediate' })
+    factory.endTransaction()
+    expect(
+      publications
+        .flatMap(publicationDeliveries)
+        .map(({ payload }) => (payload as { id: string }).id)
+    ).toEqual(['recovered'])
+  })
+
   it('gives fresh runtime producers distinct publication IDs despite equal local counters', () => {
     const first = createHarness(),
       second = createHarness()
@@ -1814,6 +1915,75 @@ describe('Factory action-level shared publication', () => {
     }
   })
 
+  it.each([false, true])(
+    'keeps separate synchronous owner handoffs complete through history replay (grouped=%s)',
+    async (grouped) => {
+      const { factory, publications } = createHarness()
+      factory.registerSharedDataChannel(
+        SharedDataChannelNames.PROPS,
+        new LocalSharedDataChannel()
+      )
+      factory.registerTransactionReplayHandler(
+        EventTypes.UPDATE_PROPERTY,
+        () => true
+      )
+      const group = grouped ? factory.startHistoryGroup() : undefined
+      if (!group) factory.startTransaction()
+      for (let turn = 0; turn < 2; turn++) {
+        const write = () => {
+          factory.updateTransactionBatch([
+            {
+              ...createUpdateEvent(`props-${turn}`, 1),
+              options: {
+                shared: SharedDataChannelNames.PROPS,
+                sharedDelivery: 'immediate'
+              }
+            }
+          ])
+          update(factory, `scene-${turn}`, 2, { sharedDelivery: 'immediate' })
+        }
+        if (group) factory.updateHistoryGroup(group, write)
+        else write()
+        await Promise.resolve()
+      }
+      if (group) factory.endHistoryGroup(group)
+      else factory.endTransaction()
+      expect(factory.getUndoHistoryDepth()).toBe(1)
+      const assertBoundaries = (direction: 'forward' | 'inverse') => {
+        const slices = publications.flatMap(({ slices }) => slices)
+        expect(slices).toHaveLength(2)
+        expect(
+          slices.map(({ batches }) => batches.map(({ channel }) => channel))
+        ).toEqual(
+          Array.from({ length: 2 }, () =>
+            direction === 'forward'
+              ? [
+                  SharedDataChannelNames.PROPS,
+                  SharedDataChannelNames.SCENE_TREE
+                ]
+              : [
+                  SharedDataChannelNames.SCENE_TREE,
+                  SharedDataChannelNames.PROPS
+                ]
+          )
+        )
+        expect(
+          slices.flatMap(({ batches }) =>
+            batches.flatMap(({ deliveries }) => deliveries)
+          )
+        ).toHaveLength(4)
+      }
+      assertBoundaries('forward')
+      publications.length = 0
+      await factory.undo()
+      assertBoundaries('inverse')
+      publications.length = 0
+      await factory.redo()
+      assertBoundaries('forward')
+      factory.transact.reset()
+    }
+  )
+
   it('keeps one immediate canonical owner handoff in one publication slice', async () => {
     const { factory, publications } = createHarness()
     factory.registerSharedDataChannel(
@@ -2221,58 +2391,37 @@ describe('Factory action-level shared publication', () => {
     await Promise.resolve()
     factory.endTransaction()
 
-    expect(publications).toHaveLength(3)
+    const effects = () =>
+      publications.splice(0).map((publication) =>
+        publicationDeliveries(publication).map(({ payload }) => {
+          const value = payload as { id: string; after: number }
+          return [value.id, value.after]
+        })
+      )
     expect(publications.every(({ origin }) => origin === 'action')).toBe(true)
-    publications.length = 0
-
-    factory.undo()
-
-    expect(publications).toHaveLength(3)
-    expect(publications.every(({ origin }) => origin === 'undo')).toBe(true)
-    expect(publications.map(publicationDeliveries)).toEqual([
+    expect(effects()).toEqual([
+      [['element-a', 1]],
       [
-        expect.objectContaining({
-          payload: expect.objectContaining({
-            id: 'transaction-end-between-immediate-sources',
-            after: 0
-          })
-        })
-      ],
-      [
-        expect.objectContaining({
-          payload: expect.objectContaining({ id: 'element-a', after: 1 })
-        })
-      ],
-      [
-        expect.objectContaining({
-          payload: expect.objectContaining({ id: 'element-a', after: 0 })
-        })
+        ['transaction-end-between-immediate-sources', 1],
+        ['element-a', 2]
       ]
     ])
-    publications.length = 0
-
+    factory.undo()
+    expect(publications.every(({ origin }) => origin === 'undo')).toBe(true)
+    expect(effects()).toEqual([
+      [
+        ['element-a', 1],
+        ['transaction-end-between-immediate-sources', 0]
+      ],
+      [['element-a', 0]]
+    ])
     factory.redo()
-
-    expect(publications).toHaveLength(3)
     expect(publications.every(({ origin }) => origin === 'redo')).toBe(true)
-    expect(publications.map(publicationDeliveries)).toEqual([
+    expect(effects()).toEqual([
+      [['element-a', 1]],
       [
-        expect.objectContaining({
-          payload: expect.objectContaining({ id: 'element-a', after: 1 })
-        })
-      ],
-      [
-        expect.objectContaining({
-          payload: expect.objectContaining({ id: 'element-a', after: 2 })
-        })
-      ],
-      [
-        expect.objectContaining({
-          payload: expect.objectContaining({
-            id: 'transaction-end-between-immediate-sources',
-            after: 1
-          })
-        })
+        ['transaction-end-between-immediate-sources', 1],
+        ['element-a', 2]
       ]
     ])
   })
@@ -2440,6 +2589,97 @@ describe('Factory action-level shared publication', () => {
 
     expect(publications).toHaveLength(1)
     expect(publications.every(({ origin }) => origin === 'undo')).toBe(true)
+  })
+
+  it('compensates published no-op history siblings and retries without restoring unchanged local state', async () => {
+    const { factory, publications } = createHarness()
+    const local = new Map([
+      ['first', 1],
+      ['second', 1],
+      ['unchanged', 0]
+    ])
+    const delivered = new Map<string, number>()
+    factory.subscribeToSharedPublication((publication) => {
+      for (const { payload } of publicationDeliveries(publication)) {
+        const { id, after } = payload as { id: string; after: number }
+        delivered.set(id, after)
+      }
+    })
+    let fail = true
+    const restored: string[] = []
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      (event, mode) => {
+        const { id, after } = (
+          event as AllEvent & { payload: { id: string; after: number } }
+        ).payload
+        if (fail && mode === 'undo' && id === 'first')
+          throw new Error('Later owner refused replay')
+        if (local.get(id) === after) return false
+        local.set(id, after)
+        if (mode === 'rollback') restored.push(id)
+        return true
+      }
+    )
+    factory.startTransaction()
+    for (const id of ['first', 'second', 'unchanged']) {
+      const handle = update(factory, id, 1, { sharedDelivery: 'immediate' })
+      if (id === 'first')
+        handle?.setDeliverySequence({
+          mode: 'atomic',
+          batchPublications: false,
+          slices: []
+        })
+      await Promise.resolve()
+    }
+    factory.endTransaction()
+    const priorLocal = [...local]
+    const priorDelivered = [...delivered]
+    expect(delivered.get('unchanged')).toBe(1)
+    publications.length = 0
+
+    expect(() => factory.undo()).toThrow('Transaction rollback failed')
+    expect([...local]).toEqual(priorLocal)
+    expect([...delivered]).toEqual(priorDelivered)
+    expect(restored).toEqual(['second'])
+    expect(publications.map(({ origin }) => origin)).toEqual([
+      'undo',
+      'undo',
+      'rollback-compensation',
+      'rollback-compensation'
+    ])
+    const forward = publications.filter(({ origin }) => origin === 'undo')
+    const compensations = publications.filter(
+      ({ origin }) => origin === 'rollback-compensation'
+    )
+    expect(
+      compensations.map(
+        ({ compensatesPublicationId }) => compensatesPublicationId
+      )
+    ).toEqual(forward.map(({ publicationId }) => publicationId).reverse())
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+
+    fail = false
+    publications.length = 0
+    factory.undo()
+    expect([...local.values()]).toEqual([0, 0, 0])
+    expect([...delivered]).toEqual([...local])
+    expect(publications.map(({ origin }) => origin)).toEqual([
+      'undo',
+      'undo',
+      'undo'
+    ])
+    expect(factory.getUndoHistoryDepth()).toBe(0)
+    publications.length = 0
+    factory.redo()
+    expect([...local.values()]).toEqual([1, 1, 1])
+    expect([...delivered]).toEqual([...local])
+    expect(publications.map(({ origin }) => origin)).toEqual([
+      'redo',
+      'redo',
+      'redo'
+    ])
+    expect(factory.getUndoHistoryDepth()).toBe(1)
   })
 
   it('isolates publication subscribers from commit and from each other', () => {

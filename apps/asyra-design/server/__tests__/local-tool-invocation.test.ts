@@ -1,9 +1,16 @@
 import { toolSemantics } from '../../src/ai/tool-contract'
-import { createAiToolContract } from '@asyra/ai-agent-runtime'
+import {
+  createAiToolContract,
+  inspectAiToolResult,
+  admitAiRecipe
+} from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from '../operation-input-schema'
 import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
   localToolOutcome,
+  localToolFailureReply,
+  localToolResultSchema,
   invokeLocalTool,
   LocalToolInputError,
   observeLocalToolExecution
@@ -14,6 +21,9 @@ import { createLocalReferenceTools } from '../local-reference-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { AiActionNames } from '../../src/constants/ai-actions'
+import { AiDesignToolIds } from '../../src/constants/ai-design'
+import { AiImageToolIds, AiReferenceToolIds } from '../ai-domain-prompt'
+import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 
 const signal = () => new AbortController().signal
@@ -23,6 +33,40 @@ const definition = {
   name: 'registered-operation',
   inputSchema: { type: 'object', additionalProperties: false }
 }
+
+it('uses the owner outcome once and avoids failure diagnostics for successful domain results', async () => {
+  const resultOutcome = vi.fn(() => ({
+    status: 'success' as const,
+    settlement: 'completed' as const
+  }))
+  const executionEvidence = vi.fn()
+  const reply = await invokeLocalTool(
+    {
+      call: async () => JSON.stringify({ status: 'unknown', available: false }),
+      resultOutcome
+    },
+    definition,
+    {},
+    signal(),
+    executionEvidence
+  )
+  expect(reply.success).toBe(true)
+  expect(resultOutcome).toHaveBeenCalledOnce()
+  expect(executionEvidence).not.toHaveBeenCalled()
+})
+
+it('reuses validation only for the exact unchanged invocation reply', async () => {
+  const reply = await invokeLocalTool(
+    { call: async () => JSON.stringify({ ready: true }) },
+    definition,
+    {},
+    signal()
+  )
+  expect(localToolResultSchema(reply)).toEqual(definition.outputSchema)
+  expect(localToolResultSchema({ ...reply })).toBeUndefined()
+  reply.text = JSON.stringify({ ready: false })
+  expect(localToolResultSchema(reply)).toBeUndefined()
+})
 
 it('preserves an unknown child result and settlement through the native wrapper', async () => {
   const result = {
@@ -124,11 +168,16 @@ it('preflights every advertised App tool family before its owner executes', asyn
   const operations = createLocalOperationTools(
     actions,
     {
+      ...designs,
       modelActions: (input) => designs.modelActions(images.modelActions(input)),
       resolveBatch: (input) => designs.resolveBatch(images.resolveBatch(input)),
       resolveTargets: designs.resolveTargets
     },
-    vi.fn()
+    vi.fn(),
+    {
+      referenceImages: images.referenceImages,
+      validateReferences: images.validateReferences
+    }
   )
   expect(
     operations.definitions.find(
@@ -146,10 +195,32 @@ it('preflights every advertised App tool family before its owner executes', asyn
     images,
     operations,
     createLocalReferenceTools(images.addReference),
-    createLocalDesignWorkflow(designs, operations)
+    createLocalDesignWorkflow(designs, operations),
+    createLocalToolLibraryTools(
+      () => {
+        throw new Error('Rejected controls must not resolve the library')
+      },
+      () => ({})
+    )
   ]
+  const browserNames = new Set(actions.map((action) => action.name))
+  const nativeNames = new Set(
+    owners
+      .flatMap((owner) => owner.definitions.map((tool) => tool.name))
+      .filter((name) => !browserNames.has(name))
+  )
+  expect([...nativeNames].sort()).toEqual(
+    [
+      ...Object.values(AiDesignToolIds),
+      ...Object.values(AiImageToolIds),
+      AiReferenceToolIds.IMPORT_REFERENCE_IMAGE
+    ].sort()
+  )
   for (const owner of owners) {
-    const call = vi.spyOn(owner, 'call')
+    const call = vi.spyOn(
+      owner,
+      'callInternal' in owner ? 'callInternal' : 'call'
+    )
     for (const tool of owner.definitions) {
       expect(() => createAiToolContract(tool), tool.name).not.toThrow()
       const reply = await invokeLocalTool(owner, tool, null, signal())
@@ -569,7 +640,7 @@ it('rejects missing retained identities at each preparation, image and workflow 
   ]
   for (const owner of owners) {
     const call = vi
-      .spyOn(owner, 'call')
+      .spyOn(owner, 'callInternal' in owner ? 'callInternal' : 'call')
       .mockResolvedValue(
         JSON.stringify({ available: true, status: 'complete' })
       )
@@ -623,7 +694,7 @@ it('distinguishes usable discovery pages from incomplete mutations through publi
   expect(next.success).toBe(true)
   expect(JSON.parse(next.text).complete).toBe(true)
   const call = vi
-    .spyOn(operations, 'call')
+    .spyOn(operations, 'callInternal')
     .mockResolvedValue(JSON.stringify({ ...page, next: undefined }))
   expect(
     JSON.parse(
@@ -744,7 +815,11 @@ it.each([false, true])(
       },
       {
         ...definition,
-        outputSchema: { type: 'object', required: ['requiredReceipt'] }
+        ...toolSemantics(
+          { type: 'object', required: ['requiredReceipt'] },
+          'prepare',
+          ['request-artifacts']
+        )
       },
       {},
       signal()
@@ -758,3 +833,101 @@ it.each([false, true])(
     expect(call).toHaveBeenCalledOnce()
   }
 )
+
+it('exposes only successful domain fields to recipe proof and keeps partial evidence separate', () => {
+  const schema = {
+    type: 'object',
+    properties: { count: { type: 'integer' } },
+    required: ['count'],
+    additionalProperties: true
+  }
+  const contract = createAiToolContract({
+    ...definition,
+    ...toolSemantics(schema, 'mutation', ['document']),
+    composition: 'allowed'
+  })
+  expect(contract.outputSchema).toEqual(schema)
+  const interrupted = {
+    available: false,
+    recoverable: true,
+    code: 'INTERRUPTED',
+    message: 'Stopped after one write',
+    settlement: 'partial',
+    executionResult: { actionResults: [{}] }
+  }
+  expect(
+    inspectAiToolResult(contract, interrupted, {
+      outcome: { status: 'partial', settlement: 'partial' },
+      validate: operationInputIssue
+    }).status
+  ).toBe('partial')
+  expect(
+    inspectAiToolResult(
+      contract,
+      { count: 1, status: 'partial' },
+      {
+        outcome: { status: 'partial', settlement: 'partial' },
+        validate: operationInputIssue
+      }
+    ).status
+  ).toBe('partial')
+  expect(
+    inspectAiToolResult(contract, interrupted, {
+      outcome: { status: 'success', settlement: 'completed' },
+      validate: operationInputIssue
+    })
+  ).toMatchObject({ status: 'invalid', settlement: 'completed' })
+  const admitted = admitAiRecipe(
+    {
+      format: 1,
+      name: 'count-result',
+      revision: 1,
+      description: 'Return the count from the registered result.',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        required: [],
+        additionalProperties: false
+      },
+      outputSchema: { type: 'integer' },
+      steps: [
+        {
+          id: 'write',
+          tool: contract.name,
+          revision: contract.revision,
+          input: { kind: 'object', fields: {} }
+        }
+      ],
+      output: { kind: 'step', step: 'write', path: '/count' }
+    },
+    {
+      resolve: () => contract,
+      validate: operationInputIssue,
+      limits: {
+        bytes: 10000,
+        steps: 4,
+        bindings: 20,
+        bindingDepth: 8,
+        issues: 4
+      }
+    }
+  )
+  expect(admitted).toMatchObject({ ok: true })
+})
+
+it('preserves an owner-declared terminal failure without changing retryable failures', () => {
+  const terminal = JSON.parse(
+    localToolFailureReply('Stop this request.', 'MUTATION_SCOPE_UNAVAILABLE', {
+      recoverable: false,
+      settlement: 'not-started'
+    }).text
+  )
+  expect(terminal).toMatchObject({
+    recoverable: false,
+    toolOutcome: { status: 'failed', settlement: 'not-started' }
+  })
+  const retryable = JSON.parse(
+    localToolFailureReply('Correct the input.', 'INVALID_INPUT').text
+  )
+  expect(retryable.recoverable).toBe(true)
+})

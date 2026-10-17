@@ -218,6 +218,93 @@ describe('Factory flow proof history group', () => {
     expect(factory.getUndoHistoryDepth()).toBe(1)
   })
 
+  it('synchronous immediate boundaries', async () => {
+    const factory = new Factory()
+    const channels = [
+      SharedDataChannelNames.PROPS,
+      SharedDataChannelNames.SCENE_TREE
+    ]
+    for (const channel of channels)
+      factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      () => true
+    )
+    const publications: SharedPublication[] = []
+    factory.subscribeToSharedPublication((value) => publications.push(value))
+    factory.startTransaction()
+    for (const [index, channel] of channels.entries()) {
+      const handle = factory.updateTransaction({
+        type: EventTypes.UPDATE_TRANSACTION,
+        eventName: EventTypes.UPDATE_PROPERTY,
+        payload: { id: `entry-${index}`, before: 0, after: 1 },
+        options: { shared: channel, sharedDelivery: 'immediate' }
+      })
+      if (index === 0)
+        handle?.setDeliverySequence({
+          mode: 'atomic',
+          batchPublications: false,
+          slices: []
+        })
+    }
+    await Promise.resolve()
+    expect(publications).toHaveLength(1)
+    expect(
+      publications[0]?.slices.map(({ batches }) =>
+        batches.map(({ channel }) => channel)
+      )
+    ).toEqual([channels])
+    factory.endTransaction({ outcome: 'rollback' })
+    expect(publications).toHaveLength(2)
+    expect(publications[1]?.origin).toBe('rollback-compensation')
+    expect(
+      publications[1]?.slices.map(({ batches }) =>
+        batches.map(({ channel }) => channel)
+      )
+    ).toEqual([[...channels].reverse()])
+    expect(factory.getUndoHistoryDepth()).toBe(0)
+    factory.transact.reset()
+  })
+
+  it('atomic member boundaries', () => {
+    const factory = new Factory()
+    const props = SharedDataChannelNames.PROPS
+    const scene = SharedDataChannelNames.SCENE_TREE
+    for (const channel of [props, scene])
+      factory.registerSharedDataChannel(channel, new LocalSharedDataChannel())
+    factory.registerTransactionReplayHandler(
+      EventTypes.UPDATE_PROPERTY,
+      () => true
+    )
+    const publications: SharedPublication[] = []
+    factory.subscribeToSharedPublication((value) => publications.push(value))
+    const group = factory.startHistoryGroup()
+    factory.updateHistoryGroup(group, () => {
+      for (const [index, channel] of [props, scene, props].entries())
+        factory.updateTransaction({
+          type: EventTypes.UPDATE_TRANSACTION,
+          eventName: EventTypes.UPDATE_PROPERTY,
+          payload: { id: `entry-${index}`, before: 0, after: 1 },
+          options: { shared: channel }
+        })
+    })
+    factory.endHistoryGroup(group)
+    publications.length = 0
+    factory.undo()
+    expect(
+      publications.flatMap(({ slices }) =>
+        slices.map(({ batches }) => batches.map(({ channel }) => channel))
+      )
+    ).toEqual([[props, scene, props]])
+    publications.length = 0
+    factory.redo()
+    expect(
+      publications.flatMap(({ slices }) =>
+        slices.map(({ batches }) => batches.map(({ channel }) => channel))
+      )
+    ).toEqual([[props, scene, props]])
+  })
+
   it('pending and ordered replay', () => {
     const factory = new Factory()
     let value = 0

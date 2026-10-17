@@ -1,3 +1,6 @@
+import { createDesignCheckResults } from './design-check-results'
+import { createHash } from 'node:crypto'
+import type { LocalToolOwnership } from './local-tool-leases'
 import {
   isDesignFill,
   isDesignFillTemplate,
@@ -713,8 +716,10 @@ export const prepareDesignAsync = (
 
 export const createDesignPreparationSession = (
   compile: typeof prepareDesign = prepareDesign,
-  compileAsync: typeof prepareDesignAsync = prepareDesignAsync
+  compileAsync: typeof prepareDesignAsync = prepareDesignAsync,
+  ownership?: LocalToolOwnership
 ) => {
+  const checkResults = createDesignCheckResults()
   const artifacts = new Map<string, PreparedDesign>()
   const recipes = new Map<string, unknown>()
   const targetSets = new Map<
@@ -727,6 +732,17 @@ export const createDesignPreparationSession = (
     string,
     ReturnType<typeof createDesignTargetIndex>
   >()
+  const removeArtifact = (artifactId: string) => {
+    targetIndexes.delete(artifactId)
+    recipes.delete(artifactId)
+    for (const [id, selected] of targetSets) {
+      if (selected.artifactId === artifactId) {
+        targetBytes -= selected.bytes
+        targetSets.delete(id)
+      }
+    }
+    return artifacts.delete(artifactId)
+  }
   const publish = (
     artifactId: string,
     result: AnalyzedDesign,
@@ -738,6 +754,28 @@ export const createDesignPreparationSession = (
     const { review, layoutReview, sharedFillIds, ...compiled } = result
     const artifact = freeze(compiled)
     artifacts.set(artifactId, artifact)
+    try {
+      ownership?.publish(
+        artifactId,
+        () => {
+          removeArtifact(artifactId)
+        },
+        () => {
+          if (!artifacts.has(artifactId))
+            throw new Error('Design artifact is unavailable in this request')
+        }
+      )
+    } catch (error) {
+      removeArtifact(artifactId)
+      throw error
+    }
+    checkResults.recordPreparedSource({
+      artifactId,
+      recipeRevision: createHash('sha256')
+        .update(JSON.stringify(recipes.get(artifactId)))
+        .digest('hex'),
+      findings: artifact.findings
+    })
     return {
       artifactId,
       ...(reuse ? { reuse } : {}),
@@ -755,7 +793,9 @@ export const createDesignPreparationSession = (
     }
   }
   return {
+    checkResults,
     recipe(artifactId: string) {
+      ownership?.assertOwned(artifactId)
       const artifact = artifacts.get(artifactId)
       if (!artifact || !recipes.has(artifactId))
         throw new Error(
@@ -771,6 +811,7 @@ export const createDesignPreparationSession = (
       selections: readonly { artifactId: string; ids: readonly string[] }[]
     ) {
       const prepared = selections.map(({ artifactId, ids }) => {
+        ownership?.assertOwned(artifactId)
         if (!artifacts.has(artifactId) || ids.length === 0)
           throw new Error(
             'Target artifact or selected identities are unavailable.'
@@ -792,17 +833,27 @@ export const createDesignPreparationSession = (
         )
       const receipts = prepared.map((item) => {
         const targetSetId = randomUUID()
-        targetSets.set(targetSetId, item)
         return {
           artifactId: item.artifactId,
           targetSetId,
           count: item.ids.length
         }
       })
+      ownership?.publishAliases(
+        receipts.map((item) => ({
+          handle: item.targetSetId,
+          ownerHandle: item.artifactId
+        }))
+      )
+      receipts.forEach((receipt, index) =>
+        targetSets.set(receipt.targetSetId, prepared[index])
+      )
       targetBytes += additionalBytes
       return receipts
     },
     resolveTargetSet(artifactId: string, targetSetId: string): string[] {
+      ownership?.assertOwned(artifactId)
+      ownership?.assertOwned(targetSetId)
       const selected = targetSets.get(targetSetId)
       if (
         !selected ||
@@ -814,8 +865,37 @@ export const createDesignPreparationSession = (
         )
       return [...selected.ids]
     },
-    retainRejectedDraft: rejectedDrafts.retain,
-    repairDraft: rejectedDrafts.repair,
+    retainRejectedDraft(input: unknown) {
+      const handle = rejectedDrafts.retain(input)
+      if (!handle) return
+      try {
+        ownership?.publish(
+          handle,
+          () => {
+            rejectedDrafts.release(handle)
+          },
+          () => {
+            if (!rejectedDrafts.describe(handle))
+              throw new Error('Rejected source is unavailable.')
+          },
+          'request'
+        )
+      } catch (error) {
+        rejectedDrafts.release(handle)
+        throw error
+      }
+      return handle
+    },
+    repairDraft(input: unknown) {
+      if (
+        input &&
+        typeof input === 'object' &&
+        'draftId' in input &&
+        typeof input.draftId === 'string'
+      )
+        ownership?.assertOwned(input.draftId)
+      return rejectedDrafts.repair(input)
+    },
     describeRejectedDraft: rejectedDrafts.describe,
     async prepareAsync(input: unknown, signal: AbortSignal) {
       signal.throwIfAborted()
@@ -865,23 +945,19 @@ export const createDesignPreparationSession = (
     release(artifactIds: readonly string[]) {
       const releasedArtifactIds: string[] = [],
         missingArtifactIds: string[] = []
-      for (const artifactId of new Set(artifactIds)) {
-        targetIndexes.delete(artifactId)
-        recipes.delete(artifactId)
-        for (const [id, selected] of targetSets) {
-          if (selected.artifactId === artifactId) {
-            targetBytes -= selected.bytes
-            targetSets.delete(id)
-          }
-        }
-        const result = artifacts.delete(artifactId)
+      const unique = [...new Set(artifactIds)]
+      for (const artifactId of unique) ownership?.assertRelease(artifactId)
+      for (const artifactId of unique) {
+        const result = removeArtifact(artifactId)
           ? releasedArtifactIds
           : missingArtifactIds
+        ownership?.retire(artifactId)
         result.push(artifactId)
       }
       return { releasedArtifactIds, missingArtifactIds }
     },
     selectKeys(artifactId: string, prefix?: string): string[] {
+      ownership?.assertOwned(artifactId)
       const artifact = artifacts.get(artifactId)
       if (!artifact)
         throw new Error('Design artifact is unavailable in this request')
@@ -893,6 +969,7 @@ export const createDesignPreparationSession = (
       return index.keys(prefix)
     },
     resolve(artifactId: string): PreparedDesign {
+      ownership?.assertOwned(artifactId)
       const artifact = artifacts.get(artifactId)
       if (!artifact)
         throw new Error('Design artifact is unavailable in this request')

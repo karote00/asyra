@@ -1,13 +1,19 @@
+import { createPrescribedPositionAction } from './prescribed-position-action'
+import { createDocumentExport } from './document-export'
 import {
   createAiToolContract,
   createAiToolMiddleware,
-  createAiInvoker
+  createAiInvoker,
+  AiProviderError
 } from '@asyra/ai-agent-runtime'
 import { operationInputIssue } from './tool-schema'
 import { designActionOutcome } from './tool-contract'
 import core from '../contexts'
 import { createRetainedDesignContext } from '../common-apis/retained-design-context'
-import { observeDesignChanges } from '../common-apis/design-review'
+import {
+  createDesignReviewer,
+  observeDesignChanges
+} from '../common-apis/design-review'
 import { createRetainedFillAction } from './retained-fill-action'
 import { getActiveCollaborationHandle } from '../collaboration/lifecycle'
 import { recordActionFailure } from './action-failure'
@@ -24,9 +30,14 @@ import { createDesignReviewAction } from './review-action'
 import { createArrangementAction } from './arrangement-action'
 import { createOrganizationAction } from './organization-action'
 import { createDesignEditAction } from './design-edit-action'
-import { createDocumentContextAction } from './context-action'
+import {
+  createDocumentContextAction,
+  createRegionTargetsAction,
+  createDocumentContextReleaseAction
+} from './context-action'
 import {
   createAiInspectionAction,
+  createDesignAttachmentAction,
   createInspectionValidationAction
 } from './inspection'
 import { createInspectionEvidence } from '../common-apis/inspection-evidence'
@@ -97,41 +108,78 @@ export const createAiRuntimeInput = (
   options: CreateAiRuntimeInputOptions
 ): CreateAiAgentRuntimeInput => {
   const evidence = createInspectionEvidence()
+  const reviewer = createDesignReviewer(undefined, undefined, true)
   const queries = createRetainedDesignContext(core, observeDesignChanges)
+  const documentExports = createDocumentExport()
   const transactionRunner =
     options.transactionRunner ?? createAiTransactionRunner()
+  const actionDefinitions = [
+    ...documentExports.actions,
+    ...createBasicApiActions(undefined, undefined, queries),
+    ...createAiActions(undefined, {
+      confirmPersistence: async (signal) => {
+        const session = getActiveCollaborationHandle()
+        if (!session) return { status: 'local-only' }
+        return {
+          status: 'durable',
+          ...(await session.confirmPersistence(signal))
+        }
+      }
+    }),
+    createPreparedDesignAction(undefined, undefined, undefined, evidence),
+    createDocumentContextAction(queries.read),
+    createRegionTargetsAction(queries.read),
+    createDocumentContextReleaseAction(queries.read),
+    createRetainedFillAction(queries),
+    createDesignEditAction(),
+    createOrganizationAction(),
+    createArrangementAction(),
+    createDesignReviewAction(reviewer, evidence),
+    createPrescribedPositionAction(evidence),
+    createAiInspectionAction(undefined, evidence),
+    createDesignAttachmentAction(evidence),
+    createInspectionValidationAction(evidence)
+  ].map((definition) => observeAiAction(definition))
+  const contracts = new Map(
+    actionDefinitions.map((definition) => [
+      definition.name,
+      createAiToolContract(definition)
+    ])
+  )
   return {
     createRecordingSink: options.createRecordingSink,
-    actionDefinitions: [
-      ...createBasicApiActions(),
-      ...createAiActions(undefined, {
-        confirmPersistence: async (signal) => {
-          const session = getActiveCollaborationHandle()
-          if (!session) return { status: 'local-only' }
-          return {
-            status: 'durable',
-            ...(await session.confirmPersistence(signal))
-          }
-        }
-      }),
-      createPreparedDesignAction(),
-      createDocumentContextAction(queries.read),
-      createRetainedFillAction(queries),
-      createDesignEditAction(),
-      createOrganizationAction(),
-      createArrangementAction(),
-      createDesignReviewAction(undefined, evidence),
-      createAiInspectionAction(undefined, evidence),
-      createInspectionValidationAction(evidence)
-    ].map((definition) => observeAiAction(definition)),
+    actionDefinitions,
     confirmationHandler: createAiConfirmationHandler(
       options.requestConfirmation
     ),
     contextProvider: createAiContextProvider(),
     options: { ...options.runtimeOptions, failurePolicy: 'preserve-progress' },
-    ownedResources: [...(options.ownedResources ?? []), evidence, queries],
+    ownedResources: [
+      ...(options.ownedResources ?? []),
+      evidence,
+      queries,
+      reviewer,
+      documentExports
+    ],
     permissionPolicy: createAiPermissionPolicy(options.permissionRules),
-    provider: options.provider,
+    provider: {
+      async requestActionBatch(input, requestOptions) {
+        const actions = input.actions.map((description) => {
+          const contract = contracts.get(description.name)
+          if (!contract)
+            throw new AiProviderError({
+              code: 'AI_PROVIDER_INVALID_INPUT',
+              message: 'An admitted action has no canonical App contract.'
+            })
+          return contract
+        })
+        return options.provider.requestActionBatch(
+          { ...input, actions },
+          requestOptions
+        )
+      },
+      dispose: () => options.provider.dispose?.()
+    },
     transactionRunner: {
       run: async (label, execute, request) => {
         try {

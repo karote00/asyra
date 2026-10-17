@@ -267,14 +267,10 @@ current selection. Conversation history is not stored across App reloads.
 App UI labels and hints use English. AI responses follow the request and personal
 language preferences; the App does not impose a response language.
 
-For an explicit live subscription check, run from this App directory:
-
-```bash
-E2E_LOCAL_AI=true yarn test:e2e e2e/local-ai-provider.spec.ts --workers=1
-```
-
-This consumes your subscription allowance and verifies real text drawing and
-uploaded-image vectorization.
+Formal tests use deterministic provider transcripts and actual tool, browser and
+storage owners. They never request a real model turn or judge generated content.
+Live model evaluation is a separate, explicitly requested manual activity; its
+observations are not unit, integration or E2E pass/fail gates.
 
 ### Use an HTTP model adapter
 

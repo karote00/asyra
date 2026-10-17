@@ -1,10 +1,17 @@
 export const AiActionNames = Object.freeze({
+  EXPORT_DOCUMENT: 'export_document',
+  DOWNLOAD_DOCUMENT_EXPORT: 'download_document_export',
+  RELEASE_DOCUMENT_EXPORT: 'release_document_export',
   APPLY_PREPARED_DESIGN: 'apply_prepared_design',
   REVIEW_DESIGN: 'review_design',
+  APPLY_PRESCRIBED_POSITIONS: 'apply_prescribed_positions',
   ARRANGE_DESIGN: 'arrange_design',
   ORGANIZE_DESIGN: 'organize_design',
   UPDATE_DESIGN_ELEMENT: 'update_design_element',
   READ_DESIGN_CONTEXT: 'read_design_context',
+  RESOLVE_DESIGN_TARGETS: 'resolve_design_targets',
+  READ_DESIGN_ATTACHMENT: 'read_design_attachment',
+  RELEASE_DESIGN_CONTEXT: 'release_design_context',
   MAP_RETAINED_FILLS: 'map_retained_fills',
   INSPECT_DRAWING: 'inspect_drawing',
   VALIDATE_INSPECTION_EVIDENCE: 'validate_inspection_evidence',
@@ -35,5 +42,6 @@ export const AiDrawingDetailSelectionIntents = Object.freeze({
 export const AiBatchOnlyActionNames: readonly string[] = Object.freeze([
   AiActionNames.UPDATE_DESIGN_ELEMENT,
   AiActionNames.SET_ELEMENT_VISIBILITY,
-  AiActionNames.MAP_RETAINED_FILLS
+  AiActionNames.MAP_RETAINED_FILLS,
+  AiActionNames.RESOLVE_DESIGN_TARGETS
 ])

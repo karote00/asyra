@@ -161,6 +161,8 @@ export const requestConfiguredAiActionBatch = async (
       model,
       executable,
       recordDirectory: environment.AI_EXECUTION_RECORD_DIR?.trim() || undefined,
+      toolLibraryDirectory:
+        environment.AI_TOOL_LIBRARY_DIR?.trim() || undefined,
       ...sourceIdentity,
       signal: options.signal,
       onProgress: options.onProgress,

@@ -504,3 +504,10 @@ jobs:
           FLOW_DESIGN_EVIDENCE: ${{ needs.design-e2e.outputs.design-evidence }}
           FLOW_COLLABORATION_EVIDENCE: ${{ needs.design-e2e.outputs.collaboration-evidence }}
         run: node tools/flow-inspector/control-plane/workflow-results.cjs aggregate
+      - name: Upload complete workflow result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: workflow-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/flow-ci/workflow-result.json
+          if-no-files-found: error

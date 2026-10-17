@@ -318,6 +318,7 @@ type CoreBasicApiKeys =
   | 'getAllElementData'
   | 'getCanonicalElementCount'
   | 'getCanonicalOwnerSnapshot'
+  | 'getPropertyOwnerElementIds'
   | 'projectLocalComputedDataForElements'
   | 'updateElementData'
   | 'getSelectedElementIds'

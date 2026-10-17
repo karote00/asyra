@@ -1,6 +1,6 @@
 import {
   defineBasicApi,
-  apiString,
+  apiId,
   apiNumber,
   apiBoolean,
   apiPosition,
@@ -20,7 +20,7 @@ const nullablePositionSchema = { anyOf: [apiPosition, { type: 'null' }] }
 
 const vectorAnchorPointSchema = apiObject(
   {
-    id: apiString,
+    id: apiId,
     x: apiNumber,
     y: apiNumber,
     type: vectorAnchorTypeSchema,
@@ -40,7 +40,7 @@ const getVectorAnchorPointAtWorkspacePosApi = defineBasicApi({
   method: 'getVectorAnchorPointAtWorkspacePos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'workspacePos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -53,7 +53,7 @@ const getVectorEditablePointAtWorkspacePosApi = defineBasicApi({
   method: 'getVectorEditablePointAtWorkspacePos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'workspacePos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -66,7 +66,7 @@ const getVectorSegmentAtWorkspacePosApi = defineBasicApi({
   method: 'getVectorSegmentAtWorkspacePos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'workspacePos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -79,7 +79,7 @@ const getVectorSegmentHitAtWorkspacePosApi = defineBasicApi({
   method: 'getVectorSegmentHitAtWorkspacePos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'workspacePos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -92,7 +92,7 @@ const isPointNearVectorPathAtWorkspacePosApi = defineBasicApi({
   method: 'isPointNearVectorPathAtWorkspacePos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'workspacePos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -107,7 +107,7 @@ const getVectorAnchorPointAtClientPosApi = defineBasicApi({
   method: 'getVectorAnchorPointAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'clientPos', schema: apiPosition }
   ]
 })
@@ -120,7 +120,7 @@ const getVectorEditablePointAtClientPosApi = defineBasicApi({
   method: 'getVectorEditablePointAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'clientPos', schema: apiPosition }
   ]
 })
@@ -131,7 +131,7 @@ const getVectorSegmentAtClientPosApi = defineBasicApi({
   method: 'getVectorSegmentAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'clientPos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -144,7 +144,7 @@ const getVectorSegmentHitAtClientPosApi = defineBasicApi({
   method: 'getVectorSegmentHitAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'clientPos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -157,7 +157,7 @@ const isPointNearVectorPathAtClientPosApi = defineBasicApi({
   method: 'isPointNearVectorPathAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'clientPos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
@@ -169,7 +169,7 @@ const getVectorAnchorPointsApi = defineBasicApi({
   category: 'vector',
   method: 'getVectorAnchorPoints',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }],
+  parameters: [{ name: 'elementId', schema: apiId }],
   description:
     'Returns workspace anchors including absolute in/out handle positions and stable IDs.'
 })
@@ -179,7 +179,7 @@ const getVectorAnchorSubpathsApi = defineBasicApi({
   category: 'vector',
   method: 'getVectorAnchorSubpaths',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }],
+  parameters: [{ name: 'elementId', schema: apiId }],
   description: 'Returns subpaths with workspace anchors.'
 })
 
@@ -188,7 +188,7 @@ const getVectorTopologyApi = defineBasicApi({
   category: 'vector',
   method: 'getVectorTopology',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }],
+  parameters: [{ name: 'elementId', schema: apiId }],
   description:
     'Returns points, segments and networks in element-local coordinates. Do not pass these coordinates to workspace edit methods without converting.'
 })
@@ -199,8 +199,8 @@ const getVectorAnchorPointByIdApi = defineBasicApi({
   method: 'getVectorAnchorPointById',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId }
   ],
   description: vectorWorkspaceEditingDescription
 })
@@ -213,8 +213,8 @@ const getVectorAnchorEndpointApi = defineBasicApi({
   method: 'getVectorAnchorEndpoint',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId }
   ]
 })
 
@@ -226,8 +226,8 @@ const getVectorAnchorContinuationApi = defineBasicApi({
   method: 'getVectorAnchorContinuation',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId }
   ]
 })
 
@@ -238,8 +238,8 @@ const getVectorAnchorPointHandleModeApi = defineBasicApi({
   method: 'getVectorAnchorPointHandleMode',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId }
   ]
 })
 
@@ -249,8 +249,8 @@ const updateVectorAnchorPointPositionApi = defineBasicApi({
   method: 'updateVectorAnchorPointPosition',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId },
     { name: 'position', schema: apiPosition }
   ],
   description:
@@ -266,8 +266,8 @@ const updateVectorAnchorPointTypeApi = defineBasicApi({
   method: 'updateVectorAnchorPointType',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId },
     { name: 'type', schema: vectorAnchorTypeSchema }
   ]
 })
@@ -279,8 +279,8 @@ const setVectorAnchorPointHandleModeApi = defineBasicApi({
   method: 'setVectorAnchorPointHandleMode',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId },
     { name: 'mode', schema: vectorHandleModeSchema }
   ]
 })
@@ -291,8 +291,8 @@ const updateVectorAnchorPointHandlePositionApi = defineBasicApi({
   method: 'updateVectorAnchorPointHandlePosition',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId },
     { name: 'target', schema: vectorHandleTargetSchema },
     { name: 'position', schema: apiPosition }
   ],
@@ -307,13 +307,13 @@ const updateVectorAnchorPointHandlesApi = defineBasicApi({
   method: 'updateVectorAnchorPointHandles',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     {
       name: 'updates',
       schema: apiArray(
         apiObject(
           {
-            pointId: apiString,
+            pointId: apiId,
             target: vectorHandleTargetSchema,
             position: nullablePositionSchema,
             forceSmooth: apiBoolean
@@ -334,7 +334,7 @@ const appendVectorAnchorPointApi = defineBasicApi({
   method: 'appendVectorAnchorPoint',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'point', schema: vectorAnchorPointSchema },
     {
       name: 'options',
@@ -344,8 +344,8 @@ const appendVectorAnchorPointApi = defineBasicApi({
           continuation: {
             anyOf: [
               apiObject({
-                networkId: apiString,
-                pointId: apiString,
+                networkId: apiId,
+                pointId: apiId,
                 side: { enum: ['start', 'end'] }
               }),
               { type: 'null' }
@@ -368,9 +368,9 @@ const connectVectorAnchorEndpointsApi = defineBasicApi({
   method: 'connectVectorAnchorEndpoints',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'sourcePointId', schema: apiString },
-    { name: 'targetPointId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'sourcePointId', schema: apiId },
+    { name: 'targetPointId', schema: apiId }
   ]
 })
 
@@ -382,9 +382,9 @@ const connectVectorAnchorPointsApi = defineBasicApi({
   method: 'connectVectorAnchorPoints',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'sourcePointId', schema: apiString },
-    { name: 'targetPointId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'sourcePointId', schema: apiId },
+    { name: 'targetPointId', schema: apiId }
   ]
 })
 
@@ -395,7 +395,7 @@ const removeLastSinglePointSubpathApi = defineBasicApi({
   category: 'vector',
   method: 'removeLastSinglePointSubpath',
   effect: 'delete',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiId }]
 })
 
 const removeVectorAnchorPointApi = defineBasicApi({
@@ -406,8 +406,8 @@ const removeVectorAnchorPointApi = defineBasicApi({
   method: 'removeVectorAnchorPoint',
   effect: 'delete',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'pointId', schema: apiString }
+    { name: 'elementId', schema: apiId },
+    { name: 'pointId', schema: apiId }
   ]
 })
 
@@ -417,8 +417,8 @@ const splitVectorSegmentAtWorkspacePosApi = defineBasicApi({
   method: 'splitVectorSegmentAtWorkspacePos',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'segmentId', schema: apiString },
+    { name: 'elementId', schema: apiId },
+    { name: 'segmentId', schema: apiId },
     { name: 'workspacePos', schema: apiPosition }
   ],
   description: vectorWorkspaceEditingDescription
@@ -432,7 +432,7 @@ const setVectorClosedApi = defineBasicApi({
   method: 'setVectorClosed',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     { name: 'closed', schema: apiBoolean }
   ]
 })
@@ -443,7 +443,7 @@ const scaleVectorElementAroundCenterApi = defineBasicApi({
   method: 'scaleVectorElementAroundCenter',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiId },
     {
       name: 'scale',
       schema: apiObject({
@@ -464,9 +464,7 @@ const setVectorElementPositionsApi = defineBasicApi({
   parameters: [
     {
       name: 'updates',
-      schema: apiArray(
-        apiObject({ elementId: apiString, position: apiPosition })
-      )
+      schema: apiArray(apiObject({ elementId: apiId, position: apiPosition }))
     }
   ],
   description: 'Updates element positions, not anchor positions.'
@@ -478,7 +476,7 @@ const createVectorElementFromSinglePointApi = defineBasicApi({
   method: 'createVectorElementFromSinglePoint',
   effect: 'write',
   parameters: [
-    { name: 'pointId', schema: apiString },
+    { name: 'pointId', schema: apiId },
     { name: 'position', schema: apiPosition }
   ],
   description:

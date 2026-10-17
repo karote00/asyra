@@ -19,6 +19,22 @@ async function freePort() {
   await new Promise((resolve) => server.close(resolve))
   return port
 }
+async function settleFixtureProcesses(entries) {
+  for (const entry of entries) entry.controller.abort()
+  const results = await Promise.allSettled(
+    entries.map((entry) => entry.promise)
+  )
+  const failures = results.flatMap((result) => {
+    if (result.status === 'rejected') return [result.reason]
+    if (result.value.error) return [new Error(result.value.error)]
+    return []
+  })
+  if (failures.length)
+    throw new AggregateError(
+      failures,
+      'Fixture process cleanup failed: ' + failures.map(String).join('; ')
+    )
+}
 async function playwrightFixture(t, options = {}) {
   fs.mkdirSync(path.join(root, 'tmp/flow-inspector'), { recursive: true })
   const repository = fs.mkdtempSync(
@@ -142,13 +158,16 @@ async function playwrightFixture(t, options = {}) {
     PATH: process.env.PATH,
     LANG: 'en_US.UTF-8',
     CI: 'true',
+    ...(options.largeDocument ? { E2E_LARGE_DOCUMENT: 'true' } : {}),
     TMPDIR: process.env.RUNNER_TEMP || temporary,
     APP_URL: 'http://127.0.0.1:' + appPort,
     E2E_OWN_SERVERS: '1',
     E2E_DOCUMENT_BACKEND_URL: 'http://127.0.0.1:' + backendPort,
     DOCUMENT_PERSISTENCE_BACKEND_URL: 'http://127.0.0.1:' + backendPort,
     DOCUMENT_BACKEND_PORT: String(backendPort),
-    DOCUMENT_BACKEND_DATA_DIR: path.join(repository, 'document-backend'),
+    DOCUMENT_BACKEND_DATA_DIR: options.largeDocument
+      ? path.join(app, 'test-results/document-backend')
+      : path.join(repository, 'document-backend'),
     COLLABORATION_WS_HOST: '127.0.0.1',
     COLLABORATION_WS_PORT: String(collaborationPort),
     VITE_COLLABORATION_WS_URL:
@@ -156,8 +175,7 @@ async function playwrightFixture(t, options = {}) {
   }
   const running = []
   t.after(async () => {
-    for (const entry of running) entry.controller.abort()
-    await Promise.all(running.map((entry) => entry.promise))
+    await settleFixtureProcesses(running)
   })
   async function start(args, url, label) {
     const controller = new AbortController()
@@ -185,7 +203,7 @@ async function playwrightFixture(t, options = {}) {
       if (entry.done)
         throw new Error(label + ' stopped: ' + entry.result.output.slice(-6000))
       try {
-        if ((await fetch(url)).ok) return
+        if ((await fetch(url)).ok) return entry
       } catch {
         /* Startup is bounded by the owning deadline. */
       }
@@ -213,19 +231,18 @@ async function playwrightFixture(t, options = {}) {
     'http://127.0.0.1:' + collaborationPort + '/health',
     'collaboration'
   )
-  if (observationSource !== 'status')
-    await start(
-      [
-        path.join(root, 'node_modules/vite/bin/vite.js'),
-        '--host',
-        '127.0.0.1',
-        '--port',
-        String(appPort),
-        '--strictPort'
-      ],
-      env.APP_URL,
-      'vite'
-    )
+  const viteArgs = [
+    path.join(root, 'node_modules/vite/bin/vite.js'),
+    '--host',
+    '127.0.0.1',
+    '--port',
+    String(appPort),
+    '--strictPort'
+  ]
+  let vite =
+    observationSource !== 'status'
+      ? await start(viteArgs, env.APP_URL, 'vite')
+      : undefined
   const sourceFile = path.join(app, 'src/features/delete-element/index.ts')
   const source = fs.readFileSync(sourceFile, 'utf8')
   let sequence = 0
@@ -393,6 +410,12 @@ async function playwrightFixture(t, options = {}) {
       const names = selected.map((item) =>
         item.testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       )
+      // Each isolated source version gets a fresh module graph. HMR between
+      // fault and recovery versions is not part of the product owner proof.
+      if (vite && sequence > 0 && options.isolateWorkspaces) {
+        await settleFixtureProcesses([vite])
+        vite = await start(viteArgs, env.APP_URL, 'vite-' + sequence)
+      }
       const reportPath = 'tmp/report-' + ++sequence + '.json'
       const args = [
         path.join(root, 'node_modules/playwright/cli.js'),
@@ -456,4 +479,4 @@ async function playwrightFixture(t, options = {}) {
     }
   }
 }
-module.exports = { playwrightFixture }
+module.exports = { playwrightFixture, settleFixtureProcesses }

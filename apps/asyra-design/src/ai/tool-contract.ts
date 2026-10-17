@@ -1,11 +1,26 @@
-import { AiToolContractError } from '@asyra/ai-agent-runtime'
+import { AiToolContractError, embedAiToolSchema } from '@asyra/ai-agent-runtime'
+import { operationInputIssue } from './tool-schema'
 import { AiActionNames } from '../constants/ai-actions'
 import type {
+  AiJsonValue,
   AiToolContractInput,
   AiToolOutcome
 } from '@asyra/ai-agent-runtime'
 
 export const toolResultString = { type: 'string', minLength: 1 }
+export const toolRequestReference = {
+  ...toolResultString,
+  maxLength: 160,
+  'x-runtime-value': 'request-artifact'
+}
+export const toolDocumentReference = {
+  ...toolResultString,
+  'x-runtime-value': 'document'
+}
+export const toolDocumentReferences = {
+  type: 'array',
+  items: toolDocumentReference
+}
 export const toolResultIds = { type: 'array', items: toolResultString }
 export const toolResultCount = { type: 'integer', minimum: 0 }
 export const toolResultBoolean = { type: 'boolean' }
@@ -24,6 +39,13 @@ export const toolResultObject = (
   additionalProperties: true
 })
 
+/** Canonical write coverage, independent from product values or visual acceptance. */
+export const toolMutationScope = toolResultObject({
+  complete: { type: 'boolean' },
+  elementIds: toolDocumentReferences,
+  removedElementIds: toolDocumentReferences
+})
+
 /** Metadata belongs to the definition owner, never a parallel name-based catalog. */
 export const toolSemantics = (
   outputSchema: unknown,
@@ -32,12 +54,18 @@ export const toolSemantics = (
   output: AiToolContractInput['lifecycle']['output'] = 'value'
 ): Pick<
   AiToolContractInput,
-  'revision' | 'outputSchema' | 'effect' | 'resources' | 'lifecycle'
+  | 'revision'
+  | 'outputSchema'
+  | 'partialOutputSchema'
+  | 'effect'
+  | 'resources'
+  | 'lifecycle'
 > => ({
-  revision: 1,
-  outputSchema: {
+  revision: 2,
+  outputSchema,
+  partialOutputSchema: {
     anyOf: [
-      outputSchema,
+      embedAiToolSchema(outputSchema as AiJsonValue, '#/anyOf/0'),
       toolResultObject({
         available: { const: false },
         recoverable: { const: true },
@@ -83,6 +111,17 @@ export const designActionOutcome = (value: unknown): AiToolOutcome => {
   ].includes(String(result.settlement))
     ? (result.settlement as AiToolOutcome['settlement'])
     : undefined
+  if (
+    result.delivery &&
+    typeof result.delivery === 'object' &&
+    (result.delivery as Record<string, unknown>).status === 'unavailable'
+  )
+    return {
+      status: 'partial',
+      settlement: ['complete', 'no-change'].includes(String(result.status))
+        ? 'completed'
+        : (reportedSettlement ?? 'unknown')
+    }
   if (result.status === 'unknown')
     return { status: 'unknown', settlement: reportedSettlement ?? 'unknown' }
   if (result.status === 'partial' || result.complete === false)
@@ -136,6 +175,15 @@ const actionEffects: Record<
     effect: 'prepare',
     resources: ['request']
   },
+  [AiActionNames.EXPORT_DOCUMENT]: { effect: 'read', resources: ['document'] },
+  [AiActionNames.DOWNLOAD_DOCUMENT_EXPORT]: {
+    effect: 'external',
+    resources: ['document-export']
+  },
+  [AiActionNames.RELEASE_DOCUMENT_EXPORT]: {
+    effect: 'prepare',
+    resources: ['document-export']
+  },
   [AiActionNames.REPORT_OUTCOME]: { effect: 'prepare', resources: ['request'] },
   [AiActionNames.ARRANGE_DESIGN]: {
     effect: 'mutation',
@@ -149,7 +197,19 @@ const actionEffects: Record<
     effect: 'mutation',
     resources: ['document']
   },
+  [AiActionNames.APPLY_PRESCRIBED_POSITIONS]: {
+    effect: 'mutation',
+    resources: ['document']
+  },
   [AiActionNames.REVIEW_DESIGN]: { effect: 'read', resources: ['document'] },
+  [AiActionNames.READ_DESIGN_ATTACHMENT]: {
+    effect: 'read',
+    resources: ['document']
+  },
+  [AiActionNames.RESOLVE_DESIGN_TARGETS]: {
+    effect: 'read',
+    resources: ['document']
+  },
   [AiActionNames.READ_DESIGN_CONTEXT]: {
     effect: 'read',
     resources: ['document']
@@ -157,6 +217,10 @@ const actionEffects: Record<
   [AiActionNames.APPLY_PREPARED_DESIGN]: {
     effect: 'mutation',
     resources: ['document']
+  },
+  [AiActionNames.RELEASE_DESIGN_CONTEXT]: {
+    effect: 'prepare',
+    resources: ['request']
   },
   [AiActionNames.MAP_RETAINED_FILLS]: {
     effect: 'mutation',
@@ -172,4 +236,41 @@ export const actionToolSemantics = (name: string, outputSchema: unknown) => {
   const metadata = actionEffects[name]
   if (!metadata) throw new Error(`No declared action effects: ${name}`)
   return toolSemantics(outputSchema, metadata.effect, metadata.resources)
+}
+
+/** External delivery consumes an owner-authored view after complete internal handoff. */
+export const projectToolDelivery = (
+  contract: Pick<AiToolContractInput, 'delivery'>,
+  value: unknown
+): unknown => {
+  if (!contract.delivery) return value
+  let view: unknown = value
+  for (const token of contract.delivery.path.slice(1).split('/')) {
+    const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
+    view =
+      view && typeof view === 'object' && Object.hasOwn(view, key)
+        ? (view as Record<string, unknown>)[key]
+        : undefined
+  }
+  const issue =
+    view === undefined
+      ? 'Declared delivery view is unavailable.'
+      : operationInputIssue(view, contract.delivery.outputSchema)
+  const original =
+    value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  const outcome = designActionOutcome(original.toolOutcome ?? original)
+  if (issue)
+    return {
+      available: false,
+      recoverable: true,
+      code: 'TOOL_DELIVERY_INVALID',
+      message: `${issue} Execution must not be replayed.`,
+      settlement: outcome.settlement,
+      toolOutcome: { status: 'partial', settlement: outcome.settlement }
+    }
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return view
+  return {
+    ...(view as Record<string, unknown>),
+    ...(original.toolOutcome ? { toolOutcome: original.toolOutcome } : {})
+  }
 }

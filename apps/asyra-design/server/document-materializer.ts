@@ -1,10 +1,12 @@
+import { createHash } from 'node:crypto'
+import { DocumentPersistenceError } from './document-persistence-error'
 import {
   persistenceSpan,
   persistenceDetail,
   type DocumentPersistenceObservation
 } from './document-persistence-observation'
 import { Buffer } from 'node:buffer'
-import { decodeDocumentPublication } from '../src/collaboration/operations'
+import { readDocumentPublicationSlices } from '../src/collaboration/document-publication'
 import { decodePublicationFramePublication } from '../src/collaboration/protocol'
 import type { CanonicalChange } from '../src/collaboration/app-protocol-types'
 
@@ -38,6 +40,7 @@ export interface MaterializedDocumentRecord<Document> {
   readonly documentGeneration?: number
   readonly durableSequence: number
   readonly publicationSequences: Readonly<Record<string, number>>
+  readonly publicationDigests?: Readonly<Record<string, string>>
   readonly batches: Readonly<
     Record<
       string,
@@ -85,6 +88,7 @@ interface PreparedPublication {
   readonly sequence: number
   readonly publicationId: string
   readonly canonicalChanges: readonly CanonicalChange[]
+  readonly digest: string
 }
 
 const BASE64_PATTERN =
@@ -114,7 +118,10 @@ const parsePersistenceBatch = (input: unknown): DocumentPersistenceBatch => {
     !Array.isArray(input.entries) ||
     input.entries.length === 0
   ) {
-    throw new Error('[document-materializer] persistence batch is invalid')
+    throw new DocumentPersistenceError(
+      'invalid-request',
+      '[document-materializer] persistence batch is invalid'
+    )
   }
 
   const protocolVersion = input.protocolVersion
@@ -142,7 +149,8 @@ const parsePersistenceBatch = (input: unknown): DocumentPersistenceBatch => {
           Buffer.from(frame, 'base64').toString('base64') !== frame
       )
     ) {
-      throw new Error(
+      throw new DocumentPersistenceError(
+        'invalid-request',
         '[document-materializer] persistence batch entries must be contiguous and uniquely identified'
       )
     }
@@ -161,7 +169,8 @@ const parsePersistenceBatch = (input: unknown): DocumentPersistenceBatch => {
     firstSequence !== expectedDurableSequence + 1 ||
     lastSequence !== firstSequence + entries.length - 1
   ) {
-    throw new Error(
+    throw new DocumentPersistenceError(
+      'invalid-request',
       '[document-materializer] persistence batch sequence must be contiguous'
     )
   }
@@ -207,7 +216,8 @@ const assertExistingBatchIdentity = <Document>(
     existing.lastSequence !== batch.lastSequence ||
     !sameOrderedValues(existing.publicationIds, publicationIds)
   ) {
-    throw new Error(
+    throw new DocumentPersistenceError(
+      'durable-conflict',
       '[document-materializer] persistence batch identity conflicts with durable data'
     )
   }
@@ -226,15 +236,21 @@ const isFullyDurablePublicationRetry = <Document>(
     )
     if (durableSequence === undefined) continue
     knownCount += 1
-    if (durableSequence !== item.sequence) {
-      throw new Error(
+    if (
+      durableSequence !== item.sequence ||
+      getOwnValue(current.publicationDigests ?? {}, item.publicationId) !==
+        item.digest
+    ) {
+      throw new DocumentPersistenceError(
+        'durable-conflict',
         '[document-materializer] publication identity conflicts with durable data'
       )
     }
   }
   if (knownCount === 0) return false
   if (knownCount !== prepared.length) {
-    throw new Error(
+    throw new DocumentPersistenceError(
+      'durable-conflict',
       '[document-materializer] persistence batch partially overlaps durable data'
     )
   }
@@ -256,20 +272,60 @@ export const createDocumentMaterializationService = <Document>({
 
       prepared = Object.freeze(
         batch.entries.map((entry) => {
-          const decoded = decodePublicationFramePublication(
-            entry.encodedPublicationFrames.map(
-              (frame) => new Uint8Array(Buffer.from(frame, 'base64'))
+          let decoded: ReturnType<typeof decodePublicationFramePublication>
+          try {
+            decoded = decodePublicationFramePublication(
+              entry.encodedPublicationFrames.map(
+                (frame) => new Uint8Array(Buffer.from(frame, 'base64'))
+              )
             )
-          )
+          } catch (cause) {
+            throw new DocumentPersistenceError(
+              'invalid-request',
+              'Invalid publication frame data',
+              { cause }
+            )
+          }
           if (decoded.publication.publicationId !== entry.publicationId) {
-            throw new Error(
+            throw new DocumentPersistenceError(
+              'invalid-request',
               '[document-materializer] publication identity conflicts with encoded bytes'
             )
           }
+          const slices = readDocumentPublicationSlices(decoded.publication)
+          const digest = createHash('sha256')
+            .update(
+              JSON.stringify(
+                {
+                  artifactId: decoded.publication.artifactId,
+                  transactionId: decoded.publication.transactionId,
+                  origin: decoded.publication.origin,
+                  mode: decoded.publication.mode,
+                  compensatesPublicationId:
+                    decoded.publication.compensatesPublicationId,
+                  slices: slices.map((changes, index) => ({
+                    sliceId: decoded.publication.slices[index]?.sliceId,
+                    changes
+                  }))
+                },
+                (_key, value) =>
+                  value !== null &&
+                  typeof value === 'object' &&
+                  !Array.isArray(value)
+                    ? Object.fromEntries(
+                        Object.keys(value)
+                          .sort()
+                          .map((key) => [key, value[key]])
+                      )
+                    : value
+              )
+            )
+            .digest('hex')
           return Object.freeze({
             sequence: entry.sequence,
             publicationId: entry.publicationId,
-            canonicalChanges: decodeDocumentPublication(decoded.publication)
+            canonicalChanges: slices.flat(),
+            digest
           })
         })
       )
@@ -301,17 +357,19 @@ export const createDocumentMaterializationService = <Document>({
         )
         if (existingBatch || publicationRetry) {
           if (current.durableSequence < batch.lastSequence) {
-            throw new Error(
+            throw new DocumentPersistenceError(
+              'durable-conflict',
               '[document-materializer] durable retry watermark is inconsistent'
             )
           }
           return Object.freeze({
-            durableSequence: current.durableSequence
+            durableSequence: batch.lastSequence
           })
         }
 
         if (current.durableSequence !== batch.expectedDurableSequence) {
-          throw new Error(
+          throw new DocumentPersistenceError(
+            'durable-conflict',
             '[document-materializer] expected durable sequence conflicts with stored checkpoint'
           )
         }
@@ -332,7 +390,11 @@ export const createDocumentMaterializationService = <Document>({
         }
 
         const publicationSequences = copyRegistry(current.publicationSequences)
-        prepared.forEach(({ publicationId, sequence }) => {
+        const publicationDigests = copyRegistry(
+          current.publicationDigests ?? {}
+        )
+        prepared.forEach(({ publicationId, sequence, digest }) => {
+          publicationDigests[publicationId] = digest
           publicationSequences[publicationId] = sequence
         })
         const batches = copyRegistry(current.batches)
@@ -346,6 +408,7 @@ export const createDocumentMaterializationService = <Document>({
           documentGeneration: current.documentGeneration ?? 0,
           durableSequence: batch.lastSequence,
           publicationSequences: Object.freeze(publicationSequences),
+          publicationDigests: Object.freeze(publicationDigests),
           batches: Object.freeze(batches)
         })
 

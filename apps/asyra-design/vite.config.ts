@@ -1,3 +1,4 @@
+import { createToolLibraryManagementMiddleware } from './server/local-tool-management'
 import { createAiStatusMiddleware } from './server/ai-status'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -31,6 +32,7 @@ const createActionBatchPlugin = (): Plugin => ({
       void actionBatch.dispose()
     })
     server.middlewares.use(createAiStatusMiddleware())
+    server.middlewares.use(createToolLibraryManagementMiddleware())
   },
   configurePreviewServer(server) {
     const actionBatch = createActionBatchMiddleware()
@@ -39,6 +41,7 @@ const createActionBatchPlugin = (): Plugin => ({
       void actionBatch.dispose()
     })
     server.middlewares.use(createAiStatusMiddleware())
+    server.middlewares.use(createToolLibraryManagementMiddleware())
   }
 })
 

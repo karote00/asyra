@@ -1,3 +1,4 @@
+import { DocumentPersistenceError } from './document-persistence-error'
 import {
   persistenceSpan,
   type DocumentPersistenceObservation
@@ -11,7 +12,10 @@ import type {
 } from '../src/collaboration/app-protocol-types'
 
 const fail = (message: string): never => {
-  throw new Error(`[document-canonical-reducer] ${message}`)
+  throw new DocumentPersistenceError(
+    'invalid-operation',
+    `[document-canonical-reducer] ${message}`
+  )
 }
 
 const cloneJson = <Value>(value: Value): Value =>
@@ -340,16 +344,17 @@ const applyElementCreation = (
   document: AppDocumentData,
   change: Extract<CanonicalChange, { kind: 'element-creation' }>
 ): void => {
-  const parentChildren = [...getContainerChildren(document, change.parentId)]
-  if (change.index < 0 || change.index > parentChildren.length) {
-    fail('element creation index is invalid')
-  }
   const elementIds = new Set<string>()
-  for (const element of change.elements) {
+  const entriesByParent = new Map<string, (typeof change.entries)[number][]>()
+  for (const entry of change.entries) {
+    const { data: element, parentId } = entry
     if (elementIds.has(element.id) || document.sceneTree.elements[element.id]) {
       fail(`created element "${element.id}" already exists`)
     }
     elementIds.add(element.id)
+    const entries = entriesByParent.get(parentId) ?? []
+    entries.push(entry)
+    entriesByParent.set(parentId, entries)
   }
   for (const component of change.properties) {
     if (document.props[component.id]) {
@@ -357,11 +362,28 @@ const applyElementCreation = (
     }
     document.props[component.id] = cloneJson(component)
   }
-  for (const element of change.elements) {
-    document.sceneTree.elements[element.id] = cloneJson(element)
+  for (const { data } of change.entries) {
+    document.sceneTree.elements[data.id] = cloneJson(data)
   }
-  parentChildren.splice(change.index, 0, ...elementIds)
-  setContainerChildren(document, change.parentId, parentChildren)
+  for (const [parentId, entries] of entriesByParent) {
+    const children = [...getContainerChildren(document, parentId)]
+    const usedIndexes = new Set<number>()
+    for (const { data, index } of entries.sort(
+      (left, right) => left.index - right.index
+    )) {
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index > children.length ||
+        usedIndexes.has(index)
+      ) {
+        fail('element creation index is invalid')
+      }
+      usedIndexes.add(index)
+      children.splice(index, 0, data.id)
+    }
+    setContainerChildren(document, parentId, children)
+  }
 }
 
 const applyElementRemoval = (

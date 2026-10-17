@@ -409,7 +409,11 @@ The exact implementation boundary is Inspector step
   ordered `CanonicalChange[]` through `applyCanonicalChanges(...)`. The closed
   union covers property components, raw element data, hierarchy moves,
   subtree removal/restore, and canonical element creation/removal. Core
-  preserves order and delegates to the existing owner APIs. One
+  preserves order and delegates to the existing owner APIs. Canonical element
+  creation carries exact `{data,parentId,index}` entries, including nonadjacent
+  siblings and multiple parents; it never infers a contiguous range from replay
+  order. Scene preflights these entries and Props preflights the exact graph
+  before either owner applies. One
   `property-components` change may combine ordered structural records and
   value updates in one Props-owned mutation batch. For `subtree-restore`, Core
   first requests Scene Tree's `pending-restore` preflight, then preflights and
@@ -470,3 +474,22 @@ surviving elements remain active. Canonical before/after evidence and tombstones
 stay with their owners for Undo/Redo and collaboration; callers supply no old
 values. `removeSubtree` remains the compatible scalar UI/facade path. Design AI
 uses the registered `api_element_deleteElements` batch action.
+
+
+### Property owner lookup
+
+`core.getPropertyOwnerElementIds(propertyIds)` returns unique current element IDs
+through the canonical nested-property ancestor and element-owner indexes. It
+includes all consumers of a shared property, reads no unrelated elements and
+returns no copied property payload. Unknown IDs fail through canonical property
+validation by default. Removal observers may explicitly pass
+`{ includeRetired: true }`: retired IDs have no active ancestor traversal, while
+remaining direct owner relations are still included. Canonical hierarchy and
+parent-property changes own removal invalidation. Inspection dependency tracking uses this
+public facade rather than guessing owners from the initiating tool target.
+
+## History replay observation
+
+`core.isInUndoRedo()` reads the composed Factory replay state directly, including
+its outer transaction lifetime. It reserves nothing and retains no second busy
+state. Input policies can reject new history commands before queueing.

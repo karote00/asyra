@@ -1,4 +1,6 @@
+import { SessionCancelPolicies } from '@asyra/utils'
 import { describe, it, expect } from 'vitest'
+import * as featureExports from '../src'
 import {
   defineFeature,
   getFeature,
@@ -7,6 +9,10 @@ import {
 } from '../src'
 
 describe('Feature System', () => {
+  it('consumes session policies without re-exporting the Utils contract', () => {
+    expect(featureExports).not.toHaveProperty('SessionCancelPolicies')
+  })
+
   it('should define and register a feature', () => {
     const feature = defineFeature('test-feature', undefined, {
       api: {
@@ -57,7 +63,7 @@ describe('Feature System', () => {
   it('rejects feature-defined cancellation without onCancel', () => {
     expect(() =>
       defineFeature('invalid-feature-defined-cancel', undefined, {
-        cancelPolicy: 'feature-defined',
+        cancelPolicy: SessionCancelPolicies.FEATURE_DEFINED,
         session: {
           onStart: () => ({ started: true })
         }

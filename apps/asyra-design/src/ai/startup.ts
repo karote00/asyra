@@ -94,13 +94,20 @@ export const createAiStartup = (
     runtime = createAiAgentRuntime(
       createAiRuntimeInput({
         permissionRules: {
+          [AiActionNames.EXPORT_DOCUMENT]: 'allow',
+          [AiActionNames.DOWNLOAD_DOCUMENT_EXPORT]: 'allow',
+          [AiActionNames.RELEASE_DOCUMENT_EXPORT]: 'allow',
           ...basicApiPermissionRules,
           [AiActionNames.APPLY_PREPARED_DESIGN]: 'allow',
+          [AiActionNames.APPLY_PRESCRIBED_POSITIONS]: 'allow',
           [AiActionNames.ORGANIZE_DESIGN]: 'allow',
           [AiActionNames.ARRANGE_DESIGN]: 'allow',
           [AiActionNames.REVIEW_DESIGN]: 'allow',
           [AiActionNames.UPDATE_DESIGN_ELEMENT]: 'allow',
           [AiActionNames.READ_DESIGN_CONTEXT]: 'allow',
+          [AiActionNames.RESOLVE_DESIGN_TARGETS]: 'allow',
+          [AiActionNames.READ_DESIGN_ATTACHMENT]: 'allow',
+          [AiActionNames.RELEASE_DESIGN_CONTEXT]: 'allow',
           [AiActionNames.MAP_RETAINED_FILLS]: 'allow',
           [AiActionNames.INSPECT_DRAWING]: 'allow',
           [AiActionNames.VALIDATE_INSPECTION_EVIDENCE]: 'allow',

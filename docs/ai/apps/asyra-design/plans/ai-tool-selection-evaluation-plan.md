@@ -8,6 +8,11 @@ and their direct interaction regressions pass.
 Matched live model comparison remains unmeasured. No remote operations.
 Parent: [tool contract refactor](ai-tool-contract-refactor-plan.md).
 
+Current-contract note - 2026-10-17: this is historical evaluation evidence, not
+an active execution plan. Current review tools, explicit image dependencies and
+criteria timing are defined in ../specs/ai-execution-flow.md and ../API_SURFACES.md.
+Its earlier pre-mutation-plan wording does not impose a gate before ready drawing.
+
 ## Bounded contract
 
 Use ActiveSaddler's offline failure-pattern and scenario-selection concepts to

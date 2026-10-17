@@ -200,9 +200,16 @@ boundary against code running with the user's OS authority.
 The service admits one run at a time. Every run has a bounded deadline and output
 size. Cancellation and shutdown terminate the owned process group and await
 settlement before another run starts. Timeouts, signals, spawn failures, and
-missing reports are non-passing results. Child environments omit ambient secrets;
+missing reports are non-passing results. A denied process-group cleanup signal is
+not a spawn failure. EPERM is treated as an already-settled group only when a
+bounded independent process-table observation proves that the owned group has no
+members. A transient exiting member must actually disappear within the existing
+250 ms cleanup grace; its state alone is not settlement.
+A surviving group or unavailable/malformed observation remains a non-passing
+cleanup error; cancellation and timeout retain their original reasons. The actual
+child exit code is never replaced with success. Child environments omit ambient secrets;
 the runner leader terminates its group if its service owner abruptly dies.
-trusted tests still execute with the user's OS authority. Source-writing agents,
+Trusted tests still execute with the user's OS authority. Source-writing agents,
 network containment, token budgets, tickets, and PR mutation are unsupported.
 
 New format-2 attempt records bind their request, mapping revision, contract,
@@ -628,6 +635,14 @@ projecting pass, fail or unverified. Dependency failure also blocks the final
 check even when the selected cases passed. Missing output after infrastructure
 failure or cancellation remains unverified. No secret, raw stdout, screenshot,
 trace, or arbitrary report text enters the bounded output.
+The aggregate writes the complete result, including retained observation details,
+to `tmp/flow-ci/workflow-result.json` and uploads it even when the verdict fails.
+`FLOW_AGGREGATE_RESULT_FILE` may select another project-contained output path.
+Stdout contains verdicts, blockers, producer case counts and the result path;
+runner details and full case records remain in the artifact and original bundles.
+Failure to persist the result is a failing aggregate, never a successful receipt.
+The output transport must not depend on the size of retained runner payloads.
+
 
 This is observational CI integration, not a protected issuer. Workflow and
 report bytes remain repository-controlled; digest integrity is not authenticity.

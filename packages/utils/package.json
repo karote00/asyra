@@ -38,8 +38,9 @@
     "clean": "rm -rf dist",
     "has:test": "find . -type f \\( -name \"*.test.ts\" -o -name \"*.test.tsx\" \\) | grep -q .",
     "test": "yarn has:test && vitest || echo 'No test files found. Skipping test.'",
-    "test:local": "vitest run",
-    "test:ci": "yarn has:test && vitest run --coverage --reporter=default --reporter=junit"
+    "test:local": "yarn test:types && vitest run",
+    "test:ci": "yarn test:types && yarn has:test && vitest run --coverage --reporter=default --reporter=junit",
+    "test:types": "tsc -p tsconfig.test-types.json"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.6",

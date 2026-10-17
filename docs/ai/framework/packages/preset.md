@@ -204,6 +204,12 @@ recovery policy.
   These values are App-facing
   projections only and never validate, repair, reorder, or become a second
   canonical hierarchy.
+  The observer retains derived identity membership only while its exact published
+  map and flattened-array identities remain current. Later structural batches
+  update affected memberships without rereading unrelated rows. Complete ordered
+  flattened identity output is still materialized once per structural publication.
+  Reseeding, load, foreign publication, failure and disposal invalidate retained
+  preparation; incomplete membership is not reused as a complete projection.
 
 Preset must not accept app-provided installers, disposers, dependency objects,
 engine ids, custom providers, extension callbacks, or replace semantics.

@@ -24,6 +24,18 @@ Injected providers and app adapters are borrowed by default. `dispose()` aborts
 and awaits active invocations, disposes the instance-local registry, and
 disposes only resources listed in `ownedResources`.
 
+### Synchronous mutation settlement observation
+
+`runAiMutation(context, mutate, settled?)` delegates to the existing
+`AiMutationExecutor`. When an observer is supplied, that owner calls it exactly
+once with the result after successful canonical publication, before yielding to
+another task. The direct execution path calls it synchronously after `mutate`.
+Failed mutation execution has no successful settlement callback. The observer is
+for capturing receipts and revision-bound artifacts, never another transaction or
+a retry. Domain artifact capture must report its own failures without discarding
+an acknowledged mutation. Cancellation before admission prevents mutation; later
+cancellation cannot turn an acknowledged write into a not-started operation.
+
 ## Invocation Flow
 
 ```text
@@ -388,8 +400,8 @@ server. Recovery does not resume or replay an interrupted drawing.
 ## Reusable tool composition
 
 The generic composition APIs share the existing registry, immutable tool contracts
-and `createAiInvoker` boundary. Design integration and model-facing construction
-entry points are delivered separately. No provider setting changes are required.
+and `createAiInvoker` boundary. Design supplies domain executors and model-facing construction
+entry points through the same Runtime contracts. No provider setting changes are required.
 See [Tool Specification](../../../../packages/ai-agent-runtime/TOOL_SPECIFICATION.md)
 for the current declarative format and lifecycle.
 
@@ -418,6 +430,20 @@ for the current declarative format and lifecycle.
   reaches the existing host scheduler/security/transaction boundary; every node
   emits ordinary invocation events. Validate live permissions and references there.
   A parent never holds a scheduling barrier while waiting for a child.
+- A recipe may declare one bounded `iteration` with typed state, a registered
+  verification check, declared repairs, next-state binding and `maxIterations`.
+  Initial steps run once. Only the check's `pass` completes mechanical iteration;
+  unknown/decision-required findings, repeated progress, budget exhaustion,
+  cancellation or uncertain settlement stop without replay. Admission and invocation
+  both bound the complete nested expansion. No callback, arbitrary expression or
+  secondary model is involved. See the specification for exact fields and bindings.
+- Verification belongs to the registered domain descriptor: `statusPath` and
+  `progressPath` refer to required output values. Transport adapters must relocate
+  these pointers when wrapping a result. A checker certifies supported mechanical
+  rules only; task-specific visual judgment remains with the primary agent.
+  Keep execution success, current task obligations, visual acceptance and durable
+  saved availability separate. Changed dependencies reopen only affected checks.
+
 - `leases.open`, `retain` and `release` are host-owned resource operations.
   Retain child outputs for the caller before releasing call-local leases. The host
   identifies references in values, preserves borrowed/sibling ownership and bounds
@@ -436,7 +462,7 @@ propagate revocation to their own live permission/availability boundary. Storage
 bytes and applicability checks are trusted host inputs; they are not model-authored
 claims. Saved records exclude execution arguments/results and request identities.
 A successful scalar-host test is not a claim of Design geometry, grouped Undo or
-visual equivalence; those integration contracts belong to PR 3 acceptance.
+visual equivalence; those integration contracts belong to the App acceptance cases.
 
 Hosts can expose `aiRecipeInputSchema` for model-authored proposals, then call
 `library.submit` for semantic admission. The transport schema does not replace

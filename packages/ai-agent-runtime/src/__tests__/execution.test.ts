@@ -200,3 +200,19 @@ describe('AI registered action execution', () => {
     expect(batch.actionResults[0].result).toEqual([AI_REDACTED_VALUE])
   })
 })
+
+it('forwards synchronous settlement to the mutation owner and observes direct execution before yielding', async () => {
+  const signal = new AbortController().signal
+  const sequence: string[] = []
+  const settled = (value: string) => sequence.push(value)
+  const owner: AiMutationExecutor = async (mutate, observe) => {
+    const result = mutate()
+    sequence.push('publish')
+    observe?.(result)
+    return result
+  }
+  await runAiMutation({ signal, runMutation: owner }, () => 'owned', settled)
+  const direct = runAiMutation({ signal }, () => 'direct', settled)
+  expect(sequence).toEqual(['publish', 'owned', 'direct'])
+  await direct
+})

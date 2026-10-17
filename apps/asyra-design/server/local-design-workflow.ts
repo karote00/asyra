@@ -1,7 +1,7 @@
 import {
   toolSemantics,
   toolResultObject,
-  toolResultStatus
+  toolRequestReference
 } from '../src/ai/tool-contract'
 import {
   invokeLocalTool,
@@ -9,6 +9,7 @@ import {
   localToolOutcome,
   type LocalToolObservation
 } from './local-tool-invocation'
+import { designCheckSummarySchema } from './design-check-results'
 import { reviewPlanSchema } from './local-design-review'
 import { operationInputIssue } from './operation-input-schema'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -36,6 +37,64 @@ export const createLocalDesignWorkflow = (
   const review = operations.definitions.find(
     (tool) => tool.name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA
   )
+  // The wrapper exports child resources as well as their execution receipts.
+  // Keep the preparation contract intact so call cleanup can transfer ownership.
+  const partOutputSchema = {
+    allOf: [
+      preparation?.outputSchema ?? false,
+      toolResultObject(
+        {
+          applicable: { const: true },
+          actionResults: { type: 'array' },
+          completedSteps: { type: 'array', items: { type: 'string' } },
+          checks: designCheckSummarySchema
+        },
+        ['applicable', 'actionResults', 'completedSteps']
+      )
+    ]
+  }
+  const stoppedPartSchema = toolResultObject(
+    {
+      failedStep: { type: 'string' },
+      completedSteps: { type: 'array', items: { type: 'string' } },
+      artifactId: toolRequestReference
+    },
+    ['failedStep', 'completedSteps']
+  )
+  const stoppedOutputSchema = {
+    anyOf: [
+      stoppedPartSchema,
+      toolResultObject(
+        {
+          checks: designCheckSummarySchema,
+          status: { enum: ['partial', 'failed', 'unknown'] },
+          parts: {
+            type: 'array',
+            items: { anyOf: [partOutputSchema, stoppedPartSchema] }
+          }
+        },
+        ['status', 'parts']
+      )
+    ]
+  }
+  const semantics = toolSemantics(
+    {
+      anyOf: [
+        partOutputSchema,
+        toolResultObject(
+          {
+            status: { const: 'complete' },
+            parts: { type: 'array', minItems: 1, items: partOutputSchema },
+            checks: designCheckSummarySchema
+          },
+          ['status', 'parts']
+        )
+      ]
+    },
+    'mutation',
+    ['document', 'request-artifacts'],
+    'request-artifact'
+  )
   const single = {
     rejectInput: (name: string, args: unknown) =>
       name === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
@@ -50,26 +109,15 @@ export const createLocalDesignWorkflow = (
         ? [
             {
               ...preparation,
-              ...toolSemantics(
-                {
-                  anyOf: [
-                    toolResultObject({
-                      actionResults: { type: 'array' },
-                      completedSteps: { type: 'array' }
-                    }),
-                    toolResultObject({
-                      status: toolResultStatus,
-                      parts: { type: 'array', items: { type: 'object' } }
-                    })
-                  ]
-                },
-                'mutation',
-                ['document', 'request-artifacts']
-              ),
+              ...semantics,
+              partialOutputSchema: {
+                anyOf: [semantics.partialOutputSchema, stoppedOutputSchema]
+              },
+              recoveryOutputSchema: stoppedOutputSchema,
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
-                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before semantic review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
+                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
                 preparation.description,
               inputSchema: {
                 ...preparation.inputSchema,
@@ -94,7 +142,8 @@ export const createLocalDesignWorkflow = (
       name: string,
       args: unknown,
       signal: AbortSignal,
-      part?: { key: string; index: number }
+      part?: { key: string; index: number },
+      inspectionTargets?: Set<string>
     ): Promise<string> => {
       signal.throwIfAborted()
       if (
@@ -153,7 +202,20 @@ export const createLocalDesignWorkflow = (
           arguments_,
           async () => {
             const reply = await invokeLocalTool(
-              owner,
+              owner === operations && inspectionTargets
+                ? {
+                    ...operations,
+                    callInternal: (name, args, signal) =>
+                      operations.callInternal(
+                        name,
+                        args,
+                        signal,
+                        inspectionTargets
+                      ),
+                    call: (name, args, signal) =>
+                      operations.call(name, args, signal, inspectionTargets)
+                  }
+                : owner,
               step,
               arguments_,
               signal,
@@ -431,6 +493,26 @@ export const createLocalDesignWorkflow = (
         keys.add(part.key)
       }
       const completed: Record<string, unknown>[] = []
+      const inspectionTargets = new Set<string>()
+      const finish = async (result: Record<string, unknown>) => {
+        const captureTarget = [...inspectionTargets].at(-1)
+        const followup = await operations.finishInspection(
+          inspectionTargets,
+          captureTarget,
+          input.inspection === 'defer',
+          signal,
+          result.settlement === 'unknown' || result.status === 'unknown',
+          input.response === 'full'
+        )
+        return JSON.stringify({
+          ...result,
+          ...followup,
+          parts: completed.map((part) => ({
+            ...part,
+            measurementDeferred: false
+          }))
+        })
+      }
       const parentIds = new Map<string, string>()
       for (const [index, part] of parts.entries()) {
         signal.throwIfAborted()
@@ -439,7 +521,7 @@ export const createLocalDesignWorkflow = (
             ? part.parentId
             : parentIds.get(String(part.parentPart))
         if (part.parentPart !== undefined && parentId === undefined)
-          return JSON.stringify({
+          return finish({
             status: 'partial',
             complete: false,
             parts: completed,
@@ -471,7 +553,8 @@ export const createLocalDesignWorkflow = (
                   : 'defer'
             },
             signal,
-            { key: part.key, index }
+            { key: part.key, index },
+            inspectionTargets
           )
         )
         completed.push({ key: part.key, ...receipt })
@@ -482,7 +565,7 @@ export const createLocalDesignWorkflow = (
           if (outcome.status === 'unknown') status = 'unknown'
           let settlement = index ? 'partial' : outcome.settlement
           if (outcome.settlement === 'unknown') settlement = 'unknown'
-          return JSON.stringify({
+          return finish({
             status,
             settlement,
             parts: completed,
@@ -497,7 +580,7 @@ export const createLocalDesignWorkflow = (
         if (typeof identity === 'string' && identity)
           parentIds.set(part.key, identity)
       }
-      return JSON.stringify({
+      return finish({
         status: 'complete',
         complete: true,
         parts: completed

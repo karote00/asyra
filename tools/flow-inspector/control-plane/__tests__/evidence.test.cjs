@@ -1363,11 +1363,11 @@ test(
       })
       assert.equal(
         report.numTotalTests,
-        2,
+        4,
         `${runner.output}\n${JSON.stringify(report)}`
       )
       assert.equal(report.numFailedTests, expectedFailed, runner.output)
-      assert.equal(report.numPassedTests, 2 - expectedFailed)
+      assert.equal(report.numPassedTests, 4 - expectedFailed)
       assert.equal(report.numPendingTests, 0)
       assert.equal(report.numRuntimeErrorTestSuites ?? 0, 0)
       assert.equal(report.success, expectedFailed === 0)
@@ -1375,14 +1375,22 @@ test(
       assert.equal(report.testResults[0].message, '')
       assert.deepEqual(
         report.testResults[0].assertionResults.map((item) => item.status),
-        Array(2).fill(expectedFailed ? 'failed' : 'passed')
+        [
+          ...Array(2).fill(expectedFailed ? 'failed' : 'passed'),
+          'passed',
+          'passed'
+        ]
       )
       assert.equal(runner.code, expectedFailed ? 1 : 0)
     }
     const baseline = await prove('baseline', [])
     await appProof('app-baseline', 0)
     try {
-      replace(appFile, 'if (snapshot.keyShift) {', 'if (!snapshot.keyShift) {')
+      replace(
+        appFile,
+        "if (direction === 'redo') {",
+        "if (direction === 'undo') {"
+      )
       await appProof('app-reversed-shortcut', 2)
       const appChanged = await prove('app-reversed-shortcut', [])
       assert.equal(

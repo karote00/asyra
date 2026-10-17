@@ -1,3 +1,4 @@
+import { prepareDocumentPublication } from '../../src/collaboration/document-publication'
 import type { SharedPublication } from '@asyra/factory'
 import { Buffer } from 'node:buffer'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
@@ -76,7 +77,7 @@ describe('document backend destructive Reset boundary', () => {
     }
     const encodedPublicationFrames = encodePublicationMessageFrames({
       type: CollaborationMessageTypes.PUBLICATION,
-      publication,
+      publication: prepareDocumentPublication(publication),
       fromActorId: 'actor-after-reset',
       sequence: 1
     }).map((frame) => Buffer.from(frame).toString('base64'))
@@ -258,4 +259,110 @@ it('keeps the previous cached and on-disk watermark when checkpoint writing fail
   expect(
     (await freshStore.readCheckpoint('failed-write')).durableSequence
   ).toBe(1)
+})
+
+it('retains document changes and retry identity across failed writes, Undo, Redo and fresh stores', async () => {
+  const { applyCanonicalChangesToDocument } =
+    await import('../document-canonical-reducer')
+  const apply = vi.fn(applyCanonicalChangesToDocument)
+  const open = () =>
+    createDocumentMaterializationService({
+      store: createFileDocumentMaterializationStore(dataDirectory),
+      authorize: async () => undefined,
+      applyCanonicalChanges: apply
+    })
+  const makeBatch = (
+    sequence: number,
+    origin: 'action' | 'undo' | 'redo',
+    before: string,
+    after: string
+  ) => {
+    const publication = prepareDocumentPublication({
+      publicationId: `publication-${sequence}`,
+      artifactId: `artifact-${sequence}`,
+      transactionId: sequence,
+      origin,
+      mode: 'atomic',
+      slices: [
+        {
+          sliceId: `slice-${sequence}`,
+          orderedIds: [`delivery-${sequence}`],
+          batches: [
+            {
+              batchId: `source-${sequence}`,
+              channel: 'sceneTree',
+              deliveries: [
+                {
+                  deliveryId: `delivery-${sequence}`,
+                  orderedIds: [`delivery-${sequence}`],
+                  eventName: 'updateElementData',
+                  payload: {
+                    action: 'updateElementData',
+                    eventName: 'updateElementData',
+                    id: 'workspace',
+                    changes: [{ key: 'name', before, after }]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })
+    return {
+      protocolVersion: 1,
+      documentId: 'reload-proof',
+      batchId: `request-${sequence}`,
+      expectedDurableSequence: sequence - 1,
+      firstSequence: sequence,
+      lastSequence: sequence,
+      entries: [
+        {
+          documentId: 'reload-proof',
+          sequence,
+          publicationId: publication.publicationId,
+          encodedPublicationFrames: encodePublicationMessageFrames({
+            type: CollaborationMessageTypes.SEND_PUBLICATION,
+            requestId: `wire-${sequence}`,
+            publication
+          }).map((frame) => Buffer.from(frame).toString('base64'))
+        }
+      ]
+    }
+  }
+  const first = makeBatch(1, 'action', 'Workspace', 'Edited')
+  vi.mocked(writeFile).mockRejectedValueOnce(
+    new Error('checkpoint write failed')
+  )
+  await expect(open().materialize(first)).rejects.toThrow(
+    'checkpoint write failed'
+  )
+  const failed =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'reload-proof'
+    )
+  expect(failed.durableSequence).toBe(0)
+  expect(failed.document.sceneTree.elements.workspace?.name).toBe('Workspace')
+  await open().materialize(first)
+  apply.mockClear()
+  await open().materialize(first)
+  expect(apply).not.toHaveBeenCalled()
+  await open().materialize(makeBatch(2, 'undo', 'Edited', 'Workspace'))
+  const undone =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'reload-proof'
+    )
+  expect(undone.document.sceneTree.elements.workspace?.name).toBe('Workspace')
+  const redo = makeBatch(3, 'redo', 'Workspace', 'Edited')
+  await open().materialize(redo)
+  const loaded =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'reload-proof'
+    )
+  expect(loaded.document.sceneTree.elements.workspace?.name).toBe('Edited')
+  expect(loaded.durableSequence).toBe(3)
+  expect(Object.keys(loaded.publicationDigests ?? {})).toHaveLength(3)
+  apply.mockClear()
+  await open().materialize(redo)
+  expect(apply).not.toHaveBeenCalled()
 })

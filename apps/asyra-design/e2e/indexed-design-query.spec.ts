@@ -206,10 +206,8 @@ test('edits a bounded part of one tier without reading its shared parent childre
     const { core } = await import('../src/testing/runtime-access')
     const { transactionApis, elementApis, historyApis } =
       await import('../src/common-apis')
-    const { createDocumentContextAction } =
-      await import('../src/ai/context-action')
-    const { createBasicApiActions } =
-      await import('../src/ai/basic-api-actions')
+    const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
+    const { createAiTransactionRunner } = await import('../src/ai/transaction')
     const workspace = core.getCurrentWorkspaceId()
     const parent = transactionApis.runTransaction(() =>
       core.createElementInParent(
@@ -229,6 +227,25 @@ test('edits a bounded part of one tier without reading its shared parent childre
         parent
       )
     )
+    const runtime = createAiRuntimeInput({
+      permissionRules: {},
+      provider: {
+        requestActionBatch: async () => {
+          throw new Error('Unexpected model call')
+        }
+      }
+    })
+    const runner = createAiTransactionRunner()
+    const signal = new AbortController().signal
+    const invoke = async (name: string, input: unknown) => {
+      const action = runtime.actionDefinitions.find(
+        (item) => item.name === name
+      )
+      if (!action) throw new Error(`Missing registered action: ${name}`)
+      return runner.run(name, (runMutation) =>
+        action.execute(input, { signal, runMutation })
+      )
+    }
     const original = core.getElementChildren
     let childReads = 0
     core.getElementChildren = (...args) => {
@@ -236,24 +253,15 @@ test('edits a bounded part of one tier without reading its shared parent childre
       return original.apply(core, args)
     }
     try {
-      const context = { signal: new AbortController().signal }
-      const receipt = (await createDocumentContextAction().execute(
-        {
-          scope: 'region',
-          bounds: { x: 300, y: 300, width: 40, height: 80 },
-          filter: { ancestorId: parent, type: 'rect', locked: false },
-          result: 'ids'
-        },
-        context as never
-      )) as { elementIds: string[] }
-      const action = createBasicApiActions().find(
-        (a) => a.name === 'api_element_setElementsVisible'
-      )
-      if (!action) throw new Error('Missing registered visibility action')
-      await action.execute(
-        { elementIds: receipt.elementIds, visible: false },
-        context as never
-      )
+      const receipt = (await invoke('resolve_design_targets', {
+        scope: 'region',
+        bounds: { x: 300, y: 300, width: 40, height: 80 },
+        filter: { ancestorId: parent, type: 'rect', locked: false }
+      })) as { elementIds: string[] }
+      await invoke('api_element_setElementsVisible', {
+        elementIds: receipt.elementIds,
+        visible: false
+      })
       const hidden = ids.filter((id) => !elementApis.isElementVisible(id))
       await historyApis.undo()
       return {
@@ -265,6 +273,8 @@ test('edits a bounded part of one tier without reading its shared parent childre
       }
     } finally {
       core.getElementChildren = original
+      for (const resource of runtime.ownedResources ?? [])
+        await resource.dispose()
     }
   })
   expect(result.candidates).toEqual([result.ids[4]])
@@ -315,20 +325,24 @@ test('retained region fills use current positions, keep Undo, and reject stale s
           )[0].color
       )
     const store = createRetainedDesignContext(core, observeDesignChanges)
+    const signal = new AbortController().signal
     try {
-      const first = store.read({
-        scope: 'region',
-        bounds: { x: -1, y: 0, width: 150, height: 50 },
-        filter: { type: 'rect', parentId: workspace },
-        fields: ['x'],
-        delivery: 'reference'
-      })
+      const first = store.read(
+        {
+          scope: 'region',
+          bounds: { x: -1, y: 0, width: 150, height: 50 },
+          filter: { type: 'rect', parentId: workspace },
+          fields: ['x'],
+          delivery: 'reference'
+        },
+        signal
+      )
       const action = createRetainedFillAction(store)
-      const signal = new AbortController().signal
       const input = {
         mappings: [
           {
             snapshotId: first.snapshotId,
+            leaseId: first.leaseId,
             coordinateSpace: 'parent-local' as const,
             axis: 'x' as const,
             domain: [0, 100],
@@ -342,11 +356,15 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         ]
       }
       const runner = createAiTransactionRunner()
-      await runner.run(
-        'Map colors',
-        (runMutation) => action.execute(input, { signal, runMutation }),
-        { signal }
-      )
+      await runner
+        .run(
+          'Map colors',
+          (runMutation) => action.execute(input, { signal, runMutation }),
+          { signal }
+        )
+        .catch((error: unknown) => {
+          throw error instanceof Error && error.cause ? error.cause : error
+        })
       const mapped = readColors()
       await historyApis.undo()
       const undone = readColors()
@@ -368,13 +386,17 @@ test('retained region fills use current positions, keep Undo, and reject stale s
       transactionApis.runTransaction(() =>
         fillApis.shareFillAtIndex(targets[0], targets.slice(1), 0)
       )
-      const shared = store.read({
-        scope: 'ids',
-        elementIds: targets,
-        fields: ['x'],
-        delivery: 'reference'
-      })
+      const shared = store.read(
+        {
+          scope: 'ids',
+          elementIds: targets,
+          fields: ['x'],
+          delivery: 'reference'
+        },
+        signal
+      )
       input.mappings[0].snapshotId = shared.snapshotId
+      input.mappings[0].leaseId = shared.leaseId
       let conflict = ''
       try {
         await runner.run(
@@ -388,12 +410,17 @@ test('retained region fills use current positions, keep Undo, and reject stale s
         )
       }
       const afterConflict = readColors()
-      input.mappings[0].snapshotId = store.read({
-        scope: 'ids',
-        elementIds: targets,
-        fields: ['x'],
-        delivery: 'reference'
-      }).snapshotId
+      const refreshed = store.read(
+        {
+          scope: 'ids',
+          elementIds: targets,
+          fields: ['x'],
+          delivery: 'reference'
+        },
+        signal
+      )
+      input.mappings[0].snapshotId = refreshed.snapshotId
+      input.mappings[0].leaseId = refreshed.leaseId
       input.mappings[0].stops = [
         { at: 0, color: '#abcdef' },
         { at: 1, color: '#abcdef' }
