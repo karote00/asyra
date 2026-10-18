@@ -40,6 +40,90 @@ const fixture = () => {
 }
 
 describe('optional knowledge access', () => {
+  it('cannot create or revive registrations through malformed update revisions', () => {
+    const access = createAiKnowledgeAccess({
+      tenantId: 'tenant',
+      scopeId: 'scope',
+      authorize: (operation, identity) =>
+        identity.principal === admin ||
+        operation === 'update' ||
+        operation === 'discover',
+      read: async (entry) => ({ revision: entry.revision, text: 'Advice' })
+    })
+    const session = access.openSession(reader, 'task')
+    for (const expected of [undefined, null, NaN, 0, -1, 1.5, '1']) {
+      expect(() =>
+        access.update(metadata('new'), expected as number, reader)
+      ).toThrow('KNOWLEDGE_REVISION_CONFLICT')
+    }
+    expect(session.discover()).toEqual([])
+    access.register(metadata('removed', { revision: 2 }), admin)
+    access.unregister('removed', 2, admin)
+    expect(() =>
+      access.update(metadata('removed'), undefined as unknown as number, reader)
+    ).toThrow('KNOWLEDGE_REVISION_CONFLICT')
+    expect(() => access.register(metadata('removed'), admin)).toThrow(
+      'KNOWLEDGE_REVISION_CONFLICT'
+    )
+    expect(session.discover()).toEqual([])
+  })
+
+  it('authorizes both existing and proposed metadata before updating ownership labels', async () => {
+    const access = createAiKnowledgeAccess({
+      tenantId: 'tenant',
+      scopeId: 'scope',
+      authorize: (operation, identity, entry) =>
+        identity.principal === admin ||
+        operation !== 'update' ||
+        entry?.contexts?.includes('editable') === true,
+      read: async (entry) => ({
+        revision: entry.revision,
+        text: 'Original advice'
+      })
+    })
+    access.register(metadata('restricted', { contexts: ['restricted'] }), admin)
+    access.register(metadata('editable', { contexts: ['editable'] }), admin)
+    const session = access.openSession(reader, 'task')
+    await session.retrieve(
+      { ids: ['restricted'], contexts: ['restricted'] },
+      signal()
+    )
+    expect(() =>
+      access.update(
+        metadata('restricted', {
+          revision: 2,
+          contexts: ['editable']
+        }),
+        1,
+        reader
+      )
+    ).toThrow('KNOWLEDGE_UNAUTHORIZED')
+    expect(() =>
+      access.update(
+        metadata('editable', {
+          revision: 2,
+          contexts: ['restricted']
+        }),
+        1,
+        reader
+      )
+    ).toThrow('KNOWLEDGE_UNAUTHORIZED')
+    expect(
+      (
+        await session.retrieve(
+          { ids: ['restricted'], contexts: ['restricted'] },
+          signal()
+        )
+      ).alreadyDelivered
+    ).toBe(true)
+    access.update(
+      metadata('editable', { revision: 2, contexts: ['editable'] }),
+      1,
+      reader
+    )
+    expect(session.discover(['editable'])[0]?.revision).toBe(2)
+  })
+
   it('resolves nested diamond references once and additive extensions in deterministic order', async () => {
     const { access, reads } = fixture()
     for (const entry of [

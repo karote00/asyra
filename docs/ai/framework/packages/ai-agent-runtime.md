@@ -485,7 +485,11 @@ Trusted host code uses `register(metadata, principal)`,
 `update(metadata, expectedRevision, principal)` and
 `unregister(id, expectedRevision, principal)`. Registration rejects duplicate IDs;
 revisions are positive monotonic integers, including after removal. Authorization
-is mandatory and default-deny on exceptions. The controller binds one tenant and
+is mandatory and default-deny on exceptions. Updates require an existing entry,
+a positive safe-integer expected revision matching that entry, and a newer revision.
+The policy must authorize both the existing and proposed metadata; changing labels
+cannot grant ownership of the original entry. Failed updates leave registrations
+and delivery reuse unchanged. The controller binds one tenant and
 scope. A host creates `openSession(principal, taskId)` from trusted request context;
 never obtain these identities from model tool arguments.
 

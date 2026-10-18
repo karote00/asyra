@@ -153,9 +153,15 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
     ) {
       active()
       const metadata = admit(value)
-      requirePermission('update', identity(principal), metadata)
+      const who = identity(principal)
+      const previous = entries.get(metadata.id)
+      requirePermission('update', who, previous)
+      requirePermission('update', who, metadata)
       if (
-        entries.get(metadata.id)?.revision !== expectedRevision ||
+        !previous ||
+        !Number.isSafeInteger(expectedRevision) ||
+        expectedRevision < 1 ||
+        previous.revision !== expectedRevision ||
         metadata.revision <= expectedRevision
       )
         fail('KNOWLEDGE_REVISION_CONFLICT')

@@ -385,3 +385,21 @@ the two affected suites passed. Other control-plane inputs remain unchanged.
 
 Exact-head admission, correction push and remote CI observation remain delivery gates.
 User review and plan closeout remain distinct from implementation delivery.
+
+### PR #346 security review correction
+
+The follow-up review remains within the Runtime step and its direct Design
+consumer. Discovery is limited to the PR implementation, its contracts and formal
+regressions; no new service, dependencies or Agent administration surface is added.
+
+Two permanent regressions failed on the reviewed head: malformed expected revisions
+could turn update into registration or revive removed IDs, and proposed metadata
+alone could authorize relabeling an entry the caller could not update. Runtime now
+requires an existing exact positive safe-integer revision and authorizes both old
+and new metadata. Rejected updates preserve registrations, tombstones and delivery
+reuse. The shared root workspace remains passive and independent.
+
+Acceptance: full Runtime tests/build, focused Design knowledge/provider integration,
+Design typecheck, scoped lint, naming, documentation and exact-head changeset check.
+Prior unrelated package/workspace evidence remains valid because its inputs are
+unchanged. No merge is authorized.

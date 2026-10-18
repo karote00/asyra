@@ -60,7 +60,7 @@ export interface AiKnowledgeSession {
 export interface AiKnowledgeOptions {
   readonly tenantId: string
   readonly scopeId: string
-  /** Trusted host policy; called again on reuse and after asynchronous reads. */
+  /** Trusted host policy; checked on both old/new update metadata, reuse and after reads. */
   readonly authorize: (
     operation: AiKnowledgeOperation,
     identity: AiKnowledgeIdentity,
