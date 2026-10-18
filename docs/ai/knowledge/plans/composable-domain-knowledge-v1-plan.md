@@ -198,14 +198,17 @@ also compares revision. Admin credentials are closure-held host values and never
 serialized in tool metadata. Revocation is checked on every read and discovery,
 including reuse, and after asynchronous provider settlement.
 
-The provider returns the requested revision and text. Runtime rejects mismatches,
+The provider returns the requested revision, module guidance in `text`, and
+separate `{ target, text }` override contributions matching its declared targets. Runtime rejects mismatches,
 empty/oversized content and stale graph generations. Content remains advisory text;
 no evaluation, interpolation, callback construction or execution is supported.
 App parses shared Markdown/frontmatter into metadata and content; Runtime accepts
 normalized descriptors so other Apps can retain their own file format extensions.
 
 References include dependencies. Extends includes its target plus additive advice.
-An override explicitly replaces the target's advice in the resolved view, retaining
+An override explicitly replaces only the target's own advice in the resolved view,
+without redirecting its other contributions or discarding the overriding module's
+independent guidance. Resolution retains
 both source identities in provenance. Higher numeric override priority wins;
 equal-priority competing replacements fail explicitly. Independent contributions
 sort by ID; dependencies precede dependents. Shared files are never mutated.
@@ -220,6 +223,9 @@ recheck authorization and graph validity. Provider/App may reuse parsed immutabl
 file contents; Runtime does not own a second content cache. Any registration change
 invalidates delivery reuse and in-flight reads conservatively. Bound registered
 entries, session deliveries, query IDs, graph depth/nodes and returned text bytes.
+Session `invalidateContext()` clears delivery receipts after context reconstruction;
+`retrieve({ ids, contexts, rehydrate: true })` provides explicit read rehydration.
+An epoch change rejects in-flight results. Provider caches are unaffected.
 Dispose prevents late delivery and releases session context.
 
 ### Design integration and file admission
@@ -403,3 +409,55 @@ Acceptance: full Runtime tests/build, focused Design knowledge/provider integrat
 Design typecheck, scoped lint, naming, documentation and exact-head changeset check.
 Prior unrelated package/workspace evidence remains valid because its inputs are
 unchanged. No merge is authorized.
+
+### Reviewer follow-up - bounded Runtime step
+
+Owner: Inspector `runtime`; approved composition, read/update and context-reuse
+contracts above. Inputs remain trusted metadata, scoped identity, provider content
+and query context. Output is deterministic advisory composition with provenance;
+optional absence bypasses this owner. Allowed edits: Runtime knowledge types,
+resolver, exports, formal tests and contract documentation. No filesystem, domain
+policy, executable knowledge, persistence or new dependencies. Runtime owns
+content validation, resolution and stale-context rejection.
+
+Correct mixed composition by making provider `text` the module's own guidance and
+provider `overrides` explicit target/text contributions matching declared targets.
+Keep all independent guidance; select only the highest-priority targeted body,
+reject ties, and retain original/replacing sources plus complete graph provenance.
+An override changes only its explicit target body, never that target's independent
+contributions to other targets. No implicit whole-module
+replacement fallback. Design's file adapter will extract targeted bodies from
+app-owned frontmatter without exposing bodies through discovery.
+
+Add session context invalidation plus a read-only `rehydrate` query option.
+Both invalidate delivery receipts, not provider content caches or permissions;
+in-flight reads bound to an older context fail. Normal unchanged-context reads
+still reuse receipts. Design retains one session per ephemeral provider request,
+exposes explicit read rehydration, and invalidates on observed compaction.
+
+DoD: failing mixed/nested/multi-target and context reconstruction regressions first;
+full Runtime tests/build/lint, followed by the direct Design consumer step. Review
+is bounded to PR files, direct consumers and the three reviewer findings. Stop for
+an unresolved architecture conflict; do not merge or add a search service.
+
+### Reviewer follow-up - Design step
+
+Owner: Inspector `design`; file admission and read-only tool route. Input remains
+allowlisted Markdown, trusted request identity, selected IDs/context labels and a
+read rehydration flag. Output separates discovery metadata from own/targeted
+content and responds to observed provider compaction. Only Design knowledge
+adapter, provider, formal tests and App contract docs may change. No changes to
+Public API action execution, shared source files, permissions or persistence.
+App admission owns malformed frontmatter; Runtime owns scoped resolution. DoD:
+prove mixed file admission and compaction fail before correction, test both review
+intent examples through existing discovery/read calls, and run provider integration,
+server regression, typecheck, lint and production build. No new retrieval engine.
+
+Reviewer correction validation: 414 Runtime tests passed with build; 1,299 Design
+server tests passed with two existing skips, including Public API binding tests,
+mixed content admission, explicit cross-context retrieval and real provider-event
+compaction rehydration. Full Design typecheck and production build passed. Scoped
+lint has zero errors and three existing console warnings. Naming (15), package and
+placement (4), and public documentation generation/check/validation passed.
+No shared content, action execution or persistence behavior changed. Updated-head
+remote CI and human review remain delivery evidence, not local test claims.

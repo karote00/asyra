@@ -493,20 +493,30 @@ and delivery reuse unchanged. The controller binds one tenant and
 scope. A host creates `openSession(principal, taskId)` from trusted request context;
 never obtain these identities from model tool arguments.
 
-Sessions expose only `discover(contexts)`, `retrieve({ ids, contexts }, signal)`
-and `dispose()`. Discovery returns metadata, not bodies. Retrieval traverses sorted
+Sessions expose `discover(contexts)`, `retrieve({ ids, contexts, rehydrate? }, signal)`,
+`invalidateContext()` and `dispose()`. Context invalidation only clears delivery
+receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Retrieval traverses sorted
 references/extends/explicit override targets, deduplicates dependencies, rejects
 cycles/missing/inapplicable dependencies and returns source revisions/provenance.
-Extends adds advice. Higher numeric override priority replaces the named target's
-advice in the returned view; conflicting equal priorities reject. Sources remain
-unchanged. Specialized entries require a matching context label. The App owns
+Extends adds advice. Provider `AiKnowledgeContent.text` is the module's own guidance.
+Its optional `overrides: [{ target, text }]` must match every declared override
+exactly, with no duplicates or undeclared targets. Content stays outside metadata.
+Higher numeric priority replaces only the named target's own guidance; equal
+priorities reject. The overriding module's own guidance remains. Overriding a
+module never redirects that module's contributions to other targets. Each resolved
+document identifies the original target, selected source and replaced source;
+`sources` retains every dependency. Sources remain unchanged. Specialized entries require a matching context label. The App owns
 selection/relevance policy; Runtime neither infers intent nor ranks search results.
 
 Results are marked `trust: 'untrusted-advice'`. Content is never instructions or
 authority. Repeating an identical query within the same session returns
 `alreadyDelivered: true` and empty documents with source receipts; the caller must
 retain the earlier result in its conversation. A new conversation must use a new
-session. Changed registrations invalidate delivery reuse and in-flight results.
+session. A host must call `invalidateContext()` when earlier results are removed
+or reconstructed. `rehydrate: true` clears receipts and reads content again when
+the Agent notices missing advice. Both advance a session context epoch, rejecting
+in-flight results from the previous epoch without clearing App content caches.
+Changed registrations invalidate delivery reuse and in-flight results.
 Authorization is checked again even on reuse and after provider completion.
 Provider/App owns revision-correct content and any content cache; Runtime retains
 only bounded delivery signatures. Disposal rejects late results.
@@ -514,7 +524,8 @@ only bounded delivery signatures. Disposal rejects late results.
 Limits: 128 distinct registered identities per controller lifetime, 32 live
 sessions, 8 concurrent retrievals per session, 32 query IDs/context labels/relations per field, graph depth 16 and at
 most 64 visited nodes, 64 retained query signatures per session, 65,536 text
-characters per document and 262,144 UTF-8 bytes per retrieval. Signature capacity
+characters per body/contribution and 262,144 UTF-8 bytes for both provider payloads
+and resolved text per retrieval. Signature capacity
 resets reuse rather than dropping required content. Providers must honor the
 supplied abort signal and their own I/O deadlines. Runtime rejects oversized or
 wrong-revision results rather than truncating advice. No Agent update, extraction,

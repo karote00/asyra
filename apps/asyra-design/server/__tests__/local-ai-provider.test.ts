@@ -5099,6 +5099,46 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
         })
       ).alreadyDelivered
     ).toBe(true)
+    server.send({
+      method: 'item/completed',
+      params: {
+        threadId: 'other-thread',
+        turnId: 'turn-1',
+        item: { id: 'unrelated-compact', type: 'contextCompaction' }
+      }
+    })
+    expect(
+      (
+        await call('read_knowledge', {
+          ids: ['design.docs-page'],
+          contexts: ['docs-page']
+        })
+      ).alreadyDelivered
+    ).toBe(true)
+    server.send({
+      method: 'item/started',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        item: { id: 'compact-1', type: 'contextCompaction' }
+      }
+    })
+    server.send({
+      method: 'item/completed',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        item: { id: 'compact-1', type: 'contextCompaction' }
+      }
+    })
+    const restored = await call('read_knowledge', {
+      ids: ['design.docs-page'],
+      contexts: ['docs-page']
+    })
+    expect(restored.alreadyDelivered).toBe(false)
+    expect(JSON.stringify(restored)).toContain(
+      'copy actions near their examples'
+    )
     expect(executeBatch).not.toHaveBeenCalled()
   } finally {
     server.finish()

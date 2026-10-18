@@ -1183,6 +1183,16 @@ const runLocalAiProvider = async (
     if (
       (value.method === 'item/started' || value.method === 'item/completed') &&
       isRecord(params.item) &&
+      params.item.type === 'contextCompaction' &&
+      typeof params.item.id === 'string'
+    ) {
+      if (value.method === 'item/completed') knowledge.invalidateContext()
+      return
+    }
+
+    if (
+      (value.method === 'item/started' || value.method === 'item/completed') &&
+      isRecord(params.item) &&
       typeof params.item.id === 'string' &&
       !['webSearch', 'sleep', 'userMessage'].includes(String(params.item.type))
     ) {

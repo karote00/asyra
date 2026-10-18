@@ -184,6 +184,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
       if (sessions.size >= 32) return fail('KNOWLEDGE_LIMIT')
       const who = identity(principal, taskId)
       const delivered = new Set<string>()
+      let contextEpoch = 0
       let deliveryGeneration = generation
       let closed = false
       let pendingReads = 0
@@ -229,6 +230,13 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               return fail('KNOWLEDGE_INVALID_QUERY')
             const ids = list(query.ids)
             const contexts = list(query.contexts)
+            if (
+              query.rehydrate !== undefined &&
+              typeof query.rehydrate !== 'boolean'
+            )
+              return fail('KNOWLEDGE_INVALID_QUERY')
+            if (query.rehydrate) session.invalidateContext()
+            const epoch = contextEpoch
             const version = generation
             const ordered: AiKnowledgeMetadata[] = []
             const visiting = new Set<string>()
@@ -279,11 +287,12 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
                     priority: override.priority
                   })
               }
-            const key = JSON.stringify([ids, contexts, version])
+            const key = JSON.stringify([ids, contexts, version, epoch])
             const recheck = () => {
               assertSession()
               signal.throwIfAborted()
               if (generation !== version) fail('KNOWLEDGE_STALE_REVISION')
+              if (contextEpoch !== epoch) fail('KNOWLEDGE_STALE_CONTEXT')
               for (const metadata of ordered)
                 requirePermission('read', who, metadata)
             }
@@ -300,6 +309,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               })
             let bytes = 0
             const texts = new Map<string, string>()
+            const replacementTexts = new Map<string, Map<string, string>>()
             for (const metadata of ordered) {
               const value = await provider(metadata, who, signal)
               recheck()
@@ -307,38 +317,53 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
                 fail('KNOWLEDGE_STALE_REVISION')
               if (!boundedText(value.text, 65536))
                 fail('KNOWLEDGE_INVALID_CONTENT')
+              const contributions = value.overrides ?? []
+              const targets = new Set(
+                (metadata.overrides ?? []).map((item) => item.target)
+              )
+              if (
+                !Array.isArray(contributions) ||
+                contributions.length !== targets.size ||
+                contributions.some(
+                  (item) =>
+                    !item ||
+                    !targets.has(item.target) ||
+                    !boundedText(item.text, 65536)
+                ) ||
+                new Set(contributions.map((item) => item.target)).size !==
+                  targets.size
+              )
+                fail('KNOWLEDGE_INVALID_CONTENT')
+              replacementTexts.set(
+                metadata.id,
+                new Map(contributions.map((item) => [item.target, item.text]))
+              )
               bytes += new TextEncoder().encode(value.text).byteLength
+              for (const item of contributions)
+                bytes += new TextEncoder().encode(item.text).byteLength
               if (bytes > 262144) fail('KNOWLEDGE_LIMIT')
               texts.set(metadata.id, value.text)
             }
-            const replacements = new Set(
-              ordered
-                .filter((metadata) => metadata.overrides?.length)
-                .map((metadata) => metadata.id)
-            )
-            const documents = ordered
-              .filter((metadata) => !replacements.has(metadata.id))
-              .map((metadata) => {
-                let selected = metadata
-                const replacedSource = overrides.has(metadata.id)
-                  ? source(metadata)
-                  : undefined
-                const seen = new Set<string>()
-                let replacement = overrides.get(selected.id)
-                while (replacement) {
-                  if (seen.has(selected.id)) return fail('KNOWLEDGE_CYCLE')
-                  seen.add(selected.id)
-                  selected = replacement.metadata
-                  replacement = overrides.get(selected.id)
-                }
-                return Object.freeze({
-                  target: metadata.id,
-                  source: source(selected),
-                  ...(replacedSource ? { replacedSource } : {}),
-                  text:
-                    texts.get(selected.id) ?? fail('KNOWLEDGE_INVALID_CONTENT')
-                })
+            const documents = ordered.map((metadata) => {
+              const replacement = overrides.get(metadata.id)?.metadata
+              const text = replacement
+                ? replacementTexts.get(replacement.id)?.get(metadata.id)
+                : texts.get(metadata.id)
+              return Object.freeze({
+                target: metadata.id,
+                source: source(replacement ?? metadata),
+                ...(replacement ? { replacedSource: source(metadata) } : {}),
+                text: text ?? fail('KNOWLEDGE_INVALID_CONTENT')
               })
+            })
+            if (
+              documents.reduce(
+                (total, document) =>
+                  total + new TextEncoder().encode(document.text).byteLength,
+                0
+              ) > 262144
+            )
+              fail('KNOWLEDGE_LIMIT')
             recheck()
             if (delivered.size >= 64) delivered.clear()
             delivered.add(key)
@@ -353,6 +378,11 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
           } finally {
             pendingReads -= 1
           }
+        },
+        invalidateContext() {
+          assertSession()
+          contextEpoch += 1
+          delivered.clear()
         },
         dispose() {
           closed = true

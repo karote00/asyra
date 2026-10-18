@@ -27,7 +27,14 @@ const fixture = () => {
         : allowed && identity.principal === reader,
     read: async (entry) => {
       reads++
-      return { revision: entry.revision, text: `${entry.id}@${entry.revision}` }
+      return {
+        revision: entry.revision,
+        text: `${entry.id}@${entry.revision}`,
+        overrides: entry.overrides?.map(({ target }) => ({
+          target,
+          text: `${entry.id} replaces ${target}`
+        }))
+      }
     }
   })
   return {
@@ -160,12 +167,12 @@ describe('optional knowledge access', () => {
     const result = await access
       .openSession(reader, 'task')
       .retrieve({ ids: ['primary', 'accent'] }, signal())
-    expect(result.documents).toHaveLength(1)
+    expect(result.documents).toHaveLength(3)
     expect(result.documents[0]).toMatchObject({
       target: 'button',
       source: { id: 'primary' },
       replacedSource: { id: 'button' },
-      text: 'primary@1'
+      text: 'primary replaces button'
     })
     expect(result.sources.map((item) => item.id)).toEqual([
       'button',
@@ -534,4 +541,232 @@ it('bounds concurrent provider work and releases capacity after settlement', asy
   expect(
     (await session.retrieve({ ids: ['button'] }, signal())).alreadyDelivered
   ).toBe(true)
+})
+
+it('preserves mixed module guidance and resolves target-specific nested overrides independently of registration order', async () => {
+  const entries = [
+    metadata('button'),
+    metadata('colors'),
+    metadata('middle', { overrides: [{ target: 'button', priority: 1 }] }),
+    metadata('page', {
+      references: ['colors'],
+      extends: ['button'],
+      overrides: [
+        { target: 'middle', priority: 2 },
+        { target: 'colors', priority: 1 }
+      ]
+    })
+  ]
+  const read = async (entry: AiKnowledgeMetadata) => ({
+    revision: entry.revision,
+    text: `Independent ${entry.id}`,
+    overrides: entry.overrides?.map(({ target }) => ({
+      target,
+      text: `${entry.id} replaces ${target}`
+    }))
+  })
+  const resolve = async (catalog: AiKnowledgeMetadata[]) => {
+    const access = createAiKnowledgeAccess({
+      tenantId: 'tenant',
+      scopeId: 'scope',
+      authorize: () => true,
+      read
+    })
+    catalog.forEach((entry) => access.register(entry, admin))
+    return access
+      .openSession(reader, 'task')
+      .retrieve({ ids: ['page'] }, signal())
+  }
+  const result = await resolve(entries)
+  expect(result).toEqual(await resolve([...entries].reverse()))
+  expect(result.documents.find((doc) => doc.target === 'page')?.text).toBe(
+    'Independent page'
+  )
+  expect(result.documents.find((doc) => doc.target === 'button')).toMatchObject(
+    {
+      text: 'middle replaces button',
+      source: { id: 'middle' },
+      replacedSource: { id: 'button' }
+    }
+  )
+  expect(result.documents.find((doc) => doc.target === 'colors')?.text).toBe(
+    'page replaces colors'
+  )
+  expect(result.sources.map((item) => item.id).sort()).toEqual([
+    'button',
+    'colors',
+    'middle',
+    'page'
+  ])
+})
+
+it('rehydrates lost context without changing provider content or revision', async () => {
+  const { access, reads } = fixture()
+  access.register(metadata('button'), admin)
+  const session = access.openSession(reader, 'task')
+  await session.retrieve({ ids: ['button'] }, signal())
+  expect(
+    (await session.retrieve({ ids: ['button'] }, signal())).alreadyDelivered
+  ).toBe(true)
+  expect(reads()).toBe(1)
+  const restored = await session.retrieve(
+    { ids: ['button'], rehydrate: true },
+    signal()
+  )
+  expect(restored.alreadyDelivered).toBe(false)
+  expect(restored.documents[0].text).toBe('button@1')
+  expect(reads()).toBe(2)
+  session.invalidateContext()
+  expect(
+    (await session.retrieve({ ids: ['button'] }, signal())).documents[0].text
+  ).toBe('button@1')
+  expect(reads()).toBe(3)
+  expect(
+    (await session.retrieve({ ids: ['button'] }, signal())).alreadyDelivered
+  ).toBe(true)
+  expect(reads()).toBe(3)
+})
+
+it('rejects stale in-flight context and does not let rehydration bypass authorization', async () => {
+  let finish!: (value: { revision: number; text: string }) => void
+  let allowed = true
+  const access = createAiKnowledgeAccess({
+    tenantId: 'tenant',
+    scopeId: 'scope',
+    authorize: () => allowed,
+    read: () =>
+      new Promise((resolve) => {
+        finish = resolve
+      })
+  })
+  access.register(metadata('button'), admin)
+  const session = access.openSession(reader, 'task')
+  const pending = session.retrieve({ ids: ['button'] }, signal())
+  session.invalidateContext()
+  finish({ revision: 1, text: 'Old effective context' })
+  await expect(pending).rejects.toMatchObject({
+    code: 'KNOWLEDGE_STALE_CONTEXT'
+  })
+  allowed = false
+  await expect(
+    session.retrieve({ ids: ['button'], rehydrate: true }, signal())
+  ).rejects.toMatchObject({ code: 'KNOWLEDGE_UNAUTHORIZED' })
+})
+
+it('requires exact bounded target content and preserves unrelated losing-module advice', async () => {
+  let contributions: unknown = []
+  const access = createAiKnowledgeAccess({
+    tenantId: 'tenant',
+    scopeId: 'scope',
+    authorize: () => true,
+    read: async (entry) => {
+      let overrides: { target: string; text: string }[] = []
+      if (entry.id === 'low') overrides = contributions as typeof overrides
+      if (entry.id === 'high')
+        overrides = [{ target: 'button', text: 'Winning button advice' }]
+      return { revision: 1, text: `Own ${entry.id}`, overrides }
+    }
+  })
+  access.register(metadata('button'), admin)
+  access.register(
+    metadata('low', { overrides: [{ target: 'button', priority: 1 }] }),
+    admin
+  )
+  access.register(
+    metadata('high', { overrides: [{ target: 'button', priority: 2 }] }),
+    admin
+  )
+  const session = access.openSession(reader, 'task')
+  for (const invalid of [
+    [],
+    [{ target: '../secret', text: 'x' }],
+    [{ target: 'button', text: '' }],
+    [
+      { target: 'button', text: 'x' },
+      { target: 'button', text: 'y' }
+    ],
+    [{ target: 'button', text: 'x'.repeat(65537) }]
+  ]) {
+    contributions = invalid
+    await expect(
+      session.retrieve({ ids: ['low', 'high'] }, signal())
+    ).rejects.toMatchObject({ code: 'KNOWLEDGE_INVALID_CONTENT' })
+  }
+  contributions = [{ target: 'button', text: 'Losing targeted advice' }]
+  const result = await session.retrieve({ ids: ['low', 'high'] }, signal())
+  expect(result.documents.map((doc) => doc.text)).toEqual([
+    'Winning button advice',
+    'Own high',
+    'Own low'
+  ])
+  expect(result.alreadyDelivered).toBe(false)
+})
+
+it('does not propagate an override into unrelated contributions of its target', async () => {
+  const access = createAiKnowledgeAccess({
+    tenantId: 'tenant',
+    scopeId: 'scope',
+    authorize: () => true,
+    read: async (entry) => ({
+      revision: 1,
+      text: 'Own',
+      overrides: entry.overrides?.map(({ target }) => ({
+        target,
+        text: entry.id === 'final' ? 'x'.repeat(60000) : 'Short'
+      }))
+    })
+  })
+  for (const id of ['a', 'b', 'c', 'd', 'e'])
+    access.register(metadata(id), admin)
+  access.register(
+    metadata('middle', {
+      overrides: ['a', 'b', 'c', 'd', 'e'].map((target) => ({
+        target,
+        priority: 1
+      }))
+    }),
+    admin
+  )
+  access.register(
+    metadata('final', { overrides: [{ target: 'middle', priority: 1 }] }),
+    admin
+  )
+  const result = await access
+    .openSession(reader, 'task')
+    .retrieve({ ids: ['final'] }, signal())
+  expect(
+    result.documents
+      .filter((doc) => ['a', 'b', 'c', 'd', 'e'].includes(doc.target))
+      .map((doc) => doc.text)
+  ).toEqual(Array(5).fill('Short'))
+  expect(result.documents.find((doc) => doc.target === 'middle')?.text).toBe(
+    'x'.repeat(60000)
+  )
+})
+
+it('counts all targeted override bodies toward the retrieval byte budget', async () => {
+  const targets = ['a', 'b', 'c', 'd', 'e']
+  const access = createAiKnowledgeAccess({
+    tenantId: 'tenant',
+    scopeId: 'scope',
+    authorize: () => true,
+    read: async (entry) => ({
+      revision: 1,
+      text: 'Own advice',
+      overrides: entry.overrides?.map(({ target }) => ({
+        target,
+        text: 'x'.repeat(60000)
+      }))
+    })
+  })
+  targets.forEach((id) => access.register(metadata(id), admin))
+  access.register(
+    metadata('page', {
+      overrides: targets.map((target) => ({ target, priority: 1 }))
+    }),
+    admin
+  )
+  await expect(
+    access.openSession(reader, 'task').retrieve({ ids: ['page'] }, signal())
+  ).rejects.toMatchObject({ code: 'KNOWLEDGE_LIMIT' })
 })

@@ -23,7 +23,18 @@ export interface AiKnowledgeIdentity {
 export type AiKnowledgeOperation =
   'register' | 'update' | 'unregister' | 'discover' | 'read'
 
+export interface AiKnowledgeContent {
+  readonly revision: number
+  readonly text: string
+  readonly overrides?: readonly {
+    readonly target: string
+    readonly text: string
+  }[]
+}
+
 export interface AiKnowledgeQuery {
+  /** Re-read advice after earlier results are absent from effective context. */
+  readonly rehydrate?: boolean
   readonly ids: readonly string[]
   readonly contexts?: readonly string[]
 }
@@ -49,6 +60,8 @@ export interface AiKnowledgeResult {
 }
 
 export interface AiKnowledgeSession {
+  /** Host notification that retained tool results were dropped or reconstructed. */
+  invalidateContext(): void
   discover(contexts?: readonly string[]): readonly AiKnowledgeMetadata[]
   retrieve(
     query: AiKnowledgeQuery,
@@ -71,5 +84,5 @@ export interface AiKnowledgeOptions {
     metadata: AiKnowledgeMetadata,
     identity: AiKnowledgeIdentity,
     signal: AbortSignal
-  ) => Promise<{ readonly revision: number; readonly text: string }>
+  ) => Promise<AiKnowledgeContent>
 }

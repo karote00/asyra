@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "domain-knowledge-v1",
-  "revision": 16,
+  "revision": 21,
   "definition": {
     "title": "Composable domain knowledge V1",
     "purpose": "Deliver passive shared knowledge and authorized optional contextual access in Design.",
@@ -164,24 +164,24 @@
         "criterionId": "verified",
         "kind": "automated",
         "status": "passed",
-        "binding": "4f217fd49af8b6a4268b1be8c9a9a71978074bd55d590b469a19204ebce8581a",
-        "actor": "Codex PR review",
-        "executionId": "9880667d-030f-4e84-8a17-e42aedc7fe5a",
+        "binding": "f45f71b5d1c18fe53f189fd73516925bdfe04b59da2de4be6da4807b4afe0f4f",
+        "actor": "Codex reviewer corrections",
+        "executionId": "e652337e-968d-4569-b9b0-6307f4c89964",
         "caseId": "knowledge-runtime",
-        "summary": "PR #346 review: 408 Runtime tests passed, including two regressions first demonstrated failing on the prior head. Build and scoped lint passed. Updates require existing exact revisions and authorization of both original and proposed metadata.",
-        "at": "2026-10-18T06:30:24.535Z"
+        "summary": "414 Runtime tests, build and lint passed. Test-first mixed/nested composition and context restoration corrections preserve independent guidance, exact-target overrides, provenance, authorization, revision invalidation and bounded payloads.",
+        "at": "2026-10-18T06:55:16.825Z"
       },
       {
         "nodeId": "design",
         "criterionId": "verified",
         "kind": "automated",
         "status": "passed",
-        "binding": "a52d2eb01aad6ecf4257c034c8279d8f290e7e6aaa81df32738f65fe0635a661",
-        "actor": "Codex PR review",
-        "executionId": "10bd3862-5ff3-4cb5-bc48-21fd9a2f49bc",
+        "binding": "467a86c166df0a0469e75d3c7b2650f4f4fbc8914d23d2520cff31e96cab573b",
+        "actor": "Codex reviewer corrections",
+        "executionId": "7335d610-3fa6-4371-8aae-19231b9a72e7",
         "caseId": "knowledge-design",
-        "summary": "Direct consumer revalidated against corrected Runtime: 189 knowledge/provider tests passed, one existing skip; full Design typecheck passed. App sources unchanged.",
-        "at": "2026-10-18T06:30:24.537Z"
+        "summary": "1299 server tests passed; two existing skips. Typecheck and production build passed. Tests cover separate discovery/content, docs refinement and explicit landing CTA retrieval, compaction rehydration, foreign-thread isolation and single-load provider content reuse. Public API binding tests unchanged and passing.",
+        "at": "2026-10-18T06:55:16.827Z"
       }
     ],
     "notes": [],
@@ -189,7 +189,7 @@
       {
         "nodeId": "delivery",
         "status": "in-progress",
-        "reason": "PR #346 security review fixes validated locally; updated-head remote CI and human review pending. No merge."
+        "reason": "Reviewer corrections validated locally; updated-head remote CI and human review pending. No merge."
       }
     ],
     "sources": [
@@ -199,11 +199,11 @@
       },
       {
         "nodeId": "runtime",
-        "revision": "sha256:84c57311926f7c2faf949cdf7dae7d1da456d5cc32d733f055d6d6a46e7f6b08"
+        "revision": "sha256:7db094cd4174cb4a1784d59c1335867973de0cd8e67c193fc4c1dba8f8386c23"
       },
       {
         "nodeId": "design",
-        "revision": "sha256:0e897a0c4e1cbd574139ddbcb2cc651bf69eacfac89197be96fdf77a956790d5"
+        "revision": "sha256:fee8cf8ba0ef97c73c75ec6014966046cee95520ef1b38df8f72756d8671de88"
       }
     ],
     "warnings": []

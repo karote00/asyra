@@ -206,6 +206,7 @@ export { recordStorageBatchBytes } from './profiler/record-outbox.js'
 export { createAiKnowledgeAccess, AiKnowledgeError } from './knowledge.js'
 export type {
   AiKnowledgeMetadata,
+  AiKnowledgeContent,
   AiKnowledgeIdentity,
   AiKnowledgeOperation,
   AiKnowledgeQuery,

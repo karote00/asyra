@@ -771,14 +771,33 @@ package paths; model arguments cannot choose files, credentials or scope.
 This initial loader accepts JSON-compatible YAML frontmatter and rejects other
 syntax, unknown fields and file-defined identity/revision. The Runtime itself
 accepts normalized descriptors and does not impose a parser on other Apps.
+For App files with overrides, each frontmatter entry contains `target`, `priority`
+and `text`. Admission separates `text` into provider content; discovery exposes only
+`target` and `priority`. The Markdown body remains independent module guidance.
+A missing targeted body is rejected before registration; no whole-body fallback
+or source-file mutation occurs.
 
 For low-level advice, select IDs such as `components.button`. For specialization,
 discover with `docs-page` or `landing-page`, then include the desired composition
 ID in the read. Several distinct reads in one task are supported. The Runtime
 remembers identical delivered contexts only within that request; provider results
-retain earlier advice. Request cleanup disposes access and releases the App's
+retain earlier advice. The host invalidates delivery receipts on the current
+thread's completed `contextCompaction` item. The Agent can also request
+`read_knowledge` with `rehydrate: true` when earlier advice is missing. Both paths
+re-read the App's admitted content without reloading files. A reconstructed request
+creates a fresh session. Unchanged effective context still reuses delivery receipts.
+Request cleanup disposes access and releases the App's
 content map. Files are loaded lazily once per request, so no shared mutable cache
 or cross-tenant retention is introduced.
+
+The current six-entry catalog needs no separate intent-search API. Metadata gives
+IDs, descriptions and composition targets; the Agent selects labels from the user's
+intent and target. For "refine a docs-page button", docs discovery includes general
+button advice and the docs composition while excluding landing-page advice. For
+"make it resemble a landing CTA", a second landing-context discovery/read is
+allowed within the same task. Context labels filter relevance, not authorization.
+This proves the retrieval contract; it does not guarantee a model interprets every
+natural-language request correctly.
 
 Trusted App code may install/remove app-supplied revisions through
 `createDesignKnowledge`; that owner is never registered as an Agent tool. It
