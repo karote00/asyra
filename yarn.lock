@@ -87,6 +87,7 @@ __metadata:
     "@asyra/collaboration": "workspace:*"
     "@asyra/core": "workspace:*"
     "@asyra/design-system": "workspace:*"
+    "@asyra/domain-knowledge": "workspace:*"
     "@asyra/factory": "workspace:*"
     "@asyra/feature-system": "workspace:*"
     "@asyra/input-system": "workspace:*"
@@ -275,6 +276,12 @@ __metadata:
   peerDependencies:
     react: ^19.2.8
     react-dom: ^19.2.8
+  languageName: unknown
+  linkType: soft
+
+"@asyra/domain-knowledge@workspace:*, @asyra/domain-knowledge@workspace:domain-knowledge":
+  version: 0.0.0-use.local
+  resolution: "@asyra/domain-knowledge@workspace:domain-knowledge"
   languageName: unknown
   linkType: soft
 

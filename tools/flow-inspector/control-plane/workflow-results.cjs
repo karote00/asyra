@@ -473,16 +473,23 @@ function aggregateScope(evidence, identity, jobs) {
           workspace.name
         ) &&
         typeof workspace.directory === 'string' &&
-        relationshipMap.workspaceRoots.some((root) =>
-          workspace.directory.startsWith(root + '/')
+        relationshipMap.workspaceRoots.some(
+          (root) =>
+            workspace.directory === root ||
+            workspace.directory.startsWith(root + '/')
         ) &&
         typeof workspace.group === 'string' &&
-        typeof workspace.buildTask === 'string' &&
+        (workspace.contentOnly === true
+          ? workspace.buildTask === undefined &&
+            workspace.testTask === undefined &&
+            workspace.e2eTask === null &&
+            Array.isArray(workspace.dependencies) &&
+            workspace.dependencies.length === 0
+          : typeof workspace.buildTask === 'string' &&
+            workspace.testTask === 'test:ci') &&
         ['lint', 'eslint'].includes(workspace.lintTask) &&
         [null, 'has:test'].includes(workspace.hasTestTask ?? null) &&
         (workspace.e2eTask === null || workspace.e2eTask === 'test:e2e:ci') &&
-        typeof workspace.testTask === 'string' &&
-        workspace.testTask === 'test:ci' &&
         Array.isArray(workspace.dependencies)
     ) &&
     unique(graph.map(({ name }) => name)) &&
@@ -496,6 +503,7 @@ function aggregateScope(evidence, identity, jobs) {
       const workspace = graphByName.get(entry?.name)
       return (
         workspace &&
+        workspace.contentOnly !== true &&
         entry.directory === workspace.directory &&
         entry.buildTask === workspace.buildTask &&
         entry.lintTask === workspace.lintTask &&
@@ -513,11 +521,17 @@ function aggregateScope(evidence, identity, jobs) {
     }) &&
     unique(matrix.map(({ name }) => name)) &&
     unique(matrix.map(({ artifactId }) => artifactId)) &&
-    JSON.stringify(relationshipMap.affectedWorkspaceNames) ===
-      JSON.stringify(matrix.map(({ name }) => name)) &&
+    relationshipMap.affectedWorkspaceNames.every((name) =>
+      graphByName.has(name)
+    ) &&
+    JSON.stringify(
+      relationshipMap.affectedWorkspaceNames.filter(
+        (name) => graphByName.get(name).contentOnly !== true
+      )
+    ) === JSON.stringify(matrix.map(({ name }) => name)) &&
     JSON.stringify(evidence?.workspaceMatrix) === JSON.stringify(matrix) &&
     JSON.stringify(evidence?.affectedWorkspaces) ===
-      JSON.stringify(matrix.map(({ name }) => name))
+      JSON.stringify(relationshipMap.affectedWorkspaceNames)
   const expectedFrameworkPackages = validMatrix
     ? matrix
         .filter(({ directory }) => directory.startsWith('packages/'))
@@ -579,7 +593,9 @@ function aggregateScope(evidence, identity, jobs) {
     relationshipMap.designE2ERequired === (jobs.designSelected === 'true') &&
     relationshipMap.flowInspectorValidationRequired ===
       (executionPlan.checks.controlPlane?.mode === 'full') &&
-    (executionPlan.mode !== 'full' || matrix.length === graph.length) &&
+    (executionPlan.mode !== 'full' ||
+      matrix.length ===
+        graph.filter(({ contentOnly }) => !contentOnly).length) &&
     JSON.stringify(relationshipMap.unknownPaths) === '[]' &&
     JSON.stringify(evidence.unknownPaths) === '[]'
   if (!admitted)

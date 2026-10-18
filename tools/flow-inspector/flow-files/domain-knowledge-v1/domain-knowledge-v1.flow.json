@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "domain-knowledge-v1",
+  "revision": 21,
+  "definition": {
+    "title": "Composable domain knowledge V1",
+    "purpose": "Deliver passive shared knowledge and authorized optional contextual access in Design.",
+    "nodes": [
+      {
+        "id": "content",
+        "title": "Shared knowledge content",
+        "owner": "domain-knowledge",
+        "objective": "Input: authored advisory Markdown and package metadata. Output: flat data-only workspace. No runtime code or dependencies; never modified by App or Agent. Failure owner: package admission.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Shared knowledge content verified against acceptance tests",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "knowledge-content"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
+        ],
+        "implementationRefs": [
+          "domain-knowledge",
+          "package.json",
+          "scripts/gen-turbo.js",
+          "scripts/__tests__"
+        ],
+        "actions": []
+      },
+      {
+        "id": "runtime",
+        "title": "Optional scoped knowledge access",
+        "owner": "ai-agent-runtime",
+        "objective": "Input: trusted metadata, authorization and provider. Output: scoped discovery and deterministic advisory resolution. Optional when absent; no filesystem, tool execution or knowledge writes from read sessions. Admin changes invalidate request reuse; failures reject at Runtime.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "domain-knowledge-v1",
+            "nodeId": "content"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Optional scoped knowledge access verified against acceptance tests",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "knowledge-runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
+        ],
+        "implementationRefs": [
+          "packages/ai-agent-runtime"
+        ],
+        "actions": []
+      },
+      {
+        "id": "design",
+        "title": "Design knowledge integration",
+        "owner": "asyra-design",
+        "objective": "Input: allowlisted files and trusted request identity. Output: deferred metadata/read tools through existing host. No admin tools; no canonical mutation. App owns file admission, relevance, content and failure; Runtime owns context reuse.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "domain-knowledge-v1",
+            "nodeId": "runtime"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Design knowledge integration verified against acceptance tests",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "knowledge-design"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server",
+          "apps/asyra-design/knowledge",
+          "apps/asyra-design/src/constants",
+          "apps/asyra-design/package.json"
+        ],
+        "actions": []
+      },
+      {
+        "id": "delivery",
+        "title": "Integrated verification and PR",
+        "owner": "Codex",
+        "objective": "Input: integrated candidate. Output: scoped passing gates and reviewable PR. Preserve ordinary permissions, transaction and provider behavior; no merge or publication. Failure owner: affected gate owner.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "domain-knowledge-v1",
+            "nodeId": "design"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "verified",
+            "title": "Integrated verification and PR verified against acceptance tests",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "knowledge-delivery"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
+        ],
+        "implementationRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated",
+        "title": "All acceptance cases and preserved behavior verified on delivered source",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "content",
+        "criterionId": "verified",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "d0feb3574b41204b9074b21cd76ed83e844839f03bd26d8788873b99b9a50ce6",
+        "actor": "Codex local gate evidence",
+        "executionId": "38044212-d99b-4f46-9ba9-282e940decb2",
+        "caseId": "knowledge-content",
+        "summary": "343 selected repository/source tests passed, one existing skip. Content-only final aggregation and immutable knowledge source capture regressions passed. Original archive, dependency and Turbo evidence retained; executable tasks and workspace dependencies on content-only graph entries are rejected.",
+        "at": "2026-10-17T20:55:17.129Z"
+      },
+      {
+        "nodeId": "runtime",
+        "criterionId": "verified",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "f45f71b5d1c18fe53f189fd73516925bdfe04b59da2de4be6da4807b4afe0f4f",
+        "actor": "Codex reviewer corrections",
+        "executionId": "e652337e-968d-4569-b9b0-6307f4c89964",
+        "caseId": "knowledge-runtime",
+        "summary": "414 Runtime tests, build and lint passed. Test-first mixed/nested composition and context restoration corrections preserve independent guidance, exact-target overrides, provenance, authorization, revision invalidation and bounded payloads.",
+        "at": "2026-10-18T06:55:16.825Z"
+      },
+      {
+        "nodeId": "design",
+        "criterionId": "verified",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "467a86c166df0a0469e75d3c7b2650f4f4fbc8914d23d2520cff31e96cab573b",
+        "actor": "Codex reviewer corrections",
+        "executionId": "7335d610-3fa6-4371-8aae-19231b9a72e7",
+        "caseId": "knowledge-design",
+        "summary": "1299 server tests passed; two existing skips. Typecheck and production build passed. Tests cover separate discovery/content, docs refinement and explicit landing CTA retrieval, compaction rehydration, foreign-thread isolation and single-load provider content reuse. Public API binding tests unchanged and passing.",
+        "at": "2026-10-18T06:55:16.827Z"
+      }
+    ],
+    "notes": [],
+    "progress": [
+      {
+        "nodeId": "delivery",
+        "status": "in-progress",
+        "reason": "Reviewer corrections validated locally; updated-head remote CI and human review pending. No merge."
+      }
+    ],
+    "sources": [
+      {
+        "nodeId": "content",
+        "revision": "sha256:f65ee3682f03c533b1d0a5b33d284442a9f640309e82836d120dfca54ae9c3db"
+      },
+      {
+        "nodeId": "runtime",
+        "revision": "sha256:7db094cd4174cb4a1784d59c1335867973de0cd8e67c193fc4c1dba8f8386c23"
+      },
+      {
+        "nodeId": "design",
+        "revision": "sha256:fee8cf8ba0ef97c73c75ec6014966046cee95520ef1b38df8f72756d8671de88"
+      }
+    ],
+    "warnings": []
+  }
+}

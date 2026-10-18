@@ -475,3 +475,46 @@ test('owner transfer validates a derived runtime against its original authority 
   )
   assert.equal(fs.existsSync(destination), false)
 })
+
+test('flat content-only dependencies are captured without a runtime entry and remain fingerprinted', (t) => {
+  const input = fixture(t)
+  input.write('package.json', {
+    private: true,
+    workspaces: ['apps/*', 'packages/*', 'tools/*', 'knowledge']
+  })
+  input.write('knowledge/package.json', {
+    name: '@example/knowledge',
+    contentOnly: true
+  })
+  input.write('knowledge/button.md', '# Advisory button guidance\n')
+  input.write('apps/studio/package.json', {
+    name: '@example/editor',
+    dependencies: {
+      '@example/shared': 'workspace:*',
+      '@example/knowledge': 'workspace:*'
+    }
+  })
+  input.manifest.workspaceSources.push({
+    name: '@example/knowledge',
+    inputs: ['button.md'],
+    entry: null
+  })
+  const snapshot = input.capture()
+  const entry = snapshot.runtimeAuthority.packages.find(
+    ({ name }) => name === '@example/knowledge'
+  )
+  assert.equal(entry.entryPath, null)
+  assert.deepEqual(entry.sourceInputs, ['button.md'])
+  assert.ok(
+    snapshot.runtimeSource.files.some(
+      ({ path }) => path === 'knowledge/button.md'
+    )
+  )
+  assert.doesNotThrow(() => validateSourceSnapshot(snapshot, input.contract()))
+  input.write('knowledge/button.md', '# Revised advice\n')
+  assert.notEqual(
+    captureSource(input.root, input.runDirectory + '-updated', input.contract())
+      .runtimeSource.digest,
+    snapshot.runtimeSource.digest
+  )
+})

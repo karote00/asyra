@@ -125,9 +125,17 @@ function appRuntimeFixture(root, directory) {
     negativeCaseIds: ['app.gradient'],
     externalInputs: [],
     workspaceSources: [
+      ...JSON.parse(
+        fs.readFileSync(
+          path.join(root, 'apps/asyra-design/flow-contracts.json'),
+          'utf8'
+        )
+      ).workspaceSources.filter(
+        ({ name }) => name === '@asyra/domain-knowledge'
+      ),
       {
         name: '@asyra/asyra-design',
-        inputs: ['src/**', 'server/**'],
+        inputs: ['src/**', 'server/**', 'knowledge/**'],
         entry: null
       },
       {

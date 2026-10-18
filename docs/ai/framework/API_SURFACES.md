@@ -1025,3 +1025,11 @@ while the owning provider invocation remains pending. All batches and the final
 returned batch share one transaction; fatal failure or cancellation rolls back.
 Provider retry is forbidden once a batch is admitted. App-specific tool catalogs
 and geometry preparation remain backend-owned.
+
+### Optional passive knowledge access
+
+`@asyra/ai-agent-runtime` exports `createAiKnowledgeAccess`, `AiKnowledgeError`
+and `AiKnowledge*` types. Trusted administration and request-bound discovery/read
+sessions are separate surfaces; there is no automatic tool registration or file
+I/O. See [the Runtime contract](packages/ai-agent-runtime.md#optional-knowledge-access).
+The independent content owner is [Knowledge](../knowledge/README.md).

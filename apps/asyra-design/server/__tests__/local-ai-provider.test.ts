@@ -5025,3 +5025,123 @@ it.each(['read', 'mutation', 'external', 'mixed', 'unknown'] as const)(
     expect(spawn).toHaveBeenCalledOnce()
   }
 )
+
+it('discovers and retrieves both knowledge contexts through the normal provider without document writes', async () => {
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  const executeBatch = vi.fn(async () => ({ actionResults: [], context: {} }))
+  const request = requestLocalAiActionBatch(input, {
+    model: 'selected-model',
+    executable: 'codex',
+    executeBatch
+  })
+  await untilTurn(server.packets)
+  const groups = server.packets.find(
+    (packet) => packet.method === 'thread/start'
+  )?.params.dynamicTools as {
+    name: string
+    tools: { name: string; description: string }[]
+  }[]
+  const knowledge = groups.find((group) => group.name === 'design_knowledge')
+  expect(knowledge?.tools.map((tool) => tool.name)).toEqual([
+    'discover_knowledge',
+    'read_knowledge'
+  ])
+  expect(JSON.stringify(knowledge)).not.toContain('## How')
+  let id = 800
+  const call = async (tool: string, args: unknown) => {
+    const current = ++id
+    server.send({
+      id: current,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: `knowledge-${current}`,
+        tool,
+        arguments: args
+      }
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.id === current)).toBe(true)
+    )
+    const packet = server.packets.find(
+      (packet) => packet.id === current
+    ) as unknown as {
+      result: { success: boolean; contentItems: { text: string }[] }
+    }
+    expect(packet.result.success).toBe(true)
+    return JSON.parse(packet.result.contentItems[0].text)
+  }
+  try {
+    const metadata = await call('discover_knowledge', {
+      contexts: ['docs-page']
+    })
+    expect(
+      metadata.entries.some(
+        (entry: { id: string }) => entry.id === 'design.docs-page'
+      )
+    ).toBe(true)
+    const docs = await call('read_knowledge', {
+      ids: ['design.docs-page'],
+      contexts: ['docs-page']
+    })
+    const landing = await call('read_knowledge', {
+      ids: ['design.landing-page'],
+      contexts: ['landing-page']
+    })
+    expect(JSON.stringify(docs)).toContain('copy actions near their examples')
+    expect(JSON.stringify(landing)).toContain('Identify the audience')
+    expect(
+      (
+        await call('read_knowledge', {
+          ids: ['design.docs-page'],
+          contexts: ['docs-page']
+        })
+      ).alreadyDelivered
+    ).toBe(true)
+    server.send({
+      method: 'item/completed',
+      params: {
+        threadId: 'other-thread',
+        turnId: 'turn-1',
+        item: { id: 'unrelated-compact', type: 'contextCompaction' }
+      }
+    })
+    expect(
+      (
+        await call('read_knowledge', {
+          ids: ['design.docs-page'],
+          contexts: ['docs-page']
+        })
+      ).alreadyDelivered
+    ).toBe(true)
+    server.send({
+      method: 'item/started',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        item: { id: 'compact-1', type: 'contextCompaction' }
+      }
+    })
+    server.send({
+      method: 'item/completed',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        item: { id: 'compact-1', type: 'contextCompaction' }
+      }
+    })
+    const restored = await call('read_knowledge', {
+      ids: ['design.docs-page'],
+      contexts: ['docs-page']
+    })
+    expect(restored.alreadyDelivered).toBe(false)
+    expect(JSON.stringify(restored)).toContain(
+      'copy actions near their examples'
+    )
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    server.finish()
+    await request
+  }
+})

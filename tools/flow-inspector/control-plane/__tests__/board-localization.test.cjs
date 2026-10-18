@@ -10,8 +10,13 @@ const { startServer } = require('../server.cjs')
 
 function assertAppFailures(fault) {
   assert.equal(fault.result.code, 1, fault.result.output)
-  assert.equal(fault.record.cases.length, 2, fault.result.output)
-  for (const item of fault.record.cases) {
+  const failures = fault.record.cases.filter((item) => item.status === 'failed')
+  assert.equal(failures.length, 2, fault.result.output)
+  assert.equal(
+    fault.record.cases.filter((item) => item.status === 'passed').length,
+    2
+  )
+  for (const item of failures) {
     assert.equal(item.status, 'failed', fault.result.output)
     assert.equal(item.resolution, 'mapped', JSON.stringify(fault.record.issues))
     assert.ok(item.failures.length > 0)
@@ -407,11 +412,29 @@ test(
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
-    assert.equal(failures.length, 3)
+    const manifest = require('../../../../apps/asyra-design/flow-contracts.json')
+    const selectedScenarios = [
+      'omit-registered-tools',
+      'misclassify-combined-tool',
+      'ignore-canonical-evidence'
+    ]
+    const expected = [
+      ...new Set(
+        manifest.scenarios
+          .filter((scenario) => selectedScenarios.includes(scenario.id))
+          .flatMap((scenario) => scenario.expectedFailedCaseIds)
+      )
+    ].sort()
+    assert.deepEqual(
+      failures
+        .flatMap((item) => item.locations.map((location) => location.caseId))
+        .sort(),
+      expected
+    )
     await page.goto(server.origin + '/ai-execution-flow')
     const frame = page.frameLocator('iframe')
     const buttons = frame.locator('#test-result-failures button')
-    await expect(buttons).toHaveCount(3)
+    await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(3)
     const details = frame.locator('#test-result-detail')
     for (const [index, item] of failures.entries()) {
@@ -446,7 +469,7 @@ test(
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
-    await expect(buttons).toHaveCount(3)
+    await expect(buttons).toHaveCount(expected.length)
     await buttons.first().click()
     await expect(details).toContainText(failures[0].failures[0])
     t.diagnostic('Execution Board evidence: ' + fixture.directory)
@@ -537,11 +560,30 @@ test(
     const failures = fault.record.cases.filter(
       (item) => item.status === 'failed'
     )
-    assert.equal(failures.length, 4)
+    const manifest = require('../../../../packages/ai-agent-runtime/flow-contracts.json')
+    const selectedScenarios = [
+      'allow-control-plane',
+      'copy-registration-receipt',
+      'omit-invocation-calls',
+      'omit-reload-name'
+    ]
+    const expected = [
+      ...new Set(
+        manifest.scenarios
+          .filter((scenario) => selectedScenarios.includes(scenario.id))
+          .flatMap((scenario) => scenario.expectedFailedCaseIds)
+      )
+    ].sort()
+    assert.deepEqual(
+      failures
+        .flatMap((item) => item.locations.map((location) => location.caseId))
+        .sort(),
+      expected
+    )
     await page.goto(server.origin + '/reusable-tool-composition')
     const frame = page.frameLocator('iframe')
     const buttons = frame.locator('#test-result-failures button')
-    await expect(buttons).toHaveCount(4)
+    await expect(buttons).toHaveCount(expected.length)
     await expect(frame.locator('.observation-failed')).toHaveCount(4)
     const details = frame.locator('#test-result-detail')
     for (const [index, item] of failures.entries()) {
@@ -579,7 +621,7 @@ test(
     await expect(buttons).toHaveCount(0)
     await expect(frame.locator('.observation-failed')).toHaveCount(0)
     await frame.locator('#test-result-history').selectOption(fault.record.id)
-    await expect(buttons).toHaveCount(4)
+    await expect(buttons).toHaveCount(expected.length)
     await buttons.first().click()
     await expect(details).toContainText(failures[0].failures[0])
     t.diagnostic('Recipe Board evidence: ' + fixture.directory)

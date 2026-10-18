@@ -1,3 +1,4 @@
+import { createLocalKnowledgeTools } from './local-knowledge'
 import type { ExecutionActivity } from '@asyra/ai-agent-runtime'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
@@ -326,6 +327,7 @@ const runLocalAiProvider = async (
     ) => usage?.trace(stage, evidence)
   }
   const toolController = new AbortController()
+  const knowledge = createLocalKnowledgeTools(usage?.requestId ?? randomUUID())
   let host: ReturnType<typeof createLocalToolHost> | undefined
   const notificationCounts = new Map<string, number>()
   let libraryUnavailable = false
@@ -467,6 +469,12 @@ const runLocalAiProvider = async (
         )
       : undefined
     const toolGroups = [
+      {
+        name: 'design_knowledge',
+        description:
+          'Discover and read relevant advisory design knowledge without changing files or permissions.',
+        owner: knowledge
+      },
       {
         name: 'image_analysis',
         description:
@@ -1175,6 +1183,16 @@ const runLocalAiProvider = async (
     if (
       (value.method === 'item/started' || value.method === 'item/completed') &&
       isRecord(params.item) &&
+      params.item.type === 'contextCompaction' &&
+      typeof params.item.id === 'string'
+    ) {
+      if (value.method === 'item/completed') knowledge.invalidateContext()
+      return
+    }
+
+    if (
+      (value.method === 'item/started' || value.method === 'item/completed') &&
+      isRecord(params.item) &&
       typeof params.item.id === 'string' &&
       !['webSearch', 'sleep', 'userMessage'].includes(String(params.item.type))
     ) {
@@ -1626,6 +1644,7 @@ const runLocalAiProvider = async (
     })
     try {
       for (const [component, cleanup] of [
+        ['knowledge', () => knowledge.dispose()],
         ['tool-host', () => host?.dispose()],
         ['tool-store', () => storage.close()]
       ] as const) {

@@ -483,6 +483,11 @@ const getWorkspaceManifests = () => {
 
   for (const pattern of rootManifest.workspaces) {
     if (pattern === 'create-app/*') continue
+    if (!pattern.endsWith('/*')) {
+      const manifest = readJSON(`${pattern}/package.json`)
+      manifests.set(manifest.name, manifest)
+      continue
+    }
     const baseDirectory = path.join(repositoryRoot, pattern.replace('/*', ''))
     for (const entry of fs.readdirSync(baseDirectory, {
       withFileTypes: true
@@ -510,15 +515,26 @@ test('Turbo uses exact workspace task relationships generated from manifests', (
   ])
 
   for (const [packageName, manifest] of manifests) {
+    if (manifest.contentOnly) {
+      assert.equal(manifest.scripts, undefined)
+      assert.ok(
+        !Object.keys(turbo.tasks).some((key) =>
+          key.startsWith(`${packageName}#`)
+        )
+      )
+      continue
+    }
     const buildTask = getBuildTask(manifest)
     const taskName = `${packageName}#${buildTask}`
     const internalDependencies = Object.keys({
       ...(manifest.dependencies ?? {}),
       ...(manifest.devDependencies ?? {})
     }).filter((dependency) => manifests.has(dependency))
-    const expectedDependencies = internalDependencies.map((dependency) => {
+    const expectedDependencies = internalDependencies.flatMap((dependency) => {
       const dependencyManifest = manifests.get(dependency)
-      return `${dependency}#${getBuildTask(dependencyManifest)}`
+      return dependencyManifest.contentOnly
+        ? []
+        : [`${dependency}#${getBuildTask(dependencyManifest)}`]
     })
 
     assert.ok(turbo.tasks[taskName], `${taskName} must exist`)

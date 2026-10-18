@@ -202,3 +202,16 @@ export type {
 export { aiRecipeInputSchema } from './recipe-format.js'
 
 export { recordStorageBatchBytes } from './profiler/record-outbox.js'
+
+export { createAiKnowledgeAccess, AiKnowledgeError } from './knowledge.js'
+export type {
+  AiKnowledgeMetadata,
+  AiKnowledgeContent,
+  AiKnowledgeIdentity,
+  AiKnowledgeOperation,
+  AiKnowledgeQuery,
+  AiKnowledgeSource,
+  AiKnowledgeResult,
+  AiKnowledgeSession,
+  AiKnowledgeOptions
+} from './knowledge-types.js'

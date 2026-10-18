@@ -1195,7 +1195,9 @@ test(
       await expect(canvas.locator('.step-card')).toHaveCount(7)
       await expect(canvas.locator('[data-route-id]')).toHaveCount(10)
       await expect(canvas.locator('#proof-controls')).toBeVisible()
-      await expect(canvas.locator('#scenario option')).toHaveCount(6)
+      await expect(canvas.locator('#scenario option')).toHaveText(
+        loadContract(root).scenarios.map(({ title }) => title)
+      )
       await canvas
         .getByText('Flow verification', { exact: false })
         .first()
@@ -1427,8 +1429,14 @@ test(
       const negativeFailures = server.service
         .get(negative)
         .evidence.cases.filter((item) => item.status === 'failed')
-      for (const id of server.service.contract().negativeCaseIds)
-        assert.ok(negativeFailures.some((item) => item.id === id))
+      assert.deepEqual(
+        negativeFailures.map(({ id }) => id).sort(),
+        server.service
+          .contract()
+          .scenarios.find(({ id }) => id === 'inverse-regression')
+          .expectedFailedCaseIds.slice()
+          .sort()
+      )
       assert.ok(
         Number(await viewport.getAttribute('data-zoom-scale')) < 1,
         'short viewports zoom out to fit both failed cards'
