@@ -1,0 +1,1076 @@
+{
+  "run": "knowledge-quality-knowledge-taipei-101-1792392422804",
+  "scope": "Saved observations only; tests must replace request-scoped identities with fresh producer outputs.",
+  "calls": [
+    {
+      "index": 31,
+      "tool": "execute_design_batch",
+      "input": {
+        "operations": [
+          {
+            "name": "api_element_deleteElements",
+            "arguments": {
+              "elementIds": []
+            },
+            "target": {
+              "field": "elementIds",
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": -100000,
+                  "y": -100000,
+                  "width": 200000,
+                  "height": 200000
+                },
+                "filter": {
+                  "ancestorId": "design-128268f7-21a5-49ff-9336-68e161d47c98-0",
+                  "name": {
+                    "prefix": "針尖"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "inspection": "defer",
+        "message": "校正尖塔高度"
+      },
+      "output": {
+        "available": false,
+        "code": "PREPARATION_REJECTED",
+        "stage": "admission",
+        "settlement": "not-started",
+        "recovery": "Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.",
+        "executionResult": {
+          "batches": []
+        },
+        "recoverable": true,
+        "message": "operations[0].target[0]: A conflicting target binding supplies arguments [\"elementIds\"]. Omit that argument, including empty arrays, null or placeholders; the target supplies this slot.",
+        "toolOutcome": {
+          "status": "failed",
+          "settlement": "not-started",
+          "issues": [
+            {
+              "code": "PREPARATION_REJECTED",
+              "message": "operations[0].target[0]: A conflicting target binding supplies arguments [\"elementIds\"]. Omit that argument, including empty arrays, null or placeholders; the target supplies this slot."
+            }
+          ]
+        }
+      },
+      "source": {
+        "input": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/9376-input.json",
+          "bytes": 360,
+          "sha256": "1945631d421f3f71463d669587ef4c9dde0adfba809dd4322b9d7964744604b3",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.06266599998343736
+        },
+        "output": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/9377-output.json",
+          "bytes": 791,
+          "sha256": "f94ba006fdf226da24abd62b09025ea2ad4b0c3df246176f76d93669027aa756",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.02474999998230487
+        }
+      }
+    },
+    {
+      "index": 34,
+      "tool": "execute_design_batch",
+      "input": {
+        "operations": [
+          {
+            "name": "api_element_deleteElements",
+            "arguments": {},
+            "target": {
+              "field": "elementIds",
+              "query": {
+                "scope": "region",
+                "bounds": {
+                  "x": -100000,
+                  "y": -100000,
+                  "width": 200000,
+                  "height": 200000
+                },
+                "filter": {
+                  "ancestorId": "design-128268f7-21a5-49ff-9336-68e161d47c98-0",
+                  "name": {
+                    "prefix": "針尖"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "inspection": "defer",
+        "message": "移除已校正尖塔的舊輪廓"
+      },
+      "output": {
+        "actionResults": [
+          {
+            "actionId": "05dfeeed-c83a-43d5-a674-2ca22da68138",
+            "actionName": "api_element_deleteElements",
+            "result": {
+              "status": "complete",
+              "value": {
+                "count": 3
+              },
+              "mutationScope": {
+                "complete": true,
+                "elementCount": 1,
+                "removedElementCount": 3
+              },
+              "retained": {
+                "snapshotId": "1cf7b21a-d9b8-430b-a055-08b2699b18d7",
+                "leaseId": "4f327f03-e775-482c-98b5-689d3f054142",
+                "total": 0
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              }
+            }
+          }
+        ],
+        "inspectionDeferred": true,
+        "measurementDeferred": false,
+        "checks": {
+          "counts": {
+            "pass": 1,
+            "fail": 0,
+            "unverified": 0,
+            "stale": 0
+          },
+          "visitedResults": 1
+        },
+        "batchSummary": {
+          "operationCount": 1,
+          "actionCount": 1
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      },
+      "source": {
+        "input": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/18918-input.json",
+          "bytes": 360,
+          "sha256": "fe4516597adf6bd9cdcfbd049d9c9a444b546844bd40b8e13f03cbcf64f9e3fe",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.10454099997878075
+        },
+        "output": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/19219-output.json",
+          "bytes": 685,
+          "sha256": "1589ef9cd3736c8d87cf5e328408b400f0bcc4821b59d4ceade637ad2288e59c",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.01624999998603016
+        }
+      }
+    },
+    {
+      "index": 37,
+      "tool": "review_drawing",
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspections": [
+          {
+            "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+            "view": "detail",
+            "region": {
+              "x": 8750,
+              "y": -480,
+              "width": 1024,
+              "height": 1024
+            },
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "supersedes": {
+                  "revision": 1,
+                  "reason": "前次裁切未涵蓋裝飾，改為首節如意的原尺寸區域。"
+                },
+                "referenceUses": [
+                  {
+                    "requestId": "e7de5c94-2071-4da0-9761-fdc931a2d197",
+                    "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                    "useId": "ornament",
+                    "revision": 2,
+                    "requirementRevision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+            "view": "detail",
+            "region": {
+              "x": 11000,
+              "y": -1800,
+              "width": 1024,
+              "height": 1024
+            },
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "supersedes": {
+                  "revision": 1,
+                  "reason": "已補反射與角柱，改以含立面及接縫的原尺寸局部確認細節。"
+                }
+              }
+            ]
+          },
+          {
+            "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+            "view": "overview",
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "base"
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "crown",
+                "supersedes": {
+                  "revision": 1,
+                  "reason": "完整組合包含新增塔冠欄杆與尖塔；搭配原尺寸局部檢查。"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "output": {
+        "available": false,
+        "code": "TOOL_EXECUTION_FAILED",
+        "stage": "execution",
+        "settlement": "unknown",
+        "recovery": "Inspect the failure and current state, then choose a corrected or alternate operation. Do not automatically replay mutations.",
+        "executionResult": {
+          "batches": [
+            {
+              "actionResults": [
+                {
+                  "actionId": "4c628dc5-f409-411e-b848-00da437da123",
+                  "actionName": "inspect_drawing",
+                  "result": {
+                    "available": true,
+                    "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+                    "image": {
+                      "type": "snapshot",
+                      "dataUrl": "[redacted]",
+                      "width": 1024,
+                      "height": 1024,
+                      "bounds": {
+                        "x": 8750,
+                        "y": -480,
+                        "width": 1024,
+                        "height": 1024
+                      }
+                    },
+                    "partial": true,
+                    "imageScope": "region",
+                    "background": "#ffffff",
+                    "evidence": {
+                      "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                      "receiptId": "8b5a85b0-487b-4e8a-991d-5a6629ba3f4a",
+                      "revision": 37519
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    },
+                    "actionObservation": {
+                      "handlerMs": 34.5,
+                      "executor": "app-browser"
+                    }
+                  }
+                }
+              ],
+              "context": {
+                "workspaceId": "workspace",
+                "primaryTool": "select",
+                "systemMode": "design",
+                "elementCount": 20289,
+                "selectedElementCount": 1,
+                "selectedElements": [
+                  {
+                    "id": "design-37df9957-93f8-4b9a-9f54-67f6357596ae-0",
+                    "type": "group",
+                    "visible": true,
+                    "locked": false,
+                    "bounds": {
+                      "x": 6774.914422851092,
+                      "y": -32514.632983001968,
+                      "width": 8634.916579968234,
+                      "height": 10659.55786236476
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "actionResults": [
+                {
+                  "actionId": "41ae25c5-6a7c-418c-afaf-a954aa7b7ff5",
+                  "actionName": "inspect_drawing",
+                  "result": {
+                    "available": true,
+                    "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+                    "image": {
+                      "type": "snapshot",
+                      "dataUrl": "[redacted]",
+                      "width": 1024,
+                      "height": 1024,
+                      "bounds": {
+                        "x": 11000,
+                        "y": -1800,
+                        "width": 1024,
+                        "height": 1024
+                      }
+                    },
+                    "partial": true,
+                    "imageScope": "region",
+                    "background": "#ffffff",
+                    "evidence": {
+                      "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                      "receiptId": "5f97c45c-8ccc-4863-87b1-e34d09246a30",
+                      "revision": 37519
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    },
+                    "actionObservation": {
+                      "handlerMs": 27.100000381469727,
+                      "executor": "app-browser"
+                    }
+                  }
+                }
+              ],
+              "context": {
+                "workspaceId": "workspace",
+                "primaryTool": "select",
+                "systemMode": "design",
+                "elementCount": 20289,
+                "selectedElementCount": 1,
+                "selectedElements": [
+                  {
+                    "id": "design-37df9957-93f8-4b9a-9f54-67f6357596ae-0",
+                    "type": "group",
+                    "visible": true,
+                    "locked": false,
+                    "bounds": {
+                      "x": 6774.914422851092,
+                      "y": -32514.632983001968,
+                      "width": 8634.916579968234,
+                      "height": 10659.55786236476
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "actionResults": [
+                {
+                  "actionId": "656c1b8d-a6a7-491c-a481-64d895850da4",
+                  "actionName": "inspect_drawing",
+                  "result": {
+                    "available": true,
+                    "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+                    "image": {
+                      "type": "snapshot",
+                      "dataUrl": "[redacted]",
+                      "width": 349,
+                      "height": 1024,
+                      "bounds": {
+                        "x": -5.735764363511407,
+                        "y": -32622.48826855787,
+                        "width": 16727,
+                        "height": 49055
+                      }
+                    },
+                    "partial": false,
+                    "imageScope": "overview",
+                    "background": "#ffffff",
+                    "evidence": {
+                      "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                      "receiptId": "5e8f3265-d3ba-42a0-8c4d-5a67d7e8c1c6",
+                      "revision": 37519
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    },
+                    "actionObservation": {
+                      "handlerMs": 23.399999618530273,
+                      "executor": "app-browser"
+                    }
+                  }
+                }
+              ],
+              "context": {
+                "workspaceId": "workspace",
+                "primaryTool": "select",
+                "systemMode": "design",
+                "elementCount": 20289,
+                "selectedElementCount": 1,
+                "selectedElements": [
+                  {
+                    "id": "design-37df9957-93f8-4b9a-9f54-67f6357596ae-0",
+                    "type": "group",
+                    "visible": true,
+                    "locked": false,
+                    "bounds": {
+                      "x": 6774.914422851092,
+                      "y": -32514.632983001968,
+                      "width": 8634.916579968234,
+                      "height": 10659.55786236476
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "actionResults": [
+                {
+                  "actionId": "4fdcc86c-c706-42dd-a73a-dbd926c43ee7",
+                  "actionName": "validate_inspection_evidence",
+                  "result": {
+                    "current": true,
+                    "validatedAt": {
+                      "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                      "revision": 37519
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    },
+                    "actionObservation": {
+                      "handlerMs": 0,
+                      "executor": "app-browser"
+                    }
+                  }
+                },
+                {
+                  "actionId": "f1dc427b-7211-4b9a-bdc7-75459d05a6ff",
+                  "actionName": "validate_inspection_evidence",
+                  "result": {
+                    "current": true,
+                    "validatedAt": {
+                      "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                      "revision": 37519
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    },
+                    "actionObservation": {
+                      "handlerMs": 0,
+                      "executor": "app-browser"
+                    }
+                  }
+                },
+                {
+                  "actionId": "9fa6a5de-a392-4daf-ac48-cadeb371705b",
+                  "actionName": "validate_inspection_evidence",
+                  "result": {
+                    "current": true,
+                    "validatedAt": {
+                      "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                      "revision": 37519
+                    },
+                    "toolOutcome": {
+                      "status": "success",
+                      "settlement": "completed"
+                    },
+                    "actionObservation": {
+                      "handlerMs": 0,
+                      "executor": "app-browser"
+                    }
+                  }
+                }
+              ],
+              "context": {
+                "workspaceId": "workspace",
+                "primaryTool": "select",
+                "systemMode": "design",
+                "elementCount": 20289,
+                "selectedElementCount": 1,
+                "selectedElements": [
+                  {
+                    "id": "design-37df9957-93f8-4b9a-9f54-67f6357596ae-0",
+                    "type": "group",
+                    "visible": true,
+                    "locked": false,
+                    "bounds": {
+                      "x": 6774.914422851092,
+                      "y": -32514.632983001968,
+                      "width": 8634.916579968234,
+                      "height": 10659.55786236476
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "recoverable": true,
+        "message": "Unit supersession revision is stale or unavailable.",
+        "toolOutcome": {
+          "status": "partial",
+          "settlement": "unknown",
+          "issues": [
+            {
+              "code": "TOOL_EXECUTION_FAILED",
+              "message": "Unit supersession revision is stale or unavailable."
+            }
+          ]
+        }
+      },
+      "source": {
+        "input": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/19236-input.json",
+          "bytes": 1167,
+          "sha256": "4c6b4b85a9e7e26fab3e766790c5df25e5024f2422ac66641cab759627314684",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.039166999980807304
+        },
+        "output": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/19249-output.json",
+          "bytes": 4939,
+          "sha256": "1e9dfb82e064ef5f34ac092656bdb6eb6835b7e53ecea3a00dca7dbee0f07519",
+          "redactions": [
+            "$.executionResult.batches[0].actionResults[0].result.image.dataUrl",
+            "$.executionResult.batches[1].actionResults[0].result.image.dataUrl",
+            "$.executionResult.batches[2].actionResults[0].result.image.dataUrl"
+          ],
+          "resourceIdentities": [],
+          "serializationMs": 0.09816699998918921
+        }
+      }
+    },
+    {
+      "index": 38,
+      "tool": "read_design_checks",
+      "input": {
+        "view": "details",
+        "ids": [
+          "visual-unit:[\"detail\",\"ornament\"]",
+          "visual-unit:[\"detail\",\"tiers\"]",
+          "visual-unit:[\"detail\",\"crown\"]",
+          "visual-unit:[\"detail\",\"base\"]"
+        ]
+      },
+      "output": {
+        "counts": {
+          "pass": 0,
+          "fail": 1,
+          "unverified": 1,
+          "stale": 2
+        },
+        "items": [
+          {
+            "id": "visual-unit:[\"detail\",\"ornament\"]",
+            "criterionId": "detail",
+            "unitId": "ornament",
+            "origin": "main-agent",
+            "status": "unverified",
+            "evidence": "此原尺寸裁切只包含窗框，未涵蓋如意，不能判定裝飾；需移至正確局部。",
+            "scope": [
+              "4f808ed4-9f1b-4efc-8742-38555ab670e4"
+            ],
+            "dependencies": {
+              "check-scope:visual-unit:[\"detail\",\"ornament\"]": "current",
+              "inspection:4f808ed4-9f1b-4efc-8742-38555ab670e4": "37519",
+              "reference-use:[\"reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd\",\"ornament\"]": "2",
+              "criterion:detail": "1"
+            },
+            "revision": 2
+          },
+          {
+            "id": "visual-unit:[\"detail\",\"tiers\"]",
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "origin": "main-agent",
+            "status": "fail",
+            "evidence": "八節、外張輪廓、窗框與接縫連續可辨；玻璃色調仍偏均勻，挑簷缺金屬邊緣，角柱及如意尚未完成，不能視為寫實完成品。",
+            "scope": [
+              "ddc3a708-da95-45a1-a804-7b1de0c288ed"
+            ],
+            "dependencies": {
+              "check-scope:visual-unit:[\"detail\",\"tiers\"]": "current",
+              "inspection:ddc3a708-da95-45a1-a804-7b1de0c288ed": "18578",
+              "criterion:detail": "1"
+            },
+            "revision": 2
+          },
+          {
+            "id": "visual-unit:[\"detail\",\"crown\"]",
+            "criterionId": "detail",
+            "unitId": "crown",
+            "origin": "main-agent",
+            "status": "stale",
+            "evidence": "塔冠層級與尖塔完整，但平台過於空白，尚缺欄杆、設備層百葉及尖塔分節金屬套環。",
+            "scope": [
+              "1d62c004-d816-4ea1-bbd9-9bc35df0c960"
+            ],
+            "dependencies": {
+              "check-scope:visual-unit:[\"detail\",\"crown\"]": "current",
+              "inspection:1d62c004-d816-4ea1-bbd9-9bc35df0c960": "32454",
+              "criterion:detail": "1"
+            },
+            "revision": 2,
+            "reason": "These inspection dependencies changed or could not be established."
+          },
+          {
+            "id": "visual-unit:[\"detail\",\"base\"]",
+            "criterionId": "detail",
+            "unitId": "base",
+            "origin": "main-agent",
+            "status": "stale",
+            "evidence": "基座偏置、面向與窗框對齊成立；目前屋頂與塔腳仍過於平坦，缺少石材扶壁、入口、女兒牆與材質反射層次，需補齊。",
+            "scope": [
+              "0cc420a7-e779-42dc-97d2-11f544fce42f"
+            ],
+            "dependencies": {
+              "check-scope:visual-unit:[\"detail\",\"base\"]": "current",
+              "inspection:0cc420a7-e779-42dc-97d2-11f544fce42f": "0",
+              "criterion:detail": "1"
+            },
+            "revision": 2,
+            "reason": "These inspection dependencies changed or could not be established."
+          }
+        ],
+        "visitedResults": 4,
+        "revision": 4632,
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      },
+      "source": {
+        "input": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/19250-input.json",
+          "bytes": 176,
+          "sha256": "fd57eb0581a072774dd3dab09b7961fd6df879565030310cf4b62b0d3c27b19a",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.05516699998406693
+        },
+        "output": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/19257-output.json",
+          "bytes": 2409,
+          "sha256": "8f6a9d47a37dc540163eb2e143616e6237f2d136f4cca78aaebe14c45694ff6a",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.07304200000362471
+        }
+      }
+    },
+    {
+      "index": 39,
+      "tool": "review_drawing",
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspections": [
+          {
+            "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+            "view": "detail",
+            "region": {
+              "x": 8750,
+              "y": -480,
+              "width": 1024,
+              "height": 1024
+            },
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "前次裁切未涵蓋裝飾，改為首節如意的原尺寸區域。"
+                },
+                "referenceUses": [
+                  {
+                    "requestId": "e7de5c94-2071-4da0-9761-fdc931a2d197",
+                    "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                    "useId": "ornament",
+                    "revision": 2,
+                    "requirementRevision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+            "view": "detail",
+            "region": {
+              "x": 11000,
+              "y": -1800,
+              "width": 1024,
+              "height": 1024
+            },
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "改以含立面及接縫的原尺寸局部確認反射及角柱。"
+                }
+              }
+            ]
+          },
+          {
+            "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+            "view": "overview",
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "base"
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "crown",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "整體組合包含新增欄杆與尖塔，保留原義務。"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "output": {
+        "phase": "visual",
+        "accepted": false,
+        "readyForDetail": false,
+        "inspectionIds": [
+          "57286d63-6d12-4411-9b43-ec064251ab21",
+          "ba334c00-9367-4a62-9994-744b9989da55",
+          "0487f2e5-818a-4572-9235-df41fd12b67b"
+        ],
+        "actionResults": [
+          {
+            "actionId": "027edddb-c439-44c0-80ec-f91f1dca96e6",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+              "image": {
+                "type": "snapshot",
+                "width": 1024,
+                "height": 1024,
+                "bounds": {
+                  "x": 8750,
+                  "y": -480,
+                  "width": 1024,
+                  "height": 1024
+                }
+              },
+              "partial": true,
+              "imageScope": "region",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                "receiptId": "2d965527-1106-4bbf-b4e5-759b9d2db039",
+                "revision": 37519
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "57286d63-6d12-4411-9b43-ec064251ab21",
+              "revision": 8
+            }
+          },
+          {
+            "actionId": "0ab81b5e-6fc8-4c14-a28d-db010d4515f3",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+              "image": {
+                "type": "snapshot",
+                "width": 1024,
+                "height": 1024,
+                "bounds": {
+                  "x": 11000,
+                  "y": -1800,
+                  "width": 1024,
+                  "height": 1024
+                }
+              },
+              "partial": true,
+              "imageScope": "region",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                "receiptId": "2723f142-2585-472f-b569-3928a8393d17",
+                "revision": 37519
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "ba334c00-9367-4a62-9994-744b9989da55",
+              "revision": 8
+            }
+          },
+          {
+            "actionId": "4068e6d4-efdb-4807-891d-43a8188d3f9e",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+              "image": {
+                "type": "snapshot",
+                "width": 349,
+                "height": 1024,
+                "bounds": {
+                  "x": -5.735764363511407,
+                  "y": -32622.48826855787,
+                  "width": 16727,
+                  "height": 49055
+                }
+              },
+              "partial": false,
+              "imageScope": "overview",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                "receiptId": "265efb35-590b-4995-ac25-cd33ec6f244f",
+                "revision": 37519
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "0487f2e5-818a-4572-9235-df41fd12b67b",
+              "revision": 8
+            }
+          }
+        ],
+        "coverage": {
+          "required": 5,
+          "passed": 1,
+          "pending": [
+            {
+              "id": "visual-unit:[\"detail\",\"base\"]",
+              "criterionId": "detail",
+              "unitId": "base",
+              "status": "stale"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"tiers\"]",
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "status": "fail"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"crown\"]",
+              "criterionId": "detail",
+              "unitId": "crown",
+              "status": "stale"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"ornament\"]",
+              "criterionId": "detail",
+              "unitId": "ornament",
+              "status": "unverified"
+            }
+          ]
+        },
+        "next": {
+          "tool": "review_drawing",
+          "arguments": {
+            "phase": "visual",
+            "final": false,
+            "inspectionIds": [
+              "57286d63-6d12-4411-9b43-ec064251ab21",
+              "ba334c00-9367-4a62-9994-744b9989da55",
+              "0487f2e5-818a-4572-9235-df41fd12b67b"
+            ],
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "前次裁切未涵蓋裝飾，改為首節如意的原尺寸區域。"
+                },
+                "referenceUses": [
+                  {
+                    "requestId": "e7de5c94-2071-4da0-9761-fdc931a2d197",
+                    "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                    "useId": "ornament",
+                    "revision": 2,
+                    "requirementRevision": 1
+                  }
+                ],
+                "inspectionIds": [
+                  "57286d63-6d12-4411-9b43-ec064251ab21"
+                ],
+                "binding": {
+                  "requestId": "415934b5-e4d2-4342-8e40-49bc06c2b856",
+                  "requirementRevision": 1,
+                  "checkRevision": 2,
+                  "dependencies": [
+                    {
+                      "inspectionId": "57286d63-6d12-4411-9b43-ec064251ab21",
+                      "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+                      "scope": "detail:[8750,-480,1024,1024]",
+                      "source": {
+                        "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                        "revision": 37519,
+                        "receiptId": "2d965527-1106-4bbf-b4e5-759b9d2db039"
+                      }
+                    }
+                  ],
+                  "signature": "d87f7986b28b3e31e311084bd25f34eb6b4f0e6253c5958c891400e33e07c036"
+                }
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "改以含立面及接縫的原尺寸局部確認反射及角柱。"
+                },
+                "inspectionIds": [
+                  "ba334c00-9367-4a62-9994-744b9989da55"
+                ],
+                "binding": {
+                  "requestId": "415934b5-e4d2-4342-8e40-49bc06c2b856",
+                  "requirementRevision": 1,
+                  "checkRevision": 2,
+                  "dependencies": [
+                    {
+                      "inspectionId": "ba334c00-9367-4a62-9994-744b9989da55",
+                      "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+                      "scope": "detail:[11000,-1800,1024,1024]",
+                      "source": {
+                        "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                        "revision": 37519,
+                        "receiptId": "2723f142-2585-472f-b569-3928a8393d17"
+                      }
+                    }
+                  ],
+                  "signature": "7c525695b3c43c7c8765c800a86fbea63c4af2354fedda5d70a376e8bab0c968"
+                }
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "base",
+                "inspectionIds": [
+                  "0487f2e5-818a-4572-9235-df41fd12b67b"
+                ],
+                "binding": {
+                  "requestId": "415934b5-e4d2-4342-8e40-49bc06c2b856",
+                  "requirementRevision": 1,
+                  "checkRevision": 2,
+                  "dependencies": [
+                    {
+                      "inspectionId": "0487f2e5-818a-4572-9235-df41fd12b67b",
+                      "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+                      "scope": "overview:whole",
+                      "source": {
+                        "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                        "revision": 37519,
+                        "receiptId": "265efb35-590b-4995-ac25-cd33ec6f244f"
+                      }
+                    }
+                  ],
+                  "signature": "8b73c2f0adf6ea12675f8b9c1855b839dfb1acc514b84240056a3f6fa908e33a"
+                }
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "crown",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "整體組合包含新增欄杆與尖塔，保留原義務。"
+                },
+                "inspectionIds": [
+                  "0487f2e5-818a-4572-9235-df41fd12b67b"
+                ],
+                "binding": {
+                  "requestId": "415934b5-e4d2-4342-8e40-49bc06c2b856",
+                  "requirementRevision": 1,
+                  "checkRevision": 2,
+                  "dependencies": [
+                    {
+                      "inspectionId": "0487f2e5-818a-4572-9235-df41fd12b67b",
+                      "elementId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+                      "scope": "overview:whole",
+                      "source": {
+                        "sessionId": "a9c0354c-1e8c-4b04-9cca-54de5a11781b",
+                        "revision": 37519,
+                        "receiptId": "265efb35-590b-4995-ac25-cd33ec6f244f"
+                      }
+                    }
+                  ],
+                  "signature": "d4757d55ae4f9bd5b0d47406249171f44952a1b25e4f1de2c5697465f9a1e7c7"
+                }
+              }
+            ]
+          },
+          "requiredInputs": [
+            "checks[].status",
+            "checks[].evidence"
+          ],
+          "instruction": "Inspect the delivered images, fill status/evidence in each bound check, and submit next.arguments without capture targets. Preserve bindings exactly. Submit only observed checks; keep unrelated passes. Use final=true only to attempt completion from retained current results."
+        },
+        "message": "Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.",
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      },
+      "source": {
+        "input": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/19258-input.json",
+          "bytes": 1134,
+          "sha256": "7ee1409353dfbad2a838581dd8b2f8c81fe371f2c11056f0484bcfe82effd429",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.13033399998676032
+        },
+        "output": {
+          "status": "queued",
+          "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/19271-output.json",
+          "bytes": 6202,
+          "sha256": "6a71ae3498b329a837a18bd36471e6d819333a4441eb844451589acacc3d35b0",
+          "redactions": [],
+          "resourceIdentities": [],
+          "serializationMs": 0.12479199998779222
+        }
+      }
+    }
+  ]
+}

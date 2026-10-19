@@ -6,19 +6,20 @@ import {
   toolResultObject,
   actionToolSemantics
 } from './tool-contract'
-import type { createInspectionEvidence } from '../common-apis/inspection-evidence'
+import type { InspectionEvidenceStamp } from './inspection-evidence'
 import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { reviewDesign } from '../common-apis/design-review'
 import { AiActionNames } from '../constants'
 type ReviewResult = Awaited<ReturnType<typeof reviewDesign>>
-type ReviewHandler = (
-  ...args: Parameters<typeof reviewDesign>
-) => Promise<
-  Omit<ReviewResult, 'observation'> & Partial<Pick<ReviewResult, 'observation'>>
+type ReviewHandler = (...args: Parameters<typeof reviewDesign>) => Promise<
+  Omit<ReviewResult, 'observation'> &
+    Partial<Pick<ReviewResult, 'observation'>> & {
+      evidence?: InspectionEvidenceStamp
+    }
 >
 export const createDesignReviewAction = (
   review: ReviewHandler = reviewDesign,
-  evidence?: ReturnType<typeof createInspectionEvidence>
+  isCurrent?: (stamp: InspectionEvidenceStamp) => boolean
 ): AiActionDefinition<{ elementId: string }> => ({
   ...actionToolSemantics(
     AiActionNames.REVIEW_DESIGN,
@@ -61,7 +62,7 @@ export const createDesignReviewAction = (
       ]
     )
   ),
-  revision: 4,
+  revision: 5,
   composition: 'allowed',
   verification: {
     statusPath: '/verification/status',
@@ -111,6 +112,19 @@ export const createDesignReviewAction = (
         )
       )
       signal.throwIfAborted()
+      if (measurement.evidence && !isCurrent?.(measurement.evidence))
+        return {
+          ...measurement,
+          available: false,
+          complete: false,
+          evidence: undefined,
+          verification: {
+            status: 'decision-required',
+            progress: Array.from(new Uint8Array(digest), (byte) =>
+              byte.toString(16).padStart(2, '0')
+            ).join('')
+          }
+        }
       return {
         ...measurement,
         verification: {
@@ -121,15 +135,6 @@ export const createDesignReviewAction = (
         }
       }
     }
-    if (!evidence) return measure()
-    const result = await evidence.capture(
-      async () => {
-        const measurement = await measure()
-        return { ...measurement, available: measurement.complete }
-      },
-      { elementId }
-    )
-    signal.throwIfAborted()
-    return result
+    return measure()
   }
 })

@@ -1,0 +1,73 @@
+{
+  "startedAt": "2026-10-18T11:54:32.303Z",
+  "events": [
+    {
+      "type": "navigation",
+      "url": "http://localhost:3307/?fileId=knowledge-quality-knowledge-taipei-101-1792323795116"
+    }
+  ],
+  "states": [
+    {
+      "ms": 389,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 1393,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 2397,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 3402,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 4406,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 5410,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 13549,
+      "hasHandle": true,
+      "status": "connected",
+      "roots": [
+        "design-0409db13-03b5-440f-a266-d29029a5c296-0"
+      ]
+    },
+    {
+      "ms": 14560,
+      "hasHandle": true,
+      "status": "connected",
+      "roots": [
+        "design-0409db13-03b5-440f-a266-d29029a5c296-0"
+      ]
+    },
+    {
+      "ms": 15567,
+      "hasHandle": true,
+      "status": "connected",
+      "roots": [
+        "design-0409db13-03b5-440f-a266-d29029a5c296-0"
+      ]
+    }
+  ],
+  "receipt": {
+    "documentId": "knowledge-quality-knowledge-taipei-101-1792323795116",
+    "documentGeneration": 0,
+    "sequence": 814,
+    "durableSequence": 814
+  },
+  "sameSequence": true,
+  "elapsedMs": 17191
+}

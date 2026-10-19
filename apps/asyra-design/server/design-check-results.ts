@@ -65,6 +65,24 @@ export const designCheckSummarySchema = toolResultObject(
   ['counts', 'visitedResults']
 )
 
+export interface DesignCheckDeliveryOptions {
+  view?: 'summary' | 'details'
+  ids?: string[]
+  includePassed?: boolean
+  offset?: number
+  limit?: number
+  revision?: number
+}
+export const designCheckDeliverySchema = toolResultObject(
+  {
+    ...designCheckResultsSchema.properties,
+    revision: toolResultCount,
+    firstPendingId: toolResultString,
+    nextOffset: toolResultCount
+  },
+  ['counts', 'visitedResults', 'revision']
+)
+
 export interface DesignCheckSelection {
   checkId: string
   revision: number
@@ -113,6 +131,7 @@ export const createDesignCheckResults = () => {
   const preparedLineages = new Map<string, string>()
   const latestPrepared = new Map<string, string>()
   const counts = { pass: 0, fail: 0, unverified: 0, stale: 0 }
+  let ledgerRevision = 0
   const pendingIds = new Set<string>()
   const dependents = new Map<string, Set<string>>()
   const invalidate = (keys: string[] | undefined, reason: string) => {
@@ -122,6 +141,8 @@ export const createDesignCheckResults = () => {
           counts[result.status]--
           counts.stale++
         }
+        if (result.status !== 'stale' || result.reason !== reason)
+          ledgerRevision++
         result.status = 'stale'
         result.reason = reason
         pendingIds.add(id)
@@ -141,6 +162,8 @@ export const createDesignCheckResults = () => {
           counts.stale++
         }
         pendingIds.add(id)
+        if (result.status !== 'stale' || result.reason !== reason)
+          ledgerRevision++
         result.status = 'stale'
         result.reason = reason
         pending.push(`check:${id}`)
@@ -158,6 +181,7 @@ export const createDesignCheckResults = () => {
     counts[result.status]--
     pendingIds.delete(id)
     results.delete(id)
+    ledgerRevision++
     for (const key of Object.keys(result.dependencies)) {
       const ids = dependents.get(key)
       ids?.delete(id)
@@ -334,6 +358,7 @@ export const createDesignCheckResults = () => {
           counts[duplicate.status]--
           pendingIds.delete(duplicateId)
           results.delete(duplicateId)
+          ledgerRevision++
           for (const key of Object.keys(duplicate.dependencies)) {
             const ids = dependents.get(key)
             ids?.delete(duplicateId)
@@ -406,6 +431,7 @@ export const createDesignCheckResults = () => {
         (previous?.revision ?? retiredRevisions.get(value.id)?.revision ?? 0) +
         1
       retiredRevisions.delete(value.id)
+      ledgerRevision++
       results.set(value.id, {
         ...structuredClone(value),
         revision,
@@ -417,6 +443,94 @@ export const createDesignCheckResults = () => {
         dependents.set(key, ids)
       }
       return revision
+    },
+    firstPending(origin?: DesignCheckResult['origin']) {
+      for (const id of pendingIds) {
+        const result = results.get(id)
+        if (result && (!origin || result.origin === origin))
+          return { id, status: result.status }
+      }
+      return undefined
+    },
+    deliver(options: DesignCheckDeliveryOptions = {}): {
+      counts: typeof counts
+      visitedResults: number
+      revision: number
+      firstPendingId?: string
+      items?: DesignCheckResult[]
+      nextOffset?: number
+    } {
+      const { ids, view, includePassed, revision } = options
+      const offset = options.offset ?? 0
+      const limit = options.limit ?? 50
+      if (
+        !Number.isSafeInteger(offset) ||
+        offset < 0 ||
+        !Number.isSafeInteger(limit) ||
+        limit < 1 ||
+        limit > 100
+      )
+        throw new Error(
+          'Invalid check detail page; limit must be 1-100 and offset nonnegative.'
+        )
+      if (
+        (offset > 0 && revision === undefined) ||
+        (revision !== undefined && revision !== ledgerRevision)
+      )
+        throw new Error(
+          'Check result revision changed or is missing; restart the detail read at offset zero.'
+        )
+      if (
+        ids &&
+        (view === 'summary' ||
+          options.offset !== undefined ||
+          options.limit !== undefined)
+      )
+        throw new Error(
+          'Exact check IDs cannot be combined with summary or page selectors.'
+        )
+      if (ids)
+        return {
+          ...owner.read({ ids, includePassed: true }),
+          revision: ledgerRevision
+        }
+      const firstPendingId = pendingIds.values().next().value
+      const summary = {
+        counts: { ...counts },
+        visitedResults: 0,
+        revision: ledgerRevision,
+        ...(firstPendingId ? { firstPendingId } : {})
+      }
+      if (view !== 'details') {
+        if (options.offset !== undefined || options.limit !== undefined)
+          throw new Error('Page selectors require view=details.')
+        return summary
+      }
+      const total = includePassed ? results.size : pendingIds.size
+      if (offset > total)
+        throw new Error('Check detail offset exceeds the current selection.')
+      const items: DesignCheckResult[] = []
+      let index = 0
+      let visitedResults = 0
+      for (const id of includePassed ? results.keys() : pendingIds) {
+        if (index++ < offset) continue
+        if (items.length === limit) break
+        const result = results.get(id)
+        visitedResults++
+        if (!result)
+          throw new Error(
+            'Check selection changed during synchronous projection.'
+          )
+        const { recheck: _recheck, ...value } = result
+        items.push(structuredClone(value))
+      }
+      const end = offset + items.length
+      return {
+        ...summary,
+        visitedResults,
+        items,
+        ...(end < total ? { nextOffset: end } : {})
+      }
     },
     read(options: { includePassed?: boolean; ids?: string[] } = {}) {
       const selectedCounts = { pass: 0, fail: 0, unverified: 0, stale: 0 }

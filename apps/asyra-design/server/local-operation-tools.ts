@@ -18,7 +18,8 @@ import {
 } from '@asyra/ai-agent-runtime'
 import {
   createDesignCheckResults,
-  designCheckResultsSchema,
+  designCheckDeliverySchema,
+  type DesignCheckDeliveryOptions,
   designCheckSummarySchema,
   designCheckInputSchema
 } from './design-check-results'
@@ -47,6 +48,8 @@ import {
   localToolOutcome,
   localToolFailureReply,
   localToolErrorMessage,
+  observeLocalToolExecution,
+  type LocalToolObservation,
   type LocalToolDefinition
 } from './local-tool-invocation'
 import type { InspectionEvidenceStamp } from '../src/ai/inspection-evidence'
@@ -564,15 +567,19 @@ const repairChecksDefinition = {
 const checkResultsDefinition = {
   type: 'function',
   name: AiDesignToolIds.READ_DESIGN_CHECKS,
-  ...toolSemantics(designCheckResultsSchema, 'read', ['request-artifacts']),
-  revision: 3,
+  ...toolSemantics(designCheckDeliverySchema, 'read', ['request-artifacts']),
+  revision: 4,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
-    'Read retained tool and primary-agent checks for this request. Default returns unresolved/stale work and status counts; includePassed retrieves stored pass evidence. Results never substitute for current canonical inspection. No model is invoked.',
+    'Read retained tool and primary-agent checks. Default returns counts, firstPendingId and ledger revision without rows. Exact ids retrieve full selected evidence. For all details use view=details, optional includePassed and limit (1-100); continue using nextOffset as offset with the returned revision. Changed revision requires restarting at offset zero. No model is invoked. Results never substitute for current canonical inspection.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
     properties: {
+      view: { enum: ['summary', 'details'] },
+      offset: { type: 'integer', minimum: 0 },
+      limit: { type: 'integer', minimum: 1, maximum: 100 },
+      revision: { type: 'integer', minimum: 0 },
       includePassed: { type: 'boolean' },
       ids: {
         type: 'array',
@@ -589,6 +596,7 @@ export const createLocalOperationTools = (
   preparation: LocalActionPreparation,
   dispatchBatch: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
   options: {
+    observation?: LocalToolObservation
     ownership?: LocalToolOwnership
     requestSignal?: AbortSignal
     reviewTargetId?: string
@@ -657,17 +665,21 @@ export const createLocalOperationTools = (
     ...Object.values(AiActionNames),
     ...basicApiContracts.map(({ name }) => name)
   ])
-  const registered = preparation
-    .modelActions(actions)
-    .filter(
-      (action) =>
-        allowed.has(action.name) &&
-        ![
+  const modelActions = preparation.modelActions(actions)
+  const finalActions = new Map(
+    modelActions
+      .filter((action) =>
+        [
           AiActionNames.REPORT_OUTCOME,
           AiActionNames.REQUEST_CLARIFICATION,
           AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE
         ].includes(action.name as never)
-    )
+      )
+      .map((action) => [action.name, action])
+  )
+  const registered = modelActions.filter(
+    (action) => allowed.has(action.name) && !finalActions.has(action.name)
+  )
   // Explicit review/capture owns evidence processing outside edit batches.
   const batchActions = registered.filter(
     (action) =>
@@ -678,7 +690,9 @@ export const createLocalOperationTools = (
   const batchResultResources = actionResultResources(batchActions)
   const batchActionNames = new Set(batchActions.map((action) => action.name))
   // Request-local indexes are derived from admitted actions; no model call or stale schema copy.
-  const admittedApisByName = new Map(registered.map((api) => [api.name, api]))
+  const admittedApisByName = new Map(
+    [...registered, ...finalActions.values()].map((api) => [api.name, api])
+  )
   const contextReader = registered.find(
     (action) => action.name === AiActionNames.RESOLVE_DESIGN_TARGETS
   )
@@ -912,7 +926,29 @@ export const createLocalOperationTools = (
     reference: Record<string, unknown>,
     args: Record<string, unknown>
   ) => {
-    const { inputSchema, ...usage } = descriptor
+    const { inputSchema } = descriptor
+    // Usage is navigation, not a second executable contract. An explicit
+    // projection also excludes nested delivery and recovery schemas.
+    const usage = Object.fromEntries(
+      [
+        'name',
+        'namespace',
+        'registeredName',
+        'revision',
+        'description',
+        'operation',
+        'category',
+        'effect',
+        'result',
+        'resources',
+        'lifecycle',
+        'composition',
+        'execution',
+        'recipeDependency'
+      ]
+        .filter((key) => Object.hasOwn(descriptor, key))
+        .map((key) => [key, descriptor[key]])
+    )
     const revision = createHash('sha256')
       .update(JSON.stringify(descriptor))
       .digest('hex')
@@ -1088,7 +1124,17 @@ export const createLocalOperationTools = (
       namespace: tool.namespace,
       tool: tool.name
     }
+  const isCanonicalWrapper = (
+    tool: NativeToolDescriptor,
+    action: (typeof registered)[number]
+  ) =>
+    Boolean(getBasicApiContract(action.name)) &&
+    tool.name === action.name &&
+    tool.namespace === localOperationNamespace &&
+    tool.registeredName === `${localOperationNamespace}.${action.name}`
   const actionExecution = (action: (typeof registered)[number]) => {
+    if (finalActions.has(action.name))
+      return { kind: 'final-response', action: action.name }
     if (batchActionNames.has(action.name))
       return {
         kind: 'batch-action',
@@ -1409,6 +1455,162 @@ export const createLocalOperationTools = (
       { kind: 'measurement', elementId, findings }
     )
     measurementPending = false
+    return stamp
+  }
+  const reconcileMeasurements = async (
+    elementId: string,
+    evidence: InspectionEvidenceStamp,
+    signal?: AbortSignal
+  ) => {
+    const targets = [...measuredTargets.keys()].filter((id) => id !== elementId)
+    for (let offset = 0; offset < targets.length; offset += 64) {
+      signal?.throwIfAborted()
+      const ids = targets.slice(offset, offset + 64)
+      const selected = checkResults.selection(ids.map(measurementId))
+      const previous = new Map(ids.map((id) => [id, measuredTargets.get(id)]))
+      const actionId = randomUUID()
+      const resultText = await observeLocalToolExecution(
+        AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+        {
+          operation: 'reconcile-measurements',
+          rootId: elementId,
+          evidence,
+          actionId,
+          obligations: selected
+        },
+        async () => {
+          const unavailable = (reason: string) =>
+            JSON.stringify({
+              status: 'partial',
+              batchComplete: false,
+              reason,
+              reconciliation: ids.map((targetId, index) => ({
+                targetId,
+                oldRevision: selected[index].revision,
+                disposition: 'unavailable'
+              }))
+            })
+          let receipt: AiBatchReceipt
+          try {
+            receipt = await executeBatch({
+              batchId: randomUUID(),
+              actions: [
+                {
+                  id: actionId,
+                  name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+                  arguments: { evidence, measurementTargets: ids },
+                  summary: 'Reconciling covered layout checks'
+                }
+              ]
+            })
+          } catch {
+            signal?.throwIfAborted()
+            return unavailable('coverage-delivery-failed')
+          }
+          signal?.throwIfAborted()
+          const matches = receipt.actionResults.filter(
+            (item) =>
+              item.actionId === actionId &&
+              item.actionName === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+          )
+          const result = matches.length === 1 ? matches[0].result : undefined
+          if (
+            receipt.failure ||
+            !isRecord(result) ||
+            result.current !== true ||
+            !Array.isArray(result.measurements)
+          )
+            return unavailable('coverage-not-current-or-incomplete')
+          const entries = result.measurements
+          if (
+            entries.length !== ids.length ||
+            entries.some(
+              (entry, i) => !isRecord(entry) || entry.elementId !== ids[i]
+            )
+          )
+            return unavailable('coverage-target-identity-mismatch')
+          const reconciliation: Record<string, unknown>[] = []
+          for (let i = 0; i < ids.length; i++) {
+            const id = ids[i]
+            const entry = entries[i]
+            const transition = {
+              targetId: id,
+              oldRevision: selected[i].revision
+            }
+            if (
+              !measuredTargets.has(id) ||
+              measuredTargets.get(id) !== previous.get(id)
+            ) {
+              reconciliation.push({ ...transition, disposition: 'superseded' })
+              continue
+            }
+            try {
+              checkResults.select([selected[i]])
+            } catch {
+              reconciliation.push({ ...transition, disposition: 'superseded' })
+              continue
+            }
+            if (
+              !isRecord(entry) ||
+              entry.available !== true ||
+              entry.complete !== true ||
+              !Array.isArray(entry.findings)
+            ) {
+              reconciliation.push({
+                ...transition,
+                disposition: 'unavailable',
+                reason: isRecord(entry) ? entry.reason : 'invalid-measurement'
+              })
+              continue
+            }
+            const stamp = inspectionStamp(entry.evidence)
+            if (!stamp) {
+              reconciliation.push({
+                ...transition,
+                disposition: 'unavailable',
+                reason: 'missing-evidence'
+              })
+              continue
+            }
+            measuredTargets.set(id, stamp)
+            const newRevision = checkResults.record(
+              {
+                id: measurementId(id),
+                origin: 'tool',
+                status: entry.findings.length ? 'fail' : 'pass',
+                evidence: JSON.stringify({
+                  complete: true,
+                  findings: entry.findings
+                }),
+                scope: [id],
+                dependencies: { [measurementId(id)]: JSON.stringify(stamp) }
+              },
+              { kind: 'measurement', elementId: id, findings: entry.findings }
+            )
+            reconciliation.push({
+              ...transition,
+              newRevision,
+              evidence: stamp,
+              disposition:
+                newRevision === transition.oldRevision ? 'retained' : 'updated',
+              status: entry.findings.length ? 'fail' : 'pass'
+            })
+          }
+          return JSON.stringify({
+            status: 'complete',
+            batchComplete: true,
+            reconciliation,
+            counts: checkResults.deliver().counts
+          })
+        },
+        {
+          trace: options.observation?.trace,
+          parentCallId: options.observation?.parentCallId
+        },
+        'Covered obligations retain or advance exact revisions; unavailable and superseded targets remain explicit.'
+      )
+      if (JSON.parse(resultText).batchComplete !== true) return
+    }
   }
   const canInspect = registered.some(
     (action) => action.name === AiActionNames.INSPECT_DRAWING
@@ -1676,7 +1878,14 @@ export const createLocalOperationTools = (
             ),
             ...(!acknowledged ? { failure: receipt.failure } : {})
           }
-          updateMeasurementState(ids[index], result, action.id)
+          const stamp = updateMeasurementState(ids[index], result, action.id)
+          const reviewed = result.actionResults[0]?.result
+          if (
+            stamp &&
+            isRecord(reviewed) &&
+            Number(reviewed.checkedElements) > 1
+          )
+            await reconcileMeasurements(ids[index], stamp, signal)
           if (measuredTargets.get(ids[index]))
             actionResults.push(...result.actionResults)
           else if (receipt.failure)
@@ -2225,7 +2434,7 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -2246,7 +2455,7 @@ export const createLocalOperationTools = (
                     type: 'string',
                     enum: ['usage', 'full'],
                     description:
-                      'With any selector. usage returns purpose, execution route and root schema field paths without the full schema; full is the exact-selector default; category/query default to menus.'
+                      'With any selector. usage returns purpose, execution route and root input paths without input/output/delivery validation schemas; full is the exact-selector default; category/query default to menus.'
                   },
                   schemaPaths: {
                     type: 'array',
@@ -2434,7 +2643,7 @@ export const createLocalOperationTools = (
       if (name === AiDesignToolIds.CHECK_DRAWING_IMAGE)
         return operationInputIssue(value, imageCheckResultSchema)
       if (name === AiDesignToolIds.READ_DESIGN_CHECKS)
-        return operationInputIssue(value, designCheckResultsSchema)
+        return operationInputIssue(value, designCheckDeliverySchema)
       if (name === AiDesignToolIds.VERIFY_DESIGN_CHECKS)
         return operationInputIssue(value, mechanicalVerificationSchema)
       if (name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS) {
@@ -2666,7 +2875,7 @@ export const createLocalOperationTools = (
         )
         if (issue) throw new LocalOperationPreparationError(issue)
         signal.throwIfAborted()
-        const request = args as { ids?: string[]; includePassed?: boolean }
+        const request = args as DesignCheckDeliveryOptions
         const selected = request.ids
           ? checkResults.dependencyIds(request.ids)
           : undefined
@@ -2707,15 +2916,11 @@ export const createLocalOperationTools = (
           latestEvidenceValidation.coherent === false
         )
           return JSON.stringify({
-            ...checkResults.read(
-              args as { includePassed?: boolean; ids?: string[] }
-            ),
+            ...checkResults.deliver(request),
             status: 'partial',
             evidenceValidation: latestEvidenceValidation
           })
-        return JSON.stringify(
-          checkResults.read(args as { includePassed?: boolean; ids?: string[] })
-        )
+        return JSON.stringify(checkResults.deliver(request))
       }
       if (name === AiDesignToolIds.REVIEW_PREPARED_DESIGN) {
         if (!preparedReview)
@@ -2737,14 +2942,16 @@ export const createLocalOperationTools = (
           throw new LocalOperationPreparationError(
             'Discovery registry changed; restart this selector at offset 0 without registryRevision.'
           )
-        const apis = registered
+        const apis = [...admittedApisByName.values()]
         const details = (api: (typeof apis)[number], includeSchema = true) => {
           const contract = getBasicApiContract(api.name)
           const dependencies = nativeInventory().filter(
             (tool) =>
+              !finalActions.has(api.name) &&
               tool.name === api.name &&
               tool.composition === 'allowed' &&
-              tool.registeredName
+              tool.registeredName &&
+              (!contract || isCanonicalWrapper(tool, api))
           )
           const dependency =
             dependencies.length === 1 ? dependencies[0] : undefined
@@ -2752,6 +2959,7 @@ export const createLocalOperationTools = (
             ? {
                 name: dependency.registeredName,
                 revision: dependency.revision,
+                execution: nativeExecution(dependency),
                 definition: {
                   tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
                   arguments: { names: [dependency.registeredName] }
@@ -2999,9 +3207,23 @@ export const createLocalOperationTools = (
         const matches = apis.filter((api) =>
           matchesTerms(api.name, api.description)
         )
-        const native = nativeInventory().filter((tool) =>
-          matchesTerms(tool.name, tool.description)
-        )
+        const native = nativeInventory().filter((tool) => {
+          if (!matchesTerms(tool.name, tool.description)) return false
+          // Compact views expose this wrapper via recipeDependency. Full
+          // views retain both independently executable contracts.
+          const represented =
+            args.view !== 'full' &&
+            args.includeSchemas !== true &&
+            matches.some(
+              (api) =>
+                isCanonicalWrapper(tool, api) &&
+                tool.composition === 'allowed' &&
+                nativeMatches(api.name).filter((candidate) =>
+                  isCanonicalWrapper(candidate, api)
+                ).length === 1
+            )
+          return !represented
+        })
         const inventory = [
           ...matches.map((api) => ({ api })),
           ...native.map((tool) => ({ tool }))
@@ -3263,17 +3485,37 @@ export const createLocalOperationTools = (
               actionResults: capturedResults
             })
           signal.throwIfAborted()
+          let handoff
+          try {
+            handoff = designReview.judgmentHandoff(
+              inspectionIds,
+              phase,
+              hasReusedImages ? undefined : [...selections.values()]
+            )
+          } catch (error) {
+            signal.throwIfAborted()
+            // Captures have settled independently of check binding. Preserve
+            // their actual receipts; rejected bindings never record a verdict.
+            return JSON.stringify({
+              status: 'partial',
+              phase,
+              accepted: false,
+              readyForDetail: false,
+              inspectionIds,
+              actionResults: capturedResults,
+              ...designReview.judgmentHandoff(inspectionIds, phase),
+              message:
+                `Check binding failed: ${error instanceof Error ? error.message : 'Invalid check binding.'} ` +
+                'No judgments were recorded. Keep these captured images; read the affected current check revisions, then bindChecks with these inspectionIds. Do not repeat settled edits or successful captures.'
+            })
+          }
           return JSON.stringify({
             phase: reviewArgs.phase,
             accepted: false,
             readyForDetail: false,
             inspectionIds,
             actionResults: capturedResults,
-            ...designReview.judgmentHandoff(
-              inspectionIds,
-              reviewArgs.phase as 'structure' | 'visual',
-              hasReusedImages ? undefined : [...selections.values()]
-            ),
+            ...handoff,
             message:
               'Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.'
           })
@@ -3368,7 +3610,7 @@ export const createLocalOperationTools = (
             accepted: false,
             readyForDetail: false,
             status: 'partial',
-            results: designReview.readChecks(),
+            results: designReview.deliverChecks(),
             coverage: designReview.coverage(),
             evidenceValidation: latestEvidenceValidation,
             message: coverageIssue
@@ -3614,11 +3856,20 @@ export const createLocalOperationTools = (
         name === AiActionNames.REVIEW_DESIGN &&
         typeof operationArguments.elementId === 'string'
       ) {
-        updateMeasurementState(
+        const stamp = updateMeasurementState(
           operationArguments.elementId,
           receipt,
           prepared.actions[0].id
         )
+        const reviewed = receipt.actionResults.find(
+          (item) => item.actionId === prepared.actions[0].id
+        )?.result
+        if (stamp && isRecord(reviewed) && Number(reviewed.checkedElements) > 1)
+          await reconcileMeasurements(
+            operationArguments.elementId,
+            stamp,
+            signal
+          )
       }
       if (signal.aborted) throw new Error('Backend operation cancelled')
       if (affectsDrawingReview) {

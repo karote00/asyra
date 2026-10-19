@@ -253,7 +253,8 @@ export const createRetainedFillAction = (
                 fields: [mapping.axis],
                 delivery: 'reference'
               },
-              context.signal
+              context.signal,
+              'consumer'
             )
             snapshotId = receipt.snapshotId
             leaseId = receipt.leaseId

@@ -5,7 +5,7 @@ import {
 } from './local-reference-decisions'
 import {
   createDesignCheckResults,
-  designCheckResultsSchema
+  designCheckDeliverySchema
 } from './design-check-results'
 import {
   toolResultBoolean,
@@ -80,12 +80,12 @@ export const preparedReviewDefinition = {
         pendingCriterionIds: toolResultIds
       }),
       assessment: toolResultObject({ checks: { type: 'array' } }),
-      results: designCheckResultsSchema
+      results: designCheckDeliverySchema
     }),
     'prepare',
     ['request-artifacts']
   ),
-  revision: 2,
+  revision: 3,
   name: AiDesignToolIds.REVIEW_PREPARED_DESIGN,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
@@ -513,7 +513,7 @@ export const createPreparedDesignReview = (options: {
         deterministicFindings,
         assessment,
         finalCanvasReviewRequired: true,
-        results: results.read()
+        results: results.deliver()
       }
     }
   }

@@ -128,12 +128,14 @@ action execution.
 
 Exact name/operation lookup also supports `view: "usage"` and `schemaPaths`
 (JSON Pointers into the canonical input schema). Usage includes purpose,
-execution route and root property paths. Fragment replies include exact selected
-values and transitive local reference dependencies; they are partial documentation,
-not complete executable schemas. Unknown paths reject recoverably. These modes
-require an exact selector, cannot be combined with each other, and
-never consume full-definition delivery. Explicit refresh preserves the selected
-usage or schema-path scope. A partial response offers a scoped recovery route;
+execution route and root property paths, with compact effect/composition/lifecycle
+metadata. Usage never embeds input, output, partial/recovery or delivery validation
+schemas; exact full lookup remains the authority for executable contracts.
+Fragment replies include exact selected values and transitive local reference dependencies; they are partial documentation,
+not complete executable schemas. Unknown paths reject recoverably. Schema paths
+require an exact selector; usage also supports category and query selectors.
+Usage and schema paths cannot be combined and never consume full-definition
+delivery. Explicit refresh preserves the selected usage or schema-path scope. A partial response offers a scoped recovery route;
 full recovery remains a separate choice. Optional `refreshReason` records
 context loss, delivery failure or missing fields, and requires refresh; an omitted
 reason stays unknown. Definition receipts distinguish initial delivery, reuse,
@@ -1709,6 +1711,26 @@ its earlier obligation.
 
 ### Capture and deterministic review responsibility
 
+Mechanical evidence belongs to the browser deterministic reviewer, not the image
+receipt owner. Its coverage binds the actual supported rules and traversal
+context: root-only checks do not establish containment in an external parent.
+The supported rectangular containment rule uses Frame dimensions, not arbitrary
+container or Group dimensions. Group dimensions are operation snapshots, not
+containment constraints. Group ancestry remains part of subtree coverage. A Group
+inside a Frame is checked using its read-only canonical descendant rectangle union
+and translation, using Preset's geometry owner; inspection never normalizes or
+rewrites Group/child coordinates. Unknown geometry stays incomplete. An undeclared
+custom container does not acquire a containment rule from `isContainer` alone.
+Known changes preserve a receipt only if the checked rule inputs remain equal;
+paint or stacking order alone must not retire unchanged mechanical findings.
+Geometry, measured text, inherited visibility, parent dimensions and membership
+must be considered where consumed. Unknown changes, document replacement and
+owner disposal retire receipts. Cancelled, incomplete or mixed-source checks
+issue no current evidence. Validation returns a causal failure reason and never
+promotes a mechanical receipt into visual or attachment coverage. Exact checked
+coverage stays browser-owned behind the receipt; server coverage reconciliation
+is a separate consumer change. Existing image dependency rules remain unchanged.
+
 Capturing an image does not execute deterministic subtree checking. The explicit
 mutation coordinator checks acknowledged targets before returning, even when
 `inspection=defer` suppresses screenshots. Ordered parts collect targets in an
@@ -1819,8 +1841,20 @@ applicable stored checks through their actual dependencies.
 
 Canonical canvas measurement results are retained in the same check store per
 checked target, alongside prepared-source and primary-agent evidence. Complete
-rechecks replace only that target's findings, including deleted children; partial
-checks remain unresolved. Reads validate actual browser-issued scoped receipts
+rechecks reconcile all existing mechanical obligations proven by their exact
+supported-rule/subtree coverage, including deleted descendants. The browser
+reviewer alone certifies coverage and issues independent target receipts; ancestry
+or an aggregate pass is not sufficient. Partial/uncovered/incompatible results
+remain unresolved. A later sibling edit cannot invalidate a reconciled independent
+target. The validation action accepts `measurementTargets` (1-64 unique IDs) only
+with mechanical evidence and without visual scope; entries contain `elementId`,
+`available`, and, only for complete compatible coverage, `complete`, `findings`
+and `evidence`. Unavailable entries carry a reason. Covered-root normalization
+excludes external parent containment and requires compatible inherited visibility.
+The server commits each acknowledged result only if its selected obligation
+revision and receipt remain unchanged. Late/cancelled results cannot replace newer
+state. Subsequent selected reads, verification and request completion consume the
+same reconciled ledger; selected success never claims whole-request completion. Reads validate actual browser-issued scoped receipts
 without running geometry checks. Invalid receipts stale only their dependent
 units; current unrelated passes remain. Container and text findings both block
 completion. Mechanical passes cover supported rules, never visual acceptance.
@@ -1854,9 +1888,7 @@ the currently advertised contract. There is no old-output fallback.
 ### Mechanical delivery and unresolved write scope
 
 Automatic checks retain complete findings in the existing request-owned check
-store and return a compact summary with the first pending result ID. Direct
-review and retained-result reads remain complete; explicit full batch/workflow
-responses may include automatic check receipts. Default delivery must not resend
+store and return a compact summary with the first pending result ID. Default direct review, prepared review and retained-result delivery use the same bounded check summary. `read_design_checks` returns summary by default; explicit IDs or `view: details` provide bounded detail with ledger revision, offset and next offset. Subsequent pages must name that ledger revision and reject a changed version. Internal results remain complete; explicit full batch/workflow responses may include automatic check receipts. Default delivery must not resend
 full findings, including large complete checks with known failures. Screenshot
 receipts and acknowledged product writes keep their existing output contracts.
 
@@ -2062,7 +2094,6 @@ Completed provider call identities remain closed for that request. A repeated or
 late native research start cannot attach an old call to new commentary, prolong
 that purpose, or disagree with the activity projector's closed-call state.
 
-
 ## Tool-first correction contract
 
 The primary agent owns intent, creative decisions, recipe authorship and final pixel
@@ -2136,7 +2167,13 @@ current finding receipts and explicit repair policy before any write. Each presc
 position includes current `attachmentEvidence` from `read_design_attachment`; its
 canonical receipt must belong to the stated parent and workspace. The synchronous
 mutation owner rechecks that original basis and preflights all ordinary edits before
-the first write. The first
+the first write. Mechanical stamps must be current at their issuing deterministic
+reviewer; attachment stamps must be current at the existing attachment owner.
+The two owners are explicit dependencies, not interchangeable `isCurrent` checks.
+A visual stamp cannot authorize mechanical repair, and a valid mechanical stamp
+cannot replace the original parent basis. Check both inside the synchronous
+mutation boundary; never fall back to another owner or scan asynchronously there.
+The first
 supported policy sets prescribed parent-local positions for eligible existing
 children with container-overflow findings, through the existing App APIs. It does
 not infer positions, resize ancestors or support arbitrary finding families. A mismatched or mixed unsupported set stops with
@@ -2171,25 +2208,23 @@ A successful direct edit needs no recipe. Missing reusable capability is authore
 by the primary agent, admitted by Runtime, invoked through the same host, then saved
 only when eligible. Save-only retry never repeats a completed product mutation.
 
-### Cross-owner handoff cases and stage exits
+### Cross-owner handoff cases
 
-These cases define subsequent stage acceptance; they are pending until executed
-on the relevant captured source, not passing by structural admission.
+These product cases apply to their named routes. Proof must use the relevant
+captured source; structural admission alone does not establish runtime correctness.
 
-| Case | Producer -> consumer | Required success and failure behavior |
-| --- | --- | --- |
-| Current contract (Stage 1) | compose/inspect -> host and primary judgment | Canonical oval conversion and primary visual fail/correct/pass work; removed alias rejects before dispatch and no independent assessor capability exists. |
-| Aggregate closure (Stage 2) | apply receipt -> inspect -> Runtime verification | Fresh receipt closes selected stale mechanical checks, preserves unrelated visual passes, and executes one admitted known repair; actual Runtime admits the string progress contract and acknowledged revision binding. No-op/cyclic repairs and wrong/mixed repair capabilities stop without initial-write replay. |
-| Freshness race (Stage 2) | canonical edits -> inspect -> settle | Edit, Undo/Redo, collaborator change or cancellation during check cannot publish stale success; retry only safe reads, preserve unaffected records, and return exact incomplete scope. |
-| Delegation (Stage 3) | discovery -> admit/register -> host/invoke | Exact spec -> invalid recipe correction -> eligible invocation through real host; unsupported intent returns a decision; suitable direct tools need no forced composition. |
-| Reuse (Stage 4a) | invoke receipt -> persist -> fresh request | New input yields new artifacts; failed save retries only storage, revoked dependency rejects, expired transient handles require reacquisition. |
-| Settlement (Stage 4b) | inspect/apply -> settle -> visible result | Stage replacement and call start/end ordering are truthful; Stop/partial writes/cleanup failure preserve actual progress; document-save failure, recovery, Undo/Redo and fresh reload are independently proven. |
+| Case                        | Producer -> consumer                             | Required success and failure behavior                                                                                                                                                                                                                                                                               |
+| --------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Current contract  | compose/inspect -> host and primary judgment     | Canonical oval conversion and primary visual fail/correct/pass work; removed alias rejects before dispatch and no independent assessor capability exists.                                                                                                                                                           |
+| Aggregate closure | apply receipt -> inspect -> Runtime verification | Fresh receipt closes selected stale mechanical checks, preserves unrelated visual passes, and executes one admitted known repair; actual Runtime admits the string progress contract and acknowledged revision binding. No-op/cyclic repairs and wrong/mixed repair capabilities stop without initial-write replay. |
+| Freshness race    | canonical edits -> inspect -> settle             | Edit, Undo/Redo, collaborator change or cancellation during check cannot publish stale success; retry only safe reads, preserve unaffected records, and return exact incomplete scope.                                                                                                                              |
+| Delegation        | discovery -> admit/register -> host/invoke       | Exact spec -> invalid recipe correction -> eligible invocation through real host; unsupported intent returns a decision; suitable direct tools need no forced composition.                                                                                                                                          |
+| Reuse            | invoke receipt -> persist -> fresh request       | New input yields new artifacts; failed save retries only storage, revoked dependency rejects, expired transient handles require reacquisition.                                                                                                                                                                      |
+| Settlement       | inspect/apply -> settle -> visible result        | Stage replacement and call start/end ordering are truthful; Stop/partial writes/cleanup failure preserve actual progress; document-save failure, recovery, Undo/Redo and fresh reload are independently proven.                                                                                                     |
 
-The definition of done for Stage 1 is current caller/schema/test alignment and
-applicable formal proof, types and lint. Stage 1 does not implement mechanical
-aggregation, modify model guidance or certify any future stage. Accepted historical
-evidence is immutable; obsolete executable behavior is removed, not emulated.
-
+Accepted historical evidence is immutable; obsolete executable behavior is
+removed, not emulated. Execution order and stage scope belong to the active
+implementation plan rather than this product specification.
 
 ### History input admission
 
@@ -2217,6 +2252,11 @@ compensation and save/reload use their existing canonical owners.
 Structural mutation receipts and materialized queries share the retained-context
 owner and bounded byte storage. There is no fixed query-count quota. Historical receipts remain recoverable while retained, never current edit
 authority. Pinned data cannot be evicted to admit unrelated work.
+Internal consuming reads share query rows with equivalent request reads, but own
+independent leases. Releasing an internal mapping lease on success or failure
+must not release a caller's or another consumer's lease. Normal request paging
+reuses its request lease. Cancellation, disposal and canonical invalidation still
+apply to every consumer; independent lifetime never grants stale-write authority.
 
 A review handoff describes delivered image scopes and declared unit identities,
 including existing bindings and revisions. It does not supply or approve visual
@@ -2245,6 +2285,11 @@ submission never infers or changes the declared scope. Tool submissions require
 current bindings and browser currency validation, with atomic mixed rejection and
 unchanged independent passes. Exact current replay is idempotent. Failed capture
 retains successful images but cannot issue a binding for an incomplete check.
+A rejected binding after capture returns a partial handoff with successful image
+receipts and explicit bindChecks recovery. It records no judgments, retains
+independent passes and does not classify settled capture as an unknown canvas
+write. The caller reads affected current revisions before rebinding; no implicit
+supersession, recapture or edit replay.
 
 ### Explicit reference uses
 
@@ -2270,3 +2315,62 @@ and mixed effects cannot be presented as drawing. Every ordered start/end remain
 observable. History distinguishes authored identities/revisions even when their
 text matches. Approval, failure, saving, stopping and terminal outcomes override
 work immediately. No time-based display hold or extra model call is permitted.
+
+### Knowledge-to-capability adoption
+
+Relevant advisory knowledge is the default method reference for open design
+choices, subject to user intent and current capability/security contracts. Shared
+Domain Knowledge contains only domain principles; Design owns tool mappings,
+representation limits and operational guidance. Missing/irrelevant advice and
+known-value edits do not block execution. Existing brief, method, criteria and
+fact artifacts retain concise decisions; no new approval gate or knowledge store.
+Only affected decisions are reconsidered after a real dependency change.
+Tools accept valid inputs independently of Knowledge reads or recommendations;
+no Knowledge ID, acknowledgement or adherence proof is an admission prerequisite.
+App guidance maps an agent-chosen method to existing contracts. Deterministic
+replay may control the agent decision and external evidence to verify those
+contracts and recovery; it cannot establish that a real agent adopts the method
+or improves design quality. Those efficacy claims require real-agent evidence.
+
+Compact query menus and usage views group a canonical basic action with its
+explicit registered wrapper route, retaining the qualified full-definition
+selector. Foreign namespaces and uncertain associations remain separate. Full
+and exact-name lookups retain distinct contracts; a menu is not an executable
+schema. Pagination covers the displayed capabilities, retains selector/view and
+rejects stale catalog revisions. Grouped routes never mark undisclosed full
+contracts as delivered. Invocation and recipe validation remain unchanged.
+
+Recorded analysis reports actual representation choices and uncertainty, not
+adoption or quality merely from a knowledge read or authored claim. Tool-only
+verification cannot establish subsequent real-agent improvement. Continuous
+per-pane gradient fields remain unsupported by single-axis retained color mapping;
+representation advice must state this distinction without reducing requested detail.
+
+### Whole-flow evidence closure and advisory handoff
+
+A subtree result only closes compatible existing obligations certified by the
+browser owner. Native review, batch, recipe verification, pending-result reads,
+visual review and final settlement share that result state. Repeating a read or
+verification must not revive superseded evidence. Canonical revisions protect
+against concurrent or late reconciliation; partial results retain independent
+acknowledgements without replaying writes. Root passes do not clear visual/source
+obligations or unknown mutation settlement. Save acknowledgement and reload remain
+separate from model completion and mechanical success. Finalization errors retain
+their App boundary; they are not all malformed model responses.
+
+Discovery answers known final-response identities in exact selectors and capability search with their actual final
+route and schema while leaving them unavailable to native/edit dispatch. Complete
+known contracts require no lookup; missing executable contracts use full retrieval,
+missing individual fields use scoped retrieval, and genuine loss permits refresh.
+App architectural guidance maps advisory material choices into actual supported
+parameters and separate material/detail judgments. A failing premise should be
+corrected before more dependent repetition; independent work may proceed. Knowledge
+is never required for admission and tools never infer aesthetic correctness from
+prose. Existing portable Knowledge contains no App tool identities.
+
+Formal integration must exercise real browser modification/review/validation,
+result reconciliation, repeated reads/verification, preserved visual decisions,
+final settlement and save/reload. Include negative controls for uncovered failures,
+foreign/stale/partial evidence and cancellation, plus Undo/Redo and collaboration
+through existing owners. The saved 101 sequence supplies input evidence, never
+reusable live receipt IDs. Owner-local proofs alone cannot close this flow.

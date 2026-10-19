@@ -630,6 +630,7 @@ it.each([
           ]
         })
       const retainedBefore = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
         includePassed: true
       })
       changeDuringValidation = drift
@@ -641,7 +642,7 @@ it.each([
         const retained = JSON.parse(
           await tools.call(
             AiDesignToolIds.READ_DESIGN_CHECKS,
-            { includePassed: true },
+            { view: 'details', includePassed: true },
             new AbortController().signal
           )
         )
@@ -653,6 +654,7 @@ it.each([
         expect(initial).toMatchObject({ accepted: false, status: 'partial' })
         expect(batchSizes.length - dispatchCount).toBe(1)
         const retainedAfter = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+          view: 'details',
           includePassed: true
         })
         expect(retainedAfter.items).toEqual(retainedBefore.items)
@@ -662,7 +664,9 @@ it.each([
       }
       if (drift) {
         expect(initial).toMatchObject({ accepted: false, status: 'partial' })
-        const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+        const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+          view: 'details'
+        })
         expect(
           pending.items
             .map(
@@ -676,6 +680,7 @@ it.each([
       }
       expect(initial.accepted).toBe(true)
       const before = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
         includePassed: true
       })
       const memberships = observed.getElementIdsInBounds.mock.calls.length
@@ -684,7 +689,9 @@ it.each([
         id: 'window-2',
         changes: [{ key: 'visible', before: true, after: false }]
       })
-      const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+      const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details'
+      })
       expect(
         pending.items
           .map(
@@ -703,6 +710,7 @@ it.each([
       )
       await tools.validateCompletion(signal)
       const after = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
         includePassed: true
       })
       for (const unit of units.filter((unit) => unit !== 'tier-2')) {

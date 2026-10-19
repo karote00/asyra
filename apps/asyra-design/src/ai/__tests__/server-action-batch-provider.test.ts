@@ -554,3 +554,97 @@ it.each(['activity', 'receipt', 'handoff'])(
     }
   }
 )
+
+// Exercise capture against the actual transport owner, not hand-authored HTTP examples.
+describe('evaluation capture and actual provider protocol', () => {
+  it.each([
+    'success',
+    'execution-failure',
+    'rejected-receipt',
+    'lost-receipt',
+    'cancelled'
+  ])(
+    'attributes only inference and never replays execution during %s',
+    async (mode) => {
+      const { captureRequestIdentity } =
+        await import('../../../test-data/knowledge-evaluation/capture-source.mjs')
+      const { AI_BATCH_RECEIPT_HEADER } =
+        await import('../action-batch-endpoint')
+      const controller = new AbortController()
+      const identities: string[] = []
+      const receipts: unknown[] = []
+      let executions = 0
+      let modelRequests = 0
+      const provider = createServerActionBatchProvider({
+        fetch: async (url, init) => {
+          const headers = Object.fromEntries(
+            new Headers(init.headers).entries()
+          )
+          const id = captureRequestIdentity(
+            {
+              url: () => new URL(String(url), 'http://capture.test').href,
+              method: () => init.method,
+              headers: () => headers,
+              postDataJSON: () => JSON.parse(String(init.body))
+            },
+            'http://capture.test'
+          )
+          if (id) identities.push(id)
+          if (headers[AI_BATCH_RECEIPT_HEADER] !== undefined) {
+            receipts.push(JSON.parse(String(init.body)))
+            if (mode === 'lost-receipt')
+              throw new Error('Acknowledgement connection lost')
+            return new Response('{}', {
+              status: mode === 'rejected-receipt' ? 409 : 200
+            })
+          }
+          modelRequests++
+          return new Response(
+            [
+              JSON.stringify({
+                type: 'batch',
+                receiptToken: '12345678-1234-1234-1234-123456789abc',
+                batch
+              }),
+              JSON.stringify({ type: 'result', batch })
+            ].join('\n'),
+            { headers: { 'content-type': 'application/x-ndjson' } }
+          )
+        }
+      })
+      try {
+        const pending = provider.requestActionBatch(
+          {
+            ...input,
+            metadata: {
+              ...input.metadata,
+              sourceRequestId: 'real-provider-request'
+            }
+          },
+          {
+            signal: controller.signal,
+            executeBatch: async () => {
+              executions++
+              if (mode === 'cancelled') controller.abort()
+              if (mode === 'execution-failure')
+                throw new Error('Canonical execution rejected')
+              return { actionResults: [], context: { executed: true } }
+            }
+          }
+        )
+        if (['success', 'execution-failure'].includes(mode))
+          await expect(pending).resolves.toEqual(batch)
+        else await expect(pending).rejects.toBeDefined()
+        expect(identities).toEqual(['real-provider-request'])
+        expect(modelRequests).toBe(1)
+        expect(executions).toBe(1)
+        expect(receipts).toHaveLength(mode === 'cancelled' ? 0 : 1)
+        if (mode === 'execution-failure')
+          expect(receipts[0]).toHaveProperty('batchFailure')
+      } finally {
+        controller.abort()
+        provider.dispose()
+      }
+    }
+  )
+})

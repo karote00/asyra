@@ -5,6 +5,7 @@ vi.mock('../../common-apis/fills', () => ({ fillApis: {} }))
 vi.mock('../../common-apis/strokes', () => ({ strokeApis: {} }))
 import { createDesignElementEditPreparer } from '../../common-apis/design-edit'
 import { createPrescribedPositionAction } from '../prescribed-position-action'
+import { createDesignReviewer } from '../../common-apis/design-review'
 
 const fixture = () => {
   const records: Record<
@@ -26,8 +27,10 @@ const fixture = () => {
     stroke: vi.fn()
   })
   const isCurrent = vi.fn(() => true)
+  const isAttachmentCurrent = vi.fn(() => true)
   const action = createPrescribedPositionAction(
-    { isCurrent, isAttachmentCurrent: isCurrent } as never,
+    { isCurrent },
+    { isAttachmentCurrent },
     { read: (id) => records[id], prepare, workspace: () => 'workspace' }
   )
   const attachmentEvidence = {
@@ -48,7 +51,15 @@ const fixture = () => {
     signal: new AbortController().signal,
     runMutation: async (work: () => unknown) => work()
   }
-  return { records, properties, action, isCurrent, input, context }
+  return {
+    records,
+    properties,
+    action,
+    isCurrent,
+    isAttachmentCurrent,
+    input,
+    context
+  }
 }
 
 it('preflights every canonical edit before the first write and rejects queue-time changes', async () => {
@@ -105,4 +116,97 @@ it('reports preflight rejection as not-started but never classifies a writer fai
   await expect(f.action.execute(f.input, f.context as never)).rejects.toBe(
     failure
   )
+})
+
+it('consumes real mechanical receipts independently of the attachment owner and refuses retired receipts before writing', async () => {
+  const f = fixture()
+  let changed: (() => void) | undefined
+  const reviewer = createDesignReviewer(
+    {
+      read: () => ({ type: 'frame' }),
+      computed: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: 0 }),
+      measure: () => [],
+      observeChanges(listener) {
+        changed = listener
+        return () => undefined
+      }
+    },
+    async () => undefined,
+    true
+  )
+  const attachmentOwner = {
+    isCurrent: vi.fn((_stamp: unknown) => false),
+    isAttachmentCurrent: vi.fn(() => true)
+  }
+  const write = vi.fn(() => ({ appliedElementIds: ['a'] }))
+  const prepare = vi.fn(() => write)
+  const action = createPrescribedPositionAction(reviewer, attachmentOwner, {
+    read: (id) => f.records[id],
+    workspace: () => 'workspace',
+    prepare: prepare as never
+  })
+  try {
+    const captured = await reviewer.capture('parent')
+    if (!captured.evidence) throw new Error('Expected mechanical evidence')
+    const input = {
+      evidence: [captured.evidence],
+      positions: [f.input.positions[0]]
+    }
+    expect(reviewer.isCurrent(captured.evidence)).toBe(true)
+    expect(attachmentOwner.isCurrent(captured.evidence)).toBe(false)
+    await expect(
+      action.execute(input, f.context as never)
+    ).resolves.toMatchObject({
+      status: 'complete',
+      appliedElementIds: ['a']
+    })
+    expect(write).toHaveBeenCalledOnce()
+    write.mockClear()
+    prepare.mockClear()
+    const foreign = {
+      ...input,
+      evidence: [{ ...captured.evidence, sessionId: 'foreign' }]
+    }
+    await expect(action.execute(foreign, f.context as never)).rejects.toThrow(
+      /Mechanical check evidence expired/
+    )
+    attachmentOwner.isAttachmentCurrent.mockReturnValue(false)
+    await expect(action.execute(input, f.context as never)).rejects.toThrow(
+      /attachment evidence expired/
+    )
+    attachmentOwner.isAttachmentCurrent.mockReturnValue(true)
+    changed?.()
+    await expect(action.execute(input, f.context as never)).rejects.toThrow(
+      /Mechanical check evidence expired/
+    )
+    expect(prepare).not.toHaveBeenCalled()
+    expect(write).not.toHaveBeenCalled()
+  } finally {
+    reviewer.dispose()
+  }
+})
+
+it('rejects attachment changes and cancellation inside mutation admission without preparing or applying edits', async () => {
+  const f = fixture()
+  f.context.runMutation = async (work) => {
+    f.isAttachmentCurrent.mockReturnValue(false)
+    return work()
+  }
+  await expect(f.action.execute(f.input, f.context as never)).rejects.toThrow(
+    /attachment evidence expired/
+  )
+  expect(f.isCurrent).toHaveBeenCalled()
+  expect(f.properties).not.toHaveBeenCalled()
+  const controller = new AbortController()
+  f.isAttachmentCurrent.mockClear()
+  f.context.signal = controller.signal
+  f.context.runMutation = async (work) => {
+    controller.abort(new Error('Cancelled before mutation'))
+    return work()
+  }
+  await expect(f.action.execute(f.input, f.context as never)).rejects.toThrow(
+    'Cancelled before mutation'
+  )
+  expect(f.isAttachmentCurrent).not.toHaveBeenCalled()
+  expect(f.properties).not.toHaveBeenCalled()
 })

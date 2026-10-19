@@ -6,6 +6,7 @@ import {
   actionToolSemantics
 } from './tool-contract'
 import { inspectionEvidenceSchema } from './inspection-evidence'
+import type { createDesignReviewer } from '../common-apis/design-review'
 import { inspectionInputSchema } from './inspection-schema'
 import type {
   createInspectionEvidence,
@@ -55,27 +56,56 @@ export const createAiInspectionAction = (
 })
 
 export const createInspectionValidationAction = (
-  evidence: ReturnType<typeof createInspectionEvidence>
+  evidence: ReturnType<typeof createInspectionEvidence>,
+  reviewer?: Pick<
+    ReturnType<typeof createDesignReviewer>,
+    'owns' | 'validate' | 'reconcile'
+  >
 ): AiActionDefinition<{
   evidence: { sessionId: string; revision: number; receiptId?: string }
   scope?: InspectionScopeQuery
+  measurementTargets?: string[]
 }> => ({
   ...actionToolSemantics(
     AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
-    toolResultObject({
-      current: toolResultBoolean,
-      validatedAt: inspectionEvidenceSchema
-    })
+    toolResultObject(
+      {
+        current: toolResultBoolean,
+        validatedAt: inspectionEvidenceSchema,
+        measurements: {
+          type: 'array',
+          items: toolResultObject(
+            {
+              elementId: toolDocumentReference,
+              available: toolResultBoolean,
+              complete: toolResultBoolean,
+              findings: { type: 'array', items: { type: 'object' } },
+              evidence: inspectionEvidenceSchema,
+              reason: toolResultString
+            },
+            ['elementId', 'available']
+          )
+        }
+      },
+      ['current', 'validatedAt']
+    )
   ),
-  revision: 3,
+  revision: 5,
   name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
   description:
-    'Check whether an App-issued stamp still has current canonical dependencies. Scoped visual receipts may survive unrelated document edits; unscoped stamps require the original document revision. Read-only validity check; optional requiredIds and overviewIds check canonical containment without rendering or visual judgment. Unchanged stamp checks take constant work; pending regions recheck spatial membership. Missing, retired or changed evidence is not current.',
+    'Check whether an App-issued stamp still has current canonical dependencies. Scoped visual receipts may survive unrelated document edits; unscoped stamps require the original document revision. Read-only validity check; optional requiredIds and overviewIds check canonical containment without rendering or visual judgment. Mechanical receipts validate supported rule inputs at their issuing reviewer and never establish visual containment. Unchanged stamp checks take constant work; pending regions recheck spatial membership. Missing, retired or changed evidence is not current.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
     required: ['evidence'],
     properties: {
+      measurementTargets: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 64,
+        uniqueItems: true,
+        items: toolDocumentReference
+      },
       scope: {
         type: 'object',
         additionalProperties: false,
@@ -99,6 +129,27 @@ export const createInspectionValidationAction = (
   },
   execute: async (args, { signal }) => {
     signal.throwIfAborted()
+    if (reviewer?.owns(args.evidence)) {
+      if (args.scope)
+        return {
+          current: false,
+          validatedAt: args.evidence,
+          reason: 'mechanical-receipt-is-not-visual-coverage'
+        }
+      if (args.measurementTargets)
+        return reviewer.reconcile(
+          args.evidence,
+          args.measurementTargets,
+          signal
+        )
+      return reviewer.validate(args.evidence, signal)
+    }
+    if (args.measurementTargets)
+      return {
+        current: false,
+        validatedAt: args.evidence,
+        reason: 'mechanical-coverage-requires-mechanical-receipt'
+      }
     return evidence.validate(args.evidence, args.scope)
   }
 })

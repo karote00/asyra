@@ -172,3 +172,12 @@ test('CLI generates a child handoff without dispatching an agent or writing task
   assert.equal(result.status, 0, result.stderr)
   assert.equal(parseContext(result.stdout).plan.section, '## Task 2')
 })
+
+test('independent knowledge plans retain their own task owner', () => {
+  const input = structuredClone(context)
+  input.plan.path =
+    'docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md'
+  assert.deepEqual(validateContext(input), input)
+  input.plan.path = 'docs/ai/knowledge/../framework/plans/example.md'
+  assert.throws(() => validateContext(input), /owner document path/)
+})

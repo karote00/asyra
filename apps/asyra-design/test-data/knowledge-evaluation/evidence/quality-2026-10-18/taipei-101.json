@@ -1,0 +1,272 @@
+[
+  {
+    "id": "knowledge-quality-control-taipei-101-1792318954090",
+    "arm": "quality-control",
+    "prompt": "Draw the entire Taipei 101, from its base to the tip of its spire, as a highly detailed, realistic architectural illustration using editable 2D shapes. Use a fixed elevated three-quarter view looking down at the building, with clearly visible top surfaces and consistent perspective. Preserve its distinctive silhouette, projecting bamboo-shaped tiers, façade structure, window frames, and visible ornamentation. Render realistic materials, lighting, and shadows. Include these details in the finished drawing without simplifying the building into broad shapes or a schematic. Draw the surfaces visible from the chosen viewpoint. Use real-world dimensions at 1 cm = 1 px before applying perspective; projected lengths should reflect the viewing angle. Use the attached aerial image only for broad massing, visible base relationships and silhouette; it is low resolution and includes temporary construction equipment that must not be drawn. Use the ornament close-up only for ornament shape/material. The images do not establish precise unseen geometry. Do not search for other reference images.\n\nBefore designing, use discover_knowledge and read_knowledge to read the specified advisory modules in the specified context. Apply useful guidance without changing this brief. An absence-of-advice notice is valid; continue using your own judgment. Do not ask questions or add explanatory text to the artwork.\nModules: [\"colors\",\"icons\"]\nContexts: []",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "../../tmp/knowledge-101-spec.json": "8136182acc8ef5a38f2267f05c9967f932a9e6780e4218f04a59976dc5c98035",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+      "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+      "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+      "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+      "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+      "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+      "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+    },
+    "attachments": [
+      {
+        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-0.jpg",
+        "sha256": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+      },
+      {
+        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-1.jpg",
+        "sha256": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+      }
+    ],
+    "sentAt": "2026-10-18T10:22:37.124Z",
+    "outcome": "success",
+    "failure": "page.evaluate: Target page, context or browser has been closed",
+    "firstContentMs": 104865,
+    "elapsedMs": 427985,
+    "deadline": {
+      "status": "finished",
+      "at": 1792319385108
+    },
+    "persistence": null,
+    "checkpoint": null,
+    "observedScores": [
+      2,
+      2,
+      1,
+      1
+    ],
+    "scoreLimit": "Non-blind overview only; no precise hidden geometry or source-scale detail certification.",
+    "visibleWeakness": "Podium is an approximate rectangular plinth with a roof appendage; reference-specific wing/roof relationships remain uncertain. Glass is regular and flat.",
+    "streams": [
+      {
+        "file": "99dbe702-3b71-4cc2-b5fe-6554ebcd782d.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "terminal": {
+          "event": "ai_request_usage",
+          "outcome": "completed",
+          "recordingFailures": 0
+        },
+        "callCount": 37,
+        "incomplete": [],
+        "knowledge": [
+          {
+            "tool": "discover_knowledge",
+            "callId": "exec-86254183-c251-44f2-9796-3b3634571255",
+            "input": {},
+            "outputDigest": "3f81b50b8b08258f6de2da6b07a88a69f79b8736cc387b2c92d38c8c0b35ff6f"
+          },
+          {
+            "tool": "read_knowledge",
+            "callId": "exec-fce59d74-9bbe-418d-9f0e-43d48d4f4b6e",
+            "input": {
+              "ids": [
+                "colors",
+                "icons"
+              ],
+              "contexts": []
+            },
+            "outputDigest": "3f2cb4f3e9608014d0504ddf7deb280c543572875a1a2e76cbba2ac483df1795"
+          }
+        ],
+        "referenceSelection": [
+          {
+            "referenceImageIndexes": [
+              0,
+              1
+            ],
+            "requirementRevision": 1,
+            "referenceDecisions": [
+              {
+                "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                "status": "restricted",
+                "reason": "低解析航照僅適用總量體、輪廓與基座關係；排除施工設備",
+                "uses": [
+                  {
+                    "id": "massing-visual",
+                    "criterionId": "overall",
+                    "purpose": "visual",
+                    "region": "whole",
+                    "limitations": [
+                      "不作精確立面或細節來源；不繪施工設備"
+                    ]
+                  }
+                ]
+              },
+              {
+                "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                "status": "restricted",
+                "reason": "近照可判斷如意金屬的雙渦卷與圓形垂飾，無法確立位置或尺寸",
+                "uses": [
+                  {
+                    "id": "ornament-visual",
+                    "criterionId": "detail",
+                    "unitId": "ornament",
+                    "purpose": "visual",
+                    "region": "whole",
+                    "limitations": [
+                      "不證明尺寸或未見幾何"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "artifacts": {
+      "run.json": "d32b37b607df0eec832681771b8890dacd0db7c9ebfa8b0c7bd6dd40204b7824",
+      "first.png": "83e18d9fdfd2c3e5787acfa04475856d76f5f36bb87492b8d68a3f05754945f6",
+      "final.png": "2f393c535b07118424bd95a300cee040c41a256f46ce0d5ac84d96284234029c",
+      "trace-analysis.json": "2731624b388edffcc63193e98e49c4f7fd9b3bc4262898f4b2e30b8bf0a926f7"
+    }
+  },
+  {
+    "id": "knowledge-quality-knowledge-taipei-101-1792319617619",
+    "arm": "quality-knowledge",
+    "prompt": "Draw the entire Taipei 101, from its base to the tip of its spire, as a highly detailed, realistic architectural illustration using editable 2D shapes. Use a fixed elevated three-quarter view looking down at the building, with clearly visible top surfaces and consistent perspective. Preserve its distinctive silhouette, projecting bamboo-shaped tiers, façade structure, window frames, and visible ornamentation. Render realistic materials, lighting, and shadows. Include these details in the finished drawing without simplifying the building into broad shapes or a schematic. Draw the surfaces visible from the chosen viewpoint. Use real-world dimensions at 1 cm = 1 px before applying perspective; projected lengths should reflect the viewing angle. Use the attached aerial image only for broad massing, visible base relationships and silhouette; it is low resolution and includes temporary construction equipment that must not be drawn. Use the ornament close-up only for ornament shape/material. The images do not establish precise unseen geometry. Do not search for other reference images.\n\nBefore designing, use discover_knowledge and read_knowledge to read the specified advisory modules in the specified context. Apply useful guidance without changing this brief. An absence-of-advice notice is valid; continue using your own judgment. Do not ask questions or add explanatory text to the artwork.\nModules: [\"colors\",\"icons\"]\nContexts: []",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "../../tmp/knowledge-101-spec.json": "8136182acc8ef5a38f2267f05c9967f932a9e6780e4218f04a59976dc5c98035",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+      "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "attachments": [
+      {
+        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-0.jpg",
+        "sha256": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+      },
+      {
+        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-1.jpg",
+        "sha256": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+      }
+    ],
+    "sentAt": "2026-10-18T10:33:41.560Z",
+    "outcome": "success",
+    "failure": null,
+    "firstContentMs": 71585,
+    "elapsedMs": 377422,
+    "deadline": {
+      "status": "finished",
+      "at": 1792319998982
+    },
+    "persistence": {
+      "documentId": "knowledge-quality-knowledge-taipei-101-1792319617619",
+      "documentGeneration": 0,
+      "sequence": 727,
+      "durableSequence": 727
+    },
+    "checkpoint": {
+      "bytes": 166380081,
+      "documentGeneration": 0,
+      "durableSequence": 727
+    },
+    "observedScores": [
+      2,
+      2,
+      1,
+      1
+    ],
+    "scoreLimit": "Non-blind overview only; no precise hidden geometry or source-scale detail certification.",
+    "visibleWeakness": "Podium relationships remain approximate; repeated bright reflection marks create a patterned appearance rather than convincingly irregular glass reflection.",
+    "streams": [
+      {
+        "file": "476e5a17-3168-4b69-97e5-8488612921eb.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "terminal": {
+          "event": "ai_request_usage",
+          "outcome": "completed",
+          "recordingFailures": 0
+        },
+        "callCount": 43,
+        "incomplete": [],
+        "knowledge": [
+          {
+            "tool": "discover_knowledge",
+            "callId": "exec-fdc3e35b-688c-442d-8ee3-00db2973fb4a",
+            "input": {},
+            "outputDigest": "3f81b50b8b08258f6de2da6b07a88a69f79b8736cc387b2c92d38c8c0b35ff6f"
+          },
+          {
+            "tool": "read_knowledge",
+            "callId": "exec-bb371b9d-a545-47c3-9fa1-d28b0edb36cc",
+            "input": {
+              "ids": [
+                "colors",
+                "icons"
+              ]
+            },
+            "outputDigest": "322403a641545349bd5ac44848014d3e0a76430bf61870858c4535012a323f08"
+          }
+        ],
+        "referenceSelection": [
+          {
+            "referenceImageIndexes": [
+              0,
+              1
+            ],
+            "requirementRevision": 1,
+            "referenceDecisions": [
+              {
+                "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                "status": "restricted",
+                "reason": "僅採用量體、基座關係與輪廓，不畫施工設備",
+                "uses": [
+                  {
+                    "id": "massing",
+                    "criterionId": "overall",
+                    "purpose": "visual",
+                    "region": "whole",
+                    "limitations": [
+                      "低解析度，不建立精確細部或隱藏幾何"
+                    ]
+                  }
+                ]
+              },
+              {
+                "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                "status": "restricted",
+                "reason": "僅採用如意裝飾的外形與金屬材質",
+                "uses": [
+                  {
+                    "id": "ornament-form",
+                    "criterionId": "detail",
+                    "unitId": "ornament",
+                    "purpose": "visual",
+                    "region": "whole",
+                    "limitations": [
+                      "不推定尺寸與安裝位置"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "artifacts": {
+      "run.json": "acd8a5ec1f361adf1ea7a63d323a8119297a8c7f58d33866f8260b32c359f695",
+      "first.png": "a7ab1361eb77801a6669cabc2d67e53879740688f39a676d08dedd8cdcfe2f3e",
+      "final.png": "3fd8132bc247af974f5a9baa805189259570443e970e5c505b5bca6da3d4d108",
+      "trace-analysis.json": "97dff04077886127b514ee57f40a7934ba04ccb13c5f4d2463fe266eebba4808"
+    }
+  }
+]

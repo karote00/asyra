@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "deadlineMs": 600000,
+  "samplesPerCase": 3,
+  "commonInstruction": "Before designing, use discover_knowledge and read_knowledge to read the specified advisory modules in the specified context. Apply useful guidance without changing this brief. An absence-of-advice notice is valid; continue using your own judgment. Do not ask questions or add explanatory text to the artwork.",
+  "development": [
+    {
+      "id": "dense-information",
+      "modules": ["typography", "colors", "components.button"],
+      "contexts": [],
+      "prompt": "Create an editable 640 by 480 px community notice for adults reading it on a screen. Include exactly this information: title 'Repair, Share and Learn Together'; date 'Saturday 24 October'; time '10 AM - 1 PM'; location 'Riverside Community Hall'; description 'Bring one small household item and learn practical repair skills with local volunteers.'; notice 'Spaces are limited. Children under 12 must attend with an adult.'; action 'Reserve a free place'. Use a warm cream background, dark blue and orange. Include all content, no images and no extra copy. Make it a useful finished notice.",
+      "criteria": [
+        "Reading order makes event, attendance details and action identifiable",
+        "Related time/place and supporting notices are grouped distinctly",
+        "Actual-size supporting text is comfortably readable with balanced spacing",
+        "Action is findable without competing with event information"
+      ]
+    },
+    {
+      "id": "documentation-actions",
+      "modules": ["design.docs-page"],
+      "contexts": ["docs-page"],
+      "prompt": "Design an editable 800 by 560 px documentation panel for a developer learning an API. Include title 'Create a document'; explanation 'Create an empty document before adding editable shapes. Keep the returned ID for later updates.'; code 'const document = await client.createDocument()'; actions 'Copy example', 'Try in sandbox', and 'Next: add shapes'; note 'Examples use the current API version.' Use a light neutral background with blue accents. Include all supplied copy, no invented content or illustrations. Make this a finished documentation layout.",
+      "criteria": [
+        "Explanation and code remain the main reading hierarchy",
+        "Copy action is associated with the code rather than ambiguous distant content",
+        "Actions have distinguishable purposes without competing promotional emphasis",
+        "Actual-size code and supporting copy are legible with clear spacing"
+      ]
+    }
+  ],
+  "transfer": [
+    {
+      "id": "clinic-information",
+      "modules": ["typography", "colors", "components.button"],
+      "contexts": [],
+      "prompt": "Create an editable 600 by 500 px clinic notice for adult readers. Include title 'Know your numbers'; date 'Tuesday 3 November'; time '9 AM - 12 PM'; location 'Oak Street Health Centre'; description 'Drop in for a free blood pressure check and a short conversation with a nurse.'; notice 'Bring your current medication list. No appointment is needed.'; action 'View clinic details'. Use a light grey background, dark green and amber. Include all content, no images and no extra copy.",
+      "criteria": [
+        "Reading order makes event, attendance details and action identifiable",
+        "Related time/place and supporting notices are grouped distinctly",
+        "Actual-size supporting text is comfortably readable with balanced spacing",
+        "Action is findable without competing with event information"
+      ]
+    },
+    {
+      "id": "documentation-query",
+      "modules": ["design.docs-page"],
+      "contexts": ["docs-page"],
+      "prompt": "Create an editable 760 by 540 px developer documentation panel. Include title 'Read saved shapes'; explanation 'Query the current document to inspect its editable shapes. The response contains stable IDs for later edits.'; code 'const shapes = await client.listShapes(documentId)'; actions 'Copy query', 'Open playground', and 'Next: edit a shape'; note 'Queries do not change the document.' Use a light neutral background with violet accents. Include all supplied copy without extra content or illustrations.",
+      "criteria": [
+        "Explanation and code remain the main reading hierarchy",
+        "Copy action is associated with the code rather than ambiguous distant content",
+        "Actions have distinguishable purposes without competing promotional emphasis",
+        "Actual-size code and supporting copy are legible with clear spacing"
+      ]
+    }
+  ]
+}

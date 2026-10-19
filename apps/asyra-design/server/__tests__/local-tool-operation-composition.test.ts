@@ -216,6 +216,12 @@ it('composes actual canonical basic operations and hands creation identities thr
     expect(semantic.apis[0].recipeDependency).toEqual({
       name: proposal.steps[0].tool,
       revision: 3,
+      execution: {
+        kind: 'registered-tool',
+        namespace: 'tool_library',
+        tool: 'invoke_tool',
+        arguments: { name: proposal.steps[0].tool, revision: 3 }
+      },
       definition: {
         tool: 'describe_design_apis',
         arguments: { names: [proposal.steps[0].tool] }
@@ -473,6 +479,7 @@ const inspectionHandoffFixture = () => {
     })
   const read = (ids?: string[]) =>
     invoke(AiDesignToolIds.READ_DESIGN_CHECKS, {
+      view: 'details',
       includePassed: true,
       ...(ids ? { ids } : {})
     })

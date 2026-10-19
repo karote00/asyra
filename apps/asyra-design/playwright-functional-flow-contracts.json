@@ -5721,6 +5721,73 @@
           "implementationPaths": [
             "apps/asyra-design/src/ai/prescribed-position-action.ts"
           ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.5823cbc40204",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "mechanical receipts preserve checked inputs across recorded grouping and stacking changes",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-review.ts",
+            "apps/asyra-design/src/ai/review-action.ts",
+            "apps/asyra-design/src/ai/inspection.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "functional.ai-inspection-evidence.cecdfc20505d",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "server measurement freshness uses the browser mechanical owner through edits history and reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-review.ts",
+            "apps/asyra-design/src/ai/review-action.ts",
+            "apps/asyra-design/src/ai/inspection.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "functional.mechanical-subtree-closure",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "whole subtree reconciliation survives local edits history collaboration and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-review.ts",
+            "apps/asyra-design/src/ai/review-action.ts",
+            "apps/asyra-design/src/ai/inspection.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "functional.group-containment-closure",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "testName": "incremental Group review preserves identity through local edits history collaboration and durable reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-review.ts",
+            "apps/asyra-design/src/ai/review-action.ts",
+            "apps/asyra-design/src/ai/inspection.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "functional.recorded-mechanical-coverage-reuse",
+          "stepId": "inspect-design",
+          "testFile": "apps/asyra-design/e2e/recorded-document-reload.spec.ts",
+          "testName": "reuses saved Taipei101 mechanical coverage without per-target canonical reads",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-review.ts",
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts"
+          ]
         }
       ],
       "handoffs": []

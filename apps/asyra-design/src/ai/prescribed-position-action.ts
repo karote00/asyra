@@ -6,6 +6,7 @@ import {
 import core from '../contexts'
 import { prepareDesignElementEdit } from '../common-apis/design-edit'
 import type { createInspectionEvidence } from '../common-apis/inspection-evidence'
+import type { createDesignReviewer } from '../common-apis/design-review'
 import {
   actionToolSemantics,
   toolResultObject,
@@ -20,7 +21,11 @@ import { AiActionNames } from '../constants'
 
 /** Preflight and execute one prescribed edit set inside the existing mutation owner. */
 export const createPrescribedPositionAction = (
-  evidence: ReturnType<typeof createInspectionEvidence>,
+  reviewer: Pick<ReturnType<typeof createDesignReviewer>, 'isCurrent'>,
+  evidence: Pick<
+    ReturnType<typeof createInspectionEvidence>,
+    'isAttachmentCurrent'
+  >,
   apis = {
     read: (id: string) => core.getElementData(id),
     prepare: prepareDesignElementEdit,
@@ -46,7 +51,7 @@ export const createPrescribedPositionAction = (
         try {
           if (
             !input.evidence.length ||
-            !input.evidence.every((stamp) => evidence.isCurrent(stamp))
+            !input.evidence.every((stamp) => reviewer.isCurrent(stamp))
           )
             throw new Error(
               'Mechanical check evidence expired before application.'

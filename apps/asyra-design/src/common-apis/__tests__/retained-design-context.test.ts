@@ -727,3 +727,163 @@ it('pages immutable receipt text without repeated serialization or live query re
   ).toThrow()
   store.dispose()
 })
+
+it.each(['reference', 'page', 'columns'] as const)(
+  'separates consuming %s reads from later request and sibling leases',
+  (delivery) => {
+    const { store, source, query, change } = fixture()
+    const controller = new AbortController()
+    try {
+      const first = store.read(
+        { ...query, delivery },
+        controller.signal,
+        'consumer'
+      )
+      const request = store.read({ ...query, delivery }, controller.signal)
+      const sibling = store.read(
+        { ...query, delivery },
+        controller.signal,
+        'consumer'
+      )
+      expect(
+        new Set([first.leaseId, request.leaseId, sibling.leaseId]).size
+      ).toBe(3)
+      expect(
+        new Set([first.snapshotId, request.snapshotId, sibling.snapshotId]).size
+      ).toBe(1)
+      expect(source.getElementComputedData).toHaveBeenCalledTimes(3)
+      if (!first.leaseId) throw new Error('Expected consuming lease')
+      store.releaseLease(first.leaseId, controller.signal)
+      expect(
+        store.get(request.snapshotId, request.leaseId, controller.signal)
+          .orderedIds
+      ).toEqual(['a', 'b', 'c'])
+      expect(
+        store.get(sibling.snapshotId, sibling.leaseId, controller.signal)
+          .orderedIds
+      ).toEqual(['a', 'b', 'c'])
+      expect(
+        store.read({ ...query, delivery }, controller.signal).leaseId
+      ).toBe(request.leaseId)
+      change()
+      expect(() =>
+        store.get(request.snapshotId, request.leaseId, controller.signal)
+      ).toThrow(/stale/)
+      expect(() =>
+        store.get(sibling.snapshotId, sibling.leaseId, controller.signal)
+      ).toThrow(/stale/)
+      const fresh = store.read({ ...query, delivery }, controller.signal)
+      expect(fresh.snapshotId).not.toBe(request.snapshotId)
+      expect(source.getElementComputedData).toHaveBeenCalledTimes(6)
+      controller.abort()
+      expect(() => store.get(fresh.snapshotId, fresh.leaseId)).toThrow(/lease/)
+    } finally {
+      store.dispose()
+    }
+  }
+)
+
+it('isolates consuming refinement and receipt leases without rebuilding their sources', () => {
+  const { store, source, query } = fixture()
+  const signal = new AbortController().signal
+  try {
+    const original = store.read(query, signal)
+    const refined = {
+      scope: 'snapshot' as const,
+      snapshotId: original.snapshotId,
+      filter: { name: { equals: 'a' } },
+      delivery: 'reference' as const
+    }
+    const held = store.read(refined, signal)
+    const consumed = store.read(refined, signal, 'consumer')
+    expect(consumed.snapshotId).toBe(held.snapshotId)
+    expect(consumed.observation).toMatchObject({
+      refinementExecutions: 0,
+      computedReadCount: 0
+    })
+    if (!consumed.leaseId) throw new Error('Expected consuming lease')
+    store.releaseLease(consumed.leaseId, signal)
+    expect(store.get(held.snapshotId, held.leaseId, signal).orderedIds).toEqual(
+      ['a']
+    )
+    const saved = store.retainReceipt(['a'], { status: 'complete' }, signal)
+    const receiptInput = {
+      scope: 'snapshot' as const,
+      snapshotId: saved.snapshotId,
+      delivery: 'receipt' as const
+    }
+    const internal = store.read(receiptInput, signal, 'consumer')
+    if (!internal.leaseId) throw new Error('Expected consuming receipt lease')
+    store.releaseLease(internal.leaseId, signal)
+    const delivered = store.read(receiptInput, signal)
+    expect(delivered.leaseId).toBe(saved.leaseId)
+    expect(delivered).toMatchObject({ receipt: { status: 'complete' } })
+    expect(source.getElementComputedData).toHaveBeenCalledTimes(3)
+    store.releaseFor(signal)
+    expect(() => store.get(held.snapshotId, held.leaseId)).toThrow(/lease/)
+    expect(() => store.get(saved.snapshotId, saved.leaseId)).toThrow(/lease/)
+  } finally {
+    store.dispose()
+  }
+})
+
+it('protects internal-only pins under pressure and frees capacity after consumption', () => {
+  const { store, source } = fixture(4000)
+  const owner = new AbortController()
+  const other = new AbortController()
+  const query = {
+    scope: 'ids' as const,
+    elementIds: ['a'],
+    fields: ['x'],
+    delivery: 'reference' as const
+  }
+  try {
+    const caller = store.read(query, owner.signal)
+    const consumer = store.read(query, owner.signal, 'consumer')
+    if (!caller.leaseId || !consumer.leaseId) throw new Error('Expected leases')
+    store.releaseLease(caller.leaseId, owner.signal)
+    const others = fillByteBudget((index) =>
+      store.read({ ...query, elementIds: [`other-${index}`] }, other.signal)
+    )
+    expect(
+      store.get(consumer.snapshotId, consumer.leaseId, owner.signal).orderedIds
+    ).toEqual(['a'])
+    expect(() => store.releaseLease(consumer.leaseId, other.signal)).toThrow(
+      /request/
+    )
+    const reads = source.getElementComputedData.mock.calls.length
+    const again = store.read(query, owner.signal, 'consumer')
+    expect(again.snapshotId).toBe(consumer.snapshotId)
+    expect(source.getElementComputedData).toHaveBeenCalledTimes(reads)
+    expect(again.leaseId).not.toBe(consumer.leaseId)
+    if (!again.leaseId) throw new Error('Expected second consuming lease')
+    store.releaseLease(again.leaseId, owner.signal)
+    expect(() =>
+      store.read({ ...query, elementIds: ['replacement'] }, other.signal)
+    ).toThrow(/capacity/)
+    store.releaseLease(consumer.leaseId, owner.signal)
+    const replacement = store.read(
+      { ...query, elementIds: ['replacement'] },
+      other.signal
+    )
+    expect(
+      store.get(replacement.snapshotId, replacement.leaseId, other.signal)
+        .orderedIds
+    ).toEqual(['replacement'])
+    expect(() => store.get(consumer.snapshotId)).toThrow(/missing|evicted/)
+    owner.abort()
+    for (const receipt of others)
+      expect(
+        store.get(receipt.snapshotId, receipt.leaseId, other.signal).orderedIds
+      ).toHaveLength(1)
+    store.dispose()
+    expect(() => store.read(query, other.signal, 'consumer')).toThrow(
+      /disposed/
+    )
+    expect(() =>
+      store.get(replacement.snapshotId, replacement.leaseId)
+    ).toThrow(/lease|disposed/)
+  } finally {
+    store.dispose()
+  }
+})

@@ -1,0 +1,108 @@
+{
+  "startedAt": "2026-10-18T11:55:42.765Z",
+  "events": [
+    {
+      "type": "navigation",
+      "url": "http://localhost:3307/?fileId=knowledge-quality-knowledge-taipei-101-1792323795116"
+    }
+  ],
+  "states": [
+    {
+      "ms": 338,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 1343,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 2346,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 3350,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 4355,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 5819,
+      "hasHandle": false,
+      "roots": []
+    },
+    {
+      "ms": 13362,
+      "hasHandle": true,
+      "status": "connected",
+      "roots": [
+        "design-0409db13-03b5-440f-a266-d29029a5c296-0"
+      ]
+    },
+    {
+      "ms": 14369,
+      "hasHandle": true,
+      "status": "connected",
+      "roots": [
+        "design-0409db13-03b5-440f-a266-d29029a5c296-0"
+      ]
+    },
+    {
+      "ms": 15376,
+      "hasHandle": true,
+      "status": "connected",
+      "roots": [
+        "design-0409db13-03b5-440f-a266-d29029a5c296-0"
+      ]
+    }
+  ],
+  "receipt": {
+    "documentId": "knowledge-quality-knowledge-taipei-101-1792323795116",
+    "documentGeneration": 0,
+    "sequence": 814,
+    "durableSequence": 814
+  },
+  "sameSequence": true,
+  "elapsedMs": 16988,
+  "snapshots": [
+    {
+      "file": "native-tiers.png",
+      "region": {
+        "x": 11000,
+        "y": 22500,
+        "width": 1024,
+        "height": 1024
+      },
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "native-base.png",
+      "region": {
+        "x": 9500,
+        "y": 46600,
+        "width": 1024,
+        "height": 1024
+      },
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "native-ornament.png",
+      "region": {
+        "x": 10650,
+        "y": 13200,
+        "width": 1024,
+        "height": 1024
+      },
+      "width": 1024,
+      "height": 1024
+    }
+  ]
+}

@@ -1,0 +1,845 @@
+{
+  "method": "Advisory body ablation; non-blind exploratory scores; human review pending. No superiority claim.",
+  "samples": [
+    {
+      "label": "Sample 01",
+      "id": "knowledge-quality-knowledge-clinic-information-1792318666605",
+      "case": "clinic-information",
+      "arm": "quality-knowledge",
+      "promptSha256": "20a591b9635c11740c9b59cf369896cf5f2af6da3b670cfc292b7a5900e5c76f",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 44341,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "8afa73b4-006f-4d2d-8d57-3cc514983680.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 8
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear heading/date/time/place and readable supporting copy; amber action stands out appropriately. Spacing differs but no demonstrated quality gain over control."
+      },
+      "image": "sample-01.png",
+      "imageSha256": "4d3c9a7a03326e6b335705ce93709b6b9ce9e3957fb76aa7f22a716d24c1d4b8"
+    },
+    {
+      "label": "Sample 02",
+      "id": "knowledge-quality-control-clinic-information-1792318602174",
+      "case": "clinic-information",
+      "arm": "quality-control",
+      "promptSha256": "20a591b9635c11740c9b59cf369896cf5f2af6da3b670cfc292b7a5900e5c76f",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 50425,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "b264be01-1960-4225-94c7-0981ae9da6f9.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 7
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear date/time/place block, readable description and attendance notice, distinct amber action. Correct supplied text and no clipping."
+      },
+      "image": "sample-02.png",
+      "imageSha256": "04444fafefd94471a156a06768ae0032e283d466a43e222abfcc3523035768ba"
+    },
+    {
+      "label": "Sample 03",
+      "id": "knowledge-quality-knowledge-dense-information-1792317766459",
+      "case": "dense-information",
+      "arm": "quality-knowledge",
+      "promptSha256": "455ea7115fcb063e1c8d61fe039049dadb1b10e16ebff73abc5fca079fc7cd94",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 45306,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "808bfbd2-d875-49bb-a229-553ba6457f4d.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 8
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Same clear reading sequence and grouping; 20px body, 18px notice and 22px action. Title/action size differs without a demonstrated quality gain."
+      },
+      "image": "sample-03.png",
+      "imageSha256": "5c3755e0b5a0a4048584a41fdacec1f474435e24f71dd77efe7569c10dce82fb"
+    },
+    {
+      "label": "Sample 04",
+      "id": "knowledge-quality-control-dense-information-1792317664923",
+      "case": "dense-information",
+      "arm": "quality-control",
+      "promptSha256": "455ea7115fcb063e1c8d61fe039049dadb1b10e16ebff73abc5fca079fc7cd94",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 52342,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "160bbdc4-02a1-48c1-ae52-ad44acb19cb8.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 6
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear two-line title, date/time row, separate venue, 20px body and 18px notice, distinct orange action. All required text visible."
+      },
+      "image": "sample-04.png",
+      "imageSha256": "ca2b026630ffa398f59f315d8f3d0f8073a8659a0e17b50927fa4d3c3468e6ae"
+    },
+    {
+      "label": "Sample 05",
+      "id": "knowledge-quality-control-dense-information-1792318067347",
+      "case": "dense-information",
+      "arm": "quality-control",
+      "promptSha256": "455ea7115fcb063e1c8d61fe039049dadb1b10e16ebff73abc5fca079fc7cd94",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 48420,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "134c0743-cafe-460c-9ee7-65796093caa6.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 7
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear title/date/time hierarchy and readable venue/description/notice; orange action distinct. Regular venue weight differs but does not obscure its role."
+      },
+      "image": "sample-05.png",
+      "imageSha256": "b81fafb29025501833887f91572dd4dc0dcb1461dfa23cfa68cc4d0119c64449"
+    },
+    {
+      "label": "Sample 06",
+      "id": "knowledge-quality-knowledge-dense-information-1792318000828",
+      "case": "dense-information",
+      "arm": "quality-knowledge",
+      "promptSha256": "455ea7115fcb063e1c8d61fe039049dadb1b10e16ebff73abc5fca079fc7cd94",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 52456,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "09d0c8a2-42ae-434a-9a16-b25068771c88.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 9
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear event hierarchy, date/time row, readable grouped description and notice, balanced orange action. No visible overlap or missing content."
+      },
+      "image": "sample-06.png",
+      "imageSha256": "7df5769e399cd0e11229291f516a0554a49e92d15391afa3b7a590e599502730"
+    },
+    {
+      "label": "Sample 07",
+      "id": "knowledge-quality-control-dense-information-1792318275664",
+      "case": "dense-information",
+      "arm": "quality-control",
+      "promptSha256": "455ea7115fcb063e1c8d61fe039049dadb1b10e16ebff73abc5fca079fc7cd94",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 50408,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "7d1c21e5-6bcc-4828-a13d-95d0b0a112aa.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 8
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Title, date/time and venue have clear hierarchy; description and notice separately readable; orange action is isolated with space. All copy visible."
+      },
+      "image": "sample-07.png",
+      "imageSha256": "ef8d09ecf172d27de8b19b314f81a0996425cf494f58b61bada84b0cfebfca24"
+    },
+    {
+      "label": "Sample 08",
+      "id": "knowledge-quality-knowledge-dense-information-1792318340099",
+      "case": "dense-information",
+      "arm": "quality-knowledge",
+      "promptSha256": "455ea7115fcb063e1c8d61fe039049dadb1b10e16ebff73abc5fca079fc7cd94",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 48341,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography"
+      ],
+      "streams": [
+        {
+          "file": "099ab3d9-9a41-4dd1-ab3a-fcd500fbc3ea.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 9
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear hierarchy and readable supporting copy; orange action distinct; no visible clipping. Variation in size and spacing does not establish improvement over control."
+      },
+      "image": "sample-08.png",
+      "imageSha256": "95d3e5f339c9b466a8a5d8757b55f33f4cfdfb1b4121750a1ba7655ffb09e07e"
+    },
+    {
+      "label": "Sample 09",
+      "id": "knowledge-quality-knowledge-documentation-actions-1792317825885",
+      "case": "documentation-actions",
+      "arm": "quality-knowledge",
+      "promptSha256": "4446e4ab5f1afe1f0fa3178cc7cf87e80d520c95139387e67e074e89aa9bbf9e",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 69548,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "cd8d2e85-50ec-4115-b2c4-c7daff6444c2.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 15
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Explanation precedes code; quiet Copy example is inside code region; one blue sandbox action and quieter next link; 18px code/body and 14px note readable."
+      },
+      "image": "sample-09.png",
+      "imageSha256": "1f065076a272d3f500ec56e56eb534863eb900954f5fe26c5de6e60a43a5a7e7"
+    },
+    {
+      "label": "Sample 10",
+      "id": "knowledge-quality-control-documentation-actions-1792317909839",
+      "case": "documentation-actions",
+      "arm": "quality-control",
+      "promptSha256": "4446e4ab5f1afe1f0fa3178cc7cf87e80d520c95139387e67e074e89aa9bbf9e",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 76735,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "724a46d0-98e8-4de8-ab53-dfb9ea6625ee.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 14
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear explanation and 18px code; Copy sits within code panel; sandbox is primary, next is quiet footer navigation. Content complete and readable. Different placement from the knowledge sample is not intrinsically worse."
+      },
+      "image": "sample-10.png",
+      "imageSha256": "44484f50b2fa5d2301aa4bb725e134ec3b180fed6c038e1c08d74d7d2e7c6bf2"
+    },
+    {
+      "label": "Sample 11",
+      "id": "knowledge-quality-control-documentation-actions-1792318129733",
+      "case": "documentation-actions",
+      "arm": "quality-control",
+      "promptSha256": "4446e4ab5f1afe1f0fa3178cc7cf87e80d520c95139387e67e074e89aa9bbf9e",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 66640,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "9e7f1901-896b-46d4-8967-917acdb57c9d.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 15
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Explanation/code remain prominent; copy action belongs to code panel; sandbox primary and next link secondary; readable text with no observed clipping."
+      },
+      "image": "sample-11.png",
+      "imageSha256": "2a20e2c7c6001f1c4e792f45a94abfad209c08461effbf141b087a0a7658595d"
+    },
+    {
+      "label": "Sample 12",
+      "id": "knowledge-quality-knowledge-documentation-actions-1792318211082",
+      "case": "documentation-actions",
+      "arm": "quality-knowledge",
+      "promptSha256": "4446e4ab5f1afe1f0fa3178cc7cf87e80d520c95139387e67e074e89aa9bbf9e",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 50452,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "c0c1fb46-4ee0-47f3-9702-e527604dc3fe.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 8
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Clear title, explanation and code; copy action inside code region, distinct primary sandbox and quiet next navigation; readable at actual scale."
+      },
+      "image": "sample-12.png",
+      "imageSha256": "0b516b5f9f250baa37715a99c8afe8d61e6cc649c35648ab061a62eb304fce49"
+    },
+    {
+      "label": "Sample 13",
+      "id": "knowledge-quality-knowledge-documentation-actions-1792318402408",
+      "case": "documentation-actions",
+      "arm": "quality-knowledge",
+      "promptSha256": "4446e4ab5f1afe1f0fa3178cc7cf87e80d520c95139387e67e074e89aa9bbf9e",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 72553,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "5dd60a01-1e64-496d-96af-7c3c49c1be18.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 18
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Quiet copy inside code panel, primary sandbox and quiet next action. Explanation and code remain prominent; all text readable."
+      },
+      "image": "sample-13.png",
+      "imageSha256": "c864669aff5be94000e3813ce60e0482fb7e62731d3341bf5ee399b5bfd1094d"
+    },
+    {
+      "label": "Sample 14",
+      "id": "knowledge-quality-control-documentation-actions-1792318489443",
+      "case": "documentation-actions",
+      "arm": "quality-control",
+      "promptSha256": "4446e4ab5f1afe1f0fa3178cc7cf87e80d520c95139387e67e074e89aa9bbf9e",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 51337,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "fe80d6c8-1631-45de-bbbe-c2afd4da3a4c.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 8
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Title/explanation/code dominate; copy is within the code area; sandbox action is emphasized and next is quiet; supporting text readable. No material quality defect relative to knowledge samples."
+      },
+      "image": "sample-14.png",
+      "imageSha256": "302d4bc506bf9b282c14c806d22f52d5d239a4d57ce00d2965ff531f1d00b5dc"
+    },
+    {
+      "label": "Sample 15",
+      "id": "knowledge-quality-knowledge-documentation-query-1792318725315",
+      "case": "documentation-query",
+      "arm": "quality-knowledge",
+      "promptSha256": "8763cb2c5aa84dc6430d42464a34108b4f9febc8a253911ca9eb03b8600fc05c",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+        "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+        "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+        "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+        "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+      },
+      "elapsedMs": 79863,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "7131192c-9c36-49fb-83de-e68a3b57fdcf.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 17
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Explanation and code lead reading sequence; Copy query belongs to code panel; one prominent playground action and quieter next link; all text readable with no visible clipping."
+      },
+      "image": "sample-15.png",
+      "imageSha256": "2f7ec97a2d7ffc0767a99a35886f91571d32c7fc87544b9c802a5811496c0a21"
+    },
+    {
+      "label": "Sample 16",
+      "id": "knowledge-quality-control-documentation-query-1792318819175",
+      "case": "documentation-query",
+      "arm": "quality-control",
+      "promptSha256": "8763cb2c5aa84dc6430d42464a34108b4f9febc8a253911ca9eb03b8600fc05c",
+      "sources": {
+        "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+        "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+        "knowledge/design.docs-page.md": "485adb6f275fc7bb2c632e400dfb861b0b9bed94b216ab8d419b65f501185bd8",
+        "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+        "../../domain-knowledge/colors.md": "e6a7c025b5bcafcad08a6b4dc6436972948448c3b20ac8117878a7f0e493d9e9",
+        "../../domain-knowledge/components.button.md": "af5fd25492ebc21d5ff3a5b48198f49e9324b69b4a7c607631bf67f19d03ff43",
+        "../../domain-knowledge/design.landing-page.md": "58733cf263cd03a867ea518b6c298ce95d4d8944225293373a4d0da04f9981ea",
+        "../../domain-knowledge/icons.md": "ed5943b76bfc4d3b95bc150433443b9540949ee4eede6b454e921ce8131eea6f",
+        "../../domain-knowledge/typography.md": "878a3ff57f1f798afecc7cf44bb44850e3404f3dd656219d7e584fde1896c52b"
+      },
+      "elapsedMs": 95061,
+      "outcome": "success",
+      "browserErrors": [],
+      "textExact": true,
+      "missing": [],
+      "extra": [],
+      "dimensionsExact": true,
+      "persistenceConfirmed": true,
+      "adviceConditionVerified": true,
+      "readTargets": [
+        "colors",
+        "components.button",
+        "typography",
+        "design.docs-page"
+      ],
+      "streams": [
+        {
+          "file": "e3ed0fc5-afdb-4b8b-93a5-0b94b1a6e260.jsonl",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "incompleteCalls": [],
+          "calls": 20
+        }
+      ],
+      "observation": {
+        "scores": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "reason": "Readable explanation/code hierarchy; Copy query immediately follows code, distinct primary copy and secondary playground actions, quiet next link. No clipping or missing copy. Different primary action from the knowledge arm is not a defect under the frozen brief."
+      },
+      "image": "sample-16.png",
+      "imageSha256": "965e385b34f478ae922bd7d4d1cb2e6729548056be889afb8b6ad7f8118e4327"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ const ids = [
   'components.button',
   'design.landing-page',
   'icons',
+  'illustration.architecture',
   'typography'
 ]
 
@@ -59,4 +60,41 @@ test('shared advice has provenance, practical guidance and resolvable compositio
       assert.ok(text.includes(`## ${heading}\n`), `${id}: ${heading}`)
     assert.ok(text.length > 700, `${id} contains usable advice`)
   }
+})
+
+test('architectural methods stay portable and contain no App execution contract', () => {
+  const text = fs.readFileSync(
+    path.join(directory, 'illustration.architecture.md'),
+    'utf8'
+  )
+  for (const forbidden of [
+    'Asyra',
+    'Taipei',
+    '101',
+    'prepare_and_apply_design',
+    'describe_design_apis',
+    'map_retained_fills',
+    'fillTemplates',
+    'schemaPaths',
+    'execute_design_batch',
+    'read_design_checks',
+    'Code Mode'
+  ]) {
+    assert.equal(
+      text.includes(forbidden),
+      false,
+      `Shared advice leaked ${forbidden}`
+    )
+  }
+  for (const topic of [
+    'Applicability',
+    'Decisions',
+    'Representation',
+    'Early check',
+    'Revision'
+  ]) {
+    assert.ok(text.includes(`**${topic}:**`), `Missing domain method ${topic}`)
+  }
+  assert.ok(text.includes('requested style takes precedence'))
+  assert.ok(text.includes('not every unrelated part'))
 })

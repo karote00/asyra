@@ -2109,6 +2109,7 @@ it('execution proof composes capture and assessment without dropping unavailable
     bindChecks: [{ criterionId: 'view', inspectionIds: reviewed.inspectionIds }]
   })
   const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+    view: 'details',
     includePassed: true
   })
   const tampered = structuredClone(binding.next.arguments)
@@ -2119,7 +2120,10 @@ it('execution proof composes capture and assessment without dropping unavailable
     /binding/
   )
   expect(
-    await call(AiDesignToolIds.READ_DESIGN_CHECKS, { includePassed: true })
+    await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+      view: 'details',
+      includePassed: true
+    })
   ).toEqual(retained)
   expect(captures).toEqual(['drawing', 'drawing', 'detail', 'detail'])
   expect(spawn.mock.calls.length).toBe(providerCallsBefore)
@@ -2492,7 +2496,9 @@ it('execution proof reconciles scoped criterion results after external edits wit
     })
   ).toMatchObject({ accepted: true })
   invalid.add('tier-3-2')
-  const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+  const pending = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+    view: 'details'
+  })
   expect(pending.counts).toEqual({ pass: 1, stale: 1, fail: 0, unverified: 0 })
   expect(pending.items.map((item: { id: string }) => item.id)).toEqual([
     'visual:tier-3'
@@ -2635,7 +2641,9 @@ it('execution proof retains regional units without requiring global coverage for
   })
   expect(validations.every((args) => args.scope === undefined)).toBe(true)
   invalid.add('tier-2-3')
-  const work = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+  const work = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+    view: 'details'
+  })
   expect(work.counts).toEqual({ pass: 7, stale: 1, unverified: 1, fail: 0 })
   expect(
     work.items
@@ -3174,7 +3182,9 @@ it('execution proof retains deterministic regional image checks without model ev
     pixelReads: 0
   })
   current = false
-  const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {})
+  const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+    view: 'details'
+  })
   expect(
     retained.items.filter((item: { origin: string }) => item.origin === 'tool')
   ).toEqual([

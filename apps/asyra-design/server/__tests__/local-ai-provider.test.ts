@@ -1415,6 +1415,16 @@ describe('local subscription AI backend', () => {
       'Discover the relevant tools before composing calls'
     )
     expect(instructions).toContain('Known current contracts need no lookup')
+    // The delivered provider instruction must not override scoped acquisition
+    // with a second full-schema policy for a single unknown field.
+    expect(instructions).not.toContain(
+      'When nested fields appear as unknown or a constraint is unclear'
+    )
+    expect(base).toContain('For missing fields recover those paths')
+    expect(base).toContain('refresh preserves that scope')
+    expect(base).toContain(
+      'full input/output and lifecycle contracts remain required for new recipe composition'
+    )
     expect(instructions).toContain('Runtime owns admitted finite iteration')
     expect(instructions).toContain(
       'input.actions lists final-response actions, not the complete capability catalog'
@@ -5041,6 +5051,13 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     name: string
     tools: { name: string; description: string }[]
   }[]
+  const thread = server.packets.find(
+    (packet) => packet.method === 'thread/start'
+  )?.params
+  expect(thread?.baseInstructions).toContain('discover_knowledge')
+  expect(thread?.baseInstructions).toContain(
+    'Known-value edits can proceed without a lookup'
+  )
   const knowledge = groups.find((group) => group.name === 'design_knowledge')
   expect(knowledge?.tools.map((tool) => tool.name)).toEqual([
     'discover_knowledge',
@@ -5048,7 +5065,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   ])
   expect(JSON.stringify(knowledge)).not.toContain('## How')
   let id = 800
-  const call = async (tool: string, args: unknown) => {
+  const call = async (tool: string, args: unknown, success = true) => {
     const current = ++id
     server.send({
       id: current,
@@ -5069,10 +5086,57 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     ) as unknown as {
       result: { success: boolean; contentItems: { text: string }[] }
     }
-    expect(packet.result.success).toBe(true)
+    expect(packet.result.success).toBe(success)
     return JSON.parse(packet.result.contentItems[0].text)
   }
   try {
+    const architecture = {
+      ids: ['design.architectural-illustration'],
+      contexts: ['architectural-illustration']
+    }
+    const invalid = await call(
+      'discover_knowledge',
+      { contexts: ['invented-context'] },
+      false
+    )
+    expect(invalid.recoverable).toBe(true)
+    const missing = await call(
+      'read_knowledge',
+      { ids: ['missing.advice'] },
+      false
+    )
+    expect(JSON.stringify(missing)).toContain('KNOWLEDGE_NOT_FOUND')
+    const unrelated = await call(
+      'read_knowledge',
+      { ...architecture, contexts: ['docs-page'] },
+      false
+    )
+    expect(JSON.stringify(unrelated)).toContain('KNOWLEDGE_NOT_APPLICABLE')
+    const architecturalCatalog = await call('discover_knowledge', {
+      contexts: architecture.contexts
+    })
+    expect(
+      architecturalCatalog.entries.some(
+        (entry: { id: string }) => entry.id === architecture.ids[0]
+      )
+    ).toBe(true)
+    const architecturalRead = await call('read_knowledge', architecture)
+    expect(architecturalRead.alreadyDelivered).toBe(false)
+    expect(
+      architecturalRead.documents.map((doc: { target: string }) => doc.target)
+    ).toEqual([
+      'illustration.architecture',
+      'design.architectural-illustration'
+    ])
+    expect(JSON.stringify(architecturalRead)).toContain('draft.fillTemplates')
+    expect((await call('read_knowledge', architecture)).alreadyDelivered).toBe(
+      true
+    )
+    const architecturalRestored = await call('read_knowledge', {
+      ...architecture,
+      rehydrate: true
+    })
+    expect(architecturalRestored.documents).toEqual(architecturalRead.documents)
     const metadata = await call('discover_knowledge', {
       contexts: ['docs-page']
     })
@@ -5143,5 +5207,31 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   } finally {
     server.finish()
     await request
+  }
+})
+
+it('preserves an App completion failure after a valid final response without replaying writes', async () => {
+  const operations = await import('../local-operation-tools')
+  const original = operations.createLocalOperationTools
+  const cause = new Error('Canonical completion receipt unavailable')
+  const validation = vi.fn(async () => {
+    throw cause
+  })
+  const spy = vi
+    .spyOn(operations, 'createLocalOperationTools')
+    .mockImplementation((...args) => ({
+      ...original(...args),
+      validateCompletion: validation
+    }))
+  const executeBatch = vi.fn()
+  try {
+    fakeServer()
+    await expect(
+      requestConfiguredAiActionBatch(input, { environment, executeBatch })
+    ).rejects.toBe(cause)
+    expect(validation).toHaveBeenCalledTimes(1)
+    expect(executeBatch).not.toHaveBeenCalled()
+  } finally {
+    spy.mockRestore()
   }
 })
