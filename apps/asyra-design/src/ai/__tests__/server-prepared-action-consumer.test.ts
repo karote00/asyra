@@ -21,7 +21,7 @@ const actionApis = (): AiActionApis => ({
   scaleVectorElementGeometry: vi.fn(() => true),
   selectElements: vi.fn(),
   setDrawingProgress: vi.fn(),
-  setElementVisible: vi.fn(() => true),
+  setElementsVisible: vi.fn(() => ['changed' as const]),
   updateElementFillColor: vi.fn(() => true),
   updateElementFillColors: vi.fn(() => []),
   updateElementStrokeColor: vi.fn(() => true),

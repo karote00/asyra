@@ -67,7 +67,7 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     { elementId: 'b', fillId: 'fill-b', patch: { color: '#808080' } },
     { elementId: 'c', fillId: 'fill-c', patch: { color: '#ffffff' } }
   ])
-  expect(action.revision).toBe(4)
+  expect(action.revision).toBe(5)
   expect(result).toMatchObject({ appliedCount: 3 })
 })
 it('rejects a reference invalidated while queued and performs no write', async () => {
@@ -825,5 +825,45 @@ it('reuses a rejected mapping query through another local-edit consumer, then re
     expect(edit).toHaveBeenCalledTimes(2)
   } finally {
     queries.dispose()
+  }
+})
+
+it('advertises only executable inline query scopes for retained fill consumers', async () => {
+  const { operationInputIssue, nativeToolInputSchema } =
+    await import('../../../server/operation-input-schema')
+  const action = createRetainedFillAction({} as never, {
+    targets,
+    metadata: () => ({ lock: false }),
+    update: vi.fn()
+  })
+  const { snapshotId: _snapshot, ...mapping } = input.mappings[0]
+  for (const schema of [
+    action.inputSchema,
+    nativeToolInputSchema(action.inputSchema)
+  ]) {
+    for (const query of [
+      { scope: 'ids', elementIds: ['a'] },
+      {
+        scope: 'region',
+        bounds: { x: 0, y: 0, width: 10, height: 10 },
+        filter: { type: 'rect' }
+      }
+    ])
+      expect(
+        operationInputIssue({ mappings: [{ ...mapping, query }] }, schema)
+      ).toBeUndefined()
+    for (const query of [
+      { scope: 'ids' },
+      { scope: 'region' },
+      { scope: 'ids', elementIds: ['a'], filter: { type: 'rect' } },
+      {
+        scope: 'region',
+        elementIds: ['a'],
+        bounds: { x: 0, y: 0, width: 10, height: 10 }
+      }
+    ])
+      expect(
+        operationInputIssue({ mappings: [{ ...mapping, query }] }, schema)
+      ).toBeDefined()
   }
 })

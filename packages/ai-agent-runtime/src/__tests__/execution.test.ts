@@ -216,3 +216,43 @@ it('forwards synchronous settlement to the mutation owner and observes direct ex
   expect(sequence).toEqual(['publish', 'owned', 'direct'])
   await direct
 })
+
+it('checks cancellation after deferred mutation admission without losing later completed settlements', async () => {
+  const controller = new AbortController()
+  let release: (() => void) | undefined
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const writer = vi.fn(() => 'written')
+  const settled = vi.fn()
+  const owner: AiMutationExecutor = async (mutate, observe) => {
+    await gate
+    const result = mutate()
+    observe?.(result)
+    return result
+  }
+  const pending = runAiMutation(
+    { signal: controller.signal, runMutation: owner },
+    writer,
+    settled
+  )
+  const rejected = expect(pending).rejects.toThrow()
+  controller.abort()
+  release?.()
+  await rejected
+  expect(writer).not.toHaveBeenCalled()
+  expect(settled).not.toHaveBeenCalled()
+
+  const afterWrite = new AbortController()
+  await expect(
+    runAiMutation(
+      { signal: afterWrite.signal, runMutation: owner },
+      () => {
+        afterWrite.abort()
+        return 'committed'
+      },
+      settled
+    )
+  ).resolves.toBe('committed')
+  expect(settled).toHaveBeenCalledExactlyOnceWith('committed')
+})

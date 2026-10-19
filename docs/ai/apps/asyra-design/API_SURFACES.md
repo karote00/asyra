@@ -84,11 +84,10 @@ Completed plan:
 - `AiActionBatch` contains one `batchId`, optional explanation, and ordered
   actions. Each action contains one id, registered name, server-prepared
   arguments, and bounded redaction-ready summary
-- Runtime validates only the small control envelope: non-empty `batchId`,
-  optional explanation type, non-empty actions, action id/name presence,
-  duplicate action ids, and registered action names. It does not traverse or
-  reinterpret item, path, point, style, bounds, coordinate, or geometry
-  arguments
+- Runtime resolution validates the control envelope and registered action names.
+  At invocation, `observeAiAction` uses the shared Runtime middleware to validate
+  arguments and outcomes against the exact registered input/output contracts.
+  This admission validates data; it does not reinterpret geometry or run a model.
 - resolution returns one `ResolvedAiActionBatch`; permission receives one
   `PermissionReadyAiActionBatch`; confirmation and terminal presentation
   receive one `AiActionBatchPreview`. Every stage preserves `batchId`
@@ -96,18 +95,15 @@ Completed plan:
   Permission and execution receive the exact same arguments identity.
   `AiActionBatchPreview` retains and redacts only bounded summaries, never the
   complete arguments or composition geometry
-- the reference action catalog contains only:
-  - `request_drawing_detail_choice`
-  - `insert_vector_composition`
-  - `update_composition_elements`
-  - `remove_ai_composition`
-  - `set_element_visibility`
-  - `select_elements`
-- every registered action definition exposes exactly one backend-facing
-  `inputSchema` plus one `execute(args, context)` function. `inputSchema`
-  describes what the server must prepare; the frontend does not run it against
-  returned action arguments and exposes no client model-prepare or
-  model-validation path
+- `createAiRuntimeInput` composes the current browser action definitions from
+  their owners, including the canonical basic API catalog. Native tools and
+  composed tools use those same scoped/versioned contracts; discovery exposure
+  and batch-only restrictions belong to the existing server tool owners.
+- Each definition declares its name, revision, description, input/output and
+  partial-output schemas, effects, resources, lifecycle and execution function.
+  The browser performs deterministic input and result admission before delivering
+  the receipt; preparation remains with its existing owner. The catalog is not a
+  separate manually maintained list of names.
 - the production provider owns preparation of accepted/skipped roles, bounds,
   styles, paths, points, and one `PreparedDrawingArtifact` before returning the
   `AiActionBatch`. The 7,076 sample stores that already-prepared result in its
@@ -135,17 +131,26 @@ Completed plan:
 - follow-up updates consume only canonical ids projected from the preceding
   action result; each target is revalidated immediately before its common-API
   mutation
-- recoverable per-object failures are returned as `partial` or `no-change`
-  evidence; canonical mutation or grouping consistency failures reject the
-  executor so the outer runtime transaction rolls back
+- Receipts distinguish successful changes, successful no-change, failure,
+  partial completion and unknown settlement according to the exact owner contract.
+  `set_element_visibility` consumes the canonical plural flag receipt and reports
+  unavailable targets as failed with
+  not-started settlement. Operation success never implies visual acceptance or
+  durable persistence.
+- Design uses the Runtime `preserve-progress` failure policy. Each admitted
+  synchronous mutation is a member of one Factory history group. Failure or
+  cancellation stops future work and closes that group while preserving
+  acknowledged completed members for Undo. Failed member compensation remains
+  Factory-owned; unknown settlement is reported explicitly and never replayed.
 - permission rules are explicit and default-deny; confirmation defaults to
   cancellation
-- action executors call `src/common-apis/*` with `undoable: true`. Atomic
-  mutations and composition Group/children use
-  `sharedDelivery: 'transaction-end'`; progressive composition batches and
-  non-composition progressive mutations use ordinary immediate delivery inside
-  the same outer transaction. Factory, canonical owners, Render, and optional
-  Collaboration retain their ordinary ownership
+- Action executors call `src/common-apis/*` through the existing mutation
+  executor with undoable writes. Finite synchronous members publish through
+  ordinary Factory/shared-delivery ownership; no transaction stays open while
+  awaiting the model or a child tool. Runtime checks cancellation before
+  delegation and at actual writer entry. Cancellation after a completed write
+  preserves its receipt and settlement. Canonical owners, Render and Collaboration
+  retain their ordinary ownership.
 - after the provider returns server-prepared loading bounds, the App sets one
   runtime-only `aiDrawingProgress` System Context value and
   commits an exact-bounds DOM compositor overlay, then crosses a browser paint
@@ -853,6 +858,11 @@ available, returning an opaque request-local artifact ID. Backend layout uses
 absolute, row, column or grid constraints and native frame/rect/oval/text/vector
 nodes; it does not invent content. Prepared data is admitted in full before writes.
 See `specs/design-preparation.md` and `specs/editable-text.md`.
+An explicit draft `linearFields` map supplies common world-space linear paint
+for projected or translated pattern faces selected with `materialField`. The
+preparation owner emits independent native gradients; no renderer, live material
+constraint or persistent document format is added. Ordinary native fills remain
+available. Scope, conflicts and unsupported inputs follow the preparation spec.
 
 - `read_design_context`: selection or paginated current hierarchy, bounded summaries
   and explicit truncation; no canonical mutation or geometry-payload copy.
@@ -1018,7 +1028,12 @@ pagination metadata (`elements` stays empty); it accepts no computed fields.
 Default `result: "elements"` preserves metadata and explicitly requested fields.
 Use bounds to locate local corrections even when their parent spans a much larger
 area, then pass the returned IDs to ordinary batch actions. Children queries are
-for hierarchy questions. Every reply states `limit` and `nextOffset` (explicit limits are at most 200;
+for hierarchy questions and accept `parentId`, not `bounds` or `filter`.
+For hierarchy filtering, retain the children result then explicitly use
+`scope: "snapshot"`, its `snapshotId` and `filter`. Selection accepts neither
+hierarchy nor region selectors; IDs requires `elementIds`. Invalid combinations
+reject before source reads or lease allocation and preserve existing references.
+Inline fill queries use the same ID/region contracts. Every reply states `limit` and `nextOffset` (explicit limits are at most 200;
 known IDs without a limit remain together);
 continue with the same bounds/filter, not an invented larger limit. Region
 results cover visible projected bounding boxes, not exact contours or occlusion.

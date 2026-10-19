@@ -1,3 +1,4 @@
+import { designPreparationExamples } from '../design-preparation-examples'
 import { createAiActivityProjection } from '../../src/ai/activity-state'
 import * as providerCapabilities from '../local-ai-provider'
 import {
@@ -1095,7 +1096,7 @@ it('execution proof distinguishes stage readiness from current final assessment'
       phase: 'structure',
       ...wholeViewJudgments([initial], [check('Silhouette')])
     })
-  ).toMatchObject({ readyForDetail: true, accepted: false })
+  ).toMatchObject({ structureAccepted: true, accepted: false })
   review.mutate()
   expect(() =>
     review.record({
@@ -4707,4 +4708,457 @@ it('execution proof consumes complete mapping scope before bounded delivery and 
     store.dispose()
     vi.unstubAllGlobals()
   }
+})
+
+it('execution proof preserves world material phase through preparation and current artifact consumption', () => {
+  const session = createDesignPreparationSession()
+  const result = session.prepare({
+    type: 'group',
+    name: 'Common field',
+    projection: { azimuth: 0, elevation: 30, scale: 2, originX: 0, originY: 0 },
+    linearFields: {
+      paint: {
+        frame: 'world',
+        start: { x: 0, y: 0, z: 0 },
+        end: { x: 0, y: 0, z: 40 },
+        gradientStops: [
+          { position: 0, color: '#000000', opacity: 1 },
+          { position: 1, color: '#ffffff', opacity: 1 }
+        ]
+      }
+    },
+    children: [
+      {
+        key: 'p',
+        name: 'Surfaces',
+        type: 'pattern',
+        origin: { x: 0, y: 0, z: 0 },
+        axes: [{ count: 2, step: { x: 0, y: 0, z: 20 } }],
+        faces: [
+          {
+            key: 'f',
+            name: 'Face',
+            materialField: 'paint',
+            vertices: [
+              { x: 0, y: 0, z: 0 },
+              { x: 40, y: 0, z: 0 },
+              { x: 40, y: 0, z: 20 },
+              { x: 0, y: 0, z: 20 }
+            ]
+          }
+        ]
+      }
+    ]
+  })
+  const design = session.resolve(result.artifactId)
+  design.entries.slice(1).forEach((e, i) => {
+    const g = (
+      e.descriptor.fills as {
+        gradient: { gradientHandles: { x: number; y: number }[] }
+      }[]
+    )[0].gradient
+    const [a, b] = g.gradientHandles,
+      dx = b.x - a.x,
+      dy = b.y - a.y
+    expect(
+      ((0.5 - a.x) * dx + (0.5 - a.y) * dy) / (dx * dx + dy * dy)
+    ).toBeCloseTo(0.25 + i * 0.5, 9)
+  })
+  session.release([result.artifactId])
+  expect(() => session.resolve(result.artifactId)).toThrow()
+})
+
+it('execution proof consumes repeated multi-face examples through exact native targets and artifact lifetime', async () => {
+  const example = designPreparationExamples.find(
+    (e) => e.draft.name === 'Repeated visible detail'
+  )
+  if (!example) throw new Error('Missing multi-face example')
+  const session = createDesignPreparationSession()
+  const result = session.prepare(example.draft)
+  const design = session.resolve(result.artifactId)
+  const keys = Array.from({ length: 6 }, (_, i) => [
+    `panes-${i}-glass`,
+    `panes-${i}-rim`
+  ]).flat()
+  expect(design.entries.slice(1).map((e) => e.key)).toEqual([
+    ...keys,
+    'exception'
+  ])
+  const tools = createLocalDesignTools(
+    [
+      {
+        name: AiActionNames.APPLY_PREPARED_DESIGN,
+        description: 'Apply native prepared elements',
+        inputSchema: {}
+      }
+    ],
+    session
+  )
+  const retained = JSON.parse(
+    await tools.call(
+      'retain_design_targets',
+      {
+        targets: [{ artifactId: result.artifactId, keyPrefix: 'panes-2-' }]
+      },
+      new AbortController().signal
+    )
+  )
+  const { artifactId, targetSetId } = retained.targets[0]
+  expect(tools.resolveTargets({ artifactId, targetSetId })).toEqual(
+    keys.slice(4, 6).map((k) => design.keyToId[k])
+  )
+  const fills = design.entries
+    .slice(1)
+    .map((e) => e.descriptor.fills as { id: string; gradient?: unknown }[])
+  expect(new Set(fills.map((f) => f[0].id)).size).toBe(13)
+  expect(fills[0][0].gradient).not.toEqual(fills[2][0].gradient)
+  const sibling = session.prepare(example.draft)
+  session.release([artifactId])
+  expect(() => tools.resolveTargets({ artifactId, targetSetId })).toThrow()
+  expect(session.resolve(sibling.artifactId).entries).toHaveLength(14)
+})
+
+it('execution proof rejects mismatched query scopes before reads and preserves explicit refinement', async () => {
+  vi.stubGlobal('window', {})
+  const { createRetainedDesignContext } =
+    await import('../../src/common-apis/retained-design-context')
+  const { createDocumentContextAction } =
+    await import('../../src/ai/context-action')
+  // Exact saved C21 is replayed in provider, context and browser integration suites.
+  // The isolated architecture proof exercises its unsupported selector contract.
+  const invalid = {
+    scope: 'children',
+    parentId: 'workspace',
+    filter: { type: 'group' }
+  }
+  const children = vi.fn(() => ({
+    available: true,
+    elementIds: ['a'],
+    total: 1,
+    nextOffset: null
+  }))
+  const source = {
+    getCurrentWorkspaceId: () => 'workspace',
+    getSelectedElementIds: () => [],
+    getElementChildren: children,
+    getElementIdsInBounds: () => [],
+    getElementMetadata: () => ({
+      name: 'a',
+      type: 'group',
+      parentId: 'workspace'
+    }),
+    getElementComputedData: () => ({})
+  }
+  const store = createRetainedDesignContext(source, () => () => undefined)
+  const action = createDocumentContextAction(store.read)
+  const signal = new AbortController().signal
+  try {
+    await expect(action.execute(invalid as never, { signal })).rejects.toThrow(
+      /filter.*region.*snapshot/
+    )
+    expect(children).not.toHaveBeenCalled()
+    const parent = store.read({ scope: 'children' }, signal)
+    if (!parent.snapshotId) throw new Error('Expected retained parent identity')
+    const filtered = store.read(
+      {
+        scope: 'snapshot',
+        snapshotId: parent.snapshotId,
+        filter: { type: 'group' },
+        delivery: 'page'
+      },
+      signal
+    )
+    expect(filtered.elements.map((row) => row.id)).toEqual(['a'])
+    expect(children).toHaveBeenCalledTimes(1)
+    expect(store.get(parent.snapshotId, undefined, signal).orderedIds).toEqual([
+      'a'
+    ])
+  } finally {
+    store.dispose()
+  }
+})
+
+it('execution proof dispatches the published chosen-method route without converting record success into acceptance', async () => {
+  const { operationInputIssue } = await import('../operation-input-schema')
+  const { readFileSync } = await import('node:fs')
+  const method = readFileSync(
+    new URL(
+      '../../knowledge/design.architectural-illustration.md',
+      import.meta.url
+    ),
+    'utf8'
+  )
+  const example = (label: string) => {
+    const match = method.match(
+      new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
+    )
+    if (!match) throw new Error(`Missing executable ${label} example`)
+    return JSON.parse(match[1])
+  }
+  const declaration = example('representative-review')
+  const capture = example('representative-capture')
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map(
+      (action): NonNullable<AiBatchReceipt['actionResults']>[number] => ({
+        actionId: action.id,
+        actionName: action.name,
+        result:
+          action.name === AiActionNames.INSPECT_DRAWING
+            ? {
+                available: true,
+                imageScope: 'region',
+                evidence: { sessionId: 'sample', revision: 1 },
+                image: { dataUrl: 'data:image/png;base64,AA==' }
+              }
+            : {
+                current: true,
+                validatedAt: { sessionId: 'sample', revision: 1 },
+                coverage: { complete: true }
+              }
+      })
+    )
+  }))
+  // Use the actual native owner, without a fixture-supplied binding actor.
+  const owner = createOperationOwner(
+    [
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    execute,
+    {
+      getNativeTools: () =>
+        owner.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design_operations'
+        }))
+    }
+  )
+  const signal = new AbortController().signal
+  const call = async (name: string, input: unknown) =>
+    JSON.parse(await owner.call(name, input, signal))
+  for (const sample of [declaration, capture]) {
+    const lookup = await call('describe_design_apis', {
+      names: [`design_operations.${sample.tool}`]
+    })
+    expect(lookup.tools[0].definition.availableInResponse).toBe(true)
+    expect(
+      operationInputIssue(sample.arguments, lookup.tools[0].inputSchema)
+    ).toBeUndefined()
+  }
+  expect(execute).not.toHaveBeenCalled()
+  await call(declaration.tool, declaration.arguments)
+  const bound = await call(capture.tool, capture.arguments)
+  expect(bound.recordedChecks).toEqual([])
+  expect(bound.next.arguments.checks).toHaveLength(1)
+  const result = await call(capture.tool, {
+    ...bound.next.arguments,
+    checks: bound.next.arguments.checks.map((check: object) => ({
+      ...check,
+      status: 'pass',
+      evidence: 'Deterministic primary-agent observation of the sample join.'
+    }))
+  })
+  expect(result).toMatchObject({
+    reviewOperation: 'record',
+    accepted: false,
+    recordedChecks: [
+      {
+        criterionId: 'material',
+        unitId: 'sample-join',
+        status: 'pass',
+        revision: expect.any(Number)
+      }
+    ],
+    coverage: { pending: [expect.objectContaining({ criterionId: 'overall' })] }
+  })
+  const retained = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+    view: 'details',
+    ids: [result.recordedChecks[0].id],
+    includePassed: true
+  })
+  expect(retained.items[0]).toMatchObject({
+    status: 'pass',
+    revision: result.recordedChecks[0].revision
+  })
+  expect(
+    execute.mock.calls
+      .flatMap(([batch]) => batch.actions)
+      .every((action) =>
+        [
+          AiActionNames.INSPECT_DRAWING,
+          AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+        ].includes(action.name as typeof AiActionNames.INSPECT_DRAWING)
+      )
+  ).toBe(true)
+})
+
+it('execution proof admits complete per-target material corrections from the published route', async () => {
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const { basicApiResultSchema } =
+    await import('../../src/ai/basic-api-results')
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const { readFileSync } = await import('node:fs')
+  const { operationInputIssue } = await import('../operation-input-schema')
+  const method = readFileSync(
+    new URL(
+      '../../knowledge/design.architectural-illustration.md',
+      import.meta.url
+    ),
+    'utf8'
+  )
+  const match = method.match(
+    /```json native-palette-correction\n([\s\S]*?)\n```/
+  )
+  if (!match)
+    throw new Error('Missing executable native-palette-correction example')
+  const example = JSON.parse(match[1])
+  const contract = basicApiContracts.find(
+    (item) => item.name === 'api_fill_updateFillsAtIndex'
+  )
+  if (!contract) throw new Error('Missing native fill contract')
+  const operation = example.arguments.operations[0]
+  expect(
+    operationInputIssue(contract.inputSchema, operation.arguments)
+  ).toBeUndefined()
+  expect(operation.arguments.patch).toHaveLength(2)
+  expect(operation.arguments.patch[0].gradient.gradientHandles).not.toEqual(
+    operation.arguments.patch[1].gradient.gradientHandles
+  )
+  const dispatch = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((a) => ({
+      actionId: a.id,
+      actionName: a.name,
+      result: { status: 'complete' }
+    }))
+  }))
+  const owner = createOperationOwner(
+    [
+      createAiToolContract({
+        ...contract,
+        ...toolSemantics(basicApiResultSchema(contract), 'mutation', [
+          'document'
+        ])
+      })
+    ],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    dispatch
+  )
+  const signal = new AbortController().signal
+  const broken = structuredClone(example.arguments)
+  broken.operations[0].arguments.patch[1].gradient = {
+    gradientStops: operation.arguments.patch[1].gradient.gradientStops
+  }
+  await expect(owner.call(example.tool, broken, signal)).rejects.toThrow()
+  expect(dispatch).not.toHaveBeenCalled()
+  await owner.call(example.tool, example.arguments, signal)
+  expect(dispatch).toHaveBeenCalledTimes(1)
+  expect(dispatch.mock.calls[0][0].actions[0].arguments).toEqual(
+    operation.arguments
+  )
+})
+
+it('execution proof preserves exact shared property relationships in publication', async () => {
+  const { prepareDocumentPublication, readDocumentPublicationSlices } =
+    await import('../../src/collaboration/document-publication')
+  const { EventTypes } = await import('@asyra/core/contracts')
+  const { SharedDataChannelNames, PROPS_ACTIONS } = await import('@asyra/utils')
+  const source = {
+    publicationId: 'share-material',
+    artifactId: 'share-artifact',
+    transactionId: 1,
+    origin: 'action' as const,
+    mode: 'atomic' as const,
+    slices: [
+      {
+        sliceId: 'share-slice',
+        orderedIds: ['target-fills'],
+        batches: [
+          {
+            batchId: 'share-batch',
+            channel: SharedDataChannelNames.PROPS,
+            deliveries: [
+              {
+                deliveryId: 'link',
+                orderedIds: ['target-fills'],
+                eventName: EventTypes.UPDATE_PROPERTY,
+                payload: {
+                  action: PROPS_ACTIONS.UPDATE_PROPERTY,
+                  eventName: EventTypes.UPDATE_PROPERTY,
+                  id: 'target-fills',
+                  key: 'fills',
+                  before: ['old-fill'],
+                  after: ['existing-fill']
+                }
+              },
+              {
+                deliveryId: 'remove',
+                orderedIds: ['target-fills'],
+                eventName: EventTypes.REMOVE_PROPERTY,
+                payload: {
+                  action: PROPS_ACTIONS.REMOVE_PROPERTY,
+                  eventName: EventTypes.REMOVE_PROPERTY,
+                  data: [{ id: 'old-fill', type: 'fill', color: '#112233' }]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  const result = prepareDocumentPublication(source)
+  expect(readDocumentPublicationSlices(result)[0]).toEqual([
+    {
+      kind: 'property-components',
+      records: [
+        { propertyId: 'target-fills', key: 'fills', remove: ['old-fill'] }
+      ],
+      updates: []
+    },
+    {
+      kind: 'property-components',
+      updates: [
+        { propertyId: 'target-fills', values: { fills: ['existing-fill'] } }
+      ]
+    }
+  ])
+  const undoSource = {
+    ...source,
+    origin: 'undo' as const,
+    slices: source.slices.map((slice) => ({
+      ...slice,
+      batches: slice.batches.map((batch) => ({
+        ...batch,
+        deliveries: [
+          {
+            deliveryId: 'restore-color',
+            orderedIds: ['target-fills'],
+            eventName: EventTypes.UPDATE_PROPERTY,
+            payload: {
+              action: PROPS_ACTIONS.UPDATE_PROPERTY,
+              eventName: EventTypes.UPDATE_PROPERTY,
+              id: 'old-fill',
+              key: 'color',
+              before: '#333333',
+              after: '#112233'
+            }
+          },
+          ...batch.deliveries
+        ]
+      }))
+    }))
+  }
+  const undoChanges = readDocumentPublicationSlices(
+    prepareDocumentPublication(undoSource)
+  )[0]
+  expect(undoChanges).toEqual([
+    {
+      kind: 'property-components',
+      updates: [{ propertyId: 'old-fill', values: { color: '#112233' } }]
+    },
+    ...readDocumentPublicationSlices(result)[0]
+  ])
 })

@@ -593,8 +593,12 @@ export const runAiMutation = async <T>(
   settled?: (value: T) => void
 ): Promise<T> => {
   assertExecutionNotAborted(context.signal)
-  if (context.runMutation) return context.runMutation(mutate, settled)
-  const value = mutate()
+  const guardedMutation = () => {
+    assertExecutionNotAborted(context.signal)
+    return mutate()
+  }
+  if (context.runMutation) return context.runMutation(guardedMutation, settled)
+  const value = guardedMutation()
   settled?.(value)
   return value
 }

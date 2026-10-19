@@ -5,7 +5,14 @@ import {
   toolResultIds
 } from '../src/ai/tool-contract'
 
+const countsScopeSchema = {
+  enum: ['request-checks', 'selected-checks'],
+  description:
+    'The population counted, independent of detail pagination. Counts may include tool and main-agent evidence; they do not establish visual acceptance or document durability.'
+}
+
 export const designCheckResultsSchema = toolResultObject({
+  countsScope: countsScopeSchema,
   counts: toolResultObject({
     pass: toolResultCount,
     fail: toolResultCount,
@@ -58,11 +65,12 @@ export interface DesignCheckResult {
 
 export const designCheckSummarySchema = toolResultObject(
   {
+    countsScope: countsScopeSchema,
     counts: designCheckResultsSchema.properties.counts,
     visitedResults: toolResultCount,
     firstPendingId: toolResultString
   },
-  ['counts', 'visitedResults']
+  ['countsScope', 'counts', 'visitedResults']
 )
 
 export interface DesignCheckDeliveryOptions {
@@ -80,7 +88,7 @@ export const designCheckDeliverySchema = toolResultObject(
     firstPendingId: toolResultString,
     nextOffset: toolResultCount
   },
-  ['counts', 'visitedResults', 'revision']
+  ['countsScope', 'counts', 'visitedResults', 'revision']
 )
 
 export interface DesignCheckSelection {
@@ -249,6 +257,7 @@ export const createDesignCheckResults = () => {
         if (result.status !== 'pass') firstPendingId ??= id
       }
       return {
+        countsScope: 'selected-checks' as const,
         counts: selectedCounts,
         visitedResults,
         ...(firstPendingId ? { firstPendingId } : {})
@@ -453,6 +462,7 @@ export const createDesignCheckResults = () => {
       return undefined
     },
     deliver(options: DesignCheckDeliveryOptions = {}): {
+      countsScope: 'request-checks' | 'selected-checks'
       counts: typeof counts
       visitedResults: number
       revision: number
@@ -496,6 +506,7 @@ export const createDesignCheckResults = () => {
         }
       const firstPendingId = pendingIds.values().next().value
       const summary = {
+        countsScope: 'request-checks' as const,
         counts: { ...counts },
         visitedResults: 0,
         revision: ledgerRevision,
@@ -549,6 +560,9 @@ export const createDesignCheckResults = () => {
         }
       }
       return {
+        countsScope: options.ids
+          ? ('selected-checks' as const)
+          : ('request-checks' as const),
         counts: { ...(options.ids ? selectedCounts : counts) },
         items,
         visitedResults

@@ -33,7 +33,9 @@ another task. The direct execution path calls it synchronously after `mutate`.
 Failed mutation execution has no successful settlement callback. The observer is
 for capturing receipts and revision-bound artifacts, never another transaction or
 a retry. Domain artifact capture must report its own failures without discarding
-an acknowledged mutation. Cancellation before admission prevents mutation; later
+an acknowledged mutation. Cancellation is checked before delegation and again
+when the executor enters the writer, so cancellation during asynchronous admission
+prevents mutation. Later
 cancellation cannot turn an acknowledged write into a not-started operation.
 
 ## Invocation Flow

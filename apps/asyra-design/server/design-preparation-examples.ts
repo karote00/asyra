@@ -54,25 +54,61 @@ const repeatedWorldFacesExample = {
       originX: 100,
       originY: 100
     },
+    linearFields: {
+      reflection: {
+        frame: 'world',
+        start: { x: 0, y: 0, z: 0 },
+        end: { x: 0, y: 0, z: 20 },
+        gradientStops: [
+          { position: 0, color: '#123456', opacity: 1 },
+          { position: 1, color: '#abcdef', opacity: 1 }
+        ]
+      }
+    },
     children: [
       {
         type: 'pattern',
         key: 'panes',
-        name: 'Panes',
+        name: 'Panels',
         origin: { x: 0, y: 0, z: 0 },
-        axes: [{ count: 3, step: { x: 12, y: 0, z: 0 } }],
+        axes: [
+          { count: 3, step: { x: 12, y: 0, z: 0 } },
+          { count: 2, step: { x: 0, y: 0, z: 12 } }
+        ],
         faces: [
           {
             key: 'glass',
             name: 'Glass',
-            fill: '#123456',
+            materialField: 'reflection',
             vertices: [
               { x: 0, y: 0, z: 0 },
               { x: 8, y: 0, z: 0 },
               { x: 8, y: 0, z: 8 },
               { x: 0, y: 0, z: 8 }
             ]
+          },
+          {
+            key: 'rim',
+            name: 'Metal rim',
+            fill: '#719193',
+            vertices: [
+              { x: 8, y: 0, z: 0 },
+              { x: 9, y: 0, z: 0 },
+              { x: 9, y: 0, z: 8 },
+              { x: 8, y: 0, z: 8 }
+            ]
           }
+        ]
+      },
+      {
+        type: 'projected-face',
+        key: 'exception',
+        name: 'Independent accent',
+        fill: '#c0d0c9',
+        vertices: [
+          { x: 40, y: 0, z: 0 },
+          { x: 46, y: 0, z: 0 },
+          { x: 43, y: 0, z: 5 }
         ]
       }
     ]
@@ -159,14 +195,62 @@ const flowLayoutExample = {
   }
 }
 
+const continuousWorldMaterialExample = {
+  draft: {
+    type: 'group',
+    name: 'Continuous material on two faces',
+    projection: {
+      azimuth: 30,
+      elevation: 25,
+      scale: 1,
+      originX: 0,
+      originY: 0
+    },
+    linearFields: {
+      glass: {
+        frame: 'world',
+        start: { x: 0, y: 0, z: 0 },
+        end: { x: 0, y: 0, z: 80 },
+        gradientStops: [
+          { position: 0, color: '#204050', opacity: 1 },
+          { position: 1, color: '#b0d0e0', opacity: 0.8 }
+        ]
+      }
+    },
+    children: [
+      {
+        type: 'pattern',
+        key: 'facade',
+        name: 'Facade',
+        origin: { x: 0, y: 0, z: 0 },
+        axes: [{ count: 2, step: { x: 0, y: 0, z: 40 } }],
+        faces: [
+          {
+            key: 'surface',
+            name: 'Glass',
+            materialField: 'glass',
+            vertices: [
+              { x: 0, y: 0, z: 0 },
+              { x: 60, y: 0, z: 0 },
+              { x: 60, y: 0, z: 40 },
+              { x: 0, y: 0, z: 40 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
 export const designPreparationExamples = [
   visibleSurfaceExample,
   repeatedWorldFacesExample,
   repeatedCurvesExample,
   projectedFaceExample,
+  continuousWorldMaterialExample,
   flowLayoutExample
 ] as const
 
 /** Representation decisions belong to the model; the backend only executes the supplied data. */
 export const designRepresentationGuidance =
-  'Delegate a ready part to prepare_and_apply_design: it owns preparation, optional criteria, writing and inspection; inspect its compact receipt rather than relaying intermediate data. Define intentional shared fills once in draft.sharedFills and use fill:{shared:key}; equal independent inline fills remain independent. For vector rings omit both dimensions to let the owner measure exact bounds. Choose by the data you already have: existing object IDs -> registered batch edits with new values, not reconstruction; arbitrary or already-projected 2D outlines -> vector; repeated identical 2D curves -> vector-pattern template + placements; explicit world-space planar faces in an orthographic view -> projection + projected-face; translated repetitions of those faces -> pattern template + axes; UI placement -> row/column/grid or relations. Let the backend expand suitable templates and calculate projection instead of emitting each derived vertex. Preserve supplied 2D geometry; do not invent depth, force orthographic perspective, or build hidden faces merely to use projection. Irregular/nonrepeating geometry may remain explicit vectors. These choices do not set style, detail level or camera angles.'
+  'Delegate a ready part to prepare_and_apply_design: it owns preparation, optional criteria, writing and inspection; inspect its compact receipt rather than relaying intermediate data. Define intentional shared fills once in draft.sharedFills and use fill:{shared:key}; equal independent inline fills remain independent. For vector rings omit both dimensions to let the owner measure exact bounds. Choose by the data you already have: existing object IDs -> registered batch edits with new values, not reconstruction; arbitrary or already-projected 2D outlines -> vector; repeated identical 2D curves -> vector-pattern template + placements; explicit world-space planar faces in an orthographic view -> projection + projected-face; translated repetitions of those faces -> pattern.faces + origin/axes; UI placement -> row/column/grid or relations. For a multi-face repeated component, declare each unique contour once in pattern.faces with its material role, then declare origin/axes. Output order is instance-major and then face painter order; the last axis varies fastest. Keep irregular exceptions as separate explicit nodes in their intended painter position. A chosen continuous field uses materialField; an intentional per-piece fill stays local. Let the backend expand suitable templates and calculate projection instead of emitting each derived vertex. Resolve returned artifact targets for local edits; never regenerate canonical IDs from pattern keys. Reuse instanceRanges only for known missing complete instances, never to replay an uncertain partial write. Preserve supplied 2D geometry; do not invent depth, force orthographic perspective, or build hidden faces merely to use projection. Irregular/nonrepeating geometry may remain explicit vectors. For a chosen continuous world material on projected or pattern faces, define draft.linearFields and select materialField on each intended face instead of repeating normalized gradient handles. Plain nodes and surface grids still use native fills. This converts explicit material intent, never automatic lighting or visual approval. These choices do not set style, detail level or camera angles.'

@@ -135,9 +135,25 @@ export const withToolContractAssertions = <
       ).toBe(outcome.status)
       if (outcome.status === 'success') exercised.add(name)
     }
-    return owner.projectModelResult
-      ? JSON.stringify(owner.projectModelResult(name, input, value))
-      : original
+    if (!owner.projectModelResult) return original
+    const beforeProjection = JSON.stringify(value)
+    const projected = owner.projectModelResult(name, input, value)
+    expect(
+      JSON.stringify(value),
+      `${name} projection preserves owner receipt`
+    ).toBe(beforeProjection)
+    const deliveredOutcome =
+      owner.resultOutcome?.(name, projected) ?? localToolOutcome(projected)
+    expect(
+      deliveredOutcome.settlement,
+      `${name} delivery preserves mutation settlement`
+    ).toBe(outcome.settlement)
+    if (outcome.status !== 'success')
+      expect(
+        deliveredOutcome.status,
+        `${name} delivery cannot promote incomplete owner work`
+      ).not.toBe('success')
+    return JSON.stringify(projected)
   }
   return owner
 }

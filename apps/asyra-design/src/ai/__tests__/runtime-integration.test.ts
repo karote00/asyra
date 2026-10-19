@@ -176,7 +176,7 @@ const prepareCommonApis = () => {
     x: 10,
     y: 20
   })
-  vi.spyOn(elementApis, 'setElementVisible').mockReturnValue(true)
+  vi.spyOn(elementApis, 'setElementsVisible').mockReturnValue(['changed'])
   vi.spyOn(transactionApis, 'runTransaction').mockImplementation((execute) =>
     execute()
   )
@@ -227,9 +227,9 @@ describe('Asyra Design server action-batch runtime integration', () => {
         }))
       }
       if (outcome === 'cancelled')
-        vi.mocked(elementApis.setElementVisible).mockImplementation(() => {
+        vi.mocked(elementApis.setElementsVisible).mockImplementation(() => {
           controller.abort()
-          return true
+          return ['changed']
         })
       const projection = createAiActivityProjection()
       const snapshots: {
@@ -356,8 +356,8 @@ describe('Asyra Design server action-batch runtime integration', () => {
     expect(transactionApis.startHistoryGroup).toHaveBeenCalledOnce()
     expect(transactionApis.updateHistoryGroup).toHaveBeenCalledTimes(2)
     expect(transactionApis.endHistoryGroup).toHaveBeenCalledOnce()
-    expect(elementApis.setElementVisible).toHaveBeenCalledWith(
-      'shape-1',
+    expect(elementApis.setElementsVisible).toHaveBeenCalledWith(
+      ['shape-1'],
       false,
       {
         sharedDelivery: 'immediate',

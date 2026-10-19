@@ -1,5 +1,10 @@
-import { designFillSchema } from '../src/ai/design-fill'
+import { designFillSchema, designInlineFillSchema } from '../src/ai/design-fill'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
+
+const gradientSchema = designInlineFillSchema.anyOf.find(
+  (schema) => 'properties' in schema
+)
+if (!gradientSchema) throw new Error('Native gradient schema is missing')
 
 const scalar = {
   type: 'number',
@@ -11,6 +16,33 @@ const key = { type: 'string', minLength: 1, maxLength: 160 }
 const note = { type: 'string', minLength: 1, maxLength: 500 }
 const property = { enum: ['x', 'y', 'width', 'height'] }
 export const designConstructionSchema = {
+  linearFields: {
+    type: 'object',
+    propertyNames: key,
+    additionalProperties: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['frame', 'start', 'end', 'gradientStops'],
+      properties: {
+        frame: { const: 'world' },
+        start: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['x', 'y', 'z'],
+          properties: { x: scalar, y: scalar, z: scalar }
+        },
+        end: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['x', 'y', 'z'],
+          properties: { x: scalar, y: scalar, z: scalar }
+        },
+        gradientStops: gradientSchema.properties.gradientStops
+      }
+    },
+    description:
+      'Optional common world-space linear fields. Distinct start/end points use the same units as face vertices: phase=dot(p-start,end-start)/lengthSquared(end-start). Projected faces or pattern faces select materialField instead of fill; no palette override. The backend converts phase to normalized native gradients per face/instance. Does not create live constraints or shared Fill identities. Other node kinds do not accept materialField.'
+  },
   brief: {
     type: 'object',
     additionalProperties: false,
@@ -89,11 +121,16 @@ export const projectedFaceSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['key', 'name', 'type', 'vertices'],
+  anyOf: [
+    { properties: { materialField: false } },
+    { properties: { fill: false } }
+  ],
   properties: {
     key,
     name: key,
     type: { const: 'projected-face' },
     fill: designFillSchema,
+    materialField: key,
     vertices: {
       type: 'array',
       minItems: 3,
@@ -115,6 +152,12 @@ export const designPatternSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['key', 'name', 'type', 'origin', 'axes', 'faces'],
+  anyOf: [
+    { properties: { fills: false } },
+    {
+      properties: { faces: { items: { properties: { materialField: false } } } }
+    }
+  ],
   properties: {
     key: { ...key, maxLength: 80 },
     name: { ...key, maxLength: 60 },
@@ -156,10 +199,15 @@ export const designPatternSchema = {
         type: 'object',
         additionalProperties: false,
         required: ['key', 'name', 'vertices'],
+        anyOf: [
+          { properties: { materialField: false } },
+          { properties: { fill: false } }
+        ],
         properties: {
           key: { ...key, maxLength: 40 },
           name: { ...key, maxLength: 60 },
           fill: projectedFaceSchema.properties.fill,
+          materialField: key,
           vertices: projectedFaceSchema.properties.vertices
         }
       }

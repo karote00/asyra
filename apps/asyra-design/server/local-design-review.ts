@@ -630,6 +630,28 @@ export const designEvidenceDefinitions = [
       toolResultObject(
         {
           phase: { enum: ['structure', 'visual'] },
+          reviewOperation: {
+            enum: ['capture', 'bind', 'record'],
+            description:
+              'Requested review operation; toolOutcome reports settlement. Capture and binding record no judgments.'
+          },
+          recordedChecks: {
+            type: 'array',
+            description:
+              'Exact committed criterion/unit judgments from this call, including passes. Deferred-detail decisions retain their separate deferredChecks receipt. This acknowledgement is not whole-request acceptance.',
+            items: toolResultObject(
+              {
+                id: toolResultString,
+                criterionId: toolResultString,
+                unitId: toolResultString,
+                origin: { const: 'main-agent' },
+                status: { enum: ['pass', 'fail', 'unverified', 'stale'] },
+                revision: { type: 'integer', minimum: 1 }
+              },
+              ['id', 'criterionId', 'origin', 'status', 'revision']
+            )
+          },
+          structureAccepted: toolResultBoolean,
           accepted: toolResultBoolean,
           inspectionIds: toolResultIds,
           results: designCheckDeliverySchema,
@@ -687,15 +709,21 @@ export const designEvidenceDefinitions = [
             }
           })
         },
-        ['phase', 'accepted', 'inspectionIds']
+        [
+          'phase',
+          'reviewOperation',
+          'recordedChecks',
+          'accepted',
+          'inspectionIds'
+        ]
       ),
       'prepare',
       ['request-artifacts']
     ),
-    revision: 10,
+    revision: 11,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
-      'Review the current drawing against retained criteria and selected references. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and exact dependencies with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. A rejected binding after successful capture returns partial with those images and bindChecks recovery; read the affected current revisions and rebind without recapturing or replaying edits. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
+      'Review the current drawing against retained criteria and selected references. Execution success is not visual approval. reviewOperation identifies capture/bind/record; recordedChecks acknowledges exactly the committed judgments (including local passes), while accepted reports whole-request completion. Counts are labeled with their request or selected scope. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. Do not mix a whole-target image with a crop of that same target in one unit; assign whole-view evidence to its separate criterion. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and exact dependencies with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. A rejected binding after successful capture returns partial with those images and bindChecks recovery; read the affected current revisions and rebind without recapturing or replaying edits. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -1218,8 +1246,18 @@ export const createLocalDesignReview = (
       instruction:
         'Reverify the invalidated facts with current source evidence. The fact receipt will identify the review required after verification.'
     }
-    let next: typeof nextReferences | typeof nextReview | typeof nextFacts =
-      nextReview
+    const mechanical = results.firstPending('tool')
+    const nextMechanical = {
+      tool: AiDesignToolIds.READ_DESIGN_CHECKS,
+      arguments: { ids: mechanical ? [mechanical.id] : [] },
+      instruction:
+        'Read the exact pending mechanical evidence and follow its supported repair or recheck contract. Preserve current visual passes; a mechanical blocker does not require a new visual judgment.'
+    }
+    let next:
+      | typeof nextReferences
+      | typeof nextReview
+      | typeof nextFacts
+      | typeof nextMechanical = mechanical ? nextMechanical : nextReview
     if (sourceIssues.length) next = nextReferences
     if (invalidatedFactIds.length) next = nextFacts
     return {
@@ -1230,7 +1268,7 @@ export const createLocalDesignReview = (
       requirementRevision: references.revision(),
       requiredCriterionIds: accepted ? [] : pendingCriterionIds(),
       coverage: reviewState().coverage,
-      ...(!accepted
+      ...(!accepted || mechanical
         ? {
             next: {
               ...next,
@@ -2243,6 +2281,10 @@ export const createLocalDesignReview = (
       for (const item of deferredCandidates) results.record(item)
       for (const [key, scope] of submittedScopes) unitScopes.set(key, scope)
       lastReviewIds = [...value.inspectionIds]
+      const recordedChecks: Pick<
+        DesignCheckResult,
+        'id' | 'criterionId' | 'unitId' | 'origin' | 'status' | 'revision'
+      >[] = []
       for (const check of checks) {
         if (!suppliedIds.has(visualCheckIdentity(check))) continue
         const supersedes =
@@ -2251,7 +2293,7 @@ export const createLocalDesignReview = (
             ids: [visualCheckIdentity(check)],
             includePassed: true
           }).items[0]?.supersedes
-        results.record({
+        const checkRevision = results.record({
           id: visualCheckIdentity(check),
           criterionId: check.criterionId,
           ...(check.unitId === undefined
@@ -2294,6 +2336,14 @@ export const createLocalDesignReview = (
             [`criterion:${check.criterionId}`]: String(references.revision())
           }
         })
+        recordedChecks.push({
+          id: visualCheckIdentity(check),
+          criterionId: check.criterionId,
+          ...(check.unitId === undefined ? {} : { unitId: check.unitId }),
+          origin: 'main-agent',
+          status: check.status as 'pass' | 'fail' | 'unverified',
+          revision: checkRevision
+        })
       }
       if (structure) {
         deferredDetails = nextDeferred
@@ -2310,12 +2360,14 @@ export const createLocalDesignReview = (
         }
         return {
           phase: 'structure',
+          reviewOperation: 'record' as const,
+          recordedChecks,
           results: results.deliver(),
           facts: factSnapshots(),
           deferredDetails: [...deferredDetails.values()],
           revision,
-          accepted: false,
-          readyForDetail: structureAccepted,
+          accepted: this.isAccepted(),
+          structureAccepted,
           checks,
           inspectionIds: value.inspectionIds,
           correction: this.correctionContext(value.inspectionIds)
@@ -2398,6 +2450,8 @@ export const createLocalDesignReview = (
         : issue
       return {
         phase: 'visual',
+        reviewOperation: 'record' as const,
+        recordedChecks,
         results: results.deliver(),
         coverage: requiredCoverage,
         final,

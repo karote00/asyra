@@ -1,3 +1,4 @@
+import { AiExecutionError } from '@asyra/ai-agent-runtime'
 import { expect, it, vi } from 'vitest'
 vi.mock('../../contexts', () => ({ default: {} }))
 vi.mock('../../common-apis/element', () => ({ elementApis: {} }))
@@ -204,9 +205,9 @@ it('rejects attachment changes and cancellation inside mutation admission withou
     controller.abort(new Error('Cancelled before mutation'))
     return work()
   }
-  await expect(f.action.execute(f.input, f.context as never)).rejects.toThrow(
-    'Cancelled before mutation'
-  )
+  await expect(
+    f.action.execute(f.input, f.context as never)
+  ).rejects.toBeInstanceOf(AiExecutionError)
   expect(f.isAttachmentCurrent).not.toHaveBeenCalled()
   expect(f.properties).not.toHaveBeenCalled()
 })

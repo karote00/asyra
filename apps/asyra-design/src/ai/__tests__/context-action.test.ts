@@ -1,6 +1,9 @@
+import { validateDesignContextQuery } from '../../common-apis/design-context'
+import recordedQuery from '../../../server/__tests__/fixtures/recorded-101/context-query-20261019.json'
 import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../contexts', () => ({ default: {} }))
 import {
+  documentContextSchema,
   createDocumentContextAction,
   createRegionTargetsAction,
   createDocumentContextReleaseAction
@@ -144,4 +147,82 @@ it('keeps transient and retained contracts disjoint through native conversion', 
   ).toBeDefined()
   const { delivery: _delivery, ...withoutMode } = result
   expect(operationInputIssue(withoutMode, action.outputSchema)).toBeDefined()
+})
+
+it('advertises scope-correct selectors and complete result constraints in both contracts', () => {
+  const valid = [
+    { scope: 'selection' },
+    { scope: 'children', parentId: 'p', delivery: 'page', fields: ['x'] },
+    { scope: 'ids', elementIds: ['a'], result: 'ids', fields: [] },
+    {
+      scope: 'region',
+      bounds: { x: -1, y: 0, width: 10, height: 10 },
+      filter: { type: 'group' }
+    },
+    {
+      scope: 'region',
+      bounds: { x: 0, y: 0, width: 10, height: 10 },
+      result: 'ids',
+      allMatches: true
+    },
+    { scope: 'snapshot', snapshotId: 's', filter: { type: 'group' } }
+  ]
+  const invalid = [
+    recordedQuery,
+    { scope: 'ids' },
+    { scope: 'region' },
+    { scope: 'selection', elementIds: ['a'] },
+    { scope: 'children', bounds: { x: 0, y: 0, width: 1, height: 1 } },
+    { scope: 'selection', parentId: 'p' },
+    { scope: 'selection', result: 'ids', fields: ['x'] },
+    { ...valid[4], limit: 1 },
+    { ...valid[4], result: 'elements' }
+  ]
+  const schema = createDocumentContextAction().inputSchema
+  for (const definition of [schema, nativeToolInputSchema(schema)]) {
+    for (const query of valid)
+      expect(
+        operationInputIssue(query, definition),
+        JSON.stringify(query)
+      ).toBeUndefined()
+    for (const query of invalid)
+      expect(
+        operationInputIssue(query, definition),
+        JSON.stringify(query)
+      ).toBeDefined()
+  }
+})
+
+it('preserves canonical scope, result and page admission through native schema conversion', () => {
+  const native = nativeToolInputSchema(documentContextSchema)
+  for (const selector of [
+    { scope: 'selection' },
+    { scope: 'children', parentId: 'parent' },
+    { scope: 'ids', elementIds: ['part'] },
+    { scope: 'region', bounds: { x: 0, y: 0, width: 10, height: 10 } }
+  ]) {
+    for (const result of [undefined, 'elements', 'ids'])
+      for (const fields of [undefined, [], ['x']])
+        for (const allMatches of [undefined, false, true])
+          for (const page of [{}, { offset: 0, limit: 1 }, { offset: -1 }]) {
+            const query = {
+              ...selector,
+              ...page,
+              ...(result === undefined ? {} : { result }),
+              ...(fields === undefined ? {} : { fields }),
+              ...(allMatches === undefined ? {} : { allMatches })
+            }
+            let accepted = true
+            try {
+              validateDesignContextQuery(query as never)
+            } catch {
+              accepted = false
+            }
+            for (const schema of [documentContextSchema, native])
+              expect(
+                operationInputIssue(query, schema) === undefined,
+                JSON.stringify(query)
+              ).toBe(accepted)
+          }
+  }
 })

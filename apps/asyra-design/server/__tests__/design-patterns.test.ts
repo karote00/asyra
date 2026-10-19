@@ -820,3 +820,97 @@ it('preserves all 3000 recorded facade faces, per-cell materials and interleaved
     JSON.stringify(source).length / 10
   )
 })
+
+it('preserves every saved ornament contour, material and painter position with explicit compact correspondence', async (context) => {
+  const { recordedOrnaments } = await import('./recorded-ornaments')
+  const { admitPreparedDesign } =
+    await import('../../src/ai/prepared-design-admission')
+  const { input, output, compact, correspondence, inputBytes } =
+    recordedOrnaments()
+  const original = structuredClone(input)
+  const before = constructDesign(input.draft),
+    after = constructDesign(compact)
+  const expected = before.draft.children as Record<string, unknown>[]
+  const actual = after.draft.children as Record<string, unknown>[]
+  const budget = 64 * Number.EPSILON * 100000
+  // The coordinate contract bounds both world/projected values to 100,000.
+  const close = (a: unknown, b: unknown): void => {
+    if (typeof a === 'number' && typeof b === 'number')
+      expect(Math.abs(a - b)).toBeLessThanOrEqual(budget)
+    else if (Array.isArray(a) && Array.isArray(b)) {
+      expect(a).toHaveLength(b.length)
+      a.forEach((v, i) => close(v, b[i]))
+    } else if (a && b && typeof a === 'object' && typeof b === 'object') {
+      expect(Object.keys(a)).toEqual(Object.keys(b))
+      for (const k of Object.keys(a))
+        close(
+          (a as Record<string, unknown>)[k],
+          (b as Record<string, unknown>)[k]
+        )
+    } else expect(a).toEqual(b)
+  }
+  expect(actual).toHaveLength(output.elementCount - 1)
+  expect(before.sourceWork.projectionCalls).toBe(
+    output.sourceWork.projectionCalls
+  )
+  expect(before.sourceWork.expansionWork.pathCommands).toBe(
+    output.sourceWork.pathCommands
+  )
+  input.draft.children.forEach((face, index) => {
+    const prototype = compact.children[0].faces[index % 44]
+    expect(face.key).toBe(correspondence[index].original)
+    expect(face.fill).toEqual(prototype.fill)
+    expect(face.vertices).toHaveLength(prototype.vertices.length)
+    face.vertices.forEach((v, j) =>
+      close(v, {
+        ...prototype.vertices[j],
+        z: prototype.vertices[j].z + Math.floor(index / 44) * 3500
+      })
+    )
+    expect(actual[index].key).toBe(correspondence[index].compact)
+    for (const k of ['type', 'x', 'y', 'width', 'height', 'rings', 'fill'])
+      close(actual[index][k], expected[index][k])
+  })
+  const canonical = prepareDesign(compact)
+  const explicit = prepareDesign(input.draft)
+  expect(admitPreparedDesign(JSON.parse(JSON.stringify(canonical)))).toEqual(
+    canonical
+  )
+  expect(canonical.entries).toHaveLength(explicit.entries.length)
+  for (let i = 0; i < canonical.entries.length; i++) {
+    const a = canonical.entries[i].descriptor,
+      b = explicit.entries[i].descriptor
+    for (const k of ['x', 'y', 'width', 'height']) close(a[k], b[k])
+    if (i) {
+      const { id: _a, ...fill } = (a.fills as { id: string }[])[0]
+      const { id: _b, ...other } = (b.fills as { id: string }[])[0]
+      close(fill, other)
+    }
+  }
+  const ids = canonical.entries
+    .slice(1)
+    .map((e) => (e.descriptor.fills as { id: string }[])[0].id)
+  expect(new Set(ids).size).toBe(352)
+  expect(input).toEqual(original)
+  expect(after.sourceWork.projectionCalls).toBeLessThan(
+    before.sourceWork.projectionCalls
+  )
+  expect(after.sourceWork.expansionWork.pathCommands).toBe(
+    before.sourceWork.expansionWork.pathCommands
+  )
+  const compactBytes = Buffer.byteLength(
+    JSON.stringify({ ...input, draft: compact })
+  )
+  expect(compactBytes).toBeLessThan(inputBytes / 4)
+  context.task.meta.representationWork = {
+    inputBytes,
+    compactBytes,
+    originalProjections: before.sourceWork.projectionCalls,
+    compactProjections: after.sourceWork.projectionCalls,
+    expandedPoints: after.sourceWork.expansionWork.pathCommands,
+    originalDraftBytes: Buffer.byteLength(JSON.stringify(input.draft)),
+    compactDraftBytes: Buffer.byteLength(JSON.stringify(compact)),
+    originalNativeBytes: Buffer.byteLength(JSON.stringify(explicit)),
+    compactNativeBytes: Buffer.byteLength(JSON.stringify(canonical))
+  }
+})

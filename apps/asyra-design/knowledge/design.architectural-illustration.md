@@ -37,7 +37,7 @@ reconstructing geometry or retrieving the entire catalog.
 | Use a reference for massing or a local ornament | validate_reference_images -> select_design_references -> record_design_facts                                                              | Validation confirms usable asset evidence, not aesthetic suitability. Primary agent declares exact use/region/limitations and carries returned referenceUses. Derived numbers go to record_design_calculations; neither fact storage nor calculation approves drawing quality.                                                                                                                                                                            |
 | Draw a ready part from chosen world faces       | prepare_and_apply_design with projection + projected-face                                                                                 | Choose the camera and geometry once; tool projects supplied geometry and applies canonical parent attachment. No automatic perspective, hidden-face removal or depth ordering. Already projected 2D outlines remain vectors.                                                                                                                                                                                                                              |
 | Expand regular facade detail                    | Same main tool with surface-grid boundary, normalized motifs, rows/columns and order                                                      | Backend owns expansion. Respect the actual four-corner surface contract and cell-major/motif-major semantics. Do not send a list of every projected window corner.                                                                                                                                                                                                                                                                                        |
-| Repeat a compatible motif                       | pattern template + axes, or vector-pattern template + placements                                                                          | Read exact selected schemas. These are not arbitrary 3D instancing or arbitrary function execution. Confirm supported transformations and split genuinely different motifs.                                                                                                                                                                                                                                                                               |
+| Repeat a compatible motif                       | `pattern.faces` + `origin`/`axes`, or `vector-pattern.template` + placements                                                              | Read exact selected schemas. These are not arbitrary 3D instancing or arbitrary function execution. Confirm supported transformations and split genuinely different motifs.                                                                                                                                                                                                                                                                               |
 | Correct existing local objects                  | execute_design_batch with a known contract and scoped target.query, or retained targets; discover only missing fields/routes              | Bounds plus relevant semantic/ancestor filters identify affected content. Query-bound argument slots are omitted, even empty placeholders. Respect expectedCount failures; do not increase expectedCount blindly. Prefer edits over reconstruction.                                                                                                                                                                                                       |
 | Correct occlusion                               | Existing hierarchy.moveElementsRelative operation through batch                                                                           | Use actual returned element/anchor IDs, preserve geometry, and check intended overlapping region. Save returned outcome before deciding whether a retry may write again.                                                                                                                                                                                                                                                                                  |
 | Mechanical check/repair                         | review_design -> actual mechanicalSelection -> verify_design_checks; repair_design_checks only for supported prescribed-position overflow | No extra model. The repair tool is not an automatic architectural designer, color chooser or general geometry fixer. Unsupported findings return to the primary agent.                                                                                                                                                                                                                                                                                    |
@@ -87,7 +87,7 @@ receipt and rebind only affected checks. A changed check scope needs the current
 to recover missing evidence. Tools validate these declared relationships; they do
 not decide whether the building looks correct or whether Knowledge was followed.
 
-### Material roles to a ready surface
+### Chosen-method route: ready surface, evidence, then dependent repetition
 
 1. Use the user's choices and supported reference regions to assign the visible
    parts to material roles. Record the role-to-part relation, continuous lighting
@@ -107,24 +107,10 @@ not decide whether the building looks correct or whether Knowledge was followed.
    do not require a separate prepare/review call or a disposable sample object.
    `prepare_design` is available for a needed non-mutating input check. A successful
    preparation validates declared input, not material appearance or continuity.
-4. At the first useful rendered review, choose a composition/region containing the
-   base paint plus overlaid structure. A frame-only prepared artifact can establish
-   frame alignment; it cannot establish glass appearance. Use the current containing
-   composition or actual related targets, including a necessary join/orientation.
-   Drawing coordinates and image-source crop coordinates are different contracts.
-   Keep material adequacy separate from unfinished repeated detail in existing
-   criteria/units. One `review_drawing` capture can supply multiple explicitly
-   declared checks with distinct judgments. "Other sections remain missing" is a
-   detail-completion finding, not a material verdict. Use returned bindings, not an
-   authored pass inferred from successful preparation. This adds neither an extra
-   review model nor one inspection per repeated object.
-   If a prior check used the wrong region, use its current `supersedes` revision
-   and reason to bind the corrected evidence; do not overwrite its meaning silently.
-   Preserve unverified judgments when no image is available. A material pass in one
-   region is not automatic approval of every orientation or all future details.
-   Expand decided roles using the existing grid/pattern capabilities; a local
-   gradient does not automatically span adjacent grids. Sample geometry, artifact
-   IDs and visual receipts cannot substitute for final ones.
+4. Follow the representative declaration/capture below for an unresolved shared
+   material choice. Then choose the next action from the returned verdict table.
+   Continue independent ready work while that choice is unresolved. This is one
+   route for the selected method, not one review per object or another AI model.
 5. For a local material correction, resolve explicit current targets and inspect
    their Fill relationships. `fill.updateFillsAtIndex` edits the referenced Fill
    property; a shared Fill can affect owners outside the selected targets. When
@@ -136,6 +122,228 @@ not decide whether the building looks correct or whether Knowledge was followed.
    A changed shared lighting assumption may affect more than one part, but
    geometry repetition alone is not an invalidation dependency.
    Reuse valid decisions; judge new/affected results in their final context.
+
+### Correcting an existing material without replacing its mapping
+
+Choose the correction from actual current data, not object names:
+
+- **Native palette-only edit:** resolve explicit current targets through the context query, then
+  use `core.getElementComputedData` with `fields: ["fills"]` for each known ID.
+  Consume the actual action result `value.fills`. Context-query fills are a
+  summary without complete gradients/property IDs, not a replacement payload.
+  Inspect each complete row's property identity and gradient. Preserve
+  gradient type, handles, stop positions and all unspecified stop attributes;
+  replace only the requested colors/opacity. Send a complete `gradient` value
+  per target. Omit unrelated Fill fields to retain them. `gradient` is replaced
+  as one value: `{gradientStops: ...}` alone is invalid.
+- **Known world palette change:** the original projection, face geometry and
+  world field determine the replacement. Constant-phase faces have already
+  collapsed their palette into sampled native colors; preserving handles and
+  replacing their stops is not a world-palette remap. The existing compiler can
+  validate known source geometry, but `prepare_design` returns an artifact handle,
+  not editable native gradients, and there is no public material-only reapplication
+  route. Do not apply the draft again or claim its receipt provides replacement
+  gradients. If current public operations cannot express the intended remapping,
+  report the missing capability or choose an explicitly described native edit.
+- **Direction/domain change:** supply intentionally new per-target complete native
+  gradients in the chosen local basis. This changes the mapping; evaluate its new
+  joins instead of claiming the original world field was preserved.
+
+The following executable syntax example edits two independent native gradients.
+Replace the example IDs and gradients with current document values; the two
+handle sets deliberately differ. For a palette-only edit, construct each complete
+value from its own current gradient, never broadcast the first target's handles.
+The `patch` array aligns exactly with `elementIds`; use separate operations for
+rows at different indexes. Leave `kind` and other fields unchanged unless the
+request explicitly changes them.
+
+```json native-palette-correction
+{
+  "tool": "execute_design_batch",
+  "arguments": {
+    "inspection": "defer",
+    "operations": [
+      {
+        "name": "api_fill_updateFillsAtIndex",
+        "arguments": {
+          "elementIds": [
+            "actual-lower",
+            "actual-upper"
+          ],
+          "index": 0,
+          "patch": [
+            {
+              "gradient": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 0.2
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#183b40",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#6e9796",
+                    "opacity": 0.8
+                  }
+                ]
+              }
+            },
+            {
+              "gradient": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": -0.2,
+                    "y": 0.3
+                  },
+                  {
+                    "x": 0.8,
+                    "y": 1.1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#183b40",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#6e9796",
+                    "opacity": 0.8
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+Equal gradients do not imply shared Fill identity. If selected rows share a Fill
+with outside owners, use `fill.detachFillsAtIndex` only when the correction must
+be local; intentional linked edits retain the shared property. Conflicting patches
+for one shared Fill cannot represent two different outcomes. Resolve that decision
+before writing. Re-query stale/missing targets and current rows after recovery;
+do not reuse an old patch over an intervening edit. Invalid input is not a write,
+but a partial/unknown batch requires reading acknowledged state before retrying
+only unfinished work. No automatic retry of a completed detach or edit.
+
+After correction, use current affected-image bindings through the representative
+route below. Reuse unrelated passes, preserve the whole-result obligation, and
+set final on the actual final judgment. A completed mutation is distinct from a
+durable save acknowledgment. Reloaded native fills preserve their stored mapping,
+not lost source-world provenance or request-bound review credentials.
+
+### Representative acceptance before repeating a material decision
+
+Declare sample material/join adequacy separately from complete-drawing coverage.
+The following declaration is an executable example, not an additional obligation
+for every request. Use stable unit IDs for the actual representative scope. Declare
+these choices with the initial criteria; do not rewrite existing judged obligations.
+For an existing combined criterion, retain it and make the scoped material finding
+explicit without pretending it completed the combined requirement.
+
+```json representative-review
+{
+  "tool": "define_design_criteria",
+  "arguments": {
+    "method": "Confirm the chosen material on a representative surface and join before repeating that assumption; evaluate the full drawing separately.",
+    "references": [],
+    "criteria": {
+      "material": {
+        "requirement": "The chosen material and intended continuity are visible on the representative surface and join.",
+        "description": "Inspect actual glass, overlays and a join at the chosen projection; do not judge material from an empty frame or roof-only crop.",
+        "verification": "visual",
+        "requiredUnits": ["sample-join"]
+      },
+      "overall": {
+        "requirement": "The complete requested subject and its visible details agree with the requested composition.",
+        "description": "Evaluate the entire final drawing independently of the local material sample.",
+        "verification": "visual",
+        "requiredUnits": []
+      }
+    },
+    "structureCriteria": [],
+    "detailRequired": true
+  }
+}
+```
+
+Resolve the created sample's real element ID and target-local visible bounds from
+its acknowledged apply receipt/current context. In this executable syntax example,
+replace `actual-sample` and `region` with those actual values; do not send a draft
+key as a document element ID. The region must show the material and relevant join,
+within the current capture limits. Reference pixels, canvas world coordinates and
+target-local coordinates are different spaces. For a cross-region join bind all
+relevant images; do not combine a whole image and crop of the same target in one unit.
+
+```json representative-capture
+{
+  "tool": "review_drawing",
+  "arguments": {
+    "phase": "visual",
+    "final": false,
+    "inspections": [
+      {
+        "elementId": "actual-sample",
+        "view": "detail",
+        "region": { "x": 0, "y": 0, "width": 80, "height": 40 },
+        "checks": [{ "criterionId": "material", "unitId": "sample-join" }]
+      }
+    ]
+  }
+}
+```
+
+Both examples use `design_operations` native tools. Use the exact qualified names
+for discovery, `view: usage` for routing, and exact `schemaPaths` only for missing
+fields; schema fragments are not whole recipe contracts. Known complete definitions
+can be used directly. For genuinely lost definitions use the returned refresh
+arguments and actual recovery reason. A `previously-returned` reference alone does
+not mean the needed schema is in the current response. Do not look up the catalog
+again for each repeated surface, or guess a batch alias for review tools.
+
+Inspect the delivered image yourself as the primary agent. Capture/bind returns
+`next.arguments`: fill status/evidence in its checks and submit those exact
+bindings to the same tool. Keep criterion, unit and supersession identities.
+Capture/bind defaults the returned submission to `final: false`, even if the
+capture request used `final: true`. Keep it false for local observations; set
+`next.arguments.final: true` on the actual record submission when the complete
+candidate is ready. Completion intent is not a bound check identity.
+Tools validate mechanics and evidence freshness; they do not decide appearance.
+
+| Actual receipt/state | Next action for this chosen method |
+| --- | --- |
+| Capture/bind with no `recordedChecks` | No judgment is recorded. Inspect the delivered pixels, then submit the returned binding. Never treat successful capture as material approval. |
+| Record succeeded with `unverified` | The choice remains unresolved. If the crop shows the roof rather than the join, obtain the right view and the current check revision, then explicitly supersede the wrong-view result. Do not begin repeating that unresolved choice. |
+| Record succeeded with `fail` | Correct the specific material/scope through existing edit tools. Preserve unrelated geometry and passes. Recapture affected evidence and submit its current binding; a detail failure never supplies a missing material verdict. |
+| Exact local criterion/unit is current `pass`, while `accepted: false` | Reuse that verdict for the unchanged choice; dependent repetition may proceed. Read `coverage.pending` for unfinished whole-result obligations, not as a reason to re-review the sample. Do not claim the entire request passed. |
+| `stale`, rejected binding, unavailable image or cancelled exchange | Recover the failed boundary. Rebind good retained images when possible; otherwise capture affected regions. Read exact check IDs/current revisions after uncertain delivery. Never assume a pass or replay drawing writes to recover evidence. |
+| Complete candidate ready | Judge `overall` with actual images and set `final: true` on the record submission, not merely on capture. If already recorded non-final, bind retained whole images again and submit completion without recapture. Retained current local passes accumulate; this attempt cannot silently discard another obligation. |
+
+Match every `recordedChecks` entry by criterion/unit/status/revision; transport
+success alone proves none of these. `countsScope: request-checks` combines retained
+checks, while `selected-checks` describes only the selected checks. Neither count
+nor a mechanical pass proves appearance. A changed dependency reopens only its
+affected units; independent passes remain. New independent parts may proceed at
+any point. User-directed exceptions or valid alternative methods remain explicit
+design choices, not blocked actions. This guidance never creates an approval token,
+Knowledge prerequisite, fixed review quota or additional model reviewer.
 
 Recover at the failed boundary. A missing template is a preparation input error:
 when a `draftId` was retained, use it with `repair.replacements`, then use the new
@@ -167,7 +375,7 @@ points, not additional required calls or new schema fields.
 | Choice                                         | Concrete existing handoff                                                                                                                                                                                                                                                                                                                              | Independent evidence question                                                                          |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | Material role                                  | Assign the selected `fillTemplates` key or explicit Fill to the actual base surface or motif; keep structural paint distinct when the request requires it.                                                                                                                                                                                             | Does the rendered base plus overlaid structure express the chosen material?                            |
-| Continuous domain versus repeated local effect | A gradient uses normalized local `gradientHandles` and ordered `gradientStops`. Copying identical handles to every cell restarts the field in every cell. Put a continuous field on a covering surface with separate structural geometry when that expresses the request, or transform the chosen domain into each part's supported local coordinates. | Is the intended field continuous across the relevant join, with intentional discontinuities preserved? |
+| Continuous domain versus repeated local effect | A gradient uses normalized local `gradientHandles` and ordered `gradientStops`. Copying identical handles to every cell restarts the field in every cell. Put a continuous field on a covering surface with separate structural geometry when that expresses the request, or use `linearFields` with `materialField` on projected/pattern faces so preparation maps the world domain to each native fill. For other supported shapes, explicitly transform the domain to local coordinates. | Is the intended field continuous across the relevant join, with intentional discontinuities preserved? |
 | Different orientations or projections          | Transform to the actual local basis or choose another supported representation; the same local numbers on differently oriented faces are not one common physical lighting field.                                                                                                                                                                       | Are the visible orientations consistent with the chosen light/material interpretation?                 |
 | Incomplete architecture or ornament            | Keep a separate criterion/unit for the requested geometry/detail, using its actual scope.                                                                                                                                                                                                                                                              | What requested content remains missing, independently of whether existing material is correct?         |
 
@@ -195,6 +403,7 @@ Use the decided roles and lighting domains above to choose what varies:
 | Chosen material method                                                    | Existing representation and boundary                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | One continuous gradient on one surface                                    | A normal gradient fill on that surface; separate structural lines when needed. A surface gradient is not automatically a separate gradient inside each pane.                                                                                                                                                                                                                        |
+| One world-linear field across projected/pattern faces | Declare `draft.linearFields` with world start/end and ordered stops, then select `materialField` on each face. Preparation preserves phase across origin/axis translations and emits independent native fills. Discover the executable preparation example and exact schema. Do not combine a field with an explicit face fill/palette; unsupported or unrepresentable fields reject before apply. |
 | Equal independent material values                                         | `draft.fillTemplates` and `fill: {template: key}`. Template reuse preserves independent fills; use `sharedFills` only for intentional linked edits.                                                                                                                                                                                                                                 |
 | Intentional repeated palette                                              | `surface-grid` motif `fills` cycles by row-major cell index. Do not use cycling for a nonperiodic reflection field.                                                                                                                                                                                                                                                                 |
 | Single-axis color variation on existing targets                           | `map_retained_fills` inside `execute_design_batch`, with query or caller-owned snapshot/lease, parent-local x/y domain, fill index and ordered color stops. Backend reads columns and prepares color/opacity patches only; existing gradient/kind fields remain unchanged. Conflicting updates of shared fills reject; detach and requery only when independent edits are intended. |
@@ -206,7 +415,7 @@ role templates are also useful without repetition. Preserve paint-list order,
 geometry, projection and independently editable identities. A template is not a
 continuous field and is not linked `sharedFills`. A shorter motif palette is valid
 only when its row-major cycle reproduces every intended cell; repeated geometry
-alone does not prove that. Distinct nonperiodic paints still require explicit
+alone does not prove that. Distinct paints outside the supported world-linear field still require explicit
 values with current capabilities. Do not quantize them merely to reduce bytes.
 
 For `map_retained_fills`, discover its full input contract through `operations`
@@ -336,8 +545,8 @@ choose corrected criteria; the tool must not infer the intended target for you.
 Review revisions belong to returned checks, not the capture counter or document
 sequence. Before explicitly superseding a visual unit, use `read_design_checks`
 with its exact ID and `view: details`, then carry that unit's current revision.
-Use `review_drawing` with explicit capture checks, or `bindChecks` for already
-usable images; fill only observed status/evidence in the returned `next.arguments`.
+Use the representative capture/bind/record route above, including its explicit
+final-record instruction. Reuse good images through `bindChecks`.
 Do not copy a revision from an earlier decision. A concurrent edit can still make
 that read stale: re-read/rebind only the affected unit, preserving unrelated passes.
 Keep successful images if another capture or binding failed; do not repeat a
@@ -489,3 +698,33 @@ retained valid judgments and preservation of unrelated content. Check rendered
 quality separately; a tool success is not visual acceptance. Do not require a
 new composed tool when an existing main tool already covers the task. No
 particular building, test result or fixed drawing sequence is prescribed.
+
+## Represent a repeated multi-face component once
+
+After selecting the component shape and material method, separate unique contours,
+material roles, repeat axes and genuine exceptions. For translated world-space
+copies, use one `pattern.faces` list containing every face of the component in
+painter order, then `origin` and `axes`. The backend projects each prototype and
+expands all copies. The last axis varies fastest; output order is instance first,
+then face. This does not depth-sort: if the intended painter order differs, split
+into appropriate explicit families instead of changing the artwork to fit a pattern.
+
+Use the executable multi-face example in the discovered `prepare_design` definition
+for exact syntax:
+its glass and rim are separate contours, its glass uses the chosen world field,
+and its irregular accent stays outside the pattern. Use local fills for intended
+per-piece material restarts; select a common `linearFields` domain only when the
+material should continue across copies. Preserve source contour detail. Identical
+2D curves use `vector-pattern`; arbitrary nontranslated 3D shapes remain explicit.
+Knowledge is optional; these are representation choices, not invocation eligibility.
+
+Confirm representative material evidence separately from overall detail completion
+using the scoped review flow above. Ready parts still use `prepare_and_apply_design`.
+Use current returned IDs or `retain_design_targets` with the artifact and exact
+instance prefix for a later local edit; generated keys are not canonical IDs or
+cross-artifact aliases. Reuse unaffected passes after that edit. Release/cancellation
+requires current authority, not replay of successful writes. `instanceRanges` can
+restore known missing complete instances; if a write stopped within an instance,
+use its actual partial receipt and current state before deciding what remains.
+A save failure retries saving, not preparation/application. Reload restores editable
+native shapes and fills, not the original request artifact or a live pattern link.

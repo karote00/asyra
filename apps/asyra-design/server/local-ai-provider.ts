@@ -294,11 +294,27 @@ const runLocalAiProvider = async (
     }
   }
   if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
-  const callContext = new AsyncLocalStorage<{
+  interface CallContext {
     id: string
     receipts: unknown[]
+    parent?: CallContext
     inspectionId?: string
-  }>()
+  }
+  const callContext = new AsyncLocalStorage<CallContext>()
+  const executeInCallContext = <T>(
+    call: { callId: string; parentCallId?: string },
+    execute: () => Promise<T>
+  ): Promise<T> => {
+    const current = callContext.getStore()
+    return callContext.run(
+      {
+        id: call.callId,
+        receipts: [],
+        parent: current?.id === call.parentCallId ? current : undefined
+      },
+      execute
+    )
+  }
   const ownerObservation = {
     parentCallId: () => callContext.getStore()?.id,
     progress: (event: {
@@ -395,7 +411,12 @@ const runLocalAiProvider = async (
               reportProgress({ tool: 'app-batch', status: 'running', activity })
               try {
                 const receipt = await executeBatch(batch)
-                callContext.getStore()?.receipts.push(receipt)
+                // A child contributes to its causal ancestors, never to siblings.
+                let context = callContext.getStore()
+                while (context) {
+                  context.receipts.push(receipt)
+                  context = context.parent
+                }
                 return receipt
               } finally {
                 reportProgress({
@@ -466,7 +487,8 @@ const runLocalAiProvider = async (
           ownerObservation,
           () => ({
             batches: callContext.getStore()?.receipts ?? []
-          })
+          }),
+          executeInCallContext
         )
       : undefined
     const toolGroups = [
@@ -549,7 +571,7 @@ const runLocalAiProvider = async (
           queueMs: Math.max(0, started - (queuedAt.get(call.callId) ?? started))
         })
         queuedAt.delete(call.callId)
-        return callContext.run({ id: call.callId, receipts: [] }, work)
+        return executeInCallContext(call, work)
       },
       executionEvidence: () => ({
         batches: callContext.getStore()?.receipts ?? []

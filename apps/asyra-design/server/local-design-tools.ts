@@ -659,11 +659,16 @@ export const createLocalDesignTools = (
         draft = 'repair' in args ? session.repairDraft(args.repair) : args.draft
         const budgetIssue = inspectDesignBudget(draft)
         if (budgetIssue)
-          return JSON.stringify({ ...budgetIssue, ...retainDraft(draft) })
+          return JSON.stringify({
+            ...budgetIssue,
+            settlement: 'not-started',
+            ...retainDraft(draft)
+          })
         const inputIssue = operationInputIssue({ draft }, preparationSchema)
         if (inputIssue)
           return JSON.stringify({
             available: false,
+            settlement: 'not-started',
             recovery: 'correct_input',
             ...retainDraft(draft),
             message: `${inputIssue}. Correct the listed input fields and resubmit this draft; do not research a new reference. Geometry has not been compiled.`
@@ -683,6 +688,7 @@ export const createLocalDesignTools = (
         )
           return JSON.stringify({
             available: false,
+            settlement: 'not-started',
             recovery: 'correct_input',
             message:
               'arguments.draft.projection: provide one shared camera (azimuth, elevation, scale, originX, originY); arguments.draft.layout: projected faces and patterns require absolute layout. Reuse the chosen viewpoint; no new reference search is needed.'
@@ -705,6 +711,7 @@ export const createLocalDesignTools = (
         signal.throwIfAborted()
         return JSON.stringify({
           available: false,
+          settlement: 'not-started',
           recovery: 'correct_input',
           ...(draft === undefined ? {} : retainDraft(draft)),
           ...(error instanceof DesignKeyConflictError

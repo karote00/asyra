@@ -1,3 +1,4 @@
+import recordedQuery from '../../../server/__tests__/fixtures/recorded-101/context-query-20261019.json'
 import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../contexts', () => ({ default: {} }))
 import { createRetainedDesignContext } from '../retained-design-context'
@@ -887,3 +888,60 @@ it('protects internal-only pins under pressure and frees capacity after consumpt
     store.dispose()
   }
 })
+
+it('rejects the recorded scope mismatch before reading or reserving resources, then refines explicitly', () => {
+  const { store, source } = fixture()
+  const children = vi.spyOn(source, 'getElementChildren')
+  const workspace = vi.spyOn(source, 'getCurrentWorkspaceId')
+  const signal = new AbortController().signal
+  expect(() => store.read(recordedQuery as never, signal)).toThrow(/filter/)
+  expect(children).not.toHaveBeenCalled()
+  expect(workspace).not.toHaveBeenCalled()
+  expect(source.getElementMetadata).not.toHaveBeenCalled()
+  expect(source.getElementComputedData).not.toHaveBeenCalled()
+  const parent = store.read(
+    { scope: 'children', delivery: 'reference' },
+    signal
+  )
+  const subset = store.read(
+    {
+      scope: 'snapshot',
+      snapshotId: parent.snapshotId,
+      filter: { name: { equals: 'b' } },
+      delivery: 'page'
+    },
+    signal
+  )
+  expect(subset.elements.map((row) => row.id)).toEqual(['b'])
+  expect(children).toHaveBeenCalledTimes(1)
+  expect(store.get(parent.snapshotId, undefined, signal).orderedIds).toEqual([
+    'a',
+    'b',
+    'c'
+  ])
+  expect(() => store.read(recordedQuery as never, signal)).toThrow(/filter/)
+  expect(store.get(subset.snapshotId, undefined, signal).orderedIds).toEqual([
+    'b'
+  ])
+  store.dispose()
+})
+
+it.each([{ offset: -1 }, { offset: null }, { expectedCount: -1 }])(
+  'rejects malformed snapshot refinement before reading or retaining: %j',
+  (patch) => {
+    const { store, source } = fixture()
+    const parent = store.read({ scope: 'children' })
+    source.getElementMetadata.mockClear()
+    expect(() =>
+      store.read({
+        scope: 'snapshot',
+        snapshotId: parent.snapshotId,
+        filter: { type: 'rectangle' },
+        ...patch
+      } as never)
+    ).toThrow()
+    expect(source.getElementMetadata).not.toHaveBeenCalled()
+    expect(store.get(parent.snapshotId).orderedIds).toEqual(['a', 'b', 'c'])
+    store.dispose()
+  }
+)

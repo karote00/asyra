@@ -59,6 +59,35 @@ constraints and acceptance criteria, not a complete geometry inventory. Emit rea
 coherent retained parts in a shared coordinate system; keep unresolved detail pending
 without weakening the final acceptance contract.
 
+Chosen-method advice exposes one executable advisory route: choose the method,
+initially separate local material/join and whole-result obligations, apply a ready
+part, capture its actual representative region, consume the returned binding and
+record a primary-agent judgment before repeating that unresolved shared choice.
+Capture/binding success is not a judgment; record success is not a pass. Exact
+`recordedChecks` criterion/unit/status/revision and retained pending obligations
+control interpretation; local pass can coexist with overall pending. Capture/bind
+returns a non-final submission; the primary agent explicitly sets final on the
+record call for completion, with fresh binding of retained images if needed. Correct a
+failed material or missing view at its actual owner, retain unrelated passes, and
+never rewrite judged criteria or replay drawing to repair evidence. Current
+supersession protects replacement judgments. Unknown settlement requires inspection
+of retained state before retry. Discovery uses exact native identities; missing
+fields and lost definitions retain explicit recovery. This route is App advice,
+not a Knowledge admission gate, extra model reviewer or second result store.
+No-Knowledge actions, valid alternative methods and independent ready work remain
+supported. Executable examples prove handoffs, not model adoption or visual quality.
+
+Material-correction advice pairs creation with explicit current-target edits.
+Native palette-only replacement supplies complete per-target gradients, preserving
+handles/type/positions and unrelated Fill fields. Shared property identity, not
+color equality, determines affected owners; detach only for an intentional local
+change. Constant-phase compilation loses source palette information: known world
+source can be recompiled as an oracle, but native-only documents cannot recover it.
+Do not claim compact preparation receipts expose a material-only update operation.
+Unknown settlement, changed targets and unavailable source remain explicit recovery
+conditions. Actual mutations drive scoped evidence invalidation; unrelated passes
+remain usable before fresh final judgment and durable save.
+
 The provider registers every available tool with its native protocol contract.
 Construction discovery explains choices by supplied data: existing-object edits
 use registered batch operations; ready 2D paths remain vectors; repeated 2D curves
@@ -157,6 +186,12 @@ computed projections from canonical values and linked property records. Known
 IDs and new values do not require a preliminary whole-document read. Unknown
 information needed by the requested operation still requires an appropriate read.
 
+Visibility mutation receipts consume the existing App flag status: a changed target
+returns complete, an already-matching target returns no-change, and an unavailable
+target returns failed with not-started settlement. An unavailable target never
+produces a successful successor binding. Perform this decision inside the existing
+mutation boundary; no pre-read race or inferred boolean success.
+
 ### Tool-first delegation and mechanical closure
 
 Known current tools execute directly. Ready parts do not wait for recipe authorship.
@@ -192,7 +227,15 @@ available. Sequence shape and backward references are admitted before writes.
 The workflow prepares and applies one part before preparing the next, using the
 same preparation and current canonical admission owners. A failure stops later
 parts and returns ordered receipts for successful parts plus the failed part;
-completed and uncertain writes are never automatically replayed. Cancellation
+completed and uncertain writes are never automatically replayed. Execution
+receipts belong to their actual invocation and causal descendants, not all earlier
+work in the request. Each internal workflow step uses its own invocation identity;
+acknowledged effects contribute to its coordinator but never to a sibling. A
+preparation rejection preserves its geometry explanation and retained repair draft
+and reports no canvas dispatch; an earlier successful part does not change that
+child into a partial mutation or replace its error with a result-schema failure.
+Parent settlement still accounts for every completed or uncertain child. Diagnostic
+draft retention is distinct from a document write. Unknown effects remain unknown. Cancellation
 retains existing terminal semantics and recorded acknowledged work. Nested owner
 observations identify part order and preparation/application boundaries. Patterns,
 shared fills and projection stay at their existing preparation owner. Submit
@@ -1273,6 +1316,18 @@ asserted using the real reducer, independently of machine-specific duration.
 
 ### Retained query and fill mapping
 
+The canonical query owner validates the complete selector before document reads,
+cache lookup, retention or lease allocation. Public action and native schemas
+advertise the same scope alternatives: selection has no hierarchy/region selector;
+children accepts parentId; IDs requires elementIds; region requires finite workspace
+bounds and alone accepts direct predicates. Result IDs cannot request property
+columns. Complete region IDs exclude paging. Invalid combinations return actionable
+scope/field errors with no side effects; they are never reinterpreted as another
+query. To filter a hierarchy result, explicitly retain it and refine its current
+snapshot. Existing snapshot ownership, cancellation and mutation admission remain
+unchanged. A rejected read does not consume or release an earlier valid reference.
+
+
 The App context reader retains ordered membership and requested property columns
 under a bounded snapshotId, document revision and workspace identity. Repeated
 pages reuse that result. `delivery=reference` returns a compact receipt for a
@@ -1901,6 +1956,23 @@ promise a reconciliation tool that does not exist. A subsequent request starts
 from current document state rather than replaying this request. Ordinary failed
 mechanical checks and stale evidence remain retryable through review_design.
 
+Compact count receipts explicitly distinguish request-wide counts from selected
+checks. Neither count scope asserts visual acceptance or document durability.
+Review replies identify capture, bind or record; only successful recording returns
+compact exact acknowledgements of committed check identities, criterion/unit,
+origin, status and revision, including passes. Failure before recording returns no
+acknowledgement; partial completion after recording preserves committed receipts.
+Capture and binding never pronounce readiness for further drawing. The optional
+structural judgment reports only `structureAccepted`; final `accepted` remains
+whole-request acceptance from the canonical owner. Capture/bind cannot reset a
+current acceptance merely by reporting a different constant; invalid evidence
+still invalidates through the canonical owner. A valid unverified judgment is
+successful recording.
+Full bodies remain available through the existing retained check read. A source
+or reference handoff with current visual acceptance but pending mechanical work
+identifies the exact pending check read; it must not demand another visual
+judgment or leave the next action absent solely because visual work passed.
+
 ### Declared regional acceptance coverage
 
 Every visual criterion explicitly declares `requiredUnits`, within the existing
@@ -2374,3 +2446,18 @@ final settlement and save/reload. Include negative controls for uncovered failur
 foreign/stale/partial evidence and cancellation, plus Undo/Redo and collaboration
 through existing owners. The saved 101 sequence supplies input evidence, never
 reusable live receipt IDs. Owner-local proofs alone cannot close this flow.
+
+
+### Material relationship publication
+
+Material edits use the same canonical publication path as other property changes.
+Publication conversion must retain exact final property relationships and ordering
+alongside record lifecycle changes. Removing an old Fill and linking an existing
+Fill is distinct from removal alone; equal colors do not establish shared identity.
+Updates to retiring components precede removal; creation precedes updates to new
+components. Lifecycle changes precede final relationship values as ordered canonical operations
+within the same atomic publication; each Core property batch keeps unique owners.
+Live peers, bootstrap replay and durable reduction consume the same operations.
+Remote apply creates no receiver History or outbound echo. Malformed evidence
+rejects rather than guessing missing links. A successful local edit does not imply
+durable save; history, compensation, retry and reload retain their existing owners.

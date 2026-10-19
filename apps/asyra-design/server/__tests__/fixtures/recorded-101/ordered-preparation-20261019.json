@@ -1,0 +1,3031 @@
+{
+  "runId": "1792418361592",
+  "callIndex": 18,
+  "input": {
+    "parts": [
+      {
+        "key": "crown",
+        "draft": {
+          "type": "group",
+          "key": "crown",
+          "name": "塔冠、退縮屋頂與508m尖塔",
+          "projection": {
+            "azimuth": 35,
+            "elevation": 25,
+            "scale": 1,
+            "originX": 11952.227351315523,
+            "originY": 11352.57800788057
+          },
+          "fillTemplates": {
+            "metal": "#a8bfc0",
+            "light": "#d1dcd7",
+            "dark": "#243e42",
+            "shadow": "#122f36",
+            "roof": "#849b9b",
+            "stone": "#91a6a7",
+            "rim": "#718f94"
+          },
+          "linearFields": {
+            "glassY": {
+              "frame": "world",
+              "start": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 0,
+                "z": 44800
+              },
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#31595e",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.22,
+                  "color": "#274b53",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.4,
+                  "color": "#507b80",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.6,
+                  "color": "#416b75",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.8,
+                  "color": "#6c999e",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#9dbab8",
+                  "opacity": 1
+                }
+              ]
+            },
+            "glassX": {
+              "frame": "world",
+              "start": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 0,
+                "z": 44800
+              },
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#172f3b",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.22,
+                  "color": "#244651",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.4,
+                  "color": "#2f5867",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.6,
+                  "color": "#31596b",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.8,
+                  "color": "#447786",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#7a9ea8",
+                  "opacity": 1
+                }
+              ]
+            }
+          },
+          "children": [
+            {
+              "type": "projected-face",
+              "key": "crown-basey",
+              "name": "crown-basey",
+              "vertices": [
+                {
+                  "x": -2200,
+                  "y": 2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2050,
+                  "y": 2050,
+                  "z": 41400
+                },
+                {
+                  "x": -2050,
+                  "y": 2050,
+                  "z": 41400
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "surface-grid",
+              "key": "crown-baseygrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": -2200,
+                  "y": 2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2050,
+                  "y": 2050,
+                  "z": 41400
+                },
+                {
+                  "x": -2050,
+                  "y": 2050,
+                  "z": 41400
+                }
+              ],
+              "rows": 5,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-basex",
+              "name": "crown-basex",
+              "vertices": [
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2200,
+                  "y": -2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2050,
+                  "y": -2050,
+                  "z": 41400
+                },
+                {
+                  "x": 2050,
+                  "y": 2050,
+                  "z": 41400
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "crown-basexgrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": 2200,
+                  "y": 2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2200,
+                  "y": -2200,
+                  "z": 39500
+                },
+                {
+                  "x": 2050,
+                  "y": -2050,
+                  "z": 41400
+                },
+                {
+                  "x": 2050,
+                  "y": 2050,
+                  "z": 41400
+                }
+              ],
+              "rows": 5,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-baseroof",
+              "name": "crown-baseroof",
+              "vertices": [
+                {
+                  "x": -2050,
+                  "y": -2050,
+                  "z": 41400
+                },
+                {
+                  "x": 2050,
+                  "y": -2050,
+                  "z": 41400
+                },
+                {
+                  "x": 2050,
+                  "y": 2050,
+                  "z": 41400
+                },
+                {
+                  "x": -2050,
+                  "y": 2050,
+                  "z": 41400
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-ledgey",
+              "name": "crown-ledgey",
+              "vertices": [
+                {
+                  "x": -2170,
+                  "y": 2170,
+                  "z": 41400
+                },
+                {
+                  "x": 2170,
+                  "y": 2170,
+                  "z": 41400
+                },
+                {
+                  "x": 2170,
+                  "y": 2170,
+                  "z": 41500
+                },
+                {
+                  "x": -2170,
+                  "y": 2170,
+                  "z": 41500
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-ledgex",
+              "name": "crown-ledgex",
+              "vertices": [
+                {
+                  "x": 2170,
+                  "y": 2170,
+                  "z": 41400
+                },
+                {
+                  "x": 2170,
+                  "y": -2170,
+                  "z": 41400
+                },
+                {
+                  "x": 2170,
+                  "y": -2170,
+                  "z": 41500
+                },
+                {
+                  "x": 2170,
+                  "y": 2170,
+                  "z": 41500
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-ledgeroof",
+              "name": "crown-ledgeroof",
+              "vertices": [
+                {
+                  "x": -2170,
+                  "y": -2170,
+                  "z": 41500
+                },
+                {
+                  "x": 2170,
+                  "y": -2170,
+                  "z": 41500
+                },
+                {
+                  "x": 2170,
+                  "y": 2170,
+                  "z": 41500
+                },
+                {
+                  "x": -2170,
+                  "y": 2170,
+                  "z": 41500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-uppery",
+              "name": "crown-uppery",
+              "vertices": [
+                {
+                  "x": -1500,
+                  "y": 1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1320,
+                  "y": 1320,
+                  "z": 43500
+                },
+                {
+                  "x": -1320,
+                  "y": 1320,
+                  "z": 43500
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "surface-grid",
+              "key": "crown-upperygrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": -1500,
+                  "y": 1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1320,
+                  "y": 1320,
+                  "z": 43500
+                },
+                {
+                  "x": -1320,
+                  "y": 1320,
+                  "z": 43500
+                }
+              ],
+              "rows": 6,
+              "columns": 12,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-upperx",
+              "name": "crown-upperx",
+              "vertices": [
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1500,
+                  "y": -1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1320,
+                  "y": -1320,
+                  "z": 43500
+                },
+                {
+                  "x": 1320,
+                  "y": 1320,
+                  "z": 43500
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "crown-upperxgrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1500,
+                  "y": -1500,
+                  "z": 41500
+                },
+                {
+                  "x": 1320,
+                  "y": -1320,
+                  "z": 43500
+                },
+                {
+                  "x": 1320,
+                  "y": 1320,
+                  "z": 43500
+                }
+              ],
+              "rows": 6,
+              "columns": 12,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-upperroof",
+              "name": "crown-upperroof",
+              "vertices": [
+                {
+                  "x": -1320,
+                  "y": -1320,
+                  "z": 43500
+                },
+                {
+                  "x": 1320,
+                  "y": -1320,
+                  "z": 43500
+                },
+                {
+                  "x": 1320,
+                  "y": 1320,
+                  "z": 43500
+                },
+                {
+                  "x": -1320,
+                  "y": 1320,
+                  "z": 43500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-eavey",
+              "name": "crown-eavey",
+              "vertices": [
+                {
+                  "x": -1500,
+                  "y": 1500,
+                  "z": 43500
+                },
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 43500
+                },
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 43600
+                },
+                {
+                  "x": -1500,
+                  "y": 1500,
+                  "z": 43600
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-eavex",
+              "name": "crown-eavex",
+              "vertices": [
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 43500
+                },
+                {
+                  "x": 1500,
+                  "y": -1500,
+                  "z": 43500
+                },
+                {
+                  "x": 1500,
+                  "y": -1500,
+                  "z": 43600
+                },
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 43600
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-eaveroof",
+              "name": "crown-eaveroof",
+              "vertices": [
+                {
+                  "x": -1500,
+                  "y": -1500,
+                  "z": 43600
+                },
+                {
+                  "x": 1500,
+                  "y": -1500,
+                  "z": 43600
+                },
+                {
+                  "x": 1500,
+                  "y": 1500,
+                  "z": 43600
+                },
+                {
+                  "x": -1500,
+                  "y": 1500,
+                  "z": 43600
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "lanterny",
+              "name": "lanterny",
+              "vertices": [
+                {
+                  "x": -850,
+                  "y": 850,
+                  "z": 43600
+                },
+                {
+                  "x": 850,
+                  "y": 850,
+                  "z": 43600
+                },
+                {
+                  "x": 930,
+                  "y": 930,
+                  "z": 44800
+                },
+                {
+                  "x": -930,
+                  "y": 930,
+                  "z": 44800
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "surface-grid",
+              "key": "lanternygrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": -850,
+                  "y": 850,
+                  "z": 43600
+                },
+                {
+                  "x": 850,
+                  "y": 850,
+                  "z": 43600
+                },
+                {
+                  "x": 930,
+                  "y": 930,
+                  "z": 44800
+                },
+                {
+                  "x": -930,
+                  "y": 930,
+                  "z": 44800
+                }
+              ],
+              "rows": 8,
+              "columns": 8,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "lanternx",
+              "name": "lanternx",
+              "vertices": [
+                {
+                  "x": 850,
+                  "y": 850,
+                  "z": 43600
+                },
+                {
+                  "x": 850,
+                  "y": -850,
+                  "z": 43600
+                },
+                {
+                  "x": 930,
+                  "y": -930,
+                  "z": 44800
+                },
+                {
+                  "x": 930,
+                  "y": 930,
+                  "z": 44800
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "lanternxgrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": 850,
+                  "y": 850,
+                  "z": 43600
+                },
+                {
+                  "x": 850,
+                  "y": -850,
+                  "z": 43600
+                },
+                {
+                  "x": 930,
+                  "y": -930,
+                  "z": 44800
+                },
+                {
+                  "x": 930,
+                  "y": 930,
+                  "z": 44800
+                }
+              ],
+              "rows": 8,
+              "columns": 8,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "lanternroof",
+              "name": "lanternroof",
+              "vertices": [
+                {
+                  "x": -930,
+                  "y": -930,
+                  "z": 44800
+                },
+                {
+                  "x": 930,
+                  "y": -930,
+                  "z": 44800
+                },
+                {
+                  "x": 930,
+                  "y": 930,
+                  "z": 44800
+                },
+                {
+                  "x": -930,
+                  "y": 930,
+                  "z": 44800
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "antenna-basey",
+              "name": "antenna-basey",
+              "vertices": [
+                {
+                  "x": -420,
+                  "y": 420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 46000
+                },
+                {
+                  "x": -420,
+                  "y": 420,
+                  "z": 46000
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "surface-grid",
+              "key": "antenna-baseygrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": -420,
+                  "y": 420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 46000
+                },
+                {
+                  "x": -420,
+                  "y": 420,
+                  "z": 46000
+                }
+              ],
+              "rows": 6,
+              "columns": 4,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "antenna-basex",
+              "name": "antenna-basex",
+              "vertices": [
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": -420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": -420,
+                  "z": 46000
+                },
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 46000
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "antenna-basexgrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": -420,
+                  "z": 44800
+                },
+                {
+                  "x": 420,
+                  "y": -420,
+                  "z": 46000
+                },
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 46000
+                }
+              ],
+              "rows": 6,
+              "columns": 4,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "antenna-baseroof",
+              "name": "antenna-baseroof",
+              "vertices": [
+                {
+                  "x": -420,
+                  "y": -420,
+                  "z": 46000
+                },
+                {
+                  "x": 420,
+                  "y": -420,
+                  "z": 46000
+                },
+                {
+                  "x": 420,
+                  "y": 420,
+                  "z": 46000
+                },
+                {
+                  "x": -420,
+                  "y": 420,
+                  "z": 46000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "masty",
+              "name": "masty",
+              "vertices": [
+                {
+                  "x": -230,
+                  "y": 230,
+                  "z": 46000
+                },
+                {
+                  "x": 230,
+                  "y": 230,
+                  "z": 46000
+                },
+                {
+                  "x": 95,
+                  "y": 95,
+                  "z": 49300
+                },
+                {
+                  "x": -95,
+                  "y": 95,
+                  "z": 49300
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "surface-grid",
+              "key": "mastygrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": -230,
+                  "y": 230,
+                  "z": 46000
+                },
+                {
+                  "x": 230,
+                  "y": 230,
+                  "z": 46000
+                },
+                {
+                  "x": 95,
+                  "y": 95,
+                  "z": 49300
+                },
+                {
+                  "x": -95,
+                  "y": 95,
+                  "z": 49300
+                }
+              ],
+              "rows": 12,
+              "columns": 4,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "mastx",
+              "name": "mastx",
+              "vertices": [
+                {
+                  "x": 230,
+                  "y": 230,
+                  "z": 46000
+                },
+                {
+                  "x": 230,
+                  "y": -230,
+                  "z": 46000
+                },
+                {
+                  "x": 95,
+                  "y": -95,
+                  "z": 49300
+                },
+                {
+                  "x": 95,
+                  "y": 95,
+                  "z": 49300
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "mastxgrid",
+              "name": "塔冠細密百葉與窗框",
+              "boundary": [
+                {
+                  "x": 230,
+                  "y": 230,
+                  "z": 46000
+                },
+                {
+                  "x": 230,
+                  "y": -230,
+                  "z": 46000
+                },
+                {
+                  "x": 95,
+                  "y": -95,
+                  "z": 49300
+                },
+                {
+                  "x": 95,
+                  "y": 95,
+                  "z": 49300
+                }
+              ],
+              "rows": 12,
+              "columns": 4,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "h",
+                  "name": "塔冠百葉",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.15
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.15
+                    }
+                  ]
+                },
+                {
+                  "key": "v",
+                  "name": "塔冠肋柱",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.045,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "mastroof",
+              "name": "mastroof",
+              "vertices": [
+                {
+                  "x": -95,
+                  "y": -95,
+                  "z": 49300
+                },
+                {
+                  "x": 95,
+                  "y": -95,
+                  "z": 49300
+                },
+                {
+                  "x": 95,
+                  "y": 95,
+                  "z": 49300
+                },
+                {
+                  "x": -95,
+                  "y": 95,
+                  "z": 49300
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "needley",
+              "name": "needley",
+              "vertices": [
+                {
+                  "x": -95,
+                  "y": 95,
+                  "z": 49300
+                },
+                {
+                  "x": 95,
+                  "y": 95,
+                  "z": 49300
+                },
+                {
+                  "x": 12,
+                  "y": 12,
+                  "z": 50800
+                },
+                {
+                  "x": -12,
+                  "y": 12,
+                  "z": 50800
+                }
+              ],
+              "materialField": "glassY"
+            },
+            {
+              "type": "projected-face",
+              "key": "needlex",
+              "name": "needlex",
+              "vertices": [
+                {
+                  "x": 95,
+                  "y": 95,
+                  "z": 49300
+                },
+                {
+                  "x": 95,
+                  "y": -95,
+                  "z": 49300
+                },
+                {
+                  "x": 12,
+                  "y": -12,
+                  "z": 50800
+                },
+                {
+                  "x": 12,
+                  "y": 12,
+                  "z": 50800
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "projected-face",
+              "key": "needleroof",
+              "name": "needleroof",
+              "vertices": [
+                {
+                  "x": -12,
+                  "y": -12,
+                  "z": 50800
+                },
+                {
+                  "x": 12,
+                  "y": -12,
+                  "z": 50800
+                },
+                {
+                  "x": 12,
+                  "y": 12,
+                  "z": 50800
+                },
+                {
+                  "x": -12,
+                  "y": 12,
+                  "z": 50800
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-fin0-1",
+              "name": "crown-fin0-1",
+              "vertices": [
+                {
+                  "x": 1960,
+                  "y": -1850,
+                  "z": 39500
+                },
+                {
+                  "x": 2140,
+                  "y": -1850,
+                  "z": 39500
+                },
+                {
+                  "x": 2140,
+                  "y": -1850,
+                  "z": 42000
+                },
+                {
+                  "x": 2050,
+                  "y": -1850,
+                  "z": 42400
+                },
+                {
+                  "x": 1960,
+                  "y": -1850,
+                  "z": 42000
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-fin01",
+              "name": "crown-fin01",
+              "vertices": [
+                {
+                  "x": 1960,
+                  "y": 1850,
+                  "z": 39500
+                },
+                {
+                  "x": 2140,
+                  "y": 1850,
+                  "z": 39500
+                },
+                {
+                  "x": 2140,
+                  "y": 1850,
+                  "z": 42000
+                },
+                {
+                  "x": 2050,
+                  "y": 1850,
+                  "z": 42400
+                },
+                {
+                  "x": 1960,
+                  "y": 1850,
+                  "z": 42000
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-fin1-1",
+              "name": "crown-fin1-1",
+              "vertices": [
+                {
+                  "x": -1940,
+                  "y": 2050,
+                  "z": 39500
+                },
+                {
+                  "x": -1760,
+                  "y": 2050,
+                  "z": 39500
+                },
+                {
+                  "x": -1760,
+                  "y": 2050,
+                  "z": 42000
+                },
+                {
+                  "x": -1850,
+                  "y": 2050,
+                  "z": 42400
+                },
+                {
+                  "x": -1940,
+                  "y": 2050,
+                  "z": 42000
+                }
+              ],
+              "fill": {
+                "template": "metal"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "crown-fin11",
+              "name": "crown-fin11",
+              "vertices": [
+                {
+                  "x": 1760,
+                  "y": 2050,
+                  "z": 39500
+                },
+                {
+                  "x": 1940,
+                  "y": 2050,
+                  "z": 39500
+                },
+                {
+                  "x": 1940,
+                  "y": 2050,
+                  "z": 42000
+                },
+                {
+                  "x": 1850,
+                  "y": 2050,
+                  "z": 42400
+                },
+                {
+                  "x": 1760,
+                  "y": 2050,
+                  "z": 42000
+                }
+              ],
+              "fill": {
+                "template": "metal"
+              }
+            }
+          ]
+        },
+        "parentId": "design-0306d3ea-332a-4c58-b76f-c4fff4ec2178-0"
+      },
+      {
+        "key": "base-details",
+        "draft": {
+          "type": "group",
+          "key": "base-details",
+          "name": "塔基斜撐、裙樓柱列與屋頂天窗",
+          "projection": {
+            "azimuth": 35,
+            "elevation": 25,
+            "scale": 1,
+            "originX": 11952.227351315523,
+            "originY": 11352.57800788057
+          },
+          "fillTemplates": {
+            "metal": "#a8bfc0",
+            "light": "#d1dcd7",
+            "dark": "#243e42",
+            "shadow": "#122f36",
+            "roof": "#849b9b",
+            "stone": "#91a6a7",
+            "rim": "#718f94"
+          },
+          "linearFields": {
+            "glassY": {
+              "frame": "world",
+              "start": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 0,
+                "z": 44800
+              },
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#31595e",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.22,
+                  "color": "#274b53",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.4,
+                  "color": "#507b80",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.6,
+                  "color": "#416b75",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.8,
+                  "color": "#6c999e",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#9dbab8",
+                  "opacity": 1
+                }
+              ]
+            },
+            "glassX": {
+              "frame": "world",
+              "start": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 0,
+                "z": 44800
+              },
+              "gradientStops": [
+                {
+                  "position": 0,
+                  "color": "#172f3b",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.22,
+                  "color": "#244651",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.4,
+                  "color": "#2f5867",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.6,
+                  "color": "#31596b",
+                  "opacity": 1
+                },
+                {
+                  "position": 0.8,
+                  "color": "#447786",
+                  "opacity": 1
+                },
+                {
+                  "position": 1,
+                  "color": "#7a9ea8",
+                  "opacity": 1
+                }
+              ]
+            }
+          },
+          "children": [
+            {
+              "type": "projected-face",
+              "key": "buttress-y0",
+              "name": "buttress-y0",
+              "vertices": [
+                {
+                  "x": -2670,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": -2330,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": -2360,
+                  "y": 2710,
+                  "z": 5700
+                },
+                {
+                  "x": -2540,
+                  "y": 2680,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "light"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-y0",
+              "name": "buttress-shadow-y0",
+              "vertices": [
+                {
+                  "x": -2330,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": -2260,
+                  "y": 3120,
+                  "z": 2230
+                },
+                {
+                  "x": -2330,
+                  "y": 2600,
+                  "z": 5700
+                },
+                {
+                  "x": -2360,
+                  "y": 2710,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-y1",
+              "name": "buttress-y1",
+              "vertices": [
+                {
+                  "x": -1120,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": -780,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": -810,
+                  "y": 2710,
+                  "z": 5700
+                },
+                {
+                  "x": -990,
+                  "y": 2680,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "light"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-y1",
+              "name": "buttress-shadow-y1",
+              "vertices": [
+                {
+                  "x": -780,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": -710,
+                  "y": 3120,
+                  "z": 2230
+                },
+                {
+                  "x": -780,
+                  "y": 2600,
+                  "z": 5700
+                },
+                {
+                  "x": -810,
+                  "y": 2710,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-y2",
+              "name": "buttress-y2",
+              "vertices": [
+                {
+                  "x": 430,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": 770,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": 740,
+                  "y": 2710,
+                  "z": 5700
+                },
+                {
+                  "x": 560,
+                  "y": 2680,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "light"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-y2",
+              "name": "buttress-shadow-y2",
+              "vertices": [
+                {
+                  "x": 770,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": 840,
+                  "y": 3120,
+                  "z": 2230
+                },
+                {
+                  "x": 770,
+                  "y": 2600,
+                  "z": 5700
+                },
+                {
+                  "x": 740,
+                  "y": 2710,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-y3",
+              "name": "buttress-y3",
+              "vertices": [
+                {
+                  "x": 1980,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": 2320,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": 2290,
+                  "y": 2710,
+                  "z": 5700
+                },
+                {
+                  "x": 2110,
+                  "y": 2680,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "light"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-y3",
+              "name": "buttress-shadow-y3",
+              "vertices": [
+                {
+                  "x": 2320,
+                  "y": 3300,
+                  "z": 2230
+                },
+                {
+                  "x": 2390,
+                  "y": 3120,
+                  "z": 2230
+                },
+                {
+                  "x": 2320,
+                  "y": 2600,
+                  "z": 5700
+                },
+                {
+                  "x": 2290,
+                  "y": 2710,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-x0",
+              "name": "buttress-x0",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": -2670,
+                  "z": 2230
+                },
+                {
+                  "x": 3300,
+                  "y": -2330,
+                  "z": 2230
+                },
+                {
+                  "x": 2710,
+                  "y": -2360,
+                  "z": 5700
+                },
+                {
+                  "x": 2680,
+                  "y": -2540,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "metal"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-x0",
+              "name": "buttress-shadow-x0",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": -2330,
+                  "z": 2230
+                },
+                {
+                  "x": 3120,
+                  "y": -2260,
+                  "z": 2230
+                },
+                {
+                  "x": 2600,
+                  "y": -2330,
+                  "z": 5700
+                },
+                {
+                  "x": 2710,
+                  "y": -2360,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-x1",
+              "name": "buttress-x1",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": -1120,
+                  "z": 2230
+                },
+                {
+                  "x": 3300,
+                  "y": -780,
+                  "z": 2230
+                },
+                {
+                  "x": 2710,
+                  "y": -810,
+                  "z": 5700
+                },
+                {
+                  "x": 2680,
+                  "y": -990,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "metal"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-x1",
+              "name": "buttress-shadow-x1",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": -780,
+                  "z": 2230
+                },
+                {
+                  "x": 3120,
+                  "y": -710,
+                  "z": 2230
+                },
+                {
+                  "x": 2600,
+                  "y": -780,
+                  "z": 5700
+                },
+                {
+                  "x": 2710,
+                  "y": -810,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-x2",
+              "name": "buttress-x2",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": 430,
+                  "z": 2230
+                },
+                {
+                  "x": 3300,
+                  "y": 770,
+                  "z": 2230
+                },
+                {
+                  "x": 2710,
+                  "y": 740,
+                  "z": 5700
+                },
+                {
+                  "x": 2680,
+                  "y": 560,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "metal"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-x2",
+              "name": "buttress-shadow-x2",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": 770,
+                  "z": 2230
+                },
+                {
+                  "x": 3120,
+                  "y": 840,
+                  "z": 2230
+                },
+                {
+                  "x": 2600,
+                  "y": 770,
+                  "z": 5700
+                },
+                {
+                  "x": 2710,
+                  "y": 740,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-x3",
+              "name": "buttress-x3",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": 1980,
+                  "z": 2230
+                },
+                {
+                  "x": 3300,
+                  "y": 2320,
+                  "z": 2230
+                },
+                {
+                  "x": 2710,
+                  "y": 2290,
+                  "z": 5700
+                },
+                {
+                  "x": 2680,
+                  "y": 2110,
+                  "z": 6100
+                }
+              ],
+              "fill": {
+                "template": "metal"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "buttress-shadow-x3",
+              "name": "buttress-shadow-x3",
+              "vertices": [
+                {
+                  "x": 3300,
+                  "y": 2320,
+                  "z": 2230
+                },
+                {
+                  "x": 3120,
+                  "y": 2390,
+                  "z": 2230
+                },
+                {
+                  "x": 2600,
+                  "y": 2320,
+                  "z": 5700
+                },
+                {
+                  "x": 2710,
+                  "y": 2290,
+                  "z": 5700
+                }
+              ],
+              "fill": {
+                "template": "rim"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "podium-colonnade-Y",
+              "name": "裙樓柱列與石材窗楣",
+              "boundary": [
+                {
+                  "x": -11200,
+                  "y": 4610,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": 4610,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": 4610,
+                  "z": 2050
+                },
+                {
+                  "x": -11200,
+                  "y": 4610,
+                  "z": 2050
+                }
+              ],
+              "rows": 1,
+              "columns": 24,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "pier",
+                  "name": "石材方柱",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.08,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.26,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.26,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.08,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "edge",
+                  "name": "柱身亮面",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.08,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.13,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.13,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.08,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "lintel",
+                  "name": "上楣",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.88
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.88
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.97
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.97
+                    }
+                  ]
+                },
+                {
+                  "key": "base",
+                  "name": "柱腳",
+                  "fill": {
+                    "template": "rim"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.04,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.3,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.3,
+                      "v": 0.12
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 0.12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "podium-colonnade-X",
+              "name": "裙樓柱列與石材窗楣",
+              "boundary": [
+                {
+                  "x": 4210,
+                  "y": 4600,
+                  "z": 0
+                },
+                {
+                  "x": 4210,
+                  "y": -4300,
+                  "z": 0
+                },
+                {
+                  "x": 4210,
+                  "y": -4300,
+                  "z": 2050
+                },
+                {
+                  "x": 4210,
+                  "y": 4600,
+                  "z": 2050
+                }
+              ],
+              "rows": 1,
+              "columns": 14,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "pier",
+                  "name": "石材方柱",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.08,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.26,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.26,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.08,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "edge",
+                  "name": "柱身亮面",
+                  "fill": {
+                    "template": "light"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.08,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.13,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.13,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.08,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "lintel",
+                  "name": "上楣",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.88
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.88
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.97
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.97
+                    }
+                  ]
+                },
+                {
+                  "key": "base",
+                  "name": "柱腳",
+                  "fill": {
+                    "template": "rim"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.04,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.3,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.3,
+                      "v": 0.12
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 0.12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "skylight-glass0",
+              "name": "屋頂天窗玻璃",
+              "vertices": [
+                {
+                  "x": -10200,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -8900,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -8900,
+                  "y": 3300,
+                  "z": 2442
+                },
+                {
+                  "x": -10200,
+                  "y": 3300,
+                  "z": 2442
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "skylight-grid0",
+              "name": "天窗桁架",
+              "boundary": [
+                {
+                  "x": -10200,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -8900,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -8900,
+                  "y": 3300,
+                  "z": 2442
+                },
+                {
+                  "x": -10200,
+                  "y": 3300,
+                  "z": 2442
+                }
+              ],
+              "rows": 18,
+              "columns": 4,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "a",
+                  "name": "天窗橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.04
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.04
+                    }
+                  ]
+                },
+                {
+                  "key": "b",
+                  "name": "天窗直框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "skylight-glass1",
+              "name": "屋頂天窗玻璃",
+              "vertices": [
+                {
+                  "x": -8300,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -7000,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -7000,
+                  "y": 3300,
+                  "z": 2442
+                },
+                {
+                  "x": -8300,
+                  "y": 3300,
+                  "z": 2442
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "skylight-grid1",
+              "name": "天窗桁架",
+              "boundary": [
+                {
+                  "x": -8300,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -7000,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -7000,
+                  "y": 3300,
+                  "z": 2442
+                },
+                {
+                  "x": -8300,
+                  "y": 3300,
+                  "z": 2442
+                }
+              ],
+              "rows": 18,
+              "columns": 4,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "a",
+                  "name": "天窗橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.04
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.04
+                    }
+                  ]
+                },
+                {
+                  "key": "b",
+                  "name": "天窗直框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "skylight-glass2",
+              "name": "屋頂天窗玻璃",
+              "vertices": [
+                {
+                  "x": -6400,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -5100,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -5100,
+                  "y": 3300,
+                  "z": 2442
+                },
+                {
+                  "x": -6400,
+                  "y": 3300,
+                  "z": 2442
+                }
+              ],
+              "materialField": "glassX"
+            },
+            {
+              "type": "surface-grid",
+              "key": "skylight-grid2",
+              "name": "天窗桁架",
+              "boundary": [
+                {
+                  "x": -6400,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -5100,
+                  "y": -3200,
+                  "z": 2442
+                },
+                {
+                  "x": -5100,
+                  "y": 3300,
+                  "z": 2442
+                },
+                {
+                  "x": -6400,
+                  "y": 3300,
+                  "z": 2442
+                }
+              ],
+              "rows": 18,
+              "columns": 4,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "a",
+                  "name": "天窗橫框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.04
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.04
+                    }
+                  ]
+                },
+                {
+                  "key": "b",
+                  "name": "天窗直框",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.04,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "entry-canopy-Y",
+              "name": "entry-canopy-Y",
+              "vertices": [
+                {
+                  "x": -1200,
+                  "y": 4620,
+                  "z": 780
+                },
+                {
+                  "x": 1600,
+                  "y": 4620,
+                  "z": 780
+                },
+                {
+                  "x": 1600,
+                  "y": 5150,
+                  "z": 730
+                },
+                {
+                  "x": -1200,
+                  "y": 5150,
+                  "z": 730
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "entry-canopy-trim",
+              "name": "entry-canopy-trim",
+              "vertices": [
+                {
+                  "x": -1200,
+                  "y": 5150,
+                  "z": 730
+                },
+                {
+                  "x": 1600,
+                  "y": 5150,
+                  "z": 730
+                },
+                {
+                  "x": 1600,
+                  "y": 5150,
+                  "z": 690
+                },
+                {
+                  "x": -1200,
+                  "y": 5150,
+                  "z": 690
+                }
+              ],
+              "fill": {
+                "template": "light"
+              }
+            }
+          ]
+        },
+        "parentId": "design-0306d3ea-332a-4c58-b76f-c4fff4ec2178-0"
+      }
+    ],
+    "message": "塔冠尖頂、塔基與裙樓細節",
+    "inspection": "defer",
+    "response": "compact"
+  }
+}

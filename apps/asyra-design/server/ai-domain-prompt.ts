@@ -95,6 +95,12 @@ Reuse unaffected decisions and passed evidence. Revisit only actual changed depe
 If a representation cannot express the requested result, retain the limitation explicitly;
 do not invent parameters, silently simplify appearance or require a new composed tool by quota.
 Mechanical checks prove supported constraints, not material realism or adoption of advice.
+For a chosen method with an unresolved shared material assumption, follow its App-owned
+representative route before repeating that assumption: a ready part, actual relevant image,
+then a primary-agent judgment. A successful capture or record is not a pass. Match the
+returned criterion/unit/status/revision; a current local pass can coexist with whole-result
+pending. Repair only the failed boundary and reuse unaffected passes. Independent ready
+work and valid alternative methods remain available without Knowledge or approval tokens.
 
 Research only missing information after reusing attachments, canvas context and retained source facts.
 Use native web research with no fixed sources. Tool discovery is separate from reference research:
@@ -120,7 +126,8 @@ records findings with review_drawing and repeats corrections as needed. Capture 
 before submitting visual judgments. Follow the capture response next.arguments, add your observed
 checks, and record both passes and failures before changing the drawing. Declare requiredUnits for each visual criterion: [] explicitly means whole-view; stable regional IDs let independently editable areas retain their own judgments. Keep a separate overall criterion. Every submitted check must specify its own inspectionIds from the capture response; the enclosing list is not inherited. Submit only judged
 criterion/unit IDs with their actual image dependencies; do not wait to report every pass at the end.
-Keep unrelated passes and repair pending work. final=true attempts completion from retained results,
+Keep unrelated passes and repair pending work. Set final=true on the actual record submission
+(the capture/bind response defaults to false) to attempt completion from retained results,
 not a request to repeat all judgments. There is no limit on necessary primary-agent visual iterations.
 For explicitly aligned native reference/canvas crops, discover check_drawing_image to measure pixel differences without AI. Inspect a target-local region first, then supply its inspectionId and the matching reference crop. Same view and scale are your responsibility; do not compare an unaligned photograph as if it were pixel ground truth. Keep the returned checkId and fixed baseline/tolerances across corrections; resultId selects retained evidence in read_design_checks. Unsupported comparison remains unverified, and a pixel pass never replaces your final visual judgment.
 Use read_design_checks for counts and firstPendingId without evidence rows. Request exact ids for a known result, or view=details for unresolved/stale work; includePassed adds prior passes to detail pages. Continue pages with nextOffset and the returned revision; restart at offset zero if the revision changes. A dependency change can reopen earlier passes. Unknown scope requires rechecking,

@@ -176,6 +176,7 @@
               "artifact:tool-program"
             ],
             "conditions": [
+              "Provider and internal workflow invocations own causal receipt subtrees. Acknowledged browser effects reach the current call and its ancestors only, never siblings; previous-part receipts cannot reclassify a later preparation rejection. Preserve geometry repair details and explicit no-canvas-dispatch settlement independently from retained draft artifacts. Parent partial/unknown settlement remains truthful, cancellation preserves acknowledged work and no write is automatically replayed.",
               "Only canonical componentMappings select native image components; reject obsolete ovalPathIds before execution. Suitable direct tools need no recipe; primary-agent authorship supplies missing recipes and Runtime alone admits their exact dependency graph.",
               "Preserve registered identities; common immutable input/output, revision, effect and lifecycle contracts derive compact provider definitions. Browser and native adapters share canonical action effects; host validation rejects malformed output while preserving actual settlement and never replaying execution.",
               "Derive region target fields from the unique region-capable registered context alternative, preserving shared constraints; reject ambiguous declarations and validate the original complete context schema before writes.",
@@ -206,6 +207,8 @@
               "Advertise registry-derived category choices and return current recovery choices on unknown lookup without a canvas exchange",
               "Classify redundant model routes with explicit replacements while preserving public UI methods and primitive capability coverage",
               "Known final-response identities resolve to their authoritative response schema and final-only route, never native/edit dispatch. One acquisition policy distinguishes current contracts, missing fields, executable schemas and actual delivery recovery. App guidance maps optional portable advice to chosen parameters and independent judgments without introducing a Knowledge admission gate.",
+              "Chosen-method advice follows exact discovery, initial independent local/whole criteria, actual representative capture, returned binding and exact recorded verdicts before dependent repetition. Capture success is not judgment and record success is not pass. Local pass with whole pending, current supersession, scoped stale recovery and unknown settlement preserve existing result ownership. No Knowledge gate, extra reviewer, new ledger or drawing replay; independent ready work and alternative methods remain valid.",
+              "Material correction guidance consumes current native fills and canonical property ownership, emits complete per-target gradients, and preserves omitted fields and unrelated verdicts. Palette-only changes do not replace coordinate domains. Constant-phase or loaded native fills cannot reconstruct unknown world source; compact preparation receipts are not material-edit values. Existing apply, cancellation, inspection and durability owners remain authoritative; no new editor or hidden reapplication.",
               "Distinguish computed projections from canonical value and record mutations in registered descriptors",
               "One immutable registered delivery declaration identifies an owner-produced model view and its exact schema. Complete typed results feed internal checks, resources and recipes before external projection; missing or invalid delivery preserves execution settlement and never replays writes.",
               "Resolve prepared target identities at the unique registered argument path; reject conflicts and ambiguity before dispatch; preserve reference order for aligned new-value patches",
@@ -251,6 +254,8 @@
               "request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse"
             ],
             "implementationBoundary": [
+              "apps/asyra-design/e2e/fixtures/receipt-provider.mjs",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/ordered-preparation-20261019.json",
               "apps/asyra-design/server/local-vector-artifact.ts",
               "apps/asyra-design/server/__tests__/local-vector-artifact.test.ts",
               "packages/ai-agent-runtime/src/tool-contract.ts",
@@ -294,6 +299,7 @@
               "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
               "apps/asyra-design/server/local-tool-invocation.ts",
               "apps/asyra-design/server/__tests__/local-tool-invocation.test.ts",
+              "apps/asyra-design/server/__tests__/tool-contract-assertions.ts",
               "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
@@ -313,6 +319,11 @@
               "apps/asyra-design/server/local-operation-batch.ts",
               "apps/asyra-design/server/__tests__/operation-input-schema.test.ts",
               "apps/asyra-design/server/ai-domain-prompt.ts",
+              "apps/asyra-design/knowledge/design.architectural-illustration.md",
+              "apps/asyra-design/server/local-knowledge.ts",
+              "apps/asyra-design/src/ai/__tests__/knowledge-handoff.test.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
               "apps/asyra-design/src/ai/actions.ts",
               "apps/asyra-design/server/local-image-tools.ts",
               "apps/asyra-design/server/__tests__/local-image-ownership.test.ts",
@@ -393,6 +404,8 @@
               "Acquire candidate image URLs in one batch with bounded concurrent I/O, ordered per-source receipts, original images and request-local in-flight reuse; one source failure does not discard siblings; cancellation prevents attachment admission",
               "No cross-request retention without measured reuse and equivalence",
               "Expand request-local vector templates and placements without losing geometry, painter order or stable keys",
+              "Executable App representation examples use the existing typed preparation entry points: multi-face patterns preserve declared instance/face painter order, native independent fills, current generated-key targeting and expanded budgets. Advice does not infer repeats or require Knowledge; irregular details remain explicit. Same pattern consumers support optional world material fields without granting visual approval.",
+              "Compile explicit draft-local world linearFields on projected and translated pattern faces into ordinary independent native gradients. Resolve exact materialField keys, reject fill/palette conflicts, validate finite distinct endpoints and ordered stops, and pull back affine world phase through the admitted plane and normalized vector bounds. Preserve per-instance phase, constant color/opacity, reversal and non-square geometry; reject unsupported or unrepresentable input before writes. Reuse plane derivation only within preparation, preserve actual source-work budgets and artifact lifetime, and never infer visual approval, change rendering or persist a new live material relation.",
               "Expand declarative planar convex surface grids from normalized cell motifs using one projected boundary; preserve explicit cell-major or motif-major order, keys, caller-authored per-cell fills, motif world offsets and exact editable vector output; reject unsupported planes and degeneracy rather than approximate them"
             ],
             "bypasses": [
@@ -439,6 +452,14 @@
               "apps/asyra-design/server/__tests__/fixtures/reference-linked-image.html",
               "apps/asyra-design/server/__tests__/reference-image-download.test.ts",
               "apps/asyra-design/server/design-construction.ts",
+              "apps/asyra-design/server/design-linear-field.ts",
+              "apps/asyra-design/server/__tests__/design-linear-field.test.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+              "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+              "apps/asyra-design/server/__tests__/recorded-ornaments.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/ornament-input-20261019.json.gz",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/ornament-output-20261019.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/material-field-20261019.json",
               "apps/asyra-design/server/design-construction-schema.ts",
               "apps/asyra-design/server/design-preparation-examples.ts",
               "apps/asyra-design/server/__tests__/design-patterns.test.ts",
@@ -480,6 +501,8 @@
               "Check repair returns actual settlement and the complete fresh successor selection. Later cancellation/owner failure preserves acknowledged writes, Undo and canonical recovery; partial/unknown output never supplies success bindings or repeats initial recipe writes. Reuse post-write owner checks rather than scan twice. Coordinator never holds the leaf scheduler barrier while awaiting a child.",
               "Structural recovery receipts and queries remain byte-bounded in the same retained-context owner, without a fixed query-count quota. Pinned receipts remain recoverable; stale receipts cannot authorize edits and live query pins cannot be evicted for capacity.",
               "Registered owner-produced model views cover retained mapping and structural results; complete mutation scope and canonical typed outputs reach internal consumers first. Receipt readback is byte-bounded and advertises exact immutable JSON-text page offsets; external projection cannot remove failure settlement, invent a handle or force full oversized output.",
+              "Runtime checks the execution signal both before handing a writer to the existing host mutation executor and when that executor enters the writer. Cancellation during admission prevents a new write; cancellation after a completed write never erases its settlement observer or return value.",
+              "Single-target visibility consumes the existing App plural flag-status owner inside the mutation boundary: changed is complete, unchanged is no-change, unavailable is failed with not-started settlement. Boolean-only replies cannot certify target availability; cancellation before mutation performs no write.",
               "Element selection checks all requested identities at the common element-selection owner inside synchronous mutation admission. Any nonexistent target rejects the whole replacement, preserving prior selection and Undo history. The App action and basic element selection/toggle routes share this owner; generic Core and vector channels retain their separate contracts.",
               "The existing mutation executor reports settlement synchronously after canonical publication and before yielding. Structural group/ungroup/move results publish ordered live membership and immutable full receipts through the existing retained-context owner. Compact delivery exports typed snapshot/lease/count references only after original receipt checking; declared element-list consumers resolve inside synchronous mutation admission. Historical receipt reads do not refresh target authority. Post-write retention/publication failure preserves settlement and cannot replay or authorize a dependent write.",
               "Reviewed attachment parent, workspace and canonical inspection stamp are checked inside the first synchronous mutation callback, after queue admission; reject expired or missing evidence before writes. Own admitted later slices may advance the stamp and retain ordinary per-slice canonical checks; never recheck review after successful mutation or replay it.",
@@ -492,6 +515,7 @@
               "Plural subtree deletion shares canonical hierarchy and orphan-property preparation for the call, preserves deleted-instance retention and reversible evidence, and rejects invalid targets before mutation",
               "Workspace region queries use renderer-owned spatial candidates; owner changes invalidate affected bounds, viewport pan/zoom preserves workspace extents, and current canonical filters choose mutation targets",
               "Explicit region-query batch targets resolve complete identities once through the registered reader before writes and feed ordinary mutation admission; incomplete results cannot write. Transient complete-region identity delivery publishes no reusable handle and reserves no retained capacity. A matching retained selection can supply copied identities without changing caller leases; other page/reference/column delivery remains pinned.",
+              "Canonical query admission validates scope-specific fields and complete result/page constraints before source reads, cache lookup, retention or lease allocation. Registered action and native schemas preserve these alternatives. Unsupported children filters return actionable input failure; explicit current snapshot refinement remains supported. Rejection preserves other request leases and never reinterprets selectors or replays writes.",
               "Canonical finite name/type/hierarchy/lock predicates filter workspace candidates or current retained snapshot identities before delivery. Refinement repeats no spatial query, preserves independent leases and stale rejection, returns compact references by default and rejects exact expectedCount mismatch before target use.",
               "Local bounds lookup does not enumerate a broad parent subtree; filter current spatial candidates before paging and return identity-only observations when requested, with ordinary mutation admission retaining authority",
               "Relative hierarchy placement resolves current anchor identities internally and preserves existing canonical validation and grouped geometry behavior",
@@ -632,6 +656,7 @@
               "packages/ai-agent-runtime/src/provider.ts",
               "packages/ai-agent-runtime/src/runtime.ts",
               "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts",
+              "packages/ai-agent-runtime/src/__tests__/execution.test.ts",
               "apps/asyra-design/server/batch-exchange.ts",
               "apps/asyra-design/server/__tests__/batch-exchange.test.ts",
               "apps/asyra-design/src/ai/action-batch-protocol.ts",
@@ -701,6 +726,7 @@
               "artifact:prepared-review"
             ],
             "conditions": [
+              "Canonical check receipts explicitly identify request or selected count scope without asserting visual acceptance or durability. Review capture/bind/record replies identify their operation; only committed judgments return compact exact identity, criterion/unit, origin, status and revision acknowledgements including passes. Keep committed receipts on later partial failure, preserve successful images on binding failure, and never infer readiness from capture. Optional structureAccepted is only a structural verdict; accepted remains whole-request completion.",
               "Tool-first correction: verify_design_checks consumes the actual requestId and a nonempty unique exact-revision tool-origin check selection. Recheck descriptors and dependency receipts come from the same request check owner, never diagnostic strings, ID prefixes, viewport or a second store. Wrong request, origin, unknown identity and conflicting revision reject before work.",
               "Aggregate checking reuses current owner evidence and coalesces overlapping stale reads under existing budgets. Validate canonical dependencies before publishing after asynchronous work. Return required verification status and stable nonempty normalized unresolved-work progress, requestId and every acknowledged selected revision including independent passes and confirmed terminal retirements. Missing lookup is not retirement; recreated identity rejects old revisions. Incomplete results retain exact completed/pending selections but cannot bind success.",
               "Mechanical repairability requires an actually supported typed capability for every remaining finding. Unsupported/source/visual work remains decision-required. Runtime uses the repair receipt selection for its mandatory next check; all-retired selection remains nonempty until explicit terminal verification. Repeated or cyclic progress stops without replay. Mechanical pass does not establish visual judgment, recipe eligibility or document durability. No nested model invocation; read_design_checks remains a read.",
@@ -887,6 +913,7 @@
               "Bound the visible current-purpose message to three lines while preserving full DOM and title text. Presentation does not change source purpose, language, lifecycle or freshness.",
               "Retained query mutations validate membership revision, locks and complete targets inside the synchronous mutation boundary; invalidated or evicted results produce recoverable rejection before writes",
               "Confirm the captured publication sequence through the current document generation and backend durable watermark; keep drawing completion distinct from durable, unavailable and local-only storage",
+              "Canonical property publication retains exact final relationships and order alongside lifecycle records, including links to existing shared properties. Updates to retiring components precede removal, and creation precedes updates to new components. Lifecycle and final values are ordered operations in one atomic publication, retaining unique property owners within each Core batch. Live remote apply and durable reduction consume the same operations; malformed evidence rejects, and remote apply produces no local History or echo.",
               "Wait outside the publication queue; later edits do not extend the target, and cancellation, disconnect, Reset or backend failure cannot approve persistence",
               "Questions pause a segment; answers start the next",
               "Accurately report partial work and unresolved failure",
@@ -914,6 +941,10 @@
               "apps/asyra-design/src/app/__tests__/context-menu-app-integration.test.tsx",
               "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
               "apps/asyra-design/package.json",
+              "apps/asyra-design/src/collaboration/operations.ts",
+              "apps/asyra-design/src/collaboration/document-publication.ts",
+              "apps/asyra-design/src/init/__tests__/collaboration-operations.test.ts",
+              "apps/asyra-design/e2e/ai-linear-material.spec.ts",
               "apps/asyra-design/server/document-persistence-queue.ts",
               "apps/asyra-design/server/__tests__/document-persistence-queue.test.ts",
               "apps/asyra-design/collaboration-server.ts",
@@ -951,7 +982,8 @@
             ],
             "specRefs": [
               "#purpose-lifetime",
-              "#evidence-and-completion"
+              "#evidence-and-completion",
+              "#material-relationship-publication"
             ],
             "failureOwnerStepId": "settle"
           },

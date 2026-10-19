@@ -5,7 +5,8 @@ import {
   selectAiToolResultSchema,
   type AiJsonValue,
   type AiToolContractInput,
-  type AiToolOutcome
+  type AiToolOutcome,
+  type AiInvocationMiddleware
 } from '@asyra/ai-agent-runtime'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { BrowserBatchExecutionError } from './batch-exchange'
@@ -391,10 +392,12 @@ export const observeLocalToolExecution = async (
   args: unknown,
   execute: () => Promise<string>,
   observation: LocalToolObservation = {},
-  expectedResult = 'A structured owner receipt with usable output or an explicit failure'
+  expectedResult = 'A structured owner receipt with usable output or an explicit failure',
+  middleware: readonly AiInvocationMiddleware<string>[] = []
 ): Promise<string> => {
   const invoker = createAiInvoker({
     execute: async () => execute(),
+    middleware,
     observe: (event) => {
       const evidence = {
         callId: event.call.callId,
