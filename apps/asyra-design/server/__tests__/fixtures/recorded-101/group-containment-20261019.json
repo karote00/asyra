@@ -1,0 +1,6789 @@
+{
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1792392422804",
+  "scope": "Original preparation inputs and observed failure. Tests compile fresh identities and attach through the recorded parent relation; historical receipts are never reused.",
+  "calls": [
+    {
+      "index": 8,
+      "tool": "prepare_and_apply_design",
+      "input": {
+        "draft": {
+          "type": "group",
+          "name": "臺北101・基座與下段",
+          "projection": {
+            "azimuth": 35,
+            "elevation": 26,
+            "scale": 1,
+            "originX": 17000,
+            "originY": 47000
+          },
+          "fillTemplates": {
+            "metal": "#9bb2b4",
+            "edge": "#d3e1dc",
+            "shadow": "#19343c",
+            "stone": "#7d8e8e",
+            "roof": "#758e91",
+            "dark": "#304a56"
+          },
+          "children": [
+            {
+              "type": "projected-face",
+              "key": "裙樓-left",
+              "name": "裙樓-left",
+              "vertices": [
+                {
+                  "x": -9200,
+                  "y": 6200,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 2200
+                },
+                {
+                  "x": -9200,
+                  "y": 6200,
+                  "z": 2200
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "裙樓-left-grid",
+              "name": "裙樓-left-grid",
+              "boundary": [
+                {
+                  "x": -9200,
+                  "y": 6200,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 2200
+                },
+                {
+                  "x": -9200,
+                  "y": 6200,
+                  "z": 2200
+                }
+              ],
+              "rows": 4,
+              "columns": 24,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "裙樓-right",
+              "name": "裙樓-right",
+              "vertices": [
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": -3800,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": -3800,
+                  "z": 2200
+                },
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 2200
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "裙樓-right-grid",
+              "name": "裙樓-right-grid",
+              "boundary": [
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": -3800,
+                  "z": 0
+                },
+                {
+                  "x": 4200,
+                  "y": -3800,
+                  "z": 2200
+                },
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 2200
+                }
+              ],
+              "rows": 4,
+              "columns": 24,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "裙樓-top",
+              "name": "裙樓-top",
+              "vertices": [
+                {
+                  "x": -9200,
+                  "y": -3800,
+                  "z": 2200
+                },
+                {
+                  "x": 4200,
+                  "y": -3800,
+                  "z": 2200
+                },
+                {
+                  "x": 4200,
+                  "y": 6200,
+                  "z": 2200
+                },
+                {
+                  "x": -9200,
+                  "y": 6200,
+                  "z": 2200
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "屋頂平台-left",
+              "name": "屋頂平台-left",
+              "vertices": [
+                {
+                  "x": -8950,
+                  "y": 5950,
+                  "z": 2200
+                },
+                {
+                  "x": 3950,
+                  "y": 5950,
+                  "z": 2200
+                },
+                {
+                  "x": 3950,
+                  "y": 5950,
+                  "z": 2350
+                },
+                {
+                  "x": -8950,
+                  "y": 5950,
+                  "z": 2350
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "屋頂平台-right",
+              "name": "屋頂平台-right",
+              "vertices": [
+                {
+                  "x": 3950,
+                  "y": 5950,
+                  "z": 2200
+                },
+                {
+                  "x": 3950,
+                  "y": -3550,
+                  "z": 2200
+                },
+                {
+                  "x": 3950,
+                  "y": -3550,
+                  "z": 2350
+                },
+                {
+                  "x": 3950,
+                  "y": 5950,
+                  "z": 2350
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "屋頂平台-top",
+              "name": "屋頂平台-top",
+              "vertices": [
+                {
+                  "x": -8950,
+                  "y": -3550,
+                  "z": 2350
+                },
+                {
+                  "x": 3950,
+                  "y": -3550,
+                  "z": 2350
+                },
+                {
+                  "x": 3950,
+                  "y": 5950,
+                  "z": 2350
+                },
+                {
+                  "x": -8950,
+                  "y": 5950,
+                  "z": 2350
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "塔腳-left",
+              "name": "塔腳-left",
+              "vertices": [
+                {
+                  "x": -3400,
+                  "y": 3200,
+                  "z": 2350
+                },
+                {
+                  "x": 3400,
+                  "y": 3200,
+                  "z": 2350
+                },
+                {
+                  "x": 2650,
+                  "y": 2450,
+                  "z": 6400
+                },
+                {
+                  "x": -2650,
+                  "y": 2450,
+                  "z": 6400
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "塔腳-left-grid",
+              "name": "塔腳-left-grid",
+              "boundary": [
+                {
+                  "x": -3400,
+                  "y": 3200,
+                  "z": 2350
+                },
+                {
+                  "x": 3400,
+                  "y": 3200,
+                  "z": 2350
+                },
+                {
+                  "x": 2650,
+                  "y": 2450,
+                  "z": 6400
+                },
+                {
+                  "x": -2650,
+                  "y": 2450,
+                  "z": 6400
+                }
+              ],
+              "rows": 8,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "塔腳-right",
+              "name": "塔腳-right",
+              "vertices": [
+                {
+                  "x": 3400,
+                  "y": 3200,
+                  "z": 2350
+                },
+                {
+                  "x": 3400,
+                  "y": -3200,
+                  "z": 2350
+                },
+                {
+                  "x": 2650,
+                  "y": -2450,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": 2450,
+                  "z": 6400
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "塔腳-right-grid",
+              "name": "塔腳-right-grid",
+              "boundary": [
+                {
+                  "x": 3400,
+                  "y": 3200,
+                  "z": 2350
+                },
+                {
+                  "x": 3400,
+                  "y": -3200,
+                  "z": 2350
+                },
+                {
+                  "x": 2650,
+                  "y": -2450,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": 2450,
+                  "z": 6400
+                }
+              ],
+              "rows": 8,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "塔腳-top",
+              "name": "塔腳-top",
+              "vertices": [
+                {
+                  "x": -2650,
+                  "y": -2450,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": -2450,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": 2450,
+                  "z": 6400
+                },
+                {
+                  "x": -2650,
+                  "y": 2450,
+                  "z": 6400
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "下段玻璃塔身-left",
+              "name": "下段玻璃塔身-left",
+              "vertices": [
+                {
+                  "x": -2650,
+                  "y": 2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 13000
+                },
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 13000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "下段玻璃塔身-left-grid",
+              "name": "下段玻璃塔身-left-grid",
+              "boundary": [
+                {
+                  "x": -2650,
+                  "y": 2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 13000
+                },
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 13000
+                }
+              ],
+              "rows": 16,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "下段玻璃塔身-right",
+              "name": "下段玻璃塔身-right",
+              "vertices": [
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": -2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 13000
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 13000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "下段玻璃塔身-right-grid",
+              "name": "下段玻璃塔身-right-grid",
+              "boundary": [
+                {
+                  "x": 2650,
+                  "y": 2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2650,
+                  "y": -2650,
+                  "z": 6400
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 13000
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 13000
+                }
+              ],
+              "rows": 16,
+              "columns": 16,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "下段玻璃塔身-top",
+              "name": "下段玻璃塔身-top",
+              "vertices": [
+                {
+                  "x": -2400,
+                  "y": -2400,
+                  "z": 13000
+                },
+                {
+                  "x": 2400,
+                  "y": -2400,
+                  "z": 13000
+                },
+                {
+                  "x": 2400,
+                  "y": 2400,
+                  "z": 13000
+                },
+                {
+                  "x": -2400,
+                  "y": 2400,
+                  "z": 13000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            }
+          ]
+        },
+        "inspection": "defer",
+        "message": "基座與下段塔身"
+      },
+      "inputSource": {
+        "status": "queued",
+        "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/20-input.json",
+        "bytes": 9641,
+        "sha256": "fe69fe0fc8cdcec747a4923b1693ad635eb9632e1048e3f433a1fc9360d51133",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.42299999999522697
+      }
+    },
+    {
+      "index": 14,
+      "tool": "prepare_and_apply_design",
+      "input": {
+        "draft": {
+          "type": "group",
+          "name": "八節竹形塔身",
+          "projection": {
+            "azimuth": 35,
+            "elevation": 26,
+            "scale": 1,
+            "originX": 11092.37271283521,
+            "originY": 13149.59935682673
+          },
+          "fillTemplates": {
+            "metal": "#9bb2b4",
+            "edge": "#d3e1dc",
+            "shadow": "#19343c",
+            "stone": "#7d8e8e",
+            "roof": "#758e91",
+            "dark": "#304a56"
+          },
+          "children": [
+            {
+              "type": "projected-face",
+              "key": "竹節1-left",
+              "name": "竹節1-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 13000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 13000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 16340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 16340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節1-left-grid",
+              "name": "竹節1-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 13000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 13000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 16340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 16340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節1-right",
+              "name": "竹節1-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 13000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 13000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 16340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節1-right-grid",
+              "name": "竹節1-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 13000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 13000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 16340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節1-top",
+              "name": "竹節1-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 16340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 16340
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷0-left",
+              "name": "挑簷0-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 16420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 16420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷0-right",
+              "name": "挑簷0-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 16340
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 16420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 16420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷0-top",
+              "name": "挑簷0-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 16420
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 16420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 16420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 16420
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫0-left",
+              "name": "接縫0-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 16420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 16420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 16500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 16500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫0-right",
+              "name": "接縫0-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 16420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 16420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 16500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 16500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫0-top",
+              "name": "接縫0-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 16500
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 16500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 16500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 16500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節2-left",
+              "name": "竹節2-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 16500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 16500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 19840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 19840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節2-left-grid",
+              "name": "竹節2-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 16500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 16500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 19840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 19840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節2-right",
+              "name": "竹節2-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 16500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 16500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 19840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節2-right-grid",
+              "name": "竹節2-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 16500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 16500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 19840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節2-top",
+              "name": "竹節2-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 19840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 19840
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷1-left",
+              "name": "挑簷1-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 19920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 19920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷1-right",
+              "name": "挑簷1-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 19840
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 19920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 19920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷1-top",
+              "name": "挑簷1-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 19920
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 19920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 19920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 19920
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫1-left",
+              "name": "接縫1-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 19920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 19920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 20000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 20000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫1-right",
+              "name": "接縫1-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 19920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 19920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 20000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 20000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫1-top",
+              "name": "接縫1-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 20000
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 20000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 20000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 20000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節3-left",
+              "name": "竹節3-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 20000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 20000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 23340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 23340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節3-left-grid",
+              "name": "竹節3-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 20000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 20000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 23340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 23340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節3-right",
+              "name": "竹節3-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 20000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 20000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 23340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節3-right-grid",
+              "name": "竹節3-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 20000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 20000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 23340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節3-top",
+              "name": "竹節3-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 23340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 23340
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷2-left",
+              "name": "挑簷2-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 23420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 23420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷2-right",
+              "name": "挑簷2-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 23340
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 23420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 23420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷2-top",
+              "name": "挑簷2-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 23420
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 23420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 23420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 23420
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫2-left",
+              "name": "接縫2-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 23420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 23420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 23500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 23500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫2-right",
+              "name": "接縫2-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 23420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 23420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 23500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 23500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫2-top",
+              "name": "接縫2-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 23500
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 23500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 23500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 23500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節4-left",
+              "name": "竹節4-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 23500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 23500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 26840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 26840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節4-left-grid",
+              "name": "竹節4-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 23500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 23500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 26840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 26840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節4-right",
+              "name": "竹節4-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 23500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 23500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 26840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節4-right-grid",
+              "name": "竹節4-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 23500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 23500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 26840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節4-top",
+              "name": "竹節4-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 26840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 26840
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷3-left",
+              "name": "挑簷3-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 26920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 26920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷3-right",
+              "name": "挑簷3-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 26840
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 26920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 26920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷3-top",
+              "name": "挑簷3-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 26920
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 26920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 26920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 26920
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫3-left",
+              "name": "接縫3-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 26920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 26920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 27000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 27000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫3-right",
+              "name": "接縫3-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 26920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 26920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 27000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 27000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫3-top",
+              "name": "接縫3-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 27000
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 27000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 27000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 27000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節5-left",
+              "name": "竹節5-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 27000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 27000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 30340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 30340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節5-left-grid",
+              "name": "竹節5-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 27000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 27000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 30340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 30340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節5-right",
+              "name": "竹節5-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 27000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 27000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 30340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節5-right-grid",
+              "name": "竹節5-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 27000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 27000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 30340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節5-top",
+              "name": "竹節5-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 30340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 30340
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷4-left",
+              "name": "挑簷4-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 30420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 30420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷4-right",
+              "name": "挑簷4-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 30340
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 30420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 30420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷4-top",
+              "name": "挑簷4-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 30420
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 30420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 30420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 30420
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫4-left",
+              "name": "接縫4-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 30420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 30420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 30500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 30500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫4-right",
+              "name": "接縫4-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 30420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 30420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 30500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 30500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫4-top",
+              "name": "接縫4-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 30500
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 30500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 30500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 30500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節6-left",
+              "name": "竹節6-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 30500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 30500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 33840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 33840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節6-left-grid",
+              "name": "竹節6-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 30500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 30500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 33840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 33840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節6-right",
+              "name": "竹節6-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 30500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 30500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 33840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節6-right-grid",
+              "name": "竹節6-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 30500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 30500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 33840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節6-top",
+              "name": "竹節6-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 33840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 33840
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷5-left",
+              "name": "挑簷5-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 33920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 33920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷5-right",
+              "name": "挑簷5-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 33840
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 33920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 33920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷5-top",
+              "name": "挑簷5-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 33920
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 33920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 33920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 33920
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫5-left",
+              "name": "接縫5-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 33920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 33920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 34000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 34000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫5-right",
+              "name": "接縫5-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 33920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 33920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 34000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 34000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫5-top",
+              "name": "接縫5-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 34000
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 34000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 34000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 34000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節7-left",
+              "name": "竹節7-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 34000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 34000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 37340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 37340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節7-left-grid",
+              "name": "竹節7-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 34000
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 34000
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 37340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 37340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節7-right",
+              "name": "竹節7-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 34000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 34000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 37340
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節7-right-grid",
+              "name": "竹節7-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 34000
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 34000
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 37340
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節7-top",
+              "name": "竹節7-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 37340
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 37340
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷6-left",
+              "name": "挑簷6-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 37420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 37420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷6-right",
+              "name": "挑簷6-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 37340
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 37420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 37420
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷6-top",
+              "name": "挑簷6-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 37420
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 37420
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 37420
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 37420
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫6-left",
+              "name": "接縫6-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 37420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 37420
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 37500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 37500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫6-right",
+              "name": "接縫6-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 37420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 37420
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 37500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 37500
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫6-top",
+              "name": "接縫6-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 37500
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 37500
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 37500
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 37500
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節8-left",
+              "name": "竹節8-left",
+              "vertices": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 37500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 37500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 40840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 40840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節8-left-grid",
+              "name": "竹節8-left-grid",
+              "boundary": [
+                {
+                  "x": -2700,
+                  "y": 2700,
+                  "z": 37500
+                },
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 37500
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 40840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 40840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "stone"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節8-right",
+              "name": "竹節8-right",
+              "vertices": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 37500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 37500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 40840
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "竹節8-right-grid",
+              "name": "竹節8-right-grid",
+              "boundary": [
+                {
+                  "x": 2700,
+                  "y": 2700,
+                  "z": 37500
+                },
+                {
+                  "x": 2700,
+                  "y": -2700,
+                  "z": 37500
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 40840
+                }
+              ],
+              "rows": 8,
+              "columns": 18,
+              "order": "motif-major",
+              "motifs": [
+                {
+                  "key": "sill",
+                  "name": "recess sill",
+                  "fill": {
+                    "template": "shadow"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    }
+                  ]
+                },
+                {
+                  "key": "rail",
+                  "name": "silver horizontal frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.1
+                    },
+                    {
+                      "u": 1,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0,
+                      "v": 0.14
+                    }
+                  ]
+                },
+                {
+                  "key": "mullion",
+                  "name": "vertical mullion",
+                  "fill": {
+                    "template": "edge"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 0
+                    },
+                    {
+                      "u": 0.035,
+                      "v": 1
+                    },
+                    {
+                      "u": 0,
+                      "v": 1
+                    }
+                  ]
+                },
+                {
+                  "key": "mid",
+                  "name": "fine inner frame",
+                  "fill": {
+                    "template": "metal"
+                  },
+                  "vertices": [
+                    {
+                      "u": 0.49,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 0.14
+                    },
+                    {
+                      "u": 0.51,
+                      "v": 1
+                    },
+                    {
+                      "u": 0.49,
+                      "v": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "竹節8-top",
+              "name": "竹節8-top",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": -3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 40840
+                },
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 40840
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷7-left",
+              "name": "挑簷7-left",
+              "vertices": [
+                {
+                  "x": -3200,
+                  "y": 3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 40920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 40920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷7-right",
+              "name": "挑簷7-right",
+              "vertices": [
+                {
+                  "x": 3200,
+                  "y": 3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3200,
+                  "y": -3200,
+                  "z": 40840
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 40920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 40920
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "挑簷7-top",
+              "name": "挑簷7-top",
+              "vertices": [
+                {
+                  "x": -3235,
+                  "y": -3235,
+                  "z": 40920
+                },
+                {
+                  "x": 3235,
+                  "y": -3235,
+                  "z": 40920
+                },
+                {
+                  "x": 3235,
+                  "y": 3235,
+                  "z": 40920
+                },
+                {
+                  "x": -3235,
+                  "y": 3235,
+                  "z": 40920
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫7-left",
+              "name": "接縫7-left",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 40920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 40920
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 41000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 41000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#193d4d",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#557d88",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫7-right",
+              "name": "接縫7-right",
+              "vertices": [
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 40920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 40920
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 41000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 41000
+                }
+              ],
+              "fill": {
+                "gradientType": "linear",
+                "gradientHandles": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 1,
+                    "y": 1
+                  }
+                ],
+                "gradientStops": [
+                  {
+                    "position": 0,
+                    "color": "#417785",
+                    "opacity": 1
+                  },
+                  {
+                    "position": 1,
+                    "color": "#90afb1",
+                    "opacity": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "接縫7-top",
+              "name": "接縫7-top",
+              "vertices": [
+                {
+                  "x": -2690,
+                  "y": -2690,
+                  "z": 41000
+                },
+                {
+                  "x": 2690,
+                  "y": -2690,
+                  "z": 41000
+                },
+                {
+                  "x": 2690,
+                  "y": 2690,
+                  "z": 41000
+                },
+                {
+                  "x": -2690,
+                  "y": 2690,
+                  "z": 41000
+                }
+              ],
+              "fill": {
+                "template": "roof"
+              }
+            }
+          ]
+        },
+        "parentId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+        "inspection": "defer",
+        "message": "八節竹形塔身、窗框與挑簷"
+      },
+      "inputSource": {
+        "status": "queued",
+        "path": "225f1c82-e277-4053-a5d4-43fe331cc19e.payloads/52-input.json",
+        "bytes": 38717,
+        "sha256": "981a74a133c870891536eacb12777fddbb8c863bec440f7b5eb5a13608a7b775",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 2.0287910000042757
+      }
+    }
+  ],
+  "observedReview": {
+    "index": 51,
+    "findings": [
+      {
+        "kind": "container-overflow",
+        "elementId": "design-9549ccf5-16ca-469f-bb9f-586064bba71f-0",
+        "parentId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+        "left": 0,
+        "top": 25604.123976994764,
+        "right": 0,
+        "bottom": 0
+      },
+      {
+        "kind": "container-overflow",
+        "elementId": "design-128268f7-21a5-49ff-9336-68e161d47c98-0",
+        "parentId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+        "left": 0,
+        "top": 32622.48826855787,
+        "right": 0,
+        "bottom": 0
+      },
+      {
+        "kind": "container-overflow",
+        "elementId": "design-a76c33b1-f3f5-42cf-ade9-746068837541-0",
+        "parentId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+        "left": 0,
+        "top": 23977.059877306223,
+        "right": 0,
+        "bottom": 0
+      },
+      {
+        "kind": "container-overflow",
+        "elementId": "design-99469a0a-3b2d-4597-a77c-ba91f887eb00-0",
+        "parentId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+        "left": 5.735764363511407,
+        "top": 0,
+        "right": 8.19152044288785,
+        "bottom": 0
+      },
+      {
+        "kind": "container-overflow",
+        "elementId": "design-37df9957-93f8-4b9a-9f54-67f6357596ae-0",
+        "parentId": "design-f58c5eb5-f104-4567-a034-6340dec6cccb-0",
+        "left": 0,
+        "top": 32514.632983001968,
+        "right": 0,
+        "bottom": 0
+      }
+    ]
+  }
+}

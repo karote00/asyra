@@ -21,6 +21,8 @@ export type RetainedContextQuery = (
     }
 ) & { delivery?: 'page' | 'reference' | 'columns' | 'receipt' | 'transient' }
 
+type QueryLeaseScope = 'request' | 'consumer'
+
 export class RetainedQueryError extends Error {}
 
 type ContextResult = ReturnType<ReturnType<typeof createDesignContextReader>>
@@ -58,7 +60,12 @@ export const createRetainedDesignContext = (
   >()
   const leases = new Map<
     string,
-    { snapshotId: string; signal?: AbortSignal; abort: () => void }
+    {
+      snapshotId: string
+      signal?: AbortSignal
+      scope: QueryLeaseScope
+      abort: () => void
+    }
   >()
   const releaseLease = (leaseId: string, signal?: AbortSignal) => {
     const lease = leases.get(leaseId)
@@ -74,15 +81,25 @@ export const createRetainedDesignContext = (
       if (lease.signal === signal) releaseLease(id)
     for (const [id, entry] of entries) if (entry.signal === signal) release(id)
   }
-  const acquire = (snapshotId: string, signal?: AbortSignal) => {
+  const acquire = (
+    snapshotId: string,
+    signal?: AbortSignal,
+    scope: QueryLeaseScope = 'request'
+  ) => {
     signal?.throwIfAborted()
-    for (const [id, lease] of leases)
-      if (lease.snapshotId === snapshotId && lease.signal === signal) return id
+    if (scope === 'request')
+      for (const [id, lease] of leases)
+        if (
+          lease.snapshotId === snapshotId &&
+          lease.signal === signal &&
+          lease.scope === 'request'
+        )
+          return id
     const entry = entries.get(snapshotId)
     if (!entry) throw new RetainedQueryError('Retained query missing.')
     const id = crypto.randomUUID()
     const abort = () => releaseLease(id)
-    leases.set(id, { snapshotId, signal, abort })
+    leases.set(id, { snapshotId, signal, scope, abort })
     entry.leases.add(id)
     signal?.addEventListener('abort', abort, { once: true })
     return id
@@ -170,7 +187,8 @@ export const createRetainedDesignContext = (
   }
   const refine = (
     input: Extract<RetainedContextQuery, { scope: 'snapshot' }>,
-    signal?: AbortSignal
+    signal: AbortSignal | undefined,
+    leaseScope: QueryLeaseScope
   ) => {
     const parent = get(input.snapshotId, undefined, signal)
     validateDesignContextFilter(input.filter)
@@ -227,7 +245,8 @@ export const createRetainedDesignContext = (
         input.offset,
         input.limit,
         input.delivery,
-        signal
+        signal,
+        leaseScope
       ),
       observation: {
         reused: Boolean(prior),
@@ -240,7 +259,12 @@ export const createRetainedDesignContext = (
       }
     }
   }
-  const read = (input: RetainedContextQuery, signal?: AbortSignal) => {
+  // Consumer reads share retained rows but release only their own lease.
+  const read = (
+    input: RetainedContextQuery,
+    signal?: AbortSignal,
+    leaseScope: QueryLeaseScope = 'request'
+  ) => {
     signal?.throwIfAborted()
     if (disposed)
       throw new RetainedQueryError('Retained query owner is disposed.')
@@ -346,7 +370,7 @@ export const createRetainedDesignContext = (
           available: true,
           scope: 'snapshot',
           snapshotId: value.snapshotId,
-          leaseId: acquire(value.snapshotId, signal),
+          leaseId: acquire(value.snapshotId, signal, leaseScope),
           total: value.result.total,
           coordinateSpace: value.coordinateSpace,
           elements: [],
@@ -367,7 +391,7 @@ export const createRetainedDesignContext = (
             : { receipt: JSON.parse(text) as Record<string, unknown> })
         }
       }
-      if (input.filter !== undefined) return refine(input, signal)
+      if (input.filter !== undefined) return refine(input, signal, leaseScope)
       assertDesignContextCount(
         get(input.snapshotId, undefined, signal).result.total,
         input.expectedCount
@@ -377,7 +401,8 @@ export const createRetainedDesignContext = (
         input.offset,
         input.limit,
         input.delivery,
-        signal
+        signal,
+        leaseScope
       )
       return {
         ...result,
@@ -568,7 +593,8 @@ export const createRetainedDesignContext = (
         offset,
         query.allMatches ? snapshot.result.total : limit,
         delivery,
-        signal
+        signal,
+        leaseScope
       ),
       observation: {
         ...work,
@@ -617,7 +643,8 @@ export const createRetainedDesignContext = (
     offset = 0,
     limit = 50,
     delivery: RetainedContextQuery['delivery'],
-    signal?: AbortSignal
+    signal: AbortSignal | undefined,
+    leaseScope: QueryLeaseScope
   ) => {
     if (delivery === 'reference') {
       const value = get(id)
@@ -638,10 +665,13 @@ export const createRetainedDesignContext = (
         missingIds: [],
         missingCount: value.result.missingIds.length,
         delivery,
-        leaseId: acquire(id, signal)
+        leaseId: acquire(id, signal, leaseScope)
       }
     }
-    const result = { ...page(id, offset, limit), leaseId: acquire(id, signal) }
+    const result = {
+      ...page(id, offset, limit),
+      leaseId: acquire(id, signal, leaseScope)
+    }
     if (delivery === 'columns')
       return {
         ...result,

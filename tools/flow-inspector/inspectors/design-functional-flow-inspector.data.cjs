@@ -835,7 +835,8 @@ const data = {
       ],
       outputs: ['artifact:inspect-design-outcome'],
       conditions: [
-        'Bind observations to current canonical content and keep overview distinct from native detail.'
+        'Bind observations to current canonical content and keep overview distinct from native detail.',
+        'Mechanical receipt validity follows supported rule inputs at the browser reviewer; image and attachment evidence retain independent dependencies. Validate real server freshness, cancellation, history and document replacement through the existing action boundary.'
       ],
       bypasses: [
         'Unavailable capture and stale evidence remain explicit rather than proving current geometry.'
@@ -848,8 +849,12 @@ const data = {
         'Observation records or test assertions as canonical product state',
         'Guessed ownership or test-specific runtime output'
       ],
-      cacheDimensions: [],
+      cacheDimensions: [
+        'Existing browser reviewer verdicts keyed by element and actual checked traversal context; issued mechanical receipts reference exact supported coverage within that observer lifetime.'
+      ],
       implementationBoundary: [
+        'apps/asyra-design/src/common-apis/design-review.ts',
+        'apps/asyra-design/src/ai/runtime-input.ts',
         'apps/asyra-design/server/local-mechanical-checks.ts',
         'apps/asyra-design/server/local-operation-tools.ts',
         'apps/asyra-design/src/ai/prescribed-position-action.ts',

@@ -1,4 +1,14 @@
 import { admitPreparedDesign } from '../../src/ai/prepared-design-admission'
+import { readFileSync } from 'node:fs'
+const recordedMaterials = JSON.parse(
+  readFileSync(
+    new URL(
+      '../../test-data/knowledge-evaluation/evidence/architecture-2026-10-18/representation-replay.jsonl',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import {
   DesignTextDefaults,
@@ -1595,4 +1605,46 @@ it('keeps cancellation and failed artifact publication out of retained source pa
   })
   expect(() => failed.prepare(draft())).toThrow('Publication unavailable')
   expect(failed.checkResults.read({ includePassed: true }).items).toEqual([])
+})
+
+it('preserves the recorded reflection geometry and independent paints when equal gradients use templates', () => {
+  const saved = JSON.parse(JSON.stringify(recordedMaterials))
+  const call = saved.calls.find(
+    (item: { input: { bytes: number } }) => item.input.bytes === 670447
+  )
+  if (!call) throw new Error('Missing recorded reflection input')
+  const original = call.inputValue.draft
+  const compact = structuredClone(original)
+  const keys = new Map<string, string>()
+  for (const grid of compact.children) {
+    if (grid.type !== 'surface-grid') continue
+    for (const motif of grid.motifs) {
+      if (!motif.fills) continue
+      motif.fills = motif.fills.map((fill: unknown) => {
+        const serialized = JSON.stringify(fill)
+        let key = keys.get(serialized)
+        if (!key) {
+          key = `material-${keys.size}`
+          keys.set(serialized, key)
+          compact.fillTemplates[key] = fill
+        }
+        return { template: key }
+      })
+    }
+  }
+  expect(keys.size).toBe(1545)
+  const before = prepareDesign(original, 'material-equivalence')
+  const after = prepareDesign(compact, 'material-equivalence')
+  expect(after).toEqual(before)
+  expect(Buffer.byteLength(JSON.stringify(compact))).toBeLessThan(
+    Buffer.byteLength(JSON.stringify(original))
+  )
+  const unknown = structuredClone(compact)
+  const first = keys.values().next().value
+  if (!first) throw new Error('Missing material template')
+  Reflect.deleteProperty(unknown.fillTemplates, first)
+  expect(() => prepareDesign(unknown, 'invalid-material')).toThrow(
+    'unknown Fill template'
+  )
+  expect(prepareDesign(compact, 'material-equivalence')).toEqual(before)
 })

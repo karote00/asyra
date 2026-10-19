@@ -134,11 +134,11 @@ export const createAiRuntimeInput = (
     createDesignEditAction(),
     createOrganizationAction(),
     createArrangementAction(),
-    createDesignReviewAction(reviewer, evidence),
-    createPrescribedPositionAction(evidence),
+    createDesignReviewAction(reviewer.capture, reviewer.isCurrent),
+    createPrescribedPositionAction(reviewer, evidence),
     createAiInspectionAction(undefined, evidence),
     createDesignAttachmentAction(evidence),
-    createInspectionValidationAction(evidence)
+    createInspectionValidationAction(evidence, reviewer)
   ].map((definition) => observeAiAction(definition))
   const contracts = new Map(
     actionDefinitions.map((definition) => [

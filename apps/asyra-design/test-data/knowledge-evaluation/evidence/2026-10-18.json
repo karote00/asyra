@@ -1,0 +1,3105 @@
+[
+  {
+    "id": "knowledge-baseline-composition-1792311238287",
+    "arm": "baseline",
+    "caseId": "composition",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:13:58.301Z",
+    "sentAt": "2026-10-18T08:14:00.402Z",
+    "elapsedMs": null,
+    "firstContentMs": 23364,
+    "outcome": "invalid-evaluation",
+    "failure": "Evaluator file edit triggered Vite reload at 08:14:39Z, confirmed provider cancellation. Excluded from quality comparison.",
+    "sources": {
+      "server/ai-domain-prompt.ts": "96fe7af2ba2953c67837d395b932220cce08fed485cd741096d0576e09749b1d",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": null,
+    "errors": [],
+    "artifacts": {
+      "before.json": "ca73599a64cd4b1589a5bad113a4102fb6f9817e34cc36477829aa7ef0da6925",
+      "run.json": "389db58c230b60e0b952362ba11ad35f03bd701c653a0d7a595cb30e7062ada3"
+    }
+  },
+  {
+    "id": "knowledge-baseline-composition-1792311392815",
+    "arm": "baseline",
+    "caseId": "composition",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:16:32.832Z",
+    "sentAt": "2026-10-18T08:16:37.119Z",
+    "elapsedMs": 40354,
+    "firstContentMs": 25256,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "96fe7af2ba2953c67837d395b932220cce08fed485cd741096d0576e09749b1d",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-baseline-composition-1792311392815",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "ca73599a64cd4b1589a5bad113a4102fb6f9817e34cc36477829aa7ef0da6925",
+      "final.png": "74c8074d4450ed2d940a6f9bd4f20990ece582e5e7a116d6be254a738d1eb1b4",
+      "after.json": "fa3918d60ce4cca72cdc6669b1a7071204e32c76e52e761b4fa66d1bf5ffdc9b",
+      "analysis.json": "3bb72c3351e573aa035c77cb0dbf42b2cb16cc0d7a3ff7066d2b3c3a4a9c5f8b",
+      "run.json": "2f40a5ae6edbeaeacfa3291ac31845b8347861d2f6d56f3b139c234eca1ca921"
+    },
+    "preservation": null,
+    "streams": [
+      {
+        "file": "84553c9c-c334-4332-815f-ba89e9e6ea13.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-88a39576-72fb-4773-afd0-2478f9d7e4fb",
+            "elapsedMs": 39.48350000000028,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/4-input.json",
+              "bytes": 101,
+              "sha256": "bfe784c039332a4119e680849dd7e6ff996bc108c1e0f1948d4587fe97fe1dd5",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0961250000000291
+            },
+            "output": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/5-output.json",
+              "bytes": 114327,
+              "sha256": "17e99730bcfe5b17324cd75d274d477734525a22d1186a90cf2b9ca3967b2c11",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.8665420000015729
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-1c5bd2c6-bd49-4c0f-8dfc-3e33483dd7a4",
+            "elapsedMs": 3.262625000003027,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/6-input.json",
+              "bytes": 74,
+              "sha256": "d3e00f966702966bc67f86b446c4867cb667d9453ce34ed2b92f1608c0efe564",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.056166999998822575
+            },
+            "output": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/7-output.json",
+              "bytes": 39104,
+              "sha256": "b33d5e9dddd809aa2c2d8dcbb5e0f02cc6cb7c19564b2f4f5ccf8461e8c5643d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.6729159999995318
+            }
+          },
+          {
+            "tool": "prepare_and_apply_design",
+            "callId": "exec-eca2db2b-f175-4516-b883-8f915b5e87ed",
+            "elapsedMs": 112.22170899999765,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/8-input.json",
+              "bytes": 1408,
+              "sha256": "136a86c69950ad99f347cb19ffddc2b1aaadf15d5b802f2aa1e9b13d5ebe3e1d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.056415999999444466
+            },
+            "output": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/21-output.json",
+              "bytes": 4693,
+              "sha256": "d219c6a43eefef108eb1bc4be109ad22f7162500f45ad070add3f830c50d86a6",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0660409999982221
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-77dea058-4984-4603-976b-ef1cbc35ef76",
+            "elapsedMs": 10.268458999998984,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/22-input.json",
+              "bytes": 187,
+              "sha256": "ed7dc0ae5eef15a3b8b4d7924212e40a9bb01d687d0706670203bca9bf8dd747",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0617500000007567
+            },
+            "output": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/25-output.json",
+              "bytes": 1323,
+              "sha256": "3786e37bab5e5fc1375c4786cd7136a6e53ea5a48c102d524b93bbb880d639a2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05770900000061374
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-9760be6c-03c4-4c4e-8f1c-bdf1d2c35f48",
+            "elapsedMs": 16.240333000001556,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/26-input.json",
+              "bytes": 890,
+              "sha256": "a52993bd19a20234546e54c4d1b162a62435b561bcae4a4f2d315d4bae8c8880",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.10104199999477714
+            },
+            "output": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/33-output.json",
+              "bytes": 765,
+              "sha256": "4a5c1def7008a05429f20443142afde4f1746aa02029f9d727d72b20e576556c",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.054499999998370185
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-b058c339-938e-4c1a-b06b-5fde9142687d",
+            "elapsedMs": 6.999665999996068,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/34-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.008541000002878718
+            },
+            "output": {
+              "status": "queued",
+              "path": "84553c9c-c334-4332-815f-ba89e9e6ea13.payloads/39-output.json",
+              "bytes": 157,
+              "sha256": "f73bf41b147c8274e047cf546795e519d80e83e421d91a2fbf4cffa105933a30",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.013624999999592546
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-baseline-precise-edit-1792311438012",
+    "arm": "baseline",
+    "caseId": "precise-edit",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:17:18.025Z",
+    "sentAt": null,
+    "elapsedMs": null,
+    "firstContentMs": null,
+    "outcome": null,
+    "failure": "page.evaluate: Error: [Core] Cannot create element batch: parent \"\" is unavailable\n    at requireContainerParent (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/apis/create-apis.js:24:19)\n    at Object.createElementsInParent (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/apis/create-apis.js:124:28)\n    at Core.createElementsInParent (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/apis/scene-tree.js:30:58)\n    at Object.apply (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/runtime-lifetime.js:102:52)\n    at eval (eval at evaluate (:311:30), <anonymous>:5:14)\n    at Object.runTransaction (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/reactive-events/dist/app/publish.js:245:24)\n    at eval (eval at evaluate (:311:30), <anonymous>:4:30)\n    at async <anonymous>:337:30",
+    "sources": {
+      "server/ai-domain-prompt.ts": "96fe7af2ba2953c67837d395b932220cce08fed485cd741096d0576e09749b1d",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": null,
+    "errors": [],
+    "artifacts": {
+      "run.json": "e8568ae92f8e5bd7d8536a40cc25021d399874564fc10382aeefc11a9abf1d46"
+    }
+  },
+  {
+    "id": "knowledge-baseline-precise-edit-1792311778004",
+    "arm": "baseline",
+    "caseId": "precise-edit",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:22:58.019Z",
+    "sentAt": null,
+    "elapsedMs": null,
+    "firstContentMs": null,
+    "outcome": null,
+    "failure": "page.evaluate: Error: [Core] Cannot create element batch: parent \"\" is unavailable\n    at requireContainerParent (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/apis/create-apis.js:24:19)\n    at Object.createElementsInParent (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/apis/create-apis.js:124:28)\n    at Core.createElementsInParent (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/apis/scene-tree.js:30:58)\n    at Object.apply (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/core/dist/runtime-lifetime.js:102:52)\n    at eval (eval at evaluate (:311:30), <anonymous>:5:14)\n    at Object.runTransaction (http://localhost:3307/@fs/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/packages/reactive-events/dist/app/publish.js:245:24)\n    at eval (eval at evaluate (:311:30), <anonymous>:4:30)\n    at async <anonymous>:337:30",
+    "sources": {
+      "server/ai-domain-prompt.ts": "96fe7af2ba2953c67837d395b932220cce08fed485cd741096d0576e09749b1d",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": null,
+    "errors": [],
+    "artifacts": {
+      "run.json": "cdb00bddf53cdbcb6e6a8ea4ffa5319887482370e2e038b9b0ed042e77f6299f"
+    }
+  },
+  {
+    "id": "knowledge-baseline-precise-edit-1792311993701",
+    "arm": "baseline",
+    "caseId": "precise-edit",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:26:33.714Z",
+    "sentAt": "2026-10-18T08:26:36.713Z",
+    "elapsedMs": 37330,
+    "firstContentMs": null,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "96fe7af2ba2953c67837d395b932220cce08fed485cd741096d0576e09749b1d",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-baseline-precise-edit-1792311993701",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "97ea2b79c14313cc2d41fcb0e3aba029cc5effc6cf687e2c75b0a80e8dcccd1e",
+      "final.png": "60e034533bf45cdcbe8383a56ce91d3d87f192b52490e72ea7fa10a9209754cb",
+      "after.json": "b6ea8121c0357ee6813ee0e8f50fe0d69601be680e10e1db10c2f75c21e64b5b",
+      "analysis.json": "6a49e1ef47111b2655fcadd680cff7667712aa7650d495596664b79657eb2108",
+      "run.json": "8c334530f18a08e8fdf12a50b92e756d73cbea7999ef87cc49df42ca4106bde5"
+    },
+    "preservation": {
+      "unchanged": true,
+      "targetCorrect": true,
+      "sameIds": true
+    },
+    "streams": [
+      {
+        "file": "b3167d52-716f-42ba-bd7c-7b333c76742b.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-cb087df1-c81c-4eb6-beaf-4754c82033bc",
+            "elapsedMs": 29.919709000037983,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/4-input.json",
+              "bytes": 57,
+              "sha256": "02cad69f8cbdaef20d24cb0b9a2018c144aa97af30c1234fced1c7c8fe1bf63a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.025083999964408576
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/5-output.json",
+              "bytes": 2974,
+              "sha256": "b01cc1126594496cc1b0717b87a2ed205c6c17fdde1033c2f4940c15ab680bb4",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06804100004956126
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-49245f54-ae6f-4cba-b7f5-9ada418be99d",
+            "elapsedMs": 1.2297079999698326,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/6-input.json",
+              "bytes": 42,
+              "sha256": "b3b4a04a9018654945fe3fe1e8ae616f2253e86ced2e3e70f05d5724241cac5b",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.018417000072076917
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/7-output.json",
+              "bytes": 34997,
+              "sha256": "0de5a8e4f1648036e55d5fcf115adec74b6d87a5fac39d9844a32544ad40982e",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.3622080000350252
+            }
+          },
+          {
+            "tool": "read_design_context",
+            "callId": "exec-413c5dd1-849b-4e35-b67b-45b40a4ebfe5",
+            "elapsedMs": 7.981041999999434,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/8-input.json",
+              "bytes": 174,
+              "sha256": "03a350572d3282d1af21e73f18ee207f244dc505ffd89fff8e5706f706c8ea28",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03558399993926287
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/11-output.json",
+              "bytes": 1751,
+              "sha256": "1466c2c129e22021e7241465a81480fec0f966fdb86e086efffcb2b0bcb9e711",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03666699992027134
+            }
+          },
+          {
+            "tool": "execute_design_batch",
+            "callId": "exec-19099501-0ae8-42c6-b154-4b6120430a64",
+            "elapsedMs": 37.493292000028305,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/12-input.json",
+              "bytes": 231,
+              "sha256": "baea25d9dfa5469b1a9ed95ca1b92495d9f9985d990d6254ead629ff2395a84d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05416699999477714
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/19-output.json",
+              "bytes": 1013,
+              "sha256": "925a076c5c46995c3926dd199d6023a0fcdb0f89eb198b23c7dd7f5b5dc215a7",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.024833999923430383
+            }
+          },
+          {
+            "tool": "define_design_criteria",
+            "callId": "exec-c7edf140-8d5a-4ae8-ad88-55da12a0a897",
+            "elapsedMs": 2.3035000000381842,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/20-input.json",
+              "bytes": 380,
+              "sha256": "434faac4add8da1ab0f3bc0097c8264887b9b66b95f648d9bf33c1e5ff6c651a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03616699995473027
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/21-output.json",
+              "bytes": 189,
+              "sha256": "5ccaca5c468e7ffe302da8775ff551f1bcc6154291d21e30d14882ae7688504f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02483299991581589
+            }
+          },
+          {
+            "tool": "read_design_context",
+            "callId": "exec-c97be529-e9b2-43da-a97c-7504aecdf327",
+            "elapsedMs": 3.7100409999256954,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/22-input.json",
+              "bytes": 308,
+              "sha256": "1e44b9906226b5cc733781ddc4411ae32c7f3255b59eaf2fad6c56acfcada752",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.019124999991618097
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/25-output.json",
+              "bytes": 1739,
+              "sha256": "54db8fa05c76101b31d50c47b5e41e14d7e0d3994e948ac2fb2b316d3fcdf0f4",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.037875000038184226
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-e9ffcb04-6d20-48c4-8372-888a9f1b1591",
+            "elapsedMs": 4.14533400000073,
+            "status": "partial",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/26-input.json",
+              "bytes": 115,
+              "sha256": "c251bae22a9bfd0e3f4b537006743f72758648c319373df993e7196fe38cca16",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03700000001117587
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/29-output.json",
+              "bytes": 1837,
+              "sha256": "ba6e5d0ebebe91c2908966bdba4176ccd3f30a40208dad26917c11a163f8e500",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.040459000039845705
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-fd386d88-9c73-49f5-a663-98bccd797ae3",
+            "elapsedMs": 37.410542000085115,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/30-input.json",
+              "bytes": 397,
+              "sha256": "bee5de4d31774303331573f46251db107420920aaa61eeb8aed650181d929cc2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05029200005810708
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/43-output.json",
+              "bytes": 4126,
+              "sha256": "0a1f62f143c37986f62f5bc61b20b1b474bc1e6604030c4a475f3b0bf9a72d3a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06850000005215406
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-b0f26792-4c31-4537-87e5-9872cca86bb2",
+            "elapsedMs": 20.907250000047497,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/44-input.json",
+              "bytes": 1683,
+              "sha256": "7901a66ccb732f8a63daaf779e225bd3fc5da7e2d7002adc0de4195feff7243d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.056958000059239566
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/67-output.json",
+              "bytes": 1149,
+              "sha256": "9043d723e730333813e89edf6b5f03b397fddbcf64b7ff150cb3e7df33d7c363",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04441699991002679
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-c61a0f2f-c278-481b-bcb1-2462f5153121",
+            "elapsedMs": 9.297540999948978,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/68-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.008916000020690262
+            },
+            "output": {
+              "status": "queued",
+              "path": "b3167d52-716f-42ba-bd7c-7b333c76742b.payloads/81-output.json",
+              "bytes": 157,
+              "sha256": "ec3241104b0713a60d59b42e31b55e9c89f7790f23b55152559c189f5b883073",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.009333000052720308
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-baseline-ring-1792311160756",
+    "arm": "baseline",
+    "caseId": "ring",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:12:40.771Z",
+    "sentAt": "2026-10-18T08:12:46.080Z",
+    "elapsedMs": 39332,
+    "firstContentMs": 22230,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "96fe7af2ba2953c67837d395b932220cce08fed485cd741096d0576e09749b1d",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-baseline-ring-1792311160756",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "ca73599a64cd4b1589a5bad113a4102fb6f9817e34cc36477829aa7ef0da6925",
+      "final.png": "1b42a4a78938b2e37573f4e538939bf1a439f06b22b0cec6836773a49aa2b3f4",
+      "after.json": "22ef039d4a472a11812afd95c7ff0845f783df0492dd4ac7d8ae441d6cb6be1d",
+      "analysis.json": "1c9121c50ecde638e778fcdda1bfb33b9e250470e49ce3e96564763ec1ce5f4a",
+      "run.json": "5134ca2f085c5f850eb441a93ee349c284a22bb6e4fc119c74eba8323e2f84eb"
+    },
+    "preservation": null,
+    "streams": [
+      {
+        "file": "0fb10c95-35c6-462e-9ee9-ba257a12890e.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-048bbc63-e399-44d1-989b-1c30f9b230b2",
+            "elapsedMs": 35.80291700000089,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/4-input.json",
+              "bytes": 80,
+              "sha256": "bbac7a8310b89fff675d064dc30af23659f311ceca08bab7bff247a8b27100fb",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.14400000000023283
+            },
+            "output": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/5-output.json",
+              "bytes": 109646,
+              "sha256": "7d35ed67cda7f0c6755dcd437ef0f11c6c757c97c4db8c5abe0a8e87e1690ab1",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.6662909999995463
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-393f73fe-d4a9-466d-a5b7-98f38ad6bf7c",
+            "elapsedMs": 6.339791999998852,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/6-input.json",
+              "bytes": 136,
+              "sha256": "efb37881abe605afe2578c8ea1ab422ab56399c2838024373808a372cac2c2e1",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0819999999985157
+            },
+            "output": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/7-output.json",
+              "bytes": 66508,
+              "sha256": "65ab839527c95e44d9d4c4dda3af4aac23e06041df3a439f4e27fd096684ae48",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.4495830000014394
+            }
+          },
+          {
+            "tool": "prepare_and_apply_design",
+            "callId": "exec-371e640c-6e7c-43af-9573-059c181008d6",
+            "elapsedMs": 89.96137499999895,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/8-input.json",
+              "bytes": 1988,
+              "sha256": "0b1d0e20532461a3907e45169c423b772741afd3a0e30bd2580d57d9df173cbf",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.12095899999985704
+            },
+            "output": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/19-output.json",
+              "bytes": 4327,
+              "sha256": "47e867893c1e82c3ed0742cd6c7d5261e31127d0c6fb7ce6745e0199b7839fcd",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06204200000138371
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-de438f85-5716-42c9-a6ac-05b5a2809e32",
+            "elapsedMs": 35.382166999996116,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/20-input.json",
+              "bytes": 165,
+              "sha256": "88a380fd0b6e911e2391a2c74efb2ffec0e81bc17adbf6d787138ee9005a1dc9",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.045707999997830484
+            },
+            "output": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/25-output.json",
+              "bytes": 2154,
+              "sha256": "248c388c6a4c1dcb626e3ffb4289a340dadbbcc1b5ea37fb6018e2bc80a0d32a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.09174999999959255
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-e330dfb2-a3a6-4339-968f-48c676bca225",
+            "elapsedMs": 14.754375000004075,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/26-input.json",
+              "bytes": 887,
+              "sha256": "35f83d2b254d47366aae1aed9a37fc02e35b212ff55faa8f2899205ed89fedda",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06620899999688845
+            },
+            "output": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/33-output.json",
+              "bytes": 765,
+              "sha256": "841241450e787f7144ac369f0bfc6741995303fb4b25f276dbb880d2d87c0dc0",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.030832999997073784
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-f9667320-39de-4615-b7bc-68287fae1934",
+            "elapsedMs": 0.5914160000029369,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/34-input.json",
+              "bytes": 46,
+              "sha256": "a18b216985ad52c284f137599d3adf9d8ae7f1b6dbcc934eeb7b7e3c3f3ee6a8",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.008957999998528976
+            },
+            "output": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/35-output.json",
+              "bytes": 4792,
+              "sha256": "35c0cf7a5410f8c9c33daed072ed6e3ac40bf0d56515f867f005ab21e899c931",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.21804200000042329
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-85f015e3-4bce-4360-8d61-c7abbe5e7df0",
+            "elapsedMs": 11.060082999996666,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/36-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02541600000404287
+            },
+            "output": {
+              "status": "queued",
+              "path": "0fb10c95-35c6-462e-9ee9-ba257a12890e.payloads/41-output.json",
+              "bytes": 157,
+              "sha256": "f73bf41b147c8274e047cf546795e519d80e83e421d91a2fbf4cffa105933a30",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.018166000001656357
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-candidate-composition-1792312452904",
+    "arm": "candidate",
+    "caseId": "composition",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:34:12.918Z",
+    "sentAt": "2026-10-18T08:34:15.809Z",
+    "elapsedMs": 40365,
+    "firstContentMs": 22231,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-candidate-composition-1792312452904",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "2e77656049993aea0cec972f879dca53b975735784cc294739385102d54d6a98",
+      "final.png": "99888dcf38dd5c4293bc3c73783a95cb40c180af39f29a1d6b5da1d9c978167f",
+      "after.json": "73f0070933921bcb0a5fb1a5fc70f73799802690af4fa6b99cc55bb47e8f983f",
+      "analysis.json": "a25f7e0fce1d56d4fd3e193bf477b3220d561ceb3fe962913708375493317a89",
+      "run.json": "f05d50df7249d213f0d2604f110f43d1bfd8a34bdb8c261494ca4d785bc82d37"
+    },
+    "preservation": null,
+    "streams": [
+      {
+        "file": "427216e0-6622-46ff-91dc-50caa69ea350.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "discover_knowledge",
+            "callId": "exec-0897a50e-c5f6-4d87-8511-fd86c319787a",
+            "elapsedMs": 2.697290999814868,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/4-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03616699995473027
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/5-output.json",
+              "bytes": 1030,
+              "sha256": "3f81b50b8b08258f6de2da6b07a88a69f79b8736cc387b2c92d38c8c0b35ff6f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.047916000010445714
+            },
+            "inputValue": {},
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": null,
+              "generation": null,
+              "contextKey": null,
+              "discoveredIds": [
+                "colors",
+                "components.button",
+                "icons",
+                "typography"
+              ],
+              "sources": []
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-ad9be3d3-d356-4a1c-ae58-5a5fe00a8172",
+            "elapsedMs": 35.23391700000502,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/6-input.json",
+              "bytes": 90,
+              "sha256": "e94948333f2a924eabc601254dc11df2cabac9a2730638adf09fca51fea364e5",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.021000000182539225
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/7-output.json",
+              "bytes": 39155,
+              "sha256": "8e175c85a3211db7f6e698c1d14339be342d3de59218cb07b3d7839f91666337",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.5239999999757856
+            }
+          },
+          {
+            "tool": "read_knowledge",
+            "callId": "exec-b00d9b20-1b04-41db-8a97-aa9c4d559199",
+            "elapsedMs": 2.2354999999515712,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/8-input.json",
+              "bytes": 51,
+              "sha256": "66964b96366a5e2b05517e4e93d4d5fce3f4b4bce47b0e61dc7c3404e84a0250",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07124999980442226
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/9-output.json",
+              "bytes": 4655,
+              "sha256": "2ddacabdd8bcf639af319bb8b6da96923910395ba1d968b06eea7a2501d4f966",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.10412500007078052
+            },
+            "inputValue": {
+              "ids": ["typography", "colors", "components.button"]
+            },
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": false,
+              "generation": 6,
+              "contextKey": "[[\"colors\",\"components.button\",\"typography\"],[],6,0]",
+              "discoveredIds": [],
+              "sources": [
+                {
+                  "id": "colors",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                },
+                {
+                  "id": "components.button",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                },
+                {
+                  "id": "typography",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tool": "prepare_and_apply_design",
+            "callId": "exec-f03d575b-1f27-4f53-bc5f-ece0fed3bab8",
+            "elapsedMs": 89.04945799987763,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/10-input.json",
+              "bytes": 1435,
+              "sha256": "da9f171028f0c56d31d15dc29e7c596564b4227b0471ea0ce79f23168de3ef85",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.12241699988953769
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/21-output.json",
+              "bytes": 4043,
+              "sha256": "35e66fda17f84f23aebaff487946f5904671387edb2c1038a8a144ec1d406cb7",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07379200006835163
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-b893aec5-c566-41f6-89e6-903ae7d61c56",
+            "elapsedMs": 36.574957999866456,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/22-input.json",
+              "bytes": 147,
+              "sha256": "40724d04dc9425c4cb6362b103b033cfa65e77b121c8bbb86d754a0fc2991337",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0821669998113066
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/27-output.json",
+              "bytes": 2155,
+              "sha256": "274054cbdcec92f36bc715612a0cea7eb67caca04ed58524f685522e88c8e2c6",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04833299992606044
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-b55e659c-318a-417d-ab16-eb1e7b52de4c",
+            "elapsedMs": 28.647832999937236,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/28-input.json",
+              "bytes": 147,
+              "sha256": "40724d04dc9425c4cb6362b103b033cfa65e77b121c8bbb86d754a0fc2991337",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06908300006762147
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/33-output.json",
+              "bytes": 2155,
+              "sha256": "d1a650e4f1f21d2d6968ca3ff82af5190d389bd9dd5e09a5f154a8fd777c8078",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05970799992792308
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-cad680ff-c27d-4912-9f35-06272fede1db",
+            "elapsedMs": 12.04970800015144,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/34-input.json",
+              "bytes": 978,
+              "sha256": "3f52e6c896348f09b1f49c943ec472f7983e040d524c6b8abd3368b411ad2ecf",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0694999999832362
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/41-output.json",
+              "bytes": 765,
+              "sha256": "83510e75b6309ec8b546609626331c4a9e3df487d2c687532f067bafec585920",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.044708000030368567
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-0befc5a7-39da-48ee-a971-1bb130ce0ab6",
+            "elapsedMs": 7.6130830000620335,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/42-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.007624999852851033
+            },
+            "output": {
+              "status": "queued",
+              "path": "427216e0-6622-46ff-91dc-50caa69ea350.payloads/47-output.json",
+              "bytes": 157,
+              "sha256": "f73bf41b147c8274e047cf546795e519d80e83e421d91a2fbf4cffa105933a30",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.013624999905005097
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-candidate-precise-edit-1792312512211",
+    "arm": "candidate",
+    "caseId": "precise-edit",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:35:12.224Z",
+    "sentAt": "2026-10-18T08:35:14.604Z",
+    "elapsedMs": 63553,
+    "firstContentMs": null,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-candidate-precise-edit-1792312512211",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "77b4454f566b70909a0331da1c23c639a1214d44166780f7682c62629ff8e7b5",
+      "final.png": "f02ec01ba2f6c5288b86587175f7cdeacfeae02c840ce787622a81c6e8b5c963",
+      "after.json": "0ed425db9224c7dfba6554b89c22727d990c3f5e06d10dd217ee8595fb8b380d",
+      "analysis.json": "bff549ecd1ef7a02fb4b77b4b3fc07d4304d4da8a273c233bdbe276e90920f16",
+      "run.json": "bc5a0ddf604c15333e115d3bb8b93119099063402c836be7a73da65b9e46cf7a"
+    },
+    "preservation": {
+      "unchanged": true,
+      "targetCorrect": true,
+      "sameIds": true
+    },
+    "streams": [
+      {
+        "file": "02070648-915c-473b-ac45-0cb0780d10c2.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-263771ec-bc86-4540-845c-af505304c64c",
+            "elapsedMs": 41.29529200005345,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/4-input.json",
+              "bytes": 112,
+              "sha256": "64bda5147b5c843f1adfdf6a4a2f2bf2eb5ed590db7390dbd1279587df523578",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04524999996647239
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/5-output.json",
+              "bytes": 98677,
+              "sha256": "85f3d9a9aa28850c96b0234f84e134fa07781c2896d201b4a651c8381981f400",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.3723329999484122
+            }
+          },
+          {
+            "tool": "read_design_context",
+            "callId": "exec-b448c216-fba2-48f0-95dd-a60ba7018041",
+            "elapsedMs": 11.692291999934241,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/6-input.json",
+              "bytes": 119,
+              "sha256": "5d18bd695a907494e7a6cc26f28a08821ee5903e96f1c059908b792970f8f1f3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04204199998639524
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/9-output.json",
+              "bytes": 1751,
+              "sha256": "f82b797f69f918fad2c19f3b25d48a84e11b4e9f93f59942e7d317699b499bb1",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0543329999782145
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-2fcfbe20-aedc-4447-9874-dcafb940c380",
+            "elapsedMs": 5.397875000024214,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/10-input.json",
+              "bytes": 32,
+              "sha256": "7be8dc682453ed43f341840a36403c57a2a2d743d4d81d27d4d1bf19e52ba872",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.025125000160187483
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/11-output.json",
+              "bytes": 35876,
+              "sha256": "4775b7e1216ab43c567f590a93e8ee99ec80a065efd8c2c82d8b6c86d8dac137",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.5368749999906868
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-1000ad6f-b048-4ebf-b8e5-755874845473",
+            "elapsedMs": 1.4245000001974404,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/12-input.json",
+              "bytes": 22,
+              "sha256": "c91935a70105c0eed6325c6ecbe7c018e8f1d26ed55cdc6cad5b7db1afd97ff3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03883400000631809
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/13-output.json",
+              "bytes": 13520,
+              "sha256": "347a47c0a7fbc1e75b8c41a512c22032c46a0c460388066d96424c066bcc783c",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.20958400005474687
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-807fbd11-44f1-44a7-a5ca-3c05d8ba43e0",
+            "elapsedMs": 1.021665999898687,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/14-input.json",
+              "bytes": 55,
+              "sha256": "1eb43136c1b9ad251fa0aae9f1eb07b3d93f02edc24a5834c2d3ceeb268a9a33",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.027750000124797225
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/15-output.json",
+              "bytes": 9104,
+              "sha256": "b150cca1e0a9e303bdd1b62aedda0b48a9a9e5dc9e39c59a839885c61aede874",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.12250000005587935
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-4ae60a76-2a50-46c1-8577-41ce67be3187",
+            "elapsedMs": 3.057041000109166,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/16-input.json",
+              "bytes": 145,
+              "sha256": "e7c8a00ff66006aef43505d888b9dbba7329dbc28dbda8f9a7945f002e7b8440",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.044624999864026904
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/17-output.json",
+              "bytes": 51053,
+              "sha256": "72028c7471be91c2de2aed700f8730c0c08483859be2deb7dfb0229badd54849",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.0355419998522848
+            }
+          },
+          {
+            "tool": "execute_design_batch",
+            "callId": "exec-38a23770-2385-4299-80a2-6297f5972ab0",
+            "elapsedMs": 29.664209000067785,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/18-input.json",
+              "bytes": 210,
+              "sha256": "1c719fe08503c0d63626c0f30231247ad2abb0d42812bccd93b171f79f17f38b",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02766599995084107
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/25-output.json",
+              "bytes": 1013,
+              "sha256": "9e8c41b9f4734be8d777fbdf038e3b7a93a373a9d799cc3482fa21eda6e4e031",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.023000000044703484
+            }
+          },
+          {
+            "tool": "define_design_criteria",
+            "callId": "exec-3821f4de-4a60-485d-b93d-51de159a0ca3",
+            "elapsedMs": 1.6300829998217523,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/26-input.json",
+              "bytes": 386,
+              "sha256": "06f5c6ec57053653c925e595e6ce6b31c4c8b5a8530d70dbceee2fc1a45a66ef",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06833300017751753
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/27-output.json",
+              "bytes": 189,
+              "sha256": "5ccaca5c468e7ffe302da8775ff551f1bcc6154291d21e30d14882ae7688504f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02991700009442866
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-15ad449f-3556-48fe-8284-c908f3a7613b",
+            "elapsedMs": 8.236292000161484,
+            "status": "partial",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/28-input.json",
+              "bytes": 129,
+              "sha256": "7be085bc633c02dad1106dfbad0601ca9ebd47ebef62ceecd70de45d9b2838b8",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0210829998832196
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/31-output.json",
+              "bytes": 1837,
+              "sha256": "06cb771473ab7ad4de607723452467cf1a7f7fc9e15f6b50aa09c6e769fb5de6",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04504199977964163
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-86f99176-a125-4a0d-9a4e-c6f1add47bf5",
+            "elapsedMs": 34.68229099991731,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/32-input.json",
+              "bytes": 411,
+              "sha256": "9b1873033f7baf3c27e21035016df045d1a9cbdad5cb46bf2b4c68cc5ac6e62d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06712500005960464
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/45-output.json",
+              "bytes": 4126,
+              "sha256": "c29ffb4ab92a2474c1cc8bd13063cbf9f0f2c2dbb1cf6ba2b7c927eb5f61a4b8",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06816600007005036
+            }
+          },
+          {
+            "tool": "read_design_context",
+            "callId": "exec-bbc5af22-c597-4074-808f-6f34ce298c52",
+            "elapsedMs": 5.205084000015631,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/46-input.json",
+              "bytes": 262,
+              "sha256": "a019763dffbb9ed79bef3c400f7f285c98c11991067b3cc51ea70306464f18cb",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.019832999911159277
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/49-output.json",
+              "bytes": 1739,
+              "sha256": "95a920a08d4b547e126224640e6ff98b3d42ad78bdd1a8068702db31ab632e57",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03974999999627471
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-8f5d65fc-0681-42f3-a3d2-f1f039252866",
+            "elapsedMs": 24.811667000176385,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/50-input.json",
+              "bytes": 1638,
+              "sha256": "893f16e0b6e612b2d8d545099bed4e8f8b27c65e771816ffc602924024087fa7",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.09216700005345047
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/73-output.json",
+              "bytes": 1149,
+              "sha256": "bffbe26afb10d94211683db544c9a1fbe7cca5e919833f5187f6c587992c5b84",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.039124999893829226
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-e9568b18-273c-4b32-baf4-688afd50eece",
+            "elapsedMs": 0.7414170000702143,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/74-input.json",
+              "bytes": 62,
+              "sha256": "e086038479404ad996737ddcb1ed3cd42f8831c091443efe7991b1d723dfe8a9",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02566600008867681
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/75-output.json",
+              "bytes": 1310,
+              "sha256": "93a98a1ed0a312e492731d2dfe29a8ff3b101d89cef7302b0b9e5ae7adf6b0ab",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04158299998380244
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-e265077c-b38c-417f-82c1-d50d1b761c13",
+            "elapsedMs": 12.049666999839246,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/76-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.028833999997004867
+            },
+            "output": {
+              "status": "queued",
+              "path": "02070648-915c-473b-ac45-0cb0780d10c2.payloads/89-output.json",
+              "bytes": 157,
+              "sha256": "ec3241104b0713a60d59b42e31b55e9c89f7790f23b55152559c189f5b883073",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.013375000096857548
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-candidate-ring-1792312359389",
+    "arm": "candidate",
+    "caseId": "ring",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:32:39.404Z",
+    "sentAt": "2026-10-18T08:32:44.023Z",
+    "elapsedMs": 53498,
+    "firstContentMs": 28340,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-candidate-ring-1792312359389",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "2e77656049993aea0cec972f879dca53b975735784cc294739385102d54d6a98",
+      "final.png": "e5bed71f21015dde83c9b16724d3be9ba12c6c4414b714e850d6dc87f2fdd7e0",
+      "after.json": "7a176b5c37a815ad20bcfe2010f317aa8c3e6d5a085eec02177823717cd09638",
+      "analysis.json": "8104946fbc55173c45a2581468db62d493df6ba3b656897965b2ed78e687df9d",
+      "run.json": "fb654ea195b922d1373f8ec7d5292b962a3abe6ae67a5fb20cb4fa96cf633489"
+    },
+    "preservation": null,
+    "streams": [
+      {
+        "file": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-79337a74-1705-4362-bf65-afbd06f7d55b",
+            "elapsedMs": 36.25029200001154,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/4-input.json",
+              "bytes": 101,
+              "sha256": "bfe784c039332a4119e680849dd7e6ff996bc108c1e0f1948d4587fe97fe1dd5",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0313750000204891
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/5-output.json",
+              "bytes": 114327,
+              "sha256": "17e99730bcfe5b17324cd75d274d477734525a22d1186a90cf2b9ca3967b2c11",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.500791999977082
+            }
+          },
+          {
+            "tool": "discover_knowledge",
+            "callId": "exec-37bb9d83-4052-4deb-923b-3850f504c1e1",
+            "elapsedMs": 2.4830000000074506,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/6-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.019124999991618097
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/7-output.json",
+              "bytes": 1030,
+              "sha256": "3f81b50b8b08258f6de2da6b07a88a69f79b8736cc387b2c92d38c8c0b35ff6f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03354199999012053
+            },
+            "inputValue": {},
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": null,
+              "generation": null,
+              "contextKey": null,
+              "discoveredIds": [
+                "colors",
+                "components.button",
+                "icons",
+                "typography"
+              ],
+              "sources": []
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-2b6f01e7-cb8b-482f-9393-023a5239a831",
+            "elapsedMs": 3.9367499999934807,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/8-input.json",
+              "bytes": 105,
+              "sha256": "b73803039a54c90a4c0cd9c83b1d18e3fdfc851369721fefe9ed432cf4d19a2a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04045799991581589
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/9-output.json",
+              "bytes": 100033,
+              "sha256": "49b166ad483923a7fc3c97ae478a6731a952c754eb7b3a07fcb8a830e41e86e2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.33608399995137
+            }
+          },
+          {
+            "tool": "read_knowledge",
+            "callId": "exec-7ff83ae7-0a57-4e0c-ae87-16fffb0a00ef",
+            "elapsedMs": 1.3855410000542179,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/10-input.json",
+              "bytes": 17,
+              "sha256": "0014a2ba111629ae09a82d5c6259895caab1c1262be9761fcf7311b1947c0b8b",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03495799994561821
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/11-output.json",
+              "bytes": 1639,
+              "sha256": "68d83c9940f6babe774764a1164ed62f3eaef62f28c06b18cfcaecd7c4d127e3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03370800008997321
+            },
+            "inputValue": {
+              "ids": ["icons"]
+            },
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": false,
+              "generation": 6,
+              "contextKey": "[[\"icons\"],[],6,0]",
+              "discoveredIds": [],
+              "sources": [
+                {
+                  "id": "icons",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tool": "prepare_and_apply_design",
+            "callId": "exec-f8d483e8-a69e-48e5-86ce-9a674328a7f3",
+            "elapsedMs": 86.47429100004956,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/12-input.json",
+              "bytes": 3431,
+              "sha256": "34486ddfd4b416c7b374a6babef875d59dcc11dccd639bc3755edd73ac0dd031",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.15750000008847564
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/23-output.json",
+              "bytes": 4333,
+              "sha256": "41f78d063d7f0f13f0afca45d7285e801e1f23503da61fcae5437f74330cf59d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05966699996497482
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-a7bdd813-a565-4bed-a561-ea8998672fc1",
+            "elapsedMs": 46.12150000000838,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/24-input.json",
+              "bytes": 188,
+              "sha256": "e05b0a442838aec99fe8c251f27967e943f4e7619daa39c56db8e4d8ca561451",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.057167000020854175
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/29-output.json",
+              "bytes": 2761,
+              "sha256": "5e8c5ca9d4abc6f83361774286981b5a8963577c7af99cbd5604e0c776aa0dc8",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04383300000336021
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-b11eac6e-1d0c-4134-905d-c02cffe9c116",
+            "elapsedMs": 1.4385000000474975,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/30-input.json",
+              "bytes": 47,
+              "sha256": "039684bc8867c9f71586589db1752f5253bf2ca03e71358f22b62bf21415e773",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02258400002028793
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/31-output.json",
+              "bytes": 24111,
+              "sha256": "5a9dd08b6f0099bc10b136289da17b1f1ced016c43106819af508f9eb4f15aa2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.3261669999919832
+            }
+          },
+          {
+            "tool": "read_design_context",
+            "callId": "exec-855d35ca-895f-4c07-8c25-fc7361be27fe",
+            "elapsedMs": 10.198458000086248,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/32-input.json",
+              "bytes": 128,
+              "sha256": "07a4bdfb401159762f90f04da5672bf17ff97a95c05baab5dd5849a01e7bb4a2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04737500008195639
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/35-output.json",
+              "bytes": 1064,
+              "sha256": "fdc28068cdf462f111667821a8b10f0a99494d15bff6637f46077ee9d20cadea",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04104100004769862
+            }
+          },
+          {
+            "tool": "read_design_context",
+            "callId": "exec-7432c532-b43c-4a64-bcf9-5a38fc152546",
+            "elapsedMs": 12.279832999920473,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/36-input.json",
+              "bytes": 137,
+              "sha256": "1440411b194baa28d916382f873034663d2e350aa32fcfad47ed5750e5283c20",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.028374999994412065
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/39-output.json",
+              "bytes": 1120,
+              "sha256": "34797e298406869a7bc29334f750fc37fd311bcae494c2da471f1c9738d980ef",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03662499994970858
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-086557f1-bd5d-4ffa-a7cf-b3f841898570",
+            "elapsedMs": 17.780250000068918,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/40-input.json",
+              "bytes": 1640,
+              "sha256": "cd39ac2dbb7607f7b3954c1c312413f33ced4331ba0e997973f50f7064bb68d2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07491700001992285
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/47-output.json",
+              "bytes": 765,
+              "sha256": "4a7d528026fb8397f8e63c793f94d9f2aa40ce305f78a7a5db26fe6af91895f5",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.031374999904073775
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-2afcfea3-e591-4935-80cf-5827dec5d6f0",
+            "elapsedMs": 7.970874999999069,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/48-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.010291000013239682
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/53-output.json",
+              "bytes": 157,
+              "sha256": "3782250c96a781d86b28106698c5a73a2484987d4b0b649efc50c05b824d3012",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.011042000027373433
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-66f08ec7-4967-4b2c-9a40-08163f639bda",
+            "elapsedMs": 1.0392080000601709,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/54-input.json",
+              "bytes": 50,
+              "sha256": "8a20f50a354f69f542ee5f9ca520ef843e914ff392e85509d7cdef1abadf41c5",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.014082999899983406
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/55-output.json",
+              "bytes": 9564,
+              "sha256": "9d6454a389c3912769f76972b4ab6374972b69e321540d0dbf0a454d8b91a14f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.23708300001453608
+            }
+          },
+          {
+            "tool": "release_design_context",
+            "callId": "exec-3ea4e1cc-2afb-4cff-98a1-78ed9ba7cb38",
+            "elapsedMs": 5.7672079999465495,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/56-input.json",
+              "bytes": 67,
+              "sha256": "f841bd2fea3999e7b32b39e2ad5d7d3449b7d08815dae71737f7b2d6b9c8bb7f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03345800004899502
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/59-output.json",
+              "bytes": 618,
+              "sha256": "115e9d95226dc513dceb2b2feffe410ed04ff5bdf9b656918817f5885ef28e9e",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.026625000056810677
+            }
+          },
+          {
+            "tool": "release_design_context",
+            "callId": "exec-ca75d628-34c8-4db4-892e-354e668d694d",
+            "elapsedMs": 6.071125000016764,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/60-input.json",
+              "bytes": 67,
+              "sha256": "07b9b90010f4602c928dde0e7553cbe01b5da6b9b33fa414c989f37b171e8df2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02629100007470697
+            },
+            "output": {
+              "status": "queued",
+              "path": "a11f06a1-7b38-4be7-b5e6-423ea046f81a.payloads/63-output.json",
+              "bytes": 618,
+              "sha256": "97b26f3709d356073a19ac634bb35570001e1061d0fa7cdcd2393b0de79b330f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02512500004377216
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-diagnostic-composition-1792312064963",
+    "arm": "diagnostic",
+    "caseId": "composition",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:27:44.978Z",
+    "sentAt": "2026-10-18T08:27:47.438Z",
+    "elapsedMs": 43429,
+    "firstContentMs": 26280,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "96fe7af2ba2953c67837d395b932220cce08fed485cd741096d0576e09749b1d",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-diagnostic-composition-1792312064963",
+      "documentGeneration": 0,
+      "sequence": 3,
+      "durableSequence": 3
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "2e77656049993aea0cec972f879dca53b975735784cc294739385102d54d6a98",
+      "final.png": "1b479998df926d7a2192ebb7f1d932b8d43fcf2f3e8b4227ab484c0ce96da1f7",
+      "after.json": "5182be35bb15834a241d2bef1741f83ac4e1a24000f5b1894eaa8c3af3b92faf",
+      "analysis.json": "2bc61e391f316bf6188470ff87daddf3d57222d82cecd454bf0b03512e5409a0",
+      "run.json": "7fd9b89e0fce068ce20979f1026c90a6ecb190dde036fa210f73baa47cd8c271"
+    },
+    "preservation": null,
+    "streams": [
+      {
+        "file": "a5f2571e-d201-404b-a580-fdc93ab295cd.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "discover_knowledge",
+            "callId": "exec-6a8fd946-8982-4ce9-9954-a84273cd1c56",
+            "elapsedMs": 5.499416999984533,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/4-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03208299994003028
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/5-output.json",
+              "bytes": 1030,
+              "sha256": "3f81b50b8b08258f6de2da6b07a88a69f79b8736cc387b2c92d38c8c0b35ff6f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07133299997076392
+            },
+            "inputValue": {},
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": null,
+              "generation": null,
+              "contextKey": null,
+              "discoveredIds": [
+                "colors",
+                "components.button",
+                "icons",
+                "typography"
+              ],
+              "sources": []
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-b56e217c-8c1d-41c8-999c-131a0e4d8f01",
+            "elapsedMs": 36.54487500002142,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/6-input.json",
+              "bytes": 101,
+              "sha256": "bfe784c039332a4119e680849dd7e6ff996bc108c1e0f1948d4587fe97fe1dd5",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.020332999993115664
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/7-output.json",
+              "bytes": 114327,
+              "sha256": "17e99730bcfe5b17324cd75d274d477734525a22d1186a90cf2b9ca3967b2c11",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.5529170000227168
+            }
+          },
+          {
+            "tool": "read_knowledge",
+            "callId": "exec-52a4dab6-da91-4aa3-bb8e-2e3ab90de4ae",
+            "elapsedMs": 2.2426249999552965,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/8-input.json",
+              "bytes": 51,
+              "sha256": "c373f07bb4ac212c475666d9b854ec2e19769e2420528b271a415e9c1355c957",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05149999994318932
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/9-output.json",
+              "bytes": 4655,
+              "sha256": "2ddacabdd8bcf639af319bb8b6da96923910395ba1d968b06eea7a2501d4f966",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.08541699999477714
+            },
+            "inputValue": {
+              "ids": ["colors", "components.button", "typography"]
+            },
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": false,
+              "generation": 6,
+              "contextKey": "[[\"colors\",\"components.button\",\"typography\"],[],6,0]",
+              "discoveredIds": [],
+              "sources": [
+                {
+                  "id": "colors",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                },
+                {
+                  "id": "components.button",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                },
+                {
+                  "id": "typography",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-2dc5c7a9-a412-46b4-b0ae-ee1d01e9c29a",
+            "elapsedMs": 5.3326250000391155,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/10-input.json",
+              "bytes": 105,
+              "sha256": "b73803039a54c90a4c0cd9c83b1d18e3fdfc851369721fefe9ed432cf4d19a2a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03808299999218434
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/11-output.json",
+              "bytes": 100033,
+              "sha256": "49b166ad483923a7fc3c97ae478a6731a952c754eb7b3a07fcb8a830e41e86e2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.7185830000089481
+            }
+          },
+          {
+            "tool": "prepare_and_apply_design",
+            "callId": "exec-922de81e-4a71-45db-987b-fa4d4f54c11c",
+            "elapsedMs": 105.48120899999049,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/12-input.json",
+              "bytes": 1801,
+              "sha256": "2fa6a71eb44a34ee027c0bff4756791f0a35f2ac60ae266ec37fae8964ea9a58",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.12066600006073713
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/23-output.json",
+              "bytes": 4048,
+              "sha256": "249125804708d5e409fcc4b75d8c88d3ddc9335ef25c5bd70e6f56c7d55bc751",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.047833000076934695
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-0c05c44f-c16d-4cae-817b-6dba71a4828d",
+            "elapsedMs": 34.2130420000758,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/24-input.json",
+              "bytes": 193,
+              "sha256": "663aff06e25e2e75a684e0a55441cb3d0123efc8d629bcb3c7851792d2a41894",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05904199997894466
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/29-output.json",
+              "bytes": 2777,
+              "sha256": "5c3863254df7e59963ebe55e5f562e95325db8ce36c5a231df17f0ad20b57a9c",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04654200002551079
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-14b13e84-9e45-44b8-8f6f-bc3564286c72",
+            "elapsedMs": 19.598750000004657,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/30-input.json",
+              "bytes": 1562,
+              "sha256": "2b1a099298cfb360419f5424fa5bb14b95afa36c95cfbb2f5692e9aa7549cf08",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.08024999999906868
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/37-output.json",
+              "bytes": 765,
+              "sha256": "384088d86ae3cfc5da08a13a24d26ece2064f34f9309c52b170934f2e12a6571",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.039875000016763806
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-8fda8208-4dc0-4394-8887-c095f258b6bf",
+            "elapsedMs": 7.140875000040978,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/38-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.029375000041909516
+            },
+            "output": {
+              "status": "queued",
+              "path": "a5f2571e-d201-404b-a580-fdc93ab295cd.payloads/43-output.json",
+              "bytes": 157,
+              "sha256": "3782250c96a781d86b28106698c5a73a2484987d4b0b649efc50c05b824d3012",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.007457999978214502
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-transfer-composition-transfer-1792312629933",
+    "arm": "transfer",
+    "caseId": "composition-transfer",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:37:09.945Z",
+    "sentAt": "2026-10-18T08:37:12.413Z",
+    "elapsedMs": 42434,
+    "firstContentMs": 26296,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-transfer-composition-transfer-1792312629933",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "2e77656049993aea0cec972f879dca53b975735784cc294739385102d54d6a98",
+      "final.png": "376cba647091c9c63de325fffde640dc6b042a99dfac6b7a6a6e1845270aeb30",
+      "after.json": "dd82cc939e9bb931e7e893387a54bb2d24e718568b1086ca8dca6ace6b445c89",
+      "analysis.json": "5893be87407df87e01183d0bf10b9b443cad148b32b58482d903a94d1df28ae5",
+      "run.json": "cc01e0c77fe4556af46ccc2822e9981b44970b4c735fe5edfa17b6ffce1aaea1"
+    },
+    "preservation": null,
+    "streams": [
+      {
+        "file": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "discover_knowledge",
+            "callId": "exec-dfc3743f-e61d-45d6-b4de-23b19ebc7007",
+            "elapsedMs": 1.808707999996841,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/4-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.025333999888971448
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/5-output.json",
+              "bytes": 1030,
+              "sha256": "3f81b50b8b08258f6de2da6b07a88a69f79b8736cc387b2c92d38c8c0b35ff6f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.042000000132247806
+            },
+            "inputValue": {},
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": null,
+              "generation": null,
+              "contextKey": null,
+              "discoveredIds": [
+                "colors",
+                "components.button",
+                "icons",
+                "typography"
+              ],
+              "sources": []
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-ac03247c-c952-4a4c-bf99-0803cd318ac1",
+            "elapsedMs": 30.05241600004956,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/6-input.json",
+              "bytes": 90,
+              "sha256": "8a2705037295b9cca23de19746a12e28bf9961570411438c5051a5a0070aec20",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.01708399993367493
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/7-output.json",
+              "bytes": 104640,
+              "sha256": "f75c2488858b12db63bff7aa781439bd6b6c4d39254c2d6a078289c1af067627",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.3094580001197755
+            }
+          },
+          {
+            "tool": "read_knowledge",
+            "callId": "exec-e637ce13-c760-4263-b07c-e8423103e842",
+            "elapsedMs": 0.8912500001024455,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/8-input.json",
+              "bytes": 31,
+              "sha256": "106b1cb1dfd3b6ff24faef67daef1183878db8eeae60a56c60b19fc9f6f25971",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.025750000029802322
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/9-output.json",
+              "bytes": 3128,
+              "sha256": "723b2745187e4683ff4b3f4782f224ae9ad8684aab8146ea0b4d2a855483660d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0643750000745058
+            },
+            "inputValue": {
+              "ids": ["colors", "typography"]
+            },
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": false,
+              "generation": 6,
+              "contextKey": "[[\"colors\",\"typography\"],[],6,0]",
+              "discoveredIds": [],
+              "sources": [
+                {
+                  "id": "colors",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                },
+                {
+                  "id": "typography",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-3594327f-29f2-4ed6-88c9-8e958c012a58",
+            "elapsedMs": 4.903915999922901,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/10-input.json",
+              "bytes": 105,
+              "sha256": "b73803039a54c90a4c0cd9c83b1d18e3fdfc851369721fefe9ed432cf4d19a2a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02083300007507205
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/11-output.json",
+              "bytes": 100033,
+              "sha256": "49b166ad483923a7fc3c97ae478a6731a952c754eb7b3a07fcb8a830e41e86e2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 2.457917000167072
+            }
+          },
+          {
+            "tool": "prepare_and_apply_design",
+            "callId": "exec-b409877a-32bd-483a-b650-abf8b6572ea2",
+            "elapsedMs": 97.42345799994655,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/12-input.json",
+              "bytes": 1635,
+              "sha256": "d6e6b9071b604cfd49c623db5dedd7b3bfc6a1fd63398e13cf241417a6fd18a4",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.10583300003781915
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/23-output.json",
+              "bytes": 4414,
+              "sha256": "62dd7db51b131bec75598ee9f0e4749cfcf9310c4789b4726ff18ae2b3d07c6d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.056250000139698386
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-fda5a73e-a406-42a1-bd41-42b6f2d86550",
+            "elapsedMs": 43.790917000034824,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/24-input.json",
+              "bytes": 165,
+              "sha256": "0c91b9eebda0b14138668c6e7de48ad837f0dfdaf4849333dd38f7f866d431c6",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05870900000445545
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/29-output.json",
+              "bytes": 2155,
+              "sha256": "5234d5891fed5ffbf81b4577ed8941395abbe1690d4d2f63173870d39451dec4",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.046500000171363354
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-900f96d0-fc6b-480b-b274-cd6afed2abaf",
+            "elapsedMs": 14.143832999980077,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/30-input.json",
+              "bytes": 935,
+              "sha256": "b4dde03bc98a33c9856c6692131b5e6dec4ea5e615ef2dd436e36fac1dcef217",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06816700007766485
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/37-output.json",
+              "bytes": 765,
+              "sha256": "3ed8c947a07865e0da24adf4ab68b5be28ac3c46d57ecd186699c5c09bb1b4c3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02741699991747737
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-a1c89af8-e1bc-4b26-9176-16ac2f93f27d",
+            "elapsedMs": 7.101208999985829,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/38-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.01762499986216426
+            },
+            "output": {
+              "status": "queued",
+              "path": "ad4932ae-2fbf-4a5b-ab9a-54f756b37c70.payloads/43-output.json",
+              "bytes": 157,
+              "sha256": "f73bf41b147c8274e047cf546795e519d80e83e421d91a2fbf4cffa105933a30",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.007165999850258231
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-transfer-frame-1792312586689",
+    "arm": "transfer",
+    "caseId": "frame",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:36:26.699Z",
+    "sentAt": "2026-10-18T08:36:28.996Z",
+    "elapsedMs": 40382,
+    "firstContentMs": 26277,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-transfer-frame-1792312586689",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "2e77656049993aea0cec972f879dca53b975735784cc294739385102d54d6a98",
+      "final.png": "8b475b967447839a17be58b9e5ac1deb74ad048b344f67bfc9e77aa93c49dd2f",
+      "after.json": "ce3be4dc4ee118aa0c3856c5dca61279a241d5b09413cd937c3f67db2389526d",
+      "analysis.json": "5118a7496bc215d37d5dc58f9d9f465d02e6b914e6952fc6ac8e6377d0869855",
+      "run.json": "a18ae45c79ed5e227b3684ed9fd5f59af124ca9cfd61046de485992c1a96fdc9"
+    },
+    "preservation": null,
+    "streams": [
+      {
+        "file": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-a9830def-2368-4f1f-a3ee-cb195a260b52",
+            "elapsedMs": 40.37400000006892,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/4-input.json",
+              "bytes": 76,
+              "sha256": "7308f0fe297023a60729f9b39e76d1d0b2893c620d5fc92ecfff63d83d19b206",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.045166000025346875
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/5-output.json",
+              "bytes": 104640,
+              "sha256": "f75c2488858b12db63bff7aa781439bd6b6c4d39254c2d6a078289c1af067627",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.4430829999037087
+            }
+          },
+          {
+            "tool": "discover_knowledge",
+            "callId": "exec-c0672437-6607-41b4-8382-1b7d6be2baf5",
+            "elapsedMs": 1.385499999858439,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/6-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.013374999864026904
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/7-output.json",
+              "bytes": 1030,
+              "sha256": "3f81b50b8b08258f6de2da6b07a88a69f79b8736cc387b2c92d38c8c0b35ff6f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.032958999974653125
+            },
+            "inputValue": {},
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": null,
+              "generation": null,
+              "contextKey": null,
+              "discoveredIds": [
+                "colors",
+                "components.button",
+                "icons",
+                "typography"
+              ],
+              "sources": []
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-80fcb12b-bbcc-4a88-b240-1247d0d178e3",
+            "elapsedMs": 3.3617499999236315,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/8-input.json",
+              "bytes": 105,
+              "sha256": "b73803039a54c90a4c0cd9c83b1d18e3fdfc851369721fefe9ed432cf4d19a2a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.034958999836817384
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/9-output.json",
+              "bytes": 100033,
+              "sha256": "49b166ad483923a7fc3c97ae478a6731a952c754eb7b3a07fcb8a830e41e86e2",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.345875000115484
+            }
+          },
+          {
+            "tool": "read_knowledge",
+            "callId": "exec-13605dce-8b4c-4cc3-9ba7-8730674e71a0",
+            "elapsedMs": 0.9815410000737756,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/10-input.json",
+              "bytes": 18,
+              "sha256": "bf31f6117c16845bb35d7b485c38e8afbad18350cd47e3d219ced9a504642838",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.036084000021219254
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/11-output.json",
+              "bytes": 1682,
+              "sha256": "bdf2ec76f01453d2fad0f64af69c663a17a33f2de48767111f59f79479030c16",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04074999992735684
+            },
+            "inputValue": {
+              "ids": ["colors"]
+            },
+            "result": {
+              "trust": "untrusted-advice",
+              "alreadyDelivered": false,
+              "generation": 6,
+              "contextKey": "[[\"colors\"],[],6,0]",
+              "discoveredIds": [],
+              "sources": [
+                {
+                  "id": "colors",
+                  "revision": 1,
+                  "provenance": [
+                    "Project-authored design guidance; reviewed through repository changes."
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tool": "prepare_and_apply_design",
+            "callId": "exec-02d95ace-140b-42d5-965f-4eb502cd9e02",
+            "elapsedMs": 99.10233299992979,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/12-input.json",
+              "bytes": 1130,
+              "sha256": "53d5fde754021f1a5d1c9c046dc7870f7b842f7b699cce6e559a0dd5ce593f07",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.09191699977964163
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/25-output.json",
+              "bytes": 4940,
+              "sha256": "9e24ceb446033846fb895ebe80099003e3914491e921269aa2b266ec139d28d4",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05912500014528632
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-6928860a-3a7b-4fee-a959-10369dee9449",
+            "elapsedMs": 6.555332999909297,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/26-input.json",
+              "bytes": 130,
+              "sha256": "334d6ce5fd93a0c3338efbe7677858bc986ee1f1894bb93f25d4afde855a241e",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.044541999930515885
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/29-output.json",
+              "bytes": 1323,
+              "sha256": "b546c3c94148327013a03bc5dec8ab97ecad00a584f7a5f3afcfabc779ddc600",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.032374999951571226
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-cd228a40-7f60-4acc-a390-ac17256dfbe7",
+            "elapsedMs": 16.848915999988094,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/30-input.json",
+              "bytes": 908,
+              "sha256": "9da9856f14a89f510293bc465500be6a27a80edef7e6675cfdb588d02786be25",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04800000018440187
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/37-output.json",
+              "bytes": 765,
+              "sha256": "a47031c1b9ccada568fe806a010aec722f61970282d5694088a58d13b55f6b56",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07254199986346066
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-1b9b7883-bfeb-4e30-8f78-67fa9e3747d4",
+            "elapsedMs": 8.302790999878198,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/38-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.009957999922335148
+            },
+            "output": {
+              "status": "queued",
+              "path": "3a8edfb2-ea5e-4df9-8cda-306bcf2378df.payloads/43-output.json",
+              "bytes": 157,
+              "sha256": "f73bf41b147c8274e047cf546795e519d80e83e421d91a2fbf4cffa105933a30",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.009750000201165676
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-transfer-precise-edit-transfer-1792312675408",
+    "arm": "transfer",
+    "caseId": "precise-edit-transfer",
+    "head": "3d503aa714336946839374dc948e9c171cfb8182",
+    "startedAt": "2026-10-18T08:37:55.419Z",
+    "sentAt": "2026-10-18T08:37:58.362Z",
+    "elapsedMs": 62550,
+    "firstContentMs": null,
+    "outcome": "success",
+    "failure": null,
+    "sources": {
+      "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+      "server/local-knowledge.ts": "e342526a708bd9034a8559ac43ae10fea80a1056255e8a95422590f029066828",
+      "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+      "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+      "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+      "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+      "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+    },
+    "persistence": {
+      "documentId": "knowledge-transfer-precise-edit-transfer-1792312675408",
+      "documentGeneration": 0,
+      "sequence": 2,
+      "durableSequence": 2
+    },
+    "errors": [],
+    "artifacts": {
+      "before.json": "15ddfee25545f60fdad53094f411f7b2d27a563f7efd864639fe433c970cbc59",
+      "final.png": "496cc9bc5b37bc9291efe12f4a0882550f9d9d82bae95746c54abd5da9a807d2",
+      "after.json": "385f95c0e6ca3f7688eaebd654c1fefd149acebdaa5e9760fce45ca3a365ae32",
+      "analysis.json": "c0d714414f80671d6595be1735eb59eacc49f86070547397207219c62d60b4c8",
+      "run.json": "a8579daba01ed1cee5c2ac35a7dab1e5e41b74a107939d5162f9041e7af07995"
+    },
+    "preservation": {
+      "unchanged": true,
+      "targetCorrect": true,
+      "sameIds": true
+    },
+    "streams": [
+      {
+        "file": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.jsonl",
+        "model": "gpt-6-astra",
+        "effort": "medium",
+        "incomplete": [],
+        "calls": [
+          {
+            "tool": "read_design_context",
+            "callId": "exec-be4c2fb6-b5c3-4571-b9a7-e41d00904ca4",
+            "elapsedMs": 9.016791999805719,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/4-input.json",
+              "bytes": 119,
+              "sha256": "5d18bd695a907494e7a6cc26f28a08821ee5903e96f1c059908b792970f8f1f3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.05154199991375208
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/7-output.json",
+              "bytes": 1751,
+              "sha256": "bb9ab1d5046d353dbb392858e3d90f7af16f5f8eb236c003c36587d1c5869c9c",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07295900001190603
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-42a37b8c-2806-4e51-b0ac-e043684b4b61",
+            "elapsedMs": 31.026791000040248,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/8-input.json",
+              "bytes": 33,
+              "sha256": "fefabdcff744c617ced823fb1ccb85f3b4cdcc5dc1f76010f1d645f418ecaa77",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.013749999925494194
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/9-output.json",
+              "bytes": 1308,
+              "sha256": "f37391c13eea0f6e0d2479635c3b96f5cec143955b62fd4eb4d580f42ce8f2da",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03891699993982911
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-cb52d871-efd7-4c00-a8df-083627685b14",
+            "elapsedMs": 1.3770840000361204,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/10-input.json",
+              "bytes": 22,
+              "sha256": "c91935a70105c0eed6325c6ecbe7c018e8f1d26ed55cdc6cad5b7db1afd97ff3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04429100011475384
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/11-output.json",
+              "bytes": 13520,
+              "sha256": "347a47c0a7fbc1e75b8c41a512c22032c46a0c460388066d96424c066bcc783c",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.34629100002348423
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-029b09bf-058a-4f12-915c-db7071b507a8",
+            "elapsedMs": 3.1372919999994338,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/12-input.json",
+              "bytes": 18,
+              "sha256": "7bbcbe5b2b02d940add8cfbac26cf11f78983f9f26bcea91cd7be8ba7973b0dc",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.059249999932944775
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/13-output.json",
+              "bytes": 13361,
+              "sha256": "55f0ea8601c838e75df4375800d01a0b4560fed67feceaf618950a524357da30",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.09537500003352761
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-20b97eb6-0664-4033-892f-6367dc678c54",
+            "elapsedMs": 5.476959000108764,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/14-input.json",
+              "bytes": 37,
+              "sha256": "6cfc9a9facd3ebfe9e3ca9625eacc7796657f273002e2c2d956e697f93b62c10",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03150000004097819
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/15-output.json",
+              "bytes": 52905,
+              "sha256": "aff011358d102ef2d39866e45771e280e53453fdaa8060cb8141249d400619a1",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.5402919999323785
+            }
+          },
+          {
+            "tool": "describe_design_apis",
+            "callId": "exec-9a74548e-590d-420c-a3f8-41a51afd2657",
+            "elapsedMs": 3.0992499999701977,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/16-input.json",
+              "bytes": 108,
+              "sha256": "6c5d8d577ff8102e081878f0392974892cd7c86acadf68769e57344cb2089c13",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.03479199996218085
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/17-output.json",
+              "bytes": 77539,
+              "sha256": "78529902e627901307230692e4def733fb0ec9e9eb82ed5278545d67be8fd8f5",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 1.9313329998403788
+            }
+          },
+          {
+            "tool": "execute_design_batch",
+            "callId": "exec-58df48cf-6139-4899-9a24-fc0622c6989a",
+            "elapsedMs": 18.428165999939665,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/18-input.json",
+              "bytes": 232,
+              "sha256": "11a244a48d80142de35774549006abe7351a1e6b92b193f50432ad54db88738b",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04970899992622435
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/23-output.json",
+              "bytes": 396,
+              "sha256": "59a7f18b2d83da7127a98679ce92940bb17ad0001b1d49ad40f312a836d72286",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.023708000080659986
+            }
+          },
+          {
+            "tool": "define_design_criteria",
+            "callId": "exec-9c1a9032-65e4-4d8e-b71d-7473d917ba58",
+            "elapsedMs": 0.7530419998802245,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/24-input.json",
+              "bytes": 400,
+              "sha256": "3c485cdad1d716fbf8ee19e747eb7d2149ace7994b114ffe4630720b5a03c9f3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.02091600000858307
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/25-output.json",
+              "bytes": 189,
+              "sha256": "5ccaca5c468e7ffe302da8775ff551f1bcc6154291d21e30d14882ae7688504f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0164580000564456
+            }
+          },
+          {
+            "tool": "read_design_context",
+            "callId": "exec-75ee1bc0-fbca-44f1-a0a1-796ae61775a2",
+            "elapsedMs": 4.3118749998975545,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/26-input.json",
+              "bytes": 119,
+              "sha256": "5d18bd695a907494e7a6cc26f28a08821ee5903e96f1c059908b792970f8f1f3",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.01954100001603365
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/29-output.json",
+              "bytes": 1752,
+              "sha256": "7d6fdf10643e916fd58198ea479382da4a5be610166e337c08480cf38a173bf7",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06395800015889108
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-5c507f96-7b60-45c1-bb76-c45eb97c4698",
+            "elapsedMs": 6.932416999945417,
+            "status": "partial",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/30-input.json",
+              "bytes": 129,
+              "sha256": "7be085bc633c02dad1106dfbad0601ca9ebd47ebef62ceecd70de45d9b2838b8",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07541700010187924
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/33-output.json",
+              "bytes": 1836,
+              "sha256": "2b26358602a2d2a5a4d3909ad484040f93bdd08b274cc8e1dca95d99fd76defe",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0722080001141876
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-ca1d9d59-e1de-4872-b9c6-d3711d4b8c11",
+            "elapsedMs": 9.43874999997206,
+            "status": "partial",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/34-input.json",
+              "bytes": 221,
+              "sha256": "5b6268a672a508e847afa538147c80547d2dd7274b53ea4b29d1ee47a5cb8e93",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.060249999864026904
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/37-output.json",
+              "bytes": 2948,
+              "sha256": "0fbea4af3f562a2f3fcc8a485427b691b0a4d3690c13f2ac39644511bf72a78d",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.04858299996703863
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-d6823a69-1eb9-4822-b7aa-1ec474ad69e9",
+            "elapsedMs": 22.570625000167638,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/38-input.json",
+              "bytes": 169,
+              "sha256": "5aabc73c4203c0dd3f42a9ef172fd60f9895e44704b6a28f247e62c55b8cdbe7",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.07099999999627471
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/43-output.json",
+              "bytes": 2166,
+              "sha256": "f6927e2cfb3726bcb75118bf982d4ccd8b7f3f2a3f0f8171037c0b70b9aed762",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.0711250000167638
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-03fa0c67-4ffe-4bb5-bbf5-a04098a5974e",
+            "elapsedMs": 30.57058300008066,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/44-input.json",
+              "bytes": 411,
+              "sha256": "663bd215c43e8543d1ae0cee28880aee294dc2d4edfcb2fd5ab80e532670aa1b",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.041250000009313226
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/57-output.json",
+              "bytes": 4126,
+              "sha256": "424f43387bce261f51a95cc2e6c87eec23effe0c18e8c9072ff1723ae80b7aea",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.06233300012536347
+            }
+          },
+          {
+            "tool": "review_drawing",
+            "callId": "exec-fbccdf3e-2f69-4b7f-93df-a5ba7365b193",
+            "elapsedMs": 22.09145800000988,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/58-input.json",
+              "bytes": 1722,
+              "sha256": "2e768ccaa96bdfe97f18c7612948193f3d4cb8b0596981cacd13b7a563c6434f",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.057708000065758824
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/81-output.json",
+              "bytes": 1149,
+              "sha256": "e6445c262d90acf5a527fbcb9e16b0eaf84fc412ccc3911055822b8c10eb3b54",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.042458000127226114
+            }
+          },
+          {
+            "tool": "read_design_checks",
+            "callId": "exec-a8cd9dc5-6f4a-49d0-93eb-d0f68d78cbb5",
+            "elapsedMs": 5.943124999990687,
+            "status": "usable",
+            "input": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/82-input.json",
+              "bytes": 2,
+              "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.017874999903142452
+            },
+            "output": {
+              "status": "queued",
+              "path": "8318ea2d-bc3a-4b5f-a3c6-9c66c3c715f8.payloads/95-output.json",
+              "bytes": 157,
+              "sha256": "ec3241104b0713a60d59b42e31b55e9c89f7790f23b55152559c189f5b883073",
+              "redactions": [],
+              "resourceIdentities": [],
+              "serializationMs": 0.01079199998639524
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

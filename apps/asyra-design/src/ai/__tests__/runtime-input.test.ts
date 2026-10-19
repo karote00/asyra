@@ -269,7 +269,7 @@ it('advertises one complete contract for every browser tool without exposing exe
         true
       )
       if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
-        expect(action.revision).toBe(3)
+        expect(action.revision).toBe(5)
       expect(action.lifecycle.retry).not.toBe('read-only')
       registry.register(action)
     }
@@ -401,113 +401,127 @@ it.each([null, false, [], 'invalid'])(
   }
 )
 
-it('reuses deterministic verdicts through the registered browser action and retires them with its runtime', async () => {
-  const { default: core } = await import('../../contexts')
-  const { SharedDataChannelNames, SCENE_TREE_ACTIONS, PROPS_ACTIONS } =
-    await import('@asyra/utils')
-  const original = {
-    observeSharedDataChannel: core.observeSharedDataChannel,
-    getElementMetadata: core.getElementMetadata,
-    getElementData: core.getElementData,
-    getElementComputedData: core.getElementComputedData,
-    getPropertyOwnerElementIds: core.getPropertyOwnerElementIds
-  }
-  const listeners = new Map<string, Set<(value: unknown) => void>>()
-  core.observeSharedDataChannel = vi.fn((channel, listener) => {
-    const entries = listeners.get(channel) ?? new Set()
-    entries.add(listener)
-    listeners.set(channel, entries)
-    return () => {
-      entries.delete(listener)
+it.each(['frame', 'group', 'rectangle'] as const)(
+  'reuses deterministic verdicts through the registered browser action and retires the %s runtime',
+  async (rootType) => {
+    const { default: core } = await import('../../contexts')
+    const { SharedDataChannelNames, SCENE_TREE_ACTIONS, PROPS_ACTIONS } =
+      await import('@asyra/utils')
+    const original = {
+      observeSharedDataChannel: core.observeSharedDataChannel,
+      getElementMetadata: core.getElementMetadata,
+      getElementData: core.getElementData,
+      getElementComputedData: core.getElementComputedData,
+      getPropertyOwnerElementIds: core.getPropertyOwnerElementIds
     }
-  })
-  const metadata = (id: string) => ({
-    id,
-    type: 'rectangle',
-    name: id,
-    parentId: id === 'root' ? '' : 'root',
-    visible: true,
-    lock: false,
-    childCount: id === 'root' ? 2 : 0
-  })
-  core.getElementMetadata = vi.fn(metadata)
-  core.getElementData = vi.fn((id) => ({
-    ...metadata(id),
-    children: id === 'root' ? ['a', 'b'] : []
-  })) as typeof original.getElementData
-  let x = 0
-  core.getElementComputedData = vi.fn((id) => ({
-    x: id === 'a' ? x : 0,
-    y: 0,
-    width: id === 'root' ? 100 : 10,
-    height: 100,
-    rotation: 0
-  }))
-  core.getPropertyOwnerElementIds = vi.fn(() => ['a', 'b'])
-  const input = createAiRuntimeInput({
-    provider: { requestActionBatch: vi.fn() },
-    permissionRules: {}
-  })
-  const review = input.actionDefinitions.find(
-    (action) => action.name === AiActionNames.REVIEW_DESIGN
-  )
-  const context = { signal: new AbortController().signal }
-  const emit = (channel: string, value: unknown) => {
-    for (const listener of listeners.get(channel) ?? []) listener(value)
+    const listeners = new Map<string, Set<(value: unknown) => void>>()
+    core.observeSharedDataChannel = vi.fn((channel, listener) => {
+      const entries = listeners.get(channel) ?? new Set()
+      entries.add(listener)
+      listeners.set(channel, entries)
+      return () => {
+        entries.delete(listener)
+      }
+    })
+    const metadata = (id: string) => ({
+      id,
+      type: id === 'root' ? rootType : 'rectangle',
+      name: id,
+      parentId: id === 'root' ? '' : 'root',
+      visible: true,
+      lock: false,
+      childCount: id === 'root' ? 2 : 0
+    })
+    core.getElementMetadata = vi.fn(metadata)
+    core.getElementData = vi.fn((id) => ({
+      ...metadata(id),
+      children: id === 'root' ? ['a', 'b'] : []
+    })) as typeof original.getElementData
+    let x = 0
+    core.getElementComputedData = vi.fn((id) => ({
+      x: id === 'a' ? x : 0,
+      y: 0,
+      width: id === 'root' ? 100 : 10,
+      height: 100,
+      rotation: 0
+    }))
+    core.getPropertyOwnerElementIds = vi.fn(() => ['a', 'b'])
+    const input = createAiRuntimeInput({
+      provider: { requestActionBatch: vi.fn() },
+      permissionRules: {}
+    })
+    const review = input.actionDefinitions.find(
+      (action) => action.name === AiActionNames.REVIEW_DESIGN
+    )
+    const context = { signal: new AbortController().signal }
+    const emit = (channel: string, value: unknown) => {
+      for (const listener of listeners.get(channel) ?? []) listener(value)
+    }
+    try {
+      if (!review) throw new Error('Missing registered review')
+      expect(
+        await review.execute({ elementId: 'root' }, context)
+      ).toMatchObject({
+        complete: true,
+        observation: { evaluatedNodes: 3 }
+      })
+      expect(
+        await review.execute({ elementId: 'root' }, context)
+      ).toMatchObject({
+        complete: true,
+        observation: { evaluatedNodes: 0, reusedNodes: 3 }
+      })
+      x = 150
+      emit(SharedDataChannelNames.SCENE_TREE, {
+        action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
+        id: 'a',
+        key: 'visible',
+        before: false,
+        after: true
+      })
+      expect(
+        await review.execute({ elementId: 'root' }, context)
+      ).toMatchObject({
+        complete: true,
+        findings:
+          rootType === 'frame'
+            ? [
+                expect.objectContaining({
+                  elementId: 'a',
+                  kind: 'container-overflow',
+                  right: 60
+                })
+              ]
+            : [],
+        observation: { evaluatedNodes: 2, reusedNodes: 1 }
+      })
+      x = 0
+      emit(SharedDataChannelNames.PROPS, {
+        action: PROPS_ACTIONS.UPDATE_PROPERTY,
+        id: 'shared'
+      })
+      expect(
+        await review.execute({ elementId: 'root' }, context)
+      ).toMatchObject({
+        complete: true,
+        findings: [],
+        observation: { evaluatedNodes: 3, reusedNodes: 0 }
+      })
+      expect(core.getPropertyOwnerElementIds).toHaveBeenCalled()
+      await Promise.all(
+        input.ownedResources?.map((resource) => resource.dispose()) ?? []
+      )
+      expect(
+        [...listeners.values()].every((entries) => entries.size === 0)
+      ).toBe(true)
+      await expect(
+        review.execute({ elementId: 'root' }, context)
+      ).rejects.toThrow(/disposed/)
+    } finally {
+      await Promise.all(
+        input.ownedResources?.map((resource) => resource.dispose()) ?? []
+      )
+      Object.assign(core, original)
+    }
   }
-  try {
-    if (!review) throw new Error('Missing registered review')
-    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
-      complete: true,
-      observation: { evaluatedNodes: 3 }
-    })
-    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
-      complete: true,
-      observation: { evaluatedNodes: 0, reusedNodes: 3 }
-    })
-    x = 150
-    emit(SharedDataChannelNames.SCENE_TREE, {
-      action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA,
-      id: 'a',
-      key: 'visible',
-      before: false,
-      after: true
-    })
-    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
-      complete: true,
-      findings: [
-        expect.objectContaining({
-          elementId: 'a',
-          kind: 'container-overflow',
-          right: 60
-        })
-      ],
-      observation: { evaluatedNodes: 2, reusedNodes: 1 }
-    })
-    x = 0
-    emit(SharedDataChannelNames.PROPS, {
-      action: PROPS_ACTIONS.UPDATE_PROPERTY,
-      id: 'shared'
-    })
-    expect(await review.execute({ elementId: 'root' }, context)).toMatchObject({
-      complete: true,
-      findings: [],
-      observation: { evaluatedNodes: 3, reusedNodes: 0 }
-    })
-    expect(core.getPropertyOwnerElementIds).toHaveBeenCalled()
-    await Promise.all(
-      input.ownedResources?.map((resource) => resource.dispose()) ?? []
-    )
-    expect([...listeners.values()].every((entries) => entries.size === 0)).toBe(
-      true
-    )
-    await expect(
-      review.execute({ elementId: 'root' }, context)
-    ).rejects.toThrow(/disposed/)
-  } finally {
-    await Promise.all(
-      input.ownedResources?.map((resource) => resource.dispose()) ?? []
-    )
-    Object.assign(core, original)
-  }
-})
+)

@@ -482,6 +482,9 @@ it.each(['completed', 'partial', 'unknown'] as const)(
       ]
     }
     let failure: unknown
+    const { captureRequestIdentity } =
+      await import('../../test-data/knowledge-evaluation/capture-source.mjs')
+    const capturedIdentities: string[] = []
     let postedBytes = 0
     const executeBatch = vi.fn(async () => ({
       ...(settlement === 'completed'
@@ -534,6 +537,17 @@ it.each(['completed', 'partial', 'unknown'] as const)(
       const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
       provider = createServerActionBatchProvider({
         fetch: (async (url, init) => {
+          const identity = captureRequestIdentity(
+            {
+              url: () => origin + String(url),
+              method: () => init.method,
+              headers: () =>
+                Object.fromEntries(new Headers(init.headers).entries()),
+              postDataJSON: () => JSON.parse(String(init.body))
+            },
+            origin
+          )
+          if (identity) capturedIdentities.push(identity)
           if ((init.headers as Record<string, string>)['x-ai-batch-receipt'])
             postedBytes = Buffer.byteLength(String(init.body))
           return fetch(origin + String(url), {
@@ -545,10 +559,17 @@ it.each(['completed', 'partial', 'unknown'] as const)(
       const controller = new AbortController()
       await expect(
         provider.requestActionBatch(
-          { intent: 'Export', context: {}, actions: [], attempt: 1 },
+          {
+            intent: 'Export',
+            context: {},
+            actions: [],
+            attempt: 1,
+            metadata: { sourceRequestId: 'capture-export-request' }
+          },
           { signal: controller.signal, executeBatch }
         )
       ).resolves.toMatchObject({ batchId: 'recovered' })
+      expect(capturedIdentities).toEqual(['capture-export-request'])
       expect(executeBatch).toHaveBeenCalledOnce()
       expect(controller.signal.aborted).toBe(false)
       expect(postedBytes).toBeLessThan(4096)

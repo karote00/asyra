@@ -279,3 +279,142 @@ it('rejects missing override bodies before changing App registration or content'
       .text
   ).toBe('Button advice')
 })
+
+it('delivers general architectural advice through the real catalog without imposing it on flat design', async () => {
+  const tools = withToolContractAssertions(
+    createLocalKnowledgeTools('architecture-admission')
+  )
+  const found = JSON.parse(
+    await tools.call(
+      AiDesignToolIds.DISCOVER_KNOWLEDGE,
+      { contexts: ['architectural-illustration'] },
+      signal()
+    )
+  )
+  expect(JSON.stringify(found)).toContain('design.architectural-illustration')
+  const args = {
+    ids: ['design.architectural-illustration'],
+    contexts: ['architectural-illustration']
+  }
+  const read = JSON.parse(
+    await tools.call(AiDesignToolIds.READ_KNOWLEDGE, args, signal())
+  )
+  const body = JSON.stringify(read)
+  expect(body).toContain('illustration.architecture')
+  expect(body).toContain('front-to-back')
+  expect(body).toContain('surface-grid')
+  expect(body).toContain('save_tool')
+  expect(body).not.toMatch(/Taipei|50800|101/)
+  const again = JSON.parse(
+    await tools.call(AiDesignToolIds.READ_KNOWLEDGE, args, signal())
+  )
+  expect(JSON.stringify(again).length).toBeLessThan(body.length)
+  const restored = JSON.parse(
+    await tools.call(
+      AiDesignToolIds.READ_KNOWLEDGE,
+      { ...args, rehydrate: true },
+      signal()
+    )
+  )
+  expect(JSON.stringify(restored)).toContain('front-to-back')
+  const flat = JSON.parse(
+    await tools.call(
+      AiDesignToolIds.DISCOVER_KNOWLEDGE,
+      { contexts: ['docs-page'] },
+      signal()
+    )
+  )
+  expect(JSON.stringify(flat)).not.toContain(
+    'design.architectural-illustration'
+  )
+  expect(JSON.stringify(flat)).not.toContain('illustration.architecture')
+})
+
+it('advertises every declared specialized context through the current discovery description', () => {
+  const owner = createLocalKnowledgeTools('declared-contexts')
+  const definition = owner.definitions.find(
+    (tool) => tool.name === AiDesignToolIds.DISCOVER_KNOWLEDGE
+  )
+  if (!definition) throw new Error('Missing knowledge discovery contract')
+  const schema = definition.inputSchema as {
+    properties: { contexts: { items: { enum: string[] } } }
+  }
+  for (const context of schema.properties.contexts.items.enum)
+    expect(definition.description).toContain(context)
+  owner.dispose()
+})
+
+it('retries failed catalog loading and corrects missing IDs without losing delivery or repeating file reads', async () => {
+  let loads = 0
+  const owner = createLocalKnowledgeTools('retry-advice', async () => {
+    if (++loads === 1) throw new Error('Knowledge file unavailable')
+    return [fixtureFile()]
+  })
+  try {
+    await expect(
+      owner.call(AiDesignToolIds.READ_KNOWLEDGE, { ids: ['button'] }, signal())
+    ).rejects.toThrow('Knowledge file unavailable')
+    await expect(
+      owner.call(AiDesignToolIds.READ_KNOWLEDGE, { ids: ['missing'] }, signal())
+    ).rejects.toThrow('KNOWLEDGE_NOT_FOUND')
+    const result = JSON.parse(
+      await owner.call(
+        AiDesignToolIds.READ_KNOWLEDGE,
+        { ids: ['button'] },
+        signal()
+      )
+    )
+    expect(result.alreadyDelivered).toBe(false)
+    expect(result.documents[0].text).toBe('Button advice')
+    const repeated = JSON.parse(
+      await owner.call(
+        AiDesignToolIds.READ_KNOWLEDGE,
+        { ids: ['button'] },
+        signal()
+      )
+    )
+    expect(repeated.alreadyDelivered).toBe(true)
+    expect(repeated.documents).toEqual([])
+    expect(loads).toBe(2)
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('does not let a cancelled loader waiter poison peer discovery or consume its delivery', async () => {
+  let release!: (files: ReturnType<typeof fixtureFile>[]) => void
+  let loads = 0
+  const files = new Promise<ReturnType<typeof fixtureFile>[]>((resolve) => {
+    release = resolve
+  })
+  const owner = createLocalKnowledgeTools('parallel-advice', () => {
+    loads++
+    return files
+  })
+  const cancelled = new AbortController()
+  const read = owner.call(
+    AiDesignToolIds.READ_KNOWLEDGE,
+    { ids: ['button'] },
+    cancelled.signal
+  )
+  const failed = expect(read).rejects.toThrow('cancelled read')
+  const peer = owner.call(AiDesignToolIds.DISCOVER_KNOWLEDGE, {}, signal())
+  cancelled.abort(new Error('cancelled read'))
+  release([fixtureFile()])
+  try {
+    await failed
+    expect(JSON.parse(await peer).entries[0].id).toBe('button')
+    const delivered = JSON.parse(
+      await owner.call(
+        AiDesignToolIds.READ_KNOWLEDGE,
+        { ids: ['button'] },
+        signal()
+      )
+    )
+    expect(delivered.alreadyDelivered).toBe(false)
+    expect(delivered.documents[0].text).toBe('Button advice')
+    expect(loads).toBe(1)
+  } finally {
+    owner.dispose()
+  }
+})

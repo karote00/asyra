@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   createDesignCheckResults,
   designCheckResultsSchema
@@ -486,4 +486,64 @@ it('admits a complete detached mechanical selection and rejects mixed ownership'
   expect(store.select([{ checkId: 'part', revision }])[0]).toMatchObject({
     result: { status: 'stale' }
   })
+})
+
+it('delivers bounded summaries and revision-bound complete details without cloning pending rows', () => {
+  const store = createDesignCheckResults()
+  for (let i = 0; i < 137; i++)
+    store.record({
+      id: `check-${i}`,
+      origin: 'tool',
+      status: 'fail',
+      evidence: 'x'.repeat(3000),
+      dependencies: { geometry: '1' }
+    })
+  const clone = vi.spyOn(globalThis, 'structuredClone')
+  const summary = store.deliver()
+  expect(clone).not.toHaveBeenCalled()
+  clone.mockRestore()
+  expect(summary).toMatchObject({
+    counts: { fail: 137 },
+    visitedResults: 0,
+    firstPendingId: 'check-0'
+  })
+  expect(summary).not.toHaveProperty('items')
+  expect(JSON.stringify(summary).length).toBeLessThan(300)
+  const found: string[] = []
+  let offset = 0
+  do {
+    const page = store.deliver({
+      view: 'details',
+      limit: 40,
+      offset,
+      revision: summary.revision
+    })
+    if (!page.items) throw new Error('Detail page omitted items')
+    expect(page.items.length).toBeLessThanOrEqual(40)
+    for (const item of page.items) {
+      found.push(item.id)
+      expect(item.evidence).toHaveLength(3000)
+    }
+    offset = page.nextOffset ?? 0
+  } while (offset)
+  expect(new Set(found).size).toBe(137)
+  expect(store.deliver().revision).toBe(summary.revision)
+  store.invalidate(['geometry'], 'Changed geometry')
+  expect(() =>
+    store.deliver({ view: 'details', offset: 40, revision: summary.revision })
+  ).toThrow('revision')
+  const current = store.deliver().revision
+  store.invalidate(['geometry'], 'Changed geometry')
+  expect(store.deliver().revision).toBe(current)
+  expect(store.firstPending('tool')).toEqual({ id: 'check-0', status: 'stale' })
+  expect(
+    store.deliver({ ids: ['check-136'], includePassed: true }).items
+  ).toHaveLength(1)
+  expect(() => store.deliver({ view: 'details', offset: 1 })).toThrow(
+    'revision'
+  )
+  store.retire('check-0', 'Canonical removal')
+  expect(() => store.deliver({ view: 'details', revision: current })).toThrow(
+    'revision'
+  )
 })

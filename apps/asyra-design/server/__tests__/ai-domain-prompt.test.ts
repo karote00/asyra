@@ -20,6 +20,39 @@ const imageGuidance = imageDefinitions
   .join('\n')
 
 describe('stage-owned App guidance', () => {
+  it('offers selective advisory knowledge without gating known-value edits', () => {
+    expect(AI_APP_PROMPT).toContain('discover_knowledge')
+    expect(AI_APP_PROMPT).toContain('read_knowledge')
+    expect(AI_APP_PROMPT).toContain('Omit contexts for general advice')
+    expect(AI_APP_PROMPT).toContain('reuse already delivered advice')
+    expect(AI_APP_PROMPT).toContain('rehydrate: true')
+    expect(AI_APP_PROMPT).toContain(
+      'Known-value edits can proceed without a lookup'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'Missing or irrelevant knowledge does not block work'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'never permissions, tool schemas or proof of correctness'
+    )
+  })
+
+  it('connects advice to existing decisions without elevating authority or adding a planning gate', () => {
+    expect(general).toContain('default method reference')
+    expect(general).toContain('existing draft brief or criteria method')
+    expect(general).toContain(
+      'shared\ndomain advice never supplies API authority'
+    )
+    expect(general).toContain('Reuse unaffected decisions and passed evidence')
+    expect(general).toContain('do not label a per-cell enumeration procedural')
+    expect(general).toContain(
+      'full input/output and lifecycle contracts remain required'
+    )
+    expect(general).toContain(
+      'do not invent parameters, silently simplify appearance'
+    )
+  })
+
   it('uses existing activity fields for concrete work without extra reporting calls', () => {
     expect(general).toContain('existing message field')
     expect(general).toContain('action summary')

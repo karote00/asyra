@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "projectId": "design-knowledge-evaluation",
+  "flowId": "design-knowledge-evaluation",
+  "revision": 112,
+  "definition": {
+    "title": "Design knowledge behavior evaluation",
+    "purpose": "Offline verification of the current five-stage Knowledge-to-capability correction plan using saved 101 inputs and real deterministic owners. Preserve advisory portable content, current contracts and failure recovery. No model execution, remote delivery or monitoring. Engineering correctness is not evidence of Knowledge efficacy.",
+    "nodes": [
+      {
+        "id": "discovery",
+        "title": "Discovery",
+        "owner": "asyra-design",
+        "objective": "Inputs: selected capability/route, known request/revision/coverage and missing fields. Outputs: exact canonical route/schema or explicit recovery; classify first acquisition vs repetition. Bypass: complete current contract. Preserve full composition contracts and genuine lost-delivery recovery. Allowed: App guidance, canonical registry and direct tests; forbidden: duplicate schema, mandatory lookup, forced refresh rejection or domain-level API names. Failure owner: current discovery owner. No new cache/runtime rewrite authorized.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Contract and bounded evidence reviewed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "apps/asyra-design/server/__tests__",
+          "apps/asyra-design/test-data/knowledge-evaluation/evidence"
+        ],
+        "actions": []
+      },
+      {
+        "id": "content",
+        "title": "Content",
+        "owner": "domain-knowledge",
+        "objective": "Inputs: saved spatial/material adoption failures, current portable advice and user intent. Outputs: portable methods distinguishing target/setting, spatial relationships, material adequacy and detail completion. Conditions: relevant open decisions; bypass known-value/stylized/unrelated work. Allowed: shared domain content; forbidden: App tools, case answers, automatic visual approval and mandatory pre-draw gates. Failure owner: content; no cache.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "design-knowledge-evaluation",
+            "nodeId": "discovery"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Contract and bounded evidence reviewed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "domain-knowledge/illustration.architecture.md",
+          "scripts/__tests__/domain-knowledge.test.mjs"
+        ],
+        "actions": []
+      },
+      {
+        "id": "adoption",
+        "title": "Adoption",
+        "owner": "asyra-design",
+        "objective": "Inputs: delivered advice, actual method/criteria, canonical routes, reference-use receipts and real artifact identities. Outputs: appropriate combined evidence scope, current reference bindings, narrow primary-agent judgments and existing-target recovery. Conditions: relevant request; preserve reference-free work and unrelated valid passes. Allowed: App architectural guidance and direct consumer tests; forbidden: second planner/store, guessed IDs, silent reference broadening, extra AI or write replay. Failure owner: current reference/preparation/review/invocation owner. No new cache; guidance must not become a Knowledge-dependent admission requirement. Delivered provider instructions must preserve the same scoped contract-acquisition guidance, without a second blanket full-schema policy.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "design-knowledge-evaluation",
+            "nodeId": "content"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Contract and bounded evidence reviewed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/knowledge/design.architectural-illustration.md",
+          "apps/asyra-design/server/ai-domain-prompt.ts",
+          "apps/asyra-design/server/local-ai-provider.ts",
+          "apps/asyra-design/server/__tests__",
+          "apps/asyra-design/test-data/knowledge-evaluation",
+          "apps/asyra-design/src/ai/__tests__/knowledge-handoff.test.ts",
+          "apps/asyra-design/server/local-knowledge.ts",
+          "apps/asyra-design/package.json",
+          "apps/asyra-design/src/common-apis/retained-design-context.ts",
+          "apps/asyra-design/src/ai/retained-fill-action.ts",
+          "apps/asyra-design/src/common-apis/__tests__/retained-design-context.test.ts",
+          "apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "verify",
+        "title": "Verify",
+        "owner": "asyra-design",
+        "objective": "Inputs: current five-stage source, saved 101 input/output, real public producers/consumers and explicit controlled primary-agent judgments. Outputs: deterministic geometry/receipt/reconciliation/settlement/save/reload evidence, content identities and limitations. Conditions: exact dependency currency and actual durable acknowledgments. Allowed: current owner tests, real browser integration and existing Inspector proof. Forbidden: model execution, restored old authority, compatibility paths, synthetic aesthetic passes, push or monitoring. Failure owner: first incorrect canonical owner; preserve edits and support evidence/save-only retry without write replay.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "design-knowledge-evaluation",
+            "nodeId": "adoption"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Contract and bounded evidence reviewed",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/src/common-apis/design-review.ts",
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "apps/asyra-design/src/ai/__tests__/knowledge-handoff.test.ts",
+          "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+          "apps/asyra-design/e2e/recorded-document-reload.spec.ts"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "complete",
+        "title": "Evidence, limitations and delivery reviewed",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "discovery",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "cad4a6df37d5eef691eafb9f5184b624d9f07aa78da63976ae78828351caac49",
+        "actor": "Codex self-review",
+        "summary": "Current target/revision handoffs reviewed against saved C31/C34/C37 evidence. Malformed exclusive targets perform no read/write; corrected plural operation uses fresh IDs. Captured images survive rejected check binding and support current rebind without replay. Full server suites 1332 passed; real browser and same-source proof passed.",
+        "at": "2026-10-19T08:55:16.692Z"
+      },
+      {
+        "nodeId": "content",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "f676c4b31c693eae2a55991bca0787dda62614df1116e90a6e0edb1ac38e841e",
+        "actor": "Codex self-review",
+        "summary": "Portable architectural revision4 remains unchanged by this refactor. Existing general principles suffice; App names, schema fields, coordinates and recovery remain App-only. Portable content contracts passed. No causal Knowledge efficacy claim or new model run.",
+        "at": "2026-10-19T08:55:16.695Z"
+      },
+      {
+        "nodeId": "adoption",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "4b82a28925d1cc6d326fd7e7366c278bab07bf72fe790e8188f1c6b1bcac551b",
+        "actor": "Codex self-review",
+        "summary": "App guide revision8 actual delivered example passes preparation and canonical admission with equal parent-space gradient domains, independent Fill IDs and separate structure. Optional/no-Knowledge paths, invalid input recovery, retained query/paint consumers passed. Review tool revision10 retains partial capture recovery. Details: docs/ai/knowledge/evaluations/2026-10-19-five-stage-refactor.md.",
+        "at": "2026-10-19T08:55:16.699Z"
+      },
+      {
+        "nodeId": "verify",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "704876247283d2c552a3ef93f7559b38cb2c4832a67a86fd5d8facab0d98cbc7",
+        "actor": "Codex self-review",
+        "summary": "Whole-chain review found and corrected prescribed-position validation at the wrong receipt owner. Original browser run:5 failed/8 passed; new real mechanical producer regression failed before correction. Explicit deterministic reviewer and attachment owner now pass612 distinct bounded cases (395 owners+212 consumers+5 prescribed),26 wiring rerun (overlapping),13 real-browser cases including all5 repair modes,peer/history/save/reload and large saved-file initial-failure recovery. Same-source41 obligations/9 negatives/recovery,types/lint/naming/content/catalog passed. No model or Knowledge efficacy claim. Evidence: tmp/knowledge-whole-review-*.log; active plan contains current closure.",
+        "at": "2026-10-19T09:17:20.769Z"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "complete",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "17c77166b6fe441d5b99a432096ec0e84c2ad476da2fa3062b7d941167542b1a",
+        "actor": "Codex self-review",
+        "summary": "Current source d39d5896cffc7877e2ceb083203da85a65d292bdf9495aa0cf4b6c930064ceb9 reviewed across all five stages and corrected at apply owner. Mechanical repair,independent results,primary judgments,known partial/cancelled writes,save-only recovery,peer/history/durable reload and later edit/save connect through existing owners. Portable revision4 and App advice revision8 unchanged and optional. No compatibility fallback,new model run,push or monitoring;158 completed/archived files unchanged. See active Task3 whole-chain review; prior failure evidence retained.",
+        "at": "2026-10-19T09:17:20.773Z"
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [
+      {
+        "nodeId": "discovery",
+        "revision": "b3c4bea799fc97a7515ea30237bd5dbbd3b59f6d4021e870b519cb9f7feaf79d"
+      },
+      {
+        "nodeId": "content",
+        "revision": "b3c4bea799fc97a7515ea30237bd5dbbd3b59f6d4021e870b519cb9f7feaf79d"
+      },
+      {
+        "nodeId": "adoption",
+        "revision": "b3c4bea799fc97a7515ea30237bd5dbbd3b59f6d4021e870b519cb9f7feaf79d"
+      },
+      {
+        "nodeId": "verify",
+        "revision": "d39d5896cffc7877e2ceb083203da85a65d292bdf9495aa0cf4b6c930064ceb9"
+      },
+      {
+        "nodeId": "integration",
+        "revision": "b3c4bea799fc97a7515ea30237bd5dbbd3b59f6d4021e870b519cb9f7feaf79d"
+      }
+    ],
+    "warnings": []
+  }
+}

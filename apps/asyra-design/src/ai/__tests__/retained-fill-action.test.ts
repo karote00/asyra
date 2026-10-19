@@ -623,3 +623,207 @@ it.each(['capacity', 'cancel'] as const)(
     expect(retainReceipt).toHaveBeenCalledOnce()
   }
 )
+
+it.each(['complete', 'locked', 'write-failure'])(
+  'preserves another consumer of an equivalent query after %s',
+  async (outcome) => {
+    const computed = vi.fn(() => ({ x: 10 }))
+    const queries = createRetainedDesignContext(
+      {
+        getCurrentWorkspaceId: () => 'workspace',
+        getSelectedElementIds: () => [],
+        getElementChildren: () => {
+          throw new Error('Explicit targets must not traverse children')
+        },
+        getElementIdsInBounds: () => {
+          throw new Error('Explicit targets must not perform spatial search')
+        },
+        getElementMetadata: (id) => ({ name: id, type: 'rectangle' }),
+        getElementComputedData: computed
+      },
+      () => () => undefined
+    )
+    const controller = new AbortController()
+    const query = { scope: 'ids' as const, elementIds: ['a'] }
+    const held = queries.read(
+      { ...query, fields: ['x'], delivery: 'reference' },
+      controller.signal
+    )
+    const released = vi.spyOn(queries, 'releaseLease')
+    const update = vi.fn(() => {
+      if (outcome === 'write-failure') throw new Error('Canonical write failed')
+    })
+    const action = createRetainedFillAction(queries, {
+      targets,
+      metadata: () => ({ lock: outcome === 'locked' }),
+      update
+    })
+    const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
+    try {
+      const pending = action.execute(
+        { mappings: [{ ...mapping, query }] },
+        { signal: controller.signal, runMutation: async (write) => write() }
+      )
+      if (outcome === 'complete')
+        await expect(pending).resolves.toMatchObject({ appliedCount: 1 })
+      else
+        await expect(pending).rejects.toThrow(
+          outcome === 'locked' ? /locked/ : /Canonical write failed/
+        )
+      expect(update).toHaveBeenCalledTimes(outcome === 'locked' ? 0 : 1)
+      expect(computed).toHaveBeenCalledTimes(1)
+      expect(
+        queries.get(held.snapshotId, held.leaseId, controller.signal).orderedIds
+      ).toEqual(['a'])
+      expect(released).toHaveBeenCalledTimes(1)
+      const consumed = released.mock.calls[0][0]
+      expect(consumed).not.toBe(held.leaseId)
+      expect(() =>
+        queries.get(held.snapshotId, consumed, controller.signal)
+      ).toThrow(/lease/)
+      const reused = queries.read(
+        { ...query, fields: ['x'], delivery: 'reference' },
+        controller.signal
+      )
+      expect(reused.snapshotId).toBe(held.snapshotId)
+      expect(reused.leaseId).toBe(held.leaseId)
+      expect(reused.observation).toMatchObject({
+        reused: true,
+        selectionExecutions: 0,
+        computedReadCount: 0
+      })
+      controller.abort()
+      expect(() => queries.get(held.snapshotId, held.leaseId)).toThrow(/lease/)
+    } finally {
+      queries.dispose()
+    }
+  }
+)
+
+it('reuses a rejected mapping query through another local-edit consumer, then refreshes after mutation', async () => {
+  const { createBasicApiActions } = await import('../basic-api-actions')
+  const colors = new Map([
+    ['a', '#112233'],
+    ['unrelated', '#778899']
+  ])
+  const computed = vi.fn(() => ({ x: 10 }))
+  let changed = () => {
+    throw new Error('Missing observer')
+  }
+  const queries = createRetainedDesignContext(
+    {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => [],
+      getElementChildren: () => {
+        throw new Error('Unexpected traversal')
+      },
+      getElementIdsInBounds: () => {
+        throw new Error('Unexpected spatial search')
+      },
+      getElementMetadata: (id) => ({ name: id, type: 'rectangle' }),
+      getElementComputedData: computed
+    },
+    (listener) => {
+      changed = listener
+      return () => undefined
+    }
+  )
+  const signal = new AbortController().signal
+  const context = { signal, runMutation: async <T>(write: () => T) => write() }
+  const query = { scope: 'ids' as const, elementIds: ['a'] }
+  const held = queries.read(
+    { ...query, fields: ['x'], delivery: 'reference' },
+    signal
+  )
+  const mapWrite = vi.fn()
+  const mapper = createRetainedFillAction(queries, {
+    targets,
+    metadata: () => ({ lock: true }),
+    update: mapWrite
+  })
+  const edit = vi.fn(
+    (ids: string[], _index: number, patch: { color: string }) => {
+      ids.forEach((id) => colors.set(id, patch.color))
+      changed()
+    }
+  )
+  const action = createBasicApiActions(
+    () => ({
+      core: {},
+      element: {},
+      selection: {},
+      hierarchy: {},
+      viewport: {},
+      stroke: {},
+      fill: { updateFillsAtIndex: edit }
+    }),
+    { observe: () => () => undefined, resolve: () => 'live' },
+    queries
+  ).find((candidate) => candidate.name === 'api_fill_updateFillsAtIndex')
+  if (!action) throw new Error('Missing canonical fill action')
+  const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]
+  const reference = {
+    snapshotId: held.snapshotId,
+    leaseId: held.leaseId,
+    total: held.total
+  }
+  try {
+    await expect(
+      mapper.execute({ mappings: [{ ...mapping, query }] }, context)
+    ).rejects.toThrow(/locked/)
+    expect(mapWrite).not.toHaveBeenCalled()
+    const args = {
+      elementIds: reference,
+      index: 0,
+      patch: { color: '#abcdef' }
+    }
+    expect(
+      prepareOperationBatch(
+        [{ name: action.name, arguments: args }],
+        [action]
+      )[0].arguments
+    ).toEqual(args)
+    await action.execute(args, context)
+    expect(edit).toHaveBeenCalledExactlyOnceWith(['a'], 0, { color: '#abcdef' })
+    expect(colors.get('a')).toBe('#abcdef')
+    expect(colors.get('unrelated')).toBe('#778899')
+    expect(computed).toHaveBeenCalledTimes(1)
+    await expect(action.execute(args, context)).rejects.toThrow(/stale/)
+    expect(edit).toHaveBeenCalledTimes(1)
+    const fresh = queries.read(
+      { ...query, fields: ['x'], delivery: 'reference' },
+      signal
+    )
+    expect(fresh.snapshotId).not.toBe(held.snapshotId)
+    await action.execute(
+      {
+        ...args,
+        elementIds: {
+          snapshotId: fresh.snapshotId,
+          leaseId: fresh.leaseId,
+          total: fresh.total
+        }
+      },
+      context
+    )
+    expect(edit).toHaveBeenCalledTimes(2)
+    expect(computed).toHaveBeenCalledTimes(2)
+    queries.releaseFor(signal)
+    await expect(
+      action.execute(
+        {
+          ...args,
+          elementIds: {
+            snapshotId: fresh.snapshotId,
+            leaseId: fresh.leaseId,
+            total: fresh.total
+          }
+        },
+        context
+      )
+    ).rejects.toThrow(/lease|missing/)
+    expect(edit).toHaveBeenCalledTimes(2)
+  } finally {
+    queries.dispose()
+  }
+})

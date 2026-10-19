@@ -1,3 +1,5 @@
+import recordedClosure from '../server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json' with { type: 'json' }
+import recordedMechanics from '../server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json' with { type: 'json' }
 import recordedScope from '../server/__tests__/fixtures/recorded-101/scope-handoff-20261017.json' with { type: 'json' }
 import { expect, test, type Page } from '@playwright/test'
 import type { FillAttrs } from '@asyra/utils'
@@ -1364,6 +1366,7 @@ test('public review handoffs retain independent evidence and recover before runt
       const read = async () =>
         (
           await invoke(AiDesignToolIds.READ_DESIGN_CHECKS, {
+            view: 'details',
             includePassed: true
           })
         ).items as StoredCheck[]
@@ -2594,3 +2597,625 @@ for (const mode of [
       await peer.close()
     }
   })
+
+test('mechanical receipts preserve checked inputs across recorded grouping and stacking changes', async ({
+  page
+}) => {
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const result = await page.evaluate(
+    async (placement: 'before' | 'after') => {
+      const { core } = await import('../src/testing/runtime-access')
+      const { transactionApis, hierarchyApis, fillApis } =
+        await import('../src/common-apis')
+      const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
+      const input = createAiRuntimeInput({
+        permissionRules: {},
+        provider: {
+          requestActionBatch: async () => {
+            throw new Error('Model execution is forbidden in this proof')
+          }
+        }
+      })
+      const signal = new AbortController().signal
+      const invoke = async (name: string, args: Record<string, unknown>) => {
+        const action = input.actionDefinitions?.find(
+          (action) => action.name === name
+        )
+        if (!action) throw new Error(`Missing action ${name}`)
+        return (await action.execute(args, { signal } as never)) as Record<
+          string,
+          unknown
+        >
+      }
+      try {
+        const ids = transactionApis.runTransaction(() =>
+          core.createElementsInParent(
+            [
+              { type: 'rect', x: 0, y: 0, width: 40, height: 40 },
+              { type: 'rect', x: 60, y: 0, width: 40, height: 40 },
+              { type: 'rect', x: 120, y: 0, width: 40, height: 40 }
+            ],
+            core.getCurrentWorkspaceId()
+          )
+        )
+        const { groupId } = transactionApis.runTransaction(() =>
+          hierarchyApis.groupElements(ids.slice(0, 2))
+        )
+        transactionApis.runTransaction(() =>
+          hierarchyApis.moveElementsRelative({
+            elementIds: [groupId],
+            anchorId: ids[2],
+            placement: placement === 'before' ? 'after' : 'before'
+          })
+        )
+        const captured = await invoke('review_design', { elementId: ids[0] })
+        const validate = () =>
+          invoke('validate_inspection_evidence', {
+            evidence: captured.evidence
+          })
+        const before = await validate()
+        // The saved run grouped targets, changed stacking and deleted siblings.
+        // Use real canonical operations with fresh IDs, not saved actor identity.
+        transactionApis.runTransaction(() =>
+          hierarchyApis.moveElementsRelative({
+            elementIds: [groupId],
+            anchorId: ids[2],
+            placement
+          })
+        )
+        const reordered = await validate()
+        transactionApis.runTransaction(() => {
+          fillApis.addFills([ids[0]])
+          fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#112233' })
+        })
+        const painted = await validate()
+        transactionApis.runTransaction(() =>
+          hierarchyApis.groupElements([groupId, ids[2]])
+        )
+        const regrouped = await validate()
+        transactionApis.runTransaction(() => core.removeSubtrees([ids[2]]))
+        const deletedSibling = await validate()
+        const groupEvidence = await invoke('review_design', {
+          elementId: groupId
+        })
+        transactionApis.runTransaction(() => core.removeSubtrees([ids[1]]))
+        const groupAfterDeletion = await invoke(
+          'validate_inspection_evidence',
+          { evidence: groupEvidence.evidence }
+        )
+        const retainedChild = await validate()
+
+        transactionApis.runTransaction(() =>
+          core.updateElementProperties([
+            { elementId: ids[0], values: { width: 45 } }
+          ])
+        )
+        const resized = await validate()
+        return {
+          captured,
+          before,
+          reordered,
+          painted,
+          regrouped,
+          deletedSibling,
+          groupAfterDeletion,
+          retainedChild,
+          resized
+        }
+      } finally {
+        for (const owner of input.ownedResources ?? []) await owner.dispose()
+      }
+    },
+    recordedMechanics.structuralCalls[1].operations[0].arguments.request
+      ?.placement as 'before' | 'after'
+  )
+  expect(result.captured).toMatchObject({ complete: true, findings: [] })
+  expect(result.before.current).toBe(true)
+  expect(result.reordered.current).toBe(true)
+  expect(result.painted.current).toBe(true)
+  expect(result.regrouped.current).toBe(true)
+  expect(result.deletedSibling.current).toBe(true)
+  expect(result.retainedChild.current).toBe(true)
+  expect(result.groupAfterDeletion.current).toBe(false)
+  expect(result.resized.current).toBe(false)
+})
+
+test('server measurement freshness uses the browser mechanical owner through edits history and reload', async ({
+  page
+}) => {
+  await page.route('**/api/ai/status', (route) =>
+    route.fulfill({ json: { state: 'ready' } })
+  )
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const { createLocalOperationTools } =
+    await import('../server/local-operation-tools')
+  const fixture = await page.evaluate(async () => {
+    const { core, testRuntimeState } =
+      await import('../src/testing/runtime-access')
+    const { transactionApis, hierarchyApis, fillApis } =
+      await import('../src/common-apis')
+    const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
+    const input = createAiRuntimeInput({
+      permissionRules: {},
+      provider: {
+        requestActionBatch: async () => {
+          throw new Error('No model in deterministic integration')
+        }
+      }
+    })
+    testRuntimeState.set('mechanical-runtime', input)
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [
+          { type: 'rect', x: 0, y: 0, width: 30, height: 30 },
+          { type: 'rect', x: 50, y: 0, width: 30, height: 30 },
+          { type: 'rect', x: 100, y: 0, width: 30, height: 30 }
+        ],
+        core.getCurrentWorkspaceId()
+      )
+    )
+    transactionApis.runTransaction(() => {
+      hierarchyApis.groupElements(ids.slice(0, 2))
+      fillApis.addFills(ids)
+      fillApis.shareFillAtIndex(ids[0], ids.slice(1), 0)
+    })
+    testRuntimeState.set('mechanical-ids', ids)
+    return { ids, actions: JSON.parse(JSON.stringify(input.actionDefinitions)) }
+  })
+  const measured: string[] = []
+  let disconnected = false
+  const operations = createLocalOperationTools(
+    fixture.actions,
+    { modelActions: (actions) => actions, resolveBatch: (batch) => batch },
+    async (batch) => {
+      if (disconnected)
+        throw new Error('Simulated transport loss before browser dispatch')
+      measured.push(
+        ...batch.actions
+          .filter((action) => action.name === 'review_design')
+          .map((action) => String(action.arguments.elementId))
+      )
+      return (await page.evaluate(async (batch) => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        type RuntimeInput = ReturnType<
+          typeof import('../src/ai/runtime-input').createAiRuntimeInput
+        >
+        const input = testRuntimeState.get<RuntimeInput>('mechanical-runtime')
+        if (!input) throw new Error('Missing mechanical runtime')
+        if (!input) throw new Error('Missing runtime')
+        const actionResults = []
+        for (const entry of batch.actions) {
+          const action = input.actionDefinitions.find(
+            (action) => action.name === entry.name
+          )
+          if (!action) throw new Error('Missing requested action')
+          actionResults.push({
+            actionId: entry.id,
+            actionName: entry.name,
+            result: await action.execute(entry.arguments, {
+              signal: new AbortController().signal
+            })
+          })
+        }
+        return { context: {}, actionResults }
+      }, batch)) as never
+    }
+  )
+  const check = () =>
+    operations.finishInspection(
+      new Set(fixture.ids),
+      undefined,
+      true,
+      new AbortController().signal
+    )
+  try {
+    expect((await check()).checks.counts).toEqual({
+      pass: 3,
+      fail: 0,
+      stale: 0,
+      unverified: 0
+    })
+    measured.length = 0
+    await page.evaluate(async () => {
+      const { testRuntimeState } = await import('../src/testing/runtime-access')
+      const { transactionApis, fillApis } = await import('../src/common-apis')
+      const ids = testRuntimeState.get<string[]>('mechanical-ids')
+      if (!ids) throw new Error('Missing mechanical fixture IDs')
+      transactionApis.runTransaction(() =>
+        fillApis.updateFillsAtIndex([ids[0]], 0, { color: '#334455' })
+      )
+    })
+    expect((await check()).checks.counts.pass).toBe(3)
+    expect(measured).toEqual([])
+    await page.evaluate(async () => {
+      const { core, testRuntimeState } =
+        await import('../src/testing/runtime-access')
+      const { transactionApis } = await import('../src/common-apis')
+      const ids = testRuntimeState.get<string[]>('mechanical-ids')
+      if (!ids) throw new Error('Missing mechanical fixture IDs')
+      transactionApis.runTransaction(() =>
+        core.updateElementProperties([
+          {
+            elementId: ids[0],
+            values: { width: 35 }
+          }
+        ])
+      )
+    })
+    expect((await check()).checks.counts.pass).toBe(3)
+    expect(measured).toEqual([fixture.ids[0]])
+    measured.length = 0
+    await undo(page)
+    expect((await check()).checks.counts.pass).toBe(3)
+    expect(measured).toEqual([fixture.ids[0]])
+    measured.length = 0
+    await redo(page)
+    expect((await check()).checks.counts.pass).toBe(3)
+    expect(measured).toEqual([fixture.ids[0]])
+    disconnected = true
+    expect((await check()).checks.counts.pass).toBe(0)
+    disconnected = false
+    expect((await check()).checks.counts.pass).toBe(3)
+    measured.length = 0
+    await page.evaluate(async () => {
+      const { core } = await import('../src/testing/runtime-access')
+      const snapshot = await core.save()
+      await core.load(snapshot)
+    })
+    expect((await check()).checks.counts.pass).toBe(3)
+    expect(measured.sort()).toEqual([...fixture.ids].sort())
+  } finally {
+    await page.evaluate(async () => {
+      const { testRuntimeState } = await import('../src/testing/runtime-access')
+      type RuntimeInput = ReturnType<
+        typeof import('../src/ai/runtime-input').createAiRuntimeInput
+      >
+      const input = testRuntimeState.get<RuntimeInput>('mechanical-runtime')
+      if (!input) throw new Error('Missing mechanical runtime')
+      for (const owner of input.ownedResources ?? []) await owner.dispose()
+    })
+  }
+})
+
+for (const rootType of ['frame', 'group'] as const) {
+  test(
+    rootType === 'frame'
+      ? 'whole subtree reconciliation survives local edits history collaboration and durable reload'
+      : 'incremental Group review preserves identity through local edits history collaboration and durable reload',
+    async ({ page, context }) => {
+      const document = createTestDocumentIdentity()
+      await page.goto(document.url)
+      await waitForAppReady(page)
+      await waitForCollaboration(page)
+      const { createLocalOperationTools } =
+        await import('../server/local-operation-tools')
+      const fixture = await page.evaluate(async (rootType) => {
+        const { core, testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        const { transactionApis } = await import('../src/common-apis')
+        const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
+        const input = createAiRuntimeInput({
+          permissionRules: {},
+          provider: {
+            requestActionBatch: async () => {
+              throw new Error('Models are forbidden in this integration')
+            }
+          }
+        })
+        testRuntimeState.set('coverage-runtime', input)
+        const ids = transactionApis.runTransaction(() => {
+          const [root] = core.createElementsInParent(
+            [
+              {
+                type: rootType,
+                x: 0,
+                y: 0,
+                width: rootType === 'group' ? 1 : 500,
+                height: rootType === 'group' ? 1 : 500
+              }
+            ],
+            core.getCurrentWorkspaceId()
+          )
+          const children = core.createElementsInParent(
+            [
+              { type: 'rect', x: 10, y: 10, width: 40, height: 40 },
+              { type: 'rect', x: 100, y: 10, width: 40, height: 40 }
+            ],
+            root
+          )
+          return { root, children }
+        })
+        return {
+          ...ids,
+          actions: JSON.parse(JSON.stringify(input.actionDefinitions))
+        }
+      }, rootType)
+      const signal = new AbortController().signal
+      let interrupted = false
+      const executeBatch = async (batch: AiActionBatch) => {
+        if (
+          interrupted &&
+          batch.actions.some((a) => a.arguments.measurementTargets)
+        )
+          throw new Error('Interrupted coverage delivery')
+        return (await page.evaluate(async (batch) => {
+          const { testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          type Input = ReturnType<
+            typeof import('../src/ai/runtime-input').createAiRuntimeInput
+          >
+          const input = testRuntimeState.get<Input>('coverage-runtime')
+          if (!input) throw new Error('Missing runtime')
+          const actionResults = []
+          for (const entry of batch.actions) {
+            const action = input.actionDefinitions.find(
+              (a) => a.name === entry.name
+            )
+            if (!action) throw new Error('Missing action')
+            actionResults.push({
+              actionId: entry.id,
+              actionName: entry.name,
+              result: await action.execute(entry.arguments, {
+                signal: new AbortController().signal
+              })
+            })
+          }
+          return { context: {}, actionResults }
+        }, batch)) as never
+      }
+      const operations = createLocalOperationTools(
+        fixture.actions,
+        { modelActions: (a) => a, resolveBatch: (b) => b },
+        executeBatch
+      )
+      const invoke = async (name: string, args: unknown = {}) =>
+        JSON.parse(await operations.call(name, args, signal))
+      const review = (id: string) =>
+        invoke('review_design', { arguments: { elementId: id } })
+      const resize = async (id: string, width: number) =>
+        page.evaluate(
+          async ({ id, width }) => {
+            const { core } = await import('../src/testing/runtime-access')
+            const { transactionApis } = await import('../src/common-apis')
+            transactionApis.runTransaction(() =>
+              core.updateElementProperties([
+                { elementId: id, values: { width } }
+              ])
+            )
+          },
+          { id, width }
+        )
+      const peer = await context.newPage()
+      try {
+        for (const visible of [false, true])
+          await invoke('set_element_visibility', {
+            arguments: { elementId: fixture.children[0], visible },
+            inspection: 'defer'
+          })
+        // Saved calls 60-62: complete root review, exact root verification, retained read.
+        expect(recordedMechanics.sourceRun).toContain('1792342207875')
+        for (const id of fixture.children) await review(id)
+        await resize(fixture.children[0], 50)
+        await resize(fixture.children[1], 60)
+        expect((await invoke('read_design_checks')).counts.stale).toBe(2)
+        interrupted = true
+        await review(fixture.root)
+        expect((await invoke('read_design_checks')).counts.stale).toBe(2)
+        interrupted = false
+        const root = await invoke(recordedClosure.calls[0].tool, {
+          ...recordedClosure.calls[0].input,
+          arguments: { elementId: fixture.root }
+        })
+        expect(
+          (
+            await invoke(
+              recordedClosure.calls[1].tool,
+              root.mechanicalSelection
+            )
+          ).verification.status
+        ).toBe('pass')
+        expect((await invoke('read_design_checks')).counts).toEqual({
+          pass: 3,
+          fail: 0,
+          stale: 0,
+          unverified: 0
+        })
+        expect((await invoke('read_design_checks')).counts.pass).toBe(3)
+        const retainedChild = await invoke('read_design_checks', {
+          ids: [`measurement:${fixture.children[1]}`]
+        })
+        await review(fixture.children[1])
+        expect(
+          await invoke('read_design_checks', {
+            ids: [`measurement:${fixture.children[1]}`]
+          })
+        ).toEqual(retainedChild)
+        await resize(fixture.children[0], 70)
+        expect((await invoke('read_design_checks')).counts).toEqual({
+          pass: 1,
+          fail: 0,
+          stale: 2,
+          unverified: 0
+        })
+        await review(fixture.root)
+        expect((await invoke('read_design_checks')).counts.pass).toBe(3)
+        const edited = await getCoreDocumentDigest(page)
+        await expect
+          .poll(() => getPersistedDocumentDigest(document.fileId))
+          .toEqual(edited)
+        await peer.goto(document.url)
+        await waitForAppReady(peer)
+        await waitForCollaboration(peer)
+        await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
+        await undo(page)
+        expect((await invoke('read_design_checks')).counts).toEqual({
+          pass: 1,
+          fail: 0,
+          stale: 2,
+          unverified: 0
+        })
+        await review(fixture.root)
+        expect((await invoke('read_design_checks')).counts.pass).toBe(3)
+        await redo(page)
+        await review(fixture.root)
+        expect((await invoke('read_design_checks')).counts.pass).toBe(3)
+        await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
+        await expect
+          .poll(() => getPersistedDocumentDigest(document.fileId))
+          .toEqual(edited)
+        // Mechanical closure must not invent the primary agent's missing visual verdict.
+        expect(
+          operations.settleOutcome({
+            batchId: 'final',
+            actions: [
+              {
+                id: 'done',
+                name: 'report_outcome',
+                arguments: { outcome: 'completed', message: 'Done' },
+                summary: 'Finish'
+              }
+            ]
+          }).actions[0].arguments.outcome
+        ).toBe('unsupported')
+        expect(
+          await invoke('define_design_criteria', {
+            phase: 'plan',
+            method:
+              'Verify the edited rectangles within their canonical container.',
+            references: [],
+            detailRequired: false,
+            criteria: {
+              layout: {
+                requirement:
+                  'Retain both editable rectangles in their original container.',
+                description:
+                  'The current whole view preserves the two-part layout.',
+                verification: 'visual',
+                requiredUnits: []
+              }
+            }
+          })
+        ).toMatchObject({ recorded: true })
+        const capture = await invoke('inspect_drawing', {
+          arguments: { elementId: fixture.root, view: 'overview' }
+        })
+        const image = capture.actionResults?.find(
+          (entry: { result: { inspectionId?: string } }) =>
+            entry.result.inspectionId
+        )?.result
+        expect(image).toMatchObject({
+          available: true,
+          inspectionId: expect.any(String)
+        })
+        const binding = await invoke('review_drawing', {
+          phase: 'visual',
+          bindChecks: [
+            { criterionId: 'layout', inspectionIds: [image.inspectionId] }
+          ]
+        })
+        expect(binding.next?.arguments?.checks).toHaveLength(1)
+        // Controlled primary-agent verdict: this proves the protocol, not AI visual quality.
+        const judgment = await invoke('review_drawing', {
+          ...binding.next.arguments,
+          final: true,
+          checks: binding.next.arguments.checks.map((check: object) => ({
+            ...check,
+            status: 'pass',
+            evidence:
+              'Both controlled rectangles remain in the captured container.'
+          }))
+        })
+        expect(judgment).toMatchObject({ accepted: true })
+        await review(fixture.children[1])
+        await operations.validateCompletion(signal)
+        const finalBatch: AiActionBatch = {
+          batchId: 'complete',
+          actions: [
+            {
+              id: 'done',
+              name: 'report_outcome',
+              arguments: {
+                outcome: 'completed',
+                message: 'Verified and saved.'
+              },
+              summary: 'Finish'
+            }
+          ]
+        }
+        expect(operations.settleOutcome(finalBatch)).toEqual(finalBatch)
+        const finalResult = (await executeBatch(finalBatch)) as {
+          actionResults: {
+            result: {
+              persistence: { status: string }
+              status: string
+              outcome: string
+            }
+          }[]
+        }
+        expect(finalResult.actionResults[0].result).toMatchObject({
+          outcome: 'completed',
+          status: 'no-change',
+          persistence: { status: 'durable' }
+        })
+        await expect
+          .poll(() => getPersistedDocumentDigest(document.fileId))
+          .toEqual(edited)
+        await page.evaluate(async () => {
+          const { testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          type Input = ReturnType<
+            typeof import('../src/ai/runtime-input').createAiRuntimeInput
+          >
+          for (const owner of testRuntimeState.get<Input>('coverage-runtime')
+            ?.ownedResources ?? [])
+            await owner.dispose()
+        })
+        await page.reload()
+        await waitForAppReady(page)
+        await waitForCollaboration(page)
+        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
+        await page.evaluate(async (childId) => {
+          const { elementApis } = await import('../src/common-apis')
+          await elementApis.changeElementGeometry(childId, { width: 95 })
+        }, fixture.children[0])
+        const subsequent = await getCoreDocumentDigest(page)
+        expect(subsequent).not.toEqual(edited)
+        await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(subsequent)
+        await expect
+          .poll(() => getPersistedDocumentDigest(document.fileId))
+          .toEqual(subsequent)
+        await undo(page)
+        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
+        await redo(page)
+        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(subsequent)
+        await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(subsequent)
+        await expect
+          .poll(() => getPersistedDocumentDigest(document.fileId))
+          .toEqual(subsequent)
+        await page.reload()
+        await waitForAppReady(page)
+        await waitForCollaboration(page)
+        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(subsequent)
+      } finally {
+        await page.evaluate(async () => {
+          const { testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          type Input = ReturnType<
+            typeof import('../src/ai/runtime-input').createAiRuntimeInput
+          >
+          for (const owner of testRuntimeState.get<Input>('coverage-runtime')
+            ?.ownedResources ?? [])
+            await owner.dispose()
+          testRuntimeState.delete('coverage-runtime')
+        })
+        await peer.close()
+      }
+    }
+  )
+}

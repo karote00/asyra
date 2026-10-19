@@ -109,7 +109,9 @@ export const resolveAiModelBackendConfiguration = (
   })
 }
 
-const isActionBatchEnvelope = (value: unknown): value is AiActionBatch => {
+export const isActionBatchEnvelope = (
+  value: unknown
+): value is AiActionBatch => {
   if (
     !isRecord(value) ||
     typeof value.batchId !== 'string' ||

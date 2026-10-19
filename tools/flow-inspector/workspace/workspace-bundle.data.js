@@ -205,6 +205,7 @@
               "Batch known semantic operations through request-local registry indexes; exact names may resolve unique semantic identities, while ambiguous identities return candidates without choosing an execution route",
               "Advertise registry-derived category choices and return current recovery choices on unknown lookup without a canvas exchange",
               "Classify redundant model routes with explicit replacements while preserving public UI methods and primitive capability coverage",
+              "Known final-response identities resolve to their authoritative response schema and final-only route, never native/edit dispatch. One acquisition policy distinguishes current contracts, missing fields, executable schemas and actual delivery recovery. App guidance maps optional portable advice to chosen parameters and independent judgments without introducing a Knowledge admission gate.",
               "Distinguish computed projections from canonical value and record mutations in registered descriptors",
               "One immutable registered delivery declaration identifies an owner-produced model view and its exact schema. Complete typed results feed internal checks, resources and recipes before external projection; missing or invalid delivery preserves execution settlement and never replays writes.",
               "Resolve prepared target identities at the unique registered argument path; reject conflicts and ambiguity before dispatch; preserve reference order for aligned new-value patches",
@@ -298,6 +299,7 @@
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/src/ai/prescribed-position-contract.ts",
               "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
+              "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
               "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
               "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
@@ -473,6 +475,7 @@
               "Browser delivery admits receipt bytes before transmission; oversized output yields an explicit bounded delivery failure preserving known execution settlement and exact batch/action identity. Healthy exchanges continue; broken transport preserves acknowledgement uncertainty. Never replay completed work or certify omitted output. Core export bytes stay with a browser artifact/download owner beyond request cleanup; generation changes cannot relabel a snapshot.",
               "Factory alone owns history replay through outer settlement. App history opts into immediate Feature execution, never interaction queue admission. Existing session commit-current finalizes the drag before replay; current async handler settlement is allowed but queued work cannot run ahead or interleave. Repeated history during finalization/replay is ignored without retention; cleanup failure or runtime closure stops replay. No App busy mirror or second history owner. Accepted direction remains immutable.",
               "repair_design_checks consumes requestId, the complete current tool-check selection and explicit set-prescribed-child-position policy. Preflight every pending finding, unique exact child coverage, captured parent-local basis bound by the canonical attachment receipt to the exact parent/workspace, current canonical dependency receipts and ordinary permissions before any write. Mixed/unsupported findings and stale policy stop without mutation. Invoke existing App/Core mutations; no guessed positions, reparent, deletion or implicit scope expansion.",
+              "Prescribed-position mutation checks mechanical stamps at the issuing deterministic reviewer and parent basis stamps at the attachment owner inside the same synchronous preflight. Both owners are explicit dependencies; no visual fallback, async recheck inside mutation or retained second authority. Foreign, retired, disposed or queue-invalidated receipts stop before the first write.",
               "Read-only queue-time repair preflight reports an input rejection before writing. Exact failed-action identity plus not-started settlement and no acknowledgement preserves known no-write recovery; unknown or partial writer failures still retain unresolved mutation scope. Fresh explicitly prescribed policy may retry, never automatic rebasing or write replay.",
               "Check repair returns actual settlement and the complete fresh successor selection. Later cancellation/owner failure preserves acknowledged writes, Undo and canonical recovery; partial/unknown output never supplies success bindings or repeats initial recipe writes. Reuse post-write owner checks rather than scan twice. Coordinator never holds the leaf scheduler barrier while awaiting a child.",
               "Structural recovery receipts and queries remain byte-bounded in the same retained-context owner, without a fixed query-count quota. Pinned receipts remain recoverable; stale receipts cannot authorize edits and live query pins cannot be evicted for capacity.",
@@ -549,6 +552,8 @@
               "apps/asyra-design/src/common-apis/__tests__/inspection-dependencies.test.ts",
               "apps/asyra-design/e2e/fixtures/action-usage-cases.ts",
               "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json",
               "packages/ai-agent-runtime/src/types.ts",
               "apps/asyra-design/server/local-query-artifacts.ts",
               "apps/asyra-design/server/__tests__/local-query-artifacts.test.ts",
@@ -620,6 +625,7 @@
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
+              "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
               "apps/asyra-design/server/local-operation-batch.ts",
               "apps/asyra-design/server/local-design-workflow.ts",
               "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
@@ -702,15 +708,15 @@
               "Stage 2 repair capability coverage belongs to the Design repair owner before writes, not generic Runtime or the checker guessing its caller. Bind successor check selections from acknowledged current revisions; receipt refresh alone is not semantic progress.",
               "Mechanical reads and freshness validation use bounded exact-target exchanges, preserve acknowledged independent results, and continue only a proven unexecuted read suffix after fail-fast failure. Missing, duplicated or cancelled results never become passed evidence.",
               "Explicitly aligned native reference crops may be compared with current isolated target-region pixels on white using fixed baseline, region and tolerances. No resampling, camera inference or model call. Unsupported evidence remains unverified. Retain compact pixel findings in the common check store, validate canonical image dependencies before reuse and after asynchronous work, and reuse unchanged results without decoding. Pixel checks never certify visual meaning.",
-              "Canonical canvas measurements join the same check store by exact target. Complete rechecks replace that target including removed children; incomplete work remains unresolved. Scoped browser receipt validation invalidates only actual changed units without remeasurement. All unresolved mechanical findings block completion.",
+              "Canonical canvas measurements reconcile existing obligations only through reviewer-certified compatible supported-rule/subtree coverage. The validation action accepts bounded measurementTargets with mechanical evidence, never visual scope. Issue independent target receipts sharing immutable reviewed verdicts; nested standalone normalization excludes external containment and rejects incompatible inherited visibility. Commit acknowledged successors only while selected revisions and stamps match; late, partial, cancelled or unavailable coverage cannot erase pending work. Subsequent reads, selected verification and final settlement consume the same ledger. Local unrelated edits preserve independent successors; all unresolved required findings block completion.",
               "Mechanical passes require one exact action acknowledgement, coherent availability/completeness and a canonical stamp. Currency or explicit-check failure preserves prior evidence as unresolved and retires the reusable stamp; later coherent checks may recover. Return bounded check counts and firstPendingId, not all retained evidence. Canonical removal retires only its tool obligation, invalidates dependents and preserves monotonic revisions; explicit reads refresh only selected transitive dependencies and independent failures remain readable.",
               "Canonical deterministic review owns typed mechanical verdict and stable unresolved-state progress inside evidence capture. Only complete supported checks with no findings pass; declared mechanical findings are repairable, unknown/incomplete checks require primary-agent decision. Verdicts never certify visual acceptance.",
               "Successful artifact publication records existing compiler findings once in the same request-owned check store; explicit source review reuses that unit. An owned explicit predecessor can consolidate a correction into its original source obligation without deleting unrelated or visual obligations. Immutable source checks never prove current canvas effects or artifact availability.",
               "Prepared-content checks consume compiler-admitted source and deterministic findings with current attachment; no model request, assessor callback or fallback is permitted. Partial coverage cannot hide canonical failures; visual meaning remains unverified.",
-              "Retain tool and primary-agent results with distinct provenance and dependency versions. Return unresolved or stale work by default, retain passes for explicit reads, and invalidate changed dependencies including previous passes. Unknown scope invalidates conservatively; no fabricated local scene freshness.",
+              "Retain tool and primary-agent results with distinct provenance and dependency versions. All default outward consumers deliver a bounded check summary; explicit IDs or revision-bound detail pages expose every finding without truncation. Internal full records remain authoritative. Repeated reads cannot revive superseded stamps. Invalidate actual changed dependencies including previous passes; unknown scope remains conservative.",
               "Attachment currency uses the actual parent ancestry, editable membership, bounds and workspace basis signature. Known affected changes lazily revalidate the small signature; unchanged child geometry preserves evidence. Unknown/load/disposal invalidate. Preparation refresh validates retained receipts, never compares them to a new workspace snapshot.",
               "Capture actual attachment parent identity, local bounds and workspace basis through Core with a canonical inspection stamp; read only ancestor metadata and needed fields, include attachment context in prepared review, revalidate after assessment and retain exact parent/stamp for browser apply admission",
-              "Automatic mechanical checks retain full findings in the existing check store and return compact summaries by default. Direct review, exact retained reads and explicit full batch/workflow responses preserve full results. A missing or incomplete mutation scope creates one terminal request obligation in the same store, blocks subsequent document writes before dispatch and reports unsupported completion; read/check/capture remain available and ordinary mechanical failures remain retryable. No parallel scope state, invented reconciliation or write replay.",
+              "Automatic mechanical checks retain full findings in the existing check store and return compact summaries by default. Direct review retains its target findings; common-store replies use bounded summaries by default and exact retained reads or explicit revision-bound pages preserve full requested evidence. Explicit full batch/workflow responses preserve their requested action receipts. A missing or incomplete mutation scope creates one terminal request obligation in the same store, blocks subsequent document writes before dispatch and reports unsupported completion; read/check/capture remain available and ordinary mechanical failures remain retryable. No parallel scope state, invented reconciliation or write replay.",
               "Consume only exact matching mutation acknowledgement scopes, including direct edits without a prior composition. No-change preserves existing evidence; unknown coverage remains unresolved. Consume scope before compact delivery and never derive targets from read-result field names.",
               "Expose one strict plan schema and executable guidance for standalone and composed first-write admission; allow first criteria after partial drawing while retaining the original request; lock established criteria after mutation and require current full review before approval",
               "Acknowledge plan storage with IDs and fact validity only; retain full request-local criteria and facts for review without echoing submitted narrative or implying visual acceptance",
@@ -728,14 +734,16 @@
               "Return structured unresolved criteria with complete evidence, known bound IDs and actual inspection targets/regions; keep inspection-local coordinates explicit, infer no workspace bounds and require fresh final review",
               "Return completed visual findings with their freshness or coverage failure when evidence changes during assessment; stale findings remain diagnostic only and never authorize detail or completion",
               "Primary-agent reference decisions supply exact criterion roles and limitations; pixel tools require explicit source regions and never infer alignment or purpose. Changed reference selection invalidates dependent criteria only, preserving unrelated passes.",
-              "Review handoffs describe delivered image target/region and declared unit bindings with exact existing revisions. Never infer judgments, supersede scopes automatically or weaken evidence-menu admission.",
+              "Review handoffs describe delivered image target/region and declared unit bindings with exact existing revisions. A rejected binding after capture retains actual successful images in a partial handoff with bindChecks recovery and records no judgments. Never infer judgments, supersede scopes automatically, replay edits or weaken evidence-menu admission.",
               "Expose self-contained phase schemas with only applicable inputs; retain cross-field and current-evidence checks without repairing model arguments",
               "Retain request-linked named criterion descriptions through structure and final review; bind facts and checks by criterion ID",
               "Return images and evidence without implicit subtree summaries; explicit context queries own object retrieval",
               "All implicit drawing inspections use overview; explicit regions or detail remain native-resolution",
               "Retain completed deterministic node verdicts only under a live canonical observer. Actual affected nodes/ancestors, parent dimensions, inherited visibility and text inputs govern reuse; unknown/load/disposal invalidate. Cancelled or mixed-source work cannot publish results. Aggregate reports separately from canonical reads, rule evaluation and text measurement.",
+              "Mechanical receipts belong to the deterministic reviewer and bind actual supported rule inputs and exact traversal context. Known changes revalidate retained verdicts; paint/order alone preserve equal mechanical inputs. Unknown/load/disposal retire receipts; cancelled or mixed-source work publishes none. Validation dispatches by issued owner identity, reports causal failure and never treats mechanical coverage as image or attachment evidence. Root checks do not imply external-parent containment; coverage reconciliation remains downstream.",
               "Capture performs no deterministic subtree scan. Final assessment validates retained measurement evidence through its browser owner and computes only missing or stale required target checks; incomplete measurement blocks completion.",
               "Explicit criterion/unit capture bindings identify the intended checks and canonical scope. Return exact submission descriptors with request, requirement/check revisions, delivered image identities and dependencies. Primary-agent verdicts fill those descriptors; currency is revalidated before atomic recording. Never infer semantic units, combine whole-view and regional scope or erase independent passes on rejected submissions.",
+              "Mechanical containment consumes Frame dimensions only; Group ancestry remains intact and Group content bounds derive read-only through the existing Preset rectangle-union owner for checks inside Frames. No Group snapshot boundary, geometry rewrite or inferred custom-container constraint; cancelled or incomplete traversal cannot publish current evidence.",
               "Review capture declares checks per target; existing images bind through bindChecks. Only request-authenticated per-check descriptors may submit verdicts. Validate exact phase, identity, image dependencies and requirement/result revisions before and after asynchronous evidence validation. Exact same current verdict is idempotent; partial capture never binds a reduced check. Internal domain recording is not an exposed tool route.",
               "Capture calls deliver actual images and IDs without requiring or recording judgments; the primary agent submits findings on a later call with current IDs. Failed captures retain successful images and exact recovery targets; no model call, filtering failures or lower-resolution substitution",
               "Validate each browser-issued scoped visual receipt independently, allowing different capture ages only while actual dependencies remain current. Track target subtree, regional membership including entrants/exits, contributing ancestry and canonical shared-property owners. Unknown effects or document replacement invalidate conservatively; pan/zoom and selection do not.",
@@ -761,6 +769,7 @@
               "existing App inspection and measurement",
               "primary drawing agent findings bound to current inspection evidence",
               "public Scene Tree and Props observations",
+              "Preset pure rectangle union for read-only Group content geometry",
               "document load lifecycle"
             ],
             "forbiddenContributors": [
@@ -770,7 +779,7 @@
               "nested model execution from preparation or drawing review tools"
             ],
             "cacheDimensions": [
-              "deterministic node verdict: canonical element ID, actual change invalidation, inherited visibility and parent dimensions, child dependency IDs and completed text measurement; browser runtime observer lifetime, never an editable scene mirror",
+              "deterministic node verdict: canonical element ID, actual change invalidation, inherited visibility, traversal parent identity and applicable Frame dimensions, child dependency IDs and completed text measurement; browser runtime observer lifetime, never an editable scene mirror",
               "runtime-issued visual receipt, target/subtree or local region, canonical dependency IDs and regional membership, criterion inspection bindings; request lifetime, complete immutable source recipe, explicit criterion/key coverage, deterministic findings, element count, canonical attachment context/stamp, exact requirement/reference/source assertion evidence and supplied predecessor findings/currency"
             ],
             "implementationBoundary": [
@@ -807,7 +816,9 @@
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/src/ai/prescribed-position-contract.ts",
               "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
+              "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
               "apps/asyra-design/src/common-apis/design-review.ts",
+              "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
               "apps/asyra-design/src/common-apis/inspection.ts",
               "apps/asyra-design/src/ai/inspection.ts",
               "apps/asyra-design/src/ai/inspection-schema.ts",
@@ -824,6 +835,9 @@
               "apps/asyra-design/src/common-apis/inspection-evidence.ts",
               "apps/asyra-design/src/common-apis/__tests__/inspection-evidence.test.ts",
               "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+              "apps/asyra-design/e2e/recorded-document-reload.spec.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json",
               "apps/asyra-design/src/ai/inspection-evidence.ts",
               "apps/asyra-design/src/ai/__tests__/inspection.test.ts",
               "apps/asyra-design/src/ai/__tests__/runtime-input.test.ts",
@@ -11119,7 +11133,8 @@
               "artifact:inspect-design-outcome"
             ],
             "conditions": [
-              "Bind observations to current canonical content and keep overview distinct from native detail."
+              "Bind observations to current canonical content and keep overview distinct from native detail.",
+              "Mechanical receipt validity follows supported rule inputs at the browser reviewer; image and attachment evidence retain independent dependencies. Validate real server freshness, cancellation, history and document replacement through the existing action boundary."
             ],
             "bypasses": [
               "Unavailable capture and stale evidence remain explicit rather than proving current geometry."
@@ -11132,8 +11147,12 @@
               "Observation records or test assertions as canonical product state",
               "Guessed ownership or test-specific runtime output"
             ],
-            "cacheDimensions": [],
+            "cacheDimensions": [
+              "Existing browser reviewer verdicts keyed by element and actual checked traversal context; issued mechanical receipts reference exact supported coverage within that observer lifetime."
+            ],
             "implementationBoundary": [
+              "apps/asyra-design/src/common-apis/design-review.ts",
+              "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/server/local-mechanical-checks.ts",
               "apps/asyra-design/server/local-operation-tools.ts",
               "apps/asyra-design/src/ai/prescribed-position-action.ts",
