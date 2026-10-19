@@ -84,6 +84,14 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('Do not accumulate all stages in one draft')
     expect(general).toContain('parentId')
   })
+  it('separates chosen-method local decisions from tool success and whole completion', () => {
+    expect(general).toContain('A successful capture or record is not a pass')
+    expect(general).toContain('criterion/unit/status/revision')
+    expect(general).toContain('local pass can coexist with whole-result')
+    expect(general).toContain('Repair only the failed boundary')
+    expect(general).toContain('Set final=true on the actual record submission')
+    expect(general).toContain('without Knowledge or approval tokens')
+  })
   it('assigns reference purpose and pixel scope to the primary agent', () => {
     expect(general).toContain(
       'purpose (visual, fact, preparation or pixel-comparison)'

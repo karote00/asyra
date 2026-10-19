@@ -89,7 +89,7 @@ export const createRetainedFillAction = (
       message: { type: 'string' }
     })
   }),
-  revision: 4,
+  revision: 5,
   delivery: {
     path: '/modelResult',
     outputSchema: mappingModelSchema,
@@ -122,6 +122,7 @@ export const createRetainedFillAction = (
           oneOf: [{ required: ['snapshotId'] }, { required: ['query'] }],
           properties: {
             query: {
+              ...documentContextSchema,
               type: 'object',
               additionalProperties: false,
               required: ['scope'],

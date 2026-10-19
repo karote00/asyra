@@ -393,6 +393,7 @@ it('summarizes large retained failures without retransmitting their evidence', (
     })
   const summary = store.summary(ids)
   expect(summary).toEqual({
+    countsScope: 'selected-checks',
     counts: { pass: 0, fail: 0, unverified: 5000, stale: 0 },
     visitedResults: 5000,
     firstPendingId: ids[0]
@@ -546,4 +547,39 @@ it('delivers bounded summaries and revision-bound complete details without cloni
   expect(() => store.deliver({ view: 'details', revision: current })).toThrow(
     'revision'
   )
+})
+
+it('labels selected counts separately from request counts without rescanning evidence', () => {
+  const store = createDesignCheckResults()
+  store.record({
+    id: 'geometry',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'Measured',
+    dependencies: {}
+  })
+  store.record({
+    id: 'material',
+    origin: 'main-agent',
+    status: 'unverified',
+    evidence: 'Wrong crop',
+    dependencies: {}
+  })
+  expect(store.summary(['geometry'])).toMatchObject({
+    countsScope: 'selected-checks',
+    counts: { pass: 1, unverified: 0 }
+  })
+  expect(store.deliver()).toMatchObject({
+    countsScope: 'request-checks',
+    counts: { pass: 1, unverified: 1 },
+    visitedResults: 0
+  })
+  expect(store.deliver({ ids: ['material'] })).toMatchObject({
+    countsScope: 'selected-checks',
+    counts: { pass: 0, unverified: 1 }
+  })
+  expect(store.deliver({ view: 'details', limit: 1 })).toMatchObject({
+    countsScope: 'request-checks',
+    counts: { pass: 1, unverified: 1 }
+  })
 })

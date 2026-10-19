@@ -317,10 +317,10 @@ const classifyPropertyComponentBatch = (
     })
   })
 
-  updateDeliveries.forEach(({ delivery, payload }) => {
-    if (consumedUpdates.has(delivery)) {
-      return
-    }
+  // Record lifecycle changes cannot reconstruct a relationship: it may link an
+  // existing component or reorder retained children. Preserve its exact final
+  // value alongside records; Core and durable reduction apply records first.
+  updateDeliveries.forEach(({ payload }) => {
     const change = payload
     const propertyId = change.id as string
     const update = updatesByPropertyId.get(propertyId) ?? {
@@ -699,15 +699,44 @@ const createRemoteApplySteps = (
     const batch = batches[batchIndex] as SharedPublicationBatch
     const propertyComponents = classifyPropertyComponentBatch(batch)
     if (propertyComponents) {
-      changes.push(
-        Object.freeze({
-          kind: 'property-components',
-          ...(propertyComponents.records.length > 0
-            ? { records: propertyComponents.records }
-            : {}),
-          updates: propertyComponents.updates
-        })
+      const removedPropertyIds = new Set(
+        propertyComponents.records.flatMap((record) => record.remove ?? [])
       )
+      const beforeRemoval = propertyComponents.updates.filter((update) =>
+        removedPropertyIds.has(update.propertyId)
+      )
+      const afterCreation = propertyComponents.updates.filter(
+        (update) => !removedPropertyIds.has(update.propertyId)
+      )
+      // Undo can restore a component's fields before retiring that component.
+      // Preserve the update while its target exists, rather than dropping it.
+      if (beforeRemoval.length > 0) {
+        changes.push(
+          Object.freeze({
+            kind: 'property-components',
+            updates: Object.freeze(beforeRemoval)
+          })
+        )
+      }
+      if (propertyComponents.records.length > 0) {
+        // Keep lifecycle and final relationships in the same remote transaction,
+        // but separate Core batches: each property owner occurs once per batch.
+        changes.push(
+          Object.freeze({
+            kind: 'property-components',
+            records: propertyComponents.records,
+            updates: Object.freeze([])
+          })
+        )
+      }
+      if (afterCreation.length > 0) {
+        changes.push(
+          Object.freeze({
+            kind: 'property-components',
+            updates: Object.freeze(afterCreation)
+          })
+        )
+      }
       batchIndex += 1
       continue
     }

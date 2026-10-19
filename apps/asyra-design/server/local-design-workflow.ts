@@ -1,3 +1,4 @@
+import type { AiInvocationMiddleware } from '@asyra/ai-agent-runtime'
 import {
   toolSemantics,
   toolResultObject,
@@ -26,7 +27,8 @@ export const createLocalDesignWorkflow = (
   designs: ReturnType<typeof createLocalDesignTools>,
   operations: ReturnType<typeof createLocalOperationTools>,
   observation: LocalToolObservation = {},
-  executionEvidence?: () => unknown
+  executionEvidence?: () => unknown,
+  executionScope?: AiInvocationMiddleware<string>
 ) => {
   const preparation = designs.definitions.find(
     (tool) => tool.name === AiDesignToolIds.PREPARE_DESIGN
@@ -230,7 +232,8 @@ export const createLocalDesignWorkflow = (
                   observation.trace?.(stage, { ...evidence, part })
               }
             : observation,
-          step.description
+          step.description,
+          executionScope ? [executionScope] : []
         )
         const result = JSON.parse(text)
         if (localToolOutcome(result).status === 'success')

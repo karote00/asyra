@@ -20,6 +20,10 @@ if (!scenario) throw new Error('Unknown execution proof scenario')
 // These are the public entries consumed by the unchanged case file. Keep
 // isolated execution on source even when workspace dist output is available.
 const sourceAliases = [
+  {
+    find: /^@asyra\/core\/contracts$/,
+    replacement: resolve(sourceRoot, 'packages/core/src/contracts/index.ts')
+  },
   ...[
     'utils',
     'core',

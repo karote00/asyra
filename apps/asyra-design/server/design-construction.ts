@@ -1,3 +1,4 @@
+import { createLinearFieldFill, readLinearFields } from './design-linear-field'
 import { setImmediate as yieldTurn } from 'node:timers/promises'
 import { createDesignSourceWork, sourcePathCommandCount } from './design-budget'
 import { randomUUID } from 'node:crypto'
@@ -194,6 +195,11 @@ export function* constructDesignSteps(
       ? generatedRootId
       : label(input.key, 'node key', 160)
   const brief = readBrief(input.brief)
+  const linearFields = readLinearFields(input.linearFields)
+  const materialFills = new WeakMap<
+    Node,
+    ReturnType<typeof createLinearFieldFill>
+  >()
   const projection = camera(input.projection)
   let projectionCalls = 0
   const project = projection
@@ -217,7 +223,13 @@ export function* constructDesignSteps(
     parent?: string,
     template = false
   ): Node => {
-    fields(node, ['key', 'name', 'type', 'fill', 'vertices'], 'projected face')
+    fields(
+      node,
+      ['key', 'name', 'type', 'fill', 'materialField', 'vertices'],
+      'projected face'
+    )
+    if (node.materialField !== undefined && node.fill !== undefined)
+      return fail('materialField conflicts with fill')
     if (!project || parent !== rootKey || rootLayout !== 'absolute')
       return fail('projected face requires a shared camera and absolute root')
     if (
@@ -243,7 +255,18 @@ export function* constructDesignSteps(
       )
     }
     const points = vertices.map(project)
-    return vectorFromPoints(node, key, points, template)
+    const compiled = vectorFromPoints(node, key, points, template)
+    if (node.materialField !== undefined) {
+      const material = createLinearFieldFill(
+        linearFields,
+        node.materialField,
+        vertices,
+        points
+      )
+      compiled.fill = template ? undefined : material()
+      materialFills.set(compiled, material)
+    }
+    return compiled
   }
   const vectorFromPoints = (
     node: Node,
@@ -382,7 +405,13 @@ export function* constructDesignSteps(
     }[] = []
     for (const v of value.faces) {
       if (!record(v)) return fail('pattern face')
-      fields(v, ['key', 'name', 'fill', 'vertices'], 'pattern face')
+      fields(
+        v,
+        ['key', 'name', 'fill', 'materialField', 'vertices'],
+        'pattern face'
+      )
+      if (v.materialField !== undefined && fills !== undefined)
+        return fail('materialField conflicts with pattern fills')
       const faceKey = label(v.key, 'pattern face key', 40)
       if (seen.has(faceKey)) return fail('duplicate pattern face key')
       seen.add(faceKey)
@@ -410,6 +439,7 @@ export function* constructDesignSteps(
           key: faceKey,
           name: label(v.name, 'pattern face name', 60),
           fill: v.fill,
+          materialField: v.materialField,
           type: 'projected-face',
           vertices: points
         },
@@ -442,6 +472,7 @@ export function* constructDesignSteps(
             number(bounds.min[k] + offset[k], 'pattern world extent')
             number(bounds.max[k] + offset[k], 'pattern world extent')
           }
+          const material = materialFills.get(compiled)
           result.push({
             ...compiled,
             key: `${key}-${i}-${faceKey}`,
@@ -454,6 +485,7 @@ export function* constructDesignSteps(
               Number(compiled.y) + projected.y - zero.y,
               'pattern projected y'
             ),
+            ...(material ? { fill: material(offset) } : {}),
             ...(Array.isArray(fills) ? { fill: fills[i % fills.length] } : {})
           })
         }
@@ -690,6 +722,7 @@ export function* constructDesignSteps(
       delete node.relations
       delete node.projection
       delete node.sharedFills
+      delete node.linearFields
       delete node.fillTemplates
     }
     if (node.type === 'projected-face') node = face(node, key, parent)

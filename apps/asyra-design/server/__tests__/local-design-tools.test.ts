@@ -742,8 +742,10 @@ it('keeps representation examples on their actual geometry and layout owners', a
   const session = createDesignPreparationSession()
   const tools = createLocalDesignTools(actions, session)
   const prepareExample = async (type: string) => {
-    const example = designPreparationExamples.find((example) =>
-      example.draft.children.some((child) => child.type === type)
+    const example = designPreparationExamples.find(
+      (example) =>
+        (type !== 'projected-face' || example.draft.children.length === 1) &&
+        example.draft.children.some((child) => child.type === type)
     )
     if (!example) throw new Error(`Missing example for ${type}`)
     const receipt = JSON.parse(
@@ -1462,4 +1464,94 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
     AiActionNames.READ_DESIGN_ATTACHMENT,
     AiActionNames.VALIDATE_INSPECTION_EVIDENCE
   ])
+})
+
+it('discovers and invokes world material preparation through current schemas and retained recovery', async () => {
+  const tools = createLocalDesignTools(actions)
+  const source = designPreparationExamples.find(
+    (e) => 'linearFields' in e.draft && 'glass' in e.draft.linearFields
+  )
+  expect(source).toBeDefined()
+  if (
+    !source ||
+    !('linearFields' in source.draft) ||
+    !('glass' in source.draft.linearFields)
+  )
+    throw new Error('Missing field example')
+  const definition = tools.definitions.find((d) => d.name === 'prepare_design')
+  if (!definition) throw new Error('Missing prepare definition')
+  expect(operationInputIssue(source, definition.inputSchema)).toBeUndefined()
+  expect(
+    operationInputIssue(source, nativeToolInputSchema(definition.inputSchema))
+  ).toBeUndefined()
+  const success = JSON.parse(
+    await tools.call('prepare_design', source, signal())
+  )
+  expect(success).toMatchObject({ available: true, applicable: true })
+  const batch = tools.resolveBatch(request(success.artifactId))
+  const design = (batch.actions[0].arguments as { design: PreparedDesign })
+    .design
+  expect(admitPreparedDesign(JSON.parse(JSON.stringify(design)))).toEqual(
+    JSON.parse(JSON.stringify(design))
+  )
+  const invalid = { draft: structuredClone(source.draft) }
+  if (!('glass' in invalid.draft.linearFields))
+    throw new Error('Missing cloned field')
+  Object.assign(invalid.draft.linearFields.glass, {
+    end: invalid.draft.linearFields.glass.start
+  })
+  const rejected = JSON.parse(
+    await tools.call('prepare_design', invalid, signal())
+  )
+  expect(rejected).toMatchObject({ available: false })
+  expect(tools.resolveBatch(request(success.artifactId))).toEqual(batch)
+  const cancelled = new AbortController()
+  cancelled.abort()
+  await expect(
+    tools.call('prepare_design', source, cancelled.signal)
+  ).rejects.toThrow()
+  expect(tools.resolveBatch(request(success.artifactId))).toEqual(batch)
+})
+
+it('executes the multi-face representation example with common material, native exceptions and exact retained targets', async () => {
+  const example = designPreparationExamples.find(
+    (e) => e.draft.name === 'Repeated visible detail'
+  )
+  if (!example) throw new Error('Missing multi-face example')
+  const draft = example.draft as unknown as {
+    children: { type: string; faces?: unknown[] }[]
+  }
+  expect(draft.children[0].faces).toHaveLength(2)
+  expect(draft.children[1].type).toBe('projected-face')
+  const session = createDesignPreparationSession()
+  const tools = createLocalDesignTools(actions, session)
+  const receipt = JSON.parse(
+    await tools.call('prepare_design', example, signal())
+  )
+  expect(receipt).toMatchObject({
+    available: true,
+    applicable: true,
+    elementCount: 14
+  })
+  const retained = JSON.parse(
+    await tools.call(
+      'retain_design_targets',
+      { targets: [{ artifactId: receipt.artifactId, keyPrefix: 'panes-2-' }] },
+      signal()
+    )
+  )
+  expect(retained.targets[0].count).toBe(2)
+  const { artifactId, targetSetId } = retained.targets[0]
+  const ids = tools.resolveTargets({ artifactId, targetSetId })
+  const design = session.resolve(receipt.artifactId)
+  expect(ids).toEqual([
+    design.keyToId['panes-2-glass'],
+    design.keyToId['panes-2-rim']
+  ])
+  expect(design.keyToId.exception).toBeDefined()
+  const glass = design.entries.filter((e) => e.key?.endsWith('-glass'))
+  expect(glass).toHaveLength(6)
+  expect(glass[0].descriptor.fills).not.toEqual(glass[1].descriptor.fills)
+  session.release([receipt.artifactId])
+  expect(() => tools.resolveTargets({ artifactId, targetSetId })).toThrow()
 })

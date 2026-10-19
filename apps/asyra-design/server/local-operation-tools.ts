@@ -568,10 +568,10 @@ const checkResultsDefinition = {
   type: 'function',
   name: AiDesignToolIds.READ_DESIGN_CHECKS,
   ...toolSemantics(designCheckDeliverySchema, 'read', ['request-artifacts']),
-  revision: 4,
+  revision: 5,
   executionAccess: LocalToolAccess.EXCLUSIVE,
   description:
-    'Read retained tool and primary-agent checks. Default returns counts, firstPendingId and ledger revision without rows. Exact ids retrieve full selected evidence. For all details use view=details, optional includePassed and limit (1-100); continue using nextOffset as offset with the returned revision. Changed revision requires restarting at offset zero. No model is invoked. Results never substitute for current canonical inspection.',
+    'Read retained tool and primary-agent checks. Default returns request-checks counts, firstPendingId and ledger revision without rows. Exact-ID counts are selected-checks; paginated counts remain request-wide. Counts combine tool and main-agent evidence and are not visual acceptance or save confirmation. Exact ids retrieve full selected evidence. For all details use view=details, optional includePassed and limit (1-100); continue using nextOffset as offset with the returned revision. Changed revision requires restarting at offset zero. No model is invoked. Results never substitute for current canonical inspection.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -3336,6 +3336,9 @@ export const createLocalOperationTools = (
               }[]
             }[]
           | undefined
+        let reviewOperation: 'capture' | 'bind' | 'record' = 'record'
+        if (reviewArgs.inspections) reviewOperation = 'capture'
+        else if (reviewArgs.bindChecks) reviewOperation = 'bind'
         const phase = reviewArgs.phase as 'structure' | 'visual'
         if (targets?.length) designReview.validateCaptureChecks(phase, targets)
         const selections = new Map<
@@ -3359,8 +3362,9 @@ export const createLocalOperationTools = (
           return JSON.stringify({
             status: 'partial',
             phase: reviewArgs.phase,
-            accepted: false,
-            readyForDetail: false,
+            accepted: designReview.isAccepted(),
+            reviewOperation,
+            recordedChecks: [],
             inspectionIds,
             evidenceValidation: {
               current: false,
@@ -3452,8 +3456,9 @@ export const createLocalOperationTools = (
             available: false,
             status: 'partial',
             phase: reviewArgs.phase,
-            accepted: false,
-            readyForDetail: false,
+            accepted: designReview.isAccepted(),
+            reviewOperation,
+            recordedChecks: [],
             inspectionIds,
             failedInspections,
             ...designReview.judgmentHandoff(
@@ -3471,8 +3476,9 @@ export const createLocalOperationTools = (
           return {
             status: 'partial',
             phase: reviewArgs.phase,
-            accepted: false,
-            readyForDetail: false,
+            accepted: designReview.isAccepted(),
+            reviewOperation,
+            recordedChecks: [],
             inspectionIds,
             evidenceValidation: latestEvidenceValidation,
             message
@@ -3499,8 +3505,9 @@ export const createLocalOperationTools = (
             return JSON.stringify({
               status: 'partial',
               phase,
-              accepted: false,
-              readyForDetail: false,
+              accepted: designReview.isAccepted(),
+              reviewOperation,
+              recordedChecks: [],
               inspectionIds,
               actionResults: capturedResults,
               ...designReview.judgmentHandoff(inspectionIds, phase),
@@ -3511,8 +3518,9 @@ export const createLocalOperationTools = (
           }
           return JSON.stringify({
             phase: reviewArgs.phase,
-            accepted: false,
-            readyForDetail: false,
+            accepted: designReview.isAccepted(),
+            reviewOperation,
+            recordedChecks: [],
             inspectionIds,
             actionResults: capturedResults,
             ...handoff,
@@ -3526,7 +3534,9 @@ export const createLocalOperationTools = (
           signal.throwIfAborted()
           return JSON.stringify({
             phase,
-            accepted: false,
+            reviewOperation,
+            recordedChecks: [],
+            accepted: designReview.isAccepted(),
             inspectionIds,
             ...designReview.judgmentHandoff(
               inspectionIds,
@@ -3608,7 +3618,6 @@ export const createLocalOperationTools = (
           return JSON.stringify({
             ...result,
             accepted: false,
-            readyForDetail: false,
             status: 'partial',
             results: designReview.deliverChecks(),
             coverage: designReview.coverage(),

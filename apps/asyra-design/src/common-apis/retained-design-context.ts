@@ -1,5 +1,6 @@
 import {
   createDesignContextReader,
+  validateDesignContextQuery,
   validateDesignContextFilter,
   matchesDesignContextFilter,
   assertDesignContextCount,
@@ -268,10 +269,15 @@ export const createRetainedDesignContext = (
     signal?.throwIfAborted()
     if (disposed)
       throw new RetainedQueryError('Retained query owner is disposed.')
-    stop ??= observe(() => {
-      revision++
-      keys.clear()
-    })
+    if (!input || typeof input !== 'object' || Array.isArray(input))
+      throw new RetainedQueryError('Invalid document context query.')
+    if (
+      input.delivery !== undefined &&
+      !['page', 'reference', 'columns', 'receipt', 'transient'].includes(
+        input.delivery
+      )
+    )
+      throw new RetainedQueryError('Invalid document context delivery.')
     if (
       input.delivery === 'transient' &&
       (input.scope !== 'region' ||
@@ -284,8 +290,11 @@ export const createRetainedDesignContext = (
       throw new RetainedQueryError(
         'Transient delivery requires complete region IDs without paging or fields.'
       )
+    if (input.scope !== 'snapshot') {
+      const { delivery: _delivery, ...query } = input
+      validateDesignContextQuery(query)
+    }
     if (input.scope === 'snapshot') {
-      assertRequest(input.snapshotId, signal)
       if (
         Object.keys(input).some(
           (key) =>
@@ -308,6 +317,24 @@ export const createRetainedDesignContext = (
         throw new RetainedQueryError(
           'Snapshot reads accept only snapshotId, pagination, delivery, filter, expectedCount and release.'
         )
+      if (
+        typeof input.snapshotId !== 'string' ||
+        !input.snapshotId.length ||
+        (input.offset !== undefined &&
+          (!Number.isSafeInteger(input.offset) || input.offset < 0)) ||
+        (input.expectedCount !== undefined &&
+          (!Number.isSafeInteger(input.expectedCount) ||
+            input.expectedCount < 0))
+      )
+        throw new RetainedQueryError(
+          'Snapshot identity, offset and expectedCount must be valid before refinement.'
+        )
+      validateDesignContextFilter(input.filter)
+      assertRequest(input.snapshotId, signal)
+      stop ??= observe(() => {
+        revision++
+        keys.clear()
+      })
       if (input.release) {
         if (input.filter !== undefined || input.expectedCount !== undefined)
           throw new RetainedQueryError('Release cannot refine a snapshot.')
@@ -418,6 +445,10 @@ export const createRetainedDesignContext = (
     }
     if (input.delivery === 'receipt')
       throw new RetainedQueryError('Receipt recovery requires scope=snapshot.')
+    stop ??= observe(() => {
+      revision++
+      keys.clear()
+    })
     const { delivery, ...query } = input
     if (disposed)
       throw new RetainedQueryError('Retained query owner is disposed.')
@@ -516,23 +547,7 @@ export const createRetainedDesignContext = (
       else if (query.scope === 'ids') selected = query.elementIds ?? []
       else throw new RetainedQueryError('Invalid document context scope.')
       if (query.scope !== 'region') work.candidateCount = selected.length
-      // Validate the original contract before retaining any output. Reuse the already selected identities.
-      const validationSource = {
-        ...cachedSource,
-        getElementIdsInBounds: () => selected,
-        getSelectedElementIds: () => selected,
-        getElementChildren: () => ({
-          available,
-          elementIds: selected.slice(0, 1),
-          total: selected.length,
-          nextOffset: selected.length > 1 ? 1 : null
-        }),
-        getElementComputedData: () => ({})
-      }
-      createDesignContextReader(validationSource)({
-        ...query,
-        ...(query.allMatches ? {} : { offset: 0, limit: 1 })
-      })
+      assertDesignContextCount(selected.length, query.expectedCount)
       const result = selected.length
         ? reader({
             scope: 'ids',

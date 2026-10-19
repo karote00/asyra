@@ -1340,6 +1340,11 @@ test('public review handoffs retain independent evidence and recover before runt
           )
         })
         if (!bound.next?.arguments?.checks) return { unavailable: bound }
+        expect(bound).toMatchObject({
+          reviewOperation: 'bind',
+          recordedChecks: []
+        })
+        expect(bound).not.toHaveProperty('readyForDetail')
         return {
           input: {
             ...bound.next.arguments,
@@ -1556,7 +1561,22 @@ test('public review handoffs retain independent evidence and recover before runt
           outcome: 'unsupported'
         })
         const partial = await review('visual', [judgment('Left', a)])
-        expect(partial).toMatchObject({ accepted: false })
+        expect(partial).toMatchObject({
+          reviewOperation: 'record',
+          accepted: false,
+          recordedChecks: [
+            {
+              id: 'visual:Left',
+              criterionId: 'Left',
+              origin: 'main-agent',
+              status: 'pass',
+              revision: expect.any(Number)
+            }
+          ],
+          results: { countsScope: 'request-checks' }
+        })
+        expect(partial.checks).toEqual([])
+        expect(partial.recordedChecks[0]).not.toHaveProperty('evidence')
         expect(JSON.stringify(partial)).toContain(
           'Right fail from the delivered target image'
         )
@@ -3219,3 +3239,186 @@ for (const rootType of ['frame', 'group'] as const) {
     }
   )
 }
+
+test('published representative guidance reaches real capture and completion without replaying drawing', async ({
+  page
+}) => {
+  const { readFileSync } = await import('node:fs')
+  const { createLocalOperationTools } =
+    await import('../server/local-operation-tools')
+  const { AiDesignToolIds } = await import('../src/constants/ai-design')
+  const text = readFileSync(
+    new URL(
+      '../knowledge/design.architectural-illustration.md',
+      import.meta.url
+    ),
+    'utf8'
+  )
+  const example = (label: string) => {
+    const match = text.match(
+      new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
+    )
+    if (!match) throw new Error(`Missing published ${label}`)
+    return JSON.parse(match[1])
+  }
+  const declaration = example('representative-review')
+  const capture = example('representative-capture')
+  const document = createTestDocumentIdentity()
+  await page.goto(document.url)
+  await waitForAppReady(page)
+  await waitForCollaboration(page)
+  const fixture = await page.evaluate(async () => {
+    const { core, testRuntimeState } =
+      await import('../src/testing/runtime-access')
+    const { transactionApis, fillApis } = await import('../src/common-apis')
+    const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
+    const input = createAiRuntimeInput({
+      permissionRules: {},
+      provider: {
+        requestActionBatch: async () => {
+          throw new Error('No model in deterministic guidance integration')
+        }
+      }
+    })
+    testRuntimeState.set('guidance-runtime', input)
+    const ids = transactionApis.runTransaction(() => {
+      const [root] = core.createElementsInParent(
+        [{ type: 'frame', x: 0, y: 0, width: 240, height: 100 }],
+        core.getCurrentWorkspaceId()
+      )
+      const parts = core.createElementsInParent(
+        [
+          { type: 'rect', x: 10, y: 10, width: 100, height: 80 },
+          { type: 'rect', x: 120, y: 10, width: 100, height: 80 }
+        ],
+        root
+      )
+      fillApis.addFills(parts)
+      return { root, parts }
+    })
+    return {
+      ...ids,
+      actions: JSON.parse(JSON.stringify(input.actionDefinitions))
+    }
+  })
+  const digest = await getCoreDocumentDigest(page)
+  const dispatched: string[] = []
+  const owner = createLocalOperationTools(
+    fixture.actions,
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    async (batch) => {
+      dispatched.push(...batch.actions.map((action) => action.name))
+      return (await page.evaluate(async (batch) => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        type Input = ReturnType<
+          typeof import('../src/ai/runtime-input').createAiRuntimeInput
+        >
+        const input = testRuntimeState.get<Input>('guidance-runtime')
+        if (!input) throw new Error('Missing real runtime')
+        const actionResults = []
+        for (const entry of batch.actions) {
+          const action = input.actionDefinitions.find(
+            (action) => action.name === entry.name
+          )
+          if (!action) throw new Error(`Missing ${entry.name}`)
+          actionResults.push({
+            actionId: entry.id,
+            actionName: entry.name,
+            result: await action.execute(entry.arguments, {
+              signal: new AbortController().signal
+            })
+          })
+        }
+        return { context: {}, actionResults }
+      }, batch)) as never
+    }
+  )
+  const call = async (name: string, args: unknown) =>
+    JSON.parse(await owner.call(name, args, new AbortController().signal))
+  try {
+    await call(declaration.tool, declaration.arguments)
+    capture.arguments.inspections[0].elementId = fixture.parts[0]
+    const bound = await call(capture.tool, capture.arguments)
+    expect(bound.next.arguments.checks).toHaveLength(1)
+    expect(bound.recordedChecks).toEqual([])
+    const local = await call(capture.tool, {
+      ...bound.next.arguments,
+      checks: bound.next.arguments.checks.map((check: object) => ({
+        ...check,
+        status: 'pass',
+        evidence:
+          'Deterministic supplied local observation; actual browser image binding is required.'
+      }))
+    })
+    expect(local).toMatchObject({
+      accepted: false,
+      recordedChecks: [
+        { status: 'pass', criterionId: 'material', unitId: 'sample-join' }
+      ]
+    })
+    const before = (
+      await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
+        ids: [local.recordedChecks[0].id],
+        includePassed: true
+      })
+    ).items
+    const whole = await call(capture.tool, {
+      phase: 'visual',
+      final: false,
+      inspections: [
+        { elementId: fixture.root, checks: [{ criterionId: 'overall' }] }
+      ]
+    })
+    expect(whole.next.arguments.final).toBe(false)
+    const result = await call(capture.tool, {
+      ...whole.next.arguments,
+      final: true,
+      checks: whole.next.arguments.checks.map((check: object) => ({
+        ...check,
+        status: 'pass',
+        evidence:
+          'Deterministic whole-view observation; this asserts the handoff, not aesthetic quality.'
+      }))
+    })
+    expect(result).toMatchObject({
+      accepted: true,
+      coverage: { passed: 2, required: 2 }
+    })
+    expect(
+      (
+        await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+          view: 'details',
+          ids: [local.recordedChecks[0].id],
+          includePassed: true
+        })
+      ).items
+    ).toEqual(before)
+    expect(await getCoreDocumentDigest(page)).toEqual(digest)
+    expect(
+      dispatched.every(
+        (name) =>
+          name === 'inspect_drawing' ||
+          name === 'validate_inspection_evidence' ||
+          name === 'review_design'
+      )
+    ).toBe(true)
+    await expect
+      .poll(() => getPersistedDocumentDigest(document.fileId))
+      .toEqual(digest)
+  } finally {
+    await page.evaluate(async () => {
+      const { testRuntimeState } = await import('../src/testing/runtime-access')
+      type Input = ReturnType<
+        typeof import('../src/ai/runtime-input').createAiRuntimeInput
+      >
+      const input = testRuntimeState.get<Input>('guidance-runtime')
+      for (const resource of input?.ownedResources ?? [])
+        await resource.dispose()
+    })
+  }
+  await page.reload()
+  await waitForAppReady(page)
+  expect(await getCoreDocumentDigest(page)).toEqual(digest)
+})

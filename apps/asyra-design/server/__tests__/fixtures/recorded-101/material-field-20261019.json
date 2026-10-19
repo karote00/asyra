@@ -1,0 +1,129 @@
+{
+  "sourceRun": "1792402162549",
+  "sources": [
+    {
+      "file": "48-input.json",
+      "sha256": "852532109dc5a3fe322a0bb010faf2cda2ac20f3b2807a0ff605a07128fedb90"
+    },
+    {
+      "file": "88-input.json",
+      "sha256": "6349e98f1e03b3efa3690f380f4c8515b22ba08c8b2e2acd35889d154ae72995"
+    }
+  ],
+  "description": "Exact first and later left glass faces; field assignment is explicit test intent, not inferred original intent.",
+  "draft": {
+    "type": "group",
+    "name": "Recorded glass faces",
+    "projection": {
+      "azimuth": 35,
+      "elevation": 28,
+      "scale": 1,
+      "originX": 15000,
+      "originY": 49000
+    },
+    "fillTemplates": {
+      "glassL": {
+        "gradientType": "linear",
+        "gradientHandles": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 0.18
+          }
+        ],
+        "gradientStops": [
+          {
+            "position": 0,
+            "color": "#183b40",
+            "opacity": 1
+          },
+          {
+            "position": 0.25,
+            "color": "#326368",
+            "opacity": 1
+          },
+          {
+            "position": 0.5,
+            "color": "#6e9796",
+            "opacity": 1
+          },
+          {
+            "position": 0.75,
+            "color": "#38676e",
+            "opacity": 1
+          },
+          {
+            "position": 1,
+            "color": "#21474f",
+            "opacity": 1
+          }
+        ]
+      }
+    },
+    "children": [
+      {
+        "type": "projected-face",
+        "key": "tier0L",
+        "name": "tier0L",
+        "vertices": [
+          {
+            "x": -2500,
+            "y": 2500,
+            "z": 11000
+          },
+          {
+            "x": 2500,
+            "y": 2500,
+            "z": 11000
+          },
+          {
+            "x": 2840,
+            "y": 2840,
+            "z": 14350
+          },
+          {
+            "x": -2840,
+            "y": 2840,
+            "z": 14350
+          }
+        ],
+        "fill": {
+          "template": "glassL"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "tier1L",
+        "name": "tier1L",
+        "vertices": [
+          {
+            "x": -2500,
+            "y": 2500,
+            "z": 14500
+          },
+          {
+            "x": 2500,
+            "y": 2500,
+            "z": 14500
+          },
+          {
+            "x": 2840,
+            "y": 2840,
+            "z": 17850
+          },
+          {
+            "x": -2840,
+            "y": 2840,
+            "z": 17850
+          }
+        ],
+        "fill": {
+          "template": "glassL"
+        }
+      }
+    ]
+  }
+}

@@ -1246,6 +1246,21 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
   })
   await call(AiDesignToolIds.REVIEW_DRAWING, report)
   expect(tools.settleOutcome(completed)).toBe(completed)
+  const rebound = await call(AiDesignToolIds.REVIEW_DRAWING, {
+    phase: 'visual',
+    bindChecks: [
+      {
+        criterionId: Object.keys(plan.criteria)[0],
+        inspectionIds: report.inspectionIds
+      }
+    ]
+  })
+  expect(rebound).toMatchObject({
+    reviewOperation: 'bind',
+    recordedChecks: [],
+    accepted: true
+  })
+  expect(tools.settleOutcome(completed)).toBe(completed)
   const structureFailure = {
     phase: 'structure',
     ...wholeViewJudgments(report.inspectionIds, [
@@ -1258,7 +1273,7 @@ it('requires a frozen plan, current overview and detail evidence, and all criter
   }
   await expect(
     call(AiDesignToolIds.REVIEW_DRAWING, structureFailure)
-  ).resolves.toMatchObject({ accepted: false, readyForDetail: false })
+  ).resolves.toMatchObject({ accepted: false, structureAccepted: false })
   expect(tools.settleOutcome(completed).actions[0].arguments).toMatchObject({
     outcome: 'unsupported',
     message: expect.stringContaining('base outline')
@@ -3565,7 +3580,7 @@ it.each(['visual', 'data', 'reference-change', 'uncovered'] as const)(
     }
 
     expect(await call(AiDesignToolIds.REVIEW_DRAWING, review)).toMatchObject({
-      readyForDetail: true
+      structureAccepted: true
     })
     expect(
       await call(AiDesignToolIds.REVIEW_DRAWING, { ...review, phase: 'visual' })
@@ -8706,6 +8721,8 @@ it('declares the shared bounded result projection in visual review outcomes', as
   if (!definition) throw new Error('Missing review definition')
   const base = {
     phase: 'visual',
+    reviewOperation: 'record',
+    recordedChecks: [],
     accepted: true,
     inspectionIds: ['inspection']
   }

@@ -72,6 +72,35 @@ admitted Fill records in the same artifact. Existing document sharing/detachment
 uses the public fill APIs. Linked edits, detachment, Undo/Redo and save/load retain
 the ordinary property-component semantics.
 
+### Explicit world-space linear material fields
+
+A draft may declare `linearFields`, a named map of
+`{frame:"world",start:{x,y,z},end:{x,y,z},gradientStops}`. Distinct finite endpoints
+use the same units and basis as projected vertices; t(p)=dot(p-start,end-start)/
+|end-start|^2. Stops retain the existing ordered linear color/opacity contract.
+Root projected faces and translated pattern faces select `materialField:key`
+instead of `fill`. A field-bound pattern face cannot receive palette overrides.
+Plain nodes, surface-grid motifs and shared/template Fill definitions do not accept
+this selector. Existing native fills remain independent supported construction.
+
+Preparation maps the affine field on the admitted plane through the existing
+orthographic camera into the final normalized vector bounds, then emits ordinary
+native linear gradients. It must preserve phase across faces and translated
+instances, including non-square bounds, reversed direction and signed origins.
+A constant phase samples the ordered stops and emits a constant native gradient
+with canonical 8-bit color and unrounded opacity. Degenerate planes, nonfinite
+fields, missing keys and unrepresentable handles reject before canvas writes;
+valid out-of-bounds handles are not clamped to hide errors. Perspective and
+nonplanar field projection are unsupported. No renderer change is implied.
+
+Fields are immutable preparation intent, not persisted live constraints or linked
+Fill identities. Per-template plane derivation is reused only within this
+preparation; each instance consumes its actual world offset and produces its own
+editable Fill. Reload restores ordinary fills. Explicit later reconstruction uses
+current arguments/authority; direct native edits remain valid. No mechanical
+conversion result or Knowledge read grants visual approval. Existing artifact
+ownership, cancellation, partial-write receipts and save-only recovery apply.
+
 Admission rejects unknown fields, unsupported kinds, duplicate keys, nonfinite
 numbers, invalid colors/font values, contradictory layout fields and excessive
 input. Bounds: at most 1,000 source nodes and 20,000 source anchors and controls. Compact pattern expansion has a separate per-artifact bound of 10,000 total output nodes and 200,000 total points; these bounds contain memory and wire size rather than limiting the complete drawing request. Nesting depth remains 12,
@@ -293,6 +322,15 @@ fixture-specific facade generator is introduced. Existing native layout remains
 preferred for 2D row/column/grid layouts. Only final visible parts are authored;
 patterns are optional and must not regularize intentional irregularity.
 
+App examples demonstrate one multi-face component with independent material roles,
+an optional common world field, declared translation axes and an explicit irregular
+exception. Keep every unique contour and intended instance/face painter order;
+patterns do not infer copies or sort depth. Use current artifact key resolution or
+retained target sets for local instance edits, never guessed canonical IDs. Restore
+only known missing complete instances with `instanceRanges`; a partial instance
+requires its exact receipt/current state, not whole-instance replay. Representative
+visual results and whole completion keep their separate inspection owners.
+
 Pattern faces are admitted once per pattern and projected once per template
 vertex; each instance uses the camera's linear translation. Expansion never
 modifies source input. Existing immutable prepared artifact resolution performs
@@ -301,7 +339,7 @@ operations preserve unaffected canonical objects. This is not automatic whole-
 document diffing or a claim that changed drafts avoid necessary validation.
 
 Plans may name a subset `structureCriteria`. A `structure` review checks that
-subset against current overview evidence and returns `readyForDetail`; it never
+subset against current overview evidence and returns `structureAccepted`; it never
 approves completion. The optional whole-structure checkpoint does not block ready
 parts or repeated-detail preparation. Final completion still requires every
 original criterion. A failed structure judgment reopens its affected obligations,

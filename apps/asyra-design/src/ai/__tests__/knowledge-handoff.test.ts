@@ -1,3 +1,8 @@
+import type {
+  AiActionBatch,
+  AiBatchReceipt,
+  AiJsonValue
+} from '../action-batch-protocol'
 import recordedDecisions from '../../../test-data/knowledge-evaluation/evidence/architecture-2026-10-18/decision-evidence-replay.json'
 import { createLocalDesignReview } from '../../../server/local-design-review'
 import { readFileSync } from 'node:fs'
@@ -46,6 +51,15 @@ it('hands App-only method examples from real Knowledge reads to current discover
   expect(domain.text).not.toContain('map_retained_fills')
   expect(app.text).toContain('map_retained_fills')
   expect(app.text).toContain('not per-cell gradient endpoints')
+  const materialRows = app.text
+    .split('\n')
+    .filter((line: string) => line.startsWith('|'))
+  expect(
+    materialRows.some(
+      (line: string) =>
+        line.includes('`linearFields`') && line.includes('`materialField`')
+    )
+  ).toBe(true)
   const appMarkdown = readFileSync(
     new URL(
       '../../../knowledge/design.architectural-illustration.md',
@@ -263,7 +277,7 @@ it('carries the recorded material decision into initial preparation without chan
     )
     expect(
       read.sources.map((source: { revision: number }) => source.revision)
-    ).toEqual([4, 8])
+    ).toEqual([4, 13])
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
@@ -1525,3 +1539,524 @@ it('executes documented exclusive direct and retained target inputs through cano
     knowledge.dispose()
   }
 })
+
+it('executes the documented representative review through recorded wrong-crop recovery and independent result reuse', async () => {
+  const present = <T>(value: T | null | undefined): T => {
+    if (value == null) throw new Error('Missing required review receipt')
+    return value
+  }
+  const saved = JSON.parse(
+    readFileSync(
+      new URL(
+        '../../../server/__tests__/fixtures/recorded-101/representative-review-20261019.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  )
+  const declaration = saved.calls.find(
+    (call: { index: number }) => call.index === 5
+  ).input
+  expect(
+    Object.values(declaration.criteria).every(
+      (criterion: { requiredUnits: string[] }) =>
+        criterion.requiredUnits.length === 0
+    )
+  ).toBe(true)
+  const recorded = saved.calls.find(
+    (call: { index: number }) => call.index === 14
+  )
+  expect(recorded.output.accepted).toBe(false)
+  const observed = recorded.input.checks.find(
+    (check: { criterionId: string }) => check.criterionId === 'facade'
+  )
+  expect(observed.status).toBe('unverified')
+
+  const knowledge = createLocalKnowledgeTools('representative-review')
+  try {
+    const delivery = JSON.parse(
+      await knowledge.call(
+        AiDesignToolIds.READ_KNOWLEDGE,
+        {
+          ids: ['design.architectural-illustration'],
+          contexts: ['architectural-illustration']
+        },
+        signal()
+      )
+    )
+    const app = delivery.documents.find(
+      (document: { target: string }) =>
+        document.target === 'design.architectural-illustration'
+    )
+    const match = app.text.match(
+      /```json representative-review\n([\s\S]*?)\n```/
+    )
+    if (!match)
+      throw new Error('Missing executable representative review example')
+    const example = JSON.parse(match[1])
+    const { designEvidenceDefinitions } =
+      await import('../../../server/local-design-review')
+    const definition = designEvidenceDefinitions.find(
+      (item) => item.name === example.tool
+    )
+    if (!definition) throw new Error('Unknown documented declaration')
+    expect(
+      operationInputIssue(example.arguments, definition.inputSchema)
+    ).toBeUndefined()
+    const owner = createLocalDesignReview()
+    owner.record({ ...example.arguments, phase: 'plan' })
+    const crop = (x: number, revision: number) => {
+      const result = owner.inspect(
+        'sample',
+        true,
+        false,
+        { x, y: 0, width: 40, height: 40 },
+        true,
+        {
+          sessionId: 'sample-document',
+          revision,
+          receiptId: `sample-${revision}`
+        }
+      )
+      if (!result) throw new Error('Missing image receipt')
+      return result.inspectionId
+    }
+    const roof = crop(0, 1)
+    const bound = owner.bindReview('visual', [
+      { criterionId: 'material', unitId: 'sample-join', inspectionIds: [roof] }
+    ])
+    const missing = owner.recordBoundReview({
+      ...bound,
+      final: false,
+      checks: bound.checks.map((check) => ({
+        ...check,
+        status: observed.status,
+        evidence: observed.evidence
+      }))
+    })
+    expect(missing).toMatchObject({
+      reviewOperation: 'record',
+      accepted: false,
+      recordedChecks: [
+        { criterionId: 'material', unitId: 'sample-join', status: 'unverified' }
+      ]
+    })
+    const before = owner.readChecks({ includePassed: true })
+    const facade = crop(50, 1)
+    expect(() =>
+      owner.bindReview('visual', [
+        {
+          criterionId: 'material',
+          unitId: 'sample-join',
+          inspectionIds: [facade]
+        }
+      ])
+    ).toThrow(/supersed/i)
+    expect(owner.readChecks({ includePassed: true })).toEqual(before)
+    const rebound = owner.bindReview('visual', [
+      {
+        criterionId: 'material',
+        unitId: 'sample-join',
+        inspectionIds: [facade],
+        supersedes: {
+          revision: present(missing.recordedChecks)[0].revision,
+          reason: 'The previous crop showed the roof, not the material join.'
+        }
+      }
+    ])
+    const pass = owner.recordBoundReview({
+      ...rebound,
+      final: false,
+      checks: rebound.checks.map((check) => ({
+        ...check,
+        status: 'pass',
+        evidence:
+          'Supplied deterministic observation of the actual material and join.'
+      }))
+    })
+    expect(pass).toMatchObject({
+      accepted: false,
+      recordedChecks: [{ status: 'pass' }],
+      coverage: {
+        passed: 1,
+        pending: [expect.objectContaining({ criterionId: 'overall' })]
+      }
+    })
+    const currentPass = owner.readChecks({
+      ids: [present(pass.recordedChecks)[0].id],
+      includePassed: true
+    })
+    owner.mutate()
+    expect(
+      owner.readChecks({
+        ids: [present(pass.recordedChecks)[0].id],
+        includePassed: true
+      })
+    ).toEqual(currentPass)
+    const whole = present(
+      owner.inspect('drawing', true, true, undefined, false, {
+        sessionId: 'sample-document',
+        revision: 2,
+        receiptId: 'whole-2'
+      })
+    )
+    const finalBinding = owner.bindReview('visual', [
+      { criterionId: 'overall', inspectionIds: [whole.inspectionId] }
+    ])
+    expect(
+      owner.recordBoundReview({
+        ...finalBinding,
+        final: true,
+        checks: finalBinding.checks.map((check) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Supplied whole-drawing observation.'
+        }))
+      })
+    ).toMatchObject({ accepted: true, coverage: { required: 2, passed: 2 } })
+    const late = owner.bindReview('visual', [
+      {
+        criterionId: 'material',
+        unitId: 'sample-join',
+        inspectionIds: [facade]
+      }
+    ])
+    owner.invalidateInspections(
+      [facade, whole.inspectionId],
+      'The material region and its whole-view image changed.'
+    )
+    expect(() =>
+      owner.recordBoundReview({
+        ...late,
+        checks: late.checks.map((check) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Late stale result'
+        }))
+      })
+    ).toThrow()
+    expect(
+      owner.readChecks({ ids: [present(pass.recordedChecks)[0].id] }).items[0]
+        .status
+    ).toBe('stale')
+    expect(
+      owner.readChecks({ ids: ['visual:overall'], includePassed: true })
+        .items[0].status
+    ).toBe('stale')
+    const fresh = crop(50, 3)
+    const recovery = owner.bindReview('visual', [
+      { criterionId: 'material', unitId: 'sample-join', inspectionIds: [fresh] }
+    ])
+    expect(
+      owner.recordBoundReview({
+        ...recovery,
+        final: true,
+        checks: recovery.checks.map((check) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Supplied recovered material observation.'
+        }))
+      })
+    ).toMatchObject({ accepted: false })
+    const recoveredWhole = present(
+      owner.inspect('drawing', true, true, undefined, false, {
+        sessionId: 'sample-document',
+        revision: 3,
+        receiptId: 'whole-3'
+      })
+    )
+    const complete = owner.bindReview('visual', [
+      { criterionId: 'overall', inspectionIds: [recoveredWhole.inspectionId] }
+    ])
+    expect(
+      owner.recordBoundReview({
+        ...complete,
+        final: true,
+        checks: complete.checks.map((check) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Supplied recovered whole-drawing observation.'
+        }))
+      })
+    ).toMatchObject({ accepted: true })
+  } finally {
+    knowledge.dispose()
+  }
+})
+
+it.each(['unverified', 'fail'] as const)(
+  'dispatches the published native route through %s recovery without discarding an independent pass',
+  async (status) => {
+    const { AiActionNames } = await import('../../constants/ai-actions')
+    const { localOperationNamespace } =
+      await import('../../../server/local-operation-tools')
+    const saved = JSON.parse(
+      readFileSync(
+        new URL(
+          '../../../server/__tests__/fixtures/recorded-101/representative-review-20261019.json',
+          import.meta.url
+        ),
+        'utf8'
+      )
+    )
+    const observation = saved.calls
+      .find((call: { index: number }) => call.index === 14)
+      .input.checks.find(
+        (check: { criterionId: string }) => check.criterionId === 'facade'
+      )
+    expect(observation.status).toBe('unverified')
+    const knowledge = createLocalKnowledgeTools('native-representative-handoff')
+    try {
+      const response = JSON.parse(
+        await knowledge.call(
+          AiDesignToolIds.READ_KNOWLEDGE,
+          {
+            ids: ['design.architectural-illustration'],
+            contexts: ['architectural-illustration']
+          },
+          signal()
+        )
+      )
+      const text = response.documents.find(
+        (document: { target: string }) =>
+          document.target === 'design.architectural-illustration'
+      ).text
+      const example = (label: string) => {
+        const match = text.match(
+          new RegExp('```json ' + label + '\\n([\\s\\S]*?)\\n```')
+        )
+        if (!match) throw new Error(`Missing ${label} example`)
+        return JSON.parse(match[1])
+      }
+      const declaration = example('representative-review')
+      const capture = example('representative-capture')
+      declaration.arguments.criteria.independent = {
+        requirement: 'Keep the independent accepted part',
+        description: 'Separate image and dependencies',
+        verification: 'visual',
+        requiredUnits: []
+      }
+      let available = true
+      const dispatch = vi.fn(
+        async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+          context: {},
+          actionResults: batch.actions.map((action) => {
+            let result: AiJsonValue = {
+              current: true,
+              validatedAt: { sessionId: 'saved-route', revision: 1 },
+              coverage: { complete: true }
+            }
+            if (action.name === AiActionNames.INSPECT_DRAWING) {
+              result = available
+                ? {
+                    available: true,
+                    imageScope: (action.arguments as Record<string, unknown>)
+                      .region
+                      ? 'region'
+                      : 'overview',
+                    evidence: { sessionId: 'saved-route', revision: 1 },
+                    image: { dataUrl: 'data:image/png;base64,AA==' }
+                  }
+                : {
+                    available: false,
+                    message:
+                      'Capture is unavailable; select the actual visible join.'
+                  }
+            }
+            return { actionId: action.id, actionName: action.name, result }
+          })
+        })
+      )
+      const operations = createLocalOperationTools(
+        [
+          AiActionNames.INSPECT_DRAWING,
+          AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+        ].map((name) => ({ name, description: name, inputSchema: {} })),
+        { modelActions: (a) => a, resolveBatch: (b) => b },
+        dispatch,
+        {
+          getNativeTools: () =>
+            operations.definitions.map((definition) => ({
+              ...definition,
+              namespace: localOperationNamespace
+            }))
+        }
+      )
+      const call = async (name: string, args: unknown) =>
+        JSON.parse(await operations.call(name, args, signal()))
+      for (const sample of [declaration, capture]) {
+        const name = `${localOperationNamespace}.${sample.tool}`
+        const usage = (
+          await call('describe_design_apis', { names: [name], view: 'usage' })
+        ).tools[0]
+        expect(usage.definition.coverage).toBe('usage')
+        const full = (await call('describe_design_apis', { names: [name] }))
+          .tools[0]
+        expect(
+          operationInputIssue(sample.arguments, full.inputSchema)
+        ).toBeUndefined()
+        const repeated = (await call('describe_design_apis', { names: [name] }))
+          .tools[0]
+        expect(repeated.definition.availableInResponse).toBe(false)
+        const restored = (
+          await call('describe_design_apis', {
+            ...repeated.definition.refresh.arguments,
+            refreshReason: 'delivery-failure'
+          })
+        ).tools[0]
+        expect(restored.inputSchema).toEqual(full.inputSchema)
+      }
+      expect(dispatch).not.toHaveBeenCalled()
+      await call(declaration.tool, declaration.arguments)
+      const judge = async (
+        bound: { next: { arguments: { checks: object[] } } },
+        verdict: string,
+        evidence: string,
+        final?: boolean
+      ) =>
+        call(capture.tool, {
+          ...bound.next.arguments,
+          ...(final === undefined ? {} : { final }),
+          checks: bound.next.arguments.checks.map((check) => ({
+            ...check,
+            status: verdict,
+            evidence
+          }))
+        })
+      const independent = await call(capture.tool, {
+        phase: 'visual',
+        final: false,
+        inspections: [
+          { elementId: 'independent', checks: [{ criterionId: 'independent' }] }
+        ]
+      })
+      const prior = (
+        await judge(
+          independent,
+          'pass',
+          'Deterministic independent observation.'
+        )
+      ).recordedChecks[0]
+      const retained = () =>
+        call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+          view: 'details',
+          ids: [prior.id],
+          includePassed: true
+        })
+      const before = await retained()
+      available = false
+      const unavailable = await call(capture.tool, capture.arguments)
+      expect(unavailable.recordedChecks ?? []).toEqual([])
+      expect(unavailable.accepted).not.toBe(true)
+      expect((await retained()).items).toEqual(before.items)
+      available = true
+      const bound = await call(capture.tool, capture.arguments)
+      const missing = await judge(
+        bound,
+        status,
+        status === 'unverified'
+          ? observation.evidence
+          : 'Deterministic material contrast failure at the selected join.'
+      )
+      expect(missing).toMatchObject({
+        accepted: false,
+        recordedChecks: [
+          { criterionId: 'material', unitId: 'sample-join', status }
+        ]
+      })
+      const failed = missing.recordedChecks[0]
+      const replacement = structuredClone(capture.arguments)
+      replacement.inspections[0].region.x = 40
+      replacement.inspections[0].checks[0].supersedes = {
+        revision: failed.revision,
+        reason:
+          status === 'unverified'
+            ? 'Use the actual facade join rather than the roof.'
+            : 'Judge the corrected material using a fresh image.'
+      }
+      const recovered = await call(capture.tool, replacement)
+      const pass = await judge(
+        recovered,
+        'pass',
+        'Deterministic corrected join observation; this test does not judge real pixels.'
+      )
+      expect(pass).toMatchObject({
+        accepted: false,
+        recordedChecks: [
+          {
+            criterionId: 'material',
+            unitId: 'sample-join',
+            status: 'pass',
+            revision: expect.any(Number)
+          }
+        ],
+        coverage: {
+          pending: [expect.objectContaining({ criterionId: 'overall' })]
+        }
+      })
+      expect(pass.recordedChecks[0].revision).toBeGreaterThan(failed.revision)
+      expect((await retained()).items).toEqual(before.items)
+      // A delayed submission cannot overwrite the replacement with the old binding.
+      await expect(
+        judge(bound, 'pass', 'Late obsolete observation')
+      ).rejects.toThrow()
+      expect((await retained()).items).toEqual(before.items)
+      const local = await call(AiDesignToolIds.READ_DESIGN_CHECKS, {
+        view: 'details',
+        ids: [failed.id],
+        includePassed: true
+      })
+      expect(local.items[0]).toMatchObject({
+        status: 'pass',
+        revision: pass.recordedChecks[0].revision
+      })
+      const whole = await call(capture.tool, {
+        phase: 'visual',
+        final: true,
+        inspections: [
+          { elementId: 'whole', checks: [{ criterionId: 'overall' }] }
+        ]
+      })
+      expect(whole.next.arguments.final).toBe(false)
+      expect(
+        await judge(whole, 'pass', 'Deterministic whole observation.')
+      ).toMatchObject({
+        accepted: false,
+        coverage: { required: 3, passed: 3 }
+      })
+      const captures = () =>
+        dispatch.mock.calls
+          .flatMap(([batch]) => batch.actions)
+          .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
+          .length
+      const beforeCompletion = captures()
+      const completion = await call(capture.tool, {
+        phase: 'visual',
+        bindChecks: [
+          { criterionId: 'overall', inspectionIds: whole.inspectionIds }
+        ]
+      })
+      expect(
+        await judge(
+          completion,
+          'pass',
+          'Retained whole observation with explicit completion.',
+          true
+        )
+      ).toMatchObject({ accepted: true, coverage: { required: 3, passed: 3 } })
+      expect(captures()).toBe(beforeCompletion)
+      expect((await retained()).items).toEqual(before.items)
+      expect(
+        dispatch.mock.calls
+          .flatMap(([batch]) => batch.actions)
+          .every(
+            (action) =>
+              action.name === AiActionNames.INSPECT_DRAWING ||
+              action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+          )
+      ).toBe(true)
+    } finally {
+      knowledge.dispose()
+    }
+  }
+)

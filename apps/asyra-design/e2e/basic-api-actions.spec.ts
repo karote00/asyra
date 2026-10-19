@@ -1085,3 +1085,118 @@ test('exports and reloads a retained large document without delivering its body 
     )
   }
 })
+
+test('visibility receipts preserve unchanged and unavailable outcomes through history and durable reload', async ({
+  page
+}) => {
+  const identity = createTestDocumentIdentity()
+  await page.goto(identity.url)
+  await waitForAppReady(page)
+  const fixture = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { transactionApis } = await import('../src/common-apis')
+    const workspaceId = core.getCurrentWorkspaceId()
+    const ids = transactionApis.runTransaction(() =>
+      core.createElementsInParent(
+        [
+          { type: 'rect', width: 20, height: 30, visible: true },
+          { type: 'rect', x: 40, width: 20, height: 30, visible: true }
+        ],
+        workspaceId
+      )
+    )
+    if (ids.length !== 2 || ids.some((id) => !id))
+      throw new Error('Missing fixture')
+    return { id: ids[0], sibling: ids[1], workspaceId }
+  })
+  const invoke = (elementId: string, visible: boolean) =>
+    page.evaluate(
+      async (input) => {
+        const { createAiActions, AiActionNames } =
+          await import('../src/ai/actions')
+        const { observeAiAction } = await import('../src/ai/runtime-input')
+        const { createAiTransactionRunner } =
+          await import('../src/ai/transaction')
+        const action = createAiActions().find(
+          (item) => item.name === AiActionNames.SET_ELEMENT_VISIBILITY
+        )
+        if (!action) throw new Error('Visibility action missing')
+        return createAiTransactionRunner().run('Visibility', (runMutation) =>
+          observeAiAction(action).execute(input, {
+            runMutation,
+            signal: new AbortController().signal
+          })
+        )
+      },
+      { elementId, visible }
+    )
+  const visible = (id: string) =>
+    page.evaluate(
+      async (id) =>
+        (await import('../src/testing/runtime-access')).core.getElementData(id)
+          ?.visible,
+      id
+    )
+  const before = await getUndoHistoryDepth(page)
+  expect(await invoke(fixture.id, false)).toMatchObject({
+    status: 'complete',
+    changed: true,
+    toolOutcome: { status: 'success', settlement: 'completed' }
+  })
+  expect(await visible(fixture.id)).toBe(false)
+  expect(await getUndoHistoryDepth(page)).toBe(before + 1)
+  for (const id of [fixture.id, 'missing-visibility', fixture.workspaceId]) {
+    const unavailable = id !== fixture.id
+    expect(await invoke(id, false)).toMatchObject({
+      changed: false,
+      status: unavailable ? 'failed' : 'no-change',
+      toolOutcome: {
+        status: unavailable ? 'failed' : 'success',
+        settlement: unavailable ? 'not-started' : 'completed'
+      }
+    })
+    expect(await visible(fixture.id)).toBe(false)
+    expect(await visible(fixture.sibling)).toBe(true)
+    expect(await getUndoHistoryDepth(page)).toBe(before + 1)
+  }
+  await undo(page)
+  expect(await visible(fixture.id)).toBe(true)
+  await redo(page)
+  expect(await visible(fixture.id)).toBe(false)
+  expect(await invoke(fixture.id, true)).toMatchObject({
+    status: 'complete',
+    changed: true
+  })
+  await expect
+    .poll(() =>
+      page.evaluate(
+        async () =>
+          (await import('../src/testing/runtime-access'))
+            .getActiveCollaborationHandle()
+            ?.getSessionState().sync
+      )
+    )
+    .toBe('synced')
+  const expected = await page.evaluate(async () => {
+    const { core, getActiveCollaborationHandle } =
+      await import('../src/testing/runtime-access')
+    const session = getActiveCollaborationHandle()
+    if (!session) throw new Error('Document session missing')
+    const receipt = await session.confirmPersistence(AbortSignal.timeout(10000))
+    if (receipt.durableSequence < receipt.sequence)
+      throw new Error('Document changes were not durably persisted')
+    return core.save()
+  })
+  expect(
+    (await getPersistedDocumentCheckpoint(identity.fileId)).checkpoint
+  ).toEqual(expected)
+  await page.reload()
+  await waitForAppReady(page)
+  expect(
+    await page.evaluate(async () =>
+      (await import('../src/testing/runtime-access')).core.save()
+    )
+  ).toEqual(expected)
+  expect(await visible(fixture.id)).toBe(true)
+  expect(await visible(fixture.sibling)).toBe(true)
+})

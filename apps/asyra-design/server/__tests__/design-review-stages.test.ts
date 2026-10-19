@@ -230,7 +230,7 @@ describe('construction and comparison review', () => {
         phase: 'structure',
         ...wholeViewJudgments(ids, [check('Viewpoint')])
       })
-    ).toMatchObject({ readyForDetail: true, accepted: false })
+    ).toMatchObject({ structureAccepted: true, accepted: false })
     expect(r.getIssue()).toBeTruthy()
     r.mutate()
     expect(() =>
@@ -335,7 +335,7 @@ it('retains deferred work through mutations and requires a current final disposi
 
       deferredDetails
     })
-  ).toMatchObject({ readyForDetail: true, deferredDetails })
+  ).toMatchObject({ structureAccepted: true, deferredDetails })
   r.mutate()
   const visual = {
     phase: 'visual',
@@ -973,7 +973,7 @@ it('retains observable structure checks linked to the original request by stable
         }
       ])
     })
-  ).toMatchObject({ readyForDetail: true, accepted: false })
+  ).toMatchObject({ structureAccepted: true, accepted: false })
   expect(
     review.record({
       phase: 'visual',
@@ -1140,7 +1140,7 @@ it('routes visual and data evidence separately without dropping the data require
     )
   }
   expect(r.record(args)).toMatchObject({
-    readyForDetail: true
+    structureAccepted: true
   })
   expect(
     r.record({
@@ -1150,7 +1150,7 @@ it('routes visual and data evidence separately without dropping the data require
         check('scale', 'unverified')
       ])
     })
-  ).toMatchObject({ readyForDetail: false })
+  ).toMatchObject({ structureAccepted: false })
 })
 
 it('preserves an explicit reference when resubmitting a plan without reference changes', () => {
@@ -2744,7 +2744,7 @@ describe('declared regional acceptance', () => {
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
     expect(declaration.revision).toBe(4)
-    expect(inspection.revision).toBe(10)
+    expect(inspection.revision).toBe(11)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],
@@ -3775,6 +3775,30 @@ describe('explicit review binding handoff', () => {
         evidence: 'Observed the requested surface.'
       }))
     }
+    const receipt = review.recordBoundReview({ ...submit, final: false })
+    expect(receipt).toMatchObject({
+      reviewOperation: 'record',
+      accepted: false,
+      recordedChecks: [
+        {
+          id: 'visual:Viewpoint',
+          criterionId: 'Viewpoint',
+          origin: 'main-agent',
+          status: 'pass',
+          revision: expect.any(Number)
+        },
+        {
+          id: 'visual:Finish',
+          criterionId: 'Finish',
+          origin: 'main-agent',
+          status: 'pass',
+          revision: expect.any(Number)
+        }
+      ]
+    })
+    expect(receipt.recordedChecks?.every((item) => !('evidence' in item))).toBe(
+      true
+    )
     review.recordBoundReview(submit)
     const before = review.readChecks({ includePassed: true })
     review.recordBoundReview(submit)
@@ -3942,4 +3966,47 @@ it('replays the latest recorded mixed crown input before binding and preserves u
       .readChecks({ includePassed: true })
       .items.find((item) => item.criterionId === 'view')
   ).toEqual(passed.items.find((item) => item.criterionId === 'view'))
+})
+
+it('routes a mechanical blocker without demanding a new accepted visual judgment', () => {
+  const results = createDesignCheckResults()
+  const review = createLocalDesignReview({ results })
+  review.record({ ...plan, detailRequired: false })
+  const image = requireTestValue(
+    review.inspect('root', true, true)
+  ).inspectionId
+  review.record({
+    phase: 'visual',
+    ...wholeViewJudgments([image], [check('Viewpoint'), check('Finish')])
+  })
+  expect(review.isAccepted()).toBe(true)
+  results.record({
+    id: 'mechanical-root',
+    origin: 'tool',
+    status: 'fail',
+    evidence: 'Constraint needs repair.',
+    dependencies: {}
+  })
+  const handoff = review.selectReferences([]).review
+  expect(handoff).toMatchObject({
+    accepted: false,
+    requiresFreshReview: false,
+    requiredCriterionIds: [],
+    next: {
+      tool: 'read_design_checks',
+      arguments: { ids: ['mechanical-root'] }
+    }
+  })
+  results.record({
+    id: 'mechanical-root',
+    origin: 'tool',
+    status: 'pass',
+    evidence: 'Constraint repaired.',
+    dependencies: {}
+  })
+  expect(review.selectReferences([]).review).toMatchObject({
+    accepted: true,
+    requiresFreshReview: false
+  })
+  expect(review.isAccepted()).toBe(true)
 })

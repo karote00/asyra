@@ -18,11 +18,11 @@
     },
     "attachments": [
       {
-        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-0.jpg",
+        "path": "tmp/knowledge-reference-assets/reference-0.jpg",
         "sha256": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
       },
       {
-        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-1.jpg",
+        "path": "tmp/knowledge-reference-assets/reference-1.jpg",
         "sha256": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
       }
     ],
@@ -149,11 +149,11 @@
     },
     "attachments": [
       {
-        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-0.jpg",
+        "path": "tmp/knowledge-reference-assets/reference-0.jpg",
         "sha256": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
       },
       {
-        "path": "/Users/asa/Desktop/workspace/asra/.worktrees/design-knowledge-evaluation/tmp/knowledge-reference-assets/reference-1.jpg",
+        "path": "tmp/knowledge-reference-assets/reference-1.jpg",
         "sha256": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
       }
     ],

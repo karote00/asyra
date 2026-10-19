@@ -178,11 +178,7 @@ export interface AiActionApis {
     options?: EVENT_OPTIONS
   ): boolean
   setDrawingProgress(progress: AiDrawingProgressState | null): void
-  setElementVisible(
-    elementId: string,
-    visible: boolean,
-    options?: EVENT_OPTIONS
-  ): boolean
+  setElementsVisible: typeof elementApis.setElementsVisible
   selectElements(elementIds: string[], options?: EVENT_OPTIONS): void
   updateElementFillColor(
     elementId: string,
@@ -258,8 +254,8 @@ const defaultApis: AiActionApis = {
     hierarchyApis.removeSubtree(elementId, options),
   scaleVectorElementGeometry: (elementId, geometry, options) =>
     elementApis.scaleVectorElementAroundCenter(elementId, geometry, options),
-  setElementVisible: (elementId, visible, options) =>
-    elementApis.setElementVisible(elementId, visible, options),
+  setElementsVisible: (elementIds, visible, options) =>
+    elementApis.setElementsVisible(elementIds, visible, options),
   selectElements: (elementIds, options) =>
     selectionApis.selectElements(elementIds, options),
   setDrawingProgress: (progress) =>
@@ -959,11 +955,14 @@ export const createAiActions = (
         AiActionNames.SET_ELEMENT_VISIBILITY,
         toolResultObject({
           changed: toolResultBoolean,
-          elementId: toolResultString
+          elementId: toolResultString,
+          status: toolResultStatus
         })
       ),
+      revision: 3,
       name: AiActionNames.SET_ELEMENT_VISIBILITY,
-      description: 'Set whether one existing element is visible.',
+      description:
+        'Set whether one existing editable element is visible. The receipt distinguishes changed, already matching and unavailable targets. An unavailable target fails without writing; it is not a successful no-change.',
       inputSchema: Object.freeze({
         type: 'object',
         additionalProperties: false,
@@ -983,13 +982,36 @@ export const createAiActions = (
         context: AiExecutionContext
       ) => {
         assertNotAborted(context)
-        const changed = await runAiMutation(context, () =>
-          apis.setElementVisible(args.elementId, args.visible, mutationOptions)
+        const results = await runAiMutation(context, () =>
+          apis.setElementsVisible(
+            [args.elementId],
+            args.visible,
+            mutationOptions
+          )
         )
+        if (
+          results.length !== 1 ||
+          !['changed', 'unchanged', 'unavailable'].includes(results[0])
+        )
+          throw new AiActionExecutionError(
+            'The visibility owner returned an invalid target receipt.'
+          )
+        const result = results[0]
+        let status = 'no-change'
+        if (result === 'changed') status = 'complete'
+        if (result === 'unavailable') status = 'failed'
         return Object.freeze({
           action: AiActionNames.SET_ELEMENT_VISIBILITY,
-          changed,
-          elementId: args.elementId
+          changed: result === 'changed',
+          elementId: args.elementId,
+          status,
+          ...(result === 'unavailable'
+            ? {
+                settlement: 'not-started',
+                message:
+                  'The visibility target is unavailable or not editable. No visibility change was made.'
+              }
+            : {})
         })
       }
     })

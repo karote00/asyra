@@ -689,6 +689,96 @@ describe('Asyra Design app-owned collaboration processing', () => {
     ])
   })
 
+  it.each([
+    ['shared', ['existing-fill']],
+    ['ordered', ['existing-fill', 'retained-fill']]
+  ])(
+    'preserves %s relationship values through lifecycle conversion and durable reduction',
+    (_name, after) => {
+      const document = createFormalInitialDocument()
+      Object.assign(document.props, {
+        'target-fills': {
+          id: 'target-fills',
+          type: 'fills',
+          fills: ['old-fill', 'retained-fill']
+        },
+        'old-fill': { id: 'old-fill', type: 'fill', color: '#111111' },
+        'existing-fill': {
+          id: 'existing-fill',
+          type: 'fill',
+          color: '#222222'
+        },
+        'retained-fill': { id: 'retained-fill', type: 'fill', color: '#333333' }
+      })
+      const before = structuredClone(document)
+      const changes = [
+        {
+          ...delivery(
+            SharedDataChannelNames.PROPS,
+            EventTypes.UPDATE_PROPERTY,
+            {
+              action: PROPS_ACTIONS.UPDATE_PROPERTY,
+              eventName: EventTypes.UPDATE_PROPERTY,
+              id: 'old-fill',
+              key: 'color',
+              before: '#444444',
+              after: '#111111'
+            },
+            'restore-old-before-removal'
+          ),
+          batchId: 'material-batch',
+          orderedIds: ['target-fills']
+        },
+        {
+          ...delivery(
+            SharedDataChannelNames.PROPS,
+            EventTypes.REMOVE_PROPERTY,
+            {
+              action: PROPS_ACTIONS.REMOVE_PROPERTY,
+              eventName: EventTypes.REMOVE_PROPERTY,
+              data: [document.props['old-fill']]
+            },
+            'remove-old'
+          ),
+          batchId: 'material-batch',
+          orderedIds: ['target-fills']
+        },
+        {
+          ...delivery(
+            SharedDataChannelNames.PROPS,
+            EventTypes.UPDATE_PROPERTY,
+            {
+              action: PROPS_ACTIONS.UPDATE_PROPERTY,
+              eventName: EventTypes.UPDATE_PROPERTY,
+              id: 'target-fills',
+              key: 'fills',
+              before: ['old-fill', 'retained-fill'],
+              after
+            },
+            'link-existing'
+          ),
+          batchId: 'material-batch',
+          orderedIds: ['target-fills']
+        }
+      ]
+      const harness = createHarness()
+      expect(harness.processPublication(publication(changes))).toBe(true)
+      const canonical = harness.applyCanonicalChanges.mock
+        .calls[0][0] as readonly CanonicalChange[]
+      const reduced = applyCanonicalChangesToDocument(document, canonical)
+      expect(reduced.props['target-fills']).toMatchObject({ fills: after })
+      expect(reduced.props['existing-fill']).toEqual(
+        before.props['existing-fill']
+      )
+      expect(reduced.props['retained-fill']).toEqual(
+        before.props['retained-fill']
+      )
+      expect(reduced.props['old-fill']).toBeUndefined()
+      expect(document).toEqual(before)
+      expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
+    }
+  )
+
   it('preserves exact property record additions before updates in one Core request', () => {
     const harness = createHarness()
     const propertyBatchId = 'batch-vector-topology'
@@ -716,7 +806,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
           id: 'points-root',
           key: 'points',
           before: ['point-a'],
-          after: ['point-a', 'point-b']
+          after: ['point-b', 'point-a']
         },
         'update-points-root'
       ),
@@ -750,6 +840,15 @@ describe('Asyra Design app-owned collaboration processing', () => {
           }
         ],
         updates: []
+      },
+      {
+        kind: 'property-components',
+        updates: [
+          {
+            propertyId: 'points-root',
+            values: { points: ['point-b', 'point-a'] }
+          }
+        ]
       }
     ])
   })
@@ -808,6 +907,12 @@ describe('Asyra Design app-owned collaboration processing', () => {
           }
         ],
         updates: []
+      },
+      {
+        kind: 'property-components',
+        updates: [
+          { propertyId: 'points-root', values: { points: ['point-a'] } }
+        ]
       }
     ])
   })
@@ -902,6 +1007,12 @@ describe('Asyra Design app-owned collaboration processing', () => {
           }
         ],
         updates: []
+      },
+      {
+        kind: 'property-components',
+        updates: [
+          { propertyId: 'segments-root', values: { segments: ['segment-new'] } }
+        ]
       }
     ])
   })

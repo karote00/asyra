@@ -434,6 +434,63 @@
             "apps/asyra-design/src/common-apis/retained-design-context.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
+        },
+        {
+          "id": "prepare.world-material",
+          "stepId": "prepare",
+          "testName": "execution proof preserves world material phase through preparation and current artifact consumption",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-linear-field.ts",
+            "apps/asyra-design/server/design-construction.ts"
+          ]
+        },
+        {
+          "id": "prepare.repeated-representation",
+          "stepId": "prepare",
+          "testName": "execution proof consumes repeated multi-face examples through exact native targets and artifact lifetime",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-target-index.ts"
+          ]
+        },
+        {
+          "id": "apply.query-admission",
+          "stepId": "apply",
+          "testName": "execution proof rejects mismatched query scopes before reads and preserves explicit refinement",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/design-context.ts",
+            "apps/asyra-design/src/common-apis/retained-design-context.ts",
+            "apps/asyra-design/src/ai/context-action.ts"
+          ]
+        },
+        {
+          "id": "compose.chosen-method-handoff",
+          "stepId": "compose",
+          "testName": "execution proof dispatches the published chosen-method route without converting record success into acceptance",
+          "implementationPaths": [
+            "apps/asyra-design/server/ai-domain-prompt.ts",
+            "apps/asyra-design/knowledge/design.architectural-illustration.md",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "compose.material-correction",
+          "stepId": "compose",
+          "testName": "execution proof admits complete per-target material corrections from the published route",
+          "implementationPaths": [
+            "apps/asyra-design/knowledge/design.architectural-illustration.md",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "settle.property-relationships",
+          "stepId": "settle",
+          "testName": "execution proof preserves exact shared property relationships in publication",
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/operations.ts",
+            "apps/asyra-design/src/collaboration/document-publication.ts"
+          ]
         }
       ],
       "handoffs": [
@@ -449,7 +506,8 @@
           "decision": "required",
           "caseIds": [
             "prepare.lifetime",
-            "compose.resource-export"
+            "compose.resource-export",
+            "prepare.repeated-representation"
           ]
         },
         {
@@ -463,7 +521,8 @@
           "routeId": "prepare-to-apply",
           "decision": "required",
           "caseIds": [
-            "apply.composition"
+            "apply.composition",
+            "prepare.repeated-representation"
           ]
         },
         {
@@ -651,6 +710,30 @@
         "file": "apps/asyra-design/src/ai/server-action-batch-provider.ts",
         "from": "if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) return body",
         "to": "if (bytes >= 0) return body"
+      }
+    },
+    {
+      "id": "drop-final-property-relationships",
+      "title": "Drop final relationship arrays from property publication",
+      "expectedFailedCaseIds": [
+        "settle.property-relationships"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/collaboration/operations.ts",
+        "from": "update.values[change.key as string] = change.after",
+        "to": "if (!Array.isArray(change.after)) update.values[change.key as string] = change.after"
+      }
+    },
+    {
+      "id": "retire-property-before-update",
+      "title": "Retire property components before their preceding value updates",
+      "expectedFailedCaseIds": [
+        "settle.property-relationships"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/collaboration/operations.ts",
+        "from": "const removedPropertyIds = new Set(\n        propertyComponents.records.flatMap((record) => record.remove ?? [])\n      )",
+        "to": "const removedPropertyIds = new Set<string>()"
       }
     }
   ]

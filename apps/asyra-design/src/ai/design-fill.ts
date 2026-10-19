@@ -1,5 +1,7 @@
 import { FillGradientTypes, type FillGradientData } from '@asyra/utils'
 
+export type DesignGradientData = FillGradientData
+
 const color = { type: 'string', pattern: '^#[0-9A-Fa-f]{6}$' }
 const unit = { type: 'number', minimum: 0, maximum: 1 }
 const handle = { type: 'number', minimum: -10000, maximum: 10000 }
@@ -54,7 +56,7 @@ const finite = (v: unknown, min: number, max: number): v is number =>
 const isColor = (v: unknown): v is string =>
   typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)
 
-export const isDesignGradient = (v: unknown): v is FillGradientData => {
+export const isDesignGradient = (v: unknown): v is DesignGradientData => {
   if (
     !record(v) ||
     !exact(v, ['gradientType', 'gradientHandles', 'gradientStops']) ||
@@ -91,7 +93,7 @@ export const isDesignGradient = (v: unknown): v is FillGradientData => {
 
 export const isDesignInlineFill = (
   v: unknown
-): v is string | FillGradientData => isColor(v) || isDesignGradient(v)
+): v is string | DesignGradientData => isColor(v) || isDesignGradient(v)
 
 export const isDesignSharedFill = (v: unknown): v is { shared: string } =>
   record(v) &&
@@ -109,7 +111,8 @@ export const isDesignFillTemplate = (v: unknown): v is { template: string } =>
 
 export const isDesignFill = (
   v: unknown
-): v is string | FillGradientData | { shared: string } | { template: string } =>
+): v is
+  string | DesignGradientData | { shared: string } | { template: string } =>
   isDesignInlineFill(v) || isDesignSharedFill(v) || isDesignFillTemplate(v)
 
 export const designFillSchema = {

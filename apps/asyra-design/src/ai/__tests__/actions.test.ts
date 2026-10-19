@@ -1,3 +1,4 @@
+import { AiExecutionError } from '@asyra/ai-agent-runtime'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import core from '../../contexts'
 import { selectionApis } from '../../common-apis/selection'
@@ -32,7 +33,7 @@ const actionApis = (): AiActionApis => ({
   scaleVectorElementGeometry: vi.fn(() => true),
   selectElements: vi.fn(),
   setDrawingProgress: vi.fn(),
-  setElementVisible: vi.fn(() => true),
+  setElementsVisible: vi.fn(() => ['changed' as const]),
   updateElementFillColor: vi.fn(),
   updateElementFillColors: vi.fn(() => []),
   updateElementStrokeColor: vi.fn(),
@@ -191,7 +192,8 @@ describe('Asyra Design AI actions', () => {
     ).resolves.toEqual({
       action: AiActionNames.SET_ELEMENT_VISIBILITY,
       changed: true,
-      elementId: 'shape-1'
+      elementId: 'shape-1',
+      status: 'complete'
     })
     await expect(
       selection.execute(
@@ -204,7 +206,7 @@ describe('Asyra Design AI actions', () => {
       action: AiActionNames.SELECT_ELEMENTS,
       selectedCount: 2
     })
-    expect(apis.setElementVisible).toHaveBeenCalledWith('shape-1', false, {
+    expect(apis.setElementsVisible).toHaveBeenCalledWith(['shape-1'], false, {
       sharedDelivery: 'immediate',
       undoable: true
     })
@@ -212,6 +214,58 @@ describe('Asyra Design AI actions', () => {
       sharedDelivery: 'immediate',
       undoable: true
     })
+  })
+
+  it.each([
+    ['changed', 'complete', 'success', 'completed'],
+    ['unchanged', 'no-change', 'success', 'completed'],
+    ['unavailable', 'failed', 'failed', 'not-started']
+  ] as const)(
+    'preserves the visibility owner result %s through the public action receipt',
+    async (ownerStatus, status, outcome, settlement) => {
+      const apis = actionApis()
+      const setElementsVisible = vi.fn(() => [ownerStatus])
+      const action = observeAiAction(
+        actionByName(AiActionNames.SET_ELEMENT_VISIBILITY, {
+          ...apis,
+          setElementsVisible
+        })
+      )
+      const result = await action.execute(
+        { elementId: 'shape-1', visible: false },
+        executionContext()
+      )
+      expect(result).toMatchObject({
+        elementId: 'shape-1',
+        changed: ownerStatus === 'changed',
+        status,
+        toolOutcome: { status: outcome, settlement }
+      })
+      expect(setElementsVisible).toHaveBeenCalledExactlyOnceWith(
+        ['shape-1'],
+        false,
+        { sharedDelivery: 'immediate', undoable: true }
+      )
+    }
+  )
+
+  it('does not change visibility when cancellation arrives at the mutation boundary', async () => {
+    const apis = actionApis()
+    const controller = new AbortController()
+    const action = actionByName(AiActionNames.SET_ELEMENT_VISIBILITY, apis)
+    await expect(
+      action.execute(
+        { elementId: 'shape-1', visible: false },
+        {
+          signal: controller.signal,
+          runMutation: async (write) => {
+            controller.abort(new Error('Stopped before write'))
+            return write()
+          }
+        }
+      )
+    ).rejects.toThrow()
+    expect(apis.setElementsVisible).not.toHaveBeenCalled()
   })
 
   it.each([['missing'], ['shape-1', 'missing'], ['missing', 'shape-1']])(
@@ -284,7 +338,7 @@ describe('Asyra Design AI actions', () => {
           }
         }
       )
-    ).rejects.toBeInstanceOf(AiActionError)
+    ).rejects.toBeInstanceOf(AiExecutionError)
     expect(apis.selectElements).not.toHaveBeenCalled()
   })
 
@@ -305,7 +359,7 @@ describe('Asyra Design AI actions', () => {
         }
       )
     ).rejects.toBeInstanceOf(AiActionError)
-    expect(apis.setElementVisible).not.toHaveBeenCalled()
+    expect(apis.setElementsVisible).not.toHaveBeenCalled()
   })
 })
 

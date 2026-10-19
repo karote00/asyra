@@ -1,3 +1,6 @@
+/// <reference lib="dom" />
+/// <reference types="vite/client" />
+import type {} from '../../src/types'
 import recordedPurpose from './fixtures/recorded-101/purpose-20261017.json'
 import sharp from 'sharp'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
@@ -5233,5 +5236,661 @@ it('preserves an App completion failure after a valid final response without rep
     expect(executeBatch).not.toHaveBeenCalled()
   } finally {
     spy.mockRestore()
+  }
+})
+
+it('isolates recorded rejected preparation from an earlier provider part and repairs only the rejected part', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const { default: recorded } =
+    await import('./fixtures/recorded-101/ordered-preparation-20261019.json')
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  const applied: string[] = []
+  const executeBatch = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: batch.actions.map((action) => {
+        expect(action.name).toBe(AiActionNames.APPLY_PREPARED_DESIGN)
+        const root = `part-${applied.length + 1}`
+        applied.push(root)
+        return {
+          actionId: action.id,
+          actionName: action.name,
+          result: {
+            status: 'complete',
+            compositionId: root,
+            appliedElementIds: [root]
+          }
+        }
+      })
+    })
+  )
+  const request = requestLocalAiActionBatch(
+    {
+      ...input,
+      actions: [
+        {
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          description: 'Apply',
+          inputSchema: {}
+        }
+      ]
+    },
+    { model: 'selected-model', executable: 'codex', executeBatch }
+  )
+  await untilTurn(server.packets)
+  let id = 800
+  const call = async (args: unknown) => {
+    const current = ++id
+    server.send({
+      id: current,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: `recorded-${current}`,
+        tool: 'prepare_and_apply_design',
+        arguments: args
+      }
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((p) => p.id === current)).toBe(true)
+    )
+    const packet = server.packets.find((p) => p.id === current) as unknown as {
+      result: { success: boolean; contentItems: { text: string }[] }
+    }
+    return {
+      success: packet.result.success,
+      value: JSON.parse(packet.result.contentItems[0].text)
+    }
+  }
+  try {
+    const failed = await call(recorded.input)
+    expect(applied).toEqual(['part-1'])
+    expect(failed.success).toBe(false)
+    expect(failed.value).toMatchObject({
+      status: 'partial',
+      settlement: 'partial',
+      failedPart: 'base-details'
+    })
+    const rejected = failed.value.parts[1]
+    expect(rejected.message).toContain('buttress-y0.vertices')
+    expect(rejected.message).toContain('nonplanar face')
+    expect(rejected).toMatchObject({
+      recovery: 'correct_input',
+      draftId: expect.any(String),
+      toolOutcome: { status: 'failed', settlement: 'not-started' }
+    })
+    expect(rejected.executionResult?.batches ?? []).toEqual([])
+    const failedRepair = await call({
+      repair: {
+        draftId: rejected.draftId,
+        replacements: [{ path: '/name', value: 'Still nonplanar' }]
+      },
+      inspection: 'defer'
+    })
+    expect(failedRepair.success).toBe(false)
+    expect(failedRepair.value).toMatchObject({
+      recovery: 'correct_input',
+      draftId: expect.any(String),
+      toolOutcome: { status: 'failed', settlement: 'not-started' }
+    })
+    expect(failedRepair.value.message).toContain('nonplanar face')
+    expect(applied).toEqual(['part-1'])
+    // Split each recorded face into planar triangles; only the unexecuted part is repaired.
+    const children = recorded.input.parts[1].draft.children.flatMap<unknown>(
+      (child) => {
+        if (child.type !== 'projected-face' || !('vertices' in child))
+          return [child]
+        const vertices = child.vertices as { x: number; y: number; z: number }[]
+        return vertices.slice(2).map((vertex, index) => ({
+          ...child,
+          key: `${child.key}-triangle-${index}`,
+          vertices: [vertices[0], vertices[index + 1], vertex]
+        }))
+      }
+    )
+    const repaired = await call({
+      parts: [
+        {
+          key: 'base-details',
+          parentId: recorded.input.parts[1].parentId,
+          repair: {
+            draftId: failedRepair.value.draftId,
+            replacements: [{ path: '/children', value: children }]
+          }
+        }
+      ],
+      inspection: 'defer'
+    })
+    expect(repaired.success, JSON.stringify(repaired.value)).toBe(true)
+    expect(applied).toEqual(['part-1', 'part-2'])
+    expect(spawn).toHaveBeenCalledTimes(1)
+  } finally {
+    server.finish()
+    await request
+  }
+})
+
+it.each(['malformed', 'unavailable'] as const)(
+  'isolates queued provider preparation and attributes a %s second write to its own child',
+  async (mode) => {
+    vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const server = fakeServer({ hold: true, manualToolReplies: true })
+    let release!: () => void
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const actionIds: string[] = []
+    const progress: {
+      tool?: string
+      activity?: { callId?: string; parentCallId?: string }
+    }[] = []
+    const executeBatch = async (
+      batch: AiActionBatch
+    ): Promise<AiBatchReceipt> => {
+      const action = batch.actions[0]
+      actionIds.push(action.id)
+      if (actionIds.length === 1) await held
+      else if (mode === 'unavailable')
+        throw new Error('Second write receipt unavailable')
+      return {
+        context: {},
+        actionResults: [
+          {
+            actionId: action.id,
+            actionName: action.name,
+            result:
+              actionIds.length === 1
+                ? {
+                    status: 'complete',
+                    compositionId: 'prefix',
+                    appliedElementIds: ['prefix']
+                  }
+                : { status: 'complete', compositionId: 42 }
+          }
+        ]
+      }
+    }
+    const request = requestLocalAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: AiActionNames.APPLY_PREPARED_DESIGN,
+            description: 'Apply',
+            inputSchema: {}
+          }
+        ]
+      },
+      {
+        model: 'selected-model',
+        executable: 'codex',
+        executeBatch,
+        onProgress: (event) => progress.push(event)
+      }
+    )
+    await untilTurn(server.packets)
+    const sendCall = (id: number, tool: string, args: unknown) =>
+      server.send({
+        id,
+        method: 'item/tool/call',
+        params: {
+          threadId: 'thread-1',
+          turnId: 'turn-1',
+          callId: `concurrent-${id}`,
+          tool,
+          arguments: args
+        }
+      })
+    const read = async (id: number) => {
+      await vi.waitFor(() =>
+        expect(server.packets.some((p) => p.id === id)).toBe(true)
+      )
+      const packet = server.packets.find((p) => p.id === id) as unknown as {
+        result: { contentItems: { text: string }[] }
+      }
+      return JSON.parse(packet.result.contentItems[0].text)
+    }
+    const draft = {
+      type: 'group',
+      name: 'Part',
+      children: [
+        { type: 'rect', key: 'face', name: 'Face', width: 10, height: 10 }
+      ]
+    }
+    try {
+      sendCall(850, 'prepare_and_apply_design', {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft }
+        ],
+        inspection: 'defer'
+      })
+      await vi.waitFor(() => expect(actionIds).toHaveLength(1))
+      sendCall(851, 'prepare_design', {
+        draft: { ...draft, children: [draft.children[0], draft.children[0]] }
+      })
+      expect(server.packets.some((p) => p.id === 851)).toBe(false)
+      release()
+      const rejected = await read(851)
+      expect(rejected).toMatchObject({
+        available: false,
+        recovery: 'correct_input',
+        toolOutcome: { status: 'failed', settlement: 'not-started' }
+      })
+      expect(rejected.executionResult?.batches ?? []).toEqual([])
+      const result = await read(850)
+      expect(result).toMatchObject({ status: 'partial', settlement: 'unknown' })
+      expect(result.parts[1].code).toBe(
+        mode === 'malformed'
+          ? 'TOOL_RESULT_INVALID'
+          : 'MUTATION_SCOPE_UNAVAILABLE'
+      )
+      if (mode === 'malformed') {
+        const receiptIds = result.parts[1].executionResult.batches.flatMap(
+          (b: AiBatchReceipt) => b.actionResults.map((a) => a.actionId)
+        )
+        expect(receiptIds).toEqual([actionIds[1]])
+      } else {
+        expect(result.parts[1].executionResult).toBeUndefined()
+        expect(result.parts[1].message).toContain(
+          'Second write receipt unavailable'
+        )
+        expect(result.parts[1].settlement).toBe('unknown')
+      }
+      expect(JSON.stringify(result.parts[1])).not.toContain(actionIds[0])
+      const batches = progress.filter(
+        (e) => e.tool === 'app-batch' && e.activity?.parentCallId
+      )
+      expect(batches.length).toBeGreaterThan(0)
+      expect(
+        batches.every((e) => e.activity?.parentCallId !== 'concurrent-850')
+      ).toBe(true)
+      for (const batch of batches)
+        expect(
+          progress.some(
+            (e) =>
+              e.activity?.callId === batch.activity?.parentCallId &&
+              e.activity?.parentCallId === 'concurrent-850'
+          )
+        ).toBe(true)
+    } finally {
+      release()
+      server.finish()
+      await request
+    }
+  }
+)
+
+it('retains the actual provider prefix on cancellation without dispatching the next part', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  const controller = new AbortController()
+  const executeBatch = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          status: 'complete',
+          compositionId: 'acknowledged-before-cancel'
+        }
+      }))
+    })
+  )
+  const progress: {
+    tool?: string
+    status?: string
+    activity?: { callId?: string; parentCallId?: string }
+  }[] = []
+  const request = requestLocalAiActionBatch(
+    {
+      ...input,
+      actions: [
+        {
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          description: 'Apply',
+          inputSchema: {}
+        }
+      ]
+    },
+    {
+      model: 'selected-model',
+      executable: 'codex',
+      executeBatch,
+      signal: controller.signal,
+      onProgress: (event) => {
+        progress.push(event)
+        if (event.tool === 'app-batch' && event.status === 'completed')
+          controller.abort()
+      }
+    }
+  )
+  const checked = expect(request).rejects.toMatchObject({
+    code: 'AI_MODEL_BACKEND_ABORTED'
+  })
+  await untilTurn(server.packets)
+  const draft = {
+    type: 'group',
+    name: 'Part',
+    children: [
+      { type: 'rect', key: 'face', name: 'Face', width: 10, height: 10 }
+    ]
+  }
+  server.send({
+    id: 880,
+    method: 'item/tool/call',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      callId: 'cancelled-coordinator',
+      tool: 'prepare_and_apply_design',
+      arguments: {
+        parts: [
+          { key: 'a', draft },
+          { key: 'b', draft }
+        ],
+        inspection: 'defer'
+      }
+    }
+  })
+  await checked
+  expect(executeBatch).toHaveBeenCalledTimes(1)
+  expect(server.child.kill).toHaveBeenCalledOnce()
+  expect(JSON.stringify(retainedRecords)).toContain(
+    'acknowledged-before-cancel'
+  )
+  const applied = progress.find(
+    (event) => event.tool === 'app-batch' && event.status === 'completed'
+  )
+  expect(applied?.activity?.parentCallId).toEqual(expect.any(String))
+  expect(applied?.activity?.parentCallId).not.toBe('cancelled-coordinator')
+  expect(progress).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        activity: expect.objectContaining({
+          callId: applied?.activity?.parentCallId,
+          parentCallId: 'cancelled-coordinator'
+        })
+      })
+    ])
+  )
+})
+
+it('isolates overlapping provider requests with identical call IDs and cancellation after an acknowledged write', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const { default: recorded } =
+    await import('./fixtures/recorded-101/ordered-preparation-20261019.json')
+  const first = fakeServer({ hold: true, manualToolReplies: true })
+  const second = fakeServer({ hold: true, manualToolReplies: true })
+  const controller = new AbortController()
+  let release!: () => void
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const firstWrites = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
+      await held
+      return {
+        context: {},
+        actionResults: batch.actions.map((action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result: { status: 'complete', compositionId: 'first-request-root' }
+        }))
+      }
+    }
+  )
+  const secondWrites = vi.fn(async (): Promise<AiBatchReceipt> => ({
+    context: {},
+    actionResults: []
+  }))
+  const requestInput = {
+    ...input,
+    actions: [
+      {
+        name: AiActionNames.APPLY_PREPARED_DESIGN,
+        description: 'Apply',
+        inputSchema: {}
+      }
+    ]
+  }
+  const firstRequest = requestLocalAiActionBatch(requestInput, {
+    model: 'selected-model',
+    executable: 'codex',
+    executeBatch: firstWrites,
+    signal: controller.signal,
+    onProgress: (event) => {
+      if (event.tool === 'app-batch' && event.status === 'completed')
+        controller.abort()
+    }
+  })
+  const cancelled = expect(firstRequest).rejects.toMatchObject({
+    code: 'AI_MODEL_BACKEND_ABORTED'
+  })
+  await untilTurn(first.packets)
+  const secondRequest = requestLocalAiActionBatch(requestInput, {
+    model: 'selected-model',
+    executable: 'codex',
+    executeBatch: secondWrites
+  })
+  await untilTurn(second.packets)
+  const send = (
+    server: typeof first,
+    id: number,
+    tool: string,
+    args: unknown
+  ) =>
+    server.send({
+      id,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: `shared-call-${id}`,
+        tool,
+        arguments: args
+      }
+    })
+  const read = async (id: number) => {
+    await vi.waitFor(() =>
+      expect(second.packets.some((p) => p.id === id)).toBe(true)
+    )
+    const packet = second.packets.find((p) => p.id === id) as unknown as {
+      result: { success: boolean; contentItems: { text: string }[] }
+    }
+    return {
+      success: packet.result.success,
+      value: JSON.parse(packet.result.contentItems[0].text)
+    }
+  }
+  try {
+    send(first, 900, 'prepare_and_apply_design', {
+      parts: [
+        recorded.input.parts[0],
+        { ...recorded.input.parts[0], key: 'unstarted-suffix' }
+      ],
+      inspection: 'defer'
+    })
+    await vi.waitFor(() => expect(firstWrites).toHaveBeenCalledTimes(1))
+    send(second, 900, 'prepare_design', {
+      draft: recorded.input.parts[1].draft
+    })
+    const rejected = await read(900)
+    expect(rejected.success).toBe(false)
+    expect(rejected.value).toMatchObject({
+      recovery: 'correct_input',
+      draftId: expect.any(String),
+      toolOutcome: { status: 'failed', settlement: 'not-started' }
+    })
+    expect(rejected.value.message).toContain('nonplanar face')
+    expect(rejected.value.executionResult).toBeUndefined()
+    expect(first.packets.some((p) => p.id === 900)).toBe(false)
+    release()
+    await cancelled
+    expect(firstWrites).toHaveBeenCalledTimes(1)
+    expect(first.child.kill).toHaveBeenCalledOnce()
+    expect(second.child.kill).not.toHaveBeenCalled()
+    send(second, 901, 'prepare_design', {
+      repair: {
+        draftId: rejected.value.draftId,
+        replacements: [
+          {
+            path: '/children',
+            value: [
+              {
+                type: 'rect',
+                key: 'repaired',
+                name: 'Repaired part',
+                width: 20,
+                height: 20
+              }
+            ]
+          }
+        ]
+      }
+    })
+    const repaired = await read(901)
+    expect(repaired.success).toBe(true)
+    expect(repaired.value).toMatchObject({
+      available: true,
+      applicable: true,
+      artifactId: expect.any(String)
+    })
+    expect(secondWrites).not.toHaveBeenCalled()
+    expect(JSON.stringify(retainedRecords)).toContain('first-request-root')
+  } finally {
+    release()
+    controller.abort()
+    second.finish()
+    await Promise.all([cancelled, secondRequest])
+  }
+})
+
+it('rejects the recorded context selector at provider admission and preserves explicit retained refinement', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  vi.stubGlobal('window', {})
+  const { default: recorded } =
+    await import('./fixtures/recorded-101/context-query-20261019.json')
+  const { createDocumentContextAction, createDocumentContextReleaseAction } =
+    await import('../../src/ai/context-action')
+  const { createRetainedDesignContext } =
+    await import('../../src/common-apis/retained-design-context')
+  const children = vi.fn(() => ({
+    available: true,
+    elementIds: ['crown', 'base'],
+    total: 2,
+    nextOffset: null
+  }))
+  const store = createRetainedDesignContext(
+    {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => [],
+      getElementChildren: children,
+      getElementIdsInBounds: () => [],
+      getElementMetadata: (id) => ({
+        name: id,
+        type: 'group',
+        parentId: 'workspace'
+      }),
+      getElementComputedData: () => ({})
+    },
+    () => () => undefined
+  )
+  const action = createDocumentContextAction(store.read)
+  const release = createDocumentContextReleaseAction(store.read)
+  const signal = new AbortController().signal
+  const executeBatch = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: await Promise.all(
+        batch.actions.map(async (entry) => ({
+          actionId: entry.id,
+          actionName: entry.name,
+          result: JSON.parse(
+            JSON.stringify(
+              await (entry.name === release.name ? release : action).execute(
+                entry.arguments as never,
+                { signal }
+              )
+            )
+          )
+        }))
+      )
+    })
+  )
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  const request = requestLocalAiActionBatch(
+    {
+      ...input,
+      actions: [action, release].map((definition) =>
+        createAiToolContract(JSON.parse(JSON.stringify(definition)))
+      )
+    },
+    {
+      model: 'selected-model',
+      executable: 'codex',
+      executeBatch
+    }
+  )
+  await untilTurn(server.packets)
+  let id = 1200
+  const call = async (args: unknown, success: boolean) => {
+    const current = ++id
+    server.send({
+      id: current,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: `context-${current}`,
+        tool: action.name,
+        arguments: { arguments: args }
+      }
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((packet) => packet.id === current)).toBe(true)
+    )
+    const packet = server.packets.find(
+      (packet) => packet.id === current
+    ) as unknown as {
+      result: { success: boolean; contentItems: { text: string }[] }
+    }
+    const result = JSON.parse(packet.result.contentItems[0].text)
+    expect(packet.result.success, JSON.stringify(result)).toBe(success)
+    return result
+  }
+  try {
+    const rejected = await call(recorded, false)
+    expect(JSON.stringify(rejected)).toContain('filter')
+    expect(JSON.stringify(rejected)).toContain('allowed fields:')
+    expect(executeBatch).not.toHaveBeenCalled()
+    expect(children).not.toHaveBeenCalled()
+    const parent = await call({ scope: 'children' }, true)
+    const serialized = JSON.stringify(parent)
+    expect(serialized).toContain('snapshotId')
+    const captured = await executeBatch.mock.results[0].value
+    const reference = captured.actionResults[0].result as { snapshotId: string }
+    const refined = await call(
+      {
+        scope: 'snapshot',
+        snapshotId: reference.snapshotId,
+        filter: { name: { equals: 'base' } },
+        delivery: 'page'
+      },
+      true
+    )
+    expect(JSON.stringify(refined)).toContain('base')
+    expect(children).toHaveBeenCalledTimes(1)
+    await call(recorded, false)
+    expect(
+      store.get(reference.snapshotId, undefined, signal).orderedIds
+    ).toEqual(['crown', 'base'])
+  } finally {
+    server.finish()
+    await request
+    store.dispose()
+    vi.unstubAllGlobals()
   }
 })
