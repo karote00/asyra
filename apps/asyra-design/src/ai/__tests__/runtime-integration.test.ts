@@ -278,9 +278,9 @@ describe('Asyra Design server action-batch runtime integration', () => {
           expect(result.status).toBe('executed')
           const expected = [
             { status: 'running', count: 1, message: 'Refine part 0' },
-            { status: 'completed', count: 0, message: undefined },
+            { status: 'completed', count: 0, message: 'Refine part 0' },
             { status: 'running', count: 1, message: 'Refine part 1' },
-            { status: 'completed', count: 0, message: undefined }
+            { status: 'completed', count: 0, message: 'Refine part 1' }
           ]
           expect(
             snapshots.map(({ status, count, message }) => ({

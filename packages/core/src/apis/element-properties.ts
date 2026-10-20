@@ -1,3 +1,4 @@
+import type { PropertyMutationReceipt } from '../types/property-mutation-receipt.js'
 import type { PropsManager } from '@asyra/props-manager'
 import type {
   SceneTree,
@@ -35,9 +36,9 @@ export const createElementPropertyAPIs = (
   const applyResolvedTargets = (
     targetRequests: readonly ElementPropertyTargetRequest[],
     options?: EVENT_OPTIONS
-  ): readonly string[] => {
+  ): PropertyMutationReceipt => {
     if (targetRequests.length === 0) {
-      return Object.freeze([])
+      return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
     }
     const resolvedTargets =
       requests.resolveElementPropertyTargets(targetRequests)
@@ -59,8 +60,11 @@ export const createElementPropertyAPIs = (
       })),
       options
     )
-    applyPreparedPropertyIntent(requests, prepared, options)
-    return freezeOrderedElementIds(resolvedTargets)
+    const changed = applyPreparedPropertyIntent(requests, prepared, options)
+    return Object.freeze({
+      acceptedIds: freezeOrderedElementIds(resolvedTargets),
+      changed
+    })
   }
 
   return {

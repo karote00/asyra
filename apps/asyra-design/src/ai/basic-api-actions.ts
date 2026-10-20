@@ -51,6 +51,22 @@ const owners = (): ApiOwners => ({
 })
 
 const basicApiRevision = (contract: BasicApiContract): number => {
+  if (contract.result.kind === 'mutation-receipt') return 9
+  if (
+    [
+      'property-mutation',
+      'change-flag',
+      'created-items',
+      'moves',
+      'removed'
+    ].includes(contract.result.kind)
+  )
+    return 8
+  if (
+    ['created-items', 'status-items'].includes(contract.result.kind) &&
+    ['write', 'delete'].includes(contract.effect)
+  )
+    return 7
   if (
     contract.effect === 'write' &&
     (['fill', 'stroke'].includes(contract.owner) ||
@@ -59,7 +75,7 @@ const basicApiRevision = (contract: BasicApiContract): number => {
           contract.method
         )))
   )
-    return 6
+    return 7
   if (
     ['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
   )
@@ -196,7 +212,7 @@ export const createBasicApiActions = (
         const result = describeBasicApiResult(
           contract,
           value,
-          resolvedArgs.elementIds
+          resolvedArgs[contract.parameters[0]]
         )
         if (!documentMutation) return result
         const elementIds: string[] = [],
@@ -212,6 +228,11 @@ export const createBasicApiActions = (
         }
         const receipt = {
           ...result,
+          ...(atSettlement &&
+          'code' in result &&
+          result.code === 'OWNER_RESULT_INVALID'
+            ? { settlement: 'completed' }
+            : {}),
           mutationScope: { complete, elementIds, removedElementIds }
         }
         const kind = contract.result.kind

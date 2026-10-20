@@ -25,7 +25,10 @@ export const prescribedPositionsSchema = {
     additionalProperties: false,
     required: ['elementId', 'x', 'y', 'attachmentEvidence'],
     properties: {
-      elementId: toolDocumentReference,
+      elementId: {
+        ...toolDocumentReference,
+        'x-design-element-binding': 'each'
+      },
       x: { type: 'number', minimum: 0, maximum: 100000 },
       y: { type: 'number', minimum: 0, maximum: 100000 },
       attachmentEvidence: preparedAttachmentEvidenceSchema

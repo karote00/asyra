@@ -93,10 +93,17 @@ export const nativeToolInputSchema = (schema: unknown): unknown => {
     const branches = result[mode]
     if (!Array.isArray(branches)) continue
     if (mode !== 'allOf' && record(result.properties)) {
-      const { [mode]: _branches, $defs, definitions, ...common } = result
+      const {
+        [mode]: _branches,
+        $defs,
+        definitions,
+        examples,
+        ...common
+      } = result
       return {
         ...($defs ? { $defs } : {}),
         ...(definitions ? { definitions } : {}),
+        ...(examples !== undefined ? { examples } : {}),
         [mode]: compactNativeAlternatives(
           mode,
           branches.map((branch) =>

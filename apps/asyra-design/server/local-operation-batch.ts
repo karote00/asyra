@@ -5,6 +5,12 @@ import type {
 } from '../src/ai/action-batch-protocol'
 import { operationInputIssue } from './operation-input-schema'
 
+export type ElementBindingMode = 'all' | 'each' | 'one'
+interface ElementBindingSlot {
+  path: string[]
+  mode: ElementBindingMode
+}
+
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
@@ -14,8 +20,8 @@ const targetPath = (
   field: string,
   input: Record<string, unknown>,
   requested?: unknown
-): string[] => {
-  const paths = new Map<string, string[]>()
+): ElementBindingSlot => {
+  const paths = new Map<string, ElementBindingSlot>()
   const visit = (
     value: unknown,
     path: string[],
@@ -23,6 +29,17 @@ const targetPath = (
     depth = 0
   ) => {
     if (!record(value) || depth > 64) return
+    const mode = value['x-design-element-binding']
+    if (
+      path.at(-1) === field &&
+      (mode === 'all' || mode === 'each' || mode === 'one')
+    ) {
+      const key = JSON.stringify(path)
+      const prior = paths.get(key)
+      if (prior && prior.mode !== mode)
+        throw new Error('Conflicting registered target cardinality.')
+      paths.set(key, { path, mode })
+    }
     // Only supplied scalar constraints exclude a branch. Missing fields remain
     // for complete admission after identities have been bound.
     if (record(supplied) && record(value.properties)) {
@@ -59,14 +76,12 @@ const targetPath = (
     if (!record(value.properties)) return
     for (const [key, child] of Object.entries(value.properties)) {
       const childPath = [...path, key]
-      if (key === field) paths.set(JSON.stringify(childPath), childPath)
-      else
-        visit(
-          child,
-          childPath,
-          record(supplied) ? supplied[key] : undefined,
-          depth + 1
-        )
+      visit(
+        child,
+        childPath,
+        record(supplied) ? supplied[key] : undefined,
+        depth + 1
+      )
     }
   }
   visit(schema, [], input)
@@ -134,7 +149,7 @@ const assignTarget = (
 export const prepareOperationBatch = (
   operations: unknown,
   registered: AiProviderInput['actions'],
-  resolveTargets?: (reference: unknown) => string[]
+  resolveTargets?: (reference: unknown, mode: ElementBindingMode) => string[]
 ): AiActionBatch['actions'] => {
   if (!Array.isArray(operations) || !operations.length)
     throw new Error('A nonempty operations array is required.')
@@ -160,7 +175,7 @@ export const prepareOperationBatch = (
         : [operation.target]
       if (!targets.length) throw new Error('Target references cannot be empty.')
       const bindings: {
-        field: string
+        mode: ElementBindingMode
         path: string[]
         reference: Record<string, unknown>
       }[] = []
@@ -170,14 +185,14 @@ export const prepareOperationBatch = (
         try {
           if (
             !record(target) ||
-            !['elementId', 'elementIds'].includes(String(target.field)) ||
-            (targets.length > 1 && target.field !== 'elementIds')
+            typeof target.field !== 'string' ||
+            !target.field.trim()
           )
             throw new Error(
-              'Invalid or conflicting target reference; multiple bindings require plural elementIds.'
+              'Provide an exact registered element-identity target field.'
             )
           const { field, path: requested, ...reference } = target
-          const path = targetPath(
+          const { path, mode } = targetPath(
             definition.inputSchema,
             String(field),
             input,
@@ -186,7 +201,14 @@ export const prepareOperationBatch = (
           // Reserve every destination before any retained-source lookup. This
           // also catches duplicate bindings without changing caller arguments.
           reserved = assignTarget(reserved, path, undefined)
-          bindings.push({ field: String(field), path, reference })
+          if (
+            mode === 'each' &&
+            bindings.some((binding) => binding.mode === 'each')
+          )
+            throw new Error(
+              'Only one fan-out element target is allowed per operation.'
+            )
+          bindings.push({ mode, path, reference })
         } catch (error) {
           issues.push(
             `operations[${operationIndex}].target[${targetIndex}]: ${error instanceof Error ? error.message : String(error)}`
@@ -196,13 +218,17 @@ export const prepareOperationBatch = (
       if (issues.length) throw new Error(issues.join('\n'))
       if (!resolveTargets)
         throw new Error('Artifact references are unavailable.')
-      for (const { field, path, reference } of bindings) {
-        const ids = resolveTargets(reference)
-        inputs = inputs.flatMap((current) =>
-          field === 'elementIds'
-            ? [assignTarget(current, path, ids)]
-            : ids.map((elementId) => assignTarget(current, path, elementId))
-        )
+      for (const { mode, path, reference } of bindings) {
+        const ids = resolveTargets(reference, mode)
+        if (mode === 'one' && ids.length !== 1)
+          throw new Error(
+            `operations[${operationIndex}].arguments ${JSON.stringify(path)} requires exactly one resolved element; received ${ids.length}.`
+          )
+        inputs = inputs.flatMap((current) => {
+          if (mode === 'all') return [assignTarget(current, path, ids)]
+          if (mode === 'one') return [assignTarget(current, path, ids[0])]
+          return ids.map((elementId) => assignTarget(current, path, elementId))
+        })
       }
     }
     for (const args of inputs) {
@@ -217,4 +243,49 @@ export const prepareOperationBatch = (
     }
   }
   return actions
+}
+
+/** Remove only App binding annotations for Runtime recipe type proofs.
+ * Binding expansion remains owned by the App; all JSON Schema constraints stay intact.
+ */
+export const runtimeOperationSchema = <T>(schema: T): T => {
+  const visit = (value: unknown): unknown => {
+    if (!record(value)) return value
+    const result = { ...value }
+    delete result['x-design-element-binding']
+    for (const key of [
+      'properties',
+      'patternProperties',
+      '$defs',
+      'definitions',
+      'dependentSchemas'
+    ]) {
+      if (record(result[key]))
+        result[key] = Object.fromEntries(
+          Object.entries(result[key]).map(([name, child]) => [
+            name,
+            visit(child)
+          ])
+        )
+    }
+    for (const key of [
+      'items',
+      'additionalProperties',
+      'contains',
+      'propertyNames',
+      'not',
+      'if',
+      'then',
+      'else',
+      'unevaluatedProperties',
+      'unevaluatedItems'
+    ]) {
+      if (record(result[key])) result[key] = visit(result[key])
+    }
+    for (const key of ['allOf', 'anyOf', 'oneOf', 'prefixItems']) {
+      if (Array.isArray(result[key])) result[key] = result[key].map(visit)
+    }
+    return result
+  }
+  return visit(schema) as T
 }

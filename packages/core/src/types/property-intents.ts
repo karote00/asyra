@@ -1,3 +1,4 @@
+import type { PropertyMutationReceipt } from './property-mutation-receipt.js'
 import type {
   PropertyTargetView,
   SharedPropertySourceUpdate
@@ -31,21 +32,21 @@ export interface ElementPropertyIntentAPIs {
   updateElementPropertyTargets: (
     updates: readonly ElementPropertyOverride[],
     options?: EVENT_OPTIONS
-  ) => readonly string[]
+  ) => PropertyMutationReceipt
   updateSharedPropertySources: (
     updates: readonly SharedPropertySourceUpdate[],
     options?: EVENT_OPTIONS
-  ) => readonly string[]
+  ) => PropertyMutationReceipt
   resetElementPropertyOverrides: (
     updates: readonly ElementPropertyOverrideReset[],
     options?: EVENT_OPTIONS
-  ) => readonly string[]
+  ) => PropertyMutationReceipt
   detachElementPropertyTargets: (
     targets: readonly ElementPropertyTarget[],
     options?: EVENT_OPTIONS
-  ) => readonly string[]
+  ) => PropertyMutationReceipt
   shareElementPropertyTargets: (
     updates: readonly ElementPropertySharing[],
     options?: EVENT_OPTIONS
-  ) => readonly string[]
+  ) => PropertyMutationReceipt
 }

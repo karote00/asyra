@@ -679,3 +679,85 @@ it.each(
     }
   }
 )
+
+it.each([
+  ['rolled-back', 'not-started'],
+  ['committed', 'completed'],
+  ['unknown', 'unknown']
+] as const)(
+  'preserves the original public owner failure and %s member settlement in prepared receipts',
+  async (hostStatus, settlement) => {
+    const receipts: unknown[] = []
+    const runtime = createAiAgentRuntime({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          if (!options.executeBatch) throw new Error('Missing batch executor')
+          receipts.push(await options.executeBatch(batch('rejected')))
+          return {
+            batchId: 'final-read',
+            actions: [
+              { id: 'read', name: 'read', arguments: {}, summary: 'Read' }
+            ]
+          }
+        }
+      },
+      actionDefinitions: [
+        {
+          name: 'edit',
+          description: 'Edit',
+          inputSchema: {},
+          revision: 1,
+          effect: 'mutation',
+          resources: ['test-document'],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
+          outputSchema: true,
+          execute: async () => {
+            throw new AiTransactionSettlementError(
+              new AiActionExecutionError('Target unavailable'),
+              hostStatus
+            )
+          }
+        },
+        {
+          name: 'read',
+          description: 'Read',
+          inputSchema: {},
+          revision: 1,
+          effect: 'read',
+          resources: [],
+          lifecycle: {
+            cancellation: 'before-dispatch',
+            retry: 'never',
+            output: 'value'
+          },
+          outputSchema: true,
+          execute: async () => ({})
+        }
+      ],
+      contextProvider: { getContext: async () => ({}) },
+      permissionPolicy: { evaluate: () => 'allow' },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: { run: async (_label, execute) => execute() }
+    })
+    try {
+      expect(
+        (
+          await runtime.run({
+            intent: 'Preserve failure',
+            signal: new AbortController().signal
+          })
+        ).status
+      ).toBe('executed')
+      expect(receipts[0]).toMatchObject({
+        actionResults: [],
+        failure: { message: 'Target unavailable', settlement }
+      })
+    } finally {
+      await runtime.dispose()
+    }
+  }
+)

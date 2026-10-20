@@ -1,0 +1,43 @@
+{
+  "provenance": {
+    "run": "1792471047468",
+    "callId": "exec-530aebcf-6467-415a-a526-501f4956cb77",
+    "inputSha256": "363fa17df53e7917baa64b29d9fa4faa5da3902734409dc78c9cd1e456a1ce1b",
+    "derivation": "Exact saved criterion declaration verified against preserved provider input and SHA-256. No model replay."
+  },
+  "input": {
+    "method": "採公分世界座標，1cm=1px後以方位35°、俯角28°固定正投影呈現遠距俯視。高度50800cm；其餘未提供精測尺寸為依附件比例的建築插畫估計，不冒稱施工圖。先畫偏置裙樓，再畫兩節含窗框與連續世界材質的代表立面，檢視後擴展。金屬、玻璃、陰影各自獨立；只畫可見面。",
+    "references": [
+      "使用者空拍附件：僅量體與基座關係；排除施工機具",
+      "使用者如意近照：僅裝飾輪廓與金屬",
+      "https://www.thorntontomasetti.com/project/taipei-101"
+    ],
+    "criteria": {
+      "overall": {
+        "requirement": "完整台北101，高度寫實、可編輯2D建築插畫，不含背景或施工設備",
+        "description": "基座至508m尖頂完整、八段外張竹節、固定俯視三分之四視角與合理遮擋。",
+        "verification": "visual",
+        "requiredUnits": []
+      },
+      "detail": {
+        "requirement": "可見立面窗框、裝飾、屋頂與材料光影不得簡化",
+        "description": "檢視基座、塔身與冠部的玻璃、窗框、層板、頂面及裝飾。",
+        "verification": "visual",
+        "requiredUnits": ["base", "tiers", "crown"]
+      },
+      "material": {
+        "requirement": "真實材質、光線與陰影",
+        "description": "相鄰兩段玻璃連續色調、獨立金屬窗框、簷下暗部且不同立面照明一致。",
+        "verification": "visual",
+        "requiredUnits": ["representative"]
+      },
+      "ornament": {
+        "requirement": "附件近照僅供如意形狀與材質",
+        "description": "可見金屬如意雙卷頭、中央節點與下垂圓飾；不外推精密尺寸。",
+        "verification": "visual",
+        "requiredUnits": []
+      }
+    },
+    "detailRequired": true
+  }
+}

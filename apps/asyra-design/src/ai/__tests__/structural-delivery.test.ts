@@ -1,3 +1,4 @@
+import { localToolOutcome } from '../../../server/local-tool-invocation'
 import { observeAiAction } from '../runtime-input'
 import { createAiActions } from '../actions'
 import { observeActionBatch } from '../../../server/local-action-observation'
@@ -557,7 +558,15 @@ it('publishes structural output through the real runtime wrapper before a depend
 
 it('projects real observed fill receipts after preserving complete original mutation scopes', async () => {
   let listener: ((change?: InspectionDependencyChange) => void) | undefined
-  const writes = vi.fn((elementIds: string[]) => listener?.({ elementIds }))
+  const writes = vi.fn((elementIds: string[]) => {
+    listener?.({ elementIds })
+    return {
+      value: null,
+      acceptedIds: elementIds,
+      unavailableIds: [],
+      changed: true
+    }
+  })
   const base = createBasicApiActions(
     () => ({
       core: {},
@@ -673,15 +682,31 @@ it('projects real observed fill receipts after preserving complete original muta
       )
     ).toBe(3072)
     const reply = JSON.parse(compact)
-    expect(reply.actionResults).toEqual([])
-    expect(reply.batchSummary.acknowledgedActions).toEqual([
-      { actionName: action.name, count: 16, application: 'not-reported' }
-    ])
-    // Keep the one actionable pending identity; do not retransmit all mutation IDs.
-    expect(compact.match(/window-/g)).toHaveLength(1)
+    expect(reply.actionResults).toHaveLength(16)
+    expect(reply.batchSummary.acknowledgedActions).toBeUndefined()
+    for (const receipt of reply.actionResults)
+      expect(receipt.result).toMatchObject({
+        changed: true,
+        toolOutcome: { status: 'success', settlement: 'completed' }
+      })
+    // Explicit owner identities remain actionable; compact scope is not inferred success.
+    for (const [part, receipt] of reply.actionResults.entries())
+      expect(receipt.result.acceptedIds).toEqual(
+        Array.from({ length: 192 }, (_, index) => `window-${part}-${index}`)
+      )
     expect(reply.checks.counts.unverified).toBe(3072)
-    expect(compact.length).toBeLessThan(JSON.stringify(originals).length / 10)
-    expect(compact.length).toBeLessThan(2000)
+    expect(localToolOutcome(reply)).toMatchObject({
+      status: 'partial',
+      issues: expect.arrayContaining([
+        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
+      ])
+    })
+    expect(
+      reply.actionResults.every(
+        (receipt: { result: { unavailableIds: string[] } }) =>
+          receipt.result.unavailableIds.length === 0
+      )
+    ).toBe(true)
   } finally {
     await runtime.dispose()
   }

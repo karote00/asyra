@@ -30,6 +30,7 @@ import type {
 import { vectorApis } from './vector-apis'
 import { updateElementProperties as applyElementPropertyUpdate } from './update-element-properties'
 import { viewportApis } from '../viewport'
+import { mutationReceipt, type MutationReceipt } from '../mutation-receipt'
 
 export type { VectorPointTarget } from './types'
 export {
@@ -85,6 +86,23 @@ const setElementFlag = (
   value: boolean,
   options?: EVENT_OPTIONS
 ): boolean => setElementFlags([elementId], key, value, options)[0] === 'changed'
+
+const setElementFlagReceipt = (
+  elementId: string,
+  key: 'lock' | 'visible',
+  value: boolean,
+  options?: EVENT_OPTIONS
+): MutationReceipt<boolean> => {
+  const status = setElementFlags([elementId], key, value, options)[0]
+  return mutationReceipt(
+    status === 'changed',
+    {
+      acceptedIds: status === 'unavailable' ? [] : [elementId],
+      changed: status === 'changed'
+    },
+    status === 'unavailable' ? [elementId] : []
+  )
+}
 
 const getDefaultFillsForType = (type: EntityType) => {
   switch (type) {
@@ -292,8 +310,8 @@ export const elementApis = {
     elementId: string,
     lock: boolean,
     options?: EVENT_OPTIONS
-  ): boolean => {
-    return setElementFlag(elementId, 'lock', lock, options)
+  ): MutationReceipt<boolean> => {
+    return setElementFlagReceipt(elementId, 'lock', lock, options)
   },
 
   setElementVisible: (
@@ -311,25 +329,37 @@ export const elementApis = {
   ): ElementFlagResult[] =>
     setElementFlags(elementIds, 'visible', visible, options),
 
-  toggleElementLock: (elementId: string, options?: EVENT_OPTIONS): boolean => {
+  toggleElementLock: (
+    elementId: string,
+    options?: EVENT_OPTIONS
+  ): MutationReceipt<boolean> => {
     const element = core.getElementData(elementId)
     if (!element || element.type === EntityTypes.WORKSPACE) {
-      return false
+      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    return setElementFlag(elementId, 'lock', !element.lock, options)
+    return setElementFlagReceipt(elementId, 'lock', !element.lock, options)
   },
 
   toggleElementVisible: (
     elementId: string,
     options?: EVENT_OPTIONS
-  ): boolean => {
+  ): MutationReceipt<boolean> => {
     const element = core.getElementData(elementId)
     if (!element || element.type === EntityTypes.WORKSPACE) {
-      return false
+      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    return setElementFlag(elementId, 'visible', !element.visible, options)
+    return setElementFlagReceipt(
+      elementId,
+      'visible',
+      !element.visible,
+      options
+    )
   },
 
   getElementBounds: (elementId: string): ElementBounds | null => {
@@ -606,7 +636,7 @@ export const elementApis = {
   },
 
   resetElementSize: (elementId: string, options?: EVENT_OPTIONS) => {
-    elementApis.changeElementGeometry(
+    return elementApis.changeElementGeometry(
       elementId,
       {
         width: DEFAULT_ELEMENT_SIZE,
@@ -621,7 +651,10 @@ export const elementApis = {
     geometry: Partial<ElementBounds>,
     options?: EVENT_OPTIONS
   ) => {
-    applyElementPropertyUpdate([elementId], geometry, options)
+    return mutationReceipt(
+      null,
+      applyElementPropertyUpdate([elementId], geometry, options)
+    )
   },
 
   normalizeGroupGeometryForElements: (
@@ -642,28 +675,30 @@ export const elementApis = {
   ) => {
     const entries = Object.entries(positionsById ?? {})
     if (entries.length === 0) {
-      return
+      return mutationReceipt(null, { acceptedIds: [], changed: false })
     }
 
-    runTransaction(() => {
+    return runTransaction(() => {
+      const acceptedIds: string[] = []
+      const unavailableIds: string[] = []
       const propertyUpdates: {
         elementId: string
         values: Readonly<Record<string, unknown>>
       }[] = []
 
       entries.forEach(([elementId, position]) => {
-        if (
-          typeof position?.x !== 'number' ||
-          typeof position?.y !== 'number'
-        ) {
+        if (!Number.isFinite(position?.x) || !Number.isFinite(position?.y)) {
+          unavailableIds.push(elementId)
           return
         }
 
         const currentPosition = elementApis.getElementPosition(elementId)
         if (!currentPosition) {
+          unavailableIds.push(elementId)
           return
         }
 
+        acceptedIds.push(elementId)
         if (
           currentPosition.x === position.x &&
           currentPosition.y === position.y
@@ -680,9 +715,11 @@ export const elementApis = {
         })
       })
 
-      if (propertyUpdates.length > 0) {
-        core.updateElementProperties(propertyUpdates, options)
-      }
+      const changed =
+        propertyUpdates.length > 0
+          ? core.updateElementProperties(propertyUpdates, options).changed
+          : false
+      return mutationReceipt(null, { acceptedIds, changed }, unavailableIds)
     })
   },
 

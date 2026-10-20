@@ -75,6 +75,7 @@ const documentContextProperties = {
     }
   },
   elementIds: {
+    'x-design-element-binding': 'all',
     type: 'array',
     minItems: 1,
     uniqueItems: true,
@@ -170,7 +171,10 @@ export const createDocumentContextAction = (
         leaseId: toolRequestReference,
         total: toolResultCount,
         coordinateSpace: { const: 'parent-local' },
-        elementIds: toolDocumentReferences,
+        elementIds: {
+          ...toolDocumentReferences,
+          'x-design-element-binding': 'all'
+        },
         missingIds: toolDocumentReferences,
         elements: { type: 'array', items: { type: 'object' } },
         receipt: { type: 'object' },
@@ -271,7 +275,10 @@ export const createRegionTargetsAction = (
         available: { const: true },
         coordinateSpace: { const: 'parent-local' },
         total: toolResultCount,
-        elementIds: toolDocumentReferences,
+        elementIds: {
+          ...toolDocumentReferences,
+          'x-design-element-binding': 'all'
+        },
         missingIds: toolDocumentReferences,
         elements: { type: 'array', maxItems: 0 },
         nextOffset: { const: null },

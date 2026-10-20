@@ -25,6 +25,9 @@ export const activityToolLabels: Readonly<Record<string, string>> =
     [AiDesignToolIds.SAVE_TOOL]: 'Saving a reusable operation',
     [AiDesignToolIds.MANAGE_TOOL]: 'Managing reusable operations',
     [AiDesignToolIds.PREPARE_DESIGN]: 'Preparing the design',
+    [AiDesignToolIds.PREPARE_MATERIAL_REVISION]:
+      'Calculating the material correction',
+    [AiActionNames.APPLY_PREPARED_MATERIAL]: 'Applying the material correction',
     [AiDesignToolIds.REVIEW_DRAWING]: 'Checking the requested details',
     [AiDesignToolIds.DEFINE_DESIGN_CRITERIA]: 'Defining the requested checks',
     [AiDesignToolIds.RECORD_DESIGN_FACTS]: 'Recording verified sources',
@@ -153,6 +156,39 @@ const ownerPhaseLabels = {
   inspecting: 'Checking the drawing'
 } as const
 
+type ClosedCall =
+  | true
+  | {
+      readonly entry: ActivityEntry
+      readonly outcome: ExecutionActivity['outcome']
+    }
+
+const settledEntry = (
+  closedCalls: Readonly<Record<string, ClosedCall>> = {}
+): ActivityEntry | undefined => {
+  const settled = Object.values(closedCalls).filter(
+    (call): call is Exclude<ClosedCall, true> => call !== true
+  )
+  if (!settled.length) return
+  const statuses = settled.map((call) => call.outcome?.status ?? 'unknown')
+  let status: 'unknown' | 'success' | 'failed' | 'partial' = 'partial'
+  if (statuses.includes('unknown')) status = 'unknown'
+  else if (statuses.every((value) => value === 'success')) status = 'success'
+  else if (statuses.every((value) => value === 'failed')) status = 'failed'
+  const labels = {
+    success: 'Completed operation',
+    partial: 'Partially completed operation',
+    failed: 'Failed operation',
+    unknown: 'Operation ended - outcome unconfirmed'
+  }
+  return {
+    label: labels[status] + (settled.length > 1 ? ` (${settled.length})` : ''),
+    message: settled
+      .map((call) => call.entry.message ?? call.entry.label)
+      .join('; ')
+  }
+}
+
 interface ActivityState {
   readonly lifecycle: ActivityLifecycle
   readonly phaseLabel?: string
@@ -161,7 +197,7 @@ interface ActivityState {
   readonly sequence: number
   readonly objective?: string
   readonly requestPurpose?: ActivityPurpose
-  readonly closedCalls?: Readonly<Record<string, true>>
+  readonly closedCalls?: Readonly<Record<string, ClosedCall>>
   readonly calls: Readonly<Record<string, ActiveCall>>
   readonly failed: boolean
 }
@@ -502,7 +538,7 @@ export const reduceAiActivity = (
     const activity = update.activity
     const calls: Record<string, ActiveCall> =
       update.attempt > state.attempt ? {} : { ...state.calls }
-    const closedCalls: Record<string, true> = { ...ordered.closedCalls }
+    const closedCalls: Record<string, ClosedCall> = { ...ordered.closedCalls }
     let requestPurpose = ordered.requestPurpose
     const authored =
       activity.kind === 'work'
@@ -518,6 +554,9 @@ export const reduceAiActivity = (
       if (update.toolStatus === 'completed') {
         closedCalls[activity.callId] = true
         if (requestPurpose?.id === activity.callId) requestPurpose = undefined
+      } else if (Object.values(calls).some((call) => !call.parentCallId)) {
+        // Unscoped commentary during principal work is informational only.
+        closedCalls[activity.callId] = true
       } else {
         if (authored && requestPurpose && requestPurpose.id !== activity.callId)
           closedCalls[requestPurpose.id] = true
@@ -530,7 +569,17 @@ export const reduceAiActivity = (
         )
       }
     } else if (update.toolStatus === 'completed') {
-      closedCalls[activity.callId] = true
+      const previous = calls[activity.callId]
+      closedCalls[activity.callId] =
+        previous && !previous.parentCallId
+          ? {
+              entry: {
+                label: previous.operationLabel,
+                message: previous.purpose?.message
+              },
+              outcome: activity.outcome
+            }
+          : true
       Reflect.deleteProperty(calls, activity.callId)
       let changed = true
       while (changed) {
@@ -545,6 +594,17 @@ export const reduceAiActivity = (
       }
     } else {
       const previous = calls[activity.callId]
+      if (
+        !previous &&
+        !activity.parentCallId &&
+        !publicOperationIds(calls, false).length
+      ) {
+        for (const id of Object.keys(closedCalls)) closedCalls[id] = true
+      }
+      if (!previous && !activity.parentCallId && requestPurpose) {
+        closedCalls[requestPurpose.id] = true
+        requestPurpose = undefined
+      }
       let operationLabel =
         previous?.operationLabel ?? ownerPhaseLabels.executing
       if (update.tool && Object.hasOwn(activityToolLabels, update.tool)) {
@@ -586,9 +646,9 @@ export const reduceAiActivity = (
     }
     const entry = projectCallEntry(
       calls,
-      {
-        label: ownerPhaseLabels.provider
-      },
+      publicOperationIds(calls, false).length
+        ? { label: ownerPhaseLabels.provider }
+        : (settledEntry(closedCalls) ?? { label: ownerPhaseLabels.provider }),
       requestPurpose?.message
     )
     const next = {
@@ -641,7 +701,7 @@ export const reduceAiActivity = (
       'active-purpose'
     )
   }
-  const entry: ActivityEntry = {
+  const entry: ActivityEntry = settledEntry(ordered.closedCalls) ?? {
     label:
       update.toolStatus === 'completed'
         ? ownerPhaseLabels.provider

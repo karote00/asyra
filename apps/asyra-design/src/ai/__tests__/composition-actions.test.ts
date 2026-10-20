@@ -91,11 +91,11 @@ const actionApis = () => ({
   setElementsVisible: vi.fn(() => ['changed' as const]),
   updateElementFillColor: vi.fn(() => true),
   updateElementFillColors: vi.fn((updates: readonly AiColorUpdate[]) =>
-    updates.map(() => true)
+    updates.map((): 'changed' | 'unchanged' | 'unavailable' => 'changed')
   ),
   updateElementStrokeColor: vi.fn(() => true),
   updateElementStrokeColors: vi.fn((updates: readonly AiColorUpdate[]) =>
-    updates.map(() => true)
+    updates.map((): 'changed' | 'unchanged' | 'unavailable' => 'changed')
   )
 })
 
@@ -1237,7 +1237,11 @@ describe('Asyra Design AI composition action execution', () => {
     const apis = actionApis()
     apis.getElementType.mockReturnValue('vector')
     apis.getElementFillColor.mockReturnValue('#050504')
-    apis.updateElementFillColors.mockReturnValue([true, false, true])
+    apis.updateElementFillColors.mockReturnValue([
+      'changed',
+      'unchanged',
+      'changed'
+    ])
     const action = actionByName(AiActionNames.UPDATE_COMPOSITION_ELEMENTS, apis)
 
     await expect(
@@ -1260,7 +1264,7 @@ describe('Asyra Design AI composition action execution', () => {
           reason: 'no-change'
         }
       ],
-      status: 'partial'
+      status: 'complete'
     })
   })
 
@@ -1268,7 +1272,7 @@ describe('Asyra Design AI composition action execution', () => {
     const apis = actionApis()
     apis.getElementType.mockReturnValue('vector')
     apis.getElementFillColor.mockReturnValue('#050504')
-    apis.updateElementFillColors.mockReturnValue([true])
+    apis.updateElementFillColors.mockReturnValue(['changed'])
     const action = actionByName(AiActionNames.UPDATE_COMPOSITION_ELEMENTS, apis)
 
     await expect(

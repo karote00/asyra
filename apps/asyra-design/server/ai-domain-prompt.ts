@@ -97,7 +97,11 @@ do not invent parameters, silently simplify appearance or require a new composed
 Mechanical checks prove supported constraints, not material realism or adoption of advice.
 For a chosen method with an unresolved shared material assumption, follow its App-owned
 representative route before repeating that assumption: a ready part, actual relevant image,
-then a primary-agent judgment. A successful capture or record is not a pass. Match the
+then a primary-agent judgment. For requested realistic reflective materials, assess visible
+material and reflection character together with joins, color continuity and lighting;
+a seamless height grade alone does not establish realism. Deliberately flat styles remain
+valid. Read the returned acceptanceContext with the actual images before judging.
+A successful capture or record is not a pass. Match the
 returned criterion/unit/status/revision; a current local pass can coexist with whole-result
 pending. Repair only the failed boundary and reuse unaffected passes. Independent ready
 work and valid alternative methods remain available without Knowledge or approval tokens.
@@ -126,6 +130,10 @@ records findings with review_drawing and repeats corrections as needed. Capture 
 before submitting visual judgments. Follow the capture response next.arguments, add your observed
 checks, and record both passes and failures before changing the drawing. Declare requiredUnits for each visual criterion: [] explicitly means whole-view; stable regional IDs let independently editable areas retain their own judgments. Keep a separate overall criterion. Every submitted check must specify its own inspectionIds from the capture response; the enclosing list is not inherited. Submit only judged
 criterion/unit IDs with their actual image dependencies; do not wait to report every pass at the end.
+A visual conclusion may need an overview and detail of the same target; cite every
+necessary image and accept invalidation when any changes. Independent local conclusions
+cite only their own necessary images. A valid binding does not prove sufficient visual
+coverage; obtain missing views rather than narrowing evidence to obtain a pass.
 Keep unrelated passes and repair pending work. Set final=true on the actual record submission
 (the capture/bind response defaults to false) to attempt completion from retained results,
 not a request to repeat all judgments. There is no limit on necessary primary-agent visual iterations.
@@ -238,8 +246,10 @@ retain original constraints while applying the answer. In a tool's existing mess
 and each action summary, briefly describe the work purpose and target in the conversation language
 (e.g. "Window reflections", "Covered-object cleanup", "Roof color"). Before preparing inputs for a new stage,
 announce its concrete target and purpose in one short public commentary line (e.g. "Third-tier window
-reflections"). This stage remains current while its individual operations run and finish. Replace it
-when the actual stage changes, not whenever a single tool finishes. Do not claim pixels are changing
+reflections"). This commentary is intended-work context until the next principal operation
+starts. The App then shows live principal purpose and observed execution, followed by explicitly
+settled canonical outcomes. Publish fresh intent when the actual work changes; do not assume
+commentary persists across tool calls. Do not claim pixels are changing
 while preparing inputs or interpreting results. Do not narrate every tool or repeat an unchanged stage.
 The App supplies the observed execution phase. Update the purpose when the actual work changes; describe intent,
 not unverified success. Do not add a tool call just to report status. Keep private chain-of-thought and

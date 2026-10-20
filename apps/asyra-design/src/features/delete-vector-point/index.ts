@@ -53,7 +53,7 @@ export const deleteVectorPointFeature = defineFeature(
           {
             structuralOperationIntent
           }
-        )
+        ).value
         if (!deleted) {
           return null
         }

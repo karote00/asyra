@@ -976,8 +976,8 @@ for (const width of [360, 1280]) {
           callId: 'research-1',
           phase: 'executing',
           status: 'completed',
-          label: 'Processing your request',
-          expected: ''
+          label: 'Operation ended - outcome unconfirmed',
+          expected: 'Researching design context'
         },
         {
           tool: 'prepare_design',
@@ -992,8 +992,8 @@ for (const width of [360, 1280]) {
           callId: 'prepare-1',
           phase: 'preparing',
           status: 'completed',
-          label: 'Processing your request',
-          expected: ''
+          label: 'Operation ended - outcome unconfirmed',
+          expected: 'Preparing the design'
         },
         {
           tool: 'provider',
@@ -1009,8 +1009,8 @@ for (const width of [360, 1280]) {
           callId: 'prepare-2',
           phase: 'admission',
           status: 'running',
-          label: 'Current task',
-          expected: '正在加入窗戶光影反射效果'
+          label: 'Processing your request',
+          expected: ''
         },
         {
           tool: 'prepare_design',
@@ -1018,7 +1018,7 @@ for (const width of [360, 1280]) {
           phase: 'preparing',
           status: 'running',
           label: 'Preparing the design',
-          expected: '正在加入窗戶光影反射效果'
+          expected: ''
         },
         {
           tool: 'app-batch',
@@ -1027,7 +1027,7 @@ for (const width of [360, 1280]) {
           phase: 'executing',
           status: 'running',
           label: 'Preparing the design',
-          expected: '正在加入窗戶光影反射效果'
+          expected: ''
         },
         {
           tool: 'app-batch',
@@ -1036,7 +1036,7 @@ for (const width of [360, 1280]) {
           phase: 'applying',
           status: 'running',
           label: 'Preparing the design',
-          expected: '正在加入窗戶光影反射效果'
+          expected: ''
         },
         {
           tool: 'app-batch',
@@ -1045,7 +1045,7 @@ for (const width of [360, 1280]) {
           phase: 'applying',
           status: 'completed',
           label: 'Preparing the design',
-          expected: '正在加入窗戶光影反射效果'
+          expected: ''
         },
         {
           tool: 'prepare_design',
@@ -1053,15 +1053,15 @@ for (const width of [360, 1280]) {
           phase: 'applying',
           status: 'running',
           label: 'Preparing the design',
-          expected: '正在加入窗戶光影反射效果'
+          expected: ''
         },
         {
           tool: 'prepare_design',
           callId: 'prepare-2',
           phase: 'applying',
           status: 'completed',
-          label: 'Current task',
-          expected: '正在加入窗戶光影反射效果'
+          label: 'Operation ended - outcome unconfirmed',
+          expected: 'Preparing the design'
         },
         {
           tool: 'apply_prepared_design',
@@ -1077,8 +1077,8 @@ for (const width of [360, 1280]) {
           callId: 'base-status',
           phase: 'applying',
           status: 'completed',
-          label: 'Current task',
-          expected: '正在加入窗戶光影反射效果'
+          label: 'Operation ended - outcome unconfirmed',
+          expected: 'Applying window reflections'
         },
         {
           tool: 'invoke_tool',
@@ -1111,8 +1111,8 @@ for (const width of [360, 1280]) {
           callId: 'native-save-parent',
           phase: 'executing',
           status: 'completed',
-          label: 'Current task',
-          expected: '正在加入窗戶光影反射效果'
+          label: 'Operation ended - outcome unconfirmed',
+          expected: 'Prepare the editable facade panel'
         },
         {
           tool: 'provider',
@@ -1120,8 +1120,8 @@ for (const width of [360, 1280]) {
           scope: 'request',
           phase: 'provider',
           status: 'running',
-          label: 'Current task',
-          expected: '正在加入窗戶光影反射效果'
+          label: 'Operation ended - outcome unconfirmed',
+          expected: 'Prepare the editable facade panel'
         },
         {
           tool: 'provider',
@@ -1282,6 +1282,7 @@ for (const width of [360, 1280]) {
         )
         await expect(current).toContainText(message)
       }
+      // Each operation adds one operation row and two contextual label/message rows.
       const stableRows = await page
         .getByLabel('Operational progress')
         .locator('li')
@@ -1306,13 +1307,12 @@ for (const width of [360, 1280]) {
               }
             }) + '\n'
           )
-          await expect(status.locator(':scope > span')).toHaveText([
-            '正在隱藏右下角的標記。',
+          await expect(status.locator(':scope > span')).toHaveText(
             toolStatus === 'running'
-              ? label
-              : 'Task context - no App operation executing'
-          ])
-          await expect(current).toHaveText('正在隱藏右下角的標記。')
+              ? [label]
+              : [label, 'Operation ended - outcome unconfirmed']
+          )
+          await expect(current).toHaveText(label)
           if (tool === 'inspect_drawing' && toolStatus === 'running')
             await page.getByTestId('ai-agent-panel').screenshot({
               path: testInfo.outputPath('active-inspection-purpose.png')
@@ -1321,7 +1321,7 @@ for (const width of [360, 1280]) {
       }
       await expect(
         page.getByLabel('Operational progress').locator('li')
-      ).toHaveCount(stableRows)
+      ).toHaveCount(stableRows + 9)
       // Real stream/controller/panel: unrelated siblings must not borrow one
       // another's purpose or leave an execution label after both settle.
       const parallel = (
@@ -1339,6 +1339,14 @@ for (const width of [360, 1280]) {
             activity: {
               kind: 'work',
               callId,
+              ...(completed
+                ? {
+                    outcome: {
+                      status: callId === 'parallel-edit' ? 'failed' : 'success',
+                      settlement: 'completed'
+                    }
+                  }
+                : {}),
               phase: 'executing',
               sequence: ++activitySequence
             }
@@ -1348,7 +1356,6 @@ for (const width of [360, 1280]) {
       parallel('parallel-review', 'review_drawing', 'Inspect the crown')
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance')
       await expect(status.locator(':scope > span')).toHaveText([
-        '正在隱藏右下角的標記。',
         'Checking the requested details - Preparing the design - 2 operations'
       ])
       parallel('parallel-edit', 'prepare_design', 'Prepare the entrance', true)
@@ -1358,13 +1365,13 @@ for (const width of [360, 1280]) {
       ])
       parallel('parallel-review', 'review_drawing', 'Inspect the crown', true)
       await expect(status.locator(':scope > span')).toHaveText([
-        '正在隱藏右下角的標記。',
-        'Task context - no App operation executing'
+        'Prepare the entrance; Inspect the crown',
+        'Partially completed operation (2)'
       ])
       parallel('parallel-edit', 'prepare_design', 'Late completed sibling')
       await expect(status.locator(':scope > span')).toHaveText([
-        '正在隱藏右下角的標記。',
-        'Task context - no App operation executing'
+        'Prepare the entrance; Inspect the crown',
+        'Partially completed operation (2)'
       ])
       const longDescription = `Adjusting reflections on ${'window-'.repeat(85)}panes`
       await sendActivity(longDescription)

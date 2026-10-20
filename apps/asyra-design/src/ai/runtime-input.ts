@@ -43,6 +43,7 @@ import {
 import { createInspectionEvidence } from '../common-apis/inspection-evidence'
 import { createAiActions } from './actions'
 import { createPreparedDesignAction } from './design-actions'
+import { createPreparedMaterialApplication } from './prepared-material-action'
 import {
   createAiConfirmationHandler,
   type AiConfirmationRequest
@@ -111,6 +112,7 @@ export const createAiRuntimeInput = (
   const reviewer = createDesignReviewer(undefined, undefined, true)
   const queries = createRetainedDesignContext(core, observeDesignChanges)
   const documentExports = createDocumentExport()
+  const materials = createPreparedMaterialApplication()
   const transactionRunner =
     options.transactionRunner ?? createAiTransactionRunner()
   const actionDefinitions = [
@@ -126,7 +128,14 @@ export const createAiRuntimeInput = (
         }
       }
     }),
-    createPreparedDesignAction(undefined, undefined, undefined, evidence),
+    createPreparedDesignAction(
+      undefined,
+      undefined,
+      undefined,
+      evidence,
+      materials
+    ),
+    materials.action,
     createDocumentContextAction(queries.read),
     createRegionTargetsAction(queries.read),
     createDocumentContextReleaseAction(queries.read),
@@ -159,6 +168,7 @@ export const createAiRuntimeInput = (
       evidence,
       queries,
       reviewer,
+      materials,
       documentExports
     ],
     permissionPolicy: createAiPermissionPolicy(options.permissionRules),
@@ -185,7 +195,10 @@ export const createAiRuntimeInput = (
         try {
           return await transactionRunner.run(label, execute, request)
         } finally {
-          if (request?.signal) queries.releaseFor(request.signal)
+          if (request?.signal) {
+            queries.releaseFor(request.signal)
+            materials.releaseFor(request.signal)
+          }
         }
       }
     }

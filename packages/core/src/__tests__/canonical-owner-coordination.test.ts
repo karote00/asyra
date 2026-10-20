@@ -512,7 +512,10 @@ describe('Core canonical owner coordination', () => {
       options: { sharedDelivery: 'immediate' }
     })
     expect(props.applyPreparedPropertyMutationBatch).toHaveBeenCalledOnce()
-    expect(result).toEqual(['shared-position', 'shared-stroke'])
+    expect(result).toEqual({
+      acceptedIds: ['shared-position', 'shared-stroke'],
+      changed: false
+    })
     expect(Object.isFrozen(result)).toBe(true)
   })
 

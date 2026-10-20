@@ -304,6 +304,13 @@ it('delivers general architectural advice through the real catalog without impos
   expect(body).toContain('front-to-back')
   expect(body).toContain('surface-grid')
   expect(body).toContain('save_tool')
+  expect(body).not.toContain('use `fill.detachFillsAtIndex` on the intended')
+  expect(body).not.toContain(
+    'a shared Fill can affect owners outside the selected targets'
+  )
+  expect(body).toContain('Selected-owner updates apply local overrides')
+  expect(body).toContain('core.updateSharedPropertySources')
+
   expect(body).not.toMatch(/Taipei|50800|101/)
   const again = JSON.parse(
     await tools.call(AiDesignToolIds.READ_KNOWLEDGE, args, signal())

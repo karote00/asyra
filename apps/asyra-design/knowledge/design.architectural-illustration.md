@@ -112,11 +112,13 @@ not decide whether the building looks correct or whether Knowledge was followed.
    Continue independent ready work while that choice is unresolved. This is one
    route for the selected method, not one review per object or another AI model.
 5. For a local material correction, resolve explicit current targets and inspect
-   their Fill relationships. `fill.updateFillsAtIndex` edits the referenced Fill
-   property; a shared Fill can affect owners outside the selected targets. When
-   only these targets should change, use `fill.detachFillsAtIndex` on the intended
-   row before updating it. Preserve intentional linked edits when that is the
-   request; do not detach by default. A resolved artifact key is an identity
+   their Fill relationships. Selected-owner updates apply local overrides:
+   `fill.updateFillsAtIndex` changes only the selected owners, including when
+   they inherit a shared Fill. Do not detach before a local update. For an
+   intentional change to the shared source, use `core.updateSharedPropertySources`
+   with the actual source target. Use `core.resetElementPropertyOverrides` only
+   to restore inheritance, and `fill.detachFillsAtIndex` only when independent
+   ownership is explicitly intended. A resolved artifact key is an identity
    mapping, not proof that the element or Fill row still exists in the document.
    Apply the requested assignment and inspect any affected join.
    A changed shared lighting assumption may affect more than one part, but
@@ -136,15 +138,23 @@ Choose the correction from actual current data, not object names:
   replace only the requested colors/opacity. Send a complete `gradient` value
   per target. Omit unrelated Fill fields to retain them. `gradient` is replaced
   as one value: `{gradientStops: ...}` alone is invalid.
-- **Known world palette change:** the original projection, face geometry and
-  world field determine the replacement. Constant-phase faces have already
-  collapsed their palette into sampled native colors; preserving handles and
-  replacing their stops is not a world-palette remap. The existing compiler can
-  validate known source geometry, but `prepare_design` returns an artifact handle,
-  not editable native gradients, and there is no public material-only reapplication
-  route. Do not apply the draft again or claim its receipt provides replacement
-  gradients. If current public operations cannot express the intended remapping,
-  report the missing capability or choose an explicitly described native edit.
+- **Known world field correction:** use `prepare_material_revision` with the retained
+  original `artifactId`, existing `field` key and complete replacement `definition`
+  (`frame`, `start`, `end`, `gradientStops`). The tool recomputes native values from
+  the original projection and geometry, including constant-phase faces. It returns
+  an unapplied `materialRevisionId`; pass that handle to `apply_prepared_material`.
+  The consumer checks original member geometry and Fill bindings before any write,
+  then applies owner-local overrides without recreating geometry. A changed or
+  unavailable source requires an explicit current-source decision; do not retry
+  the old handle or broadcast one face's normalized gradient. The application
+  receipt distinguishes committed material changes from unavailable future reuse
+  provenance. Recover provenance without replaying a committed write.
+  For later geometry, pass the accepted revision as `materialSourceId` to
+  `prepare_design` or `prepare_and_apply_design` and omit inline `linearFields`.
+  The new draft still declares its geometry, projection and `materialField` keys.
+  Reuse only after the primary agent accepts the affected representative result;
+  preparation and application never certify visual quality. Request-local source
+  handles expire with their request; saved native fills remain ordinary document data.
 - **Direction/domain change:** supply intentionally new per-target complete native
   gradients in the chosen local basis. This changes the mapping; evaluate its new
   joins instead of claiming the original world field was preserved.
@@ -297,8 +307,12 @@ its acknowledged apply receipt/current context. In this executable syntax exampl
 replace `actual-sample` and `region` with those actual values; do not send a draft
 key as a document element ID. The region must show the material and relevant join,
 within the current capture limits. Reference pixels, canvas world coordinates and
-target-local coordinates are different spaces. For a cross-region join bind all
-relevant images; do not combine a whole image and crop of the same target in one unit.
+target-local coordinates are different spaces. For a conclusion needing multiple scales, bind all necessary images, including
+an overview and crop of the same target. Every cited image is a dependency; broad
+evidence carries broad invalidation. Local-only conclusions cite only their own
+necessary images. Preserve the separate whole-result criterion. A valid binding
+is not proof that the view covers the requested material or relationship; acquire
+additional views when necessary rather than dropping evidence to obtain a pass.
 
 ```json representative-capture
 {
@@ -449,7 +463,9 @@ a separate confirmed requirement; Knowledge does not invent one.
 
 Use compact category/query menus when the capability is unknown. For known
 operations use `operations`; for known native tools use `names`. `view: usage`
-returns purpose, route and root input paths without executable validation schemas.
+returns purpose, the actual invocation route, a validated illustrative owner example
+when available, and canonical nested field/definition paths. Examples do not replace
+executable validation schemas or supply live credentials.
 A canonical action's `recipeDependency` identifies its qualified composition
 route; foreign tools with similar names are separate choices. Select that route
 before obtaining the full recipe contract. The semantic `operations` selector

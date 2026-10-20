@@ -1,3 +1,4 @@
+import { mutationReceipt, type MutationReceipt } from '../mutation-receipt'
 import type {
   ElementPropertyPatchUpdate,
   ElementPropertyRecordFields,
@@ -1200,82 +1201,94 @@ const commitVectorTopologyOperation = (
   nextTopology: VectorTopology,
   options?: VectorTopologyOperationOptions
 ) => {
-  measureBrowserDragPhase(`vector-api:operation:${operation.type}`, () => {
-    const transientVectorPointDrag = isTransientVectorPointDragUpdate(options)
-    assertVectorTopologyOperationCanPatch(elementId)
+  return measureBrowserDragPhase(
+    `vector-api:operation:${operation.type}`,
+    () => {
+      const transientVectorPointDrag = isTransientVectorPointDragUpdate(options)
+      assertVectorTopologyOperationCanPatch(elementId)
 
-    emitDiagnosticCounter('vector-api-operation-commit-count')
-    let patch: ComputedDataPatch
-    try {
-      patch = measureBrowserDragPhase(
-        'vector-api:operation:build-patch',
-        () => {
-          vectorGeometry.validate(
-            nextTopology,
-            `commitVectorTopologyOperation:${operation.type}`
-          )
-          return createVectorTopologyOperationPatch(
-            elementId,
-            operation,
-            previousTopology,
-            nextTopology,
-            options?.closed
-          )
-        }
+      emitDiagnosticCounter('vector-api-operation-commit-count')
+      let patch: ComputedDataPatch
+      try {
+        patch = measureBrowserDragPhase(
+          'vector-api:operation:build-patch',
+          () => {
+            vectorGeometry.validate(
+              nextTopology,
+              `commitVectorTopologyOperation:${operation.type}`
+            )
+            return createVectorTopologyOperationPatch(
+              elementId,
+              operation,
+              previousTopology,
+              nextTopology,
+              options?.closed
+            )
+          }
+        )
+      } catch (error) {
+        emitDiagnosticCounter('vector-api-operation-build-patch-error-count')
+        throw error
+      }
+
+      const patchKeyCount = getComputedDataPatchOperationCount(patch)
+      emitDiagnosticCounter(
+        'vector-api-operation-patch-key-count',
+        patchKeyCount
       )
-    } catch (error) {
-      emitDiagnosticCounter('vector-api-operation-build-patch-error-count')
-      throw error
-    }
+      if (!hasComputedDataPatchOperations(patch)) {
+        emitDiagnosticCounter('vector-api-operation-empty-patch-count')
+        if (!transientVectorPointDrag) {
+          clearTransientVectorCaches(elementId)
+        }
+        return false
+      }
 
-    const patchKeyCount = getComputedDataPatchOperationCount(patch)
-    emitDiagnosticCounter('vector-api-operation-patch-key-count', patchKeyCount)
-    if (!hasComputedDataPatchOperations(patch)) {
-      emitDiagnosticCounter('vector-api-operation-empty-patch-count')
       if (!transientVectorPointDrag) {
         clearTransientVectorCaches(elementId)
       }
-      return
-    }
-
-    if (!transientVectorPointDrag) {
-      clearTransientVectorCaches(elementId)
-    }
-    const validatedPatchRequest = getValidatedVectorComputedPatchRequest({
-      structuralOperationIntent: options?.structuralOperationIntent,
-      elementId,
-      operation: getStructuralOperationForTopologyOperation(operation),
-      patch
-    })
-    const commitPatch = validatedPatchRequest?.patch ?? patch
-    const eventOptions = validatedPatchRequest
-      ? {
-          ...toVectorEventOptions(options),
-          ...validatedPatchRequest.eventOptions
-        }
-      : toVectorEventOptions(options)
-    if (transientVectorPointDrag) {
-      core.patchLocalComputedData([
-        {
-          elementId,
-          patch: commitPatch
-        }
-      ])
-    } else {
-      runTransaction(() => {
-        reconcileVectorSelectionAfterTopologyChange(
-          elementId,
-          previousTopology,
-          nextTopology
-        )
-        commitCanonicalVectorPropertyPatch(elementId, commitPatch, eventOptions)
+      const validatedPatchRequest = getValidatedVectorComputedPatchRequest({
+        structuralOperationIntent: options?.structuralOperationIntent,
+        elementId,
+        operation: getStructuralOperationForTopologyOperation(operation),
+        patch
       })
+      const commitPatch = validatedPatchRequest?.patch ?? patch
+      const eventOptions = validatedPatchRequest
+        ? {
+            ...toVectorEventOptions(options),
+            ...validatedPatchRequest.eventOptions
+          }
+        : toVectorEventOptions(options)
+      let changed = true
+      if (transientVectorPointDrag) {
+        core.patchLocalComputedData([
+          {
+            elementId,
+            patch: commitPatch
+          }
+        ])
+      } else {
+        changed = runTransaction(() => {
+          reconcileVectorSelectionAfterTopologyChange(
+            elementId,
+            previousTopology,
+            nextTopology
+          )
+          return commitCanonicalVectorPropertyPatch(
+            elementId,
+            commitPatch,
+            eventOptions
+          ).changed
+        })
+      }
+      if (transientVectorPointDrag) {
+        transientWorkspaceTopologyCache.set(elementId, nextTopology)
+        updateTransientComputedSnapshotFromPatch(elementId, commitPatch)
+      }
+      return changed
     }
-    if (transientVectorPointDrag) {
-      transientWorkspaceTopologyCache.set(elementId, nextTopology)
-      updateTransientComputedSnapshotFromPatch(elementId, commitPatch)
-    }
-  })
+  )
 }
 
 const commitVectorPointMutation = (
@@ -1286,7 +1299,7 @@ const commitVectorPointMutation = (
     closed?: boolean
   }
 ) => {
-  measureBrowserDragPhase('vector-api:commit', () => {
+  return measureBrowserDragPhase('vector-api:commit', () => {
     const transientVectorPointDrag = isTransientVectorPointDragUpdate(options)
     emitDiagnosticCounter('vector-api-commit-enter-count')
     emitDiagnosticCounter(
@@ -1334,7 +1347,7 @@ const commitVectorPointMutation = (
       })
     ) {
       emitDiagnosticCounter('vector-api-point-mutation-empty-patch-count')
-      return
+      return false
     }
 
     const validatedPatchRequest = getValidatedVectorComputedPatchRequest({
@@ -1347,6 +1360,7 @@ const commitVectorPointMutation = (
     const eventOptions =
       validatedPatchRequest?.eventOptions ?? toVectorEventOptions(options)
 
+    let changed = true
     if (transientVectorPointDrag) {
       core.patchLocalComputedData([
         {
@@ -1355,8 +1369,12 @@ const commitVectorPointMutation = (
         }
       ])
     } else {
-      runTransaction(() => {
-        commitCanonicalVectorPropertyPatch(elementId, commitPatch, eventOptions)
+      changed = runTransaction(() => {
+        return commitCanonicalVectorPropertyPatch(
+          elementId,
+          commitPatch,
+          eventOptions
+        ).changed
       })
     }
 
@@ -1366,6 +1384,7 @@ const commitVectorPointMutation = (
     } else {
       clearTransientVectorCaches(elementId)
     }
+    return changed
   })
 }
 
@@ -1593,7 +1612,7 @@ export const vectorApis = {
       readonly scaleY: number
     },
     options?: EVENT_OPTIONS
-  ): boolean => {
+  ): MutationReceipt<boolean> => {
     const computed = getVectorComputed(elementId)
     if (
       !computed ||
@@ -1612,7 +1631,9 @@ export const vectorApis = {
       !Number.isFinite(computed.height) ||
       computed.height <= 0
     ) {
-      return false
+      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
     const width = computed.width * scale.scaleX
@@ -1630,7 +1651,10 @@ export const vectorApis = {
         options
       )
     )
-    return updatedElementIds.includes(elementId)
+    return mutationReceipt(
+      updatedElementIds.acceptedIds.includes(elementId),
+      updatedElementIds
+    )
   },
 
   getVectorAnchorPointAtWorkspacePos: (
@@ -1875,7 +1899,7 @@ export const vectorApis = {
     elementId: string,
     point: VectorAnchorPoint,
     options?: AppendVectorAnchorPointOptions
-  ): { point: VectorAnchorPoint; index: number } | null => {
+  ): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null> => {
     const {
       startNewSubpath,
       continuation,
@@ -1888,7 +1912,9 @@ export const vectorApis = {
       point
     )
     if (!storedPosition) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
     const nextTopology = vectorGeometry.addPoint(
       topology,
@@ -1901,7 +1927,7 @@ export const vectorApis = {
       }
     )
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'appendAnchor',
@@ -1914,7 +1940,10 @@ export const vectorApis = {
         structuralOperationIntent
       }
     )
-    return vectorApis.getVectorAnchorPointById(elementId, point.id)
+    return mutationReceipt(
+      vectorApis.getVectorAnchorPointById(elementId, point.id),
+      { acceptedIds: [elementId], changed }
+    )
   },
 
   getVectorAnchorEndpoint: (
@@ -1946,7 +1975,7 @@ export const vectorApis = {
     sourcePointId: string,
     targetPointId: string,
     options?: VectorOperationIntentOptions
-  ): { closed: boolean } | null => {
+  ): MutationReceipt<{ closed: boolean } | null> => {
     const topology = getVectorTopologyStored(elementId)
     const connected = vectorGeometry.connectEndpoints(
       topology,
@@ -1954,10 +1983,12 @@ export const vectorApis = {
       targetPointId
     )
     if (!connected) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'connectEndpoints',
@@ -1971,9 +2002,10 @@ export const vectorApis = {
         structuralOperationIntent: options?.structuralOperationIntent
       }
     )
-    return {
-      closed: connected.closed
-    }
+    return mutationReceipt(
+      { closed: connected.closed },
+      { acceptedIds: [elementId], changed }
+    )
   },
 
   connectVectorAnchorPoints: (
@@ -1981,7 +2013,7 @@ export const vectorApis = {
     sourcePointId: string,
     targetPointId: string,
     options?: VectorOperationIntentOptions
-  ): { closed: boolean } | null => {
+  ): MutationReceipt<{ closed: boolean } | null> => {
     const topology = getVectorTopologyStored(elementId)
     const connected = vectorGeometry.connectAnchors(
       topology,
@@ -1989,10 +2021,12 @@ export const vectorApis = {
       targetPointId
     )
     if (!connected) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'connectAnchors',
@@ -2006,19 +2040,26 @@ export const vectorApis = {
         structuralOperationIntent: options?.structuralOperationIntent
       }
     )
-    return {
-      closed: connected.closed
-    }
+    return mutationReceipt(
+      { closed: connected.closed },
+      { acceptedIds: [elementId], changed }
+    )
   },
 
-  removeLastSinglePointSubpath: (elementId: string): boolean => {
+  removeLastSinglePointSubpath: (
+    elementId: string
+  ): MutationReceipt<boolean> => {
+    assertVectorTopologyOperationCanPatch(elementId)
     const topology = getVectorTopologyStored(elementId)
     const nextTopology = removeLastSinglePointSubpath(topology)
     if (!nextTopology) {
-      return false
+      return mutationReceipt(false, {
+        acceptedIds: [elementId],
+        changed: false
+      })
     }
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'removeLastSinglePointSubpath'
@@ -2026,21 +2067,23 @@ export const vectorApis = {
       topology,
       nextTopology
     )
-    return true
+    return mutationReceipt(true, { acceptedIds: [elementId], changed })
   },
 
   removeVectorAnchorPoint: (
     elementId: string,
     pointId: string,
     options?: VectorOperationIntentOptions
-  ): boolean => {
+  ): MutationReceipt<boolean> => {
     const topology = getVectorTopologyStored(elementId)
     const nextTopology = vectorGeometry.removePoint(topology, pointId)
     if (!nextTopology) {
-      return false
+      return mutationReceipt(false, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'removeAnchor',
@@ -2053,7 +2096,7 @@ export const vectorApis = {
         structuralOperationIntent: options?.structuralOperationIntent
       }
     )
-    return true
+    return mutationReceipt(true, { acceptedIds: [elementId], changed })
   },
 
   splitVectorSegmentAtWorkspacePos: (
@@ -2061,14 +2104,16 @@ export const vectorApis = {
     segmentId: string,
     workspacePos: PositionData,
     options?: VectorOperationIntentOptions
-  ): { point: VectorAnchorPoint; index: number } | null => {
+  ): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null> => {
     const topology = getVectorTopologyStored(elementId)
     const storedWorkspacePos = projectWorkspacePositionToStoredVector(
       elementId,
       workspacePos
     )
     if (!storedWorkspacePos) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
     const projectedHit = getVectorSegmentProjection(
       topology,
@@ -2076,14 +2121,18 @@ export const vectorApis = {
       storedWorkspacePos
     )
     if (!projectedHit) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
     const splitResult = vectorGeometry.splitSegment(topology, segmentId, {
       t: projectedHit.t
     })
     if (!splitResult) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
     const anchorPoints = vectorTopologyToAnchorPoints(splitResult.topology)
@@ -2098,10 +2147,12 @@ export const vectorApis = {
             anchorPoints[insertedPointIndex]
           )
     if (!insertedPoint) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'splitSegment',
@@ -2114,16 +2165,16 @@ export const vectorApis = {
         structuralOperationIntent: options?.structuralOperationIntent
       }
     )
-    return {
-      point: insertedPoint,
-      index: insertedPointIndex
-    }
+    return mutationReceipt(
+      { point: insertedPoint, index: insertedPointIndex },
+      { acceptedIds: [elementId], changed }
+    )
   },
 
   setVectorClosed: (elementId: string, closed: boolean) => {
     const topology = getVectorTopologyStored(elementId)
     const nextTopology = setTopologyClosed(topology, closed)
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'setClosed',
@@ -2133,6 +2184,7 @@ export const vectorApis = {
       nextTopology,
       { closed }
     )
+    return mutationReceipt(null, { acceptedIds: [elementId], changed })
   },
 
   updateVectorAnchorPointPosition: (
@@ -2140,26 +2192,40 @@ export const vectorApis = {
     pointId: string,
     position: PositionData,
     options?: VectorPointMutationOptions
-  ): { point: VectorAnchorPoint; index: number } | true | null => {
+  ): MutationReceipt<
+    { point: VectorAnchorPoint; index: number } | true | null
+  > => {
     const topology = getVectorTopologyStored(elementId)
     const storedPosition = projectWorkspacePositionToStoredVector(
       elementId,
       position
     )
     if (!storedPosition) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
     const nextTopology = measureVectorTopologyUpdate('move-point', () =>
       vectorGeometry.movePoint(topology, pointId, storedPosition)
     )
     if (!nextTopology) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
-    commitVectorPointMutation(elementId, topology, nextTopology, options)
+    const changed = commitVectorPointMutation(
+      elementId,
+      topology,
+      nextTopology,
+      options
+    )
     if (options?.skipResult) {
-      return true
+      return mutationReceipt(true, { acceptedIds: [elementId], changed })
     }
-    return vectorApis.getVectorAnchorPointById(elementId, pointId)
+    return mutationReceipt(
+      vectorApis.getVectorAnchorPointById(elementId, pointId),
+      { acceptedIds: [elementId], changed }
+    )
   },
 
   setVectorElementPositions: (
@@ -2168,11 +2234,14 @@ export const vectorApis = {
       position: PositionData
     }[],
     options?: EVENT_OPTIONS
-  ): readonly string[] => {
+  ): MutationReceipt<readonly string[]> => {
+    const acceptedIds: string[] = []
+    const unavailableIds: string[] = []
     const propertyUpdates: ElementPropertyValuesUpdate[] = []
 
     updates.forEach(({ elementId, position }) => {
       if (!Number.isFinite(position?.x) || !Number.isFinite(position?.y)) {
+        unavailableIds.push(elementId)
         return
       }
 
@@ -2182,9 +2251,11 @@ export const vectorApis = {
         typeof computed.x !== 'number' ||
         typeof computed.y !== 'number'
       ) {
+        unavailableIds.push(elementId)
         return
       }
 
+      acceptedIds.push(elementId)
       if (position.x === computed.x && position.y === computed.y) {
         return
       }
@@ -2199,11 +2270,20 @@ export const vectorApis = {
     })
 
     if (propertyUpdates.length === 0) {
-      return Object.freeze([])
+      return mutationReceipt(
+        Object.freeze([]),
+        { acceptedIds: [...new Set(acceptedIds)], changed: false },
+        [...new Set(unavailableIds)]
+      )
     }
 
-    return runTransaction(() =>
+    const evidence = runTransaction(() =>
       core.updateElementProperties(propertyUpdates, options)
+    )
+    return mutationReceipt(
+      evidence.acceptedIds,
+      { acceptedIds: [...new Set(acceptedIds)], changed: evidence.changed },
+      [...new Set(unavailableIds)]
     )
   },
 
@@ -2214,17 +2294,21 @@ export const vectorApis = {
   ): boolean =>
     vectorApis
       .setVectorElementPositions([{ elementId, position }], options)
-      .includes(elementId),
+      .value.includes(elementId),
 
   updateVectorAnchorPointType: (
     elementId: string,
     pointId: string,
     type: 'smooth' | 'sharp',
     options?: VectorOperationIntentOptions
-  ): { point: VectorAnchorPoint; index: number } | null => {
+  ): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null> => {
     const topology = getVectorTopologyStored(elementId)
+    if (topology.points[pointId]?.kind !== 'anchor')
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     const nextTopology = setAnchorTypeInTopology(topology, pointId, type)
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'setAnchorType',
@@ -2236,7 +2320,10 @@ export const vectorApis = {
         structuralOperationIntent: options?.structuralOperationIntent
       }
     )
-    return vectorApis.getVectorAnchorPointById(elementId, pointId)
+    return mutationReceipt(
+      vectorApis.getVectorAnchorPointById(elementId, pointId),
+      { acceptedIds: [elementId], changed }
+    )
   },
 
   getVectorAnchorPointHandleMode: (
@@ -2252,14 +2339,16 @@ export const vectorApis = {
     pointId: string,
     mode: VectorHandleMode,
     options?: VectorOperationIntentOptions
-  ): { point: VectorAnchorPoint; index: number } | null => {
+  ): MutationReceipt<{ point: VectorAnchorPoint; index: number } | null> => {
     const topology = getVectorTopologyStored(elementId)
     const nextTopology = vectorGeometry.setHandleMode(topology, pointId, mode)
     if (!nextTopology) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'setHandleMode',
@@ -2272,7 +2361,10 @@ export const vectorApis = {
         structuralOperationIntent: options?.structuralOperationIntent
       }
     )
-    return vectorApis.getVectorAnchorPointById(elementId, pointId)
+    return mutationReceipt(
+      vectorApis.getVectorAnchorPointById(elementId, pointId),
+      { acceptedIds: [elementId], changed }
+    )
   },
 
   updateVectorAnchorPointHandlePosition: (
@@ -2284,14 +2376,18 @@ export const vectorApis = {
     >,
     position: PositionData,
     options?: VectorPointMutationOptions
-  ): { point: VectorAnchorPoint; index: number } | true | null => {
+  ): MutationReceipt<
+    { point: VectorAnchorPoint; index: number } | true | null
+  > => {
     const topology = getVectorTopologyStored(elementId)
     const storedPosition = projectWorkspacePositionToStoredVector(
       elementId,
       position
     )
     if (!storedPosition) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
     const handleMode = getVectorAnchorHandleMode(topology.points[pointId])
     const nextTopology = measureVectorTopologyUpdate('update-handle', () =>
@@ -2304,14 +2400,24 @@ export const vectorApis = {
       )
     )
     if (!nextTopology) {
-      return null
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    commitVectorPointMutation(elementId, topology, nextTopology, options)
+    const changed = commitVectorPointMutation(
+      elementId,
+      topology,
+      nextTopology,
+      options
+    )
     if (options?.skipResult) {
-      return true
+      return mutationReceipt(true, { acceptedIds: [elementId], changed })
     }
-    return vectorApis.getVectorAnchorPointById(elementId, pointId)
+    return mutationReceipt(
+      vectorApis.getVectorAnchorPointById(elementId, pointId),
+      { acceptedIds: [elementId], changed }
+    )
   },
 
   updateVectorAnchorPointHandles: (
@@ -2319,11 +2425,20 @@ export const vectorApis = {
     updates: VectorHandleUpdate[],
     options?: VectorPointMutationOptions
   ) => {
+    assertVectorTopologyOperationCanPatch(elementId)
     if (updates.length === 0) {
-      return
+      return mutationReceipt(null, { acceptedIds: [elementId], changed: false })
     }
 
     const previousTopology = getVectorTopologyStored(elementId)
+    if (
+      updates.some(
+        (update) => previousTopology.points[update.pointId]?.kind !== 'anchor'
+      )
+    )
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     let topology = previousTopology
     let projectionFailed = false
     updates.forEach((update) => {
@@ -2351,10 +2466,12 @@ export const vectorApis = {
       )
     })
     if (projectionFailed) {
-      return
+      return mutationReceipt(null, { acceptedIds: [], changed: false }, [
+        elementId
+      ])
     }
 
-    commitVectorTopologyOperation(
+    const changed = commitVectorTopologyOperation(
       elementId,
       {
         type: 'setHandles',
@@ -2364,6 +2481,7 @@ export const vectorApis = {
       topology,
       options
     )
+    return mutationReceipt(null, { acceptedIds: [elementId], changed })
   },
 
   createVectorElement: (
@@ -2415,13 +2533,13 @@ export const vectorApis = {
     pointId: string,
     position: PositionData,
     options?: EVENT_OPTIONS
-  ): string | null => {
+  ): MutationReceipt<string | null> => {
     const topology = createVectorTopologyFromSinglePoint(
       pointId,
       position,
       'sharp'
     )
-    return vectorApis.createVectorElement(
+    const value = vectorApis.createVectorElement(
       {
         type: 'vector',
         points: topology.points,
@@ -2430,6 +2548,11 @@ export const vectorApis = {
         closed: false
       },
       options
+    )
+    return mutationReceipt(
+      value,
+      { acceptedIds: value ? [value] : [], changed: value !== null },
+      value ? [] : [pointId]
     )
   }
 }

@@ -102,7 +102,10 @@
           "stepId": "compose",
           "testName": "execution proof preserves partial lookup full recovery and declaration constraints",
           "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts"
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/operation-input-schema.ts"
           ]
         },
         {
@@ -401,10 +404,12 @@
         {
           "id": "settle.recorded-purpose",
           "stepId": "settle",
-          "testName": "execution proof retains recorded authored purpose after provider tool settlement",
+          "testName": "execution proof retires superseded recorded purpose after provider tool settlement",
           "implementationPaths": [
             "apps/asyra-design/server/local-ai-provider.ts",
-            "apps/asyra-design/src/ai/activity-state.ts"
+            "apps/asyra-design/src/ai/activity-state.ts",
+            "packages/ai-agent-runtime/src/provider.ts",
+            "apps/asyra-design/server/ai-domain-prompt.ts"
           ]
         },
         {
@@ -491,6 +496,51 @@
             "apps/asyra-design/src/collaboration/operations.ts",
             "apps/asyra-design/src/collaboration/document-publication.ts"
           ]
+        },
+        {
+          "id": "compose.owner-result-handoff",
+          "stepId": "compose",
+          "testName": "execution proof preserves owner result distinctions through native contract admission",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+            "apps/asyra-design/server/local-tool-invocation.ts"
+          ]
+        },
+        {
+          "id": "apply.core-owner-results",
+          "stepId": "apply",
+          "testName": "execution proof preserves Core mutation and valid no-op receipts through native invocation",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts",
+            "packages/core/src/apis/element-properties.ts",
+            "packages/core/src/apis/property-intents.ts",
+            "packages/core/src/apis/props.ts",
+            "apps/asyra-design/src/ai/transaction.ts",
+            "packages/ai-agent-runtime/src/runtime.ts"
+          ]
+        },
+        {
+          "id": "apply.non-core-owner-results",
+          "stepId": "apply",
+          "testName": "execution proof preserves non-Core mutation outcomes without opaque application",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/mutation-receipt.ts",
+            "apps/asyra-design/src/common-apis/element/apis.ts",
+            "apps/asyra-design/src/common-apis/element/vector-apis.ts",
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/common-apis/strokes.ts",
+            "apps/asyra-design/src/ai/basic-api-results.ts"
+          ]
+        },
+        {
+          "id": "apply.material-provenance",
+          "stepId": "apply",
+          "testName": "execution proof keeps material provenance independent of viewport transforms",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/prepared-material-action.ts"
+          ]
         }
       ],
       "handoffs": [
@@ -522,7 +572,8 @@
           "decision": "required",
           "caseIds": [
             "apply.composition",
-            "prepare.repeated-representation"
+            "prepare.repeated-representation",
+            "apply.material-provenance"
           ]
         },
         {
@@ -532,7 +583,11 @@
             "request.continuity",
             "apply.region-removal",
             "apply.bounded-receipt-delivery",
-            "apply.registered-model-delivery"
+            "apply.registered-model-delivery",
+            "compose.owner-result-handoff",
+            "apply.core-owner-results",
+            "apply.non-core-owner-results",
+            "apply.material-provenance"
           ]
         },
         {
@@ -734,6 +789,66 @@
         "file": "apps/asyra-design/src/collaboration/operations.ts",
         "from": "if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {\n      flush()",
         "to": "if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {\n      if (addition) flush()"
+      }
+    },
+    {
+      "id": "ignore-owner-unavailability",
+      "title": "Promote unavailable owner results to success",
+      "expectedFailedCaseIds": [
+        "compose.owner-result-handoff"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/basic-api-results.ts",
+        "from": "if (unavailable)\n      status =",
+        "to": "if (false)\n      status ="
+      }
+    },
+    {
+      "id": "lose-core-no-op",
+      "title": "Treat every Core property receipt as changed",
+      "expectedFailedCaseIds": [
+        "apply.core-owner-results"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/basic-api-results.ts",
+        "from": "status: result.changed ? 'complete' : 'no-change'",
+        "to": "status: 'complete'"
+      }
+    },
+    {
+      "id": "lose-core-failure-settlement",
+      "title": "Discard known Core failed-member settlement",
+      "expectedFailedCaseIds": [
+        "apply.core-owner-results"
+      ],
+      "mutation": {
+        "file": "packages/ai-agent-runtime/src/runtime.ts",
+        "from": "if (error.status === 'rolled-back')\n                              settlement = 'not-started'",
+        "to": "if (error.status === 'rolled-back')\n                              settlement = 'unknown'"
+      }
+    },
+    {
+      "id": "lose-non-core-no-op",
+      "title": "Promote unchanged App owner receipts to completed changes",
+      "expectedFailedCaseIds": [
+        "apply.non-core-owner-results"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/basic-api-results.ts",
+        "from": "const { acceptedIds, unavailableIds, changed } = receipt\n    let status = changed ? 'complete' : 'no-change'",
+        "to": "const { acceptedIds, unavailableIds, changed } = receipt\n    let status = 'complete'"
+      }
+    },
+    {
+      "id": "viewport-material-invalidation",
+      "title": "Include viewport-derived coordinates in material provenance",
+      "expectedFailedCaseIds": [
+        "apply.material-provenance"
+      ],
+      "mutation": {
+        "file": "apps/asyra-design/src/ai/prepared-material-action.ts",
+        "from": "      placements\n",
+        "to": "      placements,\n      viewportBasis: core.elementLocalToWorkspace(elementId, { x: 0, y: 0 })\n"
       }
     }
   ]

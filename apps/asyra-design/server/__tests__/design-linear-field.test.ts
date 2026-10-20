@@ -742,3 +742,105 @@ it.each(['facade', 'horizontal'] as const)(
     }
   }
 )
+
+it('revises a retained world material without changing creation identities or unrelated source', async () => {
+  const session = createDesignPreparationSession()
+  const draft = source()
+  const first = session.prepare(draft)
+  const original = structuredClone(session.resolve(first.artifactId))
+  const definition = {
+    ...field,
+    gradientStops: stops.map((stop) => ({ ...stop, color: '#eac490' }))
+  }
+  const revised = await session.reviseMaterial(
+    first.artifactId,
+    'glass',
+    definition,
+    new AbortController().signal
+  )
+  expect(revised.materialRevisionId).not.toBe(first.artifactId)
+  const material = session.materialRevision(revised.materialRevisionId)
+  expect(material.rootId).toBe(original.rootId)
+  expect(material.updates.map((item) => item.elementId)).toEqual(
+    original.entries.slice(1).map((entry) => entry.descriptor.id)
+  )
+  const changed = session.resolve(revised.materialRevisionId)
+  changed.entries.forEach((entry, i) => {
+    const { fills: _fills, ...geometry } = entry.descriptor
+    const { fills: _before, ...before } = original.entries[i].descriptor
+    expect(geometry).toEqual(before)
+  })
+  expect(session.resolve(first.artifactId)).toEqual(original)
+  expect(session.recipe(first.artifactId).recipe).toEqual(draft)
+  expect(
+    session.withMaterialSource(
+      { type: 'group', children: [] },
+      revised.materialRevisionId
+    )
+  ).toMatchObject({ linearFields: { glass: definition } })
+  expect(() =>
+    session.withMaterialSource({ linearFields: {} }, revised.materialRevisionId)
+  ).toThrow(/conflict/i)
+  await expect(
+    session.reviseMaterial(
+      first.artifactId,
+      'missing',
+      definition,
+      new AbortController().signal
+    )
+  ).rejects.toThrow(/field/i)
+  const cancelled = new AbortController()
+  cancelled.abort()
+  await expect(
+    session.reviseMaterial(
+      first.artifactId,
+      'glass',
+      definition,
+      cancelled.signal
+    )
+  ).rejects.toThrow()
+  session.release([revised.materialRevisionId])
+  expect(() => session.materialRevision(revised.materialRevisionId)).toThrow(
+    /unavailable/i
+  )
+  expect(session.resolve(first.artifactId)).toEqual(original)
+})
+
+it('revises sampled constant-phase faces from their world source without normalizing phases', async () => {
+  const draft = source()
+  draft.linearFields.glass = { ...field, end: { x: 0, y: 0, z: 20000 } }
+  draft.children.forEach((face, index) => {
+    face.vertices = [
+      { x: -2000, y: 1000, z: 4000 + index * 8000 },
+      { x: 2000, y: 1000, z: 4000 + index * 8000 },
+      { x: 2000, y: 3000, z: 4000 + index * 8000 },
+      { x: -2000, y: 3000, z: 4000 + index * 8000 }
+    ]
+  })
+  const session = createDesignPreparationSession()
+  const first = session.prepare(draft)
+  const definition = {
+    ...draft.linearFields.glass,
+    gradientStops: [
+      { position: 0, color: '#ff0000', opacity: 0.2 },
+      { position: 1, color: '#0000ff', opacity: 0.8 }
+    ]
+  }
+  const revision = await session.reviseMaterial(
+    first.artifactId,
+    'glass',
+    definition,
+    new AbortController().signal
+  )
+  const updates = session.materialRevision(revision.materialRevisionId).updates
+  expect(updates).toHaveLength(2)
+  expect(updates[0].gradient).not.toEqual(updates[1].gradient)
+  const expected = prepareDesign({
+    ...draft,
+    linearFields: { glass: definition }
+  })
+  updates.forEach((item, index) =>
+    expect(item.gradient).toEqual(gradient(expected.entries[index + 1]))
+  )
+  expect(session.recipe(first.artifactId).recipe).toEqual(draft)
+})

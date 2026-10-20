@@ -25,14 +25,7 @@ const connected = (page: Page) =>
     )
     .toBe('connected')
 
-test('recorded world material reaches real tools, local checks, history, peer and durable reload without inference', async ({
-  page,
-  context
-}, testInfo) => {
-  const document = createTestDocumentIdentity()
-  await page.goto(document.url)
-  await waitForAppReady(page)
-  await connected(page)
+const materialHarness = async (page: Page) => {
   const actions = await page.evaluate(async () => {
     const { testRuntimeState } = await import('../src/testing/runtime-access')
     const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
@@ -45,6 +38,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
       }
     })
     testRuntimeState.set('material-runtime', input)
+    testRuntimeState.set('material-request', new AbortController())
     return JSON.parse(JSON.stringify(input.actionDefinitions))
   })
   const execute = async (batch: AiActionBatch) =>
@@ -54,11 +48,11 @@ test('recorded world material reaches real tools, local checks, history, peer an
         typeof import('../src/ai/runtime-input').createAiRuntimeInput
       >
       const input = testRuntimeState.get<Input>('material-runtime')
-      if (!input?.transactionRunner)
+      const request = testRuntimeState.get<AbortController>('material-request')
+      if (!input?.transactionRunner || !request)
         throw new Error('Missing runtime transaction owner')
-      return input.transactionRunner.run(
-        'Material scenario',
-        async (runMutation) => {
+      return input.transactionRunner
+        .run('Material scenario', async (runMutation) => {
           const actionResults = []
           for (const a of batch.actions) {
             const action = input.actionDefinitions.find(
@@ -69,15 +63,31 @@ test('recorded world material reaches real tools, local checks, history, peer an
               actionId: a.id,
               actionName: a.name,
               result: await action.execute(a.arguments, {
-                signal: new AbortController().signal,
+                signal: request.signal,
                 runMutation
               })
             })
           }
           return { context: {}, actionResults }
-        }
-      )
+        })
+        .catch((error: unknown) => {
+          let cause = error
+          while (cause instanceof Error && cause.cause) cause = cause.cause
+          throw cause
+        })
     }, batch)) as never
+  return { actions, execute }
+}
+
+test('recorded world material reaches real tools, local checks, history, peer and durable reload without inference', async ({
+  page,
+  context
+}, testInfo) => {
+  const document = createTestDocumentIdentity()
+  await page.goto(document.url)
+  await waitForAppReady(page)
+  await connected(page)
+  const { actions, execute } = await materialHarness(page)
   const tools = createLocalDesignTools(actions)
   const ops = createLocalOperationTools(actions, tools, execute)
   const signal = new AbortController().signal
@@ -207,6 +217,22 @@ test('recorded world material reaches real tools, local checks, history, peer an
           }
         ]
       })
+      expect(binding.acceptanceContext).toEqual({
+        method:
+          'Review independent material surfaces and the whole composition separately.',
+        requirementRevision:
+          binding.next.arguments.checks[0].binding.requirementRevision,
+        checks: [
+          {
+            criterionId: 'material',
+            unitId: ['lower', 'upper'][index],
+            requirement:
+              'Each surface retains its intended independently editable material.',
+            description:
+              'Evaluate each current surface without accepting its sibling implicitly.'
+          }
+        ]
+      })
       expect(binding.next.arguments.checks).toHaveLength(1)
       return binding.next.arguments
     }
@@ -321,6 +347,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
       expect(rendered.colors[i][3]).toBe(255)
     })
     const created = await getCoreDocumentDigest(page)
+    const createdDocument = await page.evaluate(async () =>
+      (await import('../src/testing/runtime-access')).core.save()
+    )
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(created)
@@ -472,6 +501,17 @@ test('recorded world material reaches real tools, local checks, history, peer an
       .poll(() => getPersistedDocumentDigest(document.fileId))
       .toEqual(edited)
     await undo(page)
+    await testInfo.attach('undo-document-comparison', {
+      contentType: 'application/json',
+      body: Buffer.from(
+        JSON.stringify({
+          before: createdDocument,
+          after: await page.evaluate(async () =>
+            (await import('../src/testing/runtime-access')).core.save()
+          )
+        })
+      )
+    })
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(created)
     expect(
       (await visualChecks()).find(
@@ -571,7 +611,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
       ).startDocumentPublicationCapture('material-share')
     })
     // Explicitly shared and independent are different canonical relationships.
-    // A local edit detaches exactly one row; history/save/peer see that decision.
+    // A recipient edit creates a local override; source, history/save/peer retain its relation.
     await page.evaluate(async (ids) => {
       const { fillApis, transactionApis } = await import('../src/common-apis')
       transactionApis.runTransaction(() =>
@@ -583,13 +623,27 @@ test('recorded world material reaches real tools, local checks, history, peer an
     const localOwnership = await page.evaluate(async (ids) => {
       const { core } = await import('../src/testing/runtime-access')
       const { fillApis, transactionApis } = await import('../src/common-apis')
+      const bindings = () =>
+        ids.map((elementId) => {
+          const [root] = core.readElementPropertyTargets([
+            { elementId, propertyName: 'fills', path: [] }
+          ])
+          const child = root.children[0]
+          return core.readElementPropertyTargets([
+            {
+              elementId,
+              propertyName: 'fills',
+              path: [{ key: child.key, childId: child.childId }]
+            }
+          ])[0]
+        })
       const before = ids.map(
         (id) => core.getElementComputedData(id, ['fills'])?.fills
       )
+      const beforeBindings = bindings()
       transactionApis.runTransaction(() => {
-        fillApis.detachFillsAtIndex([ids[0]], 0)
-        const fill = core.getElementComputedData(ids[0], ['fills'])?.fills[0]
-        fillApis.updateFillsAtIndex([ids[0]], 0, {
+        const fill = core.getElementComputedData(ids[1], ['fills'])?.fills[0]
+        fillApis.updateFillsAtIndex([ids[1]], 0, {
           gradient: {
             ...fill.gradient,
             gradientStops: fill.gradient.gradientStops.map((stop) => ({
@@ -601,19 +655,26 @@ test('recorded world material reaches real tools, local checks, history, peer an
       })
       return {
         before,
+        beforeBindings,
+        afterBindings: bindings(),
         after: ids.map(
           (id) => core.getElementComputedData(id, ['fills'])?.fills
         )
       }
     }, ids)
-    expect(localOwnership.before[0][0].id).toBe(localOwnership.before[1][0].id)
-    expect(localOwnership.after[0][0].id).not.toBe(
-      localOwnership.after[1][0].id
-    )
-    expect(localOwnership.after[1]).toEqual(localOwnership.before[1])
-    const detached = await getCoreDocumentDigest(page)
+    expect(localOwnership.beforeBindings[1]).toMatchObject({
+      mode: 'source-backed',
+      sourceId: localOwnership.beforeBindings[0].propertyId
+    })
+    expect(localOwnership.afterBindings[1]).toMatchObject({
+      mode: 'source-backed',
+      sourceId: localOwnership.beforeBindings[0].propertyId
+    })
+    expect(localOwnership.after[0]).toEqual(localOwnership.before[0])
+    expect(localOwnership.after[1]).not.toEqual(localOwnership.before[1])
+    const overridden = await getCoreDocumentDigest(page)
     try {
-      await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(detached)
+      await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(overridden)
     } finally {
       for (const [name, client] of [
         ['author', page],
@@ -637,14 +698,14 @@ test('recorded world material reaches real tools, local checks, history, peer an
     await undo(page)
     await expect.poll(() => getCoreDocumentDigest(page)).toEqual(shared)
     await redo(page)
-    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(detached)
+    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(overridden)
     await expect
       .poll(() => getPersistedDocumentDigest(document.fileId))
-      .toEqual(detached)
+      .toEqual(overridden)
     await page.reload()
     await waitForAppReady(page)
     await connected(page)
-    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(detached)
+    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(overridden)
     await tools.call(
       'release_design_artifacts',
       { artifactIds: [receipt.artifactId] },
@@ -663,7 +724,11 @@ test('recorded world material reaches real tools, local checks, history, peer an
         ]
       })
     ).toThrow()
-    expect(await getCoreDocumentDigest(page)).toEqual(detached)
+    expect(await getCoreDocumentDigest(page)).toEqual(overridden)
+    await page.keyboard.press('Meta+1')
+    await page.screenshot({
+      path: testInfo.outputPath('material-reloaded.png')
+    })
   } finally {
     {
       for (const [name, client] of [
@@ -800,4 +865,218 @@ test('native field sampling stays continuous across the rendered join of transla
     body: Buffer.from(result.image.split(',')[1], 'base64'),
     contentType: 'image/png'
   })
+})
+
+test('source material revisions update original faces, extend coherently and survive history, peer and reload', async ({
+  page,
+  context
+}) => {
+  const document = createTestDocumentIdentity()
+  await page.goto(document.url)
+  await waitForAppReady(page)
+  await connected(page)
+  const { actions, execute } = await materialHarness(page)
+  const tools = createLocalDesignTools(actions)
+  const signal = new AbortController().signal
+  const source = {
+    ...structuredClone(recorded.draft),
+    projection: {
+      ...recorded.draft.projection,
+      scale: 0.025,
+      originX: 0,
+      originY: 0
+    },
+    linearFields: {
+      glass: {
+        frame: 'world',
+        start: { x: 0, y: 0, z: 0 },
+        end: { x: 0, y: 0, z: 50800 },
+        gradientStops: recorded.draft.fillTemplates.glassL.gradientStops
+      }
+    },
+    children: recorded.draft.children.map(({ fill: _fill, ...face }) => ({
+      ...face,
+      materialField: 'glass'
+    }))
+  }
+  const prepared = JSON.parse(
+    await tools.call('prepare_design', { draft: source }, signal)
+  )
+  const creation = tools.resolveBatch({
+    batchId: 'source',
+    actions: [
+      {
+        id: 'create',
+        name: 'apply_prepared_design',
+        arguments: { artifactId: prepared.artifactId },
+        summary: 'Create source'
+      }
+    ]
+  })
+  const design = creation.actions[0].arguments.design as {
+    rootId: string
+    keyToId: Record<string, string>
+  }
+  const createdReceipt = (await execute(creation)) as {
+    actionResults: { result: unknown }[]
+  }
+  expect(createdReceipt.actionResults[0].result).toMatchObject({
+    materialProvenance: { status: 'available' }
+  })
+  const ids = source.children.map((child) => design.keyToId[child.key])
+  const read = () =>
+    page.evaluate(async (ids) => {
+      const { default: core } = await import('../src/contexts')
+      return ids.map((id) =>
+        core.getElementComputedData(id, ['fills', 'width', 'height', 'points'])
+      )
+    }, ids)
+  const before = await read()
+  const created = await getCoreDocumentDigest(page)
+  const peer = await context.newPage()
+  try {
+    await peer.goto(document.url)
+    await waitForAppReady(peer)
+    await connected(peer)
+    await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(created)
+    const definition = {
+      ...source.linearFields.glass,
+      gradientStops: source.linearFields.glass.gradientStops.map(
+        (stop, index) => ({ ...stop, color: index ? '#8cb8e0' : '#163e61' })
+      )
+    }
+    // A view-only change must not expire the source material's document provenance.
+    await page.evaluate(async () => {
+      const { viewportApis } = await import('../src/common-apis/viewport')
+      viewportApis.zoomToCenter(0.137, 800, 500)
+    })
+    expect(await getCoreDocumentDigest(page)).toEqual(created)
+    const revision = JSON.parse(
+      await tools.call(
+        'prepare_material_revision',
+        { artifactId: prepared.artifactId, field: 'glass', definition },
+        signal
+      )
+    )
+    expect(revision).toMatchObject({
+      available: true,
+      applied: false,
+      elementCount: ids.length
+    })
+    expect(await getCoreDocumentDigest(page)).toEqual(created)
+    const packet = tools.resolveBatch({
+      batchId: 'revise',
+      actions: [
+        {
+          id: 'material',
+          name: 'apply_prepared_material',
+          arguments: { materialRevisionId: revision.materialRevisionId },
+          summary: 'Correct source material'
+        }
+      ]
+    })
+    const receipt = (await execute(packet)) as {
+      actionResults: { result: unknown }[]
+    }
+    expect(receipt.actionResults[0].result).toMatchObject({
+      status: 'complete',
+      appliedCount: ids.length,
+      materialProvenance: { status: 'available' }
+    })
+    const after = await read()
+    for (let index = 0; index < ids.length; index++) {
+      expect(after[index]).toMatchObject({
+        width: before[index]?.width,
+        height: before[index]?.height,
+        points: before[index]?.points
+      })
+      const updates = packet.actions[0].arguments.updates as {
+        gradient: unknown
+        color: string
+      }[]
+      expect(after[index]?.fills[0]).toMatchObject({
+        gradient: updates[index].gradient,
+        color: updates[index].color
+      })
+      expect(after[index]?.fills).not.toEqual(before[index]?.fills)
+    }
+    const revised = await getCoreDocumentDigest(page)
+    await page.evaluate(async () => {
+      const { viewportApis } = await import('../src/common-apis/viewport')
+      viewportApis.panTo(613.25, 47.125)
+    })
+    await execute(packet)
+    expect(await getCoreDocumentDigest(page)).toEqual(revised)
+    await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(revised)
+    await expect
+      .poll(() => getPersistedDocumentDigest(document.fileId))
+      .toEqual(revised)
+    await undo(page)
+    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(created)
+    await redo(page)
+    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(revised)
+    // Reuse the field by reference, without returning/reconstructing native gradients.
+    const { linearFields: _fields, ...extension } = source
+    extension.children = extension.children.map((child) => ({
+      ...child,
+      key: `extension-${child.key}`
+    }))
+    const extended = JSON.parse(
+      await tools.call(
+        'prepare_design',
+        { draft: extension, materialSourceId: revision.materialRevisionId },
+        signal
+      )
+    )
+    const extensionPacket = tools.resolveBatch({
+      batchId: 'extend',
+      actions: [
+        {
+          id: 'extend',
+          name: 'apply_prepared_design',
+          arguments: { artifactId: extended.artifactId },
+          summary: 'Extend accepted material'
+        }
+      ]
+    })
+    const entries = (
+      extensionPacket.actions[0].arguments.design as {
+        entries: { key: string; descriptor: { fills?: unknown[] } }[]
+      }
+    ).entries
+    const updates = packet.actions[0].arguments.updates as {
+      gradient: unknown
+      color: string
+    }[]
+    source.children.forEach((child, index) =>
+      expect(
+        entries.find((entry) => entry.key === `extension-${child.key}`)
+          ?.descriptor.fills?.[0]
+      ).toMatchObject({ gradient: updates[index].gradient })
+    )
+    await execute(extensionPacket)
+    const final = await getCoreDocumentDigest(page)
+    await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(final)
+    await expect
+      .poll(() => getPersistedDocumentDigest(document.fileId))
+      .toEqual(final)
+    await page.reload()
+    await waitForAppReady(page)
+    await connected(page)
+    await expect.poll(() => getCoreDocumentDigest(page)).toEqual(final)
+    expect(await read()).toEqual(after)
+  } finally {
+    await peer.close()
+    if (new URL(page.url()).protocol !== 'chrome-error:')
+      await page.evaluate(async () => {
+        const { testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        type Input = ReturnType<
+          typeof import('../src/ai/runtime-input').createAiRuntimeInput
+        >
+        for (const owner of testRuntimeState.get<Input>('material-runtime')
+          ?.ownedResources ?? [])
+          await owner.dispose()
+      })
+  }
 })

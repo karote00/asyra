@@ -32,7 +32,12 @@ export const createDesignEditAction = (
     additionalProperties: false,
     required: ['elementId'],
     properties: {
-      elementId: { type: 'string', minLength: 1, maxLength: 256 },
+      elementId: {
+        'x-design-element-binding': 'each',
+        type: 'string',
+        minLength: 1,
+        maxLength: 256
+      },
       name: { type: 'string', minLength: 1, maxLength: 160 },
       properties: {
         type: 'object',

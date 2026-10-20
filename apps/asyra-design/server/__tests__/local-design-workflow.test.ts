@@ -1,6 +1,6 @@
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { reviewPlanExample } from '../local-design-review'
-import { invokeLocalTool } from '../local-tool-invocation'
+import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
 import { requireBatchSuccess } from '../batch-exchange'
 import {
   nativeToolInputSchema,
@@ -145,7 +145,8 @@ it('executes the advertised ordered input example without hidden envelope fields
   const result = JSON.parse(
     await workflow.call(definition.name, example, new AbortController().signal)
   )
-  expect(result.status).toBe('complete')
+  expect(result.status).toBe('partial')
+  expect(result.measurementIssues).toHaveLength(1)
   expect(result.parts.map((part: { key: string }) => part.key)).toEqual([
     'body',
     'detail'
@@ -389,7 +390,8 @@ describe('ordered ready parts', () => {
       )
     )
     expect(order).toEqual(['prepare', 'apply', 'prepare', 'apply'])
-    expect(result.status).toBe('complete')
+    expect(result.status).toBe('partial')
+    expect(result.measurementIssues).toHaveLength(1)
     expect(result.parts.map((part: { key: string }) => part.key)).toEqual([
       'base',
       'detail'
@@ -608,7 +610,11 @@ describe('combined design preparation and application', () => {
       operationInputIssue(input, nativeToolInputSchema(definition.inputSchema))
     ).toBeUndefined()
     const result = await invokeLocalTool(workflow, definition, input, signal())
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(false)
+    expect(JSON.parse(result.text).toolOutcome).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
+    })
     expect(execute).toHaveBeenCalledTimes(1)
     const entries = (
       execute.mock.calls[0][0].actions[0].arguments as {
@@ -933,7 +939,11 @@ it('accepts first-write criteria through the advertised combined tool and real r
     { draft, plan: reviewPlanExample, inspection: 'defer' },
     signal()
   )
-  expect(result.success, result.text).toBe(true)
+  expect(result.success, result.text).toBe(false)
+  expect(JSON.parse(result.text).toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
   expect(execute).toHaveBeenCalledOnce()
   // A second submission cannot invent a retrospective acceptance plan.
   const late = await invokeLocalTool(
@@ -962,16 +972,17 @@ it('does not apply invalid criteria and permits the corrected combined request',
   expect(rejected.success).toBe(false)
   expect(rejected.text).toContain('verification')
   expect(execute).not.toHaveBeenCalled()
-  expect(
-    (
-      await invokeLocalTool(
-        workflow,
-        workflow.definitions[0],
-        { draft, plan: reviewPlanExample, inspection: 'defer' },
-        signal()
-      )
-    ).success
-  ).toBe(true)
+  const corrected = await invokeLocalTool(
+    workflow,
+    workflow.definitions[0],
+    { draft, plan: reviewPlanExample, inspection: 'defer' },
+    signal()
+  )
+  expect(JSON.parse(corrected.text)).toMatchObject({
+    toolOutcome: { status: 'partial', settlement: 'completed' },
+    actionResults: [{ result: { status: 'complete' } }]
+  })
+  expect(execute).toHaveBeenCalledOnce()
 })
 it('leaves review state untouched when draft preparation fails', async () => {
   const { workflow, operations, execute } = reviewedWorkflow()
@@ -1084,7 +1095,11 @@ it('draws a ready part without plan generation and records initial criteria afte
     { draft, inspection: 'defer' },
     signal()
   )
-  expect(first.success, first.text).toBe(true)
+  expect(first.success, first.text).toBe(false)
+  expect(JSON.parse(first.text).toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
   expect(execute).toHaveBeenCalledOnce()
   const planned = JSON.parse(
     await operations.call(
@@ -1141,7 +1156,11 @@ it('repairs a rejected public part and consumes its retained source without rese
     },
     signal()
   )
-  expect(repaired.success, repaired.text).toBe(true)
+  expect(repaired.success, repaired.text).toBe(false)
+  expect(JSON.parse(repaired.text).toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
   expect(compile).toHaveBeenCalledOnce()
   expect(execute).toHaveBeenCalledOnce()
   expect(
@@ -1195,7 +1214,11 @@ it('recovers only the failed public part after an acknowledged earlier mutation'
     },
     signal()
   )
-  expect(repaired.success, repaired.text).toBe(true)
+  expect(repaired.success, repaired.text).toBe(false)
+  expect(JSON.parse(repaired.text).toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
   expect(execute).toHaveBeenCalledTimes(2)
   expect(compile).toHaveBeenCalledTimes(3)
   expect(execute.mock.calls[1][0].actions[0].arguments).toMatchObject({
@@ -1453,7 +1476,12 @@ it('preserves writes and exposes failed checks without replaying or losing other
       signal()
     )
   )
-  expect(result.status).toBe('complete')
+  expect(result.status).toBe('partial')
+  expect(result.complete).toBe(false)
+  expect(localToolOutcome(result)).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
   expect(result.parts).toHaveLength(2)
   expect(result.measurementIssues).toEqual([
     expect.objectContaining({
@@ -1620,7 +1648,12 @@ it('preserves the acknowledged write when automatic capture is unavailable', asy
       signal()
     )
   )
-  expect(result.status).toBe('complete')
+  expect(result.status).toBe('partial')
+  expect(result.complete).toBe(false)
+  expect(localToolOutcome(result)).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
   expect(result.parts).toHaveLength(2)
   expect(result.inspectionIssues).toHaveLength(1)
   expect(result.failedPart).toBeUndefined()
@@ -1916,6 +1949,7 @@ it.each(['compact', 'full'] as const)(
         signal()
       )
     )
+    expect(localToolOutcome(result).status).toBe('success')
     expect(result.parts).toHaveLength(2)
     expect(result.checks.counts).toMatchObject({ fail: 1, pass: 1 })
     expect(
@@ -1939,6 +1973,70 @@ it.each(['compact', 'full'] as const)(
     expect(
       events.filter((event) =>
         event.startsWith(AiActionNames.REVIEW_DESIGN + ':')
+      )
+    ).toHaveLength(2)
+  }
+)
+
+it('rejects a top-level material source for ordered parts instead of silently ignoring it', async () => {
+  const { workflow, execute } = setup()
+  await expect(
+    workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [{ key: 'one', draft }],
+        materialSourceId: 'source',
+        inspection: 'defer'
+      },
+      new AbortController().signal
+    )
+  ).rejects.toThrow()
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it.each(['compact', 'full'] as const)(
+  'keeps %s failed capture partial with completed writes and recovers only capture',
+  async (response) => {
+    const options = { captureUnavailable: true }
+    const { workflow, operations, events } = inspectionBoundaryFixture(options)
+    const reply = await invokeLocalTool(
+      workflow,
+      workflow.definitions[0],
+      {
+        parts: [
+          { key: 'first', draft },
+          { key: 'second', draft }
+        ],
+        response
+      },
+      signal()
+    )
+    const result = JSON.parse(reply.text)
+    expect(reply.success).toBe(false)
+    expect(result).toMatchObject({
+      status: 'partial',
+      complete: false,
+      toolOutcome: { status: 'partial', settlement: 'completed' }
+    })
+    expect(result.parts).toHaveLength(2)
+    expect(result.inspectionIssues).toHaveLength(1)
+    options.captureUnavailable = false
+    const recovered = JSON.parse(
+      await operations.call(
+        AiActionNames.INSPECT_DRAWING,
+        { arguments: { elementId: 'part-2' } },
+        signal()
+      )
+    )
+    expect(localToolOutcome(recovered).status).toBe('success')
+    expect(
+      events.filter((event) =>
+        event.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+      )
+    ).toHaveLength(2)
+    expect(
+      events.filter((event) =>
+        event.startsWith(AiActionNames.INSPECT_DRAWING + ':')
       )
     ).toHaveLength(2)
   }

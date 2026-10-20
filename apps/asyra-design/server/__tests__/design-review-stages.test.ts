@@ -2743,8 +2743,8 @@ describe('declared regional acceptance', () => {
     const inspection = requireTestValue(
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
-    expect(declaration.revision).toBe(4)
-    expect(inspection.revision).toBe(11)
+    expect(declaration.revision).toBe(5)
+    expect(inspection.revision).toBe(13)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],
@@ -3327,7 +3327,7 @@ it('replays the saved Taipei101 base judgment without inheriting the whole-build
     }))
   }
   const original = review.readChecks({ includePassed: true })
-  expect(() => review.record(input)).toThrow(/regional.*whole-target/i)
+  expect(() => review.record(input, { validateOnly: true })).not.toThrow()
   expect(review.readChecks({ includePassed: true })).toEqual(original)
   const overview = input.inspectionIds[0]
   const local = {
@@ -3703,9 +3703,7 @@ it('replays recorded crown rejection and explicit local redesign from the delive
   review.record(judgment(1))
   capture(2)
   const before = review.readChecks({ includePassed: true })
-  expect(() => review.record(judgment(3))).toThrow(
-    /mixes whole-target and local/
-  )
+  expect(() => review.record(judgment(3))).toThrow(/scope changed/)
   expect(() => review.record(judgment(4))).toThrow(/current result revision/)
   expect(review.readChecks({ includePassed: true })).toEqual(before)
   const handoff = review.judgmentHandoff(
@@ -3852,7 +3850,7 @@ describe('explicit review binding handoff', () => {
   })
 })
 
-it('replays the latest recorded mixed crown input before binding and preserves unrelated passes through local recovery', () => {
+it('admits recorded multiscale input without changing unrelated passes before local recovery', () => {
   const review = createLocalDesignReview()
   review.record({
     ...plan,
@@ -3910,7 +3908,7 @@ it('replays the latest recorded mixed crown input before binding and preserves u
   const before = review.readChecks({ includePassed: true })
   expect(() =>
     review.bindReview('visual', select(exactReviewBinding.rejected))
-  ).toThrow(/mixes whole-target and local/)
+  ).not.toThrow()
   expect(review.readChecks({ includePassed: true })).toEqual(before)
   const corrected = review.bindReview(
     'visual',

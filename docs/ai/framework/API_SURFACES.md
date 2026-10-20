@@ -353,13 +353,18 @@ Managed property bridges:
 - `setUIProperty<T>(key: string, value: T): void`
 - `getUIPropertySubject<T>(key: string): BehaviorSubject<T> | undefined`
 - `onUIPropertyChange<T>(key: string, callback: (value: T) => void): () => void`
-- `updateElementProperties(updates: readonly ElementPropertyValuesUpdate[], options?: EVENT_OPTIONS): readonly string[]`
+- `updateElementProperties(updates: readonly ElementPropertyValuesUpdate[], options?: EVENT_OPTIONS): PropertyMutationReceipt`
   - replaces complete canonical property field values for one or many elements
     after one resolved Scene target set and one prepared Props mutation batch
-- `patchElementProperties(patches: readonly ElementPropertyPatchUpdate[], options?: EVENT_OPTIONS): readonly string[]`
+- `patchElementProperties(patches: readonly ElementPropertyPatchUpdate[], options?: EVENT_OPTIONS): PropertyMutationReceipt`
   - applies typed ordered record set/remove deltas through the same prepared
-    owner boundary; both plural APIs return only isolated frozen ordered
-    element IDs
+    owner boundary; both plural APIs return immutable `{ acceptedIds, changed }`.
+    IDs are accepted targets, not necessarily modified targets; changed is derived
+    from canonical apply evidence, including bindings and retired property graphs.
+    The same receipt applies to updatePropertyComponents, owner property intents
+    (update/reset/detach/share) and updateSharedPropertySources, with property/source
+    IDs for source operations and element IDs for owner operations. Empty input and
+    accepted operations with no canonical evidence return changed=false.
 - `defineSystemProperty<T>(key: string, defaultValue: T): BehaviorSubject<T>` (primary declaration API)
 - `defineSystemProperty<T>(key: string, defaultValue: T, options?: { runtime?: boolean; silent?: boolean; validate?: (value: unknown) => value is T }): BehaviorSubject<T>`
 - `registerSystemProperty<T>(key: string, defaultValue: T): BehaviorSubject<T>` (compatibility alias of `defineSystemProperty`)

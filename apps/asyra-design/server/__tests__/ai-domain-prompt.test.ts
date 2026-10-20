@@ -59,7 +59,7 @@ describe('stage-owned App guidance', () => {
     expect(general).toContain('work purpose and target')
     expect(general).toContain('The App supplies the observed execution phase')
     expect(general).toContain('Before preparing inputs for a new stage')
-    expect(general).toContain('single tool finishes')
+    expect(general).toContain('commentary persists across tool calls')
     expect(general).toContain('Do not claim pixels are changing')
     expect(general).not.toContain('current action and target')
     expect(general).toContain('Window reflections')
@@ -214,9 +214,9 @@ describe('stage-owned App guidance', () => {
         (tool) => tool.name === 'define_design_criteria'
       )
     )
-    const match = criteria.description.match(/Plan input example: (.+)/)
-    expect(match).not.toBeNull()
-    const example = JSON.parse(requireTestValue(match)[1])
+    const example = (criteria.inputSchema as { examples: unknown[] })
+      .examples[0]
+    expect(criteria.description).not.toContain(JSON.stringify(example))
     expect(operationInputIssue(example, criteria.inputSchema)).toBeUndefined()
     expect(createLocalDesignReview().record(example)).toMatchObject({
       recorded: true

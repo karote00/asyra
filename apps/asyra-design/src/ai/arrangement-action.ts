@@ -32,6 +32,7 @@ export const createArrangementAction = (
       operation: { type: 'string', enum: ['align', 'distribute'] },
       axis: { type: 'string', enum: ['horizontal', 'vertical'] },
       elementIds: {
+        'x-design-element-binding': 'all',
         type: 'array',
         minItems: 2,
         uniqueItems: true,

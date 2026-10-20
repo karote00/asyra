@@ -715,7 +715,10 @@ it('advertises executable examples that prepare once and preserve their authored
       actions,
       createDesignPreparationSession(prepareDesign, compile)
     )
-    expect(tools.definitions[0].description).toContain(JSON.stringify(example))
+    expect(tools.definitions[0].inputSchema.examples).toContainEqual(example)
+    expect(tools.definitions[0].description).not.toContain(
+      JSON.stringify(example)
+    )
     expect(
       operationInputIssue(
         example,
@@ -820,6 +823,7 @@ it('repairs representative live input failures without research, compilation ret
       valid.draft,
       expect.any(String),
       expect.any(Function),
+      expect.any(Function),
       expect.any(Function)
     )
   }
@@ -854,7 +858,7 @@ it('uses retained semantic identities for repeated edits without rebuilding or a
           type: 'object',
           required: ['elementId', 'properties'],
           properties: {
-            elementId: { type: 'string' },
+            elementId: { type: 'string', 'x-design-element-binding': 'each' },
             properties: { type: 'object' }
           }
         }
@@ -1554,4 +1558,116 @@ it('executes the multi-face representation example with common material, native 
   expect(glass[0].descriptor.fills).not.toEqual(glass[1].descriptor.fills)
   session.release([receipt.artifactId])
   expect(() => tools.resolveTargets({ artifactId, targetSetId })).toThrow()
+})
+
+it('hands a material revision to its material-only consumer and reuses the same fields for extension', async () => {
+  const owner = createLocalDesignTools([
+    ...actions,
+    {
+      name: 'apply_prepared_material',
+      description: 'Apply compiled material',
+      inputSchema: { type: 'object' }
+    }
+  ])
+  const materialDefinition = owner.definitions.find(
+    (tool) => tool.name === 'prepare_material_revision'
+  )
+  if (!materialDefinition) throw new Error('Missing material definition')
+  const example = (materialDefinition.inputSchema as { examples: unknown[] })
+    .examples[0]
+  expect(
+    operationInputIssue(example, materialDefinition.inputSchema)
+  ).toBeUndefined()
+  const field = {
+    frame: 'world',
+    start: { x: 0, y: 0, z: 0 },
+    end: { x: 0, y: 0, z: 100 },
+    gradientStops: [
+      { position: 0, color: '#112233', opacity: 1 },
+      { position: 1, color: '#eeeeee', opacity: 1 }
+    ]
+  }
+  const source = {
+    type: 'group',
+    name: 'Surfaces',
+    projection: {
+      azimuth: 30,
+      elevation: 20,
+      scale: 1,
+      originX: 0,
+      originY: 0
+    },
+    linearFields: { glass: field },
+    children: [
+      {
+        type: 'projected-face',
+        key: 'wall',
+        name: 'Wall',
+        materialField: 'glass',
+        vertices: [
+          { x: 0, y: 0, z: 0 },
+          { x: 20, y: 0, z: 0 },
+          { x: 20, y: 0, z: 30 },
+          { x: 0, y: 0, z: 30 }
+        ]
+      }
+    ]
+  }
+  const first = JSON.parse(
+    await owner.call('prepare_design', { draft: source }, signal())
+  )
+  const revision = JSON.parse(
+    await owner.call(
+      'prepare_material_revision',
+      {
+        artifactId: first.artifactId,
+        field: 'glass',
+        definition: {
+          ...field,
+          gradientStops: field.gradientStops.map((stop) => ({
+            ...stop,
+            color: '#336688'
+          }))
+        }
+      },
+      signal()
+    )
+  )
+  expect(revision).toMatchObject({
+    available: true,
+    applied: false,
+    elementCount: 1
+  })
+  const packet = owner.resolveBatch({
+    batchId: 'revise',
+    actions: [
+      {
+        id: 'material',
+        name: 'apply_prepared_material',
+        arguments: { materialRevisionId: revision.materialRevisionId },
+        summary: 'Correct continuous material'
+      }
+    ]
+  })
+  expect(packet.actions[0].arguments).toMatchObject({
+    rootId: expect.any(String),
+    updates: [{ elementId: expect.any(String), gradient: expect.any(Object) }]
+  })
+  expect(() =>
+    owner.resolveBatch(request(revision.materialRevisionId))
+  ).toThrow(/material|creation/i)
+  const { linearFields: _fields, ...next } = source
+  const extension = JSON.parse(
+    await owner.call(
+      'prepare_design',
+      { draft: next, materialSourceId: revision.materialRevisionId },
+      signal()
+    )
+  )
+  expect(extension).toMatchObject({ available: true, applicable: true })
+  expect(owner.resolveRecipe(extension.artifactId).recipe).toMatchObject({
+    linearFields: {
+      glass: { gradientStops: [{ color: '#336688' }, { color: '#336688' }] }
+    }
+  })
 })
