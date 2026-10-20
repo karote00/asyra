@@ -4,6 +4,7 @@ import type {
   ComputedDataPatchChange,
   DataTypes,
   ElementDataFieldChange,
+  ElementPropertyBindingChange,
   EVENT_OPTIONS,
   ElementRawData,
   GroupInstanceTypes,
@@ -100,6 +101,11 @@ export interface UpdateComputedDataEvent {
   }
 }
 
+export interface UpdateElementPropertyBindingsEvent {
+  type: EventTypes
+  payload: { id: string; changes: readonly ElementPropertyBindingChange[] }
+}
+
 export interface UpdateElementDataEvent {
   type: EventTypes
   payload: {
@@ -135,6 +141,7 @@ export type SceneTreeEvents =
   | RemoveElementsEvent
   | MoveElementsEvent
   | ChangeSubtreeEvent
+  | UpdateElementPropertyBindingsEvent
   | UpdateElementDataEvent
   | UpdateComputedDataEvent
   | UpdateComputedDataBatchEvent

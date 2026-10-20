@@ -1,3 +1,4 @@
+import * as coreEvents from '@asyra/core'
 import { toolSemantics, toolResultObject } from '../tool-contract'
 import type { AiProvider } from '@asyra/ai-agent-runtime'
 import { describe, expect, it, vi } from 'vitest'
@@ -103,6 +104,12 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
     childCount: 0
   }))
   const stop = vi.fn()
+  const stopComputed = vi.fn()
+  const observeComputed = vi
+    .spyOn(coreEvents, 'subscribeToEventBatches')
+    .mockReturnValue({ unsubscribe: stopComputed } as ReturnType<
+      typeof coreEvents.subscribeToEventBatches
+    >)
   core.observeSharedDataChannel = vi.fn(() => stop)
   inspectionApis.inspect = vi.fn(() => ({
     available: true,
@@ -131,7 +138,8 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
     expect(
       await validate.execute({ evidence: result.evidence }, context)
     ).toMatchObject({ current: true })
-    expect(core.observeSharedDataChannel).toHaveBeenCalledTimes(2)
+    expect(core.observeSharedDataChannel).toHaveBeenCalledOnce()
+    expect(observeComputed).toHaveBeenCalledOnce()
     expect(inspectionApis.inspect).toHaveBeenCalledOnce()
     await Promise.all(
       (input.ownedResources ?? []).map((resource) => resource.dispose())
@@ -139,7 +147,8 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
     expect(
       await validate.execute({ evidence: result.evidence }, context)
     ).toMatchObject({ current: false })
-    expect(stop).toHaveBeenCalledTimes(2)
+    expect(stop).toHaveBeenCalledOnce()
+    expect(stopComputed).toHaveBeenCalledOnce()
     expect(customDispose).toHaveBeenCalledOnce()
   } finally {
     await Promise.all(
@@ -147,6 +156,7 @@ it('owns one shared inspection lifetime and disposes canonical subscriptions wit
         .slice(1)
         .map((resource) => resource.dispose())
     )
+    observeComputed.mockRestore()
     core.observeSharedDataChannel = originalObserve
     inspectionApis.inspect = originalInspect
     core.getElementMetadata = originalMetadata

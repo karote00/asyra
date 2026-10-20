@@ -342,7 +342,6 @@ it.each([
         targets: (ids) =>
           ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` })),
         metadata: () => ({ lock: false }),
-        owners: () => ['part'],
         update
       })
     ]
@@ -443,7 +442,7 @@ it.each([
         {
           id: 'map',
           tool: 'design_operations.map_retained_fills',
-          revision: 5,
+          revision: 6,
           input: {
             kind: 'object',
             fields: {

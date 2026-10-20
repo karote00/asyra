@@ -24,6 +24,7 @@ import type {
   AddRemoveElementEntry,
   AddRemoveElementsChange,
   AddRemovePropertyChange,
+  UpdateElementPropertyBindingsChange,
   UpdateElementDataChange,
   UpdateElementBatchChange,
   PropsComponentRawData,
@@ -72,6 +73,10 @@ import type {
   PreparedCanonicalElementInsertion,
   CanonicalElementInsertionRequest,
   PreparedCanonicalElementRemoval,
+  ElementPropertyBindingMutationRequest,
+  ElementPropertyBindingRequest,
+  ResolvedElementPropertyBinding,
+  PreparedElementPropertyBindingMutation,
   PreparedElementDataMutation,
   ElementDataMutationRequest,
   PreparedElementInsertion,
@@ -237,6 +242,16 @@ export interface LocalComputedDataPatchUpdate {
   readonly patch: ComputedDataPatch
 }
 
+interface PreparedElementPropertyBindingArtifact {
+  readonly kind: 'element-property-binding-mutation'
+  readonly entries: readonly {
+    readonly element: ElementInstanceTypes
+    readonly request: ElementPropertyBindingMutationRequest
+    readonly registration: ElementInsertionRegistrationContract
+  }[]
+  readonly relationIndexUpdates: readonly ElementPropertyRelationIndexUpdate[]
+}
+
 interface PreparedElementDataMutationEntry {
   readonly element: ElementInstanceTypes
   readonly before: Readonly<Pick<ElementRawData, 'name' | 'visible' | 'lock'>>
@@ -322,6 +337,7 @@ interface ElementPropertyRelationIndexUpdate {
 }
 
 type PreparedElementMutationArtifact =
+  | PreparedElementPropertyBindingArtifact
   | PreparedElementDataMutationArtifact
   | PreparedElementInsertionArtifact
   | PreparedElementRemovalArtifact
@@ -846,13 +862,19 @@ class SceneTree {
       ])
     )
     return Object.freeze(
-      [...this.elementPropertyRelationsByComponentId]
-        .filter(
-          ([componentId, currentRelations]) =>
-            (relationsAfterByComponentId.get(componentId) ?? currentRelations)
-              .length > 0
-        )
-        .map(([componentId]) => componentId)
+      [
+        ...new Set([
+          ...this.elementPropertyRelationsByComponentId.keys(),
+          ...relationsAfterByComponentId.keys()
+        ])
+      ].filter(
+        (componentId) =>
+          (
+            relationsAfterByComponentId.get(componentId) ??
+            this.elementPropertyRelationsByComponentId.get(componentId) ??
+            []
+          ).length > 0
+      )
     )
   }
 
@@ -991,9 +1013,13 @@ class SceneTree {
       readonly removeRecordIds: string[]
       readonly removeRecordIdSet: Set<string>
     }
-    const targetsByPropertyId = new Map<string, PropertyTargetAccumulator>()
-    const getTarget = (propertyId: string): PropertyTargetAccumulator => {
-      const existing = targetsByPropertyId.get(propertyId)
+    const targetsByOwner = new Map<string, PropertyTargetAccumulator>()
+    const getTarget = (
+      relation: ElementPropertyRelation
+    ): PropertyTargetAccumulator => {
+      const propertyId = relation.componentId
+      const ownerKey = getElementPropertyRelationTupleKey(relation)
+      const existing = targetsByOwner.get(ownerKey)
       if (existing) {
         return existing
       }
@@ -1004,7 +1030,7 @@ class SceneTree {
         removeRecordIds: [],
         removeRecordIdSet: new Set()
       }
-      targetsByPropertyId.set(propertyId, target)
+      targetsByOwner.set(ownerKey, target)
       return target
     }
     const addRelation = (relation: ElementPropertyRelation): void => {
@@ -1138,9 +1164,9 @@ class SceneTree {
         )
       }
       Object.entries(sourceValues).forEach(([key, value]) => {
-        const { propertyId, relation } = resolveTarget(key)
+        const { relation } = resolveTarget(key)
         addRelation(relation)
-        mergeValue(getTarget(propertyId), key, value)
+        mergeValue(getTarget(relation), key, value)
       })
       if (request.kind === 'records') {
         if (!Array.isArray(request.records)) {
@@ -1179,7 +1205,7 @@ class SceneTree {
             recordPatch.key
           )
           addRelation(relation)
-          const target = getTarget(propertyId)
+          const target = getTarget(relation)
           if (
             target.recordKey !== undefined &&
             target.recordKey !== definition.name
@@ -1218,7 +1244,7 @@ class SceneTree {
       }
     })
 
-    const mutations = [...targetsByPropertyId.values()].map((target) => {
+    const mutations = [...targetsByOwner.values()].map((target) => {
       if (target.recordKey === undefined) {
         return {
           kind: 'values' as const,
@@ -1251,6 +1277,226 @@ class SceneTree {
       relations,
       mutations
     })
+  }
+
+  resolveElementPropertyBindings(
+    requests: readonly ElementPropertyBindingRequest[]
+  ): readonly ResolvedElementPropertyBinding[] {
+    if (!Array.isArray(requests))
+      throw new Error('[SceneTree] Expected a root binding request batch')
+    return cloneAndFreezeSceneValue(
+      requests.map((request) => {
+        if (
+          !isRecord(request) ||
+          typeof request.elementId !== 'string' ||
+          typeof request.propertyName !== 'string'
+        )
+          throw new Error('[SceneTree] Invalid root binding request')
+        const element = this.getElementById(request.elementId)
+        const registration =
+          element && componentRegistry.get(element.get('type'))
+        if (!element || !registration)
+          throw new Error('[SceneTree] Missing registered element')
+        const componentId = element.props.getPropId(request.propertyName)
+        if (
+          !componentId ||
+          (request.expectedRootId !== undefined &&
+            request.expectedRootId !== componentId)
+        )
+          throw new Error('[SceneTree] Missing or stale element property root')
+        const contract = captureElementInsertionRegistrationContract(
+          registration,
+          element.get('type')
+        )
+        const definition = contract.effectiveDefinitions.find(
+          (definition) => definition.name === request.propertyName
+        )
+        if (
+          !definition ||
+          this.propsManagerOwner.getPropertyById(componentId)?.get('type') !==
+            definition.type
+        )
+          throw new Error('[SceneTree] Invalid registered property binding')
+        const relations = this.getElementPropertyRelations(componentId)
+        const relation = relations.find(
+          (relation) =>
+            relation.ownerElementId === request.elementId &&
+            relation.ownerPropertyName === request.propertyName
+        )
+        if (!relation)
+          throw new Error('[SceneTree] Missing canonical property relation')
+        return { relation, shared: relations.length > 1 }
+      })
+    )
+  }
+
+  prepareElementPropertyBindingMutation(
+    requests: readonly ElementPropertyBindingMutationRequest[]
+  ): PreparedElementPropertyBindingMutation {
+    if (!Array.isArray(requests)) {
+      throw new Error(
+        '[SceneTree] Property binding mutation requires an exact target batch'
+      )
+    }
+    const keys = new Set<string>()
+    const entries: PreparedElementPropertyBindingArtifact['entries'][number][] =
+      []
+    const changesByElement = new Map<
+      string,
+      UpdateElementPropertyBindingsChange['changes'][number][]
+    >()
+    const relationsBefore = new Map<
+      string,
+      readonly ElementPropertyRelation[]
+    >()
+    const relationsAfter = new Map<string, ElementPropertyRelation[]>()
+    const mutableRelations = (id: string) => {
+      let relations = relationsAfter.get(id)
+      if (!relations) {
+        const current = this.getElementPropertyRelations(id)
+        relationsBefore.set(id, current)
+        relations = [...current]
+        relationsAfter.set(id, relations)
+      }
+      return relations
+    }
+    requests.forEach((request: ElementPropertyBindingMutationRequest) => {
+      if (
+        !isRecord(request) ||
+        [
+          request.elementId,
+          request.propertyName,
+          request.propertyType,
+          request.before,
+          request.after
+        ].some((value) => typeof value !== 'string' || value.length === 0)
+      ) {
+        throw new Error('[SceneTree] Invalid property binding target')
+      }
+      const tuple = JSON.stringify([request.elementId, request.propertyName])
+      if (keys.has(tuple))
+        throw new Error('[SceneTree] Duplicate property binding target')
+      keys.add(tuple)
+      const element = this.getElementById(request.elementId)
+      const registration = element && componentRegistry.get(element.get('type'))
+      if (
+        !element ||
+        !registration ||
+        element.props.getPropId(request.propertyName) !== request.before
+      ) {
+        throw new Error(
+          `[SceneTree] Missing or stale property binding "${request.elementId}.${request.propertyName}"`
+        )
+      }
+      const contract = captureElementInsertionRegistrationContract(
+        registration,
+        element.get('type')
+      )
+      const definition = contract.effectiveDefinitions.find(
+        (item) => item.name === request.propertyName
+      )
+      const current = this.propsManagerOwner.getPropertyById(request.before)
+      const next = this.propsManagerOwner.getPropertyById(request.after)
+      if (
+        !definition ||
+        definition.type !== request.propertyType ||
+        current?.get('type') !== definition.type ||
+        (next && next.get('type') !== definition.type)
+      ) {
+        throw new Error(
+          '[SceneTree] Property binding must match its registered root type'
+        )
+      }
+      if (request.before === request.after) return
+      const beforeRelations = mutableRelations(request.before)
+      const index = beforeRelations.findIndex(
+        (relation) =>
+          relation.ownerElementId === request.elementId &&
+          relation.ownerPropertyName === request.propertyName
+      )
+      if (index < 0)
+        throw new Error('[SceneTree] Missing canonical property relation')
+      const [relation] = beforeRelations.splice(index, 1)
+      mutableRelations(request.after).push({
+        ...relation,
+        componentId: request.after
+      })
+      const changes = changesByElement.get(request.elementId) ?? []
+      changes.push({
+        key: request.propertyName,
+        before: request.before,
+        after: request.after
+      })
+      changesByElement.set(request.elementId, changes)
+      entries.push({
+        element,
+        request: cloneAndFreezeSceneValue(request),
+        registration: contract
+      })
+    })
+    const evidence = [...changesByElement].map(([id, changes]) => ({
+      action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+      eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+      id,
+      changes
+    }))
+    const relationIndexUpdates = [...relationsAfter].map(
+      ([componentId, after]) => ({
+        componentId,
+        relationsBefore:
+          relationsBefore.get(componentId) ?? EMPTY_ELEMENT_PROPERTY_RELATIONS,
+        relationsAfter: freezeElementPropertyRelations(after)
+      })
+    )
+    const prepared = cloneAndFreezeSceneValue({
+      kind: 'prepared-element-property-binding-mutation',
+      orphanRootPropertyIds: relationIndexUpdates
+        .filter(
+          (update) =>
+            update.relationsBefore.length > 0 &&
+            update.relationsAfter.length === 0
+        )
+        .map((update) => update.componentId),
+      retainedRootPropertyIds:
+        this.collectRootPropertyIdsAfterRelationUpdates(relationIndexUpdates),
+      orderedElementIds: [...changesByElement.keys()],
+      evidence
+    }) as PreparedElementPropertyBindingMutation
+    this.preparedElementMutationArtifacts.set(prepared, {
+      kind: 'element-property-binding-mutation',
+      entries,
+      relationIndexUpdates
+    })
+    return prepared
+  }
+
+  prepareCanonicalElementPropertyBindingMutation(
+    changes: readonly UpdateElementPropertyBindingsChange[]
+  ): PreparedElementPropertyBindingMutation {
+    if (!Array.isArray(changes))
+      throw new Error('[SceneTree] Expected canonical binding evidence')
+    return this.prepareElementPropertyBindingMutation(
+      changes.flatMap((change: UpdateElementPropertyBindingsChange) => {
+        if (
+          change.action !==
+            SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS ||
+          change.eventName !== EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS ||
+          !Array.isArray(change.changes)
+        ) {
+          throw new Error('[SceneTree] Invalid canonical binding evidence')
+        }
+        return change.changes.map(({ key, before, after }) => {
+          const current = this.propsManagerOwner.getPropertyById(before)
+          return {
+            elementId: change.id,
+            propertyName: key,
+            before,
+            after,
+            propertyType: current?.get('type') ?? ''
+          }
+        })
+      })
+    )
   }
 
   prepareElementDataMutation(
@@ -2390,7 +2636,10 @@ class SceneTree {
     const events = Object.freeze(
       preparedMutation.evidence.map((payload) => {
         let orderedIds = preparedMutation.orderedElementIds
-        if (preparedMutation.kind === 'prepared-element-data-mutation') {
+        if (
+          preparedMutation.kind === 'prepared-element-data-mutation' ||
+          preparedMutation.kind === 'prepared-element-property-binding-mutation'
+        ) {
           orderedIds = Object.freeze([(payload as UpdateElementDataChange).id])
         } else if (isElementBatchChange(payload)) {
           orderedIds = Object.freeze(payload.entries.map(({ data }) => data.id))
@@ -2414,6 +2663,104 @@ class SceneTree {
         })
       })
     ) satisfies readonly UpdateTransactionEvent[]
+
+    if (artifact.kind === 'element-property-binding-mutation') {
+      artifact.entries.forEach(({ element, request, registration }) => {
+        if (
+          this.getElementById(request.elementId) !== element ||
+          element.props.getPropId(request.propertyName) !== request.before ||
+          !isElementInsertionRegistrationContractCurrent(
+            registration,
+            element.get('type')
+          ) ||
+          this.propsManagerOwner.getPropertyById(request.after)?.get('type') !==
+            request.propertyType
+        ) {
+          throw new Error(
+            `[SceneTree] Cannot apply missing or stale property binding "${request.elementId}.${request.propertyName}"`
+          )
+        }
+      })
+      artifact.relationIndexUpdates.forEach(
+        ({ componentId, relationsBefore }) => {
+          if (
+            this.getElementPropertyRelations(componentId) !== relationsBefore
+          ) {
+            throw new Error(
+              '[SceneTree] Cannot apply stale property binding relations'
+            )
+          }
+        }
+      )
+      const restorationEvents = getTransactionReplayMode()
+        ? preparedMutation.evidence.map((change) => {
+            const binding = change as UpdateElementPropertyBindingsChange
+            return {
+              type: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+              payload: {
+                id: binding.id,
+                changes: binding.changes.map(({ key, before, after }) => ({
+                  key,
+                  before: after,
+                  after: before
+                }))
+              }
+            }
+          })
+        : undefined
+      artifact.entries.forEach(({ element, request }) => {
+        element.props.assignCanonicalPropertyBinding(
+          request.propertyName,
+          request.after
+        )
+      })
+      this.applyElementPropertyRelationIndexUpdates(
+        artifact.relationIndexUpdates,
+        'forward'
+      )
+      try {
+        this.handoffSceneTreeChanges(events, () =>
+          transactionOwner.updateTransactionBatch(events)
+        )
+        acknowledgeTransactionReplayApplied(restorationEvents)
+      } catch (error) {
+        if (reportsAcceptedCanonicalBatchHandoff(error)) {
+          acknowledgeTransactionReplayApplied(restorationEvents)
+        } else {
+          artifact.entries.forEach(({ element, request }) => {
+            element.props.assignCanonicalPropertyBinding(
+              request.propertyName,
+              request.before
+            )
+          })
+          this.applyElementPropertyRelationIndexUpdates(
+            artifact.relationIndexUpdates,
+            'reverse'
+          )
+        }
+        throw error
+      }
+    }
+
+    if (artifact.kind === 'element-property-binding-mutation') {
+      const valuesByElement = new Map<string, Record<string, DataTypes>>()
+      artifact.entries.forEach(({ request }) => {
+        const values = valuesByElement.get(request.elementId) ?? {}
+        const property = this.propsManagerOwner.getPropertyById(request.after)
+        if (!property)
+          throw new Error(
+            '[SceneTree] Accepted binding lost its active property before projection'
+          )
+        Object.assign(values, property.getValue())
+        valuesByElement.set(request.elementId, values)
+      })
+      this.updateLocalComputedData(
+        [...valuesByElement].map(([elementId, values]) => ({
+          elementId,
+          values
+        }))
+      )
+    }
 
     if (artifact.kind === 'element-data-mutation') {
       artifact.entries.forEach(({ element, before }) => {

@@ -1,10 +1,14 @@
-import type { PropertyMutation } from '@asyra/props-manager'
+import type {
+  PropertyValuesMutation,
+  PropertyRecordsMutation
+} from '@asyra/props-manager'
 import type {
   AddRemoveElementEntry,
   ElementRawData,
   ElementPropertyRelation,
   SceneTreeChange,
   SubtreeChange,
+  UpdateElementPropertyBindingsChange,
   UpdateElementDataChange
 } from '@asyra/utils'
 
@@ -34,7 +38,36 @@ export interface ResolvedElementPropertyTargets {
   readonly kind: 'resolved-element-property-targets'
   readonly orderedElementIds: readonly string[]
   readonly relations: readonly ElementPropertyRelation[]
-  readonly mutations: readonly PropertyMutation[]
+  readonly mutations: readonly (
+    PropertyValuesMutation | PropertyRecordsMutation
+  )[]
+}
+
+export interface ElementPropertyBindingRequest {
+  readonly elementId: string
+  readonly propertyName: string
+  readonly expectedRootId?: string
+}
+
+export interface ResolvedElementPropertyBinding {
+  readonly relation: ElementPropertyRelation
+  readonly shared: boolean
+}
+
+export interface ElementPropertyBindingMutationRequest {
+  readonly elementId: string
+  readonly propertyName: string
+  readonly propertyType: string
+  readonly before: string
+  readonly after: string
+}
+
+export interface PreparedElementPropertyBindingMutation {
+  readonly kind: 'prepared-element-property-binding-mutation'
+  readonly orphanRootPropertyIds: readonly string[]
+  readonly retainedRootPropertyIds: readonly string[]
+  readonly orderedElementIds: readonly string[]
+  readonly evidence: readonly UpdateElementPropertyBindingsChange[]
 }
 
 export interface ElementDataValues {
@@ -116,6 +149,7 @@ export interface PreparedSubtreesRemoval extends ElementRemovalRelationEvidence 
 }
 
 export type PreparedElementMutation =
+  | PreparedElementPropertyBindingMutation
   | PreparedElementDataMutation
   | PreparedElementInsertion
   | PreparedCanonicalElementInsertion

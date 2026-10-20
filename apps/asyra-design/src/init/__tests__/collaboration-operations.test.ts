@@ -825,20 +825,8 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        records: [
-          {
-            propertyId: 'points-root',
-            key: 'points',
-            set: {
-              'point-b': {
-                id: 'point-b',
-                type: 'vectorPoint',
-                x: 20,
-                y: 30
-              }
-            }
-          }
-        ],
+        creations: pointAddition.payload.data,
+        removals: [],
         updates: []
       },
       {
@@ -853,7 +841,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     ])
   })
 
-  it('preserves exact property record removals before updates in one Core request', () => {
+  it('preserves exact relationship updates before record retirement in one Core request', () => {
     const harness = createHarness()
     const propertyBatchId = 'batch-vector-topology-removal'
     const pointRemoval = {
@@ -899,20 +887,14 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        records: [
-          {
-            propertyId: 'points-root',
-            key: 'points',
-            remove: ['point-b']
-          }
-        ],
-        updates: []
-      },
-      {
-        kind: 'property-components',
         updates: [
           { propertyId: 'points-root', values: { points: ['point-a'] } }
         ]
+      },
+      {
+        kind: 'property-components',
+        removals: pointRemoval.payload.data,
+        updates: []
       }
     ])
   })
@@ -991,21 +973,8 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        records: [
-          {
-            propertyId: 'segments-root',
-            key: 'segments',
-            set: {
-              'segment-new': {
-                id: 'segment-new',
-                type: 'vectorSegment',
-                startId: 'point-a',
-                endId: 'point-b'
-              }
-            },
-            remove: ['segment-old']
-          }
-        ],
+        creations: segmentAddition.payload.data,
+        removals: [],
         updates: []
       },
       {
@@ -1013,6 +982,11 @@ describe('Asyra Design app-owned collaboration processing', () => {
         updates: [
           { propertyId: 'segments-root', values: { segments: ['segment-new'] } }
         ]
+      },
+      {
+        kind: 'property-components',
+        removals: segmentRemoval.payload.data,
+        updates: []
       }
     ])
   })
@@ -1185,7 +1159,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     ).toBe(true)
     expect(
       harness.applyCanonicalChanges.mock.calls[0]?.[0].map(({ kind }) => kind)
-    ).toEqual(['hierarchy-moves', 'element-removal'])
+    ).toEqual(['hierarchy-moves', 'element-removal', 'property-components'])
   })
 
   it('organizes each source publication topology exactly once', () => {
@@ -1334,16 +1308,16 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'undo'
     )
     expect(() => decodeDocumentPublication(source)).toThrow(
-      /unsupported canonical/
+      /unsupported canonical|invalid property-component/
     )
     const harness = createHarness()
     expect(() => harness.processPublication(source)).toThrow(
-      /unsupported canonical/
+      /unsupported canonical|invalid property-component/
     )
     expect(harness.applyCanonicalChanges).not.toHaveBeenCalled()
   })
 
-  it('keeps a restore without new properties valid and refuses a split restore', () => {
+  it('preserves exact property creation across semantic slices before a Scene restore', async () => {
     const source = publication(restoreDeliveries(), 'restore-boundary', 'undo')
     const propertyBatch = source.slices[0]?.batches[0]
     const sceneBatch = source.slices[0]?.batches[1]
@@ -1367,10 +1341,18 @@ describe('Asyra Design app-owned collaboration processing', () => {
         { sliceId: 'scene', orderedIds: [], batches: [sceneBatch] }
       ]
     }
-    expect(() => decodeDocumentPublication(split)).toThrow(/unsupported/)
+    expect(decodeDocumentPublication(split)).toMatchObject([
+      {
+        kind: 'property-components',
+        creations: [{ id: 'position-group-a' }],
+        updates: [],
+        removals: []
+      },
+      { kind: 'subtree-restore', propsSnapshot: { components: [] } }
+    ])
     const harness = createHarness()
-    expect(() => harness.processPublication(split)).toThrow(/unsupported/)
-    expect(harness.applyCanonicalChanges).not.toHaveBeenCalled()
+    expect(await harness.processPublication(split)).toBe(true)
+    expect(harness.applyCanonicalChanges).toHaveBeenCalledTimes(2)
   })
 
   it('classifies one restore envelope as one Core canonical change', () => {
@@ -1505,21 +1487,22 @@ describe('Asyra Design app-owned collaboration processing', () => {
 
     expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
-    expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
-      expect.objectContaining({
-        kind: 'element-removal',
-        removals: [...elementIds].reverse().map((elementId) =>
-          expect.objectContaining({
-            data: expect.objectContaining({ id: elementId })
-          })
-        )
-      })
-    ])
+    const changes = harness.applyCanonicalChanges.mock.calls[0]?.[0]
+    expect(changes?.[0]).toMatchObject({
+      kind: 'element-removal',
+      removals: [...elementIds].reverse().map((id) => ({ data: { id } }))
+    })
+    expect(changes?.slice(1)).toEqual(
+      [...elementIds].reverse().map((id) => ({
+        kind: 'property-components',
+        updates: [],
+        removals: [{ id: `position-${id}`, type: 'position' }]
+      }))
+    )
   })
 
-  it('coalesces adjacent removal batches from one publication into one canonical request', () => {
+  it('preserves property retirement barriers between adjacent Scene removals in one request', () => {
     const harness = createHarness()
-
     expect(
       harness.processPublication(
         publication(
@@ -1532,27 +1515,35 @@ describe('Asyra Design app-owned collaboration processing', () => {
         )
       )
     ).toBe(true)
-
     expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
-    expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
-      {
-        kind: 'element-removal',
-        removals: [
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-b' })
-          }),
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-a' })
-          }),
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-d' })
-          }),
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-c' })
-          })
-        ]
-      }
+    const changes = harness.applyCanonicalChanges.mock.calls[0]?.[0]
+    expect(changes?.map(({ kind }) => kind)).toEqual([
+      'element-removal',
+      'property-components',
+      'property-components',
+      'element-removal',
+      'property-components',
+      'property-components'
+    ])
+    expect(
+      changes?.flatMap((change) =>
+        change.kind === 'element-removal'
+          ? change.removals.map(({ data }) => data.id)
+          : []
+      )
+    ).toEqual(['rect-b', 'rect-a', 'rect-d', 'rect-c'])
+    expect(
+      changes?.flatMap((change) =>
+        change.kind === 'property-components'
+          ? (change.removals?.map(({ id }) => id) ?? [])
+          : []
+      )
+    ).toEqual([
+      'position-rect-b',
+      'position-rect-a',
+      'position-rect-d',
+      'position-rect-c'
     ])
   })
 
@@ -1582,7 +1573,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
       }))
     ).toEqual([
       { ids: ['rect-a'], kind: 'element-removal' },
-      { ids: ['group-a'], kind: 'element-removal' }
+      { ids: [], kind: 'property-components' },
+      { ids: ['group-a'], kind: 'element-removal' },
+      { ids: [], kind: 'property-components' }
     ])
   })
 

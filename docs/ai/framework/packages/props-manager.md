@@ -199,3 +199,49 @@ Ordinary `load`, `dispose` and `reset` retain their compatibility semantics.
 - Registration removal is rejected while active or replay-retained instances
   use the type; `unregister -> define` leaves no stale schema, constructor, or
   relationship index entry.
+
+## Shared Property Layers - Admitted Contract
+
+Implementation is governed by the active framework-first section of
+`docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md`; admission is
+not a claim that all consumers already implement it.
+
+A declaratively registered property can be independent, an explicitly marked
+`sharedSource`, or source-backed through `PropertyInheritance`:
+
+```ts
+interface PropertyInheritance {
+  sourceId: string
+  overrides: Record<string, unknown>
+  childBindings: Record<string, string>
+}
+```
+
+A source-backed record serializes `id`, its registered `type`, and `inheritance`.
+It does not serialize inherited effective values. An independent source keeps
+ordinary registered fields and `sharedSource: true`. Sources cannot inherit;
+chains, type mismatch, missing references, unknown fields and invalid effective
+values reject before mutation. Capabilities derive from declarative registration,
+not an App type list. Opaque constructor registrations remain valid independent
+components but do not acquire implicit inheritance support.
+
+Local field presence is canonical even when its value equals the source. Reset
+removes that presence. Detach materializes effective values and owned children
+once, changes only the selected binding, and retires its source dependency.
+Child bindings resolve source membership by identity; a leaf override does not
+copy the entire collection or freeze future source membership. Existing property
+indexes own both source and child dependency edges. Indexed propagation and
+unaffected-owner work counts are formal acceptance criteria.
+
+Canonical deltas distinguish field presence, child links and source intent.
+Undo, compensation and remote replay preserve unrelated fields instead of
+replacing an entire override map. Load validates complete structural references
+before replacement; existing scalar load-fallback policy does not authorize
+flattening an invalid inheritance graph. Public App callers use Core coordination.
+
+
+Sharing requires an independent same-type source. A target with explicit overrides
+or child bindings must be reset or detached before rebinding; re-sharing cannot
+silently discard its local intent. Independent targets may explicitly choose a new
+source. Property target reads expose logical child slots separately from resolved
+components, so first local isolation does not retarget a subsequent gesture frame.

@@ -56,12 +56,10 @@ export const createRetainedFillAction = (
   apis: {
     metadata: (id: string) => { lock?: boolean; parentId?: string } | undefined
     targets: typeof fillApis.getFillTargetsAtIndex
-    owners: (propertyIds: string[]) => string[]
     update: typeof fillApis.updateFillFieldsBatch
   } = {
     metadata: (id: string) => core.getElementMetadata(id),
     targets: fillApis.getFillTargetsAtIndex,
-    owners: (ids) => core.getPropertyOwnerElementIds(ids),
     update: fillApis.updateFillFieldsBatch
   }
 ): AiActionDefinition<{ mappings: FillMapping[] }> => ({
@@ -89,7 +87,7 @@ export const createRetainedFillAction = (
       message: { type: 'string' }
     })
   }),
-  revision: 5,
+  revision: 6,
   delivery: {
     path: '/modelResult',
     outputSchema: mappingModelSchema,
@@ -98,7 +96,7 @@ export const createRetainedFillAction = (
   composition: 'allowed',
   name: AiActionNames.MAP_RETAINED_FILLS,
   description:
-    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Shared fills with conflicting new values reject; detach them explicitly and requery when independent colors are intended.',
+    'Apply position-dependent fill colors from a query or retained read_design_context snapshots without exporting rows or resending IDs. Prefer query={scope:ids,elementIds} or query={scope:region,bounds,filter}; required columns are read and consumed internally before one atomic write. For existing snapshots pass snapshotId and its leaseId; caller-owned leases remain retained until explicit release or request settlement. Internally acquired query leases are released by this action. Request x or y columns with delivery=reference only when that result has another consumer. Coordinates are parent-local; choose an explicit domain in that space. Map normalized positions through ordered color stops. All mappings must use the same fill index and disjoint targets; one plural canonical fill call preserves shared-property validation and Undo. Mapped fields become selected-owner local overrides. Different owners may use different colors on the same shared source without detaching; unchanged source users remain unaffected.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -329,28 +327,17 @@ export const createRetainedFillAction = (
             consumedLeases.delete(leaseId)
           }
         }
-        // Mapping supplies simultaneous values; reject conflicting shared identities before the canonical write.
         const targets = apis.targets(ids, index)
-        const sharedValues = new Map<string, FillPatch>()
-        const updates = targets.map((target, offset) => {
-          const patch = patches[offset]
-          const prior = sharedValues.get(target.fillId)
-          if (
-            prior &&
-            (prior.color !== patch.color || prior.opacity !== patch.opacity)
-          )
-            throw new Error(
-              'Conflicting mapped values for a shared fill; detach explicitly and read again.'
-            )
-          sharedValues.set(target.fillId, patch)
-          return { ...target, patch }
-        })
-        apis.update(updates)
-        const affected = new Set(apis.owners([...sharedValues.keys()]))
+        apis.update(
+          targets.map((target, offset) => ({
+            ...target,
+            patch: patches[offset]
+          }))
+        )
         const receipt = {
           mutationScope: {
-            complete: ids.every((id) => affected.has(id)),
-            elementIds: [...affected],
+            complete: true,
+            elementIds: ids,
             removedElementIds: []
           },
           status: 'complete',

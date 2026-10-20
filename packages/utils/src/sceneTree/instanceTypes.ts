@@ -33,6 +33,7 @@ export interface IProps {
   save(): PropsRawData
   updateData(key: string, data: unknown, options?: EvnetOptions): void
   cleanup(options?: EvnetOptions): void
+  assignCanonicalPropertyBinding(name: string, id: string): void
   getPropId(name: string): string | undefined
 }
 

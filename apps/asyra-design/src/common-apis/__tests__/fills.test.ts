@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  readElementPropertyTargets: vi.fn(),
+  shareElementPropertyTargets: vi.fn(),
+  detachElementPropertyTargets: vi.fn(),
   commitPropertyChanges: vi.fn(),
   getElementById: vi.fn(),
   patchElementProperties: vi.fn(),
@@ -11,6 +14,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../contexts', () => ({
   default: {
+    readElementPropertyTargets: mocks.readElementPropertyTargets,
+    shareElementPropertyTargets: mocks.shareElementPropertyTargets,
+    detachElementPropertyTargets: mocks.detachElementPropertyTargets,
     commitPropertyChanges: mocks.commitPropertyChanges,
     getElementComputedData: (elementId: string) =>
       mocks.getElementById(elementId)?.getAllComputedData(),
@@ -392,6 +398,33 @@ it('rejects misplaced Fill fields before applying any prefix of a batch', () => 
 describe('Fill property reuse', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.readElementPropertyTargets.mockImplementation((targets) =>
+      targets.map((target) =>
+        target.path.length
+          ? {
+              propertyId: `fill-${target.elementId}`,
+              mode: 'independent'
+            }
+          : {
+              propertyId: `root-${target.elementId}`,
+              children:
+                target.elementId === 'missing'
+                  ? []
+                  : [
+                      {
+                        key: 'fills',
+                        childId: `slot-${target.elementId}`,
+                        propertyId: `fill-${target.elementId}`
+                      },
+                      {
+                        key: 'fills',
+                        childId: `second-${target.elementId}`,
+                        propertyId: `second-${target.elementId}`
+                      }
+                    ]
+            }
+      )
+    )
     mocks.getElementById.mockImplementation((elementId: string) => ({
       getAllComputedData: () => ({
         fills: [
@@ -458,16 +491,39 @@ describe('Fill property reuse', () => {
     expect(mocks.getElementById).not.toHaveBeenCalled()
     expect(mocks.updateElementProperties).not.toHaveBeenCalled()
   })
-  it('links only the chosen child Fill property, leaving other rows intact', () => {
+  it('shares canonical logical slots rather than replacing effective membership IDs', () => {
     fillApis.shareFillAtIndex('a', ['b', 'c'], 0)
-    expect(mocks.updateElementProperties).toHaveBeenCalledWith(
-      [
-        { elementId: 'b', values: { fills: ['fill-a', 'second-b'] } },
-        { elementId: 'c', values: { fills: ['fill-a', 'second-c'] } }
-      ],
+    expect(mocks.shareElementPropertyTargets).toHaveBeenCalledWith(
+      ['b', 'c'].map((elementId) => ({
+        target: {
+          elementId,
+          propertyName: 'fills',
+          path: [{ key: 'fills', childId: `slot-${elementId}` }],
+          expectedRootId: `root-${elementId}`,
+          expectedPropertyId: `fill-${elementId}`
+        },
+        sourceId: 'fill-a'
+      })),
       undefined
     )
+    expect(mocks.updateElementProperties).not.toHaveBeenCalled()
     expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  })
+  it('rejects a source-backed row without silently dropping its overrides', () => {
+    const read = mocks.readElementPropertyTargets.getMockImplementation()
+    if (!read) throw new Error('Missing target read fixture')
+    mocks.readElementPropertyTargets.mockImplementation((targets) =>
+      read(targets).map((view, i) =>
+        targets[i].path.length
+          ? { ...view, mode: 'source-backed', sourceId: 'other-source' }
+          : view
+      )
+    )
+    expect(() => fillApis.shareFillAtIndex('a', ['b'], 0)).toThrow(
+      /independent source/
+    )
+    expect(mocks.shareElementPropertyTargets).not.toHaveBeenCalled()
+    expect(mocks.runTransaction).not.toHaveBeenCalled()
   })
   it('rejects a missing target row before linking any earlier target', () => {
     mocks.getElementById.mockImplementation((elementId: string) => ({
@@ -480,14 +536,21 @@ describe('Fill property reuse', () => {
     )
     expect(mocks.updateElementProperties).not.toHaveBeenCalled()
   })
-  it('detaches into a new child ID with current values and preserves other references', () => {
+  it('detaches through the canonical owner, preserving logical slots and other rows', () => {
     fillApis.detachFillsAtIndex(['a'], 0)
-    const change = mocks.updateElementProperties.mock.calls[0][0][0]
-    const newId = change.values.fills[0]
-    expect(newId).not.toBe('fill-a')
-    expect(
-      mocks.patchElementProperties.mock.calls[0][0][0].records[0].set[newId]
-    ).toMatchObject({ color: '#123456', opacity: 0.4 })
-    expect(change.values.fills[1]).toBe('second-a')
+    expect(mocks.detachElementPropertyTargets).toHaveBeenCalledWith(
+      [
+        {
+          elementId: 'a',
+          propertyName: 'fills',
+          path: [{ key: 'fills', childId: 'slot-a' }],
+          expectedRootId: 'root-a',
+          expectedPropertyId: 'fill-a'
+        }
+      ],
+      undefined
+    )
+    expect(mocks.updateElementProperties).not.toHaveBeenCalled()
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
   })
 })

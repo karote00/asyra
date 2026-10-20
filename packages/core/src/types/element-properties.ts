@@ -1,3 +1,4 @@
+import type { ElementPropertyIntentAPIs } from './property-intents.js'
 import type { EVENT_OPTIONS } from '@asyra/utils'
 
 export interface ElementPropertyValuesUpdate {
@@ -22,7 +23,7 @@ export interface ElementPropertyPatchUpdate {
   readonly records: readonly ElementPropertyRecordPatch[]
 }
 
-export interface ElementPropertyAPIs {
+export interface ElementPropertyAPIs extends ElementPropertyIntentAPIs {
   updateElementProperties: (
     updates: readonly ElementPropertyValuesUpdate[],
     options?: EVENT_OPTIONS

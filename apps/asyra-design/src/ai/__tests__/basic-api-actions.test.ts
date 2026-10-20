@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest'
+import { operationInputIssue } from '../tool-schema'
 import { describeBasicApiResult } from '../basic-api-results'
 import { createBasicApiActions } from '../basic-api-actions'
 import {
@@ -373,4 +374,68 @@ it('does not certify unknown publication or unavailable scope resolution as empt
   expect(await action.execute({ updates: [] }, context)).toMatchObject({
     mutationScope: { complete: false }
   })
+})
+
+it('exposes distinct owner-local and shared-source operations with exact target schemas', () => {
+  const target = {
+    elementId: 'window',
+    propertyName: 'fills',
+    path: [{ key: 'fills', childId: 'slot' }],
+    expectedPropertyId: 'binding'
+  }
+  const requests = {
+    readElementPropertyTargets: { targets: [target] },
+    updateElementPropertyTargets: {
+      updates: [{ target, values: { opacity: 0.4 } }]
+    },
+    updateSharedPropertySources: {
+      updates: [{ propertyId: 'source', values: { color: '#123456' } }]
+    },
+    resetElementPropertyOverrides: { updates: [{ target, keys: ['opacity'] }] },
+    detachElementPropertyTargets: { targets: [target] },
+    shareElementPropertyTargets: { updates: [{ target, sourceId: 'source' }] }
+  }
+  for (const [method, input] of Object.entries(requests)) {
+    const contract = basicApiContracts.find(
+      (item) => item.owner === 'core' && item.method === method
+    )
+    expect(contract, method).toBeDefined()
+    if (!contract) throw new Error(`Missing ${method}`)
+    expect(operationInputIssue(input, contract.inputSchema)).toBeUndefined()
+    expect(
+      operationInputIssue(
+        { ...input, options: { undoable: false } },
+        contract.inputSchema
+      )
+    ).toBeDefined()
+    expect(contract.effect).toBe(
+      method === 'readElementPropertyTargets' ? 'read' : 'write'
+    )
+    if (method !== 'updateSharedPropertySources') {
+      const invalid = JSON.parse(
+        JSON.stringify(input).replace('"childId":"slot"', '"index":0')
+      )
+      expect(operationInputIssue(invalid, contract.inputSchema)).toBeDefined()
+    }
+  }
+})
+
+it('versions selected-owner property semantics separately from read and structural contracts', () => {
+  const actions = createBasicApiActions()
+  for (const name of [
+    'api_core_updateElementProperties',
+    'api_core_patchElementProperties',
+    'api_fill_updateFillsAtIndex',
+    'api_fill_updateFillFieldsBatch',
+    'api_fill_shareFillAtIndex',
+    'api_stroke_updateStrokeFieldsBatch'
+  ]) {
+    expect(actions.find((action) => action.name === name)?.revision, name).toBe(
+      6
+    )
+  }
+  expect(
+    actions.find((action) => action.name === 'api_core_getElementComputedData')
+      ?.revision
+  ).toBe(2)
 })

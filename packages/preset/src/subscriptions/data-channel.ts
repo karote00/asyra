@@ -32,6 +32,7 @@ import {
   type UpdateElementBatchChange,
   type UpdateElementChange,
   type UpdateElementDataChange,
+  type UpdateElementPropertyBindingsChange,
   type UpdateElementPatchChange,
   type WorkspaceRawData
 } from '@asyra/utils'
@@ -218,6 +219,12 @@ const updateRenderSceneTree = (change: SceneTreeChange) => {
       return recordRenderProjectionOutcome(
         renderSceneTreeStore.applySubtreeChange(change as SubtreeChange)
       )
+    case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS: {
+      const { id, changes } = change as UpdateElementPropertyBindingsChange
+      return recordRenderProjectionOutcome(
+        renderSceneTreeStore.updateElementPropertyBindings(id, changes)
+      )
+    }
     case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA: {
       const { id, changes, options } = change as UpdateElementDataChange
       return recordRenderProjectionOutcome(
@@ -1342,6 +1349,19 @@ const projectUIContextSceneTreeBatch = (
               changedElementIds.add(elementId)
             }
           })
+          break
+        }
+        case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS: {
+          const { id, changes: bindings } =
+            change as UpdateElementPropertyBindingsChange
+          const current = next[id]
+          if (!current) break
+          const props: Record<string, unknown> = { ...(current.props ?? {}) }
+          bindings.forEach(({ key, after }) => {
+            props[key] = after
+          })
+          ensureMutableMap()[id] = { ...current, props }
+          changedElementIds.add(id)
           break
         }
         case SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA: {

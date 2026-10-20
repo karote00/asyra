@@ -1,11 +1,21 @@
 import core from '../contexts'
-import { subscribeToFileLoadComplete } from '@asyra/core'
+import {
+  EventTypes,
+  subscribeToEventBatches,
+  subscribeToFileLoadComplete
+} from '@asyra/core'
 import {
   SharedDataChannelNames,
   SCENE_TREE_ACTIONS,
   PROPS_ACTIONS
 } from '@asyra/utils'
-import type { SceneTreeChange, PropsChange } from '@asyra/utils'
+import type {
+  SceneTreeChange,
+  PropsChange,
+  UpdateElementChange,
+  UpdateElementBatchChange,
+  UpdateElementPatchChange
+} from '@asyra/utils'
 import {
   createInspectionDependencies,
   type InspectionDependencyChange,
@@ -13,7 +23,8 @@ import {
 } from './inspection-dependencies'
 
 export const observeInspectionChanges = (
-  listener: (change?: InspectionDependencyChange) => void
+  listener: (change?: InspectionDependencyChange) => void,
+  mode: 'canonical' | 'effective' = 'canonical'
 ) => {
   const scene = core.observeSharedDataChannel(
     SharedDataChannelNames.SCENE_TREE,
@@ -27,6 +38,11 @@ export const observeInspectionChanges = (
           listener()
           return
         }
+        if (
+          mode === 'effective' &&
+          change.action === SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS
+        )
+          return
         if ('entries' in change) {
           listener({
             elementIds: change.entries.map((entry) => entry.data.id),
@@ -85,36 +101,85 @@ export const observeInspectionChanges = (
       }
     }
   )
-  const props = core.observeSharedDataChannel(
-    SharedDataChannelNames.PROPS,
-    (value) => {
-      try {
-        const change = value as PropsChange
-        if (!change || !Object.values(PROPS_ACTIONS).includes(change.action)) {
-          listener()
-          return
-        }
-        const ids =
-          'id' in change
-            ? [change.id]
-            : [
-                ...change.data.map((entry) => entry.id),
-                ...(change.parentId ? [change.parentId] : [])
-              ]
-        listener({
-          elementIds: core.getPropertyOwnerElementIds(ids, {
-            includeRetired: change.action === PROPS_ACTIONS.REMOVE_PROPERTY
-          })
+  const props =
+    mode === 'canonical'
+      ? core.observeSharedDataChannel(SharedDataChannelNames.PROPS, (value) => {
+          try {
+            const change = value as PropsChange
+            if (
+              !change ||
+              !Object.values(PROPS_ACTIONS).includes(change.action)
+            ) {
+              listener()
+              return
+            }
+            const ids =
+              'id' in change
+                ? [change.id]
+                : [
+                    ...change.data.map((entry) => entry.id),
+                    ...(change.parentId ? [change.parentId] : [])
+                  ]
+            listener({
+              elementIds: core.getPropertyOwnerElementIds(ids, {
+                includeRetired: change.action === PROPS_ACTIONS.REMOVE_PROPERTY
+              })
+            })
+          } catch {
+            listener()
+          }
         })
-      } catch {
-        listener()
-      }
-    }
-  )
+      : undefined
+  const computed =
+    mode === 'effective'
+      ? subscribeToEventBatches((events) => {
+          for (const event of events) {
+            if (
+              event.type !== EventTypes.UPDATE_COMPUTED_DATA &&
+              event.type !== EventTypes.UPDATE_COMPUTED_DATA_PATCH
+            )
+              continue
+            try {
+              if (!('payload' in event)) {
+                listener()
+                continue
+              }
+              const payload = event.payload as
+                | Pick<
+                    UpdateElementChange,
+                    'id' | 'owner' | 'key' | 'before' | 'after'
+                  >
+                | Pick<UpdateElementBatchChange, 'id' | 'changes'>
+                | Pick<UpdateElementPatchChange, 'id' | 'patch'>
+              if (!payload || typeof payload.id !== 'string') {
+                listener()
+                continue
+              }
+              if ('patch' in payload) {
+                listener({ elementIds: [payload.id] })
+                continue
+              }
+              const fields = 'changes' in payload ? payload.changes : [payload]
+              if (
+                fields.some(
+                  (field) =>
+                    field.owner === 'computed' &&
+                    !['name', 'lock', 'children'].includes(field.key)
+                )
+              ) {
+                listener({ elementIds: [payload.id] })
+              }
+            } catch {
+              listener()
+            }
+          }
+        })
+      : undefined
   const load = subscribeToFileLoadComplete(() => listener())
   return () => {
     scene()
-    props()
+    props?.()
+    computed?.unsubscribe()
     load.unsubscribe()
   }
 }
@@ -242,7 +307,8 @@ export interface InspectionScopeQuery {
 export const createInspectionEvidence = (
   observe: (
     listener: (change?: InspectionDependencyChange) => void
-  ) => () => void = observeInspectionChanges
+  ) => () => void = (listener) =>
+    observeInspectionChanges(listener, 'effective')
 ) => {
   const sessionId = crypto.randomUUID()
   let revision = 0

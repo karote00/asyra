@@ -894,9 +894,13 @@ formal tests. Diagnostic records identify the advertised schema used for admissi
 Fill row batch edits consume element targets, row index and new fields once. The
 App resolves current child IDs inside the same synchronous mutation boundary.
 Independent fills remain independent. Explicit sharing links existing Fill property
-components by canonical child ID; it does not link whole elements. Subsequent edits
-propagate to all owners of that Fill. Detaching creates an independent child from
-current values. Other rows, property fields, order and ordinary Undo/Redo persist.
+components by canonical child ID; it does not link whole elements. Editing a selected
+owner writes sparse local overrides. Only an explicit shared-source operation changes
+unmasked dependent fields in all consumers. Reset removes override presence; detach
+materializes the selected effective component. Other rows, property fields, order
+and ordinary Undo/Redo persist. Root reads expose logical child slots separately
+from effective property IDs; callers retain the logical path and may guard expected
+binding/source identities. Acceptance of an edit is not durable save confirmation.
 
 Action diagnostics distinguish the outer native call, inner App batch operations,
 and provider lifecycle activity. Every observable action records actor, parent,
@@ -1020,10 +1024,13 @@ A Fill property component has one unique ID. Distinct Fill collections may refer
 the same child ID: A=[red,blue], B=[red] shares red and preserves A's independent blue.
 This is a canonical ownership relationship, not duplicate component creation.
 Fill-row mutation destinations must be unique; repeated element targets are invalid
-input, not sharing or instructions to merge patches. Sharing/detaching retains the
-existing canonical relationship representation, persistence and Undo/Redo.
-An element-instance ref with local property overrides is a distinct model capability;
-this Fill correction does not introduce it or substitute row indexes for its identity.
+input, not sharing or instructions to merge patches. Sharing/detaching uses canonical source-backed property records and field/link deltas
+through persistence and Undo/Redo. This is property inheritance, not whole-element
+instancing. Row indexes are immediate selection conveniences, never retained identity.
+A source-backed source must be detached before it becomes an independent source.
+An overridden target must be reset or detached before rebinding to a new source.
+Current editors use the Core local-target APIs. Future shared-style UI must use the
+explicit source API; no new UI workflow is introduced by this contract.
 
 ## Progressive preparation and reference admission
 
@@ -1406,8 +1413,10 @@ caller-owned leases. Workspace and canonical revision checks remain mandatory;
 retention never makes stale values valid. AI queries default to references without
 rows; explicit bounded pages and columns remain available with the same lifetime. Declarative fill
 mapping may query its required position column internally, consume it and release
-that lease while preparing patches. Every mapping, target lock and shared-fill
-conflict is checked before the one plural write; no intermediate mutation occurs.
+that lease while preparing patches. Every mapping, target lock and local target binding is checked before the one
+plural owner-local write; no intermediate mutation occurs. Distinct selected owners
+may map different colors while inheriting one source; no implicit source update
+or mandatory detachment is allowed.
 
 ### Prepared recipe review
 
@@ -1930,12 +1939,12 @@ complete scope creates no new check or visual invalidation. Missing or incomplet
 scope remains unresolved. Failure/cancellation keeps existing settlement authority,
 releases observation, and cannot trigger replay or fabricated completion.
 
-Retained position-to-fill mapping returns this same scope from the canonical
-shared-property inverse-owner lookup after its admitted write. Native arrangement
+Retained position-to-fill mapping returns this same scope from its complete
+admitted owner-local target set after the canonical write; unchanged users of the
+shared source are not affected. Native arrangement
 and reorder retain their declared applied identities; prepared compositions retain
 their coherent root inspection unit. These paths do not guess scalar input names
-or expand a full document to find affected owners. Changed basic document-mutation
-and retained-mapping output contracts advertise revision 3; unchanged read,
+or expand a full document to find affected owners. Current selected-owner write and retained-mapping contracts advertise revision 6; unchanged read,
 selection and viewport contracts retain revision 2. Saved recipes with replaced
 dependency identities fail admission before execution and must be corrected using
 the currently advertised contract. There is no old-output fallback.

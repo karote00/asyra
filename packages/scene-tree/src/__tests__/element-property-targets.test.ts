@@ -194,7 +194,7 @@ describe('SceneTree element-property target resolution', () => {
     ])
   })
 
-  it('aggregates equivalent and disjoint shared field writes once by property id', () => {
+  it('preserves separate local field intentions for each shared owner', () => {
     const resolvedTargets = sceneTree.resolveElementPropertyTargets([
       {
         kind: 'values',
@@ -238,6 +238,7 @@ describe('SceneTree element-property target resolution', () => {
         propertyId: 'position-1',
         values: { x: 12, y: 24 }
       },
+      { kind: 'values', propertyId: 'position-1', values: { x: 12 } },
       {
         kind: 'values',
         propertyId: 'dimension-1',
@@ -246,27 +247,20 @@ describe('SceneTree element-property target resolution', () => {
     ])
   })
 
-  it('rejects conflicting shared field writes before returning a resolved targets', () => {
-    expect(() =>
-      sceneTree.resolveElementPropertyTargets([
-        {
-          kind: 'values',
-          elementId: 'element-1',
-          values: { x: 12 }
-        },
-        {
-          kind: 'values',
-          elementId: 'element-2',
-          values: { x: 24 }
-        }
-      ])
-    ).toThrow(/conflicting.*position-1.*x/i)
-
+  it('accepts distinct local values for two owners sharing the same source', () => {
+    const result = sceneTree.resolveElementPropertyTargets([
+      { kind: 'values', elementId: 'element-1', values: { x: 12 } },
+      { kind: 'values', elementId: 'element-2', values: { x: 24 } }
+    ])
+    expect(result.mutations).toEqual([
+      { kind: 'values', propertyId: 'position-1', values: { x: 12 } },
+      { kind: 'values', propertyId: 'position-1', values: { x: 24 } }
+    ])
     expect(propsManagerOwner.changes).toEqual([])
     expect(sceneTree.changes).toEqual([])
   })
 
-  it('merges equivalent and disjoint shared record operations once', () => {
+  it('preserves independent local record operations for shared owners', () => {
     const resolvedTargets = sceneTree.resolveElementPropertyTargets([
       {
         kind: 'records',
@@ -305,12 +299,16 @@ describe('SceneTree element-property target resolution', () => {
         kind: 'records',
         propertyId: 'dimension-1',
         key: PropertyTypes.DIMENSION,
+        values: { width: 160 },
+        set: { shared: { value: 1 }, first: { value: 2 } },
+        remove: ['obsolete']
+      },
+      {
+        kind: 'records',
+        propertyId: 'dimension-1',
+        key: PropertyTypes.DIMENSION,
         values: { width: 160, height: 90 },
-        set: {
-          shared: { value: 1 },
-          first: { value: 2 },
-          second: { value: 3 }
-        },
+        set: { shared: { value: 1 }, second: { value: 3 } },
         remove: ['obsolete', 'later-obsolete']
       }
     ])
@@ -329,46 +327,45 @@ describe('SceneTree element-property target resolution', () => {
         remove: ['shared']
       }
     }
-  ])('rejects conflicting shared records: $label', ({ second }) => {
-    expect(() =>
-      sceneTree.resolveElementPropertyTargets([
-        {
-          kind: 'records',
-          elementId: 'element-1',
-          records: [
-            {
-              key: PropertyTypes.DIMENSION,
-              set: { shared: { value: 1 } }
-            }
-          ]
-        },
-        {
-          kind: 'records',
-          elementId: 'element-2',
-          records: [
-            {
-              key: PropertyTypes.DIMENSION,
-              ...second
-            }
-          ]
-        }
-      ])
-    ).toThrow(/conflicting.*dimension-1.*shared/i)
-  })
+  ])(
+    'rejects duplicate record patches inside one local owner: $label',
+    ({ second }) => {
+      expect(() =>
+        sceneTree.resolveElementPropertyTargets([
+          {
+            kind: 'records',
+            elementId: 'element-1',
+            records: [
+              {
+                key: PropertyTypes.DIMENSION,
+                set: { shared: { value: 1 } }
+              }
+            ]
+          },
+          {
+            kind: 'records',
+            elementId: 'element-1',
+            records: [
+              {
+                key: PropertyTypes.DIMENSION,
+                ...second
+              }
+            ]
+          }
+        ])
+      ).toThrow(/unique active element ids/i)
+    }
+  )
 
   it('rejects a direct value replacement that conflicts with a record patch', () => {
     expect(() =>
       sceneTree.resolveElementPropertyTargets([
         {
-          kind: 'values',
+          kind: 'records',
           elementId: 'element-1',
           values: {
             [PropertyTypes.DIMENSION]: ['replacement-child']
-          }
-        },
-        {
-          kind: 'records',
-          elementId: 'element-2',
+          },
           records: [
             {
               key: PropertyTypes.DIMENSION,

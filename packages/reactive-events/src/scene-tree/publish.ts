@@ -4,6 +4,7 @@ import type {
   ComputedDataPatchChange,
   DataTypes,
   ElementDataFieldChange,
+  ElementPropertyBindingChange,
   EVENT_OPTIONS,
   ElementRawData,
   GroupInstanceTypes,
@@ -179,6 +180,15 @@ export const updateComputedData = (
     }
   ])
 }
+
+export const updateElementPropertyBindings = (
+  id: string,
+  changes: readonly ElementPropertyBindingChange[]
+) =>
+  publishEvent({
+    type: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+    payload: { id, changes }
+  })
 
 export const updateElementData = (
   id: string,

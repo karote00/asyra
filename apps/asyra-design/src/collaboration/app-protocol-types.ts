@@ -173,16 +173,39 @@ export interface PropertyComponentValuesUpdate {
   readonly values: Readonly<Record<string, unknown>>
 }
 
+export type PropertyLayerState =
+  | { readonly present: false }
+  | { readonly present: true; readonly value: unknown }
+export interface PropertyLayerEdit {
+  readonly layer: 'overrides' | 'childBindings' | 'sharedSource'
+  readonly key: string
+  readonly state: PropertyLayerState
+}
+export interface UpdateElementPropertyBindingsChange {
+  readonly action: 'updateElementPropertyBindings'
+  readonly eventName: string
+  readonly id: string
+  readonly changes: readonly Readonly<{
+    key: string
+    before: string
+    after: string
+  }>[]
+}
+
 export type CanonicalChange =
   | Readonly<{
       kind: 'property-components'
-      records?: readonly Readonly<{
+      creations?: readonly PropertyComponentRawData[]
+      removals?: readonly PropertyComponentRawData[]
+      layers?: readonly Readonly<{
         propertyId: string
-        key: string
-        set?: Readonly<Record<string, Readonly<Record<string, unknown>>>>
-        remove?: readonly string[]
+        changes: readonly PropertyLayerEdit[]
       }>[]
       updates: readonly PropertyComponentValuesUpdate[]
+    }>
+  | Readonly<{
+      kind: 'element-property-bindings'
+      changes: readonly UpdateElementPropertyBindingsChange[]
     }>
   | Readonly<{
       kind: 'element-data'
@@ -232,6 +255,7 @@ export const EventTypes = {
   MOVE_ELEMENTS: 'moveElements',
   CHANGE_SUBTREE: 'changeSubtree',
   UPDATE_ELEMENT_DATA: 'updateElementData',
+  UPDATE_ELEMENT_PROPERTY_BINDINGS: 'updateElementPropertyBindings',
   ADD_PROPERTY: 'addProperty',
   REMOVE_PROPERTY: 'removeProperty',
   UPDATE_PROPERTY: 'updateProperty'
@@ -245,7 +269,8 @@ export const SCENE_TREE_ACTIONS = {
   MOVE_ELEMENTS: 'moveElements',
   REMOVE_SUBTREE: 'removeSubtree',
   RESTORE_SUBTREE: 'restoreSubtree',
-  UPDATE_ELEMENT_DATA: 'updateElementData'
+  UPDATE_ELEMENT_DATA: 'updateElementData',
+  UPDATE_ELEMENT_PROPERTY_BINDINGS: 'updateElementPropertyBindings'
 } as const
 
 export const SharedDataChannelNames = {

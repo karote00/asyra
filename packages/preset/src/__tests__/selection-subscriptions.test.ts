@@ -433,6 +433,81 @@ describe('Preset Selection Subscriptions', () => {
     }
   })
 
+  it('projects local root binding changes to Render and one UI row without hierarchy work', () => {
+    const core = {
+      getSelection: () => undefined,
+      registerDataChannelObserver: vi.fn(),
+      unregisterDataChannelObserver: vi.fn()
+    } as unknown as PresetCoreAPIs
+    const deps = createDeps()
+    const scan = vi.spyOn(deps.sceneTree, 'getAllElements')
+    const lookup = vi.spyOn(deps.sceneTree, 'getElementById')
+    const binding = vi
+      .spyOn(renderSceneTreeStore, 'updateElementPropertyBindings')
+      .mockReturnValue({ status: 'applied', elementId: 'a' })
+    const reload = vi
+      .spyOn(renderSceneTreeStore, 'reload')
+      .mockImplementation(() => undefined)
+    propertyRegistry.register('flattenedElementIds', { defaultValue: [] })
+    propertyRegistry.register('elementDataMap', { defaultValue: {} })
+    uiContext.set('flattenedElementIds', ['a', 'b'])
+    const original = {
+      a: {
+        id: 'a',
+        type: VECTOR_TYPE,
+        props: { fills: 'shared', strokes: 'stroke' }
+      },
+      b: { id: 'b', type: VECTOR_TYPE, props: { fills: 'shared' } }
+    }
+    uiContext.set('elementDataMap', original)
+    const dispose = registerDefaultDataChannelObservers(core, deps, undefined, {
+      renderScene: true,
+      uiContext: true
+    })
+    const set = vi.spyOn(uiContext, 'set')
+    scan.mockClear()
+    lookup.mockClear()
+    try {
+      const changes = [{ key: 'fills', before: 'shared', after: 'local' }]
+      projectSceneChanges([
+        {
+          action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          id: 'a',
+          changes
+        }
+      ])
+      expect(binding).toHaveBeenCalledExactlyOnceWith('a', changes)
+      const current = uiContext.get('elementDataMap') as typeof original
+      expect(current.a.props).toEqual({ fills: 'local', strokes: 'stroke' })
+      expect(current.b).toBe(original.b)
+      expect(original.a.props.fills).toBe('shared')
+      expect(
+        set.mock.calls.some(([key]) => key === 'flattenedElementIds')
+      ).toBe(false)
+      expect(scan).not.toHaveBeenCalled()
+      expect(lookup).not.toHaveBeenCalled()
+      projectSceneChanges([
+        {
+          action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          id: 'a',
+          changes: [{ key: 'fills', before: 'local', after: 'shared' }]
+        }
+      ])
+      expect(uiContext.get('elementDataMap')).toEqual(original)
+    } finally {
+      dispose()
+      set.mockRestore()
+      binding.mockRestore()
+      reload.mockRestore()
+      scan.mockRestore()
+      lookup.mockRestore()
+      propertyRegistry.unregister('flattenedElementIds')
+      propertyRegistry.unregister('elementDataMap')
+    }
+  })
+
   it('registers the applied projection before rebuild and retires it on disposal', () => {
     const core = {
       getSelection: () => undefined,

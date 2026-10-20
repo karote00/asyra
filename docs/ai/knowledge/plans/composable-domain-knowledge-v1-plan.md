@@ -1,11 +1,13 @@
 # Composable Domain Knowledge V1
 
-Status: Follow-up items 1-3 are complete locally on their recorded evidence.
-Item 4 now includes the user's framework-first shared-property editing direction.
-The framework-first plan has been reviewed across owner isolation, source lifecycle,
-history, collaboration and durability. The user authorized an initial validated
-checkpoint push, followed by sequential Inspector admission and local implementation. UI workflow work is deferred.
-No model calls, Asyra Skill, subsequent push or monitoring. Knowledge efficacy is unproven.
+Status: Follow-up items 1-4 and the framework-first shared-property/API stages
+are implemented and locally verified. The initial checkpoint was pushed as
+`e6734a3ec073365ca78e7c4b2c9256100f6d2c69`; all subsequent changes remain local.
+The single authorized Knowledge-arm Taipei 101 acceptance is complete: 342.679 s,
+first content 75.808 s, within the 600000 ms hard cutoff. Input/output, references,
+recording and final root-cause report are preserved. No additional model run is pending. No subsequent push,
+Asyra Skill, monitoring or new UI workflow. Historical intermittent browser
+navigation/selection failures remain evidence limitations, not claimed fixes.
 
 ## Current authority and task boundary
 
@@ -16,10 +18,9 @@ references and must not be edited or moved by this task. Historical reports desc
 not permissions, next steps or current source verification. Git retains prior plan
 revisions; raw input/output, recordings and factual evaluation evidence stay intact.
 
-The initial checkpoint freezes the completed item-4 material/publication work and
-this reviewed plan for validation, commit and the single authorized push. Afterwards,
-admitted slices implement the framework behavior and AI-facing APIs below;
-do not begin production changes from the audit alone. Preserve the existing item-4
+The initial checkpoint is complete. The admitted slices below now implement the
+framework behavior and AI-facing APIs. The completed acceptance used that frozen
+source and does not authorize another implementation or push. Preserve the existing item-4
 App publication correction and its evidence. Read current framework/App contracts,
 direct consumers and relevant Git history to distinguish shared identity, field
 patches and persistent per-owner overrides. Preserve items
@@ -64,8 +65,7 @@ items 1 and 2 remains bound to those recorded sources.
   implementation; after its integration proof and full bounded review, advance only
   within the currently authorized scope. Local success alone does not close the
   complete chain. Complete the initial validated checkpoint push before starting
-  the sequential framework-first stages. Subsequent changes stay local; no model
-  calls, new UI workflows or monitoring.
+  the sequential framework-first stages. Subsequent changes stay local. All stages passed their recorded gates before the single authorized recorded 101 acceptance. That run is complete; no additional model calls, new UI workflows or monitoring are authorized.
 
 ## Evidence baseline and actual implementation state
 
@@ -88,9 +88,9 @@ historical live source digest:
 Use the report's exact captured digest as authority; metadata-only differences are
 not an assertion that prior source-bound proof is current for a future edit.
 
-### Current diagnostic authority
+### Baseline diagnostic authority
 
-The current subject is run `1792402162549`; its three remaining problems are
+The source investigation began with run `1792402162549`; its three problems are
 specified below with that run's call indices. The historical anchor above explains
 prior changes but does not describe current checker implementation or authorize
 repeating completed repairs. The current Group inspection boundary and receipt
@@ -2969,9 +2969,11 @@ or removed rows require a fresh resolution, while unrelated document edits must
 not invalidate an otherwise current target.
 
 Receipts distinguish requested scope, actual canonical change, effective-value
-change and persistence state. Return the operation, target/binding/source identities,
-changed fields, no-op or typed failure, and an affected-owner summary with the
-existing bounded query/detail path where needed. Do not return every dependent's
+change and persistence state. Use the existing invocation identity and input targets together with the standard
+mutation-scope envelope; the Core value is the accepted owner/source ID list, not
+a promise that every ID changed. Exact target reads provide binding/source and
+mask fields when needed. Preserve truthful no-change/failure settlement and the
+existing bounded query/detail path rather than adding a second result protocol. Do not return every dependent's
 full snapshot, omit a partial outcome, or call a local apply durably saved.
 Creating an equal-valued explicit override is a canonical change despite no pixels
 changing. Cancellation after a committed change must report that change; it cannot
@@ -3095,8 +3097,7 @@ contracts already support the new representation. Exact schema admission and its
 executable cases remain the first implementation gate, not an unresolved product
 choice delegated to each consumer. The review itself changed only this plan. The
 subsequent user authorization permits the initial validated push and sequential
-local implementation; no subsequent push, model tests, monitoring, Asyra Skill,
-completed-plan edits or new UI workflows.
+local implementation; no subsequent push, monitoring, Asyra Skill, completed-plan edits or new UI workflows. The latest user authorization adds one recorded 101 acceptance only after all stages pass.
 
 ##### Initial checkpoint portability correction
 
@@ -3130,3 +3131,954 @@ boundary test is the red oracle; run it, compiler scenarios, types/lint and the
 selected delivery gate. Re-audit the pending checkpoint rather than changing
 production behavior to satisfy a fixture. New shared-property implementation
 remains unstarted until the checkpoint is pushed.
+
+##### Checkpoint closure and continuation
+
+Checkpoint `e6734a3ec073365ca78e7c4b2c9256100f6d2c69` was pushed to the existing
+branch after run `435f11af-ab8a-41dc-8a19-74f9d4d54bf2` passed with
+`sourceVerified=true`: all selected package/shared gates, collaboration 19 passed,
+functional 444 passed and render contracts 3 passed, zero flaky or expected
+failures. Conditional skips remain explicit in the original reports. The current
+source proof passed 47 obligations and 11 exact negatives plus recovery. Earlier
+failed delivery runs remain failed. The worktree was clean after this push.
+
+Continue all five framework-first stages locally, one owner at a time. The final
+real-agent acceptance is the existing Knowledge-only 101 protocol, unchanged
+model/effort, original scoped reference inputs, first/size-change/final fit,
+recording and ten-second final hold. An independent hard deadline stops the
+model request at ten minutes even if capture or persistence is pending. Report
+those subsequent bounded recovery/capture times separately from task completion.
+Use actual inputs/receipts for root-cause analysis; do not use object count or a
+historical duration alone as evidence of improvement. No automatic additional
+model run is authorized by a failed acceptance.
+
+##### Contract admission - canonical shared-property layers
+
+Owner segment: current Props/Scene/Core contract and its direct Factory/App
+publication consumers. This segment edits the active plan, current package/App
+specifications and existing Inspector architecture only. It does not implement
+new UI or production behavior. Preserve ordinary independent records and existing
+canonical sharing as current data, not a version-compatibility fallback.
+
+Exact representation to implement: `PropertyInheritance` on a registered property
+record consists of `sourceId`, sparse `overrides` keyed by registered fields and
+`childBindings` keyed by canonical source child ID. A source-backed record keeps
+its own `id`/registered `type`, but serializes inheritance rather than a flattened
+copy of inherited values. An independent record retains its ordinary registered
+fields. `sharedSource: true` marks explicit shared intent even when one consumer
+remains; source-backed records cannot themselves be shared sources. These names
+are neutral persisted identities, owned by Utils data types and Props execution.
+
+Sources must be independent, active, same-type registered declarative components.
+No inheritance chains, missing sources, cycles, unknown override fields or duplicate
+child bindings. Effective field validation uses the same registered schema as an
+ordinary write. An inherited collection resolves its current source membership and
+then substitutes its owner-local child bindings by identity. A source reorder/add
+remains inherited. A removed child with a live dependent override is rejected.
+After explicit child detachment, membership still belongs to the parent collection:
+removing the source slot may remove that independent local slot, without changing
+the detached property's value or other consumers; history retains its record.
+An explicit whole-collection detach instead owns independent membership.
+
+Updates to override presence and child bindings are typed field/link deltas, not
+whole-map replacement. The current `UPDATE_PROPERTY` payload gains an optional
+`layer` discriminator (`overrides`, `childBindings`, or `sharedSource`). Layer
+deltas use `key` plus exact `{ present: false }` or `{ present: true, value }`
+before/after states. Ordinary field events have no layer. History identity includes
+the layer, so an override cannot collide with an ordinary field or child link.
+The existing prepared property batch accepts `layers` operations containing
+per-key changes; reset is absent state and equal-valued explicit presence is a
+real canonical change. No whole inheritance map is replaced during edits.
+Factory history and publications carry these deltas with
+exact before/after presence, including equal-valued overrides. Reset removes the
+field, never writes a source snapshot. Scene alone changes element root bindings;
+Props alone changes property links and fields. Existing indexed dependency edges
+cover source inheritance and local child bindings, without a second graph owner.
+
+Core local target identity is an element ID, root property name and zero or more
+registered child steps `{ key, childId }`, with expected source/binding identity
+when retaining the target. Resolve the complete path before mutation. During a
+gesture, the selected logical child survives the first local binding allocation;
+subsequent frames must not mutate the old source or retarget a reused row index.
+Source edits explicitly target a source property ID and do not infer local intent.
+Core coordinates atomic preparations; no new session, history queue or scheduler.
+
+The browser remains the semantic schema/relationship admission owner. The backend
+reduces the same explicit canonical field/link deltas and validates structural
+references atomically; it must not import browser Framework execution, duplicate
+registered field schemas or invent new ordering. Reload validates the complete
+canonical graph through Props/Scene before replacing live state. Portable wire
+types are projected at the existing App protocol boundary. Durable acknowledgment
+continues to refer to an accepted publication sequence, not local apply success.
+
+Read results distinguish independent/source-backed/source mode, target path,
+source identity, sparse local values and effective values. Mutation results include
+canonical changes, effective changes, affected owners and local acceptance; save
+receipts remain separate. Unknown target/capability, stale binding, invalid source,
+invalid field, source-in-use and failed apply are typed errors with unchanged or
+explicit compensated state. They cannot become empty successful results.
+
+Formal cases extend the existing owner, real Core, provider and browser suites.
+The first Props scenario creates a source and two registered bindings, changes
+source/local fields, resets, detaches, saves/reloads and edits again. Later stages
+add shared outer collections, concurrent unrelated fields, exact field-presence
+Undo/Redo, source retirement, failed apply/compensation, resend and recovery.
+Manual readiness acceptance does not mark any implementation criterion passed.
+
+Public coordination names are `readElementPropertyTargets`,
+`updateElementPropertyTargets`, `updateSharedPropertySources`,
+`resetElementPropertyOverrides`, `detachElementPropertyTargets` and
+`shareElementPropertyTargets`. All are batch-only at the canonical boundary; a
+single edit is a batch of one. Existing `updateElementProperties` and
+`patchElementProperties` remain current convenience APIs for selected owners,
+not ambiguous source edits. They delegate to the admitted target resolver.
+App Fill API operations expose the four intentions through the existing registry;
+no second native-tool registry or mandatory Knowledge acknowledgment is added.
+
+Admission review resolved the stale completed-plan authority and old Core snapshot
+persistence description in the existing canonical Inspector. Its twelve owner
+steps now bind to this active plan, and the existing public evaluation flow uses
+those exact architecture steps. Old task acceptance is not relabeled as acceptance
+of new property semantics. The full canonical Inspector contract suite passes 14
+cases; the initial missing-contract regression failed first. New implementation
+criteria remain pending. No completed plan was changed.
+
+##### Props owner execution card
+
+- Step: `prepare-and-apply-property-batch`; product clauses: shared property layers
+  above and `packages/props-manager.md#shared-property-layers---admitted-contract`.
+- Inputs: registered independent sources, source-backed records, exact field/link
+  intentions and current dependency identities. Outputs: valid effective reads,
+  sparse canonical serialization, one prepared mutation and exact reversible deltas.
+- Conditions: declarative registered schema/children; bypass ordinary independent
+  behavior. Reject unsupported types, missing/wrong/recursive sources, unknown
+  fields and stale preparation before writes.
+- Allowed: existing Props registry, manager, component accessor, Utils data types,
+  existing reactive event handoff, formal Props tests. Forbidden: Scene writes,
+  App overrides, computed mirrors, inherited-value snapshots as canonical state,
+  model calls, UI workflows or a new store/index owner.
+- Boundary: existing Props manager/components/registries/factory and tests, public
+  Utils property types and existing Props events. Scene/Core consumers follow in
+  their own admitted segments; no premature AI exposure.
+- Cases: source plus two bindings, equal-valued local presence, reset, source
+  change, nested membership, detach, invalid graph, load/save/reload, atomic failure,
+  exact journal changes and unaffected dependency work counts. Existing independent
+  and multi-manager isolation must remain valid.
+- Gates: formal failing owner scenario first, full Props tests/types/lint/naming,
+  then direct Core consumer verification before advancing. Stop and revise this
+  card if a different owner must change or its preparation cannot preserve atomicity.
+
+Props segment evidence: 268 formal Props tests pass, including 18 new real-owner
+scenarios. Source/binding creation, sparse round-trip, layer presence/reset,
+registered event replay, source retirement, dependency cycles, stale preparation,
+partial-apply rollback/retry and detached-child membership are covered. The 40
+existing Core property/coordination/history tests also pass. Props declarations
+build; lint has no errors (three existing state-registry console warnings).
+Evidence: `tmp/shared-property-props-owner-{tests,types,lint}.log` and
+`tmp/shared-property-existing-core.log`. This is owner evidence, not closure of
+Scene/Core APIs, Factory field-history identity or App durability. Those consumers
+must be completed before exposing the capability to AI or running live acceptance.
+
+##### Scene binding owner execution card
+
+- Step: `prepare-and-apply-scene-mutation`; input is a batch of exact element ID,
+  canonical root property name, expected current ID, next property ID/type. Only
+  Scene changes the element's binding and canonical reverse relation index.
+- Public prepared operation: `prepareElementPropertyBindingMutation`; the existing
+  `applyPreparedElementMutation` applies its one-shot result after Props has made
+  all next properties active. Validate every target before the first assignment.
+- Output is `UPDATE_ELEMENT_PROPERTY_BINDINGS` evidence with one element ID and
+  per-root-name `{ key, before, after }` ID changes. Preserve other root bindings,
+  raw element fields and other consumers. No complete props-map replacement.
+- This evidence uses existing Factory delivery/compensation and exact inverse
+  changes. Source allocation and local field values remain Props/Core work; Scene
+  must not infer override intent, clone sources or introduce a new transaction.
+- Allowlist: current Scene manager, Props/DynamicProps binding assignment,
+  Scene mutation types/subscriber/tests, Utils canonical event/data types and
+  reactive-events Scene contract. The following Core owner coordinates these
+  preparations; Factory and App consumers follow in their own segments.
+- Failure owner: Scene rejects missing/stale/duplicate/wrong-type roots before
+  assignment. A failed downstream handoff restores bindings and reverse index
+  unless the existing handoff explicitly reports canonical acceptance.
+- Formal cases: one of two owners rebinds, unrelated root untouched, wrong/missing
+  target rejection, stale preparation, complete batch rejection, handoff failure
+  restoration and exact replay. Gates: Scene tests/types/lint and naming, followed
+  by real Core transaction integration in the next segment. No UI/model work.
+
+Scene binding segment verification: 216 Scene tests, 268 Props tests and 68
+Reactive Events tests passed. Scene/Props declarations, focused lint and naming
+passed. The new real component cases verify isolated rebinding, reverse relations,
+rejected handoff restoration, exact replicated evidence and sparse graph reload.
+A projection regression failed before correction: accepted binding changes must
+refresh the selected owner's effective values. Existing custom property classes
+also remain valid: inheritance metadata belongs to declarative raw records, not a
+mandatory capability on every Property instance's getter. Full Factory/App
+integration remains pending; these owner tests do not prove durable acceptance.
+
+##### Property intention owner execution card
+
+- Step: `prepare-and-apply-property-batch`. Props resolves registered child paths
+  and prepares local override/reset/detach/share operations from Scene-issued root
+  relations. Core passes those identities unchanged and coordinates root rebinding;
+  Core does not inspect or mutate the property graph.
+- Read results retain logical source child identity, actual component/binding,
+  effective fields, source and sparse override presence. Optional expected IDs are
+  exact preconditions. No index-based child target or silent path fallback.
+- A preparation uses a bounded transient draft of touched property records and the
+  existing prepared batch. It emits explicit source promotion, field/link changes,
+  new records and requested root binding changes. No retained second registry.
+- The shared outer collection must become an owner-local binding before its child
+  is edited. Its source membership remains inherited. Resolve all batch paths
+  before writes; differing local owners do not collapse by shared source ID.
+- Reset removes only named masks. Detach materializes current effective values and
+  retires its inheritance link; shared source editing remains a separate intent.
+  Unsupported type/schema, stale identity or invalid path rejects the whole batch.
+- Implementation boundary: existing Props manager, a focused property-intent helper,
+  public Props types/exports and formal Props scenarios. Scene/Core coordination,
+  Factory inversion and App publication are subsequent owner cards. Add no UI.
+- Gates: actual declarative source/collection scenarios, duplicate/conflicting
+  targets, mask presence/reset, source reorder, stale paths, failure atomicity,
+  declarations/lint/naming. Later real Core/Factory cases must prove complete
+  gesture history and persistence; do not claim those from this owner alone.
+
+Root retirement preparation review: the real detach sequence exposed overly broad
+reverse-edge invalidation in exact orphan cleanup. Explicitly retained components
+remain identity-checked; their unrelated incoming edges are not deletion inputs.
+The prepared owner's outgoing edges and every edge being removed must remain
+exact. This permits the already-prepared new root to retain children before the
+old root is retired, without moving validation after the first write or weakening
+ordinary orphan detection. The formal scenario prepares both operations first,
+then creates, retires, and reloads the complete resulting graph.
+
+Property intention owner verification: 278 formal Props tests pass, including the
+prepared detach/create/retire/reload sequence and distinct history identity for
+field masks versus child bindings. Declarations and focused lint pass. Explicit
+shared sources are excluded from automatic root retirement. This does not yet
+claim Factory or App integration.
+
+##### Scene root-resolution execution card
+
+- Owner: `prepare-and-apply-scene-mutation`; same admitted binding contract.
+- Input: exact element/root-name identities with optional expected root ID.
+  Output: current canonical relation and whether another element slot shares it;
+  binding preparation also returns exact orphan and retained root ID sets.
+- Reuse the existing Scene relation index and registered property definitions.
+  Props remains the child-path, field, inheritance and retirement owner. No new
+  reference index, cache, transaction or source edits in Scene.
+- Missing/stale roots, mismatched registered types and inconsistent relations fail
+  before any owner writes. Empty requests are inert. Identical reads may repeat;
+  mutation targets remain unique.
+- Boundary: existing Scene manager, public mutation types and formal Scene tests.
+  Cases cover two owners, last-owner release, expected-ID rejection and unchanged
+  canonical state after failed resolution. Gates: Scene tests/types/lint; Core
+  consumes the exact outputs in the subsequent coordination segment.
+
+Scene root-resolution verification: 217 Scene tests, declarations and lint pass.
+The exact last-owner-release scenario caught a retained-root inventory omission:
+the existing collector considered only old roots. It now includes new roots from
+the same prepared relation updates, without reading element snapshots.
+
+##### Core intention coordination execution card
+
+- Owner: `coordinate-canonical-owner-preparations`; admitted six public APIs above.
+  Inputs are element/root/path identities and explicit local/source/reset/share/
+  detach intents. Scene resolves roots; Props resolves child paths and prepares
+  all canonical records. No graph interpretation or mutation belongs to Core.
+- Obtain Props intention, Scene binding and any orphan-retirement preparations
+  before the first apply. Retention combines Scene-issued roots and Props-issued
+  existing dependencies; subtract only Props-issued new identities. Apply in
+  create/update, rebind, retire order inside the caller's existing Factory action.
+- Outputs: exact target views for reads; ordered affected element IDs for local
+  operations, ordered source IDs for explicit source updates. No hidden fallback,
+  implicit source edit, new scheduler, transaction or compatibility entry point.
+- Failure: preflight rejects without writes; unexpected accepted apply failures
+  propagate to existing Factory compensation. Do not report partial success.
+- Boundary: Core API/type/facade files and formal Core integration tests. The
+  following Factory card verifies the new canonical binding event's inversion;
+  App protocol and AI exposure follow only after those proofs pass.
+- Cases: two shared owners receive different masks; explicit source update,
+  reset, detach, share, missing/stale targets, later-invalid batch, exact retired
+  records and sparse reload. Tests inspect real Props/Scene state and event order;
+  Factory Undo/Redo and cross-owner compensation are separately required.
+
+Core coordination focused verification: 42 existing/new real-owner and orchestration
+cases pass; declarations and lint pass (one existing Core console warning). Review
+continues before Factory advancement: an already source-backed root can itself
+have multiple Scene users. Local reset/edit must isolate that binding too, while
+editing a uniquely owned detached child must not silently restore sharing.
+
+##### Property intention isolation review card
+
+Return to `prepare-and-apply-property-batch` for those same admitted local semantics.
+Use Scene's exact shared-root fact and Props' existing reverse relation index;
+copy sparse masks/links only along the edited shared path. Reset has the same local
+ownership boundary as override. Already detached uniquely owned leaves retain
+identity and independence. Add real shared-binding/reset and detached-edit scenarios
+before implementation. No new index, registry, scheduler, App policy or UI changes.
+
+Isolation review also verifies explicit child re-sharing: the logical collection
+slot remains stable, while its local binding can intentionally select another
+valid independent source of the registered child type. Slot identity and selected
+source identity are distinct. Same-type/source graph validation still applies;
+requiring those two IDs to be identical would incorrectly prohibit the admitted
+share API. A formal scenario now verifies re-sharing, subsequent source edits and
+an unaffected sibling owner.
+
+Isolation review verification: 281 Props tests, declarations and focused lint pass.
+Inherited shared roots now isolate sparse bindings for local edits/reset; owned
+detached children stay independent. Explicit child re-sharing preserves the logical
+slot and correctly follows the newly selected same-type source.
+
+##### Factory binding-evidence execution card
+
+- Owner: `record-and-deliver-transaction-batch`; existing journal/inverse contract.
+- Input: admitted `UPDATE_ELEMENT_PROPERTY_BINDINGS` per-root before/after changes
+  and Props layer-presence evidence. Output: the same exact inverse/forward events
+  on existing rollback, Undo, Redo and shared compensation paths.
+- Reuse Factory's built-in change inversion; register the new canonical event.
+  No new history store, replay controller, queue, payload reconstruction or UI.
+- Boundary: Factory journal and formal tests only. Malformed evidence still fails
+  the existing admission/inversion validation; no prefix may be reported successful.
+- Gates: formal event rollback/Undo/Redo tests, complete Factory suite/types/lint;
+  then Core's real Props/Scene/Factory scenarios must prove owner replay and failure
+  compensation before App wire-format work advances.
+
+Factory binding evidence verification: the new event first failed the existing
+reversible-event admission as expected. Registering it with the existing built-in
+inverse owner closes that gap. All 302 Factory tests, declarations and focused lint
+pass; no replay algorithm or Undo admission rule changed.
+
+##### Core history integration review card
+
+Return to `coordinate-canonical-owner-preparations` to verify the same public APIs
+against real Factory and registered Props/Scene subscribers. Exercise each intended
+user action through the real transaction owner, exact Undo/Redo, sparse save/reload,
+and injected before/after-binding apply failures. Assert canonical state and history,
+not merely invocation counts. Reuse the existing event subscribers; no test-only
+product path. Any defect routes back to its first incorrect admitted owner before
+App protocol advancement.
+
+Real Core history integration passes: all five intentions form one action each,
+Undo/Redo restore exact Props and Scene data, sparse reload supports later edits,
+and both pre-binding and post-binding failures compensate without a document or
+history prefix. This is framework-owner evidence; App persistence remains pending.
+
+##### Selected-owner convenience routing card
+
+- First owner: Props intention preparation. Existing local values and record-patch
+  conveniences must preserve owner identity, including existing shared children.
+  Ordinary independent operations retain their canonical typed batch path; source-
+  backed/shared targets produce the same local intention preparation as explicit
+  APIs. This is capability-based current behavior, not a compatibility fallback.
+- Collection record set/remove resolves current logical/effective child IDs,
+  isolates edited shared children, retains unrelated masks, and explicitly overrides
+  membership only when membership changes. New children use registered defaults,
+  schema and child mapping; removals retire only unowned records.
+- Complete preparation combines independent and isolated operations before apply.
+  Conflicting IDs/targets, invalid later items and stale identities reject atomically.
+  No App cloning, full-document reconstruction or second owner registry.
+- Props tests prove local set/add/remove, equal shared-source values, independent
+  leaves, reset and sparse reload. Then the Scene segment preserves each relation
+  identity in resolved mutations, and Core delegates both convenience APIs to the
+  same prepared local operation. Existing custom independent components remain
+  supported through their existing formal property capability.
+
+Props collection routing verification: 282 tests, declarations and lint pass.
+Local record set/add/remove and complete membership replacement now preserve logical
+slots and current effective IDs. Removed local records are retired, reset resumes
+source membership, and sparse reload preserves the result. New record inputs use
+the registered declarative defaults and field validators, not App-specific copies.
+
+##### Scene convenience-target execution card
+
+Continue the routing contract at `prepare-and-apply-scene-mutation`: resolve aliases
+as before, but retain one mutation per element/root relation. Distinct owners may
+request different values even when their current source ID matches. Conflicts
+inside one owner still reject. The parallel relation/mutation arrays retain exact
+order; Core reads current binding sharing through the canonical Scene resolver.
+Only Scene resolver/types/formal scenarios change in this segment. Tests asserting
+cross-owner source-write aggregation are superseded by the accepted local semantics;
+explicit source updates remain the separate Props/Core API.
+
+Scene convenience routing verification: all 217 Scene tests and focused lint pass.
+The result now preserves per-owner identity, including conflicting local values
+on one shared source, while same-owner conflicts remain rejected.
+
+##### Core convenience routing execution card
+
+Return to `coordinate-canonical-owner-preparations`: existing element values and
+record patch APIs must consume exact Scene relation/mutation pairs and binding
+sharing, then delegate to Props owner-local preparation. Reuse the explicit
+intention coordinator for complete Props, binding and retirement preflight and
+apply order. No duplicate graph policy, transaction, source-write fallback or
+App-specific behavior. Boundary: Core API wiring and formal orchestration/real
+Factory integration tests. Prove differing selected-owner values, source isolation,
+record membership operations, invalid later items, compensation and Undo/Redo.
+Focused gates: real Core history, existing coordinator and property APIs, types,
+lint; downstream App publication remains pending and must not be reported closed.
+
+##### Existing inherited collection reachability correction card
+
+The real Core record lifecycle scenario exposed a Props preflight gap: adding a
+new member after a prior local child edit attaches through a pending membership
+override on an existing root, not a child-binding delta. Return only to
+`prepare-and-apply-property-batch`. Exact creation must derive reachability from
+all registered relationship deltas in the same preparation, still validate each
+schema/edge/type, and reject genuinely unowned records. No relaxation or App
+special case. Add a permanent existing-root membership regression, preserve the
+failing Core integration, then rerun Props and Core history/types/lint.
+
+The real Factory replay additionally proves a dependency-order defect: forward
+membership removal was journaled before child-binding removal, so Undo tried to
+restore a binding while its logical slot was still absent. Props must emit link
+removals before membership edits and link additions after them; the existing
+Factory inverse then restores membership before links. Keep all field/link
+validation and the original replay owner. The failing real remove/Undo scenario
+is the formal regression, with no relaxed replay validation.
+
+Local owner routing closure: 283 Props and 277 Core tests pass, including real
+shared child set/add/remove through the existing convenience API, exact one-action
+Undo/Redo, sparse reload and an invalid later item with no prefix. Core types and
+focused lint pass. Dependency declarations were rebuilt before cross-package
+proofs. History sorting is owned by Props evidence, not a Factory exception.
+
+##### Canonical remote layer and binding execution card
+
+Owner: `coordinate-canonical-owner-preparations`, consuming the admitted exact
+Props field/layer and Scene root-binding deltas. Extend the existing Core canonical
+change union to carry per-key `PropertyLayerEdit` batches and typed element property
+binding evidence. Reuse Props prepared batches and Scene canonical binding
+preparation/application. Do not infer local overrides from ordinary source fields,
+flatten inheritance, or replay a local intent that allocates different identities.
+Boundary: Core canonical types/coordinator and formal real-owner tests. Existing
+remote Factory transaction remains responsible for failure compensation and local
+history/echo isolation. First prove update/reset and binding replay against real
+Props/Scene; exact creation/retirement and App publication follow as a separate
+owner segment before this end-to-end feature can be complete.
+
+Canonical layer/binding coordination: 278 Core tests pass; Core declarations and
+focused lint pass. Remote identity is preserved rather than re-running the local
+intention and allocating another binding.
+
+##### Exact canonical property lifecycle admission and execution card
+
+Owner: `prepare-and-apply-property-batch`. Canonical transport must preserve explicit
+record creation/removal plus field/layer deltas, not reconstruct collection intent
+from an ADD/REMOVE batch's first ordered ID. The existing prepared mutation owner
+will accept `create-exact-property-records` and `remove-exact-property-records`
+operations. Both reuse current exact creation/schema/tombstone and indexed removal
+machinery. They represent authoritative component lifecycle, not owner-local intent.
+Creation keeps all supplied identities and sparse state; retirement requires exact
+current records, no external live property references and no undeclared removal.
+Scene remains responsible for element root references before canonical retirement.
+An explicit empty retirement list means this canonical batch declares no retirement;
+local intent preparation continues to derive its own lifecycle through existing rules.
+No alternate registry, replay control, normalization fallback or App graph inference.
+
+Public canonical `property-components` will carry these raw lifecycle records with
+ordinary updates and per-key layers. App translates the already ordered Factory
+record sequence and preserves element binding events; backend applies the same
+explicit lifecycle atomically, never guesses children from arbitrary string values.
+Keep ordinary element creation/removal contracts under their existing owners until
+their directly affected shared-reference scenarios are proved. Failure restores the
+original document through the existing remote Factory/authoritative document owners.
+
+Focused Props cases: exact creation and resurrection, source plus inherited records,
+invalid source/tombstone/duplicate/later item without writes, explicit retirement
+with local link removal, rejection of live external references, and no hidden child
+retirement. Then Core/App consumers and actual save/reload remain required gates.
+
+Canonical lifecycle owner closure: 286 Props tests pass. The source-plus-binding
+retirement regression exposed a dependency scheduling gap: a source listed before
+its dependent binding was not reconsidered after removing that binding. Explicit
+retirement now revisits declared source dependencies only; undeclared shared
+sources remain retained. No relaxation of external-owner validation.
+
+##### Core exact lifecycle execution card
+
+Owner `coordinate-canonical-owner-preparations` consumes the admitted exact raw
+creation/removal records plus typed layers and Scene binding evidence. Coordinate
+existing Props preparations and reject retirement while Scene still owns a root.
+Preserve incoming IDs and sparse records, source and link ordering, outer Factory
+compensation, and exact ordered receipts. Boundary: Core canonical types/API and
+real Props/Scene/Factory scenarios. Prove creation/binding, failed live-root removal,
+release/retirement, Undo/Redo, sparse reload and invalid later-operation compensation.
+No new graph resolver, inferred collection intent, or compatibility surface. App
+wire conversion and persistence remain the next owner, not closed by Core tests.
+
+Core exact lifecycle closure: 279 Core tests pass, including actual Factory
+compensation after a later stale retirement, live element-root refusal, exact
+Undo/Redo and sparse reload. Declaration build and focused lint pass.
+
+##### App publication layer and identity execution card
+
+Owner `prepare-document-publication`, with the receiving `apply-remote-publication`
+wire contract already admitted above. Inputs are ordered canonical Factory Props
+and Scene evidence, not AI intentions. Preserve explicit raw creation/removal,
+field mask presence and child-link identity, and root binding changes. Consecutive
+ordinary value updates may coalesce only within the same operation run; lifecycle
+and layer transitions preserve source order. Remove inferred record patch assembly
+from delivery owner IDs. Existing element creation/removal extraction remains
+separately owned and must not consume a property binding event. Mutation boundary:
+App collaboration operations, wire types/validation and formal publication cases;
+no durable reducer implementation in this segment. Prove successful roundtrip,
+malformed layer rejection before dispatch, reset absence, creation/binding and
+retirement order. Downstream durable reduction is required before closure.
+
+Publication producer proof: 30 formal publication cases pass, including sparse
+creation, layer reset absence, root rebind and exact retirement order. Existing
+conversion cases now assert source-ordered exact records rather than inferred
+collection edits. Explicit creation is valid without an adjacent Scene creation;
+therefore an ordered creation slice followed by a Scene-only restore no longer
+requires a source batching-shape rejection. Actual peer restore still must pass
+its canonical owner checks. Durable consumer cases remain failing until the next
+owner implements the admitted lifecycle; this is not whole-flow completion.
+
+##### Durable exact-property reduction execution card
+
+Owner `persist-local-commit`: reduce explicit creation, field/layer edits, root
+bindings and retirement into the existing immutable working document; no browser
+Framework execution or registered schema duplication. Keep exact identity,
+sparse presence and structural source/link references. Invalid duplicate/stale
+records, missing sources, live element/source references and later failures leave
+the input checkpoint unchanged. Existing materializer owns sequence, dedup and
+resend. Boundary: App durable reducer and its formal tests; shared protocol types
+are the reviewed upstream input. Prove source update/local override/reset/rebind,
+retirement, unrelated owner preservation, corrupt later operation and reloadable
+canonical output. Existing inferred records transport is superseded and removed
+once its direct producer/Core/reducer consumers are migrated in this stage.
+
+##### Canonical lifecycle completeness review and next owner card
+
+Durable layer proof passes, including zero unrelated graph reads for a local layer
+write at 16 and 1,024 unrelated records. Source retirement/demotion checks affected
+external references; no second persistent graph index is introduced.
+
+Review found the same inference in element/subtree deletion: the producer consumed
+Props retirement evidence, while the backend guessed owned records by traversing
+arbitrary strings. The current explicit lifecycle contract must also carry those
+already-issued retirement records. Canonical remote Scene deletion applies Scene
+only, then the following exact Props retirement; local full-lifecycle Core removal
+still derives its canonical orphan set from the existing owners. Durable reduction
+never guesses references from user string values. Source promotion, creation,
+binding release, retirement and inverse recreation preserve exact source order.
+
+Return to `coordinate-canonical-owner-preparations` for the canonical-only
+migration: remove superseded canonical collection-intent `records`, always use
+explicit retirement (empty means none), and leave canonical Scene deletion's Props
+lifecycle to the following exact records. Keep local convenience/full-removal APIs
+unchanged. Formal real-owner proofs must cover membership unlink without premature
+retirement, explicit retire, element removal, Undo compensation and resurrection.
+Then update the App producer/reducer and current fixtures; no compatibility reader
+or source-batching heuristic is retained. Stop before claiming integration until
+all direct consumers pass on the same source.
+
+Core canonical migration: 281 tests pass. A real-owner regression first proved
+that remote membership unlink incorrectly inferred retirement; explicit empty
+retirement now keeps that record until its own removal operation. Remote element
+removal plus explicit local-property retirement preserves other shared consumers
+and has exact Undo/Redo. Local full-removal APIs are unchanged.
+
+Continue `prepare-document-publication` and then `persist-local-commit` direct
+consumers: emit rather than consume property retirement after Scene removal,
+remove the superseded wire/reducer collection-intent field, and delete backend
+arbitrary-string ownership traversal. Update existing canonical scenarios to send
+explicit records; preserve all behavioral assertions for remaining owners and
+checkpoint immutability. Source no-op Scene-only deletion retains properties.
+
+Exact wire and durable consumer proof: all 93 selected publication/Factory adapter/
+operations/reducer cases pass; server and browser production types pass. Exact
+retirement replaces arbitrary-string graph deletion. Sparse reset, duplicate and
+stale retirement rejection, unaffected shared consumers and immutable checkpoint
+failure are covered. Local layer validation reads zero unrelated graphs at both
+16 and 1,024 records. A prior fixture omitted REMOVE_PROPERTY's data entirely;
+it now supplies actual canonical data instead of relying on silently consumed
+missing evidence. A progressive split-restore preserves two source slices and
+therefore two Core calls within its existing one-publication transaction.
+
+##### Canonical child-target read execution card
+
+Owner `prepare-and-apply-property-batch`, read-only target resolution. App row APIs
+cannot derive logical child identity from an effective child ID after override or
+re-share. Extend the existing target view with registered child slots containing
+`key`, logical `childId` and effective `propertyId`. Use the existing draft/schema
+resolver and current source/override membership; no App raw-document scan, guessed
+field list or second index. Prove initial/shared/local/re-shared/reset slot
+identity through the real intention lifecycle, then migrate Fill/Stroke row APIs
+to this public read contract. Public type/spec and Props tests are the boundary;
+mutation semantics are unchanged.
+
+
+##### App property intent execution card
+
+The canonical child target read passes 287 Props tests, dependency/Core types and
+focused lint. No mutation behavior changed in that read slice.
+
+Owner `prepare-one-composition-request`; product authority is the shared property
+layer admission above and the Inspector step's exact property-intent condition.
+Inputs are explicit owner targets, registered logical child slots and independent
+source identities. Outputs are canonical read views or accepted IDs, never durable
+save confirmation. Existing Factory transaction and Core plural intent APIs are the
+only contributors. App graph inference, direct source mutation for local edits and
+new UI workflows are forbidden. Boundary: existing Fill helpers, basic Core/API
+catalog, descriptions and their formal tests. Sharing a source-backed row through
+the row convenience rejects with direction to select its independent source or
+explicitly detach first; it does not silently drop overrides. Preserve other rows.
+
+Add formal schema/dispatch and row adapter regressions before implementation; then
+prove actual creation/share/local/source/reset/detach through the browser owner in
+the integration stage. Gate: focused tests, naming, App types and lint. Do not
+advance on schema/handler disagreement or partial writes on invalid targets.
+
+
+App intent adapter proof: 40 focused action/Fill tests and 18 full public-method
+signature/schema contract tests pass; production types, focused lint and 15 naming
+checks pass. The regression initially failed three Fill adapter cases and one
+missing tool-contract case. All six Core intent APIs now use the existing catalog
+and mutation boundary. No provider-specific dispatch or source mutation shortcut.
+Real browser/peer durability proof remains required before overall completion.
+
+##### Canonical root binding projection execution card
+
+Owner `project-render-state`; consume the admitted Scene root-binding delta, not
+Props source evidence. Render's existing raw snapshot and UI element data must
+retain the current binding after isolation/re-share, while effective appearance
+still follows the separate computed projection. Preserve other raw properties,
+other owners and published snapshot immutability. No document scan or hierarchy
+invalidation. Render validates the prior binding against its existing mirror and
+uses its existing mismatch resync; no new cache or recovery path. Preset projects
+the exact same per-element delta to the affected UI row only.
+
+Boundary: Render scene store, Preset data-channel and their formal existing suites.
+First prove binding changes currently drop at projection; then verify forward,
+inverse, unrelated fields, stale delivery recovery and actual read counts. Run
+Render/Preset focused suites, types, lint and naming. Stop on canonical rereads for
+successful current deltas or new shared/history evidence from projection.
+
+
+Projection test iteration review: the initial regression correctly exposed the
+missing binding route. Subsequent oracle attempts inspected incorrect positions
+of Render.updateElement, whose actual signature sends the full snapshot as its
+fifth argument. Re-read the production flush and current existing tests before
+continuing; assert that actual argument plus canonical read counts. This is a
+fixture/oracle correction, not weaker production acceptance or another projection
+path. Resync uses addElement and is checked separately.
+
+
+Projection closure: 76 Render and 33 Preset cases pass, including exact forward/
+inverse bindings, immutable previously published snapshots, stale delta resync,
+zero canonical rereads on valid deltas and no hierarchy projection. Dependency
+build/types and focused lint pass. UI and Render preserve unrelated properties.
+
+##### App durable integration execution card
+
+Owner `persist-local-commit`, with the existing `apply-remote-publication` input
+contract. Consume real registered App/AI operations, actual Factory publications,
+collaboration transport and durable checkpoints. Exercise create/share/local edit,
+source edit, sparse reset, detach, re-share, invalid later target atomicity,
+Undo/Redo and subsequent edits after browser reload. Open a second real browser
+client and compare exact inherited layers and effective values. Capture save
+confirmation before reload; a local Core save/load alone is insufficient.
+
+Boundary: existing App E2E and publication integration tests. Replace superseded
+shared-edit expectations; preserve unrelated owners and history/durability oracles.
+No model, intercepted success receipt, direct database fixture or weaker assertion.
+Failures return to the actual owner card and regression before production changes.
+Focused browser tests precede broad affected suites. Overall completion requires
+provider contract validation and retained-check reuse as well as these browser
+proofs; no 101 run until the whole current source is reviewed.
+
+
+##### Computed handoff correction card
+
+Real two-client evidence proves detach and Redo both retain the exact same new
+canonical child ID. The first post-detach computed read still exposes the retired
+child ID; Redo happens to refresh it. The saved lifecycle artifact shows a valid
+UPDATE_PROPERTY payload but canonical ordering metadata containing both an element
+ID and a property root. Scene's applied-batch subscriber incorrectly treats every
+ordering ID as a property dependency. That interpretation is outside the metadata
+contract and can stop derived projection on the first non-property ID.
+
+Owner `derive-local-computed-projection`; actual UPDATE_PROPERTY payload identity
+is authoritative for affected ancestry. Factory ordering metadata orders evidence,
+not a list of semantic property IDs. Keep indexed parent traversal and batching;
+no App reread, retry, extra mirror or changed Undo identity. Strengthen real Core/
+Factory integration with a registered expanding collection, assert immediate
+computed identity after local edit/reset/detach and exact replay. Re-read Scene
+subscriber consumers and preserved batching tests before changing that owner.
+Boundary: Scene applied property projection and its tests, real Core coordination
+proof. Gate: regression red/green, full Scene/Core suites and the failing real
+browser lifecycle. Preserve canonical publication and history contents unchanged.
+
+
+Computed handoff correction passed the exact Core/Factory regression, 282 full Core
+and 217 Scene tests, and the real two-client lifecycle (30.1s): local/source/reset/
+detach/re-share, invalid batch atomicity, peer state, exact durable checkpoint,
+reload and a subsequent edit/save/reload. Ordering metadata and history are intact.
+
+##### Effective dependency integration review card
+
+Owner AI flow `inspect`, linked to canonical `derive-local-computed-projection`.
+The accepted mask contract requires unchanged effective visual data to preserve
+value-only inspection receipts. Test the real source/local-mask path using the
+existing inspection evidence owner, not a fake validation response. Canonical
+relationship facts remain distinct from effective rendered values; source lifetime
+and target attachment checks must not silently disappear. Review all existing
+consumers of observeInspectionChanges before choosing a change. No parallel cache,
+scene scan, receipt whitelist or Knowledge-enforced prerequisite is allowed.
+
+Boundary: inspection evidence/dependency code, existing tests and browser
+inspection scenarios. Required tests: masked source field, unmasked field,
+unrelated owner, reset/detach, local/remote edits, cancellation/disposal and load.
+Use actual computed events and existing indexed dependencies where appropriate;
+stop on any weakening of mutation settlement, attachment or stale-source checks.
+
+
+The real masked-color scenario fails exactly as predicted: the unchanged masked
+owner loses its visual receipt. The three current consumers have different facts:
+mutation scope needs canonical effects; mechanical review owns its canonical
+verdict dependencies; pixel receipt freshness needs effective output. Keep the
+existing canonical observer default for the first two. Add an explicit effective
+observation mode for the existing visual receipt owner, consuming ordinary
+committed computed events and canonical structure/load. Do not interpret source
+writes or root binding swaps alone as pixel changes; effective identity changes
+still arrive through computed deltas. This is a consumer fact distinction, not a
+second index/cache. The existing AI inspect contract and canonical projection
+consumer boundary now state it explicitly. Formal browser red evidence is
+`tmp/shared-property-masked-evidence-red.log`.
+
+
+#### Effective visual receipt closure and rebind review
+
+The formal masked-source browser case now passes: a masked color edit retains the
+unchanged visual receipt, unmasked opacity invalidates both affected consumers,
+and a later local opacity edit invalidates only its owner. Unit evidence: 27 cases;
+types and focused lint passed. Canonical mutation and mechanical-review consumers
+retain their previous observation contract. Evidence is `tmp/shared-property-
+masked-evidence-green.log` and `tmp/shared-property-effective-{unit,types,lint}.log`.
+
+Review found the explicit rebind guard in the accepted product contract was not
+implemented: `share` could discard an overridden target's local masks. Return to
+`prepare-and-apply-property-batch`, with the existing plan's reset/detach-before-
+rebind condition. Inputs are admitted same-type targets/sources; reject remaining
+local masks/child bindings before canonical apply. Independent targets and reset
+inherited targets may share. No new flags, automatic discard or alternate control.
+Add a real Props regression, then verify existing Core/browser consumers. Preserve
+source-backed-source rejection and expected-identity checks. Complete scoped tests,
+lint/types and downstream source/mask/history scenarios before advancing.
+
+
+The rebind regression failed before the guard and all 288 Props tests now pass.
+The existing child-slot re-share scenario now explicitly resets its mask first,
+retaining its identity and value assertions. Public usage/docs reflect that guard.
+
+Broader browser run `tmp/shared-property-browser-full.log`: 29 passed, two existing
+conditional skips, two failed. The first is author Undo removed locally but the
+peer still rendered one element; trace contains no console error, so source/reply
+capture is required before attributing it. The second lost a test request runtime
+while the descriptor module was edited during the suite, causing Vite module
+replacement. That is an invalid test execution condition, not a proved product
+failure. Freeze all runtime modules/declarations for subsequent browser gates.
+Extend the existing first lifecycle scenario's failure attachments with author/peer
+canonical documents, history and publication evidence. Do not waive peer equality,
+change timeouts or weaken the original assertion. This stays inside the admitted
+publication/history consumer verification; any first incorrect canonical step will
+receive its own regression and correction before final live acceptance.
+
+
+The captured Undo failure is reproducible with frozen source. Author history correctly
+moves creation to Redo and the publication explicitly removes Scene then all five
+Props records; the peer applies the prior dimension reversal but disconnects during
+that final publication. Preserve the exact synthetic receiver document/publication
+in the formal fixture `shared-property-ui-undo.json`. Add a real Core browser replay
+to expose the rejected canonical step directly, independent of socket timing. Owner
+remains the admitted Core/Props exact-lifecycle path; no retry/timeout relaxation or
+publication omission. The normal two-peer Undo/Redo/save/reload scenario remains the
+closure oracle in addition to the deterministic saved-input replay.
+
+
+#### Exact lifecycle evidence ordering correction
+
+The real remote replay exposes `Factory mutation shared records ... must preserve
+canonical ordered id order`. Props retires an internal graph parent-first, but its
+lifecycle evidence retains input owner order while grouping records in retirement
+order. A direct API call without Factory does not validate this mismatch. Factory
+correctly refuses it and the peer disconnects; do not weaken that invariant.
+
+Owner: `prepare-and-apply-property-batch`, consumer Factory canonical handoff.
+Keep public prepared/result IDs in caller order and internal graph application in
+its dependency-safe order. Lifecycle evidence must derive its ordering metadata
+from the actual grouped delivery records, each record carrying its real owner set.
+Do not treat ordering metadata as property dependencies, duplicate payloads or sort
+public target results. No Factory exception, guessed adjacency or silent skipped
+record. Add a minimal actual Core/Factory remote-Undo test, then replay the saved
+browser payload and original two-peer UI lifecycle. Preserve ordinary creation,
+shared owners, detached masks, compensation, publication and durable reload tests.
+
+
+#### Compose guidance and contract revision closure card
+
+Owner `prepare-one-composition-request` / AI compose, downstream same registry and
+invocation. Update App method advice to current local-mask/source/reset/detach APIs;
+portable Domain Knowledge remains unchanged and advisory. Remove old advice that
+local edits must detach or that different owner colors on one source conflict.
+Increment revisions of existing write tools whose selected-owner meaning changed,
+and the existing App method revision, so saved recipes cannot silently reuse old
+intent. Keep current registry eligibility; no compatibility dispatcher or forced
+Knowledge prerequisite. New distinct APIs retain their own current contracts.
+
+Formal regressions assert the advertised method and affected tool revisions before
+changing them; then actual shared/local browser actions and generic provider/schema
+handoffs prove execution. Do not alter unrelated read or structural tool revisions.
+
+
+#### Final consumer fixture review
+
+The complete Render suite passes (269). Preset's isolated custom child mocks lacked
+canonical `data`, required by the current Props relationship owner; retain the
+manager isolation and zero-child-subscription oracles and provide complete child
+snapshots. Runtime inspection's lifetime test still counted two raw channels after
+visual receipts moved to committed computed events; assert one Scene channel and
+one computed subscription with both cleanup paths. No production fallback for
+incomplete test objects. The existing Inspector wording oracle also requires the
+same single all-children Core call; restore that exact architectural phrasing.
+These are direct consumer fixture corrections inside final whole-flow verification.
+The initial broader runs remain recorded failures; rerun affected suites after
+correction, retaining unrelated successful gates.
+
+
+The compose regressions pass (22 browser adapter cases and 104 server contract,
+Knowledge, schema and execution-proof cases). App method revision 14 replaces the
+obsolete detach-for-local-correction guidance. Existing selected-owner write tools
+advance to revision 6; unrelated reads and structural operations retain revisions.
+The saved UI Undo replay and original two-peer UI sequence both pass (2/2).
+Runtime lifetime now proves Scene plus computed subscription disposal (21 cases),
+Preset complete suite passes (213), and the canonical Inspector suite passes (15).
+Direct unchanged App consumers pass: Sim 33, FieldScope 6, Office 8. No App-specific
+framework branch, portable Knowledge binding or new UI workflow was introduced.
+
+
+#### Final real-use inventory and interrupted-history correction card
+
+The broad browser run was stopped after identifying a missing six-entry use-case
+inventory; the fixture's exact catalog equality rejected each API before use.
+Do not misreport those cases as product passes. Extend the existing real API
+fixture with source/local/read/reset/detach/share scenarios and retain its exact
+inventory, input/output and cancellation checks. Independent detach is a truthful
+no-op; its existing materialization case must establish sharing first.
+
+A separate interrupted-after-write scenario reached Redo but its canonical digest
+differed from the pre-Undo value (same byte length). Preserve complete documents
+and history before/after, diagnose the first differing canonical field; no weakened
+hash assertion, longer timeout, blind retry or new Undo mechanism. Inspect the
+actual public shortcut/Factory/peer path before any owner correction. Subsequent
+browser commands use explicit max-failures=1 so one defect does not hide others.
+
+
+The negative-proof audit found two obsolete mutation locations after replacing
+inferred collection records with explicit lifecycle publication. Update the
+existing relationship-omission and retirement-order scenarios to the current
+canonical value aggregation and pre-retirement flush, preserving their exact
+expected failing obligation. Audit every declared mutation site for one match
+before rerunning proof. This repairs verification wiring, not production behavior
+or the obligation. Baseline remains 47 passing cases; expected-negative failures
+must still be exact and followed by recovery on unchanged source.
+
+The interrupted-after-write replay passes once plus three repeated full peer/save/
+reload runs. One immediate post-Redo capture contains a transient empty document
+before its unchanged eventual digest assertion passes; retain full artifacts in
+`tmp/shared-property-interrupted-artifacts`. The original broad-run hash mismatch
+is not declared fixed from reruns. Its exact cause remains unconfirmed; no timeout
+extension or product fallback was added. Final acceptance reports this limitation.
+
+
+#### Retained mapper selected-owner handoff correction
+
+Owner: AI execute-existing-capability (current AI Inspector execution step),
+consuming the existing selected-owner Fill batch API. The full API browser case
+fails because the mapper reports all source users after a local override. Its
+old preflight also rejects distinct local colors on a shared source. Both contradict
+the admitted local-mask contract. Remove source-wide discovery/conflict semantics
+from this consumer; keep complete target/lock/lease preflight, one atomic owner-local
+write, compact retained receipts and truthful post-write retention failure. Advance
+its revision and description. No source write, auto-detach or second mapping owner.
+Tests: existing real history-group scope failure, shared-source distinct-color unit
+regression, real mapped state plus unchanged sibling, lease/cancel/failure tests,
+and remaining API/Fill browser cases. Re-check the exact execution Inspector and
+canonical Props/Core contracts before editing. Failure remains at canonical write
+or receipt delivery, not a synthetic successful replay. Catalog anchors use the
+existing Inspector resolver's collapsed-hyphen convention.
+
+
+#### Durable final-state link validation correction card
+
+Owner `persist-local-commit`: exact accepted canonical changes, current document,
+explicit lifecycle. The real mapper/group/remove scenario emits a root binding
+change followed by a valid removal in one persistence window. End-of-window link
+validation still requires that retired owner to exist. This incorrectly depends on
+transport batch shape. Validate operation evidence at each ordered application and
+validate final links only for surviving owners. Missing targets at the actual
+binding operation must still reject; stale removal and orphan surviving links
+must still reject. No skipped canonical operation, inferred removal or retry loop.
+Prove grouped versus separately persisted equivalence in the formal reducer and
+confirm the existing real API scenario reaches durable save and fresh reload.
+Scope: current reducer/test and existing API browser case, no new storage protocol.
+
+
+The mapper regression is red on old source-wide conflict logic and green after the
+owner-local correction (24 cases). Real browser mapping now preserves sibling color.
+The reducer regression is red for bind-then-remove in one window and green for both
+batch shapes (10 cases), preserving missing-target, stale removal and surviving
+orphan rejection. The browser mapping case additionally confirms durable checkpoint
+and fresh reload equality. Source revision fixture expectations advance with the
+current mapper (6) and App method (14), not portable Knowledge (4).
+
+A later browser navigation interrupted the unchanged grouped-history scenario;
+the complete trace is preserved in `tmp/shared-property-navigation-trace.zip`.
+Do not relabel that attempt as passed. All source/test/doc writes and mutation
+proofs must finish before a frozen browser rerun. The angular replay failure did
+not recur in three trace-enabled repeats; its initial missing-selection cause is
+still unconfirmed. Preserve this limit independently of deterministic closures.
+
+
+#### Final deterministic closure before recorded acceptance
+
+The exact source proof passes 47 obligations, 11 expected negative scenarios and
+recovery (mapping revision 34, source `f9ded3b6d71d87a83394b52954f57587a4e221cae19831f9cd39da344a7fb713`).
+Full AI suite: 640 passed. Current Knowledge/query/persistence consumers: 48 passed.
+Types and naming pass; scoped lint has zero errors and one pre-existing console
+warning. Earlier owner totals remain in their source-bound entries. The 158 API
+browser cases passed before the mapper-specific failure; that failure is now
+covered by a corrected real scope/state/durable-reload case and 24 mapper cases.
+Frozen remaining browser suite: 19 passed, one optional saved-export case skipped
+because E2E_EXPORT_DOCUMENT is absent. It does not skip the shared-property,
+source/local/reset/detach, peer, history or durable reload scenarios. No persistence
+errors occurred in the frozen run. Prior failed attempts remain failed evidence.
+
+Review: source edits remain explicit, local intent retains masks, reset preserves
+source values and detach materializes independent values. Actual canonical slots
+and binding receipts replace index/ID assumptions. Core owns atomic owner
+coordination, Factory owns history, and publication/reducer retain exact lifecycle.
+No new UI, compatibility dispatcher, model check or portable Knowledge tool binding
+was introduced. The single live acceptance measures actual behavior and cannot
+establish causal Knowledge efficacy against a differently configured historical run.
+
+
+#### Final recorded acceptance and analysis - 2026-10-20
+
+The requested single run completed in 342.679 s, first frame 75.808 s, no extra
+review model, final 14 pass/zero stale and 5/5 required visual coverage. Durable
+sequence709/709 and fresh root-order/receipt reload pass; this live oracle does not
+claim all-property equality. One drawing stream and one host-only stream are
+complete. Recorded source digest is
+`b1c989fd3beaed33039cf7742e80a83e6419bc20ddf0a25528f6549a5485825b`.
+
+The final [acceptance and root-cause report](../evaluations/2026-10-20-101-shared-property-acceptance.md)
+distinguishes deterministic API correctness, actual advice-consistent decisions,
+and unproven causal Knowledge improvement. The specimen now passes before expansion,
+and ornaments use backend repetition. Remaining findings include local versus
+world material-coordinate divergence, unsupported retained identity binding to
+anchorId, full-schema refresh/transfer, dense motif inputs, and dated context labels.
+No further production changes or live tests are authorized by these findings.
+Historical intermittent failures remain explicit limits, not claimed fixes from reruns.
+All later changes remain local; no push or monitoring.

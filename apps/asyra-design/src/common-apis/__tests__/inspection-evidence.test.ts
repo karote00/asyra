@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 const observed = vi.hoisted(() => ({
   channels: new Map<string, (change?: unknown) => void>(),
   loaded: () => undefined as unknown,
+  computed: (_events: unknown[]) => undefined as unknown,
   stopped: vi.fn(),
   getElementData: vi.fn(),
   getElementMetadata: vi.fn(),
@@ -37,13 +38,21 @@ vi.mock('../index', () => ({ inspectionApis: { inspect: vi.fn() } }))
 vi.mock('@asyra/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/core')>()),
   yieldToCooperativeHost: async () => undefined,
+  subscribeToEventBatches: (listener: (events: unknown[]) => void) => {
+    observed.computed = listener
+    return { unsubscribe: observed.stopped }
+  },
   subscribeToFileLoadComplete: (listener: () => void) => {
     observed.loaded = listener
     return { unsubscribe: observed.stopped }
   }
 }))
 import { SharedDataChannelNames, SCENE_TREE_ACTIONS } from '@asyra/utils'
-import { createInspectionEvidence } from '../inspection-evidence'
+import {
+  createInspectionEvidence,
+  observeInspectionChanges
+} from '../inspection-evidence'
+import { EventTypes } from '@asyra/core'
 import { createInspectionValidationAction } from '../../ai/inspection'
 
 const setup = () => {
@@ -121,12 +130,24 @@ describe('canonical inspection evidence lifetime', () => {
   })
 })
 
-it('invalidates through the public Scene Tree, Props and document-load routes', async () => {
+it('invalidates through structure, committed effective changes and document-load routes', async () => {
   observed.stopped.mockClear()
   const evidence = createInspectionEvidence()
   for (const change of [
     () => observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.(),
-    () => observed.channels.get(SharedDataChannelNames.PROPS)?.(),
+    () =>
+      observed.computed([
+        {
+          type: EventTypes.UPDATE_COMPUTED_DATA,
+          payload: {
+            id: 'a',
+            owner: 'computed',
+            key: 'fills',
+            before: [],
+            after: [{}]
+          }
+        }
+      ]),
     () => observed.loaded()
   ]) {
     const result = await evidence.capture(() => ({ available: true }))
@@ -740,3 +761,45 @@ it.each([
     }
   }
 )
+
+it('keeps canonical mutations separate from effective visual freshness and disposes both', async () => {
+  const canonical = vi.fn()
+  const stop = observeInspectionChanges(canonical)
+  observed.channels.get(SharedDataChannelNames.PROPS)?.()
+  expect(canonical).toHaveBeenCalledOnce()
+  stop()
+  const evidence = createInspectionEvidence()
+  const captured = await evidence.capture(() => ({ available: true }))
+  expect(observed.channels.has(SharedDataChannelNames.PROPS)).toBe(false)
+  observed.channels.get(SharedDataChannelNames.SCENE_TREE)?.({
+    action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+    id: 'a',
+    changes: [{ key: 'fills', before: 'source', after: 'local' }]
+  })
+  observed.computed([{ type: EventTypes.SELECT_ELEMENTS, payload: ['a'] }])
+  observed.computed([
+    {
+      type: EventTypes.UPDATE_COMPUTED_DATA,
+      payload: {
+        id: 'a',
+        owner: 'computed',
+        key: 'name',
+        before: 'old',
+        after: 'new'
+      }
+    }
+  ])
+  expect(evidence.isCurrent(captured.evidence)).toBe(true)
+  observed.computed([
+    {
+      type: EventTypes.UPDATE_COMPUTED_DATA_PATCH,
+      payload: {
+        id: 'a',
+        patch: { fills: {} }
+      }
+    }
+  ])
+  expect(evidence.isCurrent(captured.evidence)).toBe(false)
+  evidence.dispose()
+  expect(observed.channels.size).toBe(0)
+})

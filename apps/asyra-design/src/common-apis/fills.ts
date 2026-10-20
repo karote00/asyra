@@ -1,4 +1,7 @@
-import type { ElementPropertyPatchUpdate } from '@asyra/core'
+import type {
+  ElementPropertyPatchUpdate,
+  ElementPropertyTarget
+} from '@asyra/core'
 import {
   PropertyTypes,
   createDefaultFill,
@@ -58,6 +61,35 @@ const createFillRecordPatch = (
 const assertUniqueFillTargets = (elementIds: readonly string[]) => {
   if (new Set(elementIds).size !== elementIds.length)
     throw new Error('Fill row targets must contain unique element IDs')
+}
+
+// Logical child slots stay stable when effective bindings are isolated or re-shared.
+const fillPropertyTargetsAtIndex = (
+  elementIds: readonly string[],
+  index: number
+): ElementPropertyTarget[] => {
+  assertUniqueFillTargets(elementIds)
+  if (!Number.isInteger(index) || index < 0)
+    throw new Error('Fill row index must be a non-negative integer')
+  const roots = core.readElementPropertyTargets(
+    elementIds.map((elementId) => ({
+      elementId,
+      propertyName: PropertyTypes.FILLS,
+      path: []
+    }))
+  )
+  return roots.map((root, offset) => {
+    const slot = root.children[index]
+    if (!slot)
+      throw new Error(`Missing Fill row ${index} for ${elementIds[offset]}`)
+    return {
+      elementId: elementIds[offset],
+      propertyName: PropertyTypes.FILLS,
+      path: [{ key: slot.key, childId: slot.childId }],
+      expectedRootId: root.propertyId,
+      expectedPropertyId: slot.propertyId
+    }
+  })
 }
 
 // Resolve relationships at the canonical caller boundary, once per owner.
@@ -583,7 +615,7 @@ export const fillApis = {
     )
   },
 
-  /** Explicitly share the child property component; subsequent edits affect all owners. */
+  /** Explicit source selection; later selected-owner edits remain local overrides. */
   shareFillAtIndex: (
     sourceElementId: string,
     elementIds: readonly string[],
@@ -591,56 +623,35 @@ export const fillApis = {
     options?: EVENT_OPTIONS
   ): void => {
     assertUniqueFillTargets(elementIds)
-    const [source, ...targets] = fillRowsAtIndex(
+    const [sourceTarget, ...targets] = fillPropertyTargetsAtIndex(
       [...new Set([sourceElementId, ...elementIds])],
       index
     )
-    const updates = targets
-      .filter(({ fill }) => fill.id !== source.fill.id)
-      .map(({ elementId, fills }) => ({
-        elementId,
-        values: {
-          fills: fills.map((fill, row) =>
-            row === index ? source.fill.id : fill.id
-          )
-        }
-      }))
-    if (updates.length)
+    const [source] = core.readElementPropertyTargets([sourceTarget])
+    if (source.mode === 'source-backed')
+      throw new Error(
+        'Choose an independent source or detach the source row before sharing its effective values'
+      )
+    if (targets.length)
       transactionApis.runTransaction(() =>
-        core.updateElementProperties(updates, options)
+        core.shareElementPropertyTargets(
+          targets.map((target) => ({ target, sourceId: source.propertyId })),
+          options
+        )
       )
   },
 
-  /** Copy only the chosen child property; other rows keep their existing relations. */
+  /** Materialize this owner row through the canonical owner without editing its source. */
   detachFillsAtIndex: (
     elementIds: readonly string[],
     index: number,
     options?: EVENT_OPTIONS
   ): void => {
-    const targets = fillRowsAtIndex(elementIds, index).map((target) => ({
-      ...target,
-      newId: id('fill')
-    }))
-    if (!targets.length) return
-    transactionApis.runTransaction(() => {
-      // Record creation and reference replacement are distinct public Core operations.
-      // The outer transaction publishes one final relationship and owns rollback.
-      core.patchElementProperties(
-        targets.map(({ elementId, fill, newId }) =>
-          createFillRecordPatch(elementId, newId, fill)
-        ),
-        options
+    const targets = fillPropertyTargetsAtIndex(elementIds, index)
+    if (targets.length)
+      transactionApis.runTransaction(() =>
+        core.detachElementPropertyTargets(targets, options)
       )
-      core.updateElementProperties(
-        targets.map(({ elementId, fills, newId }) => ({
-          elementId,
-          values: {
-            fills: fills.map((fill, row) => (row === index ? newId : fill.id))
-          }
-        })),
-        options
-      )
-    })
   },
 
   updateFillFieldsBatch: (

@@ -269,7 +269,8 @@ test.describe('real registered basic actions', () => {
 test('delivers canonical mutation scope through real history-group publication', async ({
   page
 }) => {
-  await page.goto(createTestDocumentIdentity().url)
+  const identity = createTestDocumentIdentity()
+  await page.goto(identity.url)
   await waitForAppReady(page)
   const result = await page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
@@ -354,6 +355,9 @@ test('delivers canonical mutation scope through real history-group publication',
         queries.dispose()
       }
     })
+    const mappedColors = [a, b].map(
+      (id) => core.getElementComputedData(id, ['fills'])?.fills?.[0]?.color
+    )
     const group = await invoke('api_hierarchy_groupElements', {
       elementIds: [a, b]
     })
@@ -374,6 +378,7 @@ test('delivers canonical mutation scope through real history-group publication',
       plural,
       shared,
       mapped,
+      mappedColors,
       group,
       ungroup,
       removed,
@@ -393,10 +398,11 @@ test('delivers canonical mutation scope through real history-group publication',
     appliedCount: 1,
     mutationScope: {
       complete: true,
-      elementIds: expect.arrayContaining([result.a, result.b]),
+      elementIds: [result.a],
       removedElementIds: []
     }
   })
+  expect(result.mappedColors).toEqual(['#112233', '#abcdef'])
   expect(result.group.mutationScope.elementIds).toContain(result.groupId)
   expect(result.ungroup.mutationScope).toMatchObject({
     complete: true,
@@ -410,6 +416,27 @@ test('delivers canonical mutation scope through real history-group publication',
     removedElementIds: []
   })
   expect(result.read).not.toHaveProperty('mutationScope')
+  const saved = await page.evaluate(async () => {
+    const { core, getActiveCollaborationHandle } =
+      await import('../src/testing/runtime-access')
+    const session = getActiveCollaborationHandle()
+    if (!session) throw new Error('Missing session')
+    const receipt = await session.confirmPersistence(AbortSignal.timeout(10000))
+    return { receipt, document: await core.save() }
+  })
+  expect(saved.receipt.durableSequence).toBeGreaterThanOrEqual(
+    saved.receipt.sequence
+  )
+  expect(
+    (await getPersistedDocumentCheckpoint(identity.fileId)).checkpoint
+  ).toEqual(saved.document)
+  await page.reload()
+  await waitForAppReady(page)
+  expect(
+    await page.evaluate(async () =>
+      (await import('../src/testing/runtime-access')).core.save()
+    )
+  ).toEqual(saved.document)
 })
 
 for (const path of ['registered', 'canonical'] as const) {

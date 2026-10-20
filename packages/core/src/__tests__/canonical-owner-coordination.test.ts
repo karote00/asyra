@@ -225,14 +225,14 @@ const createHarness = () => {
             )
           )
         }
-        if (operation?.kind === 'records') {
-          const orderedPropertyIds = request.operations.flatMap((mutation) => {
-            if (mutation.kind === 'records' || mutation.kind === 'values') {
-              return [mutation.propertyId]
-            }
+        if (operation?.kind === 'create-exact-property-records') {
+          const ids = request.operations.flatMap((mutation) => {
+            if (mutation.kind === 'create-exact-property-records')
+              return mutation.components.map(({ id }) => id)
+            if (mutation.kind === 'values') return [mutation.propertyId]
             return []
           })
-          return preparedProperties([], [...new Set(orderedPropertyIds)])
+          return preparedProperties([], [...new Set(ids)])
         }
         return preparedProperties()
       }
@@ -667,50 +667,19 @@ describe('Core canonical owner coordination', () => {
 
   it('creates exact property records before applying updates in one owner batch', () => {
     const { apis, props } = createHarness()
+    const creations = [{ id: 'point-b', type: PROPERTY_TYPE, value: 20 }]
     apis.applyCanonicalChanges([
       {
         kind: 'property-components',
-        records: [
-          {
-            propertyId: 'points-root',
-            key: 'points',
-            set: {
-              'point-b': {
-                id: 'point-b',
-                type: PROPERTY_TYPE,
-                value: 20
-              }
-            }
-          }
-        ],
-        updates: [
-          {
-            propertyId: 'points-root',
-            values: { value: 2 }
-          }
-        ]
+        creations,
+        updates: [{ propertyId: 'points-root', values: { value: 2 } }]
       }
     ])
-
     expect(props.preparePropertyMutationBatch).toHaveBeenCalledWith({
       operations: [
-        {
-          kind: 'records',
-          propertyId: 'points-root',
-          key: 'points',
-          set: {
-            'point-b': {
-              id: 'point-b',
-              type: PROPERTY_TYPE,
-              value: 20
-            }
-          }
-        },
-        {
-          kind: 'values',
-          propertyId: 'points-root',
-          values: { value: 2 }
-        }
+        { kind: 'create-exact-property-records', components: creations },
+        { kind: 'values', propertyId: 'points-root', values: { value: 2 } },
+        { kind: 'remove-exact-property-records', components: [] }
       ]
     })
     expect(props.applyPreparedPropertyMutationBatch).toHaveBeenCalledOnce()
@@ -802,9 +771,7 @@ describe('Core canonical owner coordination', () => {
     expect(sequence).toEqual([
       'scene-apply',
       'scene-prepare',
-      'props-prepare',
       'scene-apply',
-      'props-apply',
       'scene-prepare',
       'props-prepare',
       'props-apply',
@@ -814,9 +781,7 @@ describe('Core canonical owner coordination', () => {
       'props-apply',
       'scene-apply',
       'scene-prepare',
-      'props-prepare',
-      'scene-apply',
-      'props-apply'
+      'scene-apply'
     ])
     expect(sceneTree.preflightRestoreSubtree).toHaveBeenCalledWith(
       expect.objectContaining({ elementId: 'subtree-root' }),

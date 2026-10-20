@@ -44,6 +44,10 @@ const createDelivery = (
       before: 0,
       after: 1
     }
+  } else if (eventName === EventTypes.REMOVE_PROPERTY) {
+    payload = {
+      data: orderedIds.map((id) => ({ id, type: 'position', x: 0, y: 0 }))
+    }
   } else if (eventName === EventTypes.CHANGE_SUBTREE) {
     payload = {
       elementId: 'element-a',
