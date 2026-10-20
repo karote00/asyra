@@ -396,10 +396,10 @@ The exact implementation boundary is Inspector step
   source geometry with a previous Render frame.
 - Canonical element-property edits go through the plural
   `updateElementProperties(...)` replacement API or
-  `patchElementProperties(...)` record-delta API. Core first obtains one
-  read-only `ResolvedElementPropertyTargets` result and one
-  `PreparedPropertyMutationBatch`, then applies the Props-owned batch; callers
-  do not run per-field update/commit loops.
+  `patchElementProperties(...)` record-delta API. These APIs preserve selected-owner intent through the same property-intent
+  coordinator: inherited values become sparse overrides rather than shared-source
+  writes. Core preflights Props and Scene binding changes before applying either;
+  callers do not run per-field update/commit loops.
 - `createElementsInParent(...)` is the canonical plural creation facade.
   Core asks Props to prepare the complete owner-property batch, builds one
   owner-id relation index, asks Scene to prepare the complete insertion, then
@@ -414,7 +414,7 @@ The exact implementation boundary is Inspector step
   siblings and multiple parents; it never infers a contiguous range from replay
   order. Scene preflights these entries and Props preflights the exact graph
   before either owner applies. One
-  `property-components` change may combine ordered structural records and
+  `property-components` change may combine explicit creations/removals, sparse layers and
   value updates in one Props-owned mutation batch. For `subtree-restore`, Core
   first requests Scene Tree's `pending-restore` preflight, then preflights and
   restores Props before Scene Tree applies and revalidates active property
@@ -501,3 +501,25 @@ Core exposes Render's typed `projectSpatialPoint`, `getSpatialRayAtClientPoint`,
 client conversion and explicit visual/entity mapping. Core neither reads SDK
 objects nor changes canonical state for these queries. See
 [Render spatial queries](render.md#spatial-query-facade).
+
+### Owner-local and shared-source property intentions
+
+`readElementPropertyTargets(targets)` returns mode, effective values, sparse
+`overrides`, `sourceId`/source values when inherited, and `children` with logical
+`childId` versus effective `propertyId`. Each target names an `elementId`, registered
+`propertyName`, and logical `path: [{ key, childId }]`; an empty path selects the
+root. Optional expected root/property/source IDs reject stale retained targets.
+
+- `updateElementPropertyTargets(updates)` edits only selected owners.
+- `updateSharedPropertySources(updates)` explicitly edits independent shared sources.
+- `resetElementPropertyOverrides(updates)` removes specified mask keys.
+- `detachElementPropertyTargets(targets)` materializes effective values once.
+- `shareElementPropertyTargets(updates)` binds to an independent same-type source.
+
+All are plural and preflight the whole batch. Mutation return IDs identify accepted
+owners (or sources for source updates), including valid no-ops; they do not assert
+that a field changed or that storage acknowledged it. Existing canonical mutation
+receipts determine actual changed scope. Existing Factory transactions own history,
+compensation and ordered delivery; document settlement owns durable acknowledgment.
+Logical paths survive owner isolation. Re-read after detachment/rebinding to refresh
+expected identities. Do not infer source editing from an element's current fan-out.

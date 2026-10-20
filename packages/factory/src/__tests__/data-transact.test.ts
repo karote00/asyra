@@ -1430,6 +1430,48 @@ describe('DataTransact user action completion', () => {
     subscription.unsubscribe()
   })
 
+  it.each(['rollback', 'history'] as const)(
+    'replays exact property binding deltas through %s',
+    (mode) => {
+      const transact = new DataTransact()
+      const observed: unknown[] = []
+      const subscription = subscribeToEvents((event) => {
+        if (event.type === EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS)
+          observed.push((event as AllEvent & { payload: unknown }).payload)
+      })
+      const payload = {
+        action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+        eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+        id: 'element',
+        changes: [{ key: 'material', before: 'source', after: 'local' }]
+      }
+      try {
+        transact.start()
+        transact.update({
+          type: TransactionEventTypes.UPDATE_TRANSACTION,
+          eventName: EventTypes.UPDATE_ELEMENT_PROPERTY_BINDINGS,
+          payload
+        })
+        if (mode === 'rollback') transact.end({ outcome: 'rollback' })
+        else {
+          transact.end()
+          observed.length = 0
+          runWithOwnedTransact(transact, () => transact.undo())
+          runWithOwnedTransact(transact, () => transact.redo())
+        }
+        const inverse = {
+          ...payload,
+          changes: [{ key: 'material', before: 'local', after: 'source' }]
+        }
+        expect(observed).toEqual(
+          mode === 'rollback' ? [inverse] : [inverse, payload]
+        )
+      } finally {
+        subscription.unsubscribe()
+      }
+    }
+  )
+
   it('uses the same batch replay contract for undo and redo', () => {
     const transact = new DataTransact()
     const observed: unknown[] = []

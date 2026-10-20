@@ -7,12 +7,7 @@ vi.mock('../../common-apis/fills', () => ({ fillApis: {} }))
 import { createRetainedDesignContext } from '../../common-apis/retained-design-context'
 import { createRetainedFillAction as createAction } from '../retained-fill-action'
 
-const createRetainedFillAction = (
-  queries: Parameters<typeof createAction>[0],
-  apis: Omit<NonNullable<Parameters<typeof createAction>[1]>, 'owners'> & {
-    owners?: (ids: string[]) => string[]
-  }
-) => createAction(queries, { owners: () => ['a', 'b', 'c'], ...apis })
+const createRetainedFillAction = createAction
 const targets = (ids: readonly string[]) =>
   ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` }))
 const input = {
@@ -67,7 +62,7 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     { elementId: 'b', fillId: 'fill-b', patch: { color: '#808080' } },
     { elementId: 'c', fillId: 'fill-c', patch: { color: '#ffffff' } }
   ])
-  expect(action.revision).toBe(5)
+  expect(action.revision).toBe(6)
   expect(result).toMatchObject({ appliedCount: 3 })
 })
 it('rejects a reference invalidated while queued and performs no write', async () => {
@@ -418,14 +413,13 @@ it('refines retained candidates into one canonical plural edit', async () => {
   }
 })
 
-it('exports the canonical shared-property owners for post-write mechanical checks', async () => {
-  const owners = vi.fn(() => ['a', 'b', 'c', 'shared-outside-query'])
+it('maps distinct local colors on one shared source and reports only selected owners', async () => {
   const update = vi.fn()
   const action = createRetainedFillAction({ get: () => snapshot } as never, {
-    targets,
+    targets: (ids) =>
+      ids.map((elementId) => ({ elementId, fillId: 'shared-fill' })),
     metadata: () => ({ lock: false }),
-    update,
-    owners
+    update
   })
   const result = await action.execute(input, {
     signal: new AbortController().signal,
@@ -434,12 +428,15 @@ it('exports the canonical shared-property owners for post-write mechanical check
   expect(result).toMatchObject({
     mutationScope: {
       complete: true,
-      elementIds: ['a', 'b', 'c', 'shared-outside-query'],
+      elementIds: ['a', 'b', 'c'],
       removedElementIds: []
     }
   })
-  expect(owners).toHaveBeenCalledExactlyOnceWith(['fill-a', 'fill-b', 'fill-c'])
-  expect(update).toHaveBeenCalledTimes(1)
+  expect(update).toHaveBeenCalledExactlyOnceWith([
+    { elementId: 'a', fillId: 'shared-fill', patch: { color: '#000000' } },
+    { elementId: 'b', fillId: 'shared-fill', patch: { color: '#808080' } },
+    { elementId: 'c', fillId: 'shared-fill', patch: { color: '#ffffff' } }
+  ])
 })
 
 // Recorded mapping receipts contained 3,584 and 1,600 affected identities.
@@ -468,8 +465,7 @@ it.each([3584, 1600])(
     const action = createAction(queries, {
       metadata: () => ({ lock: false }),
       targets,
-      update,
-      owners: () => ids
+      update
     })
     try {
       const { snapshotId: _snapshotId, ...mapping } = input.mappings[0]

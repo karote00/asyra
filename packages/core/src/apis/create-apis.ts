@@ -1,3 +1,4 @@
+import { createElementPropertyIntentAPIs } from './property-intents.js'
 import {
   SceneTree,
   componentRegistry,
@@ -331,34 +332,30 @@ export const createAPIs = (
     for (const change of changes) {
       switch (change.kind) {
         case 'property-components': {
-          const records = change.records ?? []
-          if (records.length === 0) {
-            const propertyIds = propsAPIs.updatePropertyComponents(
-              change.updates
-            )
-            requireOrderedIds(
-              'property-component owner',
-              propertyIds,
-              change.updates.map(({ propertyId }) => propertyId)
-            )
-            break
-          }
+          const layers = change.layers ?? []
           const orderedPropertyIds: string[] = []
           const seenPropertyIds = new Set<string>()
           const operations: PropertyMutation[] = []
-          records.forEach(({ propertyId, key, set, remove }) => {
-            if (!seenPropertyIds.has(propertyId)) {
-              seenPropertyIds.add(propertyId)
-              orderedPropertyIds.push(propertyId)
-            }
+          const includeIds = (ids: readonly string[]): void => {
+            for (const id of ids)
+              if (!seenPropertyIds.has(id)) {
+                seenPropertyIds.add(id)
+                orderedPropertyIds.push(id)
+              }
+          }
+          if (change.creations !== undefined) {
+            includeIds(change.creations.map(({ id }) => id))
             operations.push({
-              kind: 'records',
-              propertyId,
-              key,
-              ...(set === undefined ? {} : { set }),
-              ...(remove === undefined ? {} : { remove })
+              kind: 'create-exact-property-records',
+              components: change.creations
             })
-          })
+          }
+          for (const { id } of change.removals ?? []) {
+            if (sceneTree.getElementPropertyRelations(id).length > 0)
+              throw new Error(
+                `[Core] Cannot retire property record "${id}" retained by an element`
+              )
+          }
           change.updates.forEach(({ propertyId, values }) => {
             if (!seenPropertyIds.has(propertyId)) {
               seenPropertyIds.add(propertyId)
@@ -370,6 +367,18 @@ export const createAPIs = (
               values
             })
           })
+          layers.forEach(({ propertyId, changes }) => {
+            if (!seenPropertyIds.has(propertyId)) {
+              seenPropertyIds.add(propertyId)
+              orderedPropertyIds.push(propertyId)
+            }
+            operations.push({ kind: 'layers', propertyId, changes })
+          })
+          includeIds((change.removals ?? []).map(({ id }) => id))
+          operations.push({
+            kind: 'remove-exact-property-records',
+            components: change.removals ?? []
+          })
           const preparedBatch = props.preparePropertyMutationBatch({
             operations
           })
@@ -379,6 +388,14 @@ export const createAPIs = (
             result.orderedPropertyIds,
             orderedPropertyIds
           )
+          break
+        }
+        case 'element-property-bindings': {
+          const prepared =
+            sceneTree.prepareCanonicalElementPropertyBindingMutation(
+              change.changes
+            )
+          sceneTree.applyPreparedElementMutation(prepared)
           break
         }
         case 'element-data': {
@@ -404,14 +421,10 @@ export const createAPIs = (
           break
         }
         case 'subtree-removal': {
-          const result = sceneTreeAPIs.removeSubtreeFromCanonicalData(
+          const prepared = sceneTree.prepareCanonicalSubtreeRemoval(
             change.change
           )
-          if (result.elementId !== change.change.elementId) {
-            throw new Error(
-              '[Core] Subtree owner returned a different canonical root id'
-            )
-          }
+          sceneTree.applyPreparedElementMutation(prepared)
           break
         }
         case 'subtree-restore': {
@@ -442,12 +455,13 @@ export const createAPIs = (
           break
         }
         case 'element-removal': {
-          const elementIds = sceneTreeAPIs.removeElementsFromCanonicalData(
+          const prepared = sceneTree.prepareCanonicalElementRemoval(
             change.removals
           )
+          const result = sceneTree.applyPreparedElementMutation(prepared)
           requireOrderedIds(
             'element-removal owner',
-            elementIds,
+            result.orderedElementIds,
             change.removals.map(({ data }) => data.id)
           )
           break
@@ -462,9 +476,34 @@ export const createAPIs = (
     ...propsAPIs,
     ...createRenderAPIs(renderRequests),
     ...sceneTreeAPIs,
+    ...createElementPropertyIntentAPIs({
+      resolveElementPropertyBindings: (requests) =>
+        sceneTree.resolveElementPropertyBindings(requests),
+      prepareElementPropertyBindingMutation: (requests) =>
+        sceneTree.prepareElementPropertyBindingMutation(requests),
+      applyPreparedElementMutation: (prepared, options) =>
+        sceneTree.applyPreparedElementMutation(prepared, options),
+      readPropertyTargets: (targets) => props.readPropertyTargets(targets),
+      preparePropertyIntentBatch: (intents, options) =>
+        props.preparePropertyIntentBatch(intents, options),
+      prepareSharedPropertySourceBatch: (updates, options) =>
+        props.prepareSharedPropertySourceBatch(updates, options),
+      preparePropertyMutationBatch: (request) =>
+        props.preparePropertyMutationBatch(request),
+      applyPreparedPropertyMutationBatch: (prepared) =>
+        props.applyPreparedPropertyMutationBatch(prepared)
+    }),
     ...createElementPropertyAPIs({
       resolveElementPropertyTargets: (requests) =>
         sceneTree.resolveElementPropertyTargets(requests),
+      resolveElementPropertyBindings: (requests) =>
+        sceneTree.resolveElementPropertyBindings(requests),
+      prepareOwnerPropertyMutations: (updates, options) =>
+        props.prepareOwnerPropertyMutations(updates, options),
+      prepareElementPropertyBindingMutation: (requests) =>
+        sceneTree.prepareElementPropertyBindingMutation(requests),
+      applyPreparedElementMutation: (prepared, options) =>
+        sceneTree.applyPreparedElementMutation(prepared, options),
       preparePropertyMutationBatch: (request) =>
         props.preparePropertyMutationBatch(request),
       applyPreparedPropertyMutationBatch: (preparedBatch) =>

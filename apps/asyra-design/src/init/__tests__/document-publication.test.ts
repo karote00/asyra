@@ -67,6 +67,130 @@ const processor = () => {
 }
 
 describe('explicit canonical document publication', () => {
+  it('preserves sparse lifecycle, per-key layer presence and root bindings in source order', () => {
+    const raw = {
+      id: 'local-fill',
+      type: 'fill',
+      inheritance: {
+        sourceId: 'source-fill',
+        overrides: { opacity: 0.4 },
+        childBindings: {}
+      }
+    }
+    const items = [
+      ['props', 'addProperty', { data: [raw] }],
+      [
+        'sceneTree',
+        'updateElementPropertyBindings',
+        {
+          action: 'updateElementPropertyBindings',
+          eventName: 'updateElementPropertyBindings',
+          id: 'rect-a',
+          changes: [{ key: 'fill', before: 'source-fill', after: raw.id }]
+        }
+      ],
+      [
+        'props',
+        'updateProperty',
+        {
+          id: raw.id,
+          layer: 'overrides',
+          key: 'opacity',
+          before: { present: true, value: 0.4 },
+          after: { present: false }
+        }
+      ],
+      [
+        'sceneTree',
+        'updateElementPropertyBindings',
+        {
+          action: 'updateElementPropertyBindings',
+          eventName: 'updateElementPropertyBindings',
+          id: 'rect-a',
+          changes: [{ key: 'fill', before: raw.id, after: 'source-fill' }]
+        }
+      ],
+      [
+        'props',
+        'removeProperty',
+        {
+          data: [{ ...raw, inheritance: { ...raw.inheritance, overrides: {} } }]
+        }
+      ]
+    ] as const
+    const input = publication(false)
+    const source = {
+      ...input,
+      slices: [
+        {
+          sliceId: 's',
+          orderedIds: items.map((_, i) => String(i)),
+          batches: items.map(([channel, eventName, payload], i) => ({
+            batchId: `b-${i}`,
+            channel,
+            deliveries: [
+              {
+                deliveryId: String(i),
+                orderedIds: [String(i)],
+                eventName,
+                payload
+              }
+            ]
+          }))
+        }
+      ]
+    }
+    const prepared = prepareDocumentPublication(source)
+    const changes = readDocumentPublicationSlices(prepared)[0]
+    expect(changes).toEqual([
+      {
+        kind: 'property-components',
+        updates: [],
+        creations: [raw],
+        removals: []
+      },
+      { kind: 'element-property-bindings', changes: [items[1][2]] },
+      {
+        kind: 'property-components',
+        updates: [],
+        layers: [
+          {
+            propertyId: raw.id,
+            changes: [
+              { layer: 'overrides', key: 'opacity', state: { present: false } }
+            ]
+          }
+        ],
+        removals: []
+      },
+      { kind: 'element-property-bindings', changes: [items[3][2]] },
+      { kind: 'property-components', updates: [], removals: items[4][2].data }
+    ])
+    const invalid = structuredClone(prepared)
+    const payload = invalid.slices[0].batches[0].deliveries[0].payload as {
+      changes: unknown[]
+    }
+    payload.changes = [
+      {
+        kind: 'property-components',
+        updates: [],
+        layers: [
+          {
+            propertyId: raw.id,
+            changes: [
+              {
+                layer: 'overrides',
+                key: 'opacity',
+                state: { present: false, value: 1 }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+    expect(() => readDocumentPublicationSlices(invalid)).toThrow()
+  })
+
   it('applies typed operations without reconstructing low-level channel evidence', () => {
     const { apply, process } = processor()
     expect(process(publication(true))).toBe(true)

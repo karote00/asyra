@@ -277,7 +277,7 @@ it('carries the recorded material decision into initial preparation without chan
     )
     expect(
       read.sources.map((source: { revision: number }) => source.revision)
-    ).toEqual([4, 13])
+    ).toEqual([4, 14])
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
@@ -749,7 +749,6 @@ it('hands a declared color-only method through exact discovery to retained mappi
         if (!fills?.[0]?.id) throw new Error('Missing recorded Fill')
         return { elementId, fillId: fills[0].id }
       }),
-    owners: () => ids,
     update
   })
   const registry = createAiActionRegistry()

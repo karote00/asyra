@@ -29,6 +29,7 @@ export enum ElementEventTypes {
   REMOVE_ELEMENTS = 'removeElements',
   MOVE_ELEMENTS = 'moveElements',
   CHANGE_SUBTREE = 'changeSubtree',
+  UPDATE_ELEMENT_PROPERTY_BINDINGS = 'updateElementPropertyBindings',
   UPDATE_ELEMENT_DATA = 'updateElementData',
   UPDATE_COMPUTED_DATA = 'updateComputedData',
   UPDATE_COMPUTED_DATA_PATCH = 'updateComputedDataPatch'

@@ -1,3 +1,5 @@
+import recordedPropertyUndo from '../server/__tests__/fixtures/recorded-101/shared-property-ui-undo.json' with { type: 'json' }
+import { writeFile } from 'node:fs/promises'
 import recordedClosure from '../server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json' with { type: 'json' }
 import recordedMechanics from '../server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json' with { type: 'json' }
 import recordedScope from '../server/__tests__/fixtures/recorded-101/scope-handoff-20261017.json' with { type: 'json' }
@@ -10,6 +12,7 @@ import {
   createTestDocumentIdentity,
   getElementCount,
   getCoreDocumentDigest,
+  getTransactionSnapshot,
   getPersistedDocumentDigest,
   redo,
   undo,
@@ -152,6 +155,38 @@ test('manual edits, Undo, Redo and isolated Core load invalidate canonical inspe
     await expect.poll(() => getElementCount(page)).toBe(1)
     expect(await getCoreDocumentDigest(page)).toEqual(expectedDocument)
   } finally {
+    {
+      const states = await Promise.all(
+        [page, remote].map(async (client) => ({
+          url: client.url(),
+          state: await client
+            .evaluate(async () => {
+              const { core, getActiveCollaborationHandle, readTestCapture } =
+                await import('../src/testing/runtime-access')
+              const transaction = core.deps.factory.transact
+              return {
+                document: await core.save(),
+                status: getActiveCollaborationHandle()?.getStatus(),
+                history: {
+                  undo: transaction.undoStack.length,
+                  redo: transaction.redoStack.length
+                },
+                publications: readTestCapture(
+                  'inspection-lifecycle-publications'
+                ),
+                raw: readTestCapture('inspection-lifecycle-raw')
+              }
+            })
+            .catch((error: Error) => ({ error: error.message }))
+        }))
+      )
+      const file = testInfo.outputPath('inspection-lifecycle-state.json')
+      await writeFile(file, JSON.stringify(states))
+      await testInfo.attach('inspection-lifecycle-state', {
+        path: file,
+        contentType: 'application/json'
+      })
+    }
     await remote.close()
   }
 })
@@ -2579,6 +2614,13 @@ for (const mode of [
       expect(result.providerError).toBeUndefined()
       expect(primaryCalls).toBe(1)
       const after = await getCoreDocumentDigest(page)
+      const afterDocument = await page.evaluate(async () =>
+        (await import('../src/testing/runtime-access')).core.save()
+      )
+      await writeFile(
+        testInfo.outputPath('mechanical-after-document.json'),
+        JSON.stringify(afterDocument)
+      )
       if (mode === 'no-progress') {
         expect(after).toEqual(before)
         await page.reload()
@@ -2603,6 +2645,15 @@ for (const mode of [
         .poll(() => getPersistedDocumentDigest(document.fileId))
         .toEqual(recoveryBefore ?? before)
       await redo(page)
+      await writeFile(
+        testInfo.outputPath('mechanical-redo-document.json'),
+        JSON.stringify({
+          document: await page.evaluate(async () =>
+            (await import('../src/testing/runtime-access')).core.save()
+          ),
+          history: await getTransactionSnapshot(page)
+        })
+      )
       await expect.poll(() => getCoreDocumentDigest(page)).toEqual(after)
       await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(after)
       await expect
@@ -3421,4 +3472,102 @@ test('published representative guidance reaches real capture and completion with
   await page.reload()
   await waitForAppReady(page)
   expect(await getCoreDocumentDigest(page)).toEqual(digest)
+})
+
+test('shared source field changes preserve masked visual receipts and unrelated local passes', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const result = await page.evaluate(async () => {
+    const { core } = await import('../src/testing/runtime-access')
+    const { fillApis, transactionApis } = await import('../src/common-apis')
+    const { createInspectionEvidence } =
+      await import('../src/common-apis/inspection-evidence')
+    const ids = transactionApis.runTransaction(() => {
+      const ids = core.createElementsInParent(
+        [0, 100, 200].map((x) => ({
+          type: 'rect',
+          x,
+          y: 0,
+          width: 40,
+          height: 40
+        })),
+        core.getCurrentWorkspaceId()
+      )
+      fillApis.addFills(ids)
+      fillApis.shareFillAtIndex(ids[0], [ids[1]], 0)
+      fillApis.updateFillsAtIndex([ids[1]], 0, { color: '#334455' })
+      return ids
+    })
+    const sourceId = fillApis.getFillTargetsAtIndex([ids[0]], 0)[0].fillId
+    const owner = createInspectionEvidence()
+    const capture = async () =>
+      Promise.all(
+        ids.map((elementId) =>
+          owner.capture(() => ({ available: true }), { elementId })
+        )
+      )
+    try {
+      const beforeColor = await capture()
+      transactionApis.runTransaction(() =>
+        core.updateSharedPropertySources([
+          { propertyId: sourceId, values: { color: '#abcdef' } }
+        ])
+      )
+      const color = beforeColor.map((entry) => owner.isCurrent(entry.evidence))
+      const beforeOpacity = await capture()
+      transactionApis.runTransaction(() =>
+        core.updateSharedPropertySources([
+          { propertyId: sourceId, values: { opacity: 0.4 } }
+        ])
+      )
+      const opacity = beforeOpacity.map((entry) =>
+        owner.isCurrent(entry.evidence)
+      )
+      const beforeLocal = await capture()
+      fillApis.updateFillsAtIndex([ids[1]], 0, { opacity: 0.7 })
+      const local = beforeLocal.map((entry) => owner.isCurrent(entry.evidence))
+      return { color, opacity, local }
+    } finally {
+      owner.dispose()
+    }
+  })
+  expect(result).toEqual({
+    color: [false, true, true],
+    opacity: [false, false, true],
+    local: [true, false, true]
+  })
+})
+
+test('recorded UI Undo retires the exact property graph after removing its element', async ({
+  page
+}) => {
+  await page.goto(createTestDocumentIdentity().url)
+  await waitForAppReady(page)
+  const outcome = await page.evaluate(async (recorded) => {
+    const { core, getActiveCollaborationHandle } =
+      await import('../src/testing/runtime-access')
+    await getActiveCollaborationHandle()?.dispose()
+    core.load(recorded.document)
+    try {
+      await core.applyRemoteCanonicalChangeSlices({
+        origin: 'undo',
+        slices: [
+          recorded.changes as Parameters<typeof core.applyCanonicalChanges>[0]
+        ]
+      })
+      return { error: null, document: await core.save() }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : String(error),
+        document: await core.save()
+      }
+    }
+  }, recordedPropertyUndo)
+  expect(outcome.error).toBeNull()
+  expect(Object.keys(outcome.document.props)).toEqual([])
+  expect(Object.keys(outcome.document.sceneTree.elements)).toEqual([
+    'workspace'
+  ])
 })

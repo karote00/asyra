@@ -8,20 +8,26 @@ import type {
   PropsRestoreSnapshot,
   SceneTreeRestoreSnapshot,
   SubtreeChange,
-  UpdateElementDataChange
+  UpdateElementDataChange,
+  UpdateElementPropertyBindingsChange,
+  PropertyLayerEdit
 } from '@asyra/utils'
 import type { PropertyComponentValuesUpdate } from './props.js'
 
 export type CanonicalChange =
   | Readonly<{
       kind: 'property-components'
-      records?: readonly Readonly<{
+      creations?: readonly PropertyComponentRawData[]
+      removals?: readonly PropertyComponentRawData[]
+      layers?: readonly Readonly<{
         propertyId: string
-        key: string
-        set?: Readonly<Record<string, Readonly<Record<string, unknown>>>>
-        remove?: readonly string[]
+        changes: readonly PropertyLayerEdit[]
       }>[]
       updates: readonly PropertyComponentValuesUpdate[]
+    }>
+  | Readonly<{
+      kind: 'element-property-bindings'
+      changes: readonly UpdateElementPropertyBindingsChange[]
     }>
   | Readonly<{
       kind: 'element-data'

@@ -588,6 +588,115 @@ export const createBasicApiCases = async () => {
     { data: [creation], parentId: workspace },
     created
   )
+  const materialTarget = {
+    elementId: rect,
+    propertyName: 'fills',
+    path: [{ key: 'fills', childId: paintId }]
+  }
+  const shareMaterial = () => {
+    fillApis.shareFillAtIndex(rect, [other], 0)
+  }
+  const readMaterial = () =>
+    core.readElementPropertyTargets([materialTarget])[0]
+  add(
+    'core',
+    'readElementPropertyTargets',
+    { targets: [materialTarget] },
+    (value) => {
+      equal(value[0].propertyId, paintId)
+      equal(value[0].mode, 'independent')
+      equal(value[0].effective.color, '#112233')
+    }
+  )
+  add(
+    'core',
+    'updateElementPropertyTargets',
+    { updates: [{ target: materialTarget, values: { opacity: 0.3 } }] },
+    () => {
+      equal(readMaterial().overrides.opacity, 0.3)
+      equal(fill().opacity, 0.3)
+      equal(
+        (core.getElementComputedData(other, ['fills'])?.fills as Value[])[0]
+          .opacity,
+        1
+      )
+    },
+    shareMaterial
+  )
+  add(
+    'core',
+    'updateSharedPropertySources',
+    { updates: [{ propertyId: paintId, values: { color: '#abcdef' } }] },
+    () => {
+      equal(fill().color, '#abcdef')
+      equal(
+        (core.getElementComputedData(other, ['fills'])?.fills as Value[])[0]
+          .color,
+        '#abcdef'
+      )
+    },
+    shareMaterial
+  )
+  add(
+    'core',
+    'resetElementPropertyOverrides',
+    { updates: [{ target: materialTarget, keys: ['opacity'] }] },
+    () => {
+      equal(readMaterial().overrides, {})
+      equal(fill().opacity, 1)
+    },
+    () => {
+      shareMaterial()
+      core.updateElementPropertyTargets([
+        { target: materialTarget, values: { opacity: 0.3 } }
+      ])
+    }
+  )
+  add(
+    'core',
+    'detachElementPropertyTargets',
+    { targets: [materialTarget] },
+    () => {
+      equal(readMaterial().mode, 'independent')
+      assert(
+        readMaterial().propertyId !== paintId,
+        'Detached binding must be independent'
+      )
+      equal(fill().color, '#112233')
+    },
+    shareMaterial
+  )
+  add(
+    'core',
+    'shareElementPropertyTargets',
+    {
+      updates: [
+        {
+          target: {
+            elementId: other,
+            propertyName: 'fills',
+            path: [
+              {
+                key: 'fills',
+                childId: (
+                  core.getElementComputedData(other, ['fills'])
+                    ?.fills as Value[]
+                )[0].id
+              }
+            ]
+          },
+          sourceId: paintId
+        }
+      ]
+    },
+    () => {
+      equal(
+        (core.getElementComputedData(other, ['fills'])?.fills as Value[])[0]
+          .color,
+        '#112233'
+      )
+    }
+  )
   add(
     'core',
     'updateElementProperties',
@@ -826,16 +935,28 @@ export const createBasicApiCases = async () => {
     'fill',
     'shareFillAtIndex',
     { sourceElementId: rect, elementIds: [other], index: 0 },
-    () =>
-      equal(
-        (core.getElementComputedData(other, ['fills'])?.fills as Value[])[0].id,
-        paintId
-      )
+    () => {
+      const root = core.readElementPropertyTargets([
+        { elementId: other, propertyName: 'fills', path: [] }
+      ])[0]
+      const child = core.readElementPropertyTargets([
+        { elementId: other, propertyName: 'fills', path: [root.children[0]] }
+      ])[0]
+      equal(child.sourceId, paintId)
+      equal(child.effective.color, '#112233')
+      equal(child.mode, 'source-backed')
+    }
   )
-  add('fill', 'detachFillsAtIndex', { elementIds: [rect], index: 0 }, () => {
-    assert(fill().id !== paintId, 'Still shared')
-    equal(fill().color, '#112233')
-  })
+  add(
+    'fill',
+    'detachFillsAtIndex',
+    { elementIds: [rect], index: 0 },
+    () => {
+      assert(fill().id !== paintId, 'Still shared')
+      equal(fill().color, '#112233')
+    },
+    shareMaterial
+  )
   add(
     'fill',
     'updateFillFieldsBatch',

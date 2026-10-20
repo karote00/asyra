@@ -1,4 +1,4 @@
-import type { PropertyValueKind } from '@asyra/utils'
+import type { PropertyValueKind, PropertyFieldSchema } from '@asyra/utils'
 
 export const matchesPropertyValueKind = (
   kind: PropertyValueKind,
@@ -20,5 +20,30 @@ export const matchesPropertyValueKind = (
       return Array.isArray(value)
     case 'custom':
       return true
+  }
+}
+
+export const isRuntimePropertyFieldValueValid = (
+  field: PropertyFieldSchema,
+  value: unknown
+): boolean => {
+  if (!matchesPropertyValueKind(field.kind, value)) {
+    return false
+  }
+  if (
+    field.allowedUnits &&
+    field.allowedUnits.length > 0 &&
+    typeof value === 'string' &&
+    !field.allowedUnits.some((unit) => unit === value)
+  ) {
+    return false
+  }
+  if (!field.validate) {
+    return true
+  }
+  try {
+    return field.validate(value as never)
+  } catch {
+    return false
   }
 }

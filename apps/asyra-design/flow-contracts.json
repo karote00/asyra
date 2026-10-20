@@ -720,8 +720,8 @@
       ],
       "mutation": {
         "file": "apps/asyra-design/src/collaboration/operations.ts",
-        "from": "update.values[change.key as string] = change.after",
-        "to": "if (!Array.isArray(change.after)) update.values[change.key as string] = change.after"
+        "from": "values[payload.key] = payload.after",
+        "to": "if (!Array.isArray(payload.after)) values[payload.key] = payload.after"
       }
     },
     {
@@ -732,8 +732,8 @@
       ],
       "mutation": {
         "file": "apps/asyra-design/src/collaboration/operations.ts",
-        "from": "const removedPropertyIds = new Set(\n        propertyComponents.records.flatMap((record) => record.remove ?? [])\n      )",
-        "to": "const removedPropertyIds = new Set<string>()"
+        "from": "if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {\n      flush()",
+        "to": "if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {\n      if (addition) flush()"
       }
     }
   ]

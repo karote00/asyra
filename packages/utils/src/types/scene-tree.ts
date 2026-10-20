@@ -145,6 +145,20 @@ export interface ElementDataFieldChange {
   readonly after: string | boolean
 }
 
+export interface ElementPropertyBindingChange {
+  readonly key: string
+  readonly before: string
+  readonly after: string
+}
+
+export interface UpdateElementPropertyBindingsChange {
+  readonly action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_PROPERTY_BINDINGS
+  readonly eventName: string
+  readonly id: string
+  readonly changes: readonly ElementPropertyBindingChange[]
+  readonly options?: MutationOptions
+}
+
 export interface UpdateElementDataChange {
   readonly action: SCENE_TREE_ACTIONS.UPDATE_ELEMENT_DATA
   readonly eventName: string
@@ -219,6 +233,7 @@ export type SceneTreeChange =
   | AddRemoveElementsChange
   | MoveElementsChange
   | SubtreeChange
+  | UpdateElementPropertyBindingsChange
   | UpdateElementDataChange
   | UpdateElementChange
   | UpdateElementBatchChange

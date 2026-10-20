@@ -114,6 +114,27 @@ export const initPropXSubscribes = () => {
         return false
       }
 
+      if ('layer' in payload) {
+        const result = propsManager.applyPreparedPropertyMutationBatch(
+          propsManager.preparePropertyMutationBatch({
+            operations: [
+              {
+                kind: 'layers',
+                propertyId: payload.id,
+                changes: [
+                  {
+                    layer: payload.layer,
+                    key: payload.key,
+                    state: payload.after
+                  }
+                ]
+              }
+            ],
+            options
+          })
+        )
+        return result.evidence.length > 0
+      }
       const previousChangeCount = propsManager.changes.length
       propsManager.updatePropertyById(
         payload.id,

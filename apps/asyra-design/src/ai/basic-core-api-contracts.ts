@@ -511,7 +511,100 @@ const moveElementsApi = defineBasicApi({
     'Prefer hierarchy.moveElements in this app to maintain automatic group bounds.'
 })
 
+const propertyTargetSchema = apiObject(
+  {
+    elementId: apiId,
+    propertyName: apiString,
+    path: apiArray(apiObject({ key: apiString, childId: apiId })),
+    expectedRootId: apiId,
+    expectedPropertyId: apiId,
+    expectedSourceId: apiId
+  },
+  ['elementId', 'propertyName', 'path']
+)
+
+const readElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'readElementPropertyTargets',
+  effect: 'read',
+  parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
+  description:
+    'Read property mode, effective values, sparse overrides and independent sourceId. Use an empty path to read the root and its children; children expose logical childId and effective propertyId. Build subsequent paths from those logical slots, not row indices or guessed IDs. Optional expected identities reject stale targets.'
+})
+const updateElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'updateElementPropertyTargets',
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, values: apiRecord })
+      )
+    }
+  ],
+  description:
+    'Edit only the selected owner targets; source-backed targets receive sparse local overrides, including equal-valued masks. Shared sources and unrelated owners remain unchanged. The whole batch preflights before writing. Returns locally accepted element IDs, not save confirmation.'
+})
+const updateSharedPropertySourcesApi = defineBasicApi({
+  owner: 'core',
+  method: 'updateSharedPropertySources',
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(apiObject({ propertyId: apiId, values: apiRecord }))
+    }
+  ],
+  description:
+    'Explicitly edit independent shared property sources by source ID. Changes propagate to unmasked consumers; local overrides remain. Use only when intending to modify the shared style, not one selected object. Returns locally accepted source IDs, not element IDs or save confirmation.'
+})
+const resetElementPropertyOverridesApi = defineBasicApi({
+  owner: 'core',
+  method: 'resetElementPropertyOverrides',
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, keys: apiArray(apiString) })
+      )
+    }
+  ],
+  description:
+    'Remove the named local field masks so values follow the current shared source again. Does not write a captured source value as an override. Returns locally accepted element IDs; no durability claim.'
+})
+const detachElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'detachElementPropertyTargets',
+  effect: 'write',
+  parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
+  description:
+    'Materialize current effective values into independent owner components and release their source links atomically. Other owners and sources remain unchanged. Undo restores the links. Returns locally accepted element IDs; read targets again for new bindings, save separately for durability.'
+})
+const shareElementPropertyTargetsApi = defineBasicApi({
+  owner: 'core',
+  method: 'shareElementPropertyTargets',
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({ target: propertyTargetSchema, sourceId: apiId })
+      )
+    }
+  ],
+  description:
+    'Rebind selected owner targets to an independent same-type source. Reset or detach existing local overrides first; sharing rejects remaining masks or child bindings. Logical child slots remain stable. A source-backed source is rejected; no source chains. Later owner edits remain local overrides. Returns locally accepted element IDs; read targets again for new bindings, save separately for durability.'
+})
+
 export const basicCoreApiContracts = [
+  readElementPropertyTargetsApi,
+  updateElementPropertyTargetsApi,
+  updateSharedPropertySourcesApi,
+  resetElementPropertyOverridesApi,
+  detachElementPropertyTargetsApi,
+  shareElementPropertyTargetsApi,
   getCurrentWorkspaceIdApi,
   getCanonicalElementCountApi,
   getAllElementsBoundsApi,

@@ -53,6 +53,15 @@ class Props implements IProps {
     return this.propertyIds.get(PropertyTypes.DIMENSION)
   }
 
+  assignCanonicalPropertyBinding(name: string, id: string): void {
+    if (!this.propertyIds.has(name)) {
+      throw new Error(
+        `[SceneTree] Unknown canonical property binding "${name}"`
+      )
+    }
+    this.propertyIds.set(name, id)
+  }
+
   getPropId(name: string): string | undefined {
     return this.propertyIds.get(name)
   }

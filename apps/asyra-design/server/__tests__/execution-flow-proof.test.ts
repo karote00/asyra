@@ -4612,7 +4612,6 @@ it('execution proof consumes complete mapping scope before bounded delivery and 
     metadata: () => ({ lock: false }),
     targets: (members) =>
       members.map((elementId) => ({ elementId, fillId: `fill-${elementId}` })),
-    owners: () => ids,
     update
   })
   const owner = createLocalOperationTools(
@@ -5113,16 +5112,14 @@ it('execution proof preserves exact shared property relationships in publication
   expect(readDocumentPublicationSlices(result)[0]).toEqual([
     {
       kind: 'property-components',
-      records: [
-        { propertyId: 'target-fills', key: 'fills', remove: ['old-fill'] }
-      ],
-      updates: []
-    },
-    {
-      kind: 'property-components',
       updates: [
         { propertyId: 'target-fills', values: { fills: ['existing-fill'] } }
       ]
+    },
+    {
+      kind: 'property-components',
+      updates: [],
+      removals: [{ id: 'old-fill', type: 'fill', color: '#112233' }]
     }
   ])
   const undoSource = {
@@ -5157,8 +5154,15 @@ it('execution proof preserves exact shared property relationships in publication
   expect(undoChanges).toEqual([
     {
       kind: 'property-components',
-      updates: [{ propertyId: 'old-fill', values: { color: '#112233' } }]
+      updates: [
+        { propertyId: 'old-fill', values: { color: '#112233' } },
+        { propertyId: 'target-fills', values: { fills: ['existing-fill'] } }
+      ]
     },
-    ...readDocumentPublicationSlices(result)[0]
+    {
+      kind: 'property-components',
+      updates: [],
+      removals: [{ id: 'old-fill', type: 'fill', color: '#112233' }]
+    }
   ])
 })

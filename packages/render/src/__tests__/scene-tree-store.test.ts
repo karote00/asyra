@@ -89,6 +89,79 @@ describe('RenderSceneTree computed data mirror', () => {
     await Promise.resolve()
   }
 
+  it('projects exact property binding deltas without rereading canonical data or mutating published snapshots', async () => {
+    const { RenderSceneTree } = await import('../stores/scene-tree.js')
+    const store = new RenderSceneTree()
+    const element = createElement(
+      'vector-1',
+      {
+        type: 'vector',
+        visible: true,
+        props: { fills: 'shared', strokes: 'stroke' }
+      },
+      { fills: [] }
+    )
+    sceneTreeMock.getElementById.mockReturnValue(element)
+    const before = seedStore(store, 'vector-1')
+    element.save.mockClear()
+    element.getAllComputedData.mockClear()
+    sceneTreeMock.getElementById.mockClear()
+    expect(
+      store.updateElementPropertyBindings('vector-1', [
+        { key: 'fills', before: 'shared', after: 'local' }
+      ]).status
+    ).toBe('applied')
+    await flushScheduledFrame()
+    expect(renderMock.updateElement.mock.calls.at(-1)?.[4]).toMatchObject({
+      props: { fills: 'local', strokes: 'stroke' }
+    })
+    expect(before).toMatchObject({
+      props: { fills: 'shared', strokes: 'stroke' }
+    })
+    expect(
+      store.updateElementPropertyBindings('vector-1', [
+        { key: 'fills', before: 'local', after: 'shared' }
+      ]).status
+    ).toBe('applied')
+    await flushScheduledFrame()
+    expect(renderMock.updateElement.mock.calls.at(-1)?.[4]).toMatchObject({
+      props: { fills: 'shared', strokes: 'stroke' }
+    })
+    expect(sceneTreeMock.getElementById).not.toHaveBeenCalled()
+    expect(element.save).not.toHaveBeenCalled()
+    expect(element.getAllComputedData).not.toHaveBeenCalled()
+  })
+
+  it('resyncs a stale property binding delta without publishing its invalid prefix', async () => {
+    const { RenderSceneTree } = await import('../stores/scene-tree.js')
+    const store = new RenderSceneTree()
+    const element = createElement(
+      'vector-1',
+      {
+        type: 'vector',
+        visible: true,
+        props: { fills: 'source', strokes: 'stroke' }
+      },
+      { fills: [] }
+    )
+    sceneTreeMock.getElementById.mockReturnValue(element)
+    seedStore(store, 'vector-1')
+    element.save.mockReturnValue({
+      id: 'vector-1',
+      type: 'vector',
+      visible: true,
+      props: { fills: 'accepted', strokes: 'stroke' }
+    })
+    const result = store.updateElementPropertyBindings('vector-1', [
+      { key: 'strokes', before: 'stroke', after: 'bad-prefix' },
+      { key: 'fills', before: 'stale', after: 'bad-target' }
+    ])
+    expect(result.status).toBe('resynced')
+    expect(renderMock.addElement.mock.calls.at(-1)?.[0]).toMatchObject({
+      props: { fills: 'accepted', strokes: 'stroke' }
+    })
+  })
+
   it('should run: reset projection before rebuilding a scene-tree reload', async () => {
     const { RenderSceneTree } = await import('../stores/scene-tree.js')
     const store = new RenderSceneTree()

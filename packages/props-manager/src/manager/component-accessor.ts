@@ -4,6 +4,7 @@ import type {
 } from '@asyra/utils'
 
 interface ComponentAccessor {
+  validateSharedWrite: (propertyId: string, key: string, value: unknown) => void
   getPropertyById: (
     propertyId: string
   ) => PropertyComponentInstanceTypes | undefined
@@ -15,6 +16,9 @@ interface ComponentAccessor {
 }
 
 const noopAccessor: ComponentAccessor = {
+  validateSharedWrite: () => {
+    throw new Error('Shared property writes require an active Props owner')
+  },
   getPropertyById: () => undefined,
   addToMap: () => undefined,
   createComponent: () => null,

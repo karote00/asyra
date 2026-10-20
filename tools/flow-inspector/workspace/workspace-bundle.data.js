@@ -509,7 +509,7 @@
               "Every delivered reusable query snapshot is pinned until explicit release, request settlement, cancellation or disposal. Page and column delivery preserve the same ownership as reference delivery; capacity backpressure preserves accepted consumers. Borrowed leases remain with their caller, locally acquired query mappings release their own leases, and revision checks remain authoritative before one plural write",
               "AI query delivery defaults to references; explicit page and column reads remain available. Separate control-plane release from query production so successful retained reads guarantee live handle schemas; the separately registered resolve_design_targets action declares a value-only result without changing retained read contracts. The host publishes actual browser snapshot and lease identities, refuses borrowed release and acknowledges terminal remote cleanup; browser request-finally owns cleanup on cancellation.",
               "Retained query references enforce their creating request identity on remote reads, release and mutation consumption; same-workspace foreign handles reject and terminal cleanup affects only that request.",
-              "Retained query references carry workspace and canonical revision, cache only selected membership and columns, and reject stale or evicted consumption inside synchronous mutation admission before any writes; bounded position-to-fill mappings use canonical plural fills and explicit parent-local coordinates",
+              "Retained query references carry workspace and canonical revision, cache only selected membership and columns, and reject stale or evicted consumption inside synchronous mutation admission before any writes; bounded position-to-fill mappings use canonical plural owner-local fills and explicit parent-local coordinates; shared sources permit distinct local masks, and mutation receipts include only selected owners without expanding to unchanged source users",
               "Ordinary creation appends canonical membership without copying prior siblings; public children snapshots remain independent, pre-handoff failures remove attempted membership and accepted handoff retains Factory recovery ownership",
               "Preset UI membership preparation belongs to its observer lifetime and exact published map/flat identities. Structural deltas update affected memberships without rereading unrelated rows; immutable complete flattened output and existing ordering remain. Load, reseed, foreign publication, failure, incomplete membership and disposal invalidate reuse.",
               "Plural subtree deletion shares canonical hierarchy and orphan-property preparation for the call, preserves deleted-instance retention and reversible evidence, and rejects invalid targets before mutation",
@@ -726,6 +726,7 @@
               "artifact:prepared-review"
             ],
             "conditions": [
+              "Visual receipt freshness consumes committed effective computed changes plus canonical structure and load boundaries. Raw shared source writes alone do not invalidate masked consumers. Canonical mutation-scope observation retains actual source/binding changes separately; no visual freshness rule can hide acknowledged canonical effects.",
               "Canonical check receipts explicitly identify request or selected count scope without asserting visual acceptance or durability. Review capture/bind/record replies identify their operation; only committed judgments return compact exact identity, criterion/unit, origin, status and revision acknowledgements including passes. Keep committed receipts on later partial failure, preserve successful images on binding failure, and never infer readiness from capture. Optional structureAccepted is only a structural verdict; accepted remains whole-request completion.",
               "Tool-first correction: verify_design_checks consumes the actual requestId and a nonempty unique exact-revision tool-origin check selection. Recheck descriptors and dependency receipts come from the same request check owner, never diagnostic strings, ID prefixes, viewport or a second store. Wrong request, origin, unknown identity and conflicting revision reject before work.",
               "Aggregate checking reuses current owner evidence and coalesces overlapping stale reads under existing budgets. Validate canonical dependencies before publishing after asynchronous work. Return required verification status and stable nonempty normalized unresolved-work progress, requestId and every acknowledged selected revision including independent passes and confirmed terminal retirements. Missing lookup is not retirement; recreated identity rejects old revisions. Incomplete results retain exact completed/pending selections but cannot bind success.",
@@ -19680,7 +19681,7 @@
       "kind": "flow-v2",
       "group": "Framework",
       "subgroup": "Architecture and Runtime",
-      "lifecycle": "retained",
+      "lifecycle": "current",
       "sourcePath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
       "standalonePath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.html",
       "labels": [
@@ -19701,9 +19702,9 @@
           "subtitle": "One plural canonical request, separate Props and Scene owners, local-only computed projection, one existing Factory journal and Undo boundary, one minimal SharedPublication path, bounded bytes, and remote side-effect isolation."
         },
         "authority": {
-          "specPath": "docs/ai/framework/plans/completed/canonical-projection-and-collaboration-contract-realignment-plan.md",
+          "specPath": "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
           "inspectorPath": "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
-          "semanticOwner": "Asyra Design Pre-Release Canonical Projection and Collaboration Contract Realignment Plan",
+          "semanticOwner": "Current canonical Framework owners and socket-authoritative App contract",
           "inspectorOwner": "Canonical projection and collaboration owner handoff flow"
         },
         "links": [
@@ -19717,13 +19718,7 @@
             "id": "realignment-plan",
             "kind": "authority",
             "label": "Canonical projection and collaboration contract",
-            "href": "../../../docs/ai/framework/plans/completed/canonical-projection-and-collaboration-contract-realignment-plan.md"
-          },
-          {
-            "id": "performance-plan",
-            "kind": "completed-successor",
-            "label": "Completed Asyra Design drawing performance plan",
-            "href": "../../../docs/ai/apps/asyra-design/plans/completed/ai-conversational-drawing-performance-plan.md"
+            "href": "../../../docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
           },
           {
             "id": "transaction-inspector",
@@ -19766,24 +19761,29 @@
             "laneId": "intent-orchestration",
             "title": "Prepare one composition request",
             "ownerPackage": "Asyra Design AI actions and common APIs",
-            "purpose": "Translate one accepted AI composition into one Group and one all-children plural Core request inside one outer Factory transaction.",
+            "purpose": "Translate accepted App creation or property intent into the corresponding public plural Core request inside the existing Factory transaction.",
             "inputs": [
               "validated AI composition descriptor",
               "Feature-owned AbortSignal",
-              "one outer Factory transaction"
+              "one outer Factory transaction",
+              "Validated local override, explicit source update, reset, detach or share intent with canonical child slots and optional expected identities"
             ],
             "outputs": [
               "artifact:local-composition-request",
-              "artifact:progressive-stage-request"
+              "artifact:progressive-stage-request",
+              "artifact:property-intent-result"
             ],
             "conditions": [
-              "The App creates one Group and calls Core.createElementsInParent once with all accepted children.",
+              "The App creates one Group and submits one all-children request to Core.createElementsInParent.",
               "Canonical descriptor property overrides enter the prepared Props creation batch and never depend on a mixed computed/property write.",
               "The single-element convenience delegates to the same plural batch-of-one implementation.",
               "Group and children remain one intended action and one outer Factory transaction.",
               "The App obtains one active shared-delivery handle directly from Factory transaction execution; Core does not receive, store, or return that handle.",
               "The App batch-result and delivery-handle migration completes before Core deletes Core.createElementsInParentBatch; this is implementation dependency ordering, not a compatibility contract.",
-              "Progressive visibility is downstream artifact delivery and never repeats the Core mutation."
+              "Progressive visibility is downstream artifact delivery and never repeats the Core mutation.",
+              "Property operations use Core registered target reads and plural intent APIs. Local edits never mutate the shared source. Sharing a source-backed row requires explicit independent source selection; the convenience API rejects it rather than silently discarding its overrides. Read results distinguish logical child slots, effective bindings and independent source identities. Acceptance is not durable save confirmation.",
+              "App method advice distinguishes selected-owner overrides, explicit source changes, reset and detach. Existing tools with changed write meaning advance their registered revision; portable Knowledge remains advisory and tool-neutral.",
+              "Exact property target views or locally accepted owner IDs; recoverable validation failure without a written prefix."
             ],
             "bypasses": [
               "Clarification and no-change turns create no Group or canonical request.",
@@ -19794,7 +19794,8 @@
               "registered Asyra Design AI actions",
               "Asyra Design common element APIs",
               "@asyra/core public plural element API",
-              "@asyra/factory active shared-delivery handle"
+              "@asyra/factory active shared-delivery handle",
+              "@asyra/core public property intent and target-read APIs"
             ],
             "forbiddenContributors": [
               "fixed 256-item Core request loops",
@@ -19809,12 +19810,14 @@
               "apps/asyra-design/src/ai",
               "apps/asyra-design/src/ai/__tests__",
               "apps/asyra-design/src/common-apis",
-              "apps/asyra-design/src/common-apis/__tests__"
+              "apps/asyra-design/src/common-apis/__tests__",
+              "apps/asyra-design/knowledge/design.architectural-illustration.md",
+              "apps/asyra-design/server/local-knowledge.ts",
+              "apps/asyra-design/server/__tests__/local-knowledge.test.ts",
+              "apps/asyra-design/e2e/fixtures/basic-api-cases.ts"
             ],
             "specRefs": [
-              "#target-architecture",
-              "#core-creation-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-one-composition-request"
           },
@@ -19857,7 +19860,9 @@
               "Core.applyCanonicalChanges accepts one ordered remote canonical request and invokes its typed owner facades inside one caller-owned Factory transaction.",
               "Core invokes every prepared owner mutation required by the request in canonical evidence order inside the caller-owned outer Factory transaction.",
               "Factory rollback provides cross-owner atomicity after an unexpected apply failure.",
-              "All canonical callers migrate to the typed element-property APIs before the local computed semantic handoff; the transient vector preview remains an explicit local-only handoff dependency rather than being misclassified as a canonical caller."
+              "All canonical callers migrate to the typed element-property APIs before the local computed semantic handoff; the transient vector preview remains an explicit local-only handoff dependency rather than being misclassified as a canonical caller.",
+              "Coordinate distinct local override, explicit source edit, reset and detach intents. Obtain complete Props and Scene preparations before applying either owner; no new scheduler or history control.",
+              "Canonical property-components input carries exact creations, per-field layer changes and explicit removals. Core coordinates the existing prepared Props owner; Scene alone validates and applies element-property-bindings. It never replays owner-local intentions to allocate replacement remote identities. Canonical element and subtree removal apply Scene only; explicit following Props retirement records own property lifecycle. Local full-removal APIs retain their prepared orphan lifecycle. Canonical input has no collection-intent records field."
             ],
             "bypasses": [
               "An empty local descriptor batch is inert.",
@@ -19920,12 +19925,7 @@
               "packages/scene-tree/src/__tests__"
             ],
             "specRefs": [
-              "#target-architecture",
-              "#core-creation-contract",
-              "#canonical-element-property-update-contract",
-              "#shared-element-property-relation-contract",
-              "#props-manager-batch-contract",
-              "#scene-tree-lifecycle-and-apply-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "coordinate-canonical-owner-preparations"
           },
@@ -19962,7 +19962,14 @@
               "ElementPropertyRelation identity is the ownerElementId and ownerPropertyName tuple, while one compatible componentId may serve many relation tuples.",
               "Prepared exact orphan property graph removal accepts only deduplicated orphan root IDs and complete retained root property IDs from a Core-coordinated Scene release, traverses the Props property-graph from orphan roots, stops at each retained Scene root, and removes a root or descendant only when no remaining canonical relation retains it.",
               "A later invalid property item leaves no property, instance, relationship, registry, or evidence prefix.",
-              "A public single-item convenience delegates to updateProperties with the same batch-of-one owner path."
+              "A public single-item convenience delegates to updateProperties with the same batch-of-one owner path.",
+              "PropertyInheritance retains sourceId, sparse overrides and childBindings by source child identity. Independent records retain registered fields; sharedSource preserves explicit source intent.",
+              "Journal override presence and child bindings as field/link deltas. Equal-valued explicit overrides are canonical changes; reset removes presence and follows the current source.",
+              "Validate same-type independent registered sources and effective schemas; reject missing sources, chains, cycles, unknown fields, unsupported opaque types and deletion of sources with live dependent overrides before writes.",
+              "Source and child dependencies use the existing indexed property graph. A leaf edit does not freeze inherited collection membership.",
+              "Canonical record creation and retirement reuse the prepared batch owner through create-exact-property-records and remove-exact-property-records: preserve exact identities, schema, sparse inheritance and compatible tombstones; reject external live references and undeclared retirement. An explicit empty retirement set declares no lifecycle removal, rather than authorizing local intent inference.",
+              "An overridden target with remaining field masks or child bindings rejects sharing until explicit reset or detach. Independent or fully reset targets may bind to an independent same-type source; no silent local-intent discard.",
+              "Lifecycle evidence orderedIds exactly match first owner occurrence in its grouped shared records. Preserve caller-facing result order separately and dependency-safe graph application order; never duplicate payloads or weaken Factory ordering validation."
             ],
             "bypasses": [
               "An empty property request produces an empty valid prepared mutation and no property evidence.",
@@ -19997,14 +20004,14 @@
               "packages/utils/src/types/props-manager.ts",
               "packages/preset/src/props/components/fills-component.ts",
               "packages/preset/src/props/components/strokes-component.ts",
-              "packages/preset/src/__tests__/children-map-property-component.test.ts"
+              "packages/preset/src/__tests__/children-map-property-component.test.ts",
+              "packages/utils/src/propsManager/rawDataTypes.ts",
+              "packages/utils/src/propsManager/instanceTypes.ts",
+              "packages/utils/src/constants/props.ts",
+              "packages/reactive-events/src/props-manager"
             ],
             "specRefs": [
-              "#props-manager-batch-contract",
-              "#canonical-element-property-update-contract",
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates",
-              "#pre-release-removal-policy"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-and-apply-property-batch"
           },
@@ -20032,7 +20039,6 @@
               "Scene independently owns element identity, element hierarchy, and element-slot-to-root relations; Props independently owns property and component identity, lifecycle, and the property-child graph.",
               "ElementPropertyRelation is many-to-one with identity defined by the ownerElementId and ownerPropertyName tuple; a compatible componentId may repeat across relation tuples.",
               "Scene owns one derived reverse relation index from componentId to ordered ElementPropertyRelation values and keeps it equivalent through load, insert, remove, restore, rollback, Undo, and Redo.",
-              "The complete resolved targets group by propertyId: equivalent shared writes produce one mutation, while conflicting field or record writes atomically reject before Props preflight.",
               "PreparedCanonicalElementInsertion exposes the frozen owner relations already validated by Scene; Core passes them unchanged into the Props create-exact-property-graph operation instead of rebuilding Scene slot semantics.",
               "A prepared removal records released relations, retained relations, deduplicated orphan root property IDs, complete retained root property IDs from all prepared remaining element relations, and the exact relation-set read required to reject a stale relation set before mutation.",
               "Scene.prepareSubtreeRemoval accepts one root, derives the complete child-first post-order closure, emits one CHANGE_SUBTREE record, and delegates mutation to the same applyPreparedElementMutation owner.",
@@ -20044,7 +20050,10 @@
               "Apply owns Scene maps, raw element state, parent children, hierarchy order, and ordered Scene evidence only.",
               "Each apply emits one plural Scene event and one shared record per element in order for ADD_ELEMENTS and REMOVE_ELEMENTS; Factory publication slices may group those records but must not split one record or create another Scene mutation or history action.",
               "A later invalid Scene item leaves no map, parent-list, hierarchy-order, tombstone, or Scene evidence prefix.",
-              "A public single-item convenience delegates to the same one-item prepared Scene mutation."
+              "A public single-item convenience delegates to the same one-item prepared Scene mutation.",
+              "Explicit source resolved targets group by propertyId: equivalent writes produce one mutation, while conflicting source writes atomically reject before Props preflight. Owner-local targets retain distinct element and root binding identity; they cannot collapse into shared-source writes.",
+              "UPDATE_ELEMENT_PROPERTY_BINDINGS carries per-root before and after property IDs with the canonical root name. Scene atomically changes bindings and its existing reverse relation index, preserving unrelated roots.",
+              "Scene resolves each root binding. Props resolves registered child paths; Core coordinates the retained logical gesture target and rejects stale identity. Scene does not allocate or clone property sources."
             ],
             "bypasses": [
               "A rejected element-to-property request returns no partial resolved target set and performs no mutation.",
@@ -20093,15 +20102,11 @@
               "packages/factory/src/data-transact.ts",
               "packages/factory/src/__tests__/data-transact.test.ts",
               "packages/preset/src/subscriptions/data-channel.ts",
-              "packages/preset/src/__tests__/selection-subscriptions.test.ts"
+              "packages/preset/src/__tests__/selection-subscriptions.test.ts",
+              "packages/utils/src/sceneTree/instanceTypes.ts"
             ],
             "specRefs": [
-              "#scene-tree-lifecycle-and-apply-contract",
-              "#canonical-element-property-update-contract",
-              "#canonical-and-local-projection-contracts",
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates",
-              "#pre-release-removal-policy"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-and-apply-scene-mutation"
           },
@@ -20133,7 +20138,10 @@
               "The local producer switch and ordinary Preset consumer registration form one semantic handoff with no dual computed delivery.",
               "Asyra Design computed derived-state consumers normalize scalar, ordered batch, and patch events and perform each required continuation or icon synchronization exactly once per event.",
               "Preset declares its existing @asyra/reactive-events workspace package as a runtime dependency because the production consumer imports its subscriber directly.",
-              "Computed projection creates no history, SharedDataChannel batch, Collaboration publication, or persistence snapshot."
+              "Computed projection creates no history, SharedDataChannel batch, Collaboration publication, or persistence snapshot.",
+              "Resolve effective values through current source/binding dependencies. Unchanged masked values preserve value-only passes; relationship criteria retain their actual identity dependencies. No flattened canonical mirror.",
+              "UPDATE_PROPERTY payload.id identifies the changed property. Factory canonicalEvidence orderedIds are ordering metadata and may include element or other owner identities; they are never substituted for semantic property dependency inputs.",
+              "App visual freshness consumes the committed effective projection; masked source fields producing no effective change preserve existing visual receipts. Canonical mutation scope remains a separate observation mode and retains source/binding effects. Structure and document load remain explicit invalidation boundaries; no retained second value cache."
             ],
             "bypasses": [
               "A semantic computed no-op emits no canonical failure.",
@@ -20203,13 +20211,14 @@
               "turbo.json",
               "docs/ai/framework/API_SURFACES.md",
               "docs/ai/framework/packages/core.md",
-              "docs/ai/framework/packages/scene-tree.md"
+              "docs/ai/framework/packages/scene-tree.md",
+              "packages/core/src/__tests__/property-intent-history.test.ts",
+              "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+              "apps/asyra-design/src/common-apis/__tests__/inspection-evidence.test.ts",
+              "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#shared-element-property-relation-contract",
-              "#target-architecture",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "derive-local-computed-projection"
           },
@@ -20253,7 +20262,8 @@
               "Shared-delivery bookkeeping records only the existing journal delivery outcome and never mirrors canonical payloads into another applied-result object.",
               "The production fast path performs no post-action save, equality comparison, finalize-save, full-document comparison, evidence clone, or recursive immutable-tree scan.",
               "A local committed action, Undo, or Redo may emit one shared publication and one persistence trigger; staged slices do not create another persistence trigger.",
-              "A remote transaction applies through the ordinary canonical owners but creates no Undo, echo publication, or local persistence trigger."
+              "A remote transaction applies through the ordinary canonical owners but creates no Undo, echo publication, or local persistence trigger.",
+              "Preserve per-field presence and per-link deltas in one intended Undo action, with current Session policies. Compensation, Undo and Redo restore relationships without overwriting unrelated peer fields."
             ],
             "bypasses": [
               "A no-change transaction emits no history action, publication, or persistence trigger.",
@@ -20293,11 +20303,7 @@
               "packages/reactive-events/src/__tests__"
             ],
             "specRefs": [
-              "#shareddatachannel-contract",
-              "#factory-ownership-contract",
-              "#canonical-and-local-projection-contracts",
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "record-and-deliver-transaction-batch"
           },
@@ -20322,7 +20328,8 @@
               "The same local computed projection updates Render and affected UI context exactly once through distinct Preset consumers without duplicating Render delivery.",
               "Render receives applied local computed batches before the next coordinate query; UI receives the same batches after successful outer commit. Rollback discards pending UI batches and inverse replay projects restored canonical values.",
               "Local and remote state use the same ordinary Render strategy.",
-              "Render and UI consume no History artifact, rollback evidence, inverse evidence, or SharedPublication payload."
+              "Render and UI consume no History artifact, rollback evidence, inverse evidence, or SharedPublication payload.",
+              "Scene root property binding deltas update the existing raw Render mirror and affected UI row without hierarchy invalidation or unrelated reads. Computed property values remain supplied by the separate local computed projection. Existing mirror mismatch resync is the failure owner."
             ],
             "bypasses": [
               "A canonical no-change produces no Render invalidation.",
@@ -20352,9 +20359,7 @@
               "packages/preset/src/__tests__"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#target-architecture",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "project-render-state"
           },
@@ -20376,7 +20381,8 @@
               "Filter local-only channels and derive ordered canonical changes only at the publishing App boundary. Heterogeneous Scene batches preserve consecutive operation-family order without changing the source slice. Each source move delivery retains its simultaneous move set; distinct sequential deliveries must not be flattened into one move, including creation/removal-adjacent moves.",
               "Preserve publication, artifact, transaction, semantic slice and publication-level compensation identity; transmit no duplicate raw owner events.",
               "Retain the prepared immutable publication for retries. Receivers consume explicit operations without reconstructing source channel adjacency.",
-              "Report preparation failure with original source identity through a required App callback before returning to Factory; observer isolation must not hide the failed handoff."
+              "Report preparation failure with original source identity through a required App callback before returning to Factory; observer isolation must not hide the failed handoff.",
+              "Publish explicit property field/link deltas and Scene root binding changes. Keep partial outcomes, accepted state and durability separate; no second mutation on save retry."
             ],
             "bypasses": [
               "A publication containing only local channels produces no document publication.",
@@ -20402,7 +20408,7 @@
               "apps/asyra-design/src/init/__tests__/document-publication.test.ts"
             ],
             "specRefs": [
-              "#collaboration-provider-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "prepare-document-publication"
           },
@@ -20455,9 +20461,7 @@
               "packages/collaboration/src/providers/memory"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#pre-release-removal-policy",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "publish-shared-publication"
           },
@@ -20514,9 +20518,7 @@
               "apps/asyra-design/__tests__/collaboration-server.test.mjs"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#profiling-contract",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "transport-publication-bytes"
           },
@@ -20543,7 +20545,8 @@
               "The App calls exactly one Core.applyCanonicalChanges with one ordered CanonicalChange request for the accepted publication.",
               "A property-only remote follow-up derives computed state locally before Render.",
               "The Provider consumer promise resolves only after App canonical apply completes successfully.",
-              "Actor B creates no Undo, echo publication, persistence capture, provider save, or IndexedDB write."
+              "Actor B creates no Undo, echo publication, persistence capture, provider save, or IndexedDB write.",
+              "Preflight and apply the same property inheritance and element binding deltas, preserving source order, no echo and no local history. Reject a malformed complete graph without partial application."
             ],
             "bypasses": [
               "Policy or canonical preflight failure occurs before mutation and rejects the consumer Promise.",
@@ -20579,9 +20582,7 @@
               "apps/asyra-design/src/init/__tests__/collaboration-operations.test.ts"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#collaboration-provider-contract",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "apply-remote-publication"
           },
@@ -20589,9 +20590,9 @@
             "id": "persist-local-commit",
             "order": 1,
             "laneId": "durability",
-            "title": "Persist eligible local commits",
-            "ownerPackage": "@asyra/core persistence coordinator",
-            "purpose": "Capture and serialize one detached snapshot for each eligible local action, Undo, and Redo while bypassing every remote transaction.",
+            "title": "Persist accepted document publications",
+            "ownerPackage": "Asyra Design socket session and document backend",
+            "purpose": "Persist the accepted publication sequence for local action, Undo and Redo through the current socket-authoritative document contract; report durability separately from local and peer apply.",
             "inputs": [
               "artifact:local-persistence-trigger"
             ],
@@ -20599,37 +20600,37 @@
               "artifact:persistence-status"
             ],
             "conditions": [
-              "Local action, Undo, and Redo each capture one complete detached snapshot at commit.",
-              "Snapshots and provider acknowledgements preserve FIFO order.",
-              "One provider failure does not coalesce, drop, or block a later eligible snapshot."
+              "Persist canonical field/link deltas in accepted publication sequence, with exact publication identity and bytes for resend.",
+              "Source acceptance is not durability; save confirms its captured target and later edits do not extend that target.",
+              "Failed persistence retains accepted edits and recovery evidence. Retry persistence without replaying drawing or allocating new identities.",
+              "Reload preflights source/binding structure before replacing the current document and supports a subsequent edit and save."
             ],
             "bypasses": [
-              "A remote transaction performs zero client capture, save hook, provider save, and IndexedDB write.",
-              "Rollback and validation rejection save no snapshot.",
-              "A missing provider reports persistence-skipped without capture."
+              "A remote browser performs zero duplicate capture, provider save or IndexedDB persistence of the accepted source publication.",
+              "Rejected canonical mutation creates no new accepted publication.",
+              "Disconnected edits retain the existing recovery/outbox state; never return false durable success."
             ],
             "allowedContributors": [
               "artifact:local-persistence-trigger",
-              "@asyra/core persistence queue",
-              "@asyra/persistence provider"
+              "App socket-authoritative session",
+              "App canonical publication codec and durable reducer"
             ],
             "forbiddenContributors": [
-              "remote client persistence",
-              "coalesced local snapshots",
-              "live mutable provider data",
-              "Collaboration or server checkpoint policy"
+              "second ordering authority",
+              "browser Framework execution in the backend",
+              "flattened inherited values as canonical storage",
+              "product mutation replay on save retry"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "packages/core/src",
-              "packages/core/src/__tests__",
-              "packages/persistence/src",
-              "packages/persistence/src/providers/__tests__"
+              "apps/asyra-design/src/collaboration",
+              "apps/asyra-design/src/init",
+              "apps/asyra-design/server/document-canonical-reducer.ts",
+              "apps/asyra-design/server/__tests__",
+              "apps/asyra-design/e2e"
             ],
             "specRefs": [
-              "#factory-ownership-contract",
-              "#integration-and-performance-gates",
-              "#definition-of-done"
+              "#contract-admission-canonical-shared-property-layers"
             ],
             "failureOwnerStepId": "persist-local-commit"
           }
@@ -21129,6 +21130,13 @@
             "channel": "Core persistence status",
             "consumerStepIds": [],
             "terminal": true
+          },
+          {
+            "id": "artifact:property-intent-result",
+            "ownerStepId": "prepare-one-composition-request",
+            "channel": "Public target views, locally accepted owner IDs or recoverable failure; not durable save confirmation",
+            "consumerStepIds": [],
+            "terminal": true
           }
         ],
         "invariants": [
@@ -21148,7 +21156,7 @@
               "artifact:ui-context-projection"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21171,7 +21179,7 @@
               "artifact:shared-publication"
             ],
             "specRefs": [
-              "#shared-element-property-relation-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21188,8 +21196,7 @@
               "artifact:shared-publication"
             ],
             "specRefs": [
-              "#factory-ownership-contract",
-              "#target-architecture"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21205,8 +21212,7 @@
               "artifact:shared-publication"
             ],
             "specRefs": [
-              "#shareddatachannel-contract",
-              "#collaboration-provider-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21223,8 +21229,7 @@
               "artifact:remote-apply-settlement"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#profiling-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21242,8 +21247,7 @@
               "artifact:remote-apply-settlement"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#factory-ownership-contract"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           }
         ],
@@ -21263,8 +21267,7 @@
               "apply-remote-publication"
             ],
             "specRefs": [
-              "#shared-element-property-relation-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21280,9 +21283,7 @@
               "record-and-deliver-transaction-batch"
             ],
             "specRefs": [
-              "#props-manager-batch-contract",
-              "#scene-tree-lifecycle-and-apply-contract",
-              "#step-local-formal-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21297,8 +21298,7 @@
               "apply-remote-publication"
             ],
             "specRefs": [
-              "#canonical-and-local-projection-contracts",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21313,8 +21313,7 @@
               "apply-remote-publication"
             ],
             "specRefs": [
-              "#collaboration-provider-contract",
-              "#integration-and-performance-gates"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           },
           {
@@ -21331,8 +21330,7 @@
               "persist-local-commit"
             ],
             "specRefs": [
-              "#integration-and-performance-gates",
-              "#definition-of-done"
+              "#contract-admission-canonical-shared-property-layers"
             ]
           }
         ]

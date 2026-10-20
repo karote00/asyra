@@ -43,6 +43,15 @@ export function createDynamicPropsClass(properties: PropertyDefinition[]) {
       }
     }
 
+    assignCanonicalPropertyBinding(name: string, id: string): void {
+      if (!propNameToType.has(name)) {
+        throw new Error(
+          `[SceneTree] Unknown canonical property binding "${name}"`
+        )
+      }
+      this[name] = id
+    }
+
     getPropId(name: string): string | undefined {
       const val = this[name]
       return typeof val === 'string' ? val : undefined

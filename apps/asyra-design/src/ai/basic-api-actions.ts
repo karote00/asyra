@@ -52,6 +52,15 @@ const owners = (): ApiOwners => ({
 
 const basicApiRevision = (contract: BasicApiContract): number => {
   if (
+    contract.effect === 'write' &&
+    (['fill', 'stroke'].includes(contract.owner) ||
+      (contract.owner === 'core' &&
+        ['updateElementProperties', 'patchElementProperties'].includes(
+          contract.method
+        )))
+  )
+    return 6
+  if (
     ['grouped', 'ungrouped', 'moves', 'removed'].includes(contract.result.kind)
   )
     return 5

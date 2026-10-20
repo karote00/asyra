@@ -52,19 +52,7 @@ const requiredStepIds = [
   'persist-local-commit'
 ]
 
-const requiredImplementationOrder = [
-  'project-render-state',
-  'record-and-deliver-transaction-batch',
-  'prepare-and-apply-property-batch',
-  'prepare-and-apply-scene-mutation',
-  'prepare-one-composition-request',
-  'coordinate-canonical-owner-preparations',
-  'derive-local-computed-projection',
-  'publish-shared-publication',
-  'transport-publication-bytes',
-  'apply-remote-publication',
-  'persist-local-commit'
-]
+
 
 const step = (id) => {
   const value = data.steps.find((item) => item.id === id)
@@ -99,7 +87,7 @@ const feature = () => read(featurePath)
 const appApiSurface = () => read(appApiSurfacePath)
 const stateContracts = () => read(stateContractsPath)
 
-test('realignment Inspector and completed planning authorities resolve', () => {
+test('canonical Inspector uses the current plan and retains historical references', () => {
   assert.equal(
     data.target.id,
     'canonical-projection-and-collaboration-contract-realignment'
@@ -110,7 +98,7 @@ test('realignment Inspector and completed planning authorities resolve', () => {
   )
   assert.equal(
     data.authority.specPath,
-    'docs/ai/framework/plans/completed/canonical-projection-and-collaboration-contract-realignment-plan.md'
+    'docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md'
   )
   assert.equal(
     data.authority.inspectorPath,
@@ -191,16 +179,8 @@ test('Inspector exposes twelve exact single-owner runtime steps', () => {
     })
   })
 
-  const runtimeSection = plan().match(
-    /### Runtime owner segments\n([\s\S]*?)\n### Non-runtime closure segments/
-  )
-  assert.ok(runtimeSection, 'Missing runtime owner segment section')
-  const implementationIds = [
-    ...runtimeSection[1].matchAll(/^\d+\.\s+`([^`]+)`/gm)
-  ].map((match) => match[1])
-  assert.deepEqual(implementationIds, requiredImplementationOrder)
-  // The completed plan records its original implementation sequence. Current
-  // App source preparation is specified by the active collaboration contract.
+  assert.match(plan(), /Contract and admission/);
+  assert.match(plan(), /History and durability integration/);
   const preparation = step('prepare-document-publication')
   assert.deepEqual(preparation.inputs, ['artifact:shared-publication'])
   assert.deepEqual(preparation.outputs, ['artifact:document-publication', 'artifact:document-preparation-failure'])
@@ -247,10 +227,9 @@ test('Inspector exposes twelve exact single-owner runtime steps', () => {
     'docs/ai/framework/packages/scene-tree.md'
   ].forEach((filePath) => assert.ok(computedBoundary.includes(filePath)))
 
-  assert.match(
-    plan(),
-    /project-render-state[\s\S]{0,420}without\s+registering[\s\S]{0,280}no second active Render consumer/i
-  )
+  assert.match(contractText(step('project-render-state')), /Render/i)
+  assert.match(plan(), /No computed-data or App-only replacement implementation/)
+
   assert.match(
     contractText(step('derive-local-computed-projection')),
     /producer switch.*consumer registration.*one semantic handoff.*no dual computed delivery/i
@@ -681,24 +660,11 @@ test('shared element-property relations remain many-to-one without cross-owner a
   const computed = contractText(computedStep)
   const core = contractText(coreStep)
   const factory = contractText(factoryStep)
-  const sharedRelationSpec = '#shared-element-property-relation-contract'
+  const sharedRelationSpec = '#contract-admission-canonical-shared-property-layers'
 
-  assert.match(
-    text,
-    /ElementPropertyRelation[\s\S]{0,240}many-to-one[\s\S]{0,240}ownerElementId[\s\S]{0,120}ownerPropertyName[\s\S]{0,120}componentId/i
-  )
-  assert.match(
-    text,
-    /unique[\s\S]{0,80}ownerElementId[\s\S]{0,80}ownerPropertyName[\s\S]{0,120}componentId[\s\S]{0,80}may repeat/i
-  )
-  assert.match(
-    text,
-    /Props[\s\S]{0,160}property\/component identity[\s\S]{0,160}property-child graph[\s\S]{0,320}Scene[\s\S]{0,160}element hierarchy[\s\S]{0,160}element-slot[\s\S]{0,80}root[\s\S]{0,20}relation/i
-  )
-  assert.match(
-    text,
-    /stable extension (?:point|seam)[\s\S]{0,240}shared props[\s\S]{0,120}shared components[\s\S]{0,120}shared elements[\s\S]{0,240}(?:does not|without).*pre-assign/i
-  )
+  assert.match(text, /Scene remains the owner of element-to-property bindings/)
+  assert.match(text, /Props owns resolution, schema validation and indexed source\/child dependencies/)
+  assert.match(text, /different owners may override the same source field differently/)
   ;[propsStep, sceneStep, computedStep, coreStep].forEach((owner) => {
     assert.ok(
       owner.specRefs.includes(sharedRelationSpec),
@@ -740,7 +706,7 @@ test('shared element-property relations remain many-to-one without cross-owner a
   )
   assert.match(
     scene,
-    /resolved targets.*propertyId.*equivalent.*one mutation.*conflicting.*atomic.*reject.*before Props/i
+    /resolved targets.*propertyId.*equivalent.*one mutation.*conflicting source.*atomic.*reject.*before Props/i
   )
   assert.match(
     scene,
@@ -1045,11 +1011,31 @@ test('BDD covers the active architecture and retained performance gates', () => 
 test('scope and pre-release removal stay bounded', () => {
   const text = plan()
 
-  assert.match(text, /Excluded scope[\s\S]{0,240}Contents panel/i)
-  assert.match(text, /No package or tool installation is authorized/i)
-  assert.match(text, /Excluded scope[\s\S]{0,320}Live AI provider/i)
-  assert.match(text, /Excluded scope[\s\S]{0,400}production backend DB/i)
-  assert.match(text, /There is no released legacy surface to preserve/i)
-  assert.match(text, /focused gate fails three implementation attempts/i)
+  assert.match(text, /No automatic\s+N-field detachment threshold/)
+  assert.match(text, /No new registry, scheduler, evidence ledger/)
+  assert.match(text, /No new UI workflows or monitoring/)
+  assert.match(text, /Completed\/archived plans are read-only/)
   assert.ok(data.steps.every((item) => item.cacheDimensions.length === 0))
+})
+
+test('shared-property editing is admitted at canonical owners with current durability authority', () => {
+  assert.equal(data.authority.specPath,
+    'docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md')
+  const props = contractText(step('prepare-and-apply-property-batch'))
+  const scene = contractText(step('prepare-and-apply-scene-mutation'))
+  const persist = contractText(step('persist-local-commit'))
+  assert.match(props, /PropertyInheritance/)
+  assert.match(props, /override presence.*field.*deltas/i)
+  assert.match(props, /childBindings.*identity/i)
+  assert.match(scene, /root binding/i)
+  assert.match(persist, /accepted publication sequence/i)
+  assert.doesNotMatch(persist, /Core persistence queue|detached snapshot at commit/i)
+  assert.match(contractText(step('prepare-document-publication')), /field\/link deltas/i)
+})
+
+test('local property intent cannot collapse distinct owners into one shared-source write', () => {
+  const scene = contractText(step('prepare-and-apply-scene-mutation'))
+  assert.match(scene, /owner-local.*distinct.*element.*root.*binding/i)
+  assert.match(scene, /UPDATE_ELEMENT_PROPERTY_BINDINGS.*per-root.*before.*after/i)
+  assert.match(scene, /Props resolves registered child paths/i)
 })

@@ -15,11 +15,24 @@ export interface AddRemovePropertyChange {
   options?: MutationOptions
 }
 
+export type PropertyLayer = 'overrides' | 'childBindings' | 'sharedSource'
+
+export type PropertyLayerState =
+  | { readonly present: false }
+  | { readonly present: true; readonly value: unknown }
+
+export interface PropertyLayerEdit {
+  readonly layer: PropertyLayer
+  readonly key: string
+  readonly state: PropertyLayerState
+}
+
 export interface UpdatePropertyChange {
   action: PROPS_ACTIONS
   eventName: string
   id: string
   key: string
+  layer?: PropertyLayer
   before: DataTypes
   after: DataTypes
   options?: MutationOptions

@@ -418,3 +418,23 @@ it('does not let a cancelled loader waiter poison peer discovery or consume its 
     owner.dispose()
   }
 })
+
+it('maps owner-local and explicit shared-source edits without requiring detachment for a local correction', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const guide = await readFile(
+    new URL(
+      '../../knowledge/design.architectural-illustration.md',
+      import.meta.url
+    ),
+    'utf8'
+  )
+  expect(guide).toContain('core.updateSharedPropertySources')
+  expect(guide).toContain('core.resetElementPropertyOverrides')
+  expect(guide).toContain('local overrides')
+  expect(guide).not.toContain(
+    'detach and requery only when independent edits are intended'
+  )
+  expect(guide).not.toContain(
+    'Conflicting patches for one shared Fill cannot represent two different outcomes'
+  )
+})

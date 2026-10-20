@@ -742,7 +742,7 @@ const shareFillAtIndexApi = defineBasicApi({
     { name: 'index', schema: fillRowIndexSchema }
   ],
   description:
-    'Explicitly link this Fill row on target elements to the source element’s same Fill property component. Later edits to that Fill affect every linked owner. Other rows remain unchanged. Use for intentionally shared styles, not merely equal colors; use updateFillsAtIndex for independent edits.'
+    'Link target Fill rows to an independent source row. Selected-owner edits remain local overrides; only core.updateSharedPropertySources changes all unmasked consumers. Other rows remain unchanged. A source-backed source row is rejected: explicitly choose its independent source through core.shareElementPropertyTargets or detach it first to share its effective values.'
 })
 const detachFillsAtIndexApi = defineBasicApi({
   owner: 'fill',

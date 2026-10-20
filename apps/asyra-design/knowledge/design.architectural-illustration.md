@@ -234,14 +234,22 @@ request explicitly changes them.
 }
 ```
 
-Equal gradients do not imply shared Fill identity. If selected rows share a Fill
-with outside owners, use `fill.detachFillsAtIndex` only when the correction must
-be local; intentional linked edits retain the shared property. Conflicting patches
-for one shared Fill cannot represent two different outcomes. Resolve that decision
-before writing. Re-query stale/missing targets and current rows after recovery;
-do not reuse an old patch over an intervening edit. Invalid input is not a write,
-but a partial/unknown batch requires reading acknowledged state before retrying
-only unfinished work. No automatic retry of a completed detach or edit.
+Equal gradients do not imply shared Fill identity. Selected-owner fill and stroke
+edits create local overrides when a component inherits a shared source; other
+owners retain their effective values. Use `core.readElementPropertyTargets` for
+logical child slots, effective bindings and independent source identity. Use
+`core.updateSharedPropertySources` only for an intentional source-wide change;
+masked fields remain local. `core.resetElementPropertyOverrides` removes selected
+masks so those fields follow the current source again. Detach only when the owner
+must become independent: it materializes the current effective values. Reset or
+detach remaining overrides before explicitly sharing another independent source.
+A local correction does not require detachment, and different owners may override
+the same source with different values.
+
+Re-query stale/missing targets and current rows after recovery; do not reuse an old
+patch over an intervening edit. Invalid input is not a write, but a partial/unknown
+batch requires reading acknowledged state before retrying only unfinished work.
+No automatic retry of a completed reset, detach or edit.
 
 After correction, use current affected-image bindings through the representative
 route below. Reuse unrelated passes, preserve the whole-result obligation, and
@@ -406,7 +414,7 @@ Use the decided roles and lighting domains above to choose what varies:
 | One world-linear field across projected/pattern faces | Declare `draft.linearFields` with world start/end and ordered stops, then select `materialField` on each face. Preparation preserves phase across origin/axis translations and emits independent native fills. Discover the executable preparation example and exact schema. Do not combine a field with an explicit face fill/palette; unsupported or unrepresentable fields reject before apply. |
 | Equal independent material values                                         | `draft.fillTemplates` and `fill: {template: key}`. Template reuse preserves independent fills; use `sharedFills` only for intentional linked edits.                                                                                                                                                                                                                                 |
 | Intentional repeated palette                                              | `surface-grid` motif `fills` cycles by row-major cell index. Do not use cycling for a nonperiodic reflection field.                                                                                                                                                                                                                                                                 |
-| Single-axis color variation on existing targets                           | `map_retained_fills` inside `execute_design_batch`, with query or caller-owned snapshot/lease, parent-local x/y domain, fill index and ordered color stops. Backend reads columns and prepares color/opacity patches only; existing gradient/kind fields remain unchanged. Conflicting updates of shared fills reject; detach and requery only when independent edits are intended. |
+| Single-axis color variation on existing targets                           | `map_retained_fills` inside `execute_design_batch`, with query or caller-owned snapshot/lease, parent-local x/y domain, fill index and ordered color stops. Backend reads columns and prepares color/opacity patches only; existing gradient/kind fields remain unchanged. Selected-owner patches create local overrides on shared fills; use explicit source updates for linked changes, and detach only for independent ownership. |
 | Irregular per-cell gradients or a continuous field beyond current mapping | Existing `fills` can enumerate actual variations; reuse equal definitions with templates. Single-axis mapping changes color/opacity, not per-cell gradient endpoints or an arbitrary 2D lighting field. Do not claim equivalence, invent a formula parameter, silently simplify requested appearance or send arbitrary callbacks.                                                   |
 
 When compacting repeated paint, merge definitions into one template only when

@@ -23,13 +23,51 @@ const emptyPropsResult: PropertyMutationBatchResult = Object.freeze({
   evidence: Object.freeze([])
 })
 
+const emptyPreparedIntent = {
+  properties: emptyPreparedProps,
+  rootBindings: [],
+  releasedRootPropertyIds: [],
+  retainedExistingPropertyIds: [],
+  createdPropertyIds: []
+}
+const bindingRequests = () => ({
+  resolveElementPropertyBindings: vi.fn(
+    (
+      targets: readonly {
+        elementId: string
+        propertyName: string
+        expectedRootId?: string
+      }[]
+    ) =>
+      targets.map((target) => ({
+        relation: {
+          ownerElementId: target.elementId,
+          ownerElementType: 'test-element',
+          ownerPropertyName: target.propertyName,
+          componentId: target.expectedRootId ?? ''
+        },
+        shared: false
+      }))
+  ),
+  prepareElementPropertyBindingMutation: vi.fn(),
+  applyPreparedElementMutation: vi.fn(),
+  preparePropertyMutationBatch: vi.fn()
+})
+
 describe('Core canonical element property APIs', () => {
   it('coordinates one complete target and Props prepared before applying replacements', () => {
     const sequence: string[] = []
     const resolvedTargets: ResolvedElementPropertyTargets = Object.freeze({
       kind: 'resolved-element-property-targets',
       orderedElementIds: Object.freeze(['element-a', 'element-b']),
-      relations: Object.freeze([]),
+      relations: Object.freeze(
+        ['a', 'b'].map((id) => ({
+          ownerElementId: `element-${id}`,
+          ownerElementType: 'test-element',
+          ownerPropertyName: 'position',
+          componentId: `position-${id}`
+        }))
+      ),
       mutations: Object.freeze([
         Object.freeze({
           kind: 'values',
@@ -57,17 +95,18 @@ describe('Core canonical element property APIs', () => {
         return resolvedTargets
       }
     )
-    const preparePropertyMutationBatch = vi.fn(() => {
+    const prepareOwnerPropertyMutations = vi.fn(() => {
       sequence.push('props-preflight')
-      return emptyPreparedProps
+      return emptyPreparedIntent
     })
     const applyPreparedPropertyMutationBatch = vi.fn(() => {
       sequence.push('props-apply')
       return emptyPropsResult
     })
     const apis = createElementPropertyAPIs({
+      ...bindingRequests(),
       resolveElementPropertyTargets,
-      preparePropertyMutationBatch,
+      prepareOwnerPropertyMutations,
       applyPreparedPropertyMutationBatch
     })
 
@@ -84,12 +123,17 @@ describe('Core canonical element property APIs', () => {
       { kind: 'values', elementId: 'element-a', values: { x: 10 } },
       { kind: 'values', elementId: 'element-b', values: { x: 20 } }
     ])
-    expect(preparePropertyMutationBatch).toHaveBeenCalledWith({
-      operations: resolvedTargets.mutations,
-      options: {
-        shared: 'props'
-      }
-    })
+    expect(prepareOwnerPropertyMutations).toHaveBeenCalledWith(
+      resolvedTargets.mutations.map((mutation, index) => ({
+        target: {
+          root: resolvedTargets.relations[index],
+          sharedRoot: false,
+          path: []
+        },
+        mutation
+      })),
+      { shared: 'props' }
+    )
     expect(applyPreparedPropertyMutationBatch).toHaveBeenCalledWith(
       emptyPreparedProps
     )
@@ -109,11 +153,12 @@ describe('Core canonical element property APIs', () => {
           mutations: Object.freeze([])
         })
     )
-    const preparePropertyMutationBatch = vi.fn(() => emptyPreparedProps)
+    const prepareOwnerPropertyMutations = vi.fn(() => emptyPreparedIntent)
     const applyPreparedPropertyMutationBatch = vi.fn(() => emptyPropsResult)
     const apis = createElementPropertyAPIs({
+      ...bindingRequests(),
       resolveElementPropertyTargets,
-      preparePropertyMutationBatch,
+      prepareOwnerPropertyMutations,
       applyPreparedPropertyMutationBatch
     })
 
@@ -165,8 +210,9 @@ describe('Core canonical element property APIs', () => {
 
   it('keeps empty element property requests inert', () => {
     const requests = {
+      ...bindingRequests(),
       resolveElementPropertyTargets: vi.fn(),
-      preparePropertyMutationBatch: vi.fn(),
+      prepareOwnerPropertyMutations: vi.fn(),
       applyPreparedPropertyMutationBatch: vi.fn()
     }
     const apis = createElementPropertyAPIs(requests)
@@ -174,7 +220,7 @@ describe('Core canonical element property APIs', () => {
     expect(apis.updateElementProperties([])).toEqual([])
     expect(apis.patchElementProperties([])).toEqual([])
     expect(requests.resolveElementPropertyTargets).not.toHaveBeenCalled()
-    expect(requests.preparePropertyMutationBatch).not.toHaveBeenCalled()
+    expect(requests.prepareOwnerPropertyMutations).not.toHaveBeenCalled()
     expect(requests.applyPreparedPropertyMutationBatch).not.toHaveBeenCalled()
   })
 })
