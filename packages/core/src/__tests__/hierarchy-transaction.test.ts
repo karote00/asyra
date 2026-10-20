@@ -823,7 +823,7 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
         sequence.push('props-apply')
         return applyProperties(prepared)
       })
-    let result: readonly string[] = []
+    let result: ReturnType<Core['updateElementProperties']> | undefined
 
     runWithTransactionOwner(factory.getTransactionOwner(), () => {
       runTransaction(() => {
@@ -841,7 +841,10 @@ describe('Factory and Scene Tree hierarchy transaction integration', () => {
     })
 
     expect(sequence).toEqual(['target', 'props-preflight', 'props-apply'])
-    expect(result).toEqual(['property-target-first', 'property-target-second'])
+    expect(result).toEqual({
+      acceptedIds: ['property-target-first', 'property-target-second'],
+      changed: true
+    })
     expect(
       propsManager
         .getPropertyById(first.props.getPropId('value') as string)

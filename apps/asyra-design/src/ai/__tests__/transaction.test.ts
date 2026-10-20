@@ -58,6 +58,24 @@ describe('Design invocation history groups', () => {
     ).rejects.toMatchObject({ status: 'unknown' })
   })
 
+  it('cannot turn swallowed rollback failure into success or admit later writes', async () => {
+    const { runner, write, values } = setup()
+    await expect(
+      runner.run('failed-recovery', async (mutate) => {
+        if (!mutate) throw new Error('Missing mutation executor')
+        await expect(
+          mutate(() => {
+            throw new MutationRecoveryError(new Error('primary'), [
+              new Error('cleanup')
+            ])
+          })
+        ).rejects.toBeInstanceOf(AiTransactionSettlementError)
+        await expect(mutate(() => write('late', 1))).rejects.toThrow()
+      })
+    ).rejects.toMatchObject({ status: 'unknown' })
+    expect(values.has('late')).toBe(false)
+  })
+
   it('publishes each member and permits independent user Undo before sealing one AI entry', async () => {
     const { apis, values, write, runner } = setup()
     const captures = vi.fn()

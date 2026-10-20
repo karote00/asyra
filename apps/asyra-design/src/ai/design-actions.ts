@@ -26,6 +26,7 @@ import {
   type PreparedAttachmentEvidence
 } from './inspection-evidence'
 import type { PreparedDesign } from './prepared-design'
+import type { createPreparedMaterialApplication } from './prepared-material-action'
 import {
   PREPARED_DRAWING_SLICE_ELEMENT_BUDGET,
   PREPARED_DRAWING_SLICE_POINT_BUDGET
@@ -63,20 +64,36 @@ export const createPreparedDesignAction = (
   apis: PreparedDesignApis = defaultApis,
   yieldToHost: () => Promise<void> = yieldToCooperativeHost,
   now: () => number = () => performance.now(),
-  evidence?: { isCurrent(stamp: unknown): boolean }
+  evidence?: { isCurrent(stamp: unknown): boolean },
+  material?: Pick<
+    ReturnType<typeof createPreparedMaterialApplication>,
+    'capture'
+  >
 ): AiActionDefinition<{
   design: PreparedDesign
   parentId?: string
   response?: 'compact' | 'full'
   attachmentEvidence?: PreparedAttachmentEvidence
+  materialElementIds?: string[]
 }> => ({
   ...actionToolSemantics(AiActionNames.APPLY_PREPARED_DESIGN, {
     allOf: [
-      toolResultObject({
-        status: toolResultStatus,
-        compositionId: toolResultString,
-        timing: { type: 'object' }
-      }),
+      toolResultObject(
+        {
+          status: toolResultStatus,
+          compositionId: toolResultString,
+          timing: { type: 'object' },
+          materialProvenance: {
+            type: 'object',
+            required: ['status'],
+            properties: {
+              status: { enum: ['available', 'unavailable'] },
+              message: { type: 'string' }
+            }
+          }
+        },
+        ['status', 'compositionId', 'timing']
+      ),
       {
         anyOf: [
           {
@@ -110,6 +127,11 @@ export const createPreparedDesignAction = (
     required: ['design'],
     properties: {
       design: { type: 'object' },
+      materialElementIds: {
+        type: 'array',
+        uniqueItems: true,
+        items: { type: 'string', minLength: 1 }
+      },
       attachmentEvidence: preparedAttachmentEvidenceSchema,
       parentId: { type: 'string', minLength: 1 },
       response: { type: 'string', enum: ['compact', 'full'] }
@@ -130,6 +152,14 @@ export const createPreparedDesignAction = (
       throw new Error('Invalid design parent identity.')
     const startedAt = now()
     const design = admitPreparedDesign(args.design)
+    const materialIds = args.materialElementIds ?? []
+    if (
+      new Set(materialIds).size !== materialIds.length ||
+      materialIds.some(
+        (id) => !design.entries.some((entry) => entry.descriptor.id === id)
+      )
+    )
+      throw new Error('Material members must belong to this prepared design.')
     const admissionMs = now() - startedAt
     const canonicalWork = {
       scope: 'synchronous-core-creation',
@@ -271,12 +301,27 @@ export const createPreparedDesignAction = (
     checkCurrent(workspaceId ?? '')
     const selectionStartedAt = now()
     let selectionCallbackMs = 0
+    let materialProvenance:
+      { status: 'available' | 'unavailable'; message?: string } | undefined
     await runAiMutation(context, () => {
       const callbackStartedAt = now()
       checkCurrent(workspaceId)
       const selectStartedAt = now()
       validationMs += selectStartedAt - callbackStartedAt
       apis.select([design.rootId])
+      if (materialIds.length) {
+        try {
+          if (!material)
+            throw new Error('Material provenance consumer is unavailable.')
+          material.capture(design.rootId, materialIds, signal)
+          materialProvenance = { status: 'available' }
+        } catch (error) {
+          materialProvenance = {
+            status: 'unavailable',
+            message: error instanceof Error ? error.message : String(error)
+          }
+        }
+      }
       selectionMs += now() - selectStartedAt
       selectionCallbackMs = now() - callbackStartedAt
     })
@@ -297,6 +342,7 @@ export const createPreparedDesignAction = (
     )
     return {
       status: 'complete',
+      ...(materialProvenance ? { materialProvenance } : {}),
       timing: {
         canonicalWork,
         admissionMs,

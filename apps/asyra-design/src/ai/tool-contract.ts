@@ -214,6 +214,10 @@ const actionEffects: Record<
     effect: 'read',
     resources: ['document']
   },
+  [AiActionNames.APPLY_PREPARED_MATERIAL]: {
+    effect: 'mutation',
+    resources: ['document']
+  },
   [AiActionNames.APPLY_PREPARED_DESIGN]: {
     effect: 'mutation',
     resources: ['document']

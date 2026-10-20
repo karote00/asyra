@@ -75,7 +75,13 @@ export const createDesignReviewAction = (
     type: 'object',
     additionalProperties: false,
     required: ['elementId'],
-    properties: { elementId: { ...toolDocumentReference, maxLength: 256 } }
+    properties: {
+      elementId: {
+        ...toolDocumentReference,
+        'x-design-element-binding': 'each',
+        maxLength: 256
+      }
+    }
   },
   execute: async ({ elementId }, { signal }) => {
     if (signal.aborted) throw new Error('Design review cancelled.')

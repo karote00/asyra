@@ -277,7 +277,7 @@ it('carries the recorded material decision into initial preparation without chan
     )
     expect(
       read.sources.map((source: { revision: number }) => source.revision)
-    ).toEqual([4, 14])
+    ).toEqual([4, 17])
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
@@ -504,6 +504,11 @@ it('routes recorded local material edits through actual discovery and artifact t
           actionName: action.name,
           result: {
             status: 'complete',
+            value: null,
+            acceptedIds: action.arguments.elementIds,
+            unavailableIds: [],
+            changed: true,
+            toolOutcome: { status: 'success', settlement: 'completed' },
             mutationScope: {
               complete: true,
               elementIds: action.arguments.elementIds,
@@ -547,9 +552,14 @@ it('routes recorded local material edits through actual discovery and artifact t
     mixed.target.keys.push('missing-surface')
     await expect(call(mixed)).rejects.toThrow()
     expect(dispatch).not.toHaveBeenCalled()
-    expect(localToolOutcome(JSON.parse(await call(operation))).status).toBe(
-      'success'
-    )
+    const result = JSON.parse(await call(operation))
+    expect(localToolOutcome(result)).toMatchObject({
+      status: 'partial',
+      issues: expect.arrayContaining([
+        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
+      ])
+    })
+    expect(result.actionResults[0].result.toolOutcome.status).toBe('success')
     expect(dispatch).toHaveBeenCalledTimes(1)
     const actions = dispatch.mock.calls[0][0].actions
     expect(actions).toHaveLength(1)
@@ -575,7 +585,14 @@ it('routes recorded local material edits through actual discovery and artifact t
       elementIds: selectedIds,
       patch: { color: '#aabbcc' }
     }
-    expect(localToolOutcome(JSON.parse(await call(fresh))).status).toBe(
+    const freshResult = JSON.parse(await call(fresh))
+    expect(localToolOutcome(freshResult)).toMatchObject({
+      status: 'partial',
+      issues: expect.arrayContaining([
+        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
+      ])
+    })
+    expect(freshResult.actionResults[0].result.toolOutcome.status).toBe(
       'success'
     )
     expect(dispatch).toHaveBeenCalledTimes(2)
@@ -1191,6 +1208,11 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
           actionName: action.name,
           result: {
             status: 'complete',
+            value: null,
+            acceptedIds: action.arguments.elementIds,
+            unavailableIds: [],
+            changed: true,
+            toolOutcome: { status: 'success', settlement: 'completed' },
             mutationScope: {
               complete: true,
               elementIds: action.arguments.elementIds,
@@ -1236,7 +1258,13 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     const settled = JSON.parse(
       await operations.call('execute_design_batch', correction, signal())
     )
-    expect(localToolOutcome(settled).status).toBe('success')
+    expect(localToolOutcome(settled)).toMatchObject({
+      status: 'partial',
+      issues: expect.arrayContaining([
+        expect.objectContaining({ code: 'FOLLOWUP_UNAVAILABLE' })
+      ])
+    })
+    expect(settled.actionResults[0].result.toolOutcome.status).toBe('success')
     expect(dispatch).toHaveBeenCalledTimes(1)
     expect(dispatch.mock.calls[0][0].actions[0].arguments).toEqual({
       elementIds: [pane],

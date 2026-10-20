@@ -2,6 +2,7 @@ import {
   defineBasicApi,
   apiString,
   apiId,
+  apiElementId,
   apiNumber,
   apiPosition,
   apiObject,
@@ -12,7 +13,7 @@ import {
 } from './basic-api-contracts'
 
 const elementPropertyUpdatesSchema = apiArray(
-  apiObject({ elementId: apiId, values: apiRecord })
+  apiObject({ elementId: apiElementId, values: apiRecord })
 )
 
 const elementCreationDataSchema = {
@@ -149,7 +150,7 @@ const getElementMetadataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementMetadata',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiId }],
+  parameters: [{ name: 'elementId', schema: apiElementId }],
   description:
     'Read canonical identity, name, type, parent, visibility, lock and childCount without copying property data or children. Prefer read_design_context for multiple IDs.'
 })
@@ -159,7 +160,7 @@ const getElementChildrenApi = defineBasicApi({
   method: 'getElementChildren',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'offset', schema: { type: 'integer', minimum: 0 }, optional: true },
     { name: 'limit', schema: { type: 'integer', minimum: 1 }, optional: true }
   ],
@@ -171,7 +172,7 @@ const getElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'getElementData',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiId }],
+  parameters: [{ name: 'elementId', schema: apiElementId }],
   description:
     'Returns detached canonical element data; property references are not resolved geometry.'
 })
@@ -181,7 +182,7 @@ const getElementComputedDataApi = defineBasicApi({
   method: 'getElementComputedData',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'fields', schema: apiArray(apiString), optional: true }
   ],
   description:
@@ -229,7 +230,7 @@ const hasProjectedElementApi = defineBasicApi({
   owner: 'core',
   method: 'hasProjectedElement',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiId }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const getElementIdAtClientPosApi = defineBasicApi({
@@ -271,7 +272,7 @@ const workspaceToElementLocalApi = defineBasicApi({
   method: 'workspaceToElementLocal',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -283,7 +284,7 @@ const elementLocalToWorkspaceApi = defineBasicApi({
   method: 'elementLocalToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'localPosition', schema: apiPosition }
   ]
 })
@@ -295,7 +296,7 @@ const elementSourceToWorkspaceApi = defineBasicApi({
   method: 'elementSourceToWorkspace',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'sourcePosition', schema: apiPosition }
   ]
 })
@@ -307,7 +308,7 @@ const workspaceToElementSourceApi = defineBasicApi({
   method: 'workspaceToElementSource',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
@@ -372,6 +373,8 @@ const createElementsInParentApi = defineBasicApi({
 const updateElementPropertiesApi = defineBasicApi({
   owner: 'core',
   method: 'updateElementProperties',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   effect: 'write',
   parameters: [{ name: 'updates', schema: elementPropertyUpdatesSchema }],
   description:
@@ -381,6 +384,8 @@ const updateElementPropertiesApi = defineBasicApi({
 const patchElementPropertiesApi = defineBasicApi({
   owner: 'core',
   method: 'patchElementProperties',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   effect: 'write',
   parameters: [
     {
@@ -388,7 +393,7 @@ const patchElementPropertiesApi = defineBasicApi({
       schema: apiArray(
         apiObject(
           {
-            elementId: apiId,
+            elementId: apiElementId,
             values: apiRecord,
             records: apiArray(
               apiObject(
@@ -409,6 +414,8 @@ const patchElementPropertiesApi = defineBasicApi({
 const updatePropertyComponentsApi = defineBasicApi({
   owner: 'core',
   method: 'updatePropertyComponents',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['propertyId'],
   effect: 'write',
   parameters: [
     {
@@ -423,9 +430,10 @@ const updatePropertyComponentsApi = defineBasicApi({
 const updateElementDataApi = defineBasicApi({
   owner: 'core',
   method: 'updateElementData',
+  resultKind: 'change-flag',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiId },
+    { name: 'elementId', schema: apiElementId },
     {
       name: 'values',
       schema: apiObject(
@@ -513,7 +521,7 @@ const moveElementsApi = defineBasicApi({
 
 const propertyTargetSchema = apiObject(
   {
-    elementId: apiId,
+    elementId: apiElementId,
     propertyName: apiString,
     path: apiArray(apiObject({ key: apiString, childId: apiId })),
     expectedRootId: apiId,
@@ -534,6 +542,8 @@ const readElementPropertyTargetsApi = defineBasicApi({
 const updateElementPropertyTargetsApi = defineBasicApi({
   owner: 'core',
   method: 'updateElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
   effect: 'write',
   parameters: [
     {
@@ -549,6 +559,8 @@ const updateElementPropertyTargetsApi = defineBasicApi({
 const updateSharedPropertySourcesApi = defineBasicApi({
   owner: 'core',
   method: 'updateSharedPropertySources',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['propertyId'],
   effect: 'write',
   parameters: [
     {
@@ -562,6 +574,8 @@ const updateSharedPropertySourcesApi = defineBasicApi({
 const resetElementPropertyOverridesApi = defineBasicApi({
   owner: 'core',
   method: 'resetElementPropertyOverrides',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
   effect: 'write',
   parameters: [
     {
@@ -577,6 +591,8 @@ const resetElementPropertyOverridesApi = defineBasicApi({
 const detachElementPropertyTargetsApi = defineBasicApi({
   owner: 'core',
   method: 'detachElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   effect: 'write',
   parameters: [{ name: 'targets', schema: apiArray(propertyTargetSchema) }],
   description:
@@ -585,6 +601,8 @@ const detachElementPropertyTargetsApi = defineBasicApi({
 const shareElementPropertyTargetsApi = defineBasicApi({
   owner: 'core',
   method: 'shareElementPropertyTargets',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['target', 'elementId'],
   effect: 'write',
   parameters: [
     {

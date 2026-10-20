@@ -76,7 +76,10 @@ export const createInspectionValidationAction = (
           type: 'array',
           items: toolResultObject(
             {
-              elementId: toolDocumentReference,
+              elementId: {
+                ...toolDocumentReference,
+                'x-design-element-binding': 'each'
+              },
               available: toolResultBoolean,
               complete: toolResultBoolean,
               findings: { type: 'array', items: { type: 'object' } },

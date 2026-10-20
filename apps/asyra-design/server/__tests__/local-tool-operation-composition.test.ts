@@ -6,6 +6,7 @@ import {
 vi.mock('../../src/contexts', () => ({ default: {} }))
 vi.mock('../../src/common-apis', () => ({}))
 import { createBasicApiActions } from '../../src/ai/basic-api-actions'
+import { createDesignReviewAction } from '../../src/ai/review-action'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { createLocalToolHost } from '../local-tool-host'
 import { createDesignCheckResults } from '../design-check-results'
@@ -34,7 +35,7 @@ const proposal = {
     {
       id: 'create',
       tool: 'design_operations.api_element_createElements',
-      revision: 3,
+      revision: 8,
       input: {
         kind: 'object',
         fields: {
@@ -111,6 +112,20 @@ const fixture = () => {
       resolve: () => 'live'
     }
   )
+  actions.push(
+    createDesignReviewAction(
+      async () => ({
+        complete: true,
+        truncated: false,
+        checkedElements: 1,
+        measuredTextCount: 0,
+        measuredTextIds: [],
+        findings: [],
+        evidence: { sessionId: 'composition-fixture', revision: 1 }
+      }),
+      () => true
+    )
+  )
   const entries = new Map<string, AiToolStoreEntry>()
   const signal = new AbortController().signal
   const host = createLocalToolHost({
@@ -166,7 +181,11 @@ const fixture = () => {
                     JSON.stringify(
                       await action.execute(call.arguments, {
                         signal,
-                        runMutation: async (work) => work()
+                        runMutation: async (work, settled) => {
+                          const value = work()
+                          settled?.(value)
+                          return value
+                        }
                       })
                     )
                   )
@@ -215,12 +234,12 @@ it('composes actual canonical basic operations and hands creation identities thr
     )
     expect(semantic.apis[0].recipeDependency).toEqual({
       name: proposal.steps[0].tool,
-      revision: 3,
+      revision: 8,
       execution: {
         kind: 'registered-tool',
         namespace: 'tool_library',
         tool: 'invoke_tool',
-        arguments: { name: proposal.steps[0].tool, revision: 3 }
+        arguments: { name: proposal.steps[0].tool, revision: 8 }
       },
       definition: {
         tool: 'describe_design_apis',
@@ -232,7 +251,7 @@ it('composes actual canonical basic operations and hands creation identities thr
     })
     expect(lookup.tools[0]).toMatchObject({
       registeredName: proposal.steps[0].tool,
-      revision: 3,
+      revision: 8,
       composition: 'allowed',
       execution: {
         kind: 'registered-tool',
@@ -247,7 +266,7 @@ it('composes actual canonical basic operations and hands creation identities thr
       kind: 'registered-tool',
       namespace: 'tool_library',
       tool: 'invoke_tool',
-      arguments: { name: proposal.steps[0].tool, revision: 3 }
+      arguments: { name: proposal.steps[0].tool, revision: 8 }
     })
   } finally {
     await app.host.dispose()
@@ -404,7 +423,11 @@ const inspectionHandoffFixture = () => {
           if (!action) throw new Error('Unknown canonical action')
           result = await action.execute(call.arguments, {
             signal,
-            runMutation: async (work) => work()
+            runMutation: async (work, settled) => {
+              const value = work()
+              settled?.(value)
+              return value
+            }
           })
         }
         if (state.missingMutationScope && result && typeof result === 'object')
@@ -519,37 +542,37 @@ it.each([
   [
     'core.updateElementProperties',
     { updates: [{ elementId: 'a', values: { width: 20 } }] },
-    undefined,
+    { acceptedIds: ['a'], changed: true },
     ['a']
   ],
   [
     'element.updateElementProperties',
     { elementIds: ['a', 'b'], values: { width: 20 } },
-    undefined,
+    { acceptedIds: ['a', 'b'], changed: true },
     ['a', 'b']
   ],
   [
     'core.patchElementProperties',
     { patches: [{ elementId: 'a', values: { width: 20 } }] },
-    undefined,
+    { acceptedIds: ['a'], changed: true },
     ['a']
   ],
   [
     'element.patchElementProperties',
     { patches: [{ elementId: 'a', values: { width: 20 }, records: [] }] },
-    undefined,
+    { acceptedIds: ['a'], changed: true },
     ['a']
   ],
   [
     'core.updatePropertyComponents',
     { updates: [{ propertyId: 'shared-fill', values: { color: '#ffffff' } }] },
-    undefined,
+    { acceptedIds: ['shared-fill'], changed: true },
     ['a', 'b']
   ],
   [
     'fill.updatePrimaryFillColors',
     { updates: [{ elementId: 'a', color: '#ffffff' }] },
-    [true],
+    ['changed'],
     ['a']
   ],
   [
@@ -581,7 +604,7 @@ it.each([
   [
     'core.updateElementData',
     { elementId: 'a', values: { visible: false } },
-    undefined,
+    true,
     ['a']
   ],
   [
@@ -872,7 +895,7 @@ it.each([false, true])(
         }))
       : []
     const result = await f.write('element.createElements', {
-      createOptions: [{ type: 'rect' }]
+      createOptions: [{ type: 'rect' }, { type: 'rect' }]
     })
     expect(
       result.actionResults.map(
@@ -894,7 +917,7 @@ it.each([false, true])(
       operations: [
         {
           name: f.api('element.createElements'),
-          arguments: { createOptions: [{ type: 'rect' }] }
+          arguments: { createOptions: [{ type: 'rect' }, { type: 'rect' }] }
         }
       ],
       inspection: 'defer',
@@ -959,7 +982,14 @@ it('delivers terminal scope recovery on the first lost mutation acknowledgement'
   expect(f.calls).toHaveLength(1)
 })
 
-it.each(['repair', 'stuck', 'decision', 'cancel', 'partial'] as const)(
+it.each([
+  'repair',
+  'stuck',
+  'decision',
+  'cancel',
+  'partial',
+  'unconfirmed'
+] as const)(
   'runs a real container check through an admitted repair recipe and stops correctly for %s',
   async (mode) => {
     const { createDesignReviewer } =
@@ -985,6 +1015,10 @@ it.each(['repair', 'stuck', 'decision', 'cancel', 'partial'] as const)(
           changed?.({ elementIds: ['child'] })
         }
         if (mode === 'cancel') controller.abort()
+        // Missing output violates the explicit property receipt contract after the write.
+        return mode === 'unconfirmed'
+          ? undefined
+          : { acceptedIds: _ids, changed: mode !== 'stuck' }
       }
     )
     const review = createDesignReviewer({
@@ -997,7 +1031,13 @@ it.each(['repair', 'stuck', 'decision', 'cancel', 'partial'] as const)(
     })
     const measured = vi.fn(review)
     const actions = [
-      createDesignReviewAction(measured),
+      createDesignReviewAction(
+        async (...args) => ({
+          ...(await measured(...args)),
+          evidence: { sessionId: 'repair-fixture', revision: 1 }
+        }),
+        () => true
+      ),
       ...createBasicApiActions(
         () => ({
           core: {
@@ -1276,6 +1316,21 @@ it.each(['repair', 'stuck', 'decision', 'cancel', 'partial'] as const)(
         ])
       }
       expect(positions).toHaveBeenCalledTimes(mode === 'decision' ? 0 : 1)
+      if (mode === 'unconfirmed') {
+        expect(result.execution.calls).toContainEqual(
+          expect.objectContaining({
+            name: repair.registeredName,
+            status: 'failed',
+            settlement: 'completed'
+          })
+        )
+        expect(geometry.child.x).toBe(50)
+        expect(
+          result.execution.calls.filter(
+            (call: { name: string }) => call.name === checker.registeredName
+          )
+        ).toHaveLength(1)
+      }
       if (mode === 'stuck')
         expect(result.execution.issues.join(' ')).toContain(
           'Repeated verification progress'

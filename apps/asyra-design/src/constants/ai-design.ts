@@ -10,6 +10,7 @@ export const AiDesignToolIds = Object.freeze({
   RETAIN_DESIGN_TARGETS: 'retain_design_targets',
   RELEASE_DESIGN_ARTIFACTS: 'release_design_artifacts',
   PREPARE_DESIGN: 'prepare_design',
+  PREPARE_MATERIAL_REVISION: 'prepare_material_revision',
   PREPARE_AND_APPLY_DESIGN: 'prepare_and_apply_design',
   DEFINE_DESIGN_CRITERIA: 'define_design_criteria',
   RECORD_DESIGN_FACTS: 'record_design_facts',

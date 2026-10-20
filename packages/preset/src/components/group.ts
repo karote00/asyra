@@ -3,6 +3,7 @@ import {
   runTransaction,
   type ComponentDefinition,
   type ElementPropertyValuesUpdate,
+  type PropertyMutationReceipt,
   type RenderStrategy
 } from '@asyra/core'
 import {
@@ -86,7 +87,7 @@ export interface GroupOperationCore extends GroupGeometryProjectionCore {
   updateElementProperties: (
     updates: readonly ElementPropertyValuesUpdate[],
     options?: EVENT_OPTIONS
-  ) => readonly string[]
+  ) => PropertyMutationReceipt
   removeSubtree: (
     elementId: string,
     options?: EVENT_OPTIONS

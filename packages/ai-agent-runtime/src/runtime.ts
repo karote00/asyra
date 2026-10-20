@@ -82,7 +82,8 @@ export interface AiTransactionRunner {
   ): Promise<T>
 }
 
-/** Explicit host evidence; it never performs rollback or infers retained writes. */
+/** Explicit host evidence for a mutation member or final history settlement.
+ * It never performs rollback or infers retained writes. */
 export class AiTransactionSettlementError extends Error {
   constructor(
     readonly cause: unknown,
@@ -1679,11 +1680,16 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                               ? Math.max(0, performance.now() - actionStartedAt)
                               : null
                           const actionName = failedAction ?? null
-                          const failure = stableFailure(error, {
-                            code: 'AI_EXECUTION_FAILED',
-                            message: 'The batch could not complete.',
-                            stage
-                          })
+                          const failure = stableFailure(
+                            error instanceof AiTransactionSettlementError
+                              ? error.cause
+                              : error,
+                            {
+                              code: 'AI_EXECUTION_FAILED',
+                              message: 'The batch could not complete.',
+                              stage
+                            }
+                          )
                           contextStale = true
                           try {
                             await refreshContext()
@@ -1698,6 +1704,12 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                             stage === 'execution' || stage === 'context'
                               ? 'unknown'
                               : 'not-started'
+                          if (error instanceof AiTransactionSettlementError) {
+                            if (error.status === 'rolled-back')
+                              settlement = 'not-started'
+                            else if (error.status === 'committed')
+                              settlement = 'completed'
+                          }
                           if (error instanceof AiToolContractError)
                             settlement =
                               error.inspection?.settlement ?? 'not-started'

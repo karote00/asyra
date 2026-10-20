@@ -1,3 +1,4 @@
+import { runtimeOperationSchema } from './local-operation-batch'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import {
   createAiActionRegistry,
@@ -138,6 +139,7 @@ export const createLocalToolHost = (options: {
       })
       registry.register({
         ...definition,
+        inputSchema: runtimeOperationSchema(definition.inputSchema),
         name,
         composition: source.composition ?? 'control-plane',
         execute: async (input, execution) => {

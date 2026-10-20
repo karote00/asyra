@@ -94,7 +94,13 @@ const incomplete = (value: Record<string, unknown>) =>
   value.status === 'partial' || value.complete === false
 
 /** Assess execution evidence, not visual quality or the truth of model judgments. */
-export const localToolOutcome = (value: unknown) => {
+export const localToolOutcome = (
+  value: unknown
+): {
+  status: AiToolOutcome['status']
+  settlement: AiToolOutcome['settlement']
+  issues: { actionName?: string; code: string; message: string }[]
+} => {
   if (!record(value)) throw new Error('App tool returned a non-object result')
   const results = Array.isArray(value.actionResults) ? value.actionResults : []
   const receipts: Record<string, unknown>[] = results.flatMap((entry) =>
@@ -102,17 +108,40 @@ export const localToolOutcome = (value: unknown) => {
       ? [{ ...entry.result, actionName: entry.actionName }]
       : []
   )
-  const childOutcomes = receipts.map((receipt) =>
+  const receiptOutcomes = receipts.map((receipt) =>
     designActionOutcome(
       record(receipt.toolOutcome) ? receipt.toolOutcome : receipt
     )
+  )
+  const parts = Array.isArray(value.parts)
+    ? value.parts.filter(
+        (part): part is Record<string, unknown> =>
+          record(part) && Array.isArray(part.completedSteps)
+      )
+    : []
+  const partOutcomes = parts.map(localToolOutcome)
+  const childOutcomes = [...receiptOutcomes, ...partOutcomes]
+  const followupIssues = ['measurementIssues', 'inspectionIssues'].flatMap(
+    (key) =>
+      Array.isArray(value[key])
+        ? value[key].filter(record).map((issue) => ({
+            status: 'partial',
+            code: 'FOLLOWUP_UNAVAILABLE',
+            message:
+              typeof issue.message === 'string'
+                ? issue.message
+                : 'Required follow-up delivery is unavailable; recover checks without replaying writes.'
+          }))
+        : []
   )
   const observations: Record<string, unknown>[] = [
     value,
     ...receipts.map((receipt, index) => ({
       ...receipt,
-      ...childOutcomes[index]
-    }))
+      ...receiptOutcomes[index]
+    })),
+    ...parts.map((part, index) => ({ ...part, ...partOutcomes[index] })),
+    ...followupIssues
   ]
   const issues = observations
     .filter((item) => unavailable(item) || incomplete(item))
@@ -131,19 +160,11 @@ export const localToolOutcome = (value: unknown) => {
           typeof issue.message === 'string' ? issue.message : defaultMessage
       }
     })
-  const summary = record(value.batchSummary) ? value.batchSummary : {}
-  const acknowledged = Array.isArray(summary.acknowledgedActions)
-    ? summary.acknowledgedActions.some(
-        (entry) =>
-          record(entry) && typeof entry.count === 'number' && entry.count > 0
-      )
-    : false
   let status: AiToolOutcome['status'] =
     value.status === 'unknown' ? 'unknown' : 'success'
   if (issues.length)
     status =
       observations.some(incomplete) ||
-      acknowledged ||
       hasAcknowledgedActions(value.executionResult) ||
       childOutcomes.some((outcome) => outcome.status === 'success')
         ? 'partial'
@@ -160,7 +181,6 @@ export const localToolOutcome = (value: unknown) => {
     const settlements = new Set(
       childOutcomes.map((outcome) => outcome.settlement)
     )
-    if (acknowledged) settlements.add('completed')
     if (settlements.has('unknown')) settlement = 'unknown'
     else if (!unavailable(value) && !incomplete(value)) {
       if (settlements.has('partial') || settlements.size > 1)

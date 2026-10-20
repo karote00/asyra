@@ -1,3 +1,4 @@
+import { runtimeOperationSchema } from '../local-operation-batch'
 import {
   defineBasicApi,
   apiString,
@@ -518,7 +519,7 @@ it('requires fresh document identities in recipes but keeps field names and new 
     const dependency = createAiToolContract({
       name: source.name,
       description: source.description,
-      inputSchema: source.inputSchema,
+      inputSchema: runtimeOperationSchema(source.inputSchema),
       composition: 'allowed',
       ...toolSemantics(basicApiResultSchema(source), 'read', ['document'])
     })
@@ -592,7 +593,7 @@ it('hands canonical created identities to a later selection without capturing do
     createAiToolContract({
       name: source.name,
       description: source.description,
-      inputSchema: source.inputSchema,
+      inputSchema: runtimeOperationSchema(source.inputSchema),
       composition: 'allowed',
       ...toolSemantics(basicApiResultSchema(source), 'mutation', ['document'])
     })
@@ -652,4 +653,16 @@ it('hands canonical created identities to a later selection without capturing do
       }
     ).items['x-runtime-value']
   ).toBe('document')
+})
+
+it('publishes non-Core receipt semantics in the provider-facing description', () => {
+  const contracts = basicApiContracts.filter(
+    (entry) => entry.result.kind === 'mutation-receipt'
+  )
+  expect(contracts).toHaveLength(31)
+  for (const contract of contracts) {
+    expect(contract.description, contract.name).toContain('acceptedIds')
+    expect(contract.description, contract.name).toContain('unavailableIds')
+    expect(contract.description, contract.name).toContain('never replay')
+  }
 })

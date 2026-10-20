@@ -401,7 +401,7 @@ const VectorPoint = () => {
             ? elementApis.updateVectorAnchorPointPosition(elementId, pointId, {
                 x: nextX,
                 y
-              })
+              }).value
             : elementApis.updateVectorAnchorPointHandlePosition(
                 elementId,
                 pointId,
@@ -413,7 +413,7 @@ const VectorPoint = () => {
                 {
                   structuralOperationIntent
                 }
-              )
+              ).value
         return updatedPoint === true
           ? false
           : applyTargetSelection(updatedPoint, target)
@@ -456,7 +456,7 @@ const VectorPoint = () => {
             ? elementApis.updateVectorAnchorPointPosition(elementId, pointId, {
                 x,
                 y: nextY
-              })
+              }).value
             : elementApis.updateVectorAnchorPointHandlePosition(
                 elementId,
                 pointId,
@@ -468,7 +468,7 @@ const VectorPoint = () => {
                 {
                   structuralOperationIntent
                 }
-              )
+              ).value
         return updatedPoint === true
           ? false
           : applyTargetSelection(updatedPoint, target)
@@ -512,7 +512,7 @@ const VectorPoint = () => {
           {
             structuralOperationIntent
           }
-        )
+        ).value
         applyTargetSelection(updatedPoint, VECTOR_TOKENS.POINT.TARGET.ANCHOR)
       })
     },
@@ -550,7 +550,7 @@ const VectorPoint = () => {
           {
             structuralOperationIntent
           }
-        )
+        ).value
         if (!updatedPoint) {
           return
         }

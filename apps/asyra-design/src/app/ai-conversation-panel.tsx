@@ -728,7 +728,9 @@ const AiConversationFeed = ({
                     ) : null}
                     {activity.current.label ? (
                       <span>
-                        {activity.mode === 'context' && activity.current.message
+                        {activity.mode === 'context' &&
+                        activity.current.label === 'Current task' &&
+                        activity.current.message
                           ? 'Task context - no App operation executing'
                           : activity.current.label}
                       </span>

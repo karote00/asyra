@@ -524,3 +524,5 @@ export type {
   ElementPropertyOverrideReset,
   ElementPropertySharing
 } from './types/property-intents.js'
+
+export type { PropertyMutationReceipt } from './types/property-mutation-receipt.js'

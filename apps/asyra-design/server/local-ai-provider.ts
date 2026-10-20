@@ -1070,16 +1070,18 @@ const runLocalAiProvider = async (
           signal: toolController.signal,
           actor: 'provider'
         })
-        .then(({ success, contentItems }) => {
+        .then(({ success, contentItems, text }) => {
           if (terminalError || stopped) return
           toolTasks.delete(task)
+          const { status, settlement } = JSON.parse(text).toolOutcome
           reportProgress({
             tool: toolName,
             status: 'completed',
             activity: {
               kind: 'system',
               callId: params.callId as string,
-              sequence: 0
+              sequence: 0,
+              outcome: { status, settlement }
             }
           })
           writeProtocol(

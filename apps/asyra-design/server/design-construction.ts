@@ -173,6 +173,7 @@ export function* constructDesignSteps(
   void,
   {
     draft: Node
+    materialFields: Record<string, string>
     brief?: DesignBrief
     sourceWork: ReturnType<
       ReturnType<typeof createDesignSourceWork>['summary']
@@ -196,6 +197,8 @@ export function* constructDesignSteps(
       : label(input.key, 'node key', 160)
   const brief = readBrief(input.brief)
   const linearFields = readLinearFields(input.linearFields)
+  const materialFields: Record<string, string> = Object.create(null)
+  const materialNames = new WeakMap<Node, string>()
   const materialFills = new WeakMap<
     Node,
     ReturnType<typeof createLinearFieldFill>
@@ -265,6 +268,8 @@ export function* constructDesignSteps(
       )
       compiled.fill = template ? undefined : material()
       materialFills.set(compiled, material)
+      materialNames.set(compiled, String(node.materialField))
+      if (!template) materialFields[key] = String(node.materialField)
     }
     return compiled
   }
@@ -473,6 +478,9 @@ export function* constructDesignSteps(
             number(bounds.max[k] + offset[k], 'pattern world extent')
           }
           const material = materialFills.get(compiled)
+          const materialName = materialNames.get(compiled)
+          if (materialName)
+            materialFields[`${key}-${i}-${faceKey}`] = materialName
           result.push({
             ...compiled,
             key: `${key}-${i}-${faceKey}`,
@@ -873,6 +881,7 @@ export function* constructDesignSteps(
   return {
     draft,
     brief,
+    materialFields,
     sourceWork: {
       ...sourceWork.summary(),
       projectionCalls,

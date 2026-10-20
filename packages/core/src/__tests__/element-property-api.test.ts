@@ -137,7 +137,10 @@ describe('Core canonical element property APIs', () => {
     expect(applyPreparedPropertyMutationBatch).toHaveBeenCalledWith(
       emptyPreparedProps
     )
-    expect(result).toEqual(['element-a', 'element-b'])
+    expect(result).toEqual({
+      acceptedIds: ['element-a', 'element-b'],
+      changed: false
+    })
     expect(Object.isFrozen(result)).toBe(true)
   })
 
@@ -217,8 +220,14 @@ describe('Core canonical element property APIs', () => {
     }
     const apis = createElementPropertyAPIs(requests)
 
-    expect(apis.updateElementProperties([])).toEqual([])
-    expect(apis.patchElementProperties([])).toEqual([])
+    expect(apis.updateElementProperties([])).toEqual({
+      acceptedIds: [],
+      changed: false
+    })
+    expect(apis.patchElementProperties([])).toEqual({
+      acceptedIds: [],
+      changed: false
+    })
     expect(requests.resolveElementPropertyTargets).not.toHaveBeenCalled()
     expect(requests.prepareOwnerPropertyMutations).not.toHaveBeenCalled()
     expect(requests.applyPreparedPropertyMutationBatch).not.toHaveBeenCalled()

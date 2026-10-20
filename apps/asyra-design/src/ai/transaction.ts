@@ -75,19 +75,44 @@ export const createAiTransactionRunner = (
       let group: HistoryGroupHandle | undefined
       let accepting = true
       let settlementUnknown = false
+      let committed = false
+      let cause: unknown
       const runMutation: AiMutationExecutor = (mutate, settled) =>
         atIdleBoundary(
           apis,
           () => {
             if (!accepting) throw new Error('The AI mutation scope has closed.')
             group ??= apis.startHistoryGroup()
+            let memberSettlement: 'committed' | 'rolled-back' | 'unknown' =
+              'unknown'
             const stop = apis.subscribeToTransactionStatus((status) => {
-              if (status.status === 'rollback-failed') settlementUnknown = true
+              if (status.status === 'rollback-failed') {
+                settlementUnknown = true
+                accepting = false
+                memberSettlement = 'unknown'
+              } else if (
+                !settlementUnknown &&
+                (status.status === 'discarded' ||
+                  status.status === 'rolled-back') &&
+                status.nonRollbackableChangeCount === 0
+              ) {
+                memberSettlement = 'rolled-back'
+              } else if (!settlementUnknown && status.status === 'committed') {
+                memberSettlement = 'committed'
+              }
             })
             try {
               const value = apis.updateHistoryGroup(group, mutate)
+              memberSettlement = 'committed'
               settled?.(value)
               return value
+            } catch (error) {
+              if (memberSettlement === 'unknown') {
+                cause ??= error
+                settlementUnknown = true
+                accepting = false
+              }
+              throw new AiTransactionSettlementError(error, memberSettlement)
             } finally {
               stop()
             }
@@ -96,7 +121,6 @@ export const createAiTransactionRunner = (
         )
       let value!: T
       let failed = false
-      let cause: unknown
       try {
         value = await measureBrowserDragAsyncPhase('ai-app:transaction', () =>
           measureBrowserDragAsyncPhase('ai-app:transaction-execute', () =>
@@ -105,10 +129,14 @@ export const createAiTransactionRunner = (
         )
       } catch (error) {
         failed = true
-        cause = error
+        cause ??=
+          error instanceof AiTransactionSettlementError ? error.cause : error
+        if (error instanceof AiTransactionSettlementError) {
+          committed = error.status === 'committed'
+          settlementUnknown ||= error.status === 'unknown'
+        }
       }
       accepting = false
-      let committed = false
       try {
         if (group) {
           const handle = group
@@ -117,7 +145,7 @@ export const createAiTransactionRunner = (
           await atIdleBoundary(apis, () => {
             const before = history?.getCurrentActionId() ?? null
             const status = apis.endHistoryGroup(handle)
-            committed = status.memberCount > 0
+            committed ||= status.memberCount > 0
             const after = history?.getCurrentActionId() ?? null
             if (committed && after !== null && after !== before)
               history?.correlateCommittedAction(after)
@@ -126,12 +154,11 @@ export const createAiTransactionRunner = (
       } catch (error) {
         throw new AiTransactionSettlementError(error, 'unknown')
       }
+      if (settlementUnknown)
+        throw new AiTransactionSettlementError(cause, 'unknown')
       if (failed) {
         const status = committed ? 'committed' : 'rolled-back'
-        throw new AiTransactionSettlementError(
-          cause,
-          settlementUnknown ? 'unknown' : status
-        )
+        throw new AiTransactionSettlementError(cause, status)
       }
       return value
     }

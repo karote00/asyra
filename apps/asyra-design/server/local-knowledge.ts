@@ -154,7 +154,7 @@ const loadFiles = async (): Promise<readonly KnowledgeFile[]> => {
     ...files,
     {
       id: 'design.architectural-illustration',
-      revision: 14,
+      revision: 17,
       markdown: await readFile(
         new URL(
           '../knowledge/design.architectural-illustration.md',

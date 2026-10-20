@@ -144,6 +144,11 @@ const fixture = (store = memory(), requestId = 'first', workflow = false) => {
           name: AiActionNames.APPLY_PREPARED_DESIGN,
           description: 'Apply',
           inputSchema: {}
+        },
+        {
+          name: AiActionNames.APPLY_PREPARED_MATERIAL,
+          description: 'Apply material',
+          inputSchema: {}
         }
       ]
       const designs = createLocalDesignTools(actions, session)
@@ -204,7 +209,11 @@ it.each(['compact', 'full'])(
           inspection: 'defer'
         }
       )
-      expect(produced.toolOutcome.status).toBe('success')
+      expect(produced.toolOutcome).toMatchObject({
+        status: 'partial',
+        settlement: 'completed'
+      })
+      expect(produced.measurementIssues).toHaveLength(1)
       expect(produced.artifactId).toEqual(expect.any(String))
       const selected = await invoke(
         'design_preparation.retain_design_targets',
@@ -252,7 +261,8 @@ it.each([false, true])(
         ],
         inspection: 'defer'
       })
-      expect(result.toolOutcome.status).toBe(stopped ? 'partial' : 'success')
+      expect(result.toolOutcome.status).toBe('partial')
+      if (!stopped) expect(result.toolOutcome.settlement).toBe('completed')
       expect(result.parts).toHaveLength(stopped ? 2 : 3)
       for (const part of result.parts) {
         const selected = await invoke(
@@ -831,6 +841,88 @@ it('reports failed model delivery without replaying a successful library executi
       toolOutcome: { status: 'partial', settlement: 'completed' }
     })
     expect(calls).toBe(1)
+  } finally {
+    await host.dispose()
+  }
+})
+
+it('retains a material revision across native call cleanup and retires its source metadata with its lease', async () => {
+  const { host, invoke } = fixture()
+  const field = {
+    frame: 'world',
+    start: { x: 0, y: 0, z: 0 },
+    end: { x: 0, y: 0, z: 100 },
+    gradientStops: [
+      { position: 0, color: '#112233', opacity: 1 },
+      { position: 1, color: '#eeeeee', opacity: 1 }
+    ]
+  }
+  const draft = {
+    type: 'group',
+    name: 'Facades',
+    projection: {
+      azimuth: 30,
+      elevation: 20,
+      scale: 1,
+      originX: 0,
+      originY: 0
+    },
+    linearFields: { glass: field },
+    children: [
+      {
+        type: 'projected-face',
+        key: 'face',
+        name: 'Face',
+        materialField: 'glass',
+        vertices: [
+          { x: 0, y: 0, z: 0 },
+          { x: 20, y: 0, z: 0 },
+          { x: 20, y: 0, z: 30 },
+          { x: 0, y: 0, z: 30 }
+        ]
+      }
+    ]
+  }
+  try {
+    const original = await invoke('design_preparation.prepare_design', {
+      draft
+    })
+    const revised = await invoke(
+      'design_preparation.prepare_material_revision',
+      {
+        artifactId: original.artifactId,
+        field: 'glass',
+        definition: {
+          ...field,
+          gradientStops: field.gradientStops.map((stop) => ({
+            ...stop,
+            color: '#336688'
+          }))
+        }
+      }
+    )
+    expect(revised).toMatchObject({
+      available: true,
+      applied: false,
+      elementCount: 1
+    })
+    await invoke('design_preparation.release_design_artifacts', {
+      artifactIds: [original.artifactId]
+    })
+    const { linearFields: _fields, ...extension } = draft
+    const next = await invoke('design_preparation.prepare_design', {
+      draft: extension,
+      materialSourceId: revised.materialRevisionId
+    })
+    expect(next).toMatchObject({ available: true, applicable: true })
+    await invoke('design_preparation.release_design_artifacts', {
+      artifactIds: [revised.materialRevisionId]
+    })
+    const refused = await invoke('design_preparation.prepare_design', {
+      draft: extension,
+      materialSourceId: revised.materialRevisionId
+    })
+    expect(refused.available).not.toBe(true)
   } finally {
     await host.dispose()
   }

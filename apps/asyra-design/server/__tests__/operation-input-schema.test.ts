@@ -543,3 +543,33 @@ it('validates positional receipt schemas without retyping the diagnostic tail', 
     operationInputIssue([1, 'extra'], { ...schema, items: false })
   ).toBeDefined()
 })
+
+it('keeps common invocation examples at their union scope during native conversion', () => {
+  const example = { draft: { type: 'group' } }
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    examples: [example],
+    properties: { draft: { type: 'object' }, repair: { type: 'object' } },
+    oneOf: [{ required: ['draft'] }, { required: ['repair'] }]
+  }
+  const converted = nativeToolInputSchema(schema) as {
+    examples: unknown[]
+    oneOf: Record<string, unknown>[]
+  }
+  expect(converted.examples).toEqual([example])
+  expect(
+    converted.oneOf.every((branch) => !Object.hasOwn(branch, 'examples'))
+  ).toBe(true)
+  for (const input of [
+    example,
+    { repair: {} },
+    {},
+    { draft: {}, repair: {} },
+    { draft: {}, extra: true }
+  ]) {
+    expect(!!operationInputIssue(input, converted)).toBe(
+      !!operationInputIssue(input, schema)
+    )
+  }
+})

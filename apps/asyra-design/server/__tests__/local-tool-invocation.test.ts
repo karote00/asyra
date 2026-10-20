@@ -127,7 +127,7 @@ it('does not let successful child receipts erase incomplete parent settlement', 
   ).toMatchObject({ status: 'partial', settlement: 'partial' })
 })
 
-it('includes compact successful acknowledgements when combining child settlements', () => {
+it('does not treat obsolete aggregate counts as owner evidence', () => {
   expect(
     localToolOutcome({
       batchSummary: { acknowledgedActions: [{ actionName: 'edit', count: 1 }] },
@@ -135,7 +135,7 @@ it('includes compact successful acknowledgements when combining child settlement
         { result: { status: 'failed', settlement: 'not-started' } }
       ]
     })
-  ).toMatchObject({ status: 'partial', settlement: 'partial' })
+  ).toMatchObject({ status: 'failed', settlement: 'not-started' })
 })
 
 it.each(
@@ -290,10 +290,10 @@ it.each([
   [{ actionResults: [{ result: { status: 'partial' } }] }, false, 'partial'],
   [
     {
-      actionResults: [{ result: { available: false } }],
-      batchSummary: {
-        acknowledgedActions: [{ actionName: 'update', count: 2 }]
-      }
+      actionResults: [
+        { result: { status: 'complete' } },
+        { result: { available: false } }
+      ]
     },
     false,
     'partial'
@@ -932,4 +932,50 @@ it('preserves an owner-declared terminal failure without changing retryable fail
     localToolFailureReply('Correct the input.', 'INVALID_INPUT').text
   )
   expect(retryable.recoverable).toBe(true)
+})
+
+it.each(['measurementIssues', 'inspectionIssues'])(
+  'preserves completed writes but reports failed %s delivery as partial',
+  (field) => {
+    const outcome = localToolOutcome({
+      actionResults: [
+        {
+          result: {
+            status: 'complete',
+            toolOutcome: { status: 'success', settlement: 'completed' }
+          }
+        }
+      ],
+      [field]: [
+        {
+          elementId: 'region',
+          message: 'Check delivery failed; recover checks only.'
+        }
+      ]
+    })
+    expect(outcome).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
+    })
+    expect(outcome.issues).toContainEqual(
+      expect.objectContaining({
+        message: 'Check delivery failed; recover checks only.'
+      })
+    )
+  }
+)
+
+it('does not reinterpret domain parts as workflow execution receipts', () => {
+  expect(
+    localToolOutcome({
+      parts: [{ status: 'failed', evidence: 'A negative visual judgment.' }]
+    })
+  ).toMatchObject({ status: 'success', settlement: 'completed' })
+  expect(
+    localToolOutcome({
+      parts: [
+        { completedSteps: [], status: 'failed', settlement: 'not-started' }
+      ]
+    })
+  ).toMatchObject({ status: 'failed', settlement: 'not-started' })
 })

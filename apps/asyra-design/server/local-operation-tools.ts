@@ -62,7 +62,10 @@ import {
   basicApiContracts,
   getBasicApiContract
 } from '../src/ai/basic-api-catalog'
-import { prepareOperationBatch } from './local-operation-batch'
+import {
+  prepareOperationBatch,
+  type ElementBindingMode
+} from './local-operation-batch'
 import {
   createLocalDesignReview,
   designEvidenceDefinitions,
@@ -369,7 +372,7 @@ const schemaValueAt = (schema: unknown, path: string): unknown => {
       !Object.hasOwn(value, key)
     )
       throw new LocalOperationPreparationError(
-        `Unknown schema path: ${path}. Request view=usage for root paths or the containing schema path; the full definition remains available.`
+        `Unknown schema path: ${path}. Request view=usage for canonical field/definition paths or the containing schema path; the full definition remains available.`
       )
     value = (value as Record<string, unknown>)[key]
   }
@@ -461,22 +464,85 @@ const schemaFragments = (schema: unknown, paths: string[]) => {
   }
 }
 
-const inputFieldPaths = (schema: unknown, prefix = ''): string[] => {
+const schemaSlots = (
+  schema: unknown,
+  prefix = ''
+): { path: string; schema: Record<string, unknown> }[] => {
   if (!isRecord(schema)) return []
-  const fields = isRecord(schema.properties)
-    ? Object.keys(schema.properties).map(
-        (name) =>
-          `${prefix}/properties/${name.replace(/~/g, '~0').replace(/\//g, '~1')}`
-      )
-    : []
+  const slots: { path: string; schema: Record<string, unknown> }[] = []
+  if (isRecord(schema.properties))
+    for (const [name, child] of Object.entries(schema.properties)) {
+      const path = `${prefix}/properties/${name.replace(/~/g, '~0').replace(/\//g, '~1')}`
+      if (isRecord(child))
+        slots.push({ path, schema: child }, ...schemaSlots(child, path))
+    }
+  // Traverse stored definitions once; never expand recursive $ref links.
+  for (const container of ['$defs', 'definitions']) {
+    const definitions = schema[container]
+    if (isRecord(definitions))
+      for (const [name, child] of Object.entries(definitions)) {
+        const path = `${prefix}/${container}/${name.replace(/~/g, '~0').replace(/\//g, '~1')}`
+        if (isRecord(child))
+          slots.push({ path, schema: child }, ...schemaSlots(child, path))
+      }
+  }
+  for (const key of ['items', 'additionalProperties'])
+    if (isRecord(schema[key]))
+      slots.push(...schemaSlots(schema[key], `${prefix}/${key}`))
   for (const mode of ['anyOf', 'oneOf', 'allOf']) {
     const branches = schema[mode]
     if (Array.isArray(branches))
       branches.forEach((branch, index) =>
-        fields.push(...inputFieldPaths(branch, `${prefix}/${mode}/${index}`))
+        slots.push(...schemaSlots(branch, `${prefix}/${mode}/${index}`))
       )
   }
-  return fields
+  return slots
+}
+const inputFieldPaths = (schema: unknown): string[] =>
+  schemaSlots(schema).map((slot) => slot.path)
+
+/** Examples are owner-authored data, never invented runtime credentials. */
+const usageInvocation = (descriptor: Record<string, unknown>) => {
+  const schema = descriptor.inputSchema
+  const execution = descriptor.execution
+  if (!isRecord(schema) || !isRecord(execution))
+    return { available: false, reason: 'no-executable-owner-example' }
+  const example = Array.isArray(schema.examples)
+    ? schema.examples.find(
+        (value) => isRecord(value) && !operationInputIssue(value, schema)
+      )
+    : undefined
+  if (!example) return { available: false, reason: 'no-valid-owner-example' }
+  if (execution.kind === 'batch-action')
+    return {
+      illustrative: true,
+      invocation: {
+        tool: execution.tool,
+        arguments: {
+          operations: [{ name: descriptor.name, arguments: example }]
+        }
+      }
+    }
+  if (execution.kind === 'native-tool')
+    return {
+      illustrative: true,
+      invocation: {
+        namespace: execution.namespace,
+        tool: execution.tool,
+        arguments:
+          typeof execution.argumentField === 'string'
+            ? { [execution.argumentField]: example }
+            : example
+      }
+    }
+  if (execution.kind === 'final-response')
+    return {
+      illustrative: true,
+      finalResponse: {
+        actions: [{ name: descriptor.name, arguments: example }]
+      }
+    }
+  return { available: false, reason: 'execution-route-unavailable' }
 }
 
 const inspectionStamp = (
@@ -758,7 +824,12 @@ export const createLocalOperationTools = (
         properties: {
           artifactId: { type: 'string' },
           targetSetId: { type: 'string', minLength: 1, maxLength: 160 },
-          field: { enum: ['elementId', 'elementIds'] },
+          field: {
+            type: 'string',
+            minLength: 1,
+            description:
+              'Exact canonical element-identity argument name. Its schema declares all, each or one binding cardinality; for example anchorId is exactly one.'
+          },
           path: targetArgumentPathSchema,
           keys: {
             type: 'array',
@@ -775,7 +846,7 @@ export const createLocalOperationTools = (
               additionalProperties: false,
               required: ['field', 'query'],
               properties: {
-                field: { const: 'elementIds' },
+                field: { type: 'string', minLength: 1 },
                 path: targetArgumentPathSchema,
                 query: regionTargetSchema
               }
@@ -791,8 +862,15 @@ export const createLocalOperationTools = (
     const resolved = new Map<string, string[]>()
     const queryKeys = new Map<string, Record<string, unknown>>()
     const artifactTargets = new Map<string, string[]>()
-    const resolve = (reference: unknown): string[] => {
+    const resolve = (
+      reference: unknown,
+      mode: ElementBindingMode
+    ): string[] => {
       if (isRecord(reference) && reference.query !== undefined) {
+        if (mode === 'each')
+          throw new Error(
+            'Region queries require a plural or exact-one slot; scalar fan-out is not supported.'
+          )
         if (
           Object.keys(reference).length !== 1 ||
           !regionTargetSchema ||
@@ -824,24 +902,8 @@ export const createLocalOperationTools = (
       artifactTargets.set(key, ids)
       return ids
     }
-    // Check every operation before any read. A query is a plural snapshot, not
-    // an instruction to fan out scalar writes or reevaluate after each mutation.
-    if (Array.isArray(operations))
-      for (const operation of operations) {
-        if (!isRecord(operation)) continue
-        const targets = Array.isArray(operation.target)
-          ? operation.target
-          : [operation.target]
-        for (const target of targets)
-          if (
-            isRecord(target) &&
-            target.query !== undefined &&
-            target.field !== 'elementIds'
-          )
-            throw new Error(
-              'Region query targets require the plural elementIds field.'
-            )
-      }
+    // Bind every operation before any read. Region membership is resolved once;
+    // exact-one anchors reject ambiguous results instead of scalar fan-out.
     const executable = batchActions
     const admitted = prepareOperationBatch(operations, executable, resolve)
     if (!queryKeys.size) return admitted
@@ -1023,7 +1085,25 @@ export const createLocalOperationTools = (
       if (!repeated) {
         projection =
           args.view === 'usage'
-            ? { ...usage, inputFields: inputFieldPaths(inputSchema) }
+            ? {
+                ...usage,
+                inputFields: inputFieldPaths(inputSchema),
+                outputFields: inputFieldPaths(descriptor.outputSchema),
+                elementBindings: schemaSlots(inputSchema).flatMap(
+                  ({ path, schema }) =>
+                    ['all', 'each', 'one'].includes(
+                      String(schema['x-design-element-binding'])
+                    )
+                      ? [
+                          {
+                            schemaPath: path,
+                            mode: schema['x-design-element-binding']
+                          }
+                        ]
+                      : []
+                ),
+                invocationExample: usageInvocation(descriptor)
+              }
             : {
                 ...reference,
                 ...schemaFragments(inputSchema, args.schemaPaths as string[])
@@ -1176,7 +1256,7 @@ export const createLocalOperationTools = (
   ) => ({
     ...deliverDefinition(
       `${tool.namespace}.${tool.name}`,
-      { ...tool },
+      { ...tool, execution: nativeExecution(tool) },
       {
         name: tool.name,
         namespace: tool.namespace,
@@ -2206,92 +2286,24 @@ export const createLocalOperationTools = (
           )
         }
       if (!Array.isArray(value.actionResults)) return value
-      const batch = name === AiDesignToolIds.EXECUTE_DESIGN_BATCH
-      const full = isRecord(args) && args.response === 'full'
-      const acknowledged = new Map<string, number>()
-      const entries = value.actionResults
-        .filter((entry) => {
-          if (
-            !batch ||
-            full ||
-            !isRecord(entry) ||
-            typeof entry.actionName !== 'string'
-          )
-            return true
-          const contract = getBasicApiContract(entry.actionName)
-          const item = entry.result
-          if (
-            !contract ||
-            !['write', 'delete'].includes(contract.effect) ||
-            !isRecord(item) ||
-            item.status !== 'complete' ||
-            item.value !== null ||
-            !isRecord(item.toolOutcome) ||
-            item.toolOutcome.status !== 'success' ||
-            item.toolOutcome.settlement !== 'completed' ||
-            Object.keys(item.toolOutcome).some(
-              (key) => !['status', 'settlement'].includes(key)
-            ) ||
-            !isRecord(item.mutationScope) ||
-            item.mutationScope.complete !== true ||
-            !Array.isArray(item.mutationScope.elementIds) ||
-            !Array.isArray(item.mutationScope.removedElementIds) ||
-            Object.keys(item.mutationScope).some(
-              (key) =>
-                !['complete', 'elementIds', 'removedElementIds'].includes(key)
-            ) ||
-            (item.application !== undefined &&
-              item.application !== 'not-reported') ||
-            Object.keys(item).some(
-              (key) =>
-                ![
-                  'status',
-                  'value',
-                  'application',
-                  'mutationScope',
-                  'toolOutcome'
-                ].includes(key)
-            )
-          )
-            return true
-          acknowledged.set(
-            entry.actionName,
-            (acknowledged.get(entry.actionName) ?? 0) + 1
-          )
-          return false
-        })
-        .map((entry) => {
-          if (!isRecord(entry) || typeof entry.actionName !== 'string')
-            return entry
-          const definition = registered.find(
-            (action) => action.name === entry.actionName
-          )
-          return {
-            ...entry,
-            result:
-              definition && 'delivery' in definition && definition.delivery
-                ? projectToolDelivery(definition, entry.result)
-                : entry.result
-          }
-        })
+      const entries = value.actionResults.map((entry) => {
+        if (!isRecord(entry) || typeof entry.actionName !== 'string')
+          return entry
+        const definition = registered.find(
+          (action) => action.name === entry.actionName
+        )
+        return {
+          ...entry,
+          result:
+            definition && 'delivery' in definition && definition.delivery
+              ? projectToolDelivery(definition, entry.result)
+              : entry.result
+        }
+      })
       const { modelResult: _modelResult, ...source } = value
       const projected = {
         ...source,
-        actionResults: entries,
-        ...(acknowledged.size
-          ? {
-              batchSummary: {
-                ...(isRecord(value.batchSummary) ? value.batchSummary : {}),
-                acknowledgedActions: [...acknowledged].map(
-                  ([actionName, count]) => ({
-                    actionName,
-                    count,
-                    application: 'not-reported'
-                  })
-                )
-              }
-            }
-          : {})
+        actionResults: entries
       }
       return {
         ...projected,
@@ -2533,9 +2545,10 @@ export const createLocalOperationTools = (
                 ),
                 batchResultResources
               ),
+              revision: 3,
               name: AiDesignToolIds.EXECUTE_DESIGN_BATCH,
               description:
-                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. For region edits, target={field:"elementIds",query:{scope:"region",bounds,filter?}} resolves every matching ID internally once before batch writes; use a plural API, without metadata reads or pagination. Unavailable/incomplete/empty matches make no writes. Queries select current identities; mutation admission still rechecks targets. target alternatively supplies artifactId with a targetSetId from retain_design_targets, exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. Omit target-supplied argument slots entirely, including empty arrays, null or placeholders. Multiple target bindings require plural elementIds; other scalar arguments use ordinary explicit values. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Structural receipts provide retained={snapshotId,leaseId,total}; pass that object directly in a declared elementIds slot for the next edit. Read read_design_context with scope=snapshot and delivery=receipt for the original full receipt without repeating a mutation. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
+                'Submit an ordered batch of registered edits or narrow reads in one canvas exchange. Use each named operation schema. For region edits, target={field:"elementIds",query:{scope:"region",bounds,filter?}} resolves every matching ID internally once before batch writes; use a plural API, without metadata reads or pagination. Unavailable/incomplete/empty matches make no writes. Queries select current identities; mutation admission still rechecks targets. target alternatively supplies artifactId with a targetSetId from retain_design_targets, exact keys or keyPrefix and field=elementId (apply to each identity) or elementIds (one plural operation); omitted keys selects the prepared set. The field is resolved at its unique registered schema path, including nested request arguments; ambiguous paths require explicit arguments. Omit target-supplied argument slots entirely, including empty arrays, null or placeholders. Each destination schema declares x-design-element-binding: all supplies the list, each expands per element, one requires exactly one (for example anchorId). Multiple bindings may fill distinct omitted slots with at most one each destination; no Cartesian expansion. anchorId uses field="anchorId", path=["request","anchorId"], not field="elementId". Region queries allow all or one slots, never each. Other identity types are not element targets. References identify original creation members, not current Group children. Current canonical permission/existence checks still apply. All inputs are checked before dispatch. Existing Runtime transaction, Undo and failure semantics remain; inspect once after the stage, not after each item. Use inspection=defer only when another stage follows. Structural receipts provide retained={snapshotId,leaseId,total}; pass that object directly in a declared elementIds slot for the next edit. Read read_design_context with scope=snapshot and delivery=receipt for the original full receipt without repeating a mutation. Read operations should use fields=[] or specific fields, never reread the hierarchy to recover known IDs.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -2574,7 +2587,7 @@ export const createLocalOperationTools = (
                     enum: ['compact', 'full'],
                     default: 'compact',
                     description:
-                      'Compact aggregates successful valueless basic mutation acknowledgements by action name. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Use full at initial invocation for every original acknowledgement. Uncertain outcomes remain complete.'
+                      'Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Use full at initial invocation for every original acknowledgement. Uncertain receipts retain their evidence without implying completed application.'
                   },
                   message: { type: 'string', minLength: 1, maxLength: 1000 }
                 }
@@ -2698,18 +2711,6 @@ export const createLocalOperationTools = (
             !Number.isSafeInteger(value.batchSummary.actionCount)
           )
             return 'Batch omitted its action summary'
-          const counts = value.batchSummary.acknowledgedActions ?? []
-          if (
-            !Array.isArray(counts) ||
-            counts.some(
-              (item) =>
-                !isRecord(item) ||
-                typeof item.actionName !== 'string' ||
-                !Number.isSafeInteger(item.count) ||
-                Number(item.count) < 1
-            )
-          )
-            return 'Batch returned malformed compact acknowledgements'
           const followupActionCount =
             value.batchSummary.followupActionCount ?? 0
           if (
@@ -2717,13 +2718,9 @@ export const createLocalOperationTools = (
             Number(followupActionCount) < 0
           )
             return 'Batch returned an invalid follow-up count'
-          const acknowledged = counts.reduce(
-            (sum, item) => sum + Number(item.count),
-            value.actionResults.length
-          )
           if (
             !value.failure &&
-            acknowledged !==
+            value.actionResults.length !==
               Number(value.batchSummary.actionCount) +
                 Number(followupActionCount)
           )

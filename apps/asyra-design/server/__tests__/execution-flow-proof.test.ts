@@ -1,3 +1,8 @@
+import { invokeLocalTool } from '../local-tool-invocation'
+import {
+  describeBasicApiResult,
+  basicApiResultSchema
+} from '../../src/ai/basic-api-results'
 import { designPreparationExamples } from '../design-preparation-examples'
 import { createAiActivityProjection } from '../../src/ai/activity-state'
 import * as providerCapabilities from '../local-ai-provider'
@@ -196,7 +201,10 @@ it('execution proof resolves batched semantic identities and applies ordered rea
       signal
     )
   )
-  expect(result.status).toBe('complete')
+  expect(result.status).toBe('partial')
+  expect(result.settlement).toBe('completed')
+  expect(result.measurementIssues).toHaveLength(1)
+  expect(result.measurementIssues[0].targetCount).toBe(2)
   expect(order).toEqual(['prepare', 'apply', 'prepare', 'apply'])
   expect(execute.mock.calls[1][0].actions[0].arguments).toMatchObject({
     parentId: 'actual-2'
@@ -387,6 +395,101 @@ it('execution proof preserves partial lookup full recovery and declaration const
     expect(entry.outputSchema).toBeUndefined()
   }
   expect(menu.guidance.references).toContain('native web research')
+  expect(execute).not.toHaveBeenCalled()
+  const designs = createLocalDesignTools([
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ])
+  const preparation = designs.definitions.find(
+    (tool) => tool.name === AiDesignToolIds.PREPARE_DESIGN
+  )
+  if (!preparation) throw new Error('Missing preparation definition')
+  const { nativeToolInputSchema, operationInputIssue } =
+    await import('../operation-input-schema')
+  const nativePreparation = nativeToolInputSchema(preparation.inputSchema) as {
+    examples: unknown[]
+    oneOf: Record<string, unknown>[]
+  }
+  expect(nativePreparation.examples).toEqual(designPreparationExamples)
+  expect(
+    nativePreparation.oneOf.every(
+      (branch) => !Object.hasOwn(branch, 'examples')
+    )
+  ).toBe(true)
+  for (const example of nativePreparation.examples)
+    expect(operationInputIssue(example, nativePreparation)).toBeUndefined()
+  const highLevel = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.INSPECT_DRAWING,
+        description: 'Inspect',
+        inputSchema: {}
+      }
+    ],
+    designs,
+    execute,
+    {
+      getNativeTools: () =>
+        [preparation, ...highLevel.definitions].map((definition) => ({
+          ...definition,
+          namespace: 'design'
+        }))
+    }
+  )
+  const usage = JSON.parse(
+    await highLevel.call(
+      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      { names: [preparation.name], view: 'usage' },
+      new AbortController().signal
+    )
+  ).tools[0]
+  expect(usage.inputFields).toContain('/$defs/node/anyOf/0/properties/type')
+  expect(usage.invocationExample.illustrative).toBe(true)
+  const invocation = usage.invocationExample.invocation
+  expect(invocation.tool).toBe(preparation.name)
+  const prepared = JSON.parse(
+    await designs.call(
+      invocation.tool,
+      invocation.arguments,
+      new AbortController().signal
+    )
+  )
+  expect(prepared.applicable).toBe(true)
+  expect(
+    designs.resolveTargets({ artifactId: prepared.artifactId })
+  ).toHaveLength(prepared.elementCount)
+  const restoredUsage = JSON.parse(
+    await highLevel.call(
+      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      usage.definition.recover.arguments,
+      new AbortController().signal
+    )
+  ).tools[0]
+  expect(restoredUsage.invocationExample).toEqual(usage.invocationExample)
+  const criteriaUsage = JSON.parse(
+    await highLevel.call(
+      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      { names: [AiDesignToolIds.DEFINE_DESIGN_CRITERIA], view: 'usage' },
+      new AbortController().signal
+    )
+  ).tools[0]
+  expect(criteriaUsage.inputFields).toContain(
+    '/properties/criteria/additionalProperties/properties/requirement'
+  )
+  const criteriaCall = criteriaUsage.invocationExample.invocation
+  expect(criteriaCall.tool).toBe(AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
+  expect(
+    JSON.parse(
+      await highLevel.call(
+        criteriaCall.tool,
+        criteriaCall.arguments,
+        new AbortController().signal
+      )
+    )
+  ).toMatchObject({ recorded: true, criterionIds: ['appearance'] })
   expect(execute).not.toHaveBeenCalled()
 })
 vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
@@ -861,7 +964,11 @@ it('execution proof exports compound resources before cleanup', async () => {
         })
       ).text
     )
-    expect(produced.toolOutcome.status).toBe('success')
+    expect(produced.toolOutcome).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
+    })
+    expect(produced.measurementIssues).toHaveLength(1)
     artifactId = produced.artifactId
     const consumed = JSON.parse(
       (
@@ -1023,6 +1130,12 @@ it('execution proof composes preparation and canonical dispatch without repeated
     'prepare_design',
     'apply_prepared_design'
   ])
+  expect(result.toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(result.measurementIssues[0].message).toContain('not registered')
+  expect(result.failedStep).toBeUndefined()
   expect(compile).toHaveBeenCalledTimes(1)
   expect(execute).toHaveBeenCalledTimes(1)
   const dispatched = execute.mock.calls[0][0].actions
@@ -1955,7 +2068,10 @@ it('execution proof preserves concrete work through progress and settlement', as
     expect(checkpoints).toEqual([
       { label: 'Refining the design', message: 'Adjusting the roof color' },
       { label: 'Refining the design', message: 'Adjusting the roof color' },
-      { label: 'Processing your request' },
+      {
+        label: 'Operation ended - outcome unconfirmed',
+        message: 'Adjusting the roof color'
+      },
       expect.objectContaining({
         phaseLabel: 'Processing your request',
         activeCallCount: 0,
@@ -2537,7 +2653,267 @@ it('execution proof reconciles scoped criterion results after external edits wit
   ).toMatchObject({ outcome: 'unsupported' })
 })
 
+const exerciseMultiscaleEvidence = async () => {
+  let sequence = 0
+  let failCapture = false
+  const invalid = new Set<string>()
+  const captures: { receiptId: string; elementId: string }[] = []
+  const execute = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: batch.actions.map(
+        (action): AiBatchReceipt['actionResults'][number] => {
+          const args = action.arguments as {
+            elementId?: string
+            evidence?: { receiptId?: string }
+            scope?: unknown
+          }
+          if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+            return {
+              actionId: action.id,
+              actionName: action.name,
+              result: {
+                current: !invalid.has(args.evidence?.receiptId ?? ''),
+                validatedAt: { sessionId: 'multiscale', revision: sequence },
+                coverage: { complete: args.scope !== undefined }
+              }
+            }
+          expect(action.name).toBe(AiActionNames.INSPECT_DRAWING)
+          if (failCapture)
+            return {
+              actionId: action.id,
+              actionName: action.name,
+              result: { available: false, error: 'Capture unavailable' }
+            }
+          const receiptId = `image-${++sequence}`
+          captures.push({ receiptId, elementId: String(args.elementId) })
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              available: true,
+              image: { dataUrl: 'data:image/png;base64,AA==' },
+              evidence: {
+                sessionId: 'multiscale',
+                revision: sequence,
+                receiptId
+              }
+            }
+          }
+        }
+      )
+    })
+  )
+  const checkResults = createDesignCheckResults()
+  const tools = createOperationOwner(
+    [
+      AiActionNames.INSPECT_DRAWING,
+      AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+    ].map((name) => ({ name, description: name, inputSchema: {} })),
+    {
+      modelActions: (actions) => actions,
+      resolveBatch: (value) => value,
+      checkResults
+    },
+    execute,
+    { reviewTargetId: 'composition' }
+  )
+  const signal = new AbortController().signal
+  const call = async (name: string, args: Record<string, unknown>) =>
+    JSON.parse(await tools.call(name, args, signal))
+  await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
+    ...reviewPlanExample,
+    structureCriteria: [],
+    detailRequired: false,
+    criteria: {
+      ...reviewCriteria(['Overall']),
+      appearance: {
+        requirement: 'Composition and detail agree',
+        description: 'Use the necessary scales for each conclusion',
+        verification: 'visual',
+        requiredUnits: ['local', 'combined']
+      }
+    }
+  })
+  const target = (
+    unitId: string,
+    region?: { x: number; y: number; width: number; height: number }
+  ) => ({
+    elementId: 'composition',
+    view: region ? 'detail' : 'overview',
+    ...(region ? { region } : {}),
+    checks: [{ criterionId: 'appearance', unitId }]
+  })
+  const crop = { x: 0, y: 0, width: 40, height: 40 }
+  const local = await call(AiDesignToolIds.REVIEW_DRAWING, {
+    phase: 'visual',
+    final: false,
+    inspections: [target('local', { ...crop, x: 80 })]
+  })
+  const submit = async (reply: typeof local, final = false) =>
+    call(AiDesignToolIds.REVIEW_DRAWING, {
+      ...reply.next.arguments,
+      final,
+      checks: reply.next.arguments.checks.map(
+        (check: Record<string, unknown>) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Observed the declared requirement in every bound image'
+        })
+      )
+    })
+  await submit(local)
+  const localResult = checkResults
+    .read({ includePassed: true })
+    .items.find((x) => x.unitId === 'local')
+  const combined = await call(AiDesignToolIds.REVIEW_DRAWING, {
+    phase: 'visual',
+    final: false,
+    inspections: [target('combined'), target('combined', crop)]
+  })
+  expect(combined.reviewOperation).toBe('capture')
+  expect(combined.next.arguments.checks).toHaveLength(1)
+  const check = combined.next.arguments.checks[0]
+  expect(check.inspectionIds).toHaveLength(2)
+  expect(check.binding.dependencies).toHaveLength(2)
+  const before = checkResults.read({ includePassed: true })
+  const tampered = structuredClone(combined.next.arguments)
+  tampered.checks[0].inspectionIds = [check.inspectionIds[0]]
+  tampered.checks[0].status = 'pass'
+  tampered.checks[0].evidence = 'Missing required local evidence'
+  await expect(call(AiDesignToolIds.REVIEW_DRAWING, tampered)).rejects.toThrow(
+    /binding/i
+  )
+  expect(checkResults.read({ includePassed: true })).toEqual(before)
+  const pending = await submit(combined, true)
+  expect(pending.accepted).toBe(false)
+  expect(pending.coverage.pending).toContainEqual(
+    expect.objectContaining({ criterionId: 'Overall' })
+  )
+  const verdict = checkResults
+    .read({ includePassed: true })
+    .items.find((x) => x.unitId === 'combined')
+  expect(
+    Object.keys(verdict?.dependencies ?? {}).filter((k) =>
+      k.startsWith('inspection:')
+    )
+  ).toHaveLength(2)
+  const bind = (
+    criterionId: string,
+    inspectionIds: string[],
+    unitId?: string,
+    supersedes?: unknown
+  ) =>
+    call(AiDesignToolIds.REVIEW_DRAWING, {
+      phase: 'visual',
+      final: false,
+      bindChecks: [
+        {
+          criterionId,
+          ...(unitId ? { unitId } : {}),
+          inspectionIds,
+          ...(supersedes ? { supersedes } : {})
+        }
+      ]
+    })
+  expect(await bind('appearance', ['foreign-image'], 'combined')).toMatchObject(
+    { status: 'partial', recordedChecks: [] }
+  )
+  await expect(
+    bind('appearance', [check.inspectionIds[0]], 'combined')
+  ).rejects.toThrow(/scope changed/)
+  const overall = await bind('Overall', [check.inspectionIds[0]])
+  expect((await submit(overall, true)).accepted).toBe(true)
+  let active = combined
+  for (const dependencyIndex of [0, 1]) {
+    const dependency =
+      active.next.arguments.checks[0].binding.dependencies[dependencyIndex]
+    invalid.add(dependency.source.receiptId)
+    await call(AiDesignToolIds.READ_DESIGN_CHECKS, { view: 'details' })
+    const results = checkResults.read({ includePassed: true }).items
+    expect(results.find((x) => x.unitId === 'combined')?.status).toBe('stale')
+    expect(results.find((x) => x.unitId === 'local')).toEqual(localResult)
+    const priorCount = captures.length
+    failCapture = true
+    const failed = await call(AiDesignToolIds.REVIEW_DRAWING, {
+      phase: 'visual',
+      final: false,
+      inspections: [target('combined', crop)]
+    })
+    expect(failed.accepted).not.toBe(true)
+    expect(
+      checkResults
+        .read({ includePassed: true })
+        .items.find((x) => x.unitId === 'combined')?.status
+    ).toBe('stale')
+    failCapture = false
+    const fresh = await call(AiDesignToolIds.REVIEW_DRAWING, {
+      phase: 'visual',
+      final: false,
+      inspections: [target('combined'), target('combined', crop)]
+    })
+    expect(captures.length - priorCount).toBe(2)
+    await submit(fresh)
+    active = fresh
+    expect(
+      (await submit(await bind('Overall', [fresh.inspectionIds[0]]), true))
+        .accepted
+    ).toBe(true)
+  }
+  const current = checkResults
+    .read({ includePassed: true })
+    .items.find((item) => item.unitId === 'combined')
+  if (!current) throw new Error('Expected combined verdict')
+  const captureCount = captures.length
+  const replacement = await bind(
+    'appearance',
+    [active.inspectionIds[1]],
+    'combined',
+    {
+      revision: current.revision,
+      reason: 'The revised requirement is assessed at detail scale'
+    }
+  )
+  expect(captures).toHaveLength(captureCount)
+  expect(
+    checkResults
+      .read({ includePassed: true })
+      .items.find((item) => item.unitId === 'combined')
+  ).toEqual(current)
+  await submit(replacement)
+  const replaced = checkResults
+    .read({ includePassed: true })
+    .items.find((item) => item.unitId === 'combined')
+  if (!replaced) throw new Error('Expected replacement verdict')
+  expect(replaced.revision).toBeGreaterThan(current.revision)
+  expect(
+    Object.keys(replaced.dependencies).filter((key) =>
+      key.startsWith('inspection:')
+    )
+  ).toEqual([`inspection:${active.inspectionIds[1]}`])
+  const aborted = new AbortController()
+  aborted.abort()
+  const calls = execute.mock.calls.length
+  await expect(
+    tools.call(
+      AiDesignToolIds.REVIEW_DRAWING,
+      {
+        phase: 'visual',
+        inspections: [target('combined', crop)]
+      },
+      aborted.signal
+    )
+  ).rejects.toThrow()
+  expect(execute.mock.calls).toHaveLength(calls)
+  expect(
+    checkResults
+      .read({ includePassed: true })
+      .items.find((x) => x.unitId === 'local')
+  ).toEqual(localResult)
+}
+
 it('execution proof retains regional units without requiring global coverage for local review', async () => {
+  await exerciseMultiscaleEvidence()
   let sequence = 0
   let coverageComplete = true
   const invalid = new Set<string>()
@@ -4037,7 +4413,7 @@ it('execution proof preserves issued history direction across the App feature ha
   }
 })
 
-it('execution proof retains recorded authored purpose after provider tool settlement', async ({
+it('execution proof retires superseded recorded purpose after provider tool settlement', async ({
   onTestFinished
 }) => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
@@ -4195,9 +4571,9 @@ it('execution proof retains recorded authored purpose after provider tool settle
     }
   )
   expect(settled).toEqual(
-    stages.map((stage) => ({
-      label: 'Current task',
-      message: stage.text.trim()
+    stages.map(() => ({
+      label: 'Completed operation',
+      message: 'Finding available operations'
     }))
   )
   expect(executeBatch).not.toHaveBeenCalled()
@@ -4713,7 +5089,7 @@ it('execution proof consumes complete mapping scope before bounded delivery and 
   }
 })
 
-it('execution proof preserves world material phase through preparation and current artifact consumption', () => {
+it('execution proof preserves world material phase through preparation and current artifact consumption', async () => {
   const session = createDesignPreparationSession()
   const result = session.prepare({
     type: 'group',
@@ -4766,6 +5142,38 @@ it('execution proof preserves world material phase through preparation and curre
     expect(
       ((0.5 - a.x) * dx + (0.5 - a.y) * dy) / (dx * dx + dy * dy)
     ).toBeCloseTo(0.25 + i * 0.5, 9)
+  })
+  const revision = await session.reviseMaterial(
+    result.artifactId,
+    'paint',
+    {
+      frame: 'world',
+      start: { x: 0, y: 0, z: 0 },
+      end: { x: 0, y: 0, z: 40 },
+      gradientStops: [
+        { position: 0, color: '#123456', opacity: 0.5 },
+        { position: 1, color: '#abcdef', opacity: 1 }
+      ]
+    },
+    new AbortController().signal
+  )
+  const updates = session.materialRevision(revision.materialRevisionId).updates
+  expect(updates.map((item) => item.elementId)).toEqual(
+    design.entries.slice(1).map((entry) => entry.descriptor.id)
+  )
+  updates.forEach((item, index) => {
+    const original = (
+      design.entries[index + 1].descriptor.fills as {
+        gradient: { gradientHandles: unknown }
+      }[]
+    )[0].gradient
+    expect(item.gradient).toMatchObject({
+      gradientHandles: original.gradientHandles,
+      gradientStops: [
+        { position: 0, color: '#123456', opacity: 0.5 },
+        { position: 1, color: '#abcdef', opacity: 1 }
+      ]
+    })
   })
   session.release([result.artifactId])
   expect(() => session.resolve(result.artifactId)).toThrow()
@@ -4955,6 +5363,21 @@ it('execution proof dispatches the published chosen-method route without convert
   const bound = await call(capture.tool, capture.arguments)
   expect(bound.recordedChecks).toEqual([])
   expect(bound.next.arguments.checks).toHaveLength(1)
+  expect(bound.acceptanceContext).toEqual({
+    method: declaration.arguments.method,
+    requirementRevision:
+      bound.next.arguments.checks[0].binding.requirementRevision,
+    checks: bound.next.arguments.checks.map(
+      ({ criterionId, unitId }: { criterionId: string; unitId?: string }) => ({
+        criterionId,
+        ...(unitId === undefined ? {} : { unitId }),
+        requirement: declaration.arguments.criteria[criterionId].requirement,
+        description: declaration.arguments.criteria[criterionId].description
+      })
+    )
+  })
+  expect(bound.next.arguments).not.toHaveProperty('acceptanceContext')
+
   const result = await call(capture.tool, {
     ...bound.next.arguments,
     checks: bound.next.arguments.checks.map((check: object) => ({
@@ -5023,7 +5446,7 @@ it('execution proof admits complete per-target material corrections from the pub
   if (!contract) throw new Error('Missing native fill contract')
   const operation = example.arguments.operations[0]
   expect(
-    operationInputIssue(contract.inputSchema, operation.arguments)
+    operationInputIssue(operation.arguments, contract.inputSchema)
   ).toBeUndefined()
   expect(operation.arguments.patch).toHaveLength(2)
   expect(operation.arguments.patch[0].gradient.gradientHandles).not.toEqual(
@@ -5169,4 +5592,631 @@ it('execution proof preserves exact shared property relationships in publication
       removals: [{ id: 'old-fill', type: 'fill', color: '#112233' }]
     }
   ])
+})
+
+it('execution proof preserves owner result distinctions through native contract admission', async () => {
+  const { operationInputIssue } = await import('../operation-input-schema')
+  const { toolSemantics, designActionOutcome } =
+    await import('../../src/ai/tool-contract')
+  const contract = basicApiContracts.find(
+    (item) => item.name === 'api_fill_updatePrimaryFillColors'
+  )
+  if (!contract) throw new Error('Missing primary color contract')
+  expect(contract.description).toContain('changed, unchanged or unavailable')
+  const definition = {
+    ...toolSemantics(basicApiResultSchema(contract), 'mutation', ['document']),
+    name: contract.name,
+    description: contract.description,
+    inputSchema: contract.inputSchema
+  }
+  const cases = [
+    { values: [], status: 'success' },
+    { values: ['unchanged'], status: 'success' },
+    { values: ['changed', 'unchanged'], status: 'success' },
+    { values: ['unavailable'], status: 'failed' },
+    { values: ['changed', 'unavailable'], status: 'partial' }
+  ]
+  for (const { values, status } of cases) {
+    const updates = values.map((_, index) => ({
+      elementId: `target-${index}`,
+      color: '#112233'
+    }))
+    const call = vi.fn(async () => {
+      const result = {
+        ...describeBasicApiResult(contract, values, updates),
+        mutationScope: {
+          complete: true,
+          elementIds: values.flatMap((value, index) =>
+            value === 'changed' ? [`target-${index}`] : []
+          ),
+          removedElementIds: []
+        }
+      }
+      return JSON.stringify({
+        ...result,
+        toolOutcome: designActionOutcome(result)
+      })
+    })
+    const reply = await invokeLocalTool(
+      { call },
+      definition,
+      { updates },
+      new AbortController().signal
+    )
+    expect(JSON.parse(reply.text).toolOutcome.status).toBe(status)
+    expect(reply.success).toBe(status === 'success')
+    expect(call).toHaveBeenCalledOnce()
+    await invokeLocalTool(
+      { call },
+      definition,
+      { updates: [{ elementId: 'target', color: '' }] },
+      new AbortController().signal
+    )
+    expect(call).toHaveBeenCalledOnce()
+  }
+  for (const [name, value, inputs] of [
+    ['api_element_setVectorClosed', undefined, ['target']],
+    ['api_element_createElements', ['created-prefix'], [{}, {}]]
+  ] as const) {
+    const uncertain = basicApiContracts.find((item) => item.name === name)
+    if (!uncertain) throw new Error('Missing owner contract')
+    const result = {
+      ...describeBasicApiResult(uncertain, value, inputs),
+      settlement: 'completed',
+      mutationScope: {
+        complete: true,
+        elementIds: ['target'],
+        removedElementIds: []
+      }
+    }
+    expect(
+      operationInputIssue(result, basicApiResultSchema(uncertain))
+    ).toBeUndefined()
+    const call = vi.fn(async () => JSON.stringify(result))
+    const reply = await invokeLocalTool(
+      { call },
+      {
+        ...toolSemantics(basicApiResultSchema(uncertain), 'mutation', [
+          'document'
+        ]),
+        name,
+        description: uncertain.description,
+        inputSchema: { type: 'object' }
+      },
+      {},
+      new AbortController().signal
+    )
+    expect(reply.success).toBe(false)
+    expect(JSON.parse(reply.text)).toMatchObject({
+      status: 'failed',
+      settlement: 'completed',
+      value: value ?? null,
+      toolOutcome: {
+        status: 'failed',
+        settlement: 'completed'
+      }
+    })
+    expect(JSON.parse(reply.text).code).toBe('OWNER_RESULT_INVALID')
+    expect(call).toHaveBeenCalledOnce()
+  }
+})
+
+it('execution proof preserves Core mutation and valid no-op receipts through native invocation', async () => {
+  const { Core } = await import('@asyra/core')
+  const { Factory } = await import('@asyra/factory')
+  const {
+    default: props,
+    registerPropertySchema,
+    registerPropertyComponent,
+    createPropertyComponentFromConfig,
+    elementPropertyRegistry
+  } = await import('@asyra/props-manager')
+  const {
+    default: scene,
+    componentRegistry,
+    createDynamicComponent
+  } = await import('@asyra/scene-tree')
+  const { runWithTransactionOwner, runTransaction } =
+    await import('@asyra/reactive-events')
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const { operationInputIssue } = await import('../operation-input-schema')
+  const type = 'owner-receipt-proof-value',
+    ownerType = 'owner-receipt-proof-element'
+  const config = {
+    type,
+    defaults: { opacity: 1 },
+    persistKeys: ['opacity'],
+    valueKeys: ['opacity']
+  }
+  registerPropertySchema({
+    type,
+    fields: [{ key: 'opacity', kind: 'number', defaultValue: 1 }]
+  })
+  registerPropertyComponent(
+    type,
+    createPropertyComponentFromConfig(config),
+    undefined,
+    config
+  )
+  const properties = [{ name: 'material', type, alias: ['opacity'] }]
+  elementPropertyRegistry.register(properties[0], ownerType)
+  componentRegistry.register({
+    type: ownerType,
+    idPrefix: ownerType,
+    namePrefix: 'Receipt Element',
+    properties,
+    constructor: createDynamicComponent(
+      ownerType,
+      ownerType,
+      'Receipt Element',
+      properties,
+      {}
+    ),
+    defaults: {}
+  })
+  const factory = new Factory()
+  const api = new Core({
+    inputSystem: {} as never,
+    factory,
+    props,
+    sceneTree: scene,
+    render: {} as never,
+    selection: {} as never,
+    systemContext: {} as never
+  })
+  const run = <T>(call: () => T) =>
+    runWithTransactionOwner(factory.getTransactionOwner(), () =>
+      runTransaction(call)
+    )
+  const reset = () => {
+    factory.transact.reset()
+    props.reset()
+    scene.reset()
+    props.load({
+      source: { id: 'source', type, opacity: 1, sharedSource: true }
+    })
+    scene.load({
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          visible: true,
+          lock: false,
+          children: ['a']
+        },
+        a: {
+          id: 'a',
+          type: ownerType,
+          name: 'A',
+          parentId: 'workspace',
+          visible: true,
+          lock: false,
+          props: { material: 'source' }
+        }
+      }
+    })
+  }
+  const target = { elementId: 'a', propertyName: 'material', path: [] }
+  const cases: [string, Record<string, unknown>][] = [
+    [
+      'updateElementProperties',
+      { updates: [{ elementId: 'a', values: { opacity: 0.4 } }] }
+    ],
+    [
+      'patchElementProperties',
+      { patches: [{ elementId: 'a', values: { opacity: 0.4 }, records: [] }] }
+    ],
+    [
+      'updatePropertyComponents',
+      { updates: [{ propertyId: 'source', values: { opacity: 0.4 } }] }
+    ],
+    [
+      'updateElementPropertyTargets',
+      { updates: [{ target, values: { opacity: 0.4 } }] }
+    ],
+    [
+      'resetElementPropertyOverrides',
+      { updates: [{ target, keys: ['opacity'] }] }
+    ],
+    ['detachElementPropertyTargets', { targets: [target] }],
+    [
+      'shareElementPropertyTargets',
+      { updates: [{ target, sourceId: 'source' }] }
+    ],
+    [
+      'updateSharedPropertySources',
+      { updates: [{ propertyId: 'source', values: { opacity: 0.4 } }] }
+    ],
+    ['updateElementData', { elementId: 'a', values: { name: 'Renamed' } }]
+  ]
+  try {
+    const writers = basicApiContracts.filter(
+      (entry) =>
+        entry.owner === 'core' && ['write', 'delete'].includes(entry.effect)
+    )
+    expect(
+      writers.filter((entry) => String(entry.result.kind) === 'owner')
+    ).toEqual([])
+    for (const [name, input] of cases) {
+      reset()
+      if (name === 'resetElementPropertyOverrides')
+        run(() =>
+          api.updateElementPropertyTargets([
+            { target, values: { opacity: 0.4 } }
+          ])
+        )
+      if (name === 'shareElementPropertyTargets')
+        run(() => api.detachElementPropertyTargets([target]))
+      const contract = writers.find((entry) => entry.method === name)
+      if (!contract) throw new Error('Missing Core mutation contract')
+      const definition = {
+        ...toolSemantics(basicApiResultSchema(contract), 'mutation', [
+          'document'
+        ]),
+        partialOutputSchema: basicApiResultSchema(contract, true),
+        name: contract.name,
+        description: contract.description,
+        inputSchema: contract.inputSchema
+      }
+      const call = vi.fn(async () => {
+        const method = api[name as keyof typeof api]
+        if (typeof method !== 'function') throw new Error('Missing Core owner')
+        const raw = run(() =>
+          Reflect.apply(
+            method,
+            api,
+            contract.parameters.map((key) => input[key])
+          )
+        )
+        // This proof checks canonical return semantics; App publication capture has its own integration test.
+        const output = {
+          ...describeBasicApiResult(
+            contract,
+            raw,
+            input[contract.parameters[0]]
+          ),
+          mutationScope: {
+            complete: false,
+            elementIds: [],
+            removedElementIds: []
+          }
+        }
+        expect(
+          operationInputIssue(output, definition.outputSchema)
+        ).toBeUndefined()
+        return JSON.stringify(output)
+      })
+      const first = await invokeLocalTool(
+        { call },
+        definition,
+        input,
+        new AbortController().signal
+      )
+      expect(first.success, name).toBe(true)
+      expect(JSON.parse(first.text).status, name).toBe('complete')
+      const before = {
+        props: props.save(),
+        scene: scene.save(),
+        depth: factory.getUndoHistoryDepth()
+      }
+      const second = await invokeLocalTool(
+        { call },
+        definition,
+        input,
+        new AbortController().signal
+      )
+      expect(second.success, name).toBe(true)
+      const after = {
+        props: props.save(),
+        scene: scene.save(),
+        depth: factory.getUndoHistoryDepth()
+      }
+      const replacedBinding = name === 'shareElementPropertyTargets'
+      expect(JSON.parse(second.text), name).toMatchObject({
+        status: replacedBinding ? 'complete' : 'no-change',
+        toolOutcome: { status: 'success', settlement: 'completed' }
+      })
+      if (replacedBinding) {
+        expect(after.props).not.toEqual(before.props)
+        expect(after.depth).toBe(before.depth + 1)
+      } else expect(after).toEqual(before)
+      expect(call).toHaveBeenCalledTimes(2)
+    }
+    reset()
+    const { createAiAgentRuntime, runAiMutation } =
+      await import('@asyra/ai-agent-runtime')
+    const { createAiTransactionRunner } =
+      await import('../../src/ai/transaction')
+    const failures: AiBatchReceipt[] = []
+    const contract = writers.find(
+      (entry) => entry.method === 'updateElementProperties'
+    )
+    if (!contract) throw new Error('Missing mutation contract')
+    const runtime = createAiAgentRuntime({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          if (!options.executeBatch) throw new Error('Missing batch executor')
+          const missing = {
+            id: 'missing',
+            name: contract.name,
+            arguments: { updates: [{ elementId: 'missing', values: {} }] },
+            summary: 'Reject missing target'
+          }
+          failures.push(
+            await options.executeBatch({
+              batchId: 'missing-owner',
+              actions: [missing]
+            })
+          )
+          failures.push(
+            await options.executeBatch({
+              batchId: 'partial-owner',
+              actions: [
+                {
+                  id: 'prefix',
+                  name: contract.name,
+                  arguments: {
+                    updates: [{ elementId: 'a', values: { opacity: 0.6 } }]
+                  },
+                  summary: 'Apply prefix once'
+                },
+                missing
+              ]
+            })
+          )
+          return {
+            batchId: 'read-only-recovery',
+            actions: [
+              {
+                id: 'read',
+                name: 'read_owner_state',
+                arguments: {},
+                summary: 'Read current state'
+              }
+            ]
+          }
+        }
+      },
+      actionDefinitions: [
+        {
+          ...toolSemantics(true, 'mutation', ['document']),
+          name: contract.name,
+          description: contract.description,
+          inputSchema: contract.inputSchema,
+          execute: async (input, context) =>
+            runAiMutation(context, () =>
+              api.updateElementProperties(
+                (
+                  input as {
+                    updates: {
+                      elementId: string
+                      values: Record<string, number>
+                    }[]
+                  }
+                ).updates
+              )
+            )
+        },
+        {
+          ...toolSemantics(true, 'read', ['document']),
+          name: 'read_owner_state',
+          description: 'Read current state',
+          inputSchema: { type: 'object' },
+          execute: async () => api.getElementData('a')
+        }
+      ],
+      contextProvider: { getContext: async () => ({}) },
+      permissionPolicy: { evaluate: () => 'allow' },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: createAiTransactionRunner({ apis: factory })
+    })
+    try {
+      expect(
+        (
+          await runtime.run({
+            intent: 'Deterministic failure proof',
+            signal: new AbortController().signal
+          })
+        ).status
+      ).toBe('executed')
+      expect(failures[0]).toMatchObject({
+        actionResults: [],
+        failure: { settlement: 'not-started' }
+      })
+      expect(failures[1]).toMatchObject({
+        actionResults: [
+          { actionId: 'prefix', result: { acceptedIds: ['a'], changed: true } }
+        ],
+        failure: { settlement: 'not-started' }
+      })
+      expect(api.getElementComputedData('a')?.opacity).toBe(0.6)
+      expect(factory.getUndoHistoryDepth()).toBe(1)
+    } finally {
+      await runtime.dispose()
+    }
+  } finally {
+    factory.transact.reset()
+  }
+})
+
+it('execution proof preserves non-Core mutation outcomes without opaque application', () => {
+  const writers = basicApiContracts.filter(
+    (contract) =>
+      contract.owner !== 'core' && ['write', 'delete'].includes(contract.effect)
+  )
+  expect(writers.length).toBeGreaterThan(31)
+  expect(
+    writers
+      .filter((contract) => String(contract.result.kind) === 'owner')
+      .map((contract) => contract.operation)
+  ).toEqual([])
+  const contract = writers.find(
+    (entry) => entry.operation === 'element.setElementPositions'
+  )
+  if (!contract) throw new Error('Missing position contract')
+  for (const [receipt, status] of [
+    [
+      { value: null, acceptedIds: ['a'], unavailableIds: [], changed: true },
+      'complete'
+    ],
+    [
+      { value: null, acceptedIds: ['a'], unavailableIds: [], changed: false },
+      'no-change'
+    ],
+    [
+      { value: null, acceptedIds: [], unavailableIds: [], changed: false },
+      'no-change'
+    ],
+    [
+      {
+        value: null,
+        acceptedIds: [],
+        unavailableIds: ['missing'],
+        changed: false
+      },
+      'failed'
+    ],
+    [
+      {
+        value: null,
+        acceptedIds: ['a'],
+        unavailableIds: ['missing'],
+        changed: true
+      },
+      'partial'
+    ],
+    [
+      {
+        value: null,
+        acceptedIds: ['a'],
+        unavailableIds: ['missing'],
+        changed: false
+      },
+      'partial'
+    ]
+  ] as const) {
+    expect(describeBasicApiResult(contract, receipt)).toMatchObject({
+      status,
+      value: null,
+      acceptedIds: receipt.acceptedIds,
+      unavailableIds: receipt.unavailableIds,
+      changed: receipt.changed
+    })
+  }
+  for (const invalid of [
+    undefined,
+    false,
+    null,
+    [],
+    {},
+    { value: null, acceptedIds: [], unavailableIds: [], changed: true }
+  ]) {
+    expect(describeBasicApiResult(contract, invalid)).toMatchObject({
+      status: 'failed',
+      code: 'OWNER_RESULT_INVALID'
+    })
+  }
+})
+
+it('execution proof keeps material provenance independent of viewport transforms', async () => {
+  const { default: core } = await import('@asyra/core')
+  const { applyPreset, PresetProfiles, PresetDefaults } =
+    await import('@asyra/preset')
+  const { RenderContainer } = await import('@asyra/render')
+  const hadWindow = 'window' in globalThis
+  if (!hadWindow) vi.stubGlobal('window', {})
+  const { createPreparedMaterialApplication } =
+    await import('../../src/ai/prepared-material-action')
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          visible: true,
+          lock: false,
+          children: []
+        }
+      }
+    }
+  })
+  core.createElementsInParent(
+    [
+      {
+        id: 'face',
+        type: 'rect',
+        x: 9378.905950335902,
+        y: 33657.47156164411,
+        width: 20,
+        height: 30
+      }
+    ],
+    'workspace'
+  )
+  const view = new RenderContainer()
+  const face = new RenderContainer({
+    x: 9378.905950335902,
+    y: 33657.47156164411
+  })
+  view.addChild(face)
+  const original = core.elementLocalToWorkspace
+  core.elementLocalToWorkspace = (_id, point) =>
+    view.toLocal(face.toGlobal(point))
+  const owner = createPreparedMaterialApplication()
+  const signal = new AbortController().signal
+  const gradient = {
+    gradientType: 'linear' as const,
+    gradientHandles: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 }
+    ],
+    gradientStops: [
+      { position: 0, color: '#102030', opacity: 1 },
+      { position: 1, color: '#eeeeee', opacity: 1 }
+    ]
+  }
+  const input = {
+    rootId: 'source',
+    updates: [{ elementId: 'face', gradient, color: '#102030' }]
+  }
+  try {
+    owner.capture('source', ['face'], signal)
+    const before = core.save()
+    view.scale.set(0.02, 0.02)
+    view.position.set(600, 60)
+    expect(core.save()).toEqual(before)
+    await expect(
+      owner.action.execute(input, { signal })
+    ).resolves.toMatchObject({
+      status: 'complete',
+      appliedElementIds: ['face']
+    })
+    expect(core.getElementComputedData('face', ['fills'])?.fills).toMatchObject(
+      [{ gradient }]
+    )
+    core.updateElementProperties([{ elementId: 'face', values: { x: 9379 } }])
+    const moved = core.save()
+    await expect(owner.action.execute(input, { signal })).rejects.toThrow(
+      /geometry/
+    )
+    expect(core.save()).toEqual(moved)
+  } finally {
+    owner.dispose()
+    core.elementLocalToWorkspace = original
+    if (!hadWindow) vi.unstubAllGlobals()
+  }
 })

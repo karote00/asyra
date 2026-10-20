@@ -65,9 +65,24 @@ const mocks = vi.hoisted(() => ({
   setHoveredVectorSegment: vi.fn(),
   setHoveredVectorSegmentInsertPoint: vi.fn(),
   configureSharedDeliverySequence: vi.fn(),
-  updateVectorAnchorPointHandles: vi.fn(() => true),
-  updateVectorAnchorPointHandlePosition: vi.fn(() => true),
-  updateVectorAnchorPointPosition: vi.fn(() => true)
+  updateVectorAnchorPointHandles: vi.fn(() => ({
+    value: true,
+    acceptedIds: ['vector-1'],
+    unavailableIds: [],
+    changed: true
+  })),
+  updateVectorAnchorPointHandlePosition: vi.fn(() => ({
+    value: true,
+    acceptedIds: ['vector-1'],
+    unavailableIds: [],
+    changed: true
+  })),
+  updateVectorAnchorPointPosition: vi.fn(() => ({
+    value: true,
+    acceptedIds: ['vector-1'],
+    unavailableIds: [],
+    changed: true
+  }))
 }))
 
 vi.mock('@asyra/core', async (importOriginal) => ({

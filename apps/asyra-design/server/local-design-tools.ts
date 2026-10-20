@@ -209,11 +209,17 @@ const vectorPatternSchema = {
     'Exact repeated 2D vector geometry: supply one template with rings and optional paired width/height and ordered x/y placements (optional fill override). Backend preserves every anchor/control, expands ordinary editable vectors in placement order, keys key-0, key-1 etc. No scaling, rotation, projection or simplified detail. Use absolute-layout containers; bounds and expanded budgets still apply. Template lifetime is this preparation only.'
 }
 const preparationSchema = {
+  examples: designPreparationExamples,
   type: 'object',
   additionalProperties: false,
   oneOf: [{ required: ['draft'] }, { required: ['repair'] }],
   properties: {
     draft: draftSchema,
+    materialSourceId: {
+      ...toolRequestReference,
+      description:
+        'Use the retained source or material revision linearFields for this new draft; omit draft.linearFields. Does not copy geometry or approve the material.'
+    },
     repair: {
       type: 'object',
       additionalProperties: false,
@@ -399,6 +405,18 @@ export const createLocalDesignTools = (
           }
         }
       }
+      if (name === AiDesignToolIds.PREPARE_MATERIAL_REVISION) {
+        if (
+          typeof value.materialRevisionId !== 'string' ||
+          value.applied !== false
+        )
+          return 'Material preparation requires an unapplied owned revision.'
+        try {
+          session.materialRevision(value.materialRevisionId)
+        } catch {
+          return 'Material revision is unavailable.'
+        }
+      }
       if (name === AiDesignToolIds.PREPARE_DESIGN) {
         if (
           value.available !== true ||
@@ -429,6 +447,58 @@ export const createLocalDesignTools = (
         : undefined,
     definitions: enabled
       ? [
+          ...(actions.some(
+            (action) => action.name === AiActionNames.APPLY_PREPARED_MATERIAL
+          )
+            ? [
+                {
+                  type: 'function' as const,
+                  ...toolSemantics(
+                    toolResultObject({
+                      available: { const: true },
+                      materialRevisionId: toolRequestReference,
+                      applied: { const: false },
+                      elementCount: { type: 'integer', minimum: 1 }
+                    }),
+                    'prepare',
+                    ['request-artifacts'],
+                    'request-artifact'
+                  ),
+                  composition: 'allowed' as const,
+                  name: AiDesignToolIds.PREPARE_MATERIAL_REVISION,
+                  executionAccess: LocalToolAccess.INDEPENDENT,
+                  description:
+                    'Recompile an existing explicit world linear field from its owned source, preserving projection, geometry and creation IDs. Supply the existing field key and complete new field definition. Returns an unapplied materialRevisionId: use apply_prepared_material to update the original members only. Later prepare_design or prepare_and_apply_design accepts materialSourceId to reuse these fields with new geometry. No native-gradient guesses, canvas changes or visual approval occur here.',
+                  inputSchema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['artifactId', 'field', 'definition'],
+                    examples: [
+                      {
+                        artifactId: 'example-source',
+                        field: 'glass',
+                        definition: {
+                          frame: 'world',
+                          start: { x: 0, y: 0, z: 0 },
+                          end: { x: 0, y: 0, z: 100 },
+                          gradientStops: [
+                            { position: 0, color: '#204050', opacity: 1 },
+                            { position: 1, color: '#90b0c0', opacity: 1 }
+                          ]
+                        }
+                      }
+                    ],
+                    properties: {
+                      artifactId: toolRequestReference,
+                      field: { type: 'string', minLength: 1 },
+                      definition:
+                        designConstructionSchema.linearFields
+                          .additionalProperties
+                    }
+                  }
+                }
+              ]
+            : []),
           {
             type: 'function',
             ...toolSemantics(
@@ -449,8 +519,7 @@ export const createLocalDesignTools = (
             description:
               designRepresentationGuidance +
               ' ' +
-              'Prepare native editable objects without changing the canvas; returns artifactId, applicable and findings. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable.' +
-              ` Minimal valid input examples (syntax only, adapt to the request; ready parts may include repeated geometry; inspect and review each stage): ${designPreparationExamples.map((example) => JSON.stringify(example)).join(' ; ')}`,
+              'Prepare native editable objects without changing the canvas; returns artifactId, applicable and findings. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable. Canonical input examples illustrate syntax; adapt them to the request and inspect each stage.',
             inputSchema: preparationSchema
           },
           {
@@ -542,16 +611,29 @@ export const createLocalDesignTools = (
     modelActions: (
       available: AiProviderInput['actions']
     ): AiProviderInput['actions'] =>
-      available.map((action) =>
-        action.name === AiActionNames.APPLY_PREPARED_DESIGN
-          ? {
-              ...action,
-              inputSchema: referenceSchema,
-              description:
-                'Apply the artifactId returned by prepare_design. The backend resolves native editable objects. Review the actual rendered result and use returned IDs for targeted corrections.'
-            }
-          : action
-      ),
+      available.map((action) => {
+        if (action.name === AiActionNames.APPLY_PREPARED_MATERIAL)
+          return {
+            ...action,
+            inputSchema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['materialRevisionId'],
+              examples: [{ materialRevisionId: 'example-material-revision' }],
+              properties: { materialRevisionId: toolRequestReference }
+            },
+            description:
+              'Apply the owned materialRevisionId from prepare_material_revision to its original members. Geometry, placement and Fill binding must still match creation provenance. Produces local overrides only, without recreation or implicit visual approval.'
+          }
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+          return {
+            ...action,
+            inputSchema: referenceSchema,
+            description:
+              'Apply the artifactId returned by prepare_design. The backend resolves native editable objects. Review the actual rendered result and use returned IDs for targeted corrections.'
+          }
+        return action
+      }),
     resolveTargets,
     resolveBatch: (value: unknown): AiActionBatch => {
       if (!record(value) || !Array.isArray(value.actions))
@@ -560,6 +642,18 @@ export const createLocalDesignTools = (
         ...value,
         actions: value.actions.map((action) => {
           if (!record(action)) throw new Error('Invalid action')
+          if (action.name === AiActionNames.APPLY_PREPARED_MATERIAL) {
+            if (
+              !record(action.arguments) ||
+              Object.keys(action.arguments).length !== 1 ||
+              typeof action.arguments.materialRevisionId !== 'string'
+            )
+              throw new DesignReferenceError()
+            const { rootId, updates } = session.materialRevision(
+              action.arguments.materialRevisionId
+            )
+            return { ...action, arguments: { rootId, updates } }
+          }
           if (action.name !== AiActionNames.APPLY_PREPARED_DESIGN) return action
           const args = action.arguments
           if (
@@ -576,6 +670,10 @@ export const createLocalDesignTools = (
             typeof args.artifactId !== 'string'
           )
             throw new DesignReferenceError()
+          if (session.isMaterialRevision(args.artifactId))
+            throw new LocalToolInputError(
+              'Material revisions cannot create geometry; use apply_prepared_material.'
+            )
           let design
           try {
             design = session.resolve(args.artifactId)
@@ -586,10 +684,12 @@ export const createLocalDesignTools = (
             throw new Error(
               'Resolve preparation findings and unmet requirements before applying this design.'
             )
+          const materialElementIds = session.materialMembers(args.artifactId)
           return {
             ...action,
             arguments: {
               design,
+              ...(materialElementIds.length ? { materialElementIds } : {}),
               response: args.response ?? 'compact',
               ...(args.parentId === undefined
                 ? {}
@@ -642,12 +742,41 @@ export const createLocalDesignTools = (
           throw new Error('Provide artifactIds to release.')
         return JSON.stringify(session.release(args.artifactIds as string[]))
       }
+      if (enabled && name === AiDesignToolIds.PREPARE_MATERIAL_REVISION) {
+        const definition = actions.some(
+          (action) => action.name === AiActionNames.APPLY_PREPARED_MATERIAL
+        )
+        if (
+          !definition ||
+          !record(args) ||
+          typeof args.artifactId !== 'string' ||
+          typeof args.field !== 'string' ||
+          !Object.hasOwn(args, 'definition') ||
+          Object.keys(args).length !== 3
+        )
+          throw new LocalToolInputError(
+            'Provide artifactId, field and definition for the available material consumer.'
+          )
+        return JSON.stringify({
+          available: true,
+          ...(await session.reviseMaterial(
+            args.artifactId,
+            args.field,
+            args.definition,
+            signal
+          ))
+        })
+      }
       if (!enabled || name !== AiDesignToolIds.PREPARE_DESIGN)
         throw new Error('Design preparation is unavailable')
       if (
         !record(args) ||
-        Object.keys(args).length !== 1 ||
-        (!('draft' in args) && !('repair' in args))
+        Object.keys(args).some(
+          (key) => !['draft', 'repair', 'materialSourceId'].includes(key)
+        ) ||
+        'draft' in args === 'repair' in args ||
+        (args.materialSourceId !== undefined &&
+          typeof args.materialSourceId !== 'string')
       )
         return JSON.stringify({
           available: false,
@@ -657,6 +786,8 @@ export const createLocalDesignTools = (
       let draft: unknown
       try {
         draft = 'repair' in args ? session.repairDraft(args.repair) : args.draft
+        if (typeof args.materialSourceId === 'string')
+          draft = session.withMaterialSource(draft, args.materialSourceId)
         const budgetIssue = inspectDesignBudget(draft)
         if (budgetIssue)
           return JSON.stringify({

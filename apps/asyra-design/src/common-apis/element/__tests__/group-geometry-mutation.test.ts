@@ -137,6 +137,12 @@ import { updateElementProperties } from '../update-element-properties'
 describe('Group geometry mutation handoff', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.updateElementProperties.mockImplementation((updates) => ({
+      acceptedIds: updates.map(
+        (update: { elementId: string }) => update.elementId
+      ),
+      changed: true
+    }))
     mocks.projectGroupGeometryPropertyUpdates.mockImplementation(
       (_core, updates) => updates
     )
@@ -146,6 +152,41 @@ describe('Group geometry mutation handoff', () => {
         y: 200 + y * 2
       })
     )
+  })
+
+  it('returns canonical mutation evidence using original caller identities', () => {
+    mocks.projectGroupGeometryPropertyUpdates.mockReturnValueOnce([
+      { elementId: 'child-1', values: { x: 2 } }
+    ])
+    mocks.updateElementProperties.mockReturnValueOnce({
+      acceptedIds: ['child-1'],
+      changed: true
+    })
+    expect(updateElementProperties(['group-1'], { x: 2 })).toEqual({
+      acceptedIds: ['group-1'],
+      changed: true
+    })
+  })
+
+  it('preserves validated no-op receipts and validates empty values', () => {
+    mocks.updateElementProperties.mockReturnValueOnce({
+      acceptedIds: ['rect-1'],
+      changed: false
+    })
+    expect(updateElementProperties(['rect-1'], {})).toEqual({
+      acceptedIds: ['rect-1'],
+      changed: false
+    })
+    mocks.updateElementProperties.mockImplementationOnce(() => {
+      throw new Error('Missing target')
+    })
+    expect(() => updateElementProperties(['missing'], {})).toThrow(
+      'Missing target'
+    )
+    expect(updateElementProperties([], {})).toEqual({
+      acceptedIds: [],
+      changed: false
+    })
   })
 
   it('projects identity-safe element bounds into client coordinates', () => {
@@ -278,5 +319,49 @@ describe('workspace point bounds queries for nested elements', () => {
     expect(elementApis.isPointInsideElement('missing', { x: 10, y: 20 })).toBe(
       false
     )
+  })
+})
+
+it('preserves geometry and position outcomes including unchanged and unavailable targets', () => {
+  mocks.updateElementProperties.mockReturnValue({
+    acceptedIds: ['rect-1'],
+    changed: false
+  })
+  expect(
+    elementApis.changeElementGeometry('rect-1', { width: 30 })
+  ).toMatchObject({
+    acceptedIds: ['rect-1'],
+    unavailableIds: [],
+    changed: false
+  })
+  expect(
+    elementApis.setElementPositions({
+      'rect-1': { x: 10, y: 20 },
+      missing: { x: 1, y: 2 }
+    })
+  ).toMatchObject({
+    acceptedIds: ['rect-1'],
+    unavailableIds: ['missing'],
+    changed: false
+  })
+  expect(elementApis.setElementPositions({})).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: [],
+    changed: false
+  })
+  expect(elementApis.setElementLock('missing', true)).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['missing'],
+    changed: false
+  })
+  expect(elementApis.toggleElementLock('missing')).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['missing'],
+    changed: false
+  })
+  expect(elementApis.toggleElementVisible('missing')).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['missing'],
+    changed: false
   })
 })

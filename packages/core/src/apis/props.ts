@@ -55,7 +55,7 @@ export const createPropsAPIs = (requests: PropsRequests) => ({
     options?: EVENT_OPTIONS
   ) {
     if (updates.length === 0) {
-      return Object.freeze([])
+      return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
     }
     const preparedBatch = requests.preparePropertyMutationBatch({
       operations: updates.map(({ propertyId, values }) => ({
@@ -66,6 +66,9 @@ export const createPropsAPIs = (requests: PropsRequests) => ({
       options
     })
     const result = requests.applyPreparedPropertyMutationBatch(preparedBatch)
-    return Object.freeze([...result.orderedPropertyIds])
+    return Object.freeze({
+      acceptedIds: Object.freeze([...result.orderedPropertyIds]),
+      changed: result.evidence.length > 0
+    })
   }
 })

@@ -112,6 +112,17 @@ vi.mock('../../system-context', () => ({
 
 import { vectorApis } from '../vector-apis'
 
+beforeEach(() => {
+  mocks.patchElementProperties.mockImplementation((updates) => ({
+    acceptedIds: [
+      ...new Set(
+        updates.map((update: { elementId: string }) => update.elementId)
+      )
+    ],
+    changed: updates.length > 0
+  }))
+})
+
 describe('Vector direct parent creation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -214,7 +225,9 @@ describe('Vector canonical property commit', () => {
   })
 
   it('commits final topology as one ordered canonical property patch', () => {
-    expect(vectorApis.removeVectorAnchorPoint('vector-1', 'pointB')).toBe(true)
+    expect(vectorApis.removeVectorAnchorPoint('vector-1', 'pointB').value).toBe(
+      true
+    )
 
     expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
@@ -303,7 +316,7 @@ describe('Vector canonical property commit', () => {
         'pointA',
         { x: 150, y: 90 },
         { skipResult: true }
-      )
+      ).value
     ).toBe(true)
 
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
@@ -387,7 +400,7 @@ describe('Vector canonical property commit', () => {
         'pointB',
         { x: 160, y: 110 },
         { skipResult: true }
-      )
+      ).value
     ).toBe(true)
 
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
@@ -436,7 +449,7 @@ describe('Vector canonical property commit', () => {
           transientPreview: true,
           undoable: false
         }
-      )
+      ).value
     ).toBe(true)
 
     expect(mocks.patchLocalComputedData).toHaveBeenCalledOnce()
@@ -474,7 +487,7 @@ describe('Vector canonical property commit', () => {
           transientPreview: true,
           undoable: false
         }
-      )
+      ).value
     ).toEqual(
       expect.objectContaining({
         point: expect.objectContaining({
@@ -515,7 +528,7 @@ describe('Vector canonical property commit', () => {
           skipResult: true,
           undoable: false
         }
-      )
+      ).value
     ).toBe(true)
 
     expect(mocks.patchLocalComputedData).not.toHaveBeenCalled()
@@ -533,7 +546,7 @@ describe('Vector canonical property commit', () => {
           skipResult: true,
           undoable: true
         }
-      )
+      ).value
     ).toBe(true)
 
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
@@ -576,8 +589,10 @@ describe('Vector canonical property commit', () => {
       undoable: true
     } as const
     mocks.updateElementProperties.mockImplementation(
-      (patches: readonly { elementId: string }[]) =>
-        patches.map(({ elementId }) => elementId)
+      (patches: readonly { elementId: string }[]) => ({
+        acceptedIds: patches.map(({ elementId }) => elementId),
+        changed: true
+      })
     )
 
     expect(
@@ -601,7 +616,7 @@ describe('Vector canonical property commit', () => {
           }
         ],
         options
-      )
+      ).value
     ).toEqual(['vector-1', 'vector-2'])
 
     expect(mocks.updateElementProperties).toHaveBeenCalledOnce()
@@ -656,8 +671,10 @@ describe('Vector canonical property commit', () => {
       networks: {}
     })
     mocks.updateElementProperties.mockImplementation(
-      (patches: readonly { elementId: string }[]) =>
-        patches.map(({ elementId }) => elementId)
+      (patches: readonly { elementId: string }[]) => ({
+        acceptedIds: patches.map(({ elementId }) => elementId),
+        changed: true
+      })
     )
 
     expect(
@@ -666,7 +683,7 @@ describe('Vector canonical property commit', () => {
           elementId: 'dense-vector',
           position: { x: 240, y: -80 }
         }
-      ])
+      ]).value
     ).toEqual(['dense-vector'])
 
     expect(mocks.updateElementProperties).toHaveBeenCalledOnce()
@@ -755,7 +772,7 @@ describe('Vector canonical property commit', () => {
         'pointA',
         { x: 230, y: 135 },
         { skipResult: true }
-      )
+      ).value
     ).toBe(true)
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
       [
@@ -865,8 +882,10 @@ describe('Vector canonical property commit', () => {
       elementId === densestElement.id ? computed : undefined
     )
     mocks.updateElementProperties.mockImplementation(
-      (patches: readonly { elementId: string }[]) =>
-        patches.map(({ elementId }) => elementId)
+      (patches: readonly { elementId: string }[]) => ({
+        acceptedIds: patches.map(({ elementId }) => elementId),
+        changed: true
+      })
     )
 
     expect(
@@ -878,7 +897,7 @@ describe('Vector canonical property commit', () => {
             y: (computed.y as number) - 12
           }
         }
-      ])
+      ]).value
     ).toEqual([densestElement.id])
 
     expect(mocks.updateElementProperties).toHaveBeenCalledOnce()
@@ -935,7 +954,10 @@ describe('Vector canonical property commit', () => {
       segments: {},
       networks: {}
     })
-    mocks.updateElementProperties.mockReturnValue(['vector-1'])
+    mocks.updateElementProperties.mockReturnValue({
+      acceptedIds: ['vector-1'],
+      changed: true
+    })
     const options = {
       sharedDelivery: 'immediate',
       undoable: true
@@ -946,7 +968,7 @@ describe('Vector canonical property commit', () => {
         'vector-1',
         { scaleX: 2, scaleY: 3 },
         options
-      )
+      ).value
     ).toBe(true)
 
     expect(mocks.updateElementProperties).toHaveBeenCalledWith(
@@ -970,7 +992,12 @@ describe('Vector canonical property commit', () => {
     const options = { undoable: true } as const
     const setVectorElementPositions = vi
       .spyOn(vectorApis, 'setVectorElementPositions')
-      .mockReturnValue(['vector-1'])
+      .mockReturnValue({
+        value: ['vector-1'],
+        acceptedIds: ['vector-1'],
+        unavailableIds: [],
+        changed: true
+      })
 
     expect(
       vectorApis.setVectorElementPosition('vector-1', { x: 10, y: 20 }, options)
@@ -985,5 +1012,71 @@ describe('Vector canonical property commit', () => {
       options
     )
     setVectorElementPositions.mockRestore()
+  })
+})
+
+it('retains canonical Vector evidence for no-op, invalid scale and mixed positioning', () => {
+  mocks.getVectorComputedData.mockReset()
+  mocks.getSystemProperty.mockReturnValue(false)
+  mocks.getRenderElementById.mockReturnValue({})
+  mocks.patchElementProperties.mockReturnValue({
+    acceptedIds: ['vector-1'],
+    changed: false
+  })
+  mocks.updateElementProperties.mockReturnValue({
+    acceptedIds: ['vector-1'],
+    changed: false
+  })
+  expect(vectorApis.setVectorClosed('vector-1', false)).toMatchObject({
+    acceptedIds: ['vector-1'],
+    unavailableIds: [],
+    changed: false
+  })
+  expect(
+    vectorApis.scaleVectorElementAroundCenter('vector-1', {
+      scaleX: -1,
+      scaleY: 1
+    })
+  ).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['vector-1'],
+    changed: false,
+    value: false
+  })
+  expect(
+    vectorApis.setVectorElementPositions([
+      { elementId: 'vector-1', position: { x: 0, y: 0 } },
+      { elementId: 'invalid', position: { x: NaN, y: 0 } }
+    ])
+  ).toMatchObject({
+    acceptedIds: ['vector-1'],
+    unavailableIds: ['invalid'],
+    changed: false,
+    value: []
+  })
+})
+
+it('rejects missing Vector points before declaring an empty patch unchanged', () => {
+  mocks.getVectorComputedData.mockReset()
+  mocks.getSystemProperty.mockReturnValue(false)
+  mocks.patchElementProperties.mockReturnValue({
+    acceptedIds: ['vector-1'],
+    changed: false
+  })
+  expect(
+    vectorApis.updateVectorAnchorPointType('vector-1', 'missing', 'sharp')
+  ).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['vector-1'],
+    changed: false
+  })
+  expect(
+    vectorApis.updateVectorAnchorPointHandles('vector-1', [
+      { pointId: 'missing', target: 'inHandle', position: null }
+    ])
+  ).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['vector-1'],
+    changed: false
   })
 })

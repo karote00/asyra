@@ -36,6 +36,35 @@ vi.mock('../transaction', () => ({
 
 import { fillApis } from '../fills'
 
+beforeEach(() => {
+  mocks.patchElementProperties.mockImplementation((updates) => ({
+    acceptedIds: [
+      ...new Set(
+        updates.map((update: { elementId: string }) => update.elementId)
+      )
+    ],
+    changed: updates.length > 0
+  }))
+  mocks.shareElementPropertyTargets.mockImplementation((updates) => ({
+    acceptedIds: [
+      ...new Set(
+        updates.map(
+          (update: { target: { elementId: string } }) => update.target.elementId
+        )
+      )
+    ],
+    changed: updates.length > 0
+  }))
+  mocks.detachElementPropertyTargets.mockImplementation((targets) => ({
+    acceptedIds: [
+      ...new Set(
+        targets.map((target: { elementId: string }) => target.elementId)
+      )
+    ],
+    changed: targets.length > 0
+  }))
+})
+
 describe('fill common API primary-color boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -179,7 +208,7 @@ describe('fill common API primary-color boundary', () => {
         ],
         options
       )
-    ).toEqual([true, true])
+    ).toEqual(['changed', 'changed'])
     expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
       [
@@ -241,7 +270,7 @@ describe('fill common API primary-color boundary', () => {
         { color: '#050504', elementId: 'unchanged' },
         { color: '#DC2626', elementId: 'missing' }
       ])
-    ).toEqual([true, false, false])
+    ).toEqual(['changed', 'unchanged', 'unavailable'])
     expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
       [
@@ -279,7 +308,7 @@ describe('fill common API primary-color boundary', () => {
       fillApis.updatePrimaryFillColors([
         { color: '#050504', elementId: 'unchanged' }
       ])
-    ).toEqual([false])
+    ).toEqual(['unchanged'])
     expect(mocks.patchElementProperties).not.toHaveBeenCalled()
     expect(mocks.runTransaction).not.toHaveBeenCalled()
   })
@@ -349,13 +378,16 @@ describe('fill common API primary-color boundary', () => {
 
 describe('plural Fill new-value operations', () => {
   beforeEach(() => vi.clearAllMocks())
-  it('submits distinct target patches once without reading old values', () => {
+  it('submits distinct patches once and validates an empty target without forwarding old values', () => {
+    mocks.getElementById.mockReturnValue({
+      getAllComputedData: () => ({ fills: [{ id: 'fa' }] })
+    })
     fillApis.updateFillFieldsBatch([
       { elementId: 'a', fillId: 'fa', patch: { opacity: 0.3 } },
       { elementId: 'b', fillId: 'fb', patch: { visible: false } },
       { elementId: 'a', fillId: 'fa', patch: {} }
     ])
-    expect(mocks.getElementById).not.toHaveBeenCalled()
+    expect(mocks.getElementById).toHaveBeenCalledExactlyOnceWith('a')
     expect(mocks.patchElementProperties).toHaveBeenCalledExactlyOnceWith(
       [
         {
@@ -553,4 +585,120 @@ describe('Fill property reuse', () => {
     expect(mocks.updateElementProperties).not.toHaveBeenCalled()
     expect(mocks.patchElementProperties).not.toHaveBeenCalled()
   })
+})
+
+it('delivers actual primary-color owner outcomes through registered action and host classification without replay', async () => {
+  const { createBasicApiActions } = await import('../../ai/basic-api-actions')
+  const { designActionOutcome } = await import('../../ai/tool-contract')
+  const { localToolOutcome } =
+    await import('../../../server/local-tool-invocation')
+  vi.clearAllMocks()
+  mocks.getElementById.mockImplementation((id: string) =>
+    id === 'missing'
+      ? undefined
+      : {
+          getAllComputedData: () => ({
+            fills: [{ id: `fill-${id}`, color: '#111111', type: 'fill' }]
+          })
+        }
+  )
+  const action = createBasicApiActions(
+    () => ({
+      core: {},
+      element: {},
+      selection: {},
+      hierarchy: {},
+      viewport: {},
+      stroke: {},
+      fill: fillApis
+    }),
+    { observe: () => () => undefined, resolve: () => 'live' }
+  ).find((entry) => entry.name === 'api_fill_updatePrimaryFillColors')
+  if (!action) throw new Error('Missing primary Fill action')
+  const context = {
+    signal: new AbortController().signal,
+    runMutation: async <T>(write: () => T) => write()
+  }
+  for (const [updates, status] of [
+    [[], 'success'],
+    [[{ elementId: 'same', color: '#111111' }], 'success'],
+    [[{ elementId: 'missing', color: '#222222' }], 'failed'],
+    [
+      [
+        { elementId: 'changed', color: '#222222' },
+        { elementId: 'same', color: '#111111' },
+        { elementId: 'missing', color: '#222222' }
+      ],
+      'partial'
+    ]
+  ] as const) {
+    const result = await action.execute({ updates }, context)
+    const toolOutcome = designActionOutcome(result)
+    expect(toolOutcome.status).toBe(status)
+    expect(
+      localToolOutcome({
+        actionResults: [
+          {
+            actionName: action.name,
+            result: { ...(result as object), toolOutcome }
+          }
+        ]
+      }).status
+    ).toBe(status)
+  }
+  expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
+  expect(mocks.patchElementProperties.mock.calls[0][0]).toEqual([
+    {
+      elementId: 'changed',
+      records: [{ key: 'fills', set: { 'fill-changed': { color: '#222222' } } }]
+    }
+  ])
+  await expect(
+    action.execute(
+      { updates: [{ elementId: 'changed', color: '#333333' }] },
+      { ...context, signal: AbortSignal.abort() }
+    )
+  ).rejects.toThrow()
+  expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
+})
+
+it('preserves canonical changed evidence and validates empty-patch targets', () => {
+  mocks.getElementById.mockReturnValue({
+    getAllComputedData: () => ({ fills: [{ id: 'fill-1', opacity: 1 }] })
+  })
+  mocks.patchElementProperties.mockReturnValue({
+    acceptedIds: ['pupil-left'],
+    changed: false
+  })
+  expect(
+    fillApis.updateFillFieldsBatch([
+      { elementId: 'pupil-left', fillId: 'fill-1', patch: { opacity: 1 } }
+    ])
+  ).toMatchObject({
+    acceptedIds: ['pupil-left'],
+    unavailableIds: [],
+    changed: false
+  })
+  mocks.patchElementProperties.mockReturnValue({
+    acceptedIds: ['pupil-left'],
+    changed: true
+  })
+  expect(
+    fillApis.removeFills([{ elementId: 'pupil-left', fillId: 'fill-1' }])
+  ).toMatchObject({
+    acceptedIds: ['pupil-left'],
+    unavailableIds: [],
+    changed: true
+  })
+  expect(fillApis.removeFills([])).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: [],
+    changed: false
+  })
+  mocks.getElementById.mockReturnValue(undefined)
+  expect(() =>
+    fillApis.updateFillFieldsBatch([
+      { elementId: 'missing', fillId: 'missing-fill', patch: {} }
+    ])
+  ).toThrow()
 })

@@ -169,15 +169,15 @@ describe('Property intentions through real Factory owner replay', () => {
     }
     const verify = () => {
       const canonical = api.readElementPropertyTargets([target])[0]
-      expect(scene.getElementById('a')?.getAllComputedData().materials).toEqual(
-        [
+      expect(scene.getElementById('a')?.getAllComputedData()).toMatchObject({
+        materials: [
           {
             id: canonical.propertyId,
             color: canonical.effective.color,
             opacity: canonical.effective.opacity
           }
         ]
-      )
+      })
     }
     try {
       run(() =>
@@ -513,7 +513,7 @@ describe('Property intentions through real Factory owner replay', () => {
       })
       expect(props.save()).toEqual({})
       expect(Object.keys(scene.save().elements)).toEqual(['workspace'])
-      expect(factory.transact.undoStack).toHaveLength(0)
+      expect(factory.getUndoHistoryDepth()).toBe(0)
     } finally {
       factory.transact.reset()
     }
@@ -730,4 +730,100 @@ describe('Property intentions through real Factory owner replay', () => {
       }
     }
   )
+})
+
+it('reports actual property application and no-op evidence through every Core property owner', () => {
+  const { api, props, scene, factory, run, target } = setup()
+  const calls = [
+    () =>
+      api.updateElementProperties([
+        { elementId: 'a', values: { opacity: 0.4 } }
+      ]),
+    () =>
+      api.patchElementProperties([
+        { elementId: 'a', values: { opacity: 0.6 }, records: [] }
+      ]),
+    () =>
+      api.updatePropertyComponents([
+        { propertyId: 'source', values: { opacity: 0.3 } }
+      ]),
+    () =>
+      api.updateElementPropertyTargets([
+        { target: target(), values: { opacity: 0.7 } }
+      ]),
+    () =>
+      api.resetElementPropertyOverrides([
+        { target: target(), keys: ['opacity'] }
+      ]),
+    () => api.detachElementPropertyTargets([target()]),
+    () =>
+      api.shareElementPropertyTargets([
+        { target: target(), sourceId: 'source' }
+      ]),
+    () =>
+      api.updateSharedPropertySources([
+        { propertyId: 'source', values: { opacity: 0.9 } }
+      ])
+  ]
+  try {
+    for (const call of calls) {
+      const before = JSON.stringify({
+        props: props.save(),
+        scene: scene.save()
+      })
+      const receipt = run(call)
+      const after = JSON.stringify({ props: props.save(), scene: scene.save() })
+      expect(receipt).toMatchObject({ changed: before !== after })
+      expect(Object.isFrozen(receipt)).toBe(true)
+    }
+    for (const method of [
+      'updateElementProperties',
+      'patchElementProperties',
+      'updatePropertyComponents',
+      'updateElementPropertyTargets',
+      'resetElementPropertyOverrides',
+      'detachElementPropertyTargets',
+      'shareElementPropertyTargets',
+      'updateSharedPropertySources'
+    ] as const) {
+      expect(run(() => api[method]([]))).toEqual({
+        acceptedIds: [],
+        changed: false
+      })
+    }
+    expect(
+      run(() =>
+        api.updateSharedPropertySources([
+          { propertyId: 'source', values: { opacity: 0.9 } }
+        ])
+      )
+    ).toEqual({ acceptedIds: ['source'], changed: false })
+    expect(run(() => api.updateElementData('a', { name: 'a' }))).toBe(false)
+    expect(run(() => api.updateElementData('a', { name: 'Renamed' }))).toBe(
+      true
+    )
+    const before = {
+      props: props.save(),
+      scene: scene.save(),
+      depth: factory.getUndoHistoryDepth()
+    }
+    expect(() =>
+      run(() =>
+        api.updateElementProperties([
+          { elementId: 'a', values: { opacity: 0.5 } },
+          { elementId: 'missing', values: { opacity: 0.2 } }
+        ])
+      )
+    ).toThrow('missing')
+    expect({
+      props: props.save(),
+      scene: scene.save(),
+      depth: factory.getUndoHistoryDepth()
+    }).toEqual(before)
+    expect(() => run(() => api.updateElementData('missing', {}))).toThrow(
+      'missing'
+    )
+  } finally {
+    factory.transact.reset()
+  }
 })

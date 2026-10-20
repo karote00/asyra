@@ -14,11 +14,12 @@ export type BasicApiOwner =
   | 'stroke'
 export type BasicApiResultKind =
   | 'value'
-  | 'owner'
+  | 'mutation-receipt'
   | 'transient'
   | 'created-items'
-  | 'boolean-items'
   | 'status-items'
+  | 'property-mutation'
+  | 'change-flag'
   | 'moves'
   | 'removed'
   | 'grouped'
@@ -28,14 +29,16 @@ const resultDescriptions: Record<BasicApiResultKind, string> = {
     'Selection or viewport execution only. value preserves the owner result; this is not a document change.',
   value:
     'Successful read. value preserves the owner result, including false or null; no document mutation is implied.',
-  owner:
-    'value preserves the owner result. Void confirms return only, not a measured change. false/null report no application; unchanged and unavailable may be indistinguishable.',
+  'mutation-receipt':
+    'value + acceptedIds/unavailableIds + actual changed. Valid unchanged=no-change; some/all unavailable=partial/failed. Retain acknowledged work; never replay.',
   'created-items':
-    'Ordered items retain each ID or null. Null is failed creation; mixed results are partial. appliedElementIds includes successful identities only. Empty input is no-change.',
+    'Ordered items retain each ID or null. Null is failed creation; mixed results are partial. appliedElementIds includes successful identities only. Empty input is no-change. Missing or misaligned output is a result-contract failure; retain successful IDs and never replay creation.',
+  'property-mutation':
+    'Canonical acceptedIds and changed preserve validated targets and actual apply evidence. Empty or unchanged valid requests are no-change; invalid output is a result-contract failure, never a write retry.',
+  'change-flag':
+    'The canonical owner validates the target before returning true for changed or false for unchanged. Missing or invalid targets reject; false is a valid no-op.',
   'status-items':
     'Ordered changed/unchanged/unavailable values preserve each target outcome without per-item action envelopes. Unavailable targets make the operation partial or failed.',
-  'boolean-items':
-    'Ordered booleans report each application. false means unchanged or unavailable, not proof of a valid target. Items preserve that distinction; empty input is no-change.',
   grouped:
     'A group and its ordered child identities, with a retained target set and full receipt.',
   ungrouped:
@@ -54,11 +57,21 @@ export interface BasicApiContract {
   description: string
   parameters: readonly string[]
   effect: BasicApiEffect
-  result: { kind: BasicApiResultKind; description: string }
+  result: {
+    kind: BasicApiResultKind
+    description: string
+    identityPath?: readonly string[]
+  }
   inputSchema: Record<string, unknown>
 }
 export const apiString = { type: 'string', minLength: 1 }
 export const apiId = toolDocumentReference
+/** Retained element binding is an App capability, not a generic document ID. */
+export const apiElementId = { ...apiId, 'x-design-element-binding': 'each' }
+export const apiSingleElementId = {
+  ...apiId,
+  'x-design-element-binding': 'one'
+}
 export const apiNumber = { type: 'number' }
 export const apiBoolean = { type: 'boolean' }
 export const apiObject = (
@@ -80,9 +93,11 @@ export const retainedElementSetSchema = apiObject({
 })
 /** Element membership only; point/segment identity lists remain explicit. */
 export const apiElementIds = {
+  'x-design-element-binding': 'all',
   anyOf: [apiIds, retainedElementSetSchema]
 }
 export const apiUniqueElementIds = {
+  'x-design-element-binding': 'all',
   anyOf: [{ ...apiIds, uniqueItems: true }, retainedElementSetSchema]
 }
 /** These canonical declaration objects identify element membership at the App boundary. */
@@ -108,8 +123,10 @@ export interface BasicApiParameterDefinition {
 }
 
 export interface BasicApiDefinition {
+  examples?: readonly Record<string, unknown>[]
   category?: string
   resultKind?: BasicApiResultKind
+  resultIdentityPath?: readonly string[]
   owner: BasicApiOwner
   method: string
   effect: BasicApiEffect
@@ -121,10 +138,12 @@ const describeResultContract = (
   effect: BasicApiEffect,
   declared?: BasicApiResultKind
 ) => {
-  let kind: BasicApiResultKind = declared ?? 'owner'
+  let kind = declared
   if (!declared && effect === 'read') kind = 'value'
   if (!declared && (effect === 'selection' || effect === 'viewport'))
     kind = 'transient'
+  if (!kind)
+    throw new Error('Document writers must declare an owner result contract.')
   return { kind, description: resultDescriptions[kind] }
 }
 
@@ -135,6 +154,8 @@ export const defineBasicApi = ({
   effect,
   parameters,
   resultKind,
+  resultIdentityPath,
+  examples,
   description = ''
 }: BasicApiDefinition): BasicApiContract => ({
   owner,
@@ -142,16 +163,22 @@ export const defineBasicApi = ({
   operation: `${owner}.${method}`,
   method,
   effect,
-  result: describeResultContract(effect, resultKind),
+  result: {
+    ...describeResultContract(effect, resultKind),
+    ...(resultIdentityPath ? { identityPath: resultIdentityPath } : {})
+  },
   name: `api_${owner}_${method}`,
-  description: `${owner}.${method}. ${description} Uses the existing public API. Event/history suppression options are not model inputs.`,
+  description: `${owner}.${method}. ${description} Uses the existing public API. Event/history suppression options are not model inputs.${resultKind === 'mutation-receipt' ? ` ${resultDescriptions[resultKind]}` : ''}`,
   parameters: parameters.map((parameter) => parameter.name),
-  inputSchema: apiObject(
-    Object.fromEntries(
-      parameters.map((parameter) => [parameter.name, parameter.schema])
+  inputSchema: {
+    ...apiObject(
+      Object.fromEntries(
+        parameters.map((parameter) => [parameter.name, parameter.schema])
+      ),
+      parameters
+        .filter((parameter) => !parameter.optional)
+        .map((parameter) => parameter.name)
     ),
-    parameters
-      .filter((parameter) => !parameter.optional)
-      .map((parameter) => parameter.name)
-  )
+    ...(examples ? { examples } : {})
+  }
 })

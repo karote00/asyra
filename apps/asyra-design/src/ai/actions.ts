@@ -188,7 +188,7 @@ export interface AiActionApis {
   updateElementFillColors(
     updates: readonly AiColorUpdate[],
     options?: EVENT_OPTIONS
-  ): readonly boolean[]
+  ): readonly ('changed' | 'unchanged' | 'unavailable')[]
   updateElementStrokeColor(
     elementId: string,
     color: string,
@@ -197,7 +197,7 @@ export interface AiActionApis {
   updateElementStrokeColors(
     updates: readonly AiColorUpdate[],
     options?: EVENT_OPTIONS
-  ): readonly boolean[]
+  ): readonly ('changed' | 'unchanged' | 'unavailable')[]
 }
 
 export class AiActionError extends Error {
@@ -253,7 +253,8 @@ const defaultApis: AiActionApis = {
   removeSubtree: (elementId, options) =>
     hierarchyApis.removeSubtree(elementId, options),
   scaleVectorElementGeometry: (elementId, geometry, options) =>
-    elementApis.scaleVectorElementAroundCenter(elementId, geometry, options),
+    elementApis.scaleVectorElementAroundCenter(elementId, geometry, options)
+      .value,
   setElementsVisible: (elementIds, visible, options) =>
     elementApis.setElementsVisible(elementIds, visible, options),
   selectElements: (elementIds, options) =>
@@ -682,7 +683,7 @@ const createCompositionActions = (
           let appliedBatchCount = 0
           batchResults.forEach((applied, index) => {
             const batchOperation = batchOperations[index]
-            if (applied) {
+            if (applied === 'changed') {
               appliedElementIds.push(batchOperation.elementId)
               appliedBatchCount += 1
               return
@@ -690,7 +691,8 @@ const createCompositionActions = (
             skipped.push(
               Object.freeze({
                 elementId: batchOperation.elementId,
-                reason: 'no-change'
+                reason:
+                  applied === 'unchanged' ? 'no-change' : 'unavailable-target'
               })
             )
           })
@@ -702,11 +704,19 @@ const createCompositionActions = (
           }
         }
         assertNotAborted(context)
+        let status: 'complete' | 'no-change' | 'partial' | 'failed' =
+          statusForMutation(appliedElementIds.length, 0)
+        if (skipped.some((item) => item.reason !== 'no-change'))
+          status =
+            appliedElementIds.length ||
+            skipped.some((item) => item.reason === 'no-change')
+              ? 'partial'
+              : 'failed'
         return Object.freeze({
           action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
           appliedElementIds: Object.freeze(appliedElementIds),
           skipped: Object.freeze(skipped),
-          status: statusForMutation(appliedElementIds.length, skipped.length)
+          status
         })
       },
       ...actionToolSemantics(
@@ -717,6 +727,7 @@ const createCompositionActions = (
           skipped: { type: 'array' }
         })
       ),
+      revision: 3,
       name: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       inputSchema: Object.freeze({
         additionalProperties: false,
@@ -729,7 +740,11 @@ const createCompositionActions = (
               additionalProperties: false,
               required: ['elementId'],
               properties: {
-                elementId: { type: 'string', minLength: 1 },
+                elementId: {
+                  'x-design-element-binding': 'each',
+                  type: 'string',
+                  minLength: 1
+                },
                 geometry: {
                   type: 'object',
                   additionalProperties: false,
@@ -969,6 +984,7 @@ export const createAiActions = (
         required: Object.freeze(['elementId', 'visible']),
         properties: Object.freeze({
           elementId: Object.freeze({
+            'x-design-element-binding': 'each',
             type: 'string',
             minLength: 1
           }),
@@ -1029,6 +1045,7 @@ export const createAiActions = (
       required: Object.freeze(['elementIds']),
       properties: Object.freeze({
         elementIds: Object.freeze({
+          'x-design-element-binding': 'all',
           type: 'array',
           minItems: 1,
           maxItems: AI_SELECTION_LIMIT,

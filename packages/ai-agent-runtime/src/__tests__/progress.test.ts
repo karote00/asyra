@@ -764,6 +764,19 @@ it('rejects invalid activity parent and phase contracts at the shared transport 
   expect(isExecutionActivity({ ...value, parentCallId: 'prepare' })).toBe(false)
   expect(isExecutionActivity({ ...value, phase: 'imaginary' })).toBe(false)
   expect(isExecutionActivity({ ...value, sequence: 0 })).toBe(false)
+  expect(
+    isExecutionActivity({
+      ...value,
+      outcome: { status: 'partial', settlement: 'partial' }
+    })
+  ).toBe(true)
+  for (const outcome of [
+    null,
+    {},
+    { status: 'completed', settlement: 'completed' },
+    { status: 'success', settlement: 'saved' }
+  ])
+    expect(isExecutionActivity({ ...value, outcome })).toBe(false)
 })
 
 it.each(['success', 'failure', 'cancelled'] as const)(

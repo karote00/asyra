@@ -112,6 +112,7 @@ export const createLocalDesignWorkflow = (
             {
               ...preparation,
               ...semantics,
+              revision: 3,
               partialOutputSchema: {
                 anyOf: [semantics.partialOutputSchema, stoppedOutputSchema]
               },
@@ -167,6 +168,7 @@ export const createLocalDesignWorkflow = (
             ![
               'draft',
               'repair',
+              'materialSourceId',
               ...(review ? ['plan'] : []),
               'message',
               'inspection',
@@ -240,8 +242,14 @@ export const createLocalDesignWorkflow = (
           completedSteps.push(step.name)
         return result
       }
-      const preparationInput =
-        'repair' in input ? { repair: input.repair } : { draft: input.draft }
+      const preparationInput = {
+        ...('repair' in input
+          ? { repair: input.repair }
+          : { draft: input.draft }),
+        ...(input.materialSourceId === undefined
+          ? {}
+          : { materialSourceId: input.materialSourceId })
+      }
       const prepared = await runStep(designs, preparation, preparationInput)
       const stoppedAt = (result: Record<string, unknown>, step: string) => ({
         ...result,
@@ -268,8 +276,17 @@ export const createLocalDesignWorkflow = (
           ? {}
           : { inspection: input.inspection })
       })
-      if (localToolOutcome(receipt).status !== 'success')
+      const applicationOutcome = localToolOutcome(receipt)
+      const appliedWithIncompleteFollowup =
+        applicationOutcome.status === 'partial' &&
+        applicationOutcome.settlement === 'completed' &&
+        (receipt.measurementIssues?.length || receipt.inspectionIssues?.length)
+      if (
+        applicationOutcome.status !== 'success' &&
+        !appliedWithIncompleteFollowup
+      )
         return JSON.stringify(stoppedAt(receipt, apply.name))
+      if (appliedWithIncompleteFollowup) completedSteps.push(apply.name)
       if (input.response !== 'full') {
         delete receipt.context
         for (const entry of receipt.actionResults ?? []) {
@@ -295,6 +312,7 @@ export const createLocalDesignWorkflow = (
     oneOf: [{ required: ['draft'] }, { required: ['repair'] }],
     properties: {
       key: { type: 'string', minLength: 1, maxLength: 160 },
+      materialSourceId: definition.inputSchema.properties.materialSourceId,
       draft: { $ref: '#/$defs/readyDraft' },
       repair: { $ref: '#/$defs/draftRepair' },
       parentId: definition.inputSchema.properties.parentId,
@@ -362,7 +380,12 @@ export const createLocalDesignWorkflow = (
       { required: ['repair'], properties: { draft: false, parts: false } },
       {
         required: ['parts'],
-        properties: { draft: false, repair: false, parentId: false }
+        properties: {
+          draft: false,
+          repair: false,
+          parentId: false,
+          materialSourceId: false
+        }
       }
     ],
     properties: {
@@ -507,13 +530,24 @@ export const createLocalDesignWorkflow = (
           result.settlement === 'unknown' || result.status === 'unknown',
           input.response === 'full'
         )
-        return JSON.stringify({
+        const delivered = {
           ...result,
           ...followup,
           parts: completed.map((part) => ({
             ...part,
             measurementDeferred: false
           }))
+        }
+        const outcome = localToolOutcome(delivered)
+        return JSON.stringify({
+          ...delivered,
+          ...(result.status === 'complete' && outcome.status !== 'success'
+            ? {
+                status: outcome.status,
+                complete: false,
+                settlement: outcome.settlement
+              }
+            : {})
         })
       }
       const parentIds = new Map<string, string>()
@@ -540,6 +574,9 @@ export const createLocalDesignWorkflow = (
               ...('repair' in part
                 ? { repair: part.repair }
                 : { draft: part.draft }),
+              ...(part.materialSourceId === undefined
+                ? {}
+                : { materialSourceId: part.materialSourceId }),
               ...(parentId === undefined ? {} : { parentId }),
               ...(index === 0 && input.plan !== undefined
                 ? { plan: input.plan }

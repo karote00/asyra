@@ -199,7 +199,7 @@ describe('AI Agent conversation panel intent boundary', () => {
     })
     expect(
       screen.getByRole('status', { name: 'Current activity' }).textContent
-    ).toBe('Processing your request')
+    ).toBe('Adjust the roofOperation ended - outcome unconfirmed')
     await act(async () => {
       harness.pending.resolve({ status: 'success' })
     })

@@ -1,3 +1,4 @@
+import type { PropertyMutationReceipt } from '../types/property-mutation-receipt.js'
 import type {
   PropsManager,
   PropertyIntent,
@@ -38,7 +39,7 @@ export const applyPreparedPropertyIntent = (
   requests: PropertyIntentApplyRequests,
   prepared: PreparedPropertyIntentBatch,
   options?: EVENT_OPTIONS
-): void => {
+): boolean => {
   const scene = prepared.rootBindings.length
     ? requests.prepareElementPropertyBindingMutation(prepared.rootBindings)
     : undefined
@@ -65,9 +66,20 @@ export const applyPreparedPropertyIntent = (
         options
       })
     : undefined
-  requests.applyPreparedPropertyMutationBatch(prepared.properties)
-  if (scene) requests.applyPreparedElementMutation(scene, options)
-  if (retirement) requests.applyPreparedPropertyMutationBatch(retirement)
+  const properties = requests.applyPreparedPropertyMutationBatch(
+    prepared.properties
+  )
+  const binding = scene
+    ? requests.applyPreparedElementMutation(scene, options)
+    : undefined
+  const retired = retirement
+    ? requests.applyPreparedPropertyMutationBatch(retirement)
+    : undefined
+  return (
+    properties.evidence.length > 0 ||
+    !!binding?.evidence.length ||
+    !!retired?.evidence.length
+  )
 }
 
 export const createElementPropertyIntentAPIs = (
@@ -93,16 +105,20 @@ export const createElementPropertyIntentAPIs = (
     targets: readonly ElementPropertyTarget[],
     toIntent: (target: PropertyTarget, index: number) => PropertyIntent,
     options?: EVENT_OPTIONS
-  ): readonly string[] => {
-    if (targets.length === 0) return Object.freeze([])
+  ): PropertyMutationReceipt => {
+    if (targets.length === 0)
+      return Object.freeze({ acceptedIds: Object.freeze([]), changed: false })
     const prepared = requests.preparePropertyIntentBatch(
       resolve(targets).map(toIntent),
       options
     )
-    applyPreparedPropertyIntent(requests, prepared, options)
-    return Object.freeze([
-      ...new Set(targets.map((target) => target.elementId))
-    ])
+    const changed = applyPreparedPropertyIntent(requests, prepared, options)
+    return Object.freeze({
+      acceptedIds: Object.freeze([
+        ...new Set(targets.map((target) => target.elementId))
+      ]),
+      changed
+    })
   }
   return {
     readElementPropertyTargets: (targets) =>
@@ -144,10 +160,13 @@ export const createElementPropertyIntentAPIs = (
         updates,
         options
       )
-      requests.applyPreparedPropertyMutationBatch(prepared)
-      return Object.freeze([
-        ...new Set(updates.map((update) => update.propertyId))
-      ])
+      const result = requests.applyPreparedPropertyMutationBatch(prepared)
+      return Object.freeze({
+        acceptedIds: Object.freeze([
+          ...new Set(updates.map((update) => update.propertyId))
+        ]),
+        changed: result.evidence.length > 0
+      })
     }
   }
 }

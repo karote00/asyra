@@ -941,7 +941,8 @@ it('retains the original activity objective through a failed clarification and r
       projectAiActivity(active.progress, { purpose: active.originalIntent })
         .current
     ).toEqual({
-      label: 'Processing your request'
+      label: 'Operation ended - outcome unconfirmed',
+      message: 'Build the roof'
     })
     return {
       status: 'failed',

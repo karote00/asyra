@@ -3,7 +3,11 @@ export const inspectionInputSchema = {
   additionalProperties: false,
   required: ['elementId'],
   properties: {
-    elementId: { type: 'string', minLength: 1 },
+    elementId: {
+      'x-design-element-binding': 'each',
+      type: 'string',
+      minLength: 1
+    },
     view: { type: 'string', enum: ['overview', 'detail'] },
     region: {
       type: 'object',

@@ -334,7 +334,8 @@ function* prepareDesignSteps(
     constructionMs: number
     admissionMs: number
     compilationMs: number
-  }) => void
+  }) => void,
+  onMaterialFields?: (fields: Readonly<Record<string, string>>) => void
 ): Generator<void, AnalyzedDesign, void> {
   const sharedFills =
     record(input) && input.sharedFills !== undefined ? input.sharedFills : {}
@@ -407,10 +408,8 @@ function* prepareDesignSteps(
     return [{ ...compiled, id: `${elementId}-fill` }]
   }
   const constructionStarted = performance.now()
-  const { draft, brief, sourceWork } = yield* constructDesignSteps(
-    input,
-    `design-${identity}-0`
-  )
+  const { draft, brief, sourceWork, materialFields } =
+    yield* constructDesignSteps(input, `design-${identity}-0`)
   const constructionMs = performance.now() - constructionStarted
   onSourceWork?.(sourceWork)
   const admissionStarted = performance.now()
@@ -688,6 +687,7 @@ function* prepareDesignSteps(
     if (!passed) findings.push({ kind: 'requirement', ...check, actual })
     return { ...check, actual, passed }
   })
+  onMaterialFields?.(freeze(materialFields))
   const prepared = freeze({
     ...(brief ? { review: { ...brief, checks } } : {}),
     ...(textBoxOverlaps.length
@@ -727,6 +727,16 @@ export const createDesignPreparationSession = (
   const checkResults = createDesignCheckResults()
   const artifacts = new Map<string, PreparedDesign>()
   const recipes = new Map<string, unknown>()
+  const materialFields = new Map<string, Readonly<Record<string, string>>>()
+  const sourceIdentities = new Map<string, string>()
+  const materialRevisions = new Map<
+    string,
+    {
+      rootId: string
+      sourceArtifactId: string
+      updates: { elementId: string; gradient: unknown; color: unknown }[]
+    }
+  >()
   const targetSets = new Map<
     string,
     { artifactId: string; ids: readonly string[]; bytes: number }
@@ -740,6 +750,9 @@ export const createDesignPreparationSession = (
   const removeArtifact = (artifactId: string) => {
     targetIndexes.delete(artifactId)
     recipes.delete(artifactId)
+    materialFields.delete(artifactId)
+    sourceIdentities.delete(artifactId)
+    materialRevisions.delete(artifactId)
     for (const [id, selected] of targetSets) {
       if (selected.artifactId === artifactId) {
         targetBytes -= selected.bytes
@@ -757,6 +770,8 @@ export const createDesignPreparationSession = (
       | undefined
   ) => {
     const { review, layoutReview, sharedFillIds, ...compiled } = result
+    if (!sourceIdentities.has(artifactId))
+      sourceIdentities.set(artifactId, artifactId)
     const artifact = freeze(compiled)
     artifacts.set(artifactId, artifact)
     try {
@@ -811,6 +826,112 @@ export const createDesignPreparationSession = (
         findings: artifact.findings,
         elementCount: artifact.entries.length
       }
+    },
+    async reviseMaterial(
+      artifactId: string,
+      field: string,
+      definition: unknown,
+      signal: AbortSignal
+    ) {
+      signal.throwIfAborted()
+      ownership?.assertOwned(artifactId)
+      const original = artifacts.get(artifactId)
+      const recipe = recipes.get(artifactId)
+      const identity = sourceIdentities.get(artifactId)
+      if (!original || !record(recipe) || !identity)
+        throw new Error(
+          'Prepared material source is unavailable in this request.'
+        )
+      if (
+        !record(recipe.linearFields) ||
+        !Object.hasOwn(recipe.linearFields, field)
+      )
+        throw new Error('Select an existing explicit world material field.')
+      const revisedRecipe = freeze(
+        structuredClone({
+          ...recipe,
+          linearFields: { ...recipe.linearFields, [field]: definition }
+        })
+      )
+      let compiledFields: Readonly<Record<string, string>> = {}
+      const compiled = await compileAsync(
+        signal,
+        revisedRecipe,
+        identity,
+        undefined,
+        undefined,
+        (fields) => {
+          compiledFields = fields
+        }
+      )
+      signal.throwIfAborted()
+      const members = materialFields.get(artifactId) ?? {}
+      const selected = compiled.entries.filter(
+        (entry) => members[entry.key] === field
+      )
+      if (!selected.length)
+        throw new Error('Material field has no prepared members.')
+      if (
+        compiled.findings.some(
+          (finding) => finding.kind !== 'text-metrics-required'
+        )
+      )
+        throw new Error('Resolve source findings before revising material.')
+      const updates = selected.map(({ descriptor }) => {
+        const fills = descriptor.fills
+        const fill = Array.isArray(fills) ? fills[0] : undefined
+        if (!record(fill) || !isDesignGradient(fill.gradient))
+          throw new Error(
+            'Material revision did not produce a native gradient.'
+          )
+        return {
+          elementId: descriptor.id,
+          gradient: fill.gradient,
+          color: fill.color
+        }
+      })
+      const materialRevisionId = randomUUID()
+      materialFields.set(materialRevisionId, compiledFields)
+      recipes.set(materialRevisionId, revisedRecipe)
+      sourceIdentities.set(materialRevisionId, identity)
+      publish(materialRevisionId, compiled, undefined, undefined)
+      materialRevisions.set(
+        materialRevisionId,
+        freeze({
+          rootId: original.rootId,
+          sourceArtifactId: artifactId,
+          updates
+        })
+      )
+      return {
+        materialRevisionId,
+        elementCount: updates.length,
+        applied: false as const
+      }
+    },
+    materialRevision(id: string) {
+      ownership?.assertOwned(id)
+      const value = materialRevisions.get(id)
+      if (!value) throw new Error('Prepared material revision is unavailable.')
+      return value
+    },
+    materialMembers(id: string) {
+      ownership?.assertOwned(id)
+      const artifact = artifacts.get(id)
+      if (!artifact) throw new Error('Material source is unavailable.')
+      return Object.keys(materialFields.get(id) ?? {}).map(
+        (key) => artifact.keyToId[key]
+      )
+    },
+    isMaterialRevision: (id: string) => materialRevisions.has(id),
+    withMaterialSource(input: unknown, sourceId: string) {
+      ownership?.assertOwned(sourceId)
+      const source = recipes.get(sourceId)
+      if (!record(source) || !record(source.linearFields) || !record(input))
+        throw new Error('Prepared world material source is unavailable.')
+      if (input.linearFields !== undefined)
+        throw new Error('materialSourceId conflicts with inline linearFields.')
+      return { ...input, linearFields: structuredClone(source.linearFields) }
     },
     retainTargetSets(
       selections: readonly { artifactId: string; ids: readonly string[] }[]
@@ -911,6 +1032,7 @@ export const createDesignPreparationSession = (
       let reuse:
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
+      let compiledFields: Readonly<Record<string, string>> = {}
       const result = await compileAsync(
         signal,
         recipe,
@@ -920,9 +1042,13 @@ export const createDesignPreparationSession = (
         },
         (value) => {
           reuse = value
+        },
+        (fields) => {
+          compiledFields = fields
         }
       )
       signal.throwIfAborted()
+      materialFields.set(artifactId, compiledFields)
       recipes.set(artifactId, recipe)
       return publish(artifactId, result, sourceWork, reuse)
     },
@@ -934,6 +1060,7 @@ export const createDesignPreparationSession = (
       let reuse:
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
+      let compiledFields: Readonly<Record<string, string>> = {}
       const result = compile(
         recipe,
         artifactId,
@@ -942,8 +1069,12 @@ export const createDesignPreparationSession = (
         },
         (summary) => {
           reuse = summary
+        },
+        (fields) => {
+          compiledFields = fields
         }
       )
+      materialFields.set(artifactId, compiledFields)
       recipes.set(artifactId, recipe)
       return publish(artifactId, result, sourceWork, reuse)
     },
