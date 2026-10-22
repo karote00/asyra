@@ -34,23 +34,27 @@ const TextProperties = () => {
       onPointerDown={(event) => event.stopPropagation()}
     >
       <Header label="Typography" />
-      <div className="flex flex-col gap-3 pb-4 pl-4 pr-2">
-        {field('fontFamily', 'Font family')}
-        <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-col pb-4">
+        <div className="grid grid-cols-1 items-center pl-4 pr-2 h-8 min-h-8">
+          {field('fontFamily', 'Font family')}
+        </div>
+        <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
           {field('fontWeight', 'Weight')}
-          {field('fontSize', 'Font size')}
           {field('fontStyle', 'Style')}
-          {field('lineHeight', 'Line height')}
-          {field('letterSpacing', 'Letter spacing')}
+        </div>
+        <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
+          {field('fontSize', 'Font size')}
           {field('textColor', 'Text color')}
         </div>
-
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] text-white/50">Alignment</span>
+        <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
+          {field('lineHeight', 'Line height')}
+          {field('letterSpacing', 'Letter spacing')}
+        </div>
+        <div className="flex items-center pl-4 pr-2 h-8 min-h-8">
           <div
             role="group"
             aria-label="Text alignment"
-            className="grid grid-cols-3 gap-1 rounded-[3px] bg-panel-surface-hover p-0.5"
+            className="grid h-6 w-full grid-cols-3 rounded-[3px] bg-panel-surface-hover"
           >
             {(Object.keys(alignmentPaths) as TextData['textAlign'][]).map(
               (alignment) => (
@@ -88,7 +92,7 @@ const TextProperties = () => {
           </div>
         </div>
 
-        {field('text', 'Content')}
+        <div className="pl-4 pr-2 pt-1">{field('text', 'Content')}</div>
       </div>
     </section>
   )

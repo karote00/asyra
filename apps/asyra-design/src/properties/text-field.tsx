@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { PropertyControl } from '@asyra/design-system'
+import { ColorPicker, Input, PropertyControl } from '@asyra/design-system'
 import { TEXT_PROPERTY_SCHEMA, type TextData } from '@asyra/preset'
+import { COLOR_PICKER_FORMAT_DEFINITIONS } from './fills/color-picker-config'
 
 const choices: Partial<Record<keyof TextData, readonly [string, string][]>> = {
   fontWeight: [
@@ -27,6 +28,8 @@ export const TextField = ({
   const [draft, setDraft] = useState(String(value))
   const [invalid, setInvalid] = useState(false)
   const cancelled = useRef(false)
+  const pickingColor = useRef(false)
+  const [inputRevision, setInputRevision] = useState(0)
 
   useEffect(() => {
     setDraft(String(value))
@@ -52,7 +55,7 @@ export const TextField = ({
     'aria-label': label,
     'aria-invalid': invalid,
     className:
-      'w-full min-w-0 bg-transparent px-2 text-[11px] text-white outline-none',
+      'w-full min-w-0 h-full bg-transparent pr-1 text-[11px] text-text-primary caret-accent outline-none',
     value: draft,
     onChange: (
       event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -85,11 +88,41 @@ export const TextField = ({
   }
 
   const options = choices[field]
+  const prefixes: Partial<Record<keyof TextData, string>> = {
+    fontFamily: 'T',
+    fontSize: 'Ag',
+    lineHeight: '↕',
+    letterSpacing: '↔'
+  }
   let control = (
-    <input
-      {...props}
+    <Input
+      key={inputRevision}
+      value={value}
+      prefix={prefixes[field]}
+      noOutline
+      containerClassName="w-full min-w-0"
+      aria-label={label}
+      aria-invalid={invalid}
       type={numeric ? 'number' : 'text'}
       step={numeric ? 'any' : undefined}
+      onChange={(next) => {
+        commit(next)
+        return undefined
+      }}
+      onBlur={(event) => {
+        if (cancelled.current) {
+          cancelled.current = false
+          return
+        }
+        commit(event.currentTarget.value)
+      }}
+      onKeyDown={(event) => {
+        props.onKeyDown(event)
+        if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
+          setInputRevision((revision) => revision + 1)
+        }
+      }}
+      onKeyUp={props.onKeyUp}
     />
   )
   if (field === 'text') {
@@ -97,14 +130,14 @@ export const TextField = ({
       <textarea
         {...props}
         rows={3}
-        className={`${props.className} resize-y py-1.5`}
+        className={`${props.className} resize-y px-2 py-1.5`}
       />
     )
   } else if (options) {
     control = (
       <select
         aria-label={label}
-        className={`${props.className} h-full [color-scheme:dark]`}
+        className={`${props.className} pl-2 [color-scheme:dark]`}
         value={String(value)}
         onChange={(event) => commit(event.target.value)}
         onKeyDown={(event) => event.stopPropagation()}
@@ -120,14 +153,33 @@ export const TextField = ({
   }
 
   return (
-    <label className="flex min-w-0 flex-col gap-1 text-[11px] text-white/50">
-      {label}
+    <div title={label} className="flex min-w-0 flex-col text-[11px] text-white">
+      <span className="sr-only">{label}</span>
       <PropertyControl className={field === 'text' ? '!h-auto min-h-16' : ''}>
         {field === 'textColor' && (
-          <span
-            aria-hidden="true"
-            className="ml-1.5 h-3.5 w-3.5 shrink-0 rounded-sm border border-white/20"
-            style={{ backgroundColor: String(value) }}
+          <ColorPicker
+            color={draft}
+            showAlpha={false}
+            formatDefinitions={COLOR_PICKER_FORMAT_DEFINITIONS}
+            onChangeStart={() => {
+              pickingColor.current = true
+            }}
+            onChange={({ color }) => {
+              setDraft(color)
+              if (!pickingColor.current) commit(color)
+            }}
+            onChangeEnd={({ color }) => {
+              pickingColor.current = false
+              commit(color)
+            }}
+            swatchStyle={{
+              position: 'static',
+              width: '14px',
+              height: '14px',
+              borderRadius: '2px'
+            }}
+            triggerClassName="group flex h-6 w-6 items-center justify-center flex-shrink-0 rounded-l-[3px] transition-all text-text-secondary hover:text-text-primary"
+            data-testid="prop-text-color-picker"
           />
         )}
         {control}
@@ -137,6 +189,6 @@ export const TextField = ({
           Enter a valid value.
         </span>
       )}
-    </label>
+    </div>
   )
 }

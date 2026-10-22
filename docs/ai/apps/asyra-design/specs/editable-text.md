@@ -89,7 +89,13 @@ this toolbar entry does not create or edit a document object.
 A single selected Text object shows geometry and a compact Typography section:
 font family, normal/bold weight, font size, normal/italic style, line height,
 letter spacing, solid text color, left/center/right alignment, and multiline
-content. The controls use Asyra Design field styling. Text color has a swatch;
+content. Single-line fields reuse the shared Input inside PropertyControl, with
+24px controls in 32px rows matching geometry fields. Inline prefixes and accessible
+names identify fields without stacked labels. Weight/style and line-height/spacing
+share paired rows; multiline content keeps the same horizontal inset.
+Text color reuses ColorPicker and the existing color-format definitions; picker
+input commits immediately and a completed picker drag owns one Undo step.
+Text color has a swatch;
 Text does not expose unsupported Fill or Stroke lists. Non-text selections retain
 their existing appearance panels. Multiple-selection typography is not exposed.
 

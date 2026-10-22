@@ -256,3 +256,52 @@ test('Text toolbar and layer share their SVG and typography drafts preserve cano
     fullPage: true
   })
 })
+
+test('Typography controls match the compact geometry rows', async ({
+  page
+}, testInfo) => {
+  await createTextFixture(page)
+  const geometry = await page.getByTestId('prop-x').boundingBox()
+  const size = await page.getByLabel('Font size', { exact: true }).boundingBox()
+  const spacing = await page
+    .getByLabel('Letter spacing', { exact: true })
+    .boundingBox()
+  const height = await page
+    .getByLabel('Line height', { exact: true })
+    .boundingBox()
+  expect(geometry).not.toBeNull()
+  expect(size).not.toBeNull()
+  expect(spacing).not.toBeNull()
+  expect(height).not.toBeNull()
+  if (!geometry || !size || !spacing || !height)
+    throw new Error('Missing property controls')
+  expect(size.height).toBe(geometry.height)
+  expect(Math.abs(spacing.y - height.y)).toBeLessThan(1)
+  expect(spacing.y - size.y).toBe(32)
+  await page.screenshot({
+    path: testInfo.outputPath('compact-typography.png'),
+    fullPage: true
+  })
+})
+
+test('Shared text color picker commits a color with one undo step', async ({
+  page
+}) => {
+  await createTextFixture(page)
+  const before = await captureText(page)
+  const depth = await getUndoHistoryDepth(page)
+  await page.getByTestId('prop-text-color-picker-trigger').click()
+  const hex = page.getByTestId('prop-text-color-picker-hex')
+  await hex.fill('43CBA5')
+  await hex.press('Tab')
+  await expect
+    .poll(async () =>
+      String((await readTypography(page)).textColor).toLowerCase()
+    )
+    .toBe('#43cba5')
+  await page.getByTestId('prop-text-color-picker-trigger').click()
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  expect((await captureText(page)).hash).not.toBe(before.hash)
+  await undo(page)
+  expect((await captureText(page)).hash).toBe(before.hash)
+})
