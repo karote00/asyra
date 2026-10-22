@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { parseExecutionRecord } from '@asyra/ai-agent-runtime'
 import { observeKnowledgeUse } from './representation.mjs'
+import { assessRecordedChanges } from './assessment.mjs'
 
 export function summarizeCalls(rows) {
   const starts = new Map()
@@ -102,8 +103,76 @@ export function readPayload(directory, reference) {
   return JSON.parse(bytes)
 }
 
+/** Resolve exact native reply images; never recapture or fetch replacement pixels. */
+export function restoreToolImages(directory, rows) {
+  const expected = new Map()
+  for (const row of rows) {
+    if (row.stage === 'tool_completed' && row.evidence?.imageCount > 0)
+      expected.set(row.callId, row.evidence.imageCount)
+  }
+  const root = fs.realpathSync(directory)
+  const images = []
+  const identities = new Set()
+  for (const row of rows) {
+    if (row.stage !== 'asset_retained' || !row.evidence?.callId) continue
+    const { callId, contentIndex, mediaType, status, asset } = row.evidence
+    const key = JSON.stringify([callId, contentIndex])
+    if (
+      status !== 'submitted' ||
+      !Number.isSafeInteger(contentIndex) ||
+      contentIndex < 1 ||
+      contentIndex > (expected.get(callId) ?? 0) ||
+      identities.has(key) ||
+      !['image/png', 'image/jpeg', 'image/webp'].includes(mediaType)
+    )
+      throw new Error('Invalid or duplicate image delivery identity')
+    identities.add(key)
+    if (
+      asset?.status !== 'queued' ||
+      typeof asset.path !== 'string' ||
+      !Number.isSafeInteger(asset.bytes) ||
+      asset.bytes < 1
+    )
+      throw new Error('Submitted image asset was not retained')
+    const target = fs.realpathSync(path.resolve(root, asset.path))
+    if (!target.startsWith(root + path.sep))
+      throw new Error('Image asset escapes evidence directory')
+    const bytes = fs.readFileSync(target)
+    if (
+      bytes.length !== asset.bytes ||
+      createHash('sha256').update(bytes).digest('hex') !== asset.sha256
+    )
+      throw new Error('Image asset digest or size mismatch')
+    images.push({
+      callId,
+      contentIndex,
+      mediaType,
+      path: asset.path,
+      bytes: asset.bytes,
+      sha256: asset.sha256
+    })
+  }
+  for (const [callId, count] of expected) {
+    if (
+      !Number.isSafeInteger(count) ||
+      images.filter((image) => image.callId === callId).length !== count
+    )
+      throw new Error('Incomplete submitted image evidence: ' + callId)
+  }
+  return images
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const directory = path.resolve(process.argv[2])
+  const args = process.argv.slice(2)
+  if (
+    !args[0] ||
+    ![1, 3].includes(args.length) ||
+    (args.length === 3 && args[1] !== '--assessment')
+  )
+    throw new Error(
+      'Usage: analyze.mjs <run-directory> [--assessment <assessment.json>]'
+    )
+  const directory = path.resolve(args[0])
   const run = JSON.parse(fs.readFileSync(path.join(directory, 'run.json')))
   if (
     !Array.isArray(run.sourceRequestIds) ||
@@ -219,6 +288,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       model: first.model,
       effort: first.effort,
       ...summary,
+      images: restoreToolImages(recordingDirectory, rows),
       knowledgeUse: observeKnowledgeUse(summary.calls)
     })
   }
@@ -245,6 +315,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       run.arm === 'transfer' ? 110 : 140
     )
   }
+  analysis.attribution = assessRecordedChanges(directory, args[2])
   fs.writeFileSync(
     path.join(directory, 'analysis.json'),
     JSON.stringify(analysis, null, 2)

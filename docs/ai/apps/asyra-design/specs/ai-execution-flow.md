@@ -149,11 +149,11 @@ action identities return explicit candidates rather than choosing a route.
 Plural lookup does not rescan the catalog or perform a canvas exchange.
 Known operations
 execute directly; discovery is not a mandatory extra step. Full App action definitions
-carry an exact revision and are returned once per request/revision. Later lookups
-return references with a refresh route. `refresh: true` explicitly restores full
-definitions after context loss or failed delivery. Compact menus do not consume
-full-definition delivery. A new request starts fresh; this state never deduplicates
-action execution.
+carry an exact revision and return the requested content on repeated reads, with
+bounded content delivery for oversized replies. Prior App output is not proof of
+model receipt. `refresh: true` explicitly restores the selected current scope after
+context loss or failed delivery. Request-local retention never deduplicates action
+execution or substitutes for current registry validation.
 
 Exact name/operation lookup also supports `view: "usage"` and `schemaPaths`
 (JSON Pointers into the canonical input schema). Usage includes purpose,
@@ -163,14 +163,11 @@ schemas; exact full lookup remains the authority for executable contracts.
 Fragment replies include exact selected values and transitive local reference dependencies; they are partial documentation,
 not complete executable schemas. Unknown paths reject recoverably. Schema paths
 require an exact selector; usage also supports category and query selectors.
-Usage and schema paths cannot be combined and never consume full-definition
-delivery. Explicit refresh preserves the selected usage or schema-path scope. A partial response offers a scoped recovery route;
+Usage and schema paths cannot be combined; each selected scope remains independently readable. Explicit refresh preserves the selected usage or schema-path scope. A partial response offers a scoped recovery route;
 full recovery remains a separate choice. Optional `refreshReason` records
 context loss, delivery failure or missing fields, and requires refresh; an omitted
-reason stays unknown. Definition receipts distinguish initial delivery, reuse,
-version change and explicit recovery without asserting model retention. Full lookup and explicit refresh remain
-available for every contract. Replies distinguish current response coverage from
-previous delivery; a delivery record cannot prove that the model retained context.
+reason stays unknown. Definition receipts distinguish requested delivery and explicit recovery without asserting model retention; content revisions bind continuation to its source. Full lookup and explicit refresh remain
+available for every contract. Replies describe current response coverage; a previous return cannot prove that the model retained context.
 
 Native declaration conversion may remove only equivalent redundant constraints.
 It preserves common union fields, closed-object boundaries, required fields,
@@ -691,13 +688,48 @@ external timeline viewers without a new product UI. Export is explicit and local
 no automatic upload or telemetry. Saved historical records remain readable with
 missing capabilities explicitly reported rather than invented.
 
+### Unfinished native output visibility
+
+Provider observation declares its visibility through the existing Runtime trace:
+public item lifecycle and App invocation events are observable; pre-dispatch native
+tool-output item start, argument deltas/bytes and generation-versus-stall attribution
+are unavailable on the current interface. Missing events never mean zero generated
+bytes. Transport byte counts are not argument bytes. A started or completed public
+item is not automatically an admitted/executed App operation or a successful result.
+
+Formal same-version native tests supply progressing arguments and withheld deltas
+to an unfinished tool call, then verify actual public events and later execution.
+If both produce identical observations, retain that limitation rather than reporting
+a stall, oversized generation or measured thinking. Fixture bytes are test evidence,
+not production observations. Abrupt cancellation/disconnection cannot invent item
+completion. Observation uses existing records and never changes dispatch, recovery,
+status or settlement. No new proxy, database scanner, logging configuration or raw
+reasoning/code/diagnostic capture is introduced.
+
 ## Execution recording
 
 The Runtime profiler emits a versioned, append-only local record per invocation in
 addition to existing console diagnostics. The record includes request/call and
 sequence identities, observed timestamps, model/effort, bounded tool selectors,
 artifact references and terminal outcome. Source identity is optional and marked
-unavailable when not supplied. No request prompt, image bytes, credential or private reasoning is persisted.
+unavailable when not supplied. No request prompt, credential or private reasoning is persisted. Image bytes
+are excluded from event JSON and console summaries; explicit image assets use
+the existing local content-addressed asset sink.
+For native App-tool replies, the provider adapter preserves each submitted
+inputImage as an existing asset_retained event with callId, contentIndex,
+mediaType, status submitted and the asset reference. contentIndex is the exact
+zero-based position in the native contentItems array, including preceding text.
+The bytes are the validated image delivered by localToolContent, without another
+capture, decode/re-encode or resize. Repeated images may share asset bytes but
+keep distinct delivery identities. The corresponding tool output retains the
+text metadata and inspection IDs. Local transport submission does not prove
+provider perception or visual correctness. Suppressed/cancelled replies and
+transport exceptions cannot be labelled submitted. Asset-write failure remains
+recording failure and does not alter the tool outcome or replay completed work.
+Offline image restoration joins call identity and content order and verifies
+asset containment, bytes and SHA-256. Missing, corrupt, duplicate or incomplete
+image delivery evidence rejects complete analysis rather than fabricating pixels.
+
 Ordered ready-part preparation/application spans retain a bounded local part key
 and zero-based index on their existing start/end/failure records. This identifies
 part boundaries without a second trace store or inferred model decisions.
@@ -1148,8 +1180,8 @@ Its native routes and complete schemas come from the actual registered tool grou
 Native Code Mode declarations may omit sibling union fields or abbreviate nested
 schemas as unknown. Registration distributes common union fields into each branch
 without changing admission. Exact-name lookup returns the canonical inputSchema,
-including definitions and constraints, once per request/revision; subsequent lookup
-returns a reference and explicit refresh route. No separately maintained schema copy
+including definitions and constraints, on every requested read through bounded
+content continuation when necessary; explicit refresh remains available. No separately maintained schema copy
 or model-authored substitute is used. Mixed lookups return
 known matches with explicit execution routes and separately identify missing names.
 They neither discard valid matches nor send native tool names to the canvas batch.
@@ -1297,7 +1329,160 @@ publisher-declared resources. No thumbnail downgrade, subject decision or new
 network permission is implied. A successful candidate and explicit redisplay
 continue through the same request-local acquisition owner.
 
+### Selected operation contract delivery
+
+Default instructions do not enumerate all registered tools. Use existing purpose
+query or exact identity discovery for the current need. Intentional complete
+inventory remains available through categories and their continuations; it is
+optional, not a prerequisite, including for complex requests. Unrelated catalog
+growth must not inflate matched small-task contracts or their continuation count.
+Deferred native registration is transport metadata, not proof of model visibility.
+
+The existing exact-name discovery route supports explicit inputScope for owners
+that declare it. The ready-part workflow exposes operation choices and nodeTypes
+from its canonical input schema. A selected reply retains the registered execution
+route, revision, complete applicable input constraints, output/partial/recovery
+schemas and lifecycle. It is complete for the declared subset, not an unrestricted
+recipe contract. Actual execution always validates the original full contract.
+
+Scope excludes incompatible operation fields and unselected node types without
+weakening shared or branch constraints. Missing, ambiguous or unsupported scope
+returns a recoverable read failure, never an inferred route or silent full fallback.
+Retain exact reference closure without adding a second schema registry. Menu/usage publishes choices; a known selection requires no
+preliminary lookup. Full and field queries remain available. Scope cannot combine
+with usage or schemaPaths; refresh and continuations preserve it and its revision.
+
+Usage navigation exposes root input fields rather than enumerating every nested
+schema path. Exact field queries and their path-resolution recovery remain valid;
+selected/full contracts retain all nested constraints. Evidence: current usage
+inputFields alone occupies 24,166 bytes; usage plus scoped acquisition took five
+calls versus four for full. This superseded exhaustive navigation must be removed.
+
+DoD: real first-use discovery, including usage when used, returns fewer bytes and
+requires fewer calls than full on the same source from equivalent initial knowledge
+(direct/direct and usage+selected/usage+full). Report optional navigation overhead
+separately; do not compare unknown selection to an already-known contract. Exercise ordinary, projected,
+grid and mixed drafts, repair and ordered parts through current owners. Scoped
+and full validators agree within the selected domain; unsupported combinations
+reject before writes. Preserve partial receipts, cancellation, failed follow-up
+and recovery without replay. Offline native forwarding proves actual outgoing
+content, not model adoption. Component repetition and artistic choices are outside
+this delivery change; distinguish missing capability from missing usage information.
+
+### Selective nested Knowledge delivery
+
+Discovery exposes selectable child IDs, descriptions and revisions through the
+existing metadata catalog. `children` means optional navigation, never automatic
+content retrieval; dotted IDs alone do not establish hierarchy. Only discoverable
+children in the requested contexts appear. Missing optional children are omitted;
+visible navigation cycles reject. Discovery does not deliver module bodies.
+
+Select a parent topic or a detailed child directly from its discovery description,
+without a preliminary body read. Descriptions must state the decision the parent
+already supports and the additional unresolved need served by its detailed child.
+For material methods, ordinary representation and lighting-domain choices select
+method; local-coordinate conversion uncertainty or a needed worked example selects
+method.parameters. A known supported representation does not require the walkthrough.
+Hierarchy depth does not establish necessity or completeness. These are advisory
+selection conditions, not a tool gate or a deterministic intent classifier.
+
+Read selected IDs directly, without first reading every parent. Parent modules
+are thin entry guidance, not eager umbrellas. Existing references, extensions and
+explicit override targets are mandatory dependencies: preserve their constraints,
+source revisions, authorization, deduplication and explicit failure semantics.
+Do not remove required limits to make a reply small. Shared domain methods remain
+portable; App modules own tool application. Select relevant topics as decisions
+arise; absent advice and known-value actions remain valid without a lookup.
+
+DoD: execute actual catalog discovery and select returned nested IDs; verify exact
+selected dependency closure, absence of sibling bodies, retained necessary limits,
+shared dependency read counts, invalid dependencies and filtered navigation.
+Before reading bodies, test the real catalog for these selection conditions and
+the actual provider prompt for direct parent/child choice without added calls.
+Exercise both choices through the real read owner, asserting necessary closure,
+no eager details, continuation coverage and unchanged repeat/rehydrate behavior.
+Exercise actual App examples against their owners after topic selection. Existing
+paging, rehydrate, cancellation and revision protections remain; no mutations or
+write replay originate from a Knowledge read. Deterministic delivery is not proof
+of model adoption or task latency improvement.
+
+Selected material-method and representative-review decision topics must each
+return their necessary advisory dependency closure in one complete informational
+reply within the existing budget. Common execution/recovery limits remain mandatory;
+detailed contract invocation examples and material parameter walkthroughs are
+optional discoverable children, not eager references. Selected representation
+limits cannot be postponed into an optional example. Explicit detailed or multi-topic
+reads may still paginate. A prior successful read never authorizes suppressing a
+necessary dependency from a later response.
+
+DoD: actual catalog-to-invocation tests assert one reply per decision topic, necessary
+constraints and absent optional sibling bodies; optional examples still execute at
+their real owners. Execute the published forwarding example with the same-version
+offline native engine and compare the successor request exactly. Preserve paging,
+repeat/rehydrate, cancellation and stale-content recovery without write replay.
+
+### Bounded informational content delivery
+
+Discovery and Knowledge reads must bound their complete serialized replies before
+native delivery. Small selected results remain complete objects. Oversized results
+use explicit JSON fragments with UTF-8 byte ranges, total size, content revision and
+same-tool continuation. A last fragment is not evidence that earlier fragments were
+read. Assemble all matching ranges and verify content identity before treating a
+fragmented definition as complete. Never drop schema constraints or advisory text.
+
+Existing usage, schema-path and category selectors remain supported. Repeating a
+discovery read is legal; a prior App return must not suppress needed content on the
+assumption that it reached the model. Invalid or stale continuation refuses clearly
+and directs a fresh read; refresh/rehydrate retain their recovery meaning. Continuing
+one result does not reset context again or replay any design mutation. Continuations
+are request/query/revision scoped and preserve cancellation and permission checks.
+
+The App guides Code Mode to consume one bounded page per output and retain composed
+data without printing all pages together. No output-budget increase or mandatory
+Knowledge prerequisite is introduced. Native request tests must verify exact page
+content and lossless reconstruction, separately from actual model adoption.
+Discovery and provider instructions must publish the same executable informational
+forwarding example. It accepts one original text-only read reply and a query-specific
+Code Mode key, validates contiguous revision-bound byte coverage, and retains the
+complete parsed value only at completion. Each exec forwards one original bounded
+page, not the assembled value or a schema summary. Replaying a saved original page
+requires no tool call. Repeated identical pages are valid; gaps, mixed revisions,
+incoherent byte metadata and oversized single replies reject before state replacement.
+Failed read receipts cannot overwrite valid retained content. Fresh reads and refresh
+remain legal after context loss; use a fresh key for changed content. Existing
+text/image receipt forwarding remains independent. Tests execute the actual delivered
+example and inspect real native successor requests; neither storage nor tests prove
+model adoption or prevent arbitrary agent-authored oversized output.
+
+
 ### Source and upstream evidence provenance
+
+Offline native delivery verification may replace inference with fixed loopback
+Responses events while retaining the actual native executable and tool consumer.
+It must preserve the subsequent outbound request, fixture/binary identity and
+explicit missing evidence using existing diagnostic storage. Never equate a native
+echo, history view or scripted response with final remote model visibility. Test
+configuration must not change production refresh behavior or increase output limits.
+Cross-execution proofs must retain each scripted exec, corresponding actual outbound
+request and public notifications through that same evidence sink. Verify retained
+fragment coverage, revision and byte identity before parsing; a last page alone is
+insufficient. Compare compact and full printed output separately from retained
+content. Missing coverage rejects assembly. Scripted store/load observations do not
+expose native storage internals or establish historical AI behavior; absent public
+orchestration output remains explicitly unavailable.
+
+
+
+For matching discovery and Knowledge calls, retain publicly exposed native completed
+result content through the existing profiler payload sink, separately from App
+output. Decode JSON text before redaction; record original byte counts and digests
+without claiming sanitized bytes equal original bytes. Missing/null, empty,
+malformed and non-text results remain explicit. Native echo is not final model
+visibility. Exec/wait output without an explicit child-call relationship remains
+uncorrelated and its arbitrary body is omitted. No private reasoning or credentials
+may enter the trace. Diagnostic failure does not change tool settlement, recovery,
+refresh/rehydrate or dispatch; no completed operation is replayed for recording.
+
 
 Design captures host source revision and a source-scoped fingerprint at request
 entry, once per invocation, and supplies both to the Runtime profiler and child
@@ -2656,7 +2841,7 @@ replaying acknowledged writes or rereading unrelated document data.
 
 ### Actionable usage projection
 
-Usage views derive nested input/output pointers and element-slot cardinality from the
+Unscoped usage views derive root input paths, output pointers and element-slot cardinality from the
 canonical descriptor. Owner-authored examples are published only when they validate
 against its current input schema and are wrapped in its actual native, batch or final
 response route. Native conversion retains common examples at the complete union scope,
@@ -2676,3 +2861,38 @@ An unknown path is recoverable and never dispatches a drawing action. Exact look
 still defaults to full; route-only usage is optional, not a prerequisite. A known
 contract can execute directly, including without Knowledge. Explicit recovery keeps
 view/paths and never retries a previously completed product write.
+
+
+### Selected operation usage guide
+
+For the ready-part workflow, exact lookup with `view: usage` and `inputScope`
+returns an actionable guide for that operation and selected node types. Prefer
+this over full validation schemas for direct execution. The guide includes the
+actual route, an owner example validated for that scope when available, readable
+input constraints, execution effects, outcome interpretation and recovery. Missing
+matching examples are explicit, never invented credentials or silent substitutes.
+All applicable input and cross-field restrictions and required local references
+remain represented; shared definitions/notes are available in that same reply.
+Unknown schema constraints remain explicit. Optional input fields are marked optional.
+Full output validators remain authoritative at the tool owner, not default reading
+material; usage retains distinctions between success, no-op, partial, failed and
+unconfirmed settlement, including completed work and safe next actions. Main-workflow
+instructions must not claim the preparation child's read-only effect.
+
+The representative draft/projected-face/pattern and vector cases require one guide
+reply within the existing delivery budget, after optional purpose discovery. Measure
+all discovery/guide continuations and bytes; do not count only the final page. Full
+schemas, exact field queries, intentional inventory, paging and refresh remain valid.
+Refresh preserves view and inputScope and never repeats a product write. Known
+contracts need no lookup; new machine recipe bindings retain full schema admission.
+Formal tests execute published examples through the existing dispatcher and owners,
+exercise cross-field rejection, partial/cancelled/stale recovery and unrelated-catalog
+growth. No new tool, registry, validator, scheduler or state store is introduced.
+
+Owner-declared optional input groups are selected with inputScope.optionalInputs in
+the same read. The workflow publishes plan as optional: select it only when defining
+criteria in this invocation. Without that selection the scoped contract forbids plan
+and explains how to select it; drawing can proceed without it. Full unscoped queries
+retain all inputs. Only optional canonical root fields can be declared this way;
+unknown or duplicate choices reject. Broader selections may still use existing paging
+and must not claim single-response coverage when continuation is present.

@@ -324,6 +324,14 @@ is not automatically sent to the model, Asyra or any telemetry service. An expli
 assessment transmits its documented bounded diagnostic summary to the host's
 chosen provider; this is not an automatic background upload.
 
+Host-selected public native result diagnostics use the existing
+`provider_item_completed` or `orchestration_completed` trace with `nativeOutput`.
+The recorder writes that structured value through the same sanitized payload sink,
+not the bounded trace summary. A throwing payload sink leaves a failed receipt
+where record storage remains available. Hosts must select public results and decode
+structured text before redaction; raw provider context is not permitted. Native
+completion is not proof of model visibility, and absent output stays unavailable.
+
 Trace export uses `runExecutionReportCli(['--request', id, '--trace'], ...)` or
 `exportExecutionTrace(parsed)`. Transport chunks expose timing, direction, stream
 and byte count, never raw content. Timeline durations reflect observed boundaries,
@@ -497,7 +505,11 @@ never obtain these identities from model tool arguments.
 
 Sessions expose `discover(contexts)`, `retrieve({ ids, contexts, rehydrate? }, signal)`,
 `invalidateContext()` and `dispose()`. Context invalidation only clears delivery
-receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Retrieval traverses sorted
+receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Optional `children` lists navigation IDs,
+filtered to entries discoverable in the same contexts; missing children are omitted
+and visible navigation cycles reject. Navigation never participates in retrieval,
+permission to read, or implicit parent loading. Descriptions/revisions remain on
+those same catalog entries; no parallel index exists. Retrieval traverses sorted
 references/extends/explicit override targets, deduplicates dependencies, rejects
 cycles/missing/inapplicable dependencies and returns source revisions/provenance.
 Extends adds advice. Provider `AiKnowledgeContent.text` is the module's own guidance.
@@ -532,3 +544,13 @@ resets reuse rather than dropping required content. Providers must honor the
 supplied abort signal and their own I/O deadlines. Runtime rejects oversized or
 wrong-revision results rather than truncating advice. No Agent update, extraction,
 poisoning persistence or approval/evolution workflow is provided.
+
+
+A trusted host may open a Knowledge session with `{ retainResults: true }` for a
+paged informational consumer. The existing session delivery map then retains the
+immutable composed result (at most 64 query results) instead of a reference-only
+marker. Repeated retrieval returns that content after permission, cancellation,
+generation and context checks; it does not assert that a model read it. Context
+invalidation, revision change and disposal clear the same owner state. Ordinary
+sessions retain their reference-only duplicate behavior. No App tool names or
+provider limits enter the Knowledge content contract.

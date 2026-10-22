@@ -357,7 +357,7 @@ it('execution proof preserves partial lookup full recovery and declaration const
   const full = await read({ names: [action.name] })
   expect(full.inputSchema).toEqual(action.inputSchema)
   const repeated = await read({ names: [action.name] })
-  expect(repeated.definition.availableInResponse).toBe(false)
+  expect(repeated.definition.availableInResponse).toBe(true)
   expect(
     (await read(repeated.definition.refresh.arguments)).inputSchema
   ).toEqual(action.inputSchema)
@@ -440,13 +440,17 @@ it('execution proof preserves partial lookup full recovery and declaration const
     }
   )
   const usage = JSON.parse(
-    await highLevel.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-      { names: [preparation.name], view: 'usage' },
-      new AbortController().signal
+    await readCompleteInformation(
+      (input) =>
+        highLevel.call(
+          AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+          input,
+          new AbortController().signal
+        ),
+      { names: [preparation.name], view: 'usage' }
     )
   ).tools[0]
-  expect(usage.inputFields).toContain('/$defs/node/anyOf/0/properties/type')
+  expect(usage.inputFields).toContain('/properties/draft')
   expect(usage.invocationExample.illustrative).toBe(true)
   const invocation = usage.invocationExample.invocation
   expect(invocation.tool).toBe(preparation.name)
@@ -462,23 +466,29 @@ it('execution proof preserves partial lookup full recovery and declaration const
     designs.resolveTargets({ artifactId: prepared.artifactId })
   ).toHaveLength(prepared.elementCount)
   const restoredUsage = JSON.parse(
-    await highLevel.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-      usage.definition.recover.arguments,
-      new AbortController().signal
+    await readCompleteInformation(
+      (input) =>
+        highLevel.call(
+          AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+          input,
+          new AbortController().signal
+        ),
+      usage.definition.recover.arguments
     )
   ).tools[0]
   expect(restoredUsage.invocationExample).toEqual(usage.invocationExample)
   const criteriaUsage = JSON.parse(
-    await highLevel.call(
-      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-      { names: [AiDesignToolIds.DEFINE_DESIGN_CRITERIA], view: 'usage' },
-      new AbortController().signal
+    await readCompleteInformation(
+      (input) =>
+        highLevel.call(
+          AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+          input,
+          new AbortController().signal
+        ),
+      { names: [AiDesignToolIds.DEFINE_DESIGN_CRITERIA], view: 'usage' }
     )
   ).tools[0]
-  expect(criteriaUsage.inputFields).toContain(
-    '/properties/criteria/additionalProperties/properties/requirement'
-  )
+  expect(criteriaUsage.inputFields).toContain('/properties/criteria')
   const criteriaCall = criteriaUsage.invocationExample.invocation
   expect(criteriaCall.tool).toBe(AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
   expect(
@@ -494,10 +504,10 @@ it('execution proof preserves partial lookup full recovery and declaration const
 })
 vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
-  createExecutionRecordSink: () => ({
+  createExecutionRecordSink: vi.fn(() => ({
     write: () => undefined,
     flush: async () => ({ status: 'saved', path: null })
-  })
+  }))
 }))
 
 it('execution proof preserves registered native capability envelopes', async ({
@@ -512,6 +522,7 @@ it('execution proof preserves registered native capability envelopes', async ({
     rm(toolLibraryDirectory, { recursive: true, force: true })
   )
   let sentBytes = 0
+  const fragments = new Map<number, string>()
   let receivedBytes = 0
   const packets: {
     id?: number
@@ -548,6 +559,35 @@ it('execution proof preserves registered native capability envelopes', async ({
     write(chunk, _encoding, done) {
       sentBytes += Buffer.byteLength(chunk)
       const packet = JSON.parse(String(chunk))
+      const fragment = packet.result?.contentItems?.[0]?.text
+        ? JSON.parse(packet.result.contentItems[0].text).contentDelivery
+        : undefined
+      if (fragment) {
+        const previous = fragments.get(packet.id) ?? ''
+        expect(fragment.startByte).toBe(Buffer.byteLength(previous))
+        const complete = previous + fragment.text
+        fragments.set(packet.id, complete)
+        if (!fragment.lastPage) {
+          queueMicrotask(() =>
+            send({
+              id: packet.id,
+              method: 'item/tool/call',
+              params: {
+                threadId: 'proof-thread',
+                turnId: 'proof-turn',
+                callId: `fragment-${packet.id}-${fragment.endByte}`,
+                namespace: 'design_operations',
+                tool: fragment.next.tool,
+                arguments: fragment.next.arguments
+              }
+            })
+          )
+          done()
+          return
+        }
+        expect(Buffer.byteLength(complete)).toBe(fragment.totalBytes)
+        packet.result.contentItems[0].text = complete
+      }
       packets.push(packet)
       queueMicrotask(() => {
         if (packet.id === undefined) return
@@ -748,11 +788,11 @@ it('execution proof preserves registered native capability envelopes', async ({
       .map((api) =>
         expect.objectContaining({
           name: api.name,
-          definition: expect.objectContaining({ state: 'previously-returned' })
+          definition: expect.objectContaining({ state: 'included' })
         })
       )
   )
-  for (const api of categoryApis) expect(api.inputSchema).toBeUndefined()
+  for (const api of categoryApis) expect(api.inputSchema).toBeDefined()
   const mixed = packets.find(
     (packet) => packet.id === 100 && packet.result
   )?.result
@@ -1536,6 +1576,39 @@ it('execution proof records timestamped transport without storing transport cont
       evidence: { direction: 'received', bytes: 24, stream: 'protocol' }
     }
   ])
+  const writePayload = vi.fn(() => ({
+    status: 'queued' as const,
+    path: 'native.json'
+  }))
+  const native = createAiExecutionProfiler(
+    { intent: 'private', context: {}, actions: [], attempt: 1 },
+    'test-model',
+    {
+      sink: {
+        write: (record) => records.push(record),
+        writePayload,
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  const output = {
+    stage: 'native-completed-result',
+    status: 'unavailable',
+    modelVisibility: 'unavailable'
+  }
+  native.trace('provider_item_completed', {
+    callId: 'item:delivery',
+    nativeOutput: output
+  })
+  expect(writePayload).toHaveBeenCalledWith(
+    expect.any(String),
+    'item:delivery',
+    'output',
+    output
+  )
+  expect(records.at(-1)).toMatchObject({
+    diagnostic: { output: { payload: { path: 'native.json' } } }
+  })
 })
 
 function evaluateExecution(...[run, options]: Parameters<typeof evaluate>) {
@@ -5287,13 +5360,8 @@ it('execution proof rejects mismatched query scopes before reads and preserves e
 
 it('execution proof dispatches the published chosen-method route without converting record success into acceptance', async () => {
   const { operationInputIssue } = await import('../operation-input-schema')
-  const { readFileSync } = await import('node:fs')
-  const method = readFileSync(
-    new URL(
-      '../../knowledge/design.architectural-illustration.md',
-      import.meta.url
-    ),
-    'utf8'
+  const method = await readKnowledgeTopic(
+    'design.architectural-illustration.materials.review'
   )
   const example = (label: string) => {
     const match = method.match(
@@ -5344,7 +5412,12 @@ it('execution proof dispatches the published chosen-method route without convert
   )
   const signal = new AbortController().signal
   const call = async (name: string, input: unknown) =>
-    JSON.parse(await owner.call(name, input, signal))
+    JSON.parse(
+      await readCompleteInformation(
+        (args) => owner.call(name, args, signal),
+        input
+      )
+    )
   for (const sample of [declaration, capture]) {
     const lookup = await call('describe_design_apis', {
       names: [`design_operations.${sample.tool}`]
@@ -5421,14 +5494,9 @@ it('execution proof admits complete per-target material corrections from the pub
   const { basicApiResultSchema } =
     await import('../../src/ai/basic-api-results')
   const { toolSemantics } = await import('../../src/ai/tool-contract')
-  const { readFileSync } = await import('node:fs')
   const { operationInputIssue } = await import('../operation-input-schema')
-  const method = readFileSync(
-    new URL(
-      '../../knowledge/design.architectural-illustration.md',
-      import.meta.url
-    ),
-    'utf8'
+  const method = await readKnowledgeTopic(
+    'design.architectural-illustration.materials.correction'
   )
   const match = method.match(
     /```json native-palette-correction\n([\s\S]*?)\n```/
@@ -6215,4 +6283,738 @@ it('execution proof keeps material provenance independent of viewport transforms
     core.elementLocalToWorkspace = original
     if (!hadWindow) vi.unstubAllGlobals()
   }
+})
+
+it('execution proof preserves exact submitted inspection pixels and delivery identity', async ({
+  onTestFinished
+}) => {
+  for (const mode of [
+    'saved',
+    'storage-failed',
+    'transport-failed',
+    'cancelled'
+  ]) {
+    const controller = new AbortController()
+    let captures = 0
+    const { readFile, readdir, writeFile } = await import('node:fs/promises')
+    const { createHash } = await import('node:crypto')
+    const runtime = await vi.importActual<
+      typeof import('@asyra/ai-agent-runtime/node')
+    >('@asyra/ai-agent-runtime/node')
+    const mocked = await import('@asyra/ai-agent-runtime/node')
+    const parent = resolve('tmp/flow-image-tests')
+    await mkdir(parent, { recursive: true })
+    const directory = await mkdtemp(resolve(parent, 'case-'))
+    onTestFinished(() => rm(directory, { recursive: true, force: true }))
+    const recordDirectory =
+      mode === 'storage-failed' ? resolve(directory, 'blocked') : directory
+    if (mode === 'storage-failed')
+      await writeFile(recordDirectory, 'not a directory')
+    const sink = runtime.createExecutionRecordSink(
+      recordDirectory,
+      () => undefined
+    )
+    vi.mocked(mocked.createExecutionRecordSink).mockReturnValueOnce(sink)
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    onTestFinished(() => log.mockRestore())
+    const images = await Promise.all(
+      ['red', 'blue'].map((background) =>
+        sharp({ create: { width: 4, height: 3, channels: 4, background } })
+          .png()
+          .toBuffer()
+      )
+    )
+    const requests = [
+      {
+        tool: 'define_design_criteria',
+        arguments: {
+          phase: 'plan',
+          method: 'Inspect fixed pixels',
+          references: [],
+          criteria: {
+            ...reviewCriteria(['overall']),
+            surface: {
+              ...reviewCriteria(['surface']).surface,
+              requiredUnits: ['red', 'blue']
+            }
+          },
+          detailRequired: false
+        }
+      },
+      {
+        tool: 'review_drawing',
+        arguments: {
+          phase: 'visual',
+          final: false,
+          inspections: ['red', 'blue'].map((elementId) => ({
+            elementId,
+            view: 'overview',
+            checks: [{ criterionId: 'surface', unitId: elementId }]
+          }))
+        }
+      },
+      {
+        tool: 'inspect_drawing',
+        arguments: { arguments: { elementId: 'red' } }
+      },
+      {
+        tool: 'inspect_drawing',
+        arguments: { arguments: { elementId: 'invalid' } }
+      }
+    ]
+    const replies: {
+      id: number
+      result: {
+        contentItems: (
+          | { type: 'inputText'; text: string }
+          | { type: 'inputImage'; imageUrl: string }
+        )[]
+      }
+    }[] = []
+    const child = Object.assign(new EventEmitter(), {
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+      stdin: new Writable(),
+      kill: () => {
+        queueMicrotask(() => child.emit('close', null, 'SIGTERM'))
+        return true
+      }
+    })
+    const send = (value: unknown) =>
+      child.stdout.write(JSON.stringify(value) + '\n')
+    const next = (index: number) => {
+      if (index < requests.length)
+        send({
+          id: 100 + index,
+          method: 'item/tool/call',
+          params: {
+            threadId: 'images-thread',
+            turnId: 'images-turn',
+            callId: 'image-call-' + index,
+            namespace: 'design_operations',
+            ...requests[index]
+          }
+        })
+      else {
+        send({
+          method: 'item/completed',
+          params: {
+            threadId: 'images-thread',
+            turnId: 'images-turn',
+            item: {
+              type: 'agentMessage',
+              phase: 'final_answer',
+              text: JSON.stringify({
+                batchId: 'images-complete',
+                actions: [
+                  {
+                    id: 'report',
+                    name: 'report_outcome',
+                    summary: 'Image recording proof',
+                    arguments: {
+                      outcome: 'unsupported',
+                      message: 'Recorded deterministic images.'
+                    }
+                  }
+                ]
+              })
+            }
+          }
+        })
+        send({
+          method: 'turn/completed',
+          params: {
+            threadId: 'images-thread',
+            turn: { id: 'images-turn', status: 'completed' }
+          }
+        })
+      }
+    }
+    child.stdin = new Writable({
+      write(chunk, _encoding, done) {
+        const packet = JSON.parse(String(chunk))
+        if (
+          mode === 'transport-failed' &&
+          packet.result?.contentItems.some(
+            (item: { type: string }) => item.type === 'inputImage'
+          )
+        )
+          throw new Error('Injected transport failure')
+        queueMicrotask(() => {
+          if (packet.method) {
+            const responses: Record<string, unknown> = {
+              initialize: {},
+              'config/read': { config: {} },
+              'account/read': { account: { type: 'chatgpt' } },
+              'thread/start': {
+                thread: { id: 'images-thread' },
+                model: 'gpt-6-astra',
+                reasoningEffort: 'medium',
+                instructionSources: [],
+                runtimeWorkspaceRoots: []
+              },
+              'turn/start': { turn: { id: 'images-turn' } }
+            }
+            if (packet.id !== undefined)
+              send({ id: packet.id, result: responses[packet.method] })
+            if (packet.method === 'turn/start') next(0)
+          } else if (packet.result) {
+            replies.push(packet)
+            next(packet.id - 99)
+          }
+        })
+        done()
+      }
+    })
+    spawn.mockReturnValueOnce(child)
+    const running = requestLocalAiActionBatch(
+      {
+        intent: 'Image evidence proof',
+        context: {},
+        attempt: 1,
+        actions: [
+          {
+            name: 'inspect_drawing',
+            description: 'Inspect',
+            inputSchema: { type: 'object' }
+          },
+          {
+            name: 'validate_inspection_evidence',
+            description: 'Validate',
+            inputSchema: { type: 'object' }
+          }
+        ]
+      },
+      {
+        executable: 'fixture-only',
+        model: 'gpt-6-astra',
+        recordDirectory,
+        signal: controller.signal,
+        toolLibraryDirectory: resolve(directory, 'library'),
+        executeBatch: async (request) => {
+          captures += request.actions.filter(
+            (action) => action.name === 'inspect_drawing'
+          ).length
+          if (
+            mode === 'cancelled' &&
+            request.actions.some((action) => action.name === 'inspect_drawing')
+          )
+            controller.abort()
+          return {
+            context: {},
+            actionResults: request.actions.map(
+              (action): AiBatchReceipt['actionResults'][number] => {
+                const args = action.arguments as { elementId: string }
+                return {
+                  actionId: action.id,
+                  actionName: action.name,
+                  result:
+                    action.name === 'inspect_drawing'
+                      ? {
+                          available: true,
+                          elementId: args.elementId,
+                          image: {
+                            width: 4,
+                            height: 3,
+                            dataUrl:
+                              args.elementId === 'invalid'
+                                ? 'data:image/png;base64,invalid'
+                                : `data:image/png;base64,${images[args.elementId === 'blue' ? 1 : 0].toString('base64')}`
+                          },
+                          imageScope: 'overview',
+                          partial: false,
+                          evidence: {
+                            sessionId: 'pixels',
+                            revision: 1,
+                            receiptId: action.id
+                          }
+                        }
+                      : {
+                          current: true,
+                          validatedAt: { sessionId: 'pixels', revision: 1 }
+                        }
+                }
+              }
+            )
+          }
+        }
+      }
+    )
+    if (mode === 'transport-failed' || mode === 'cancelled') {
+      await expect(running).rejects.toMatchObject({
+        code:
+          mode === 'cancelled'
+            ? 'AI_MODEL_BACKEND_ABORTED'
+            : 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+      })
+      const file = (await readdir(directory)).find((name) =>
+        name.endsWith('.jsonl')
+      )
+      if (!file) throw new Error('Missing execution record')
+      const parsed = runtime.parseExecutionRecord(
+        await readFile(resolve(directory, file), 'utf8')
+      )
+      expect(
+        parsed.records.filter(
+          (row) =>
+            row.stage === 'asset_retained' &&
+            (row.evidence as { callId?: string } | undefined)?.callId
+        )
+      ).toHaveLength(0)
+      expect(captures).toBe(mode === 'cancelled' ? 1 : 2)
+      continue
+    }
+    expect(await running).toMatchObject({ batchId: 'images-complete' })
+    expect(captures).toBe(4)
+    if (mode === 'storage-failed') {
+      expect(await sink.flush()).toMatchObject({ status: 'failed' })
+      expect(
+        replies.flatMap((reply) =>
+          reply.result.contentItems.filter((item) => item.type === 'inputImage')
+        )
+      ).toHaveLength(3)
+      continue
+    }
+    const file = (await readdir(directory)).find((name) =>
+      name.endsWith('.jsonl')
+    )
+    if (!file) throw new Error('Missing execution record')
+    const parsed = runtime.parseExecutionRecord(
+      await readFile(resolve(directory, file), 'utf8')
+    )
+    expect(parsed.complete).toBe(true)
+    const deliveries = parsed.records.filter(
+      (row) =>
+        row.stage === 'asset_retained' &&
+        (row.evidence as { callId?: string } | undefined)?.callId
+    )
+    const sent = replies.flatMap((reply) =>
+      reply.result.contentItems.flatMap((item, contentIndex) =>
+        item.type === 'inputImage'
+          ? [
+              {
+                callId: 'image-call-' + (reply.id - 100),
+                contentIndex,
+                url: item.imageUrl
+              }
+            ]
+          : []
+      )
+    )
+    expect(
+      sent,
+      JSON.stringify(
+        replies.map((r) =>
+          r.result.contentItems
+            .filter((i) => i.type === 'inputText')
+            .map((i) => JSON.parse(i.text))
+        )
+      )
+    ).toHaveLength(3)
+    expect(deliveries).toHaveLength(sent.length)
+    for (let index = 0; index < sent.length; index++) {
+      const evidence = deliveries[index].evidence as {
+        callId: string
+        contentIndex: number
+        status: string
+        mediaType: string
+        asset: { path: string; sha256: string; bytes: number; reused: boolean }
+      }
+      expect(evidence).toMatchObject({
+        callId: sent[index].callId,
+        contentIndex: sent[index].contentIndex,
+        status: 'submitted',
+        mediaType: 'image/png'
+      })
+      const bytes = await readFile(resolve(directory, evidence.asset.path))
+      expect(
+        bytes.equals(Buffer.from(sent[index].url.split(',')[1], 'base64'))
+      ).toBe(true)
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(
+        evidence.asset.sha256
+      )
+      expect(bytes.length).toBe(evidence.asset.bytes)
+      expect(await sharp(bytes).raw().toBuffer()).toEqual(
+        await sharp(images[index === 1 ? 1 : 0])
+          .raw()
+          .toBuffer()
+      )
+    }
+    expect(deliveries[2].evidence).toMatchObject({ asset: { reused: true } })
+    expect(
+      replies
+        .at(-1)
+        ?.result.contentItems.every((item) => item.type === 'inputText')
+    ).toBe(true)
+    expect(JSON.stringify(parsed.records)).not.toContain('data:image')
+    expect(JSON.stringify(log.mock.calls)).not.toContain('data:image')
+  }
+})
+
+/** Isolated source-proof consumer validates complete bounded delivery. */
+const readCompleteInformation = async (
+  call: (input: unknown) => Promise<string>,
+  input: unknown
+): Promise<string> => {
+  let raw = await call(input)
+  let text = ''
+  let offset = 0
+  let revision: string | undefined
+  for (let count = 0; count < 256; count++) {
+    const page = JSON.parse(raw).contentDelivery
+    if (!page) {
+      expect(offset).toBe(0)
+      return raw
+    }
+    expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
+    expect(page.startByte).toBe(offset)
+    revision ??= page.revision
+    expect(page.revision).toBe(revision)
+    text += page.text
+    offset += Buffer.byteLength(page.text)
+    expect(page.endByte).toBe(offset)
+    if (page.lastPage) {
+      expect(offset).toBe(page.totalBytes)
+      expect(page.next).toBeNull()
+      JSON.parse(text)
+      return text
+    }
+    raw = await call(page.next.arguments)
+  }
+  throw new Error('Information continuation did not terminate')
+}
+
+it('execution proof executes the published bounded information example without replaying operations', async () => {
+  const { runInNewContext } = await import('node:vm')
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const dispatch = vi.fn()
+  const schema = {
+    type: 'object',
+    required: ['choice'],
+    additionalProperties: false,
+    properties: {
+      choice: {
+        enum: Array.from(
+          { length: 600 },
+          (_, index) => `${index}: ${'Required permitted choice. '.repeat(4)}`
+        )
+      }
+    }
+  }
+  const owner = createOperationOwner(
+    basicApiContracts.map((contract) => ({
+      ...contract,
+      inputSchema: contract.inputSchema as AiActionDescription['inputSchema'],
+      ...toolSemantics({ type: 'object' }, 'read', [])
+    })),
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    dispatch,
+    {
+      getNativeTools: () => [
+        {
+          name: 'choose',
+          namespace: 'proof',
+          description: 'Select a permitted choice.',
+          inputSchema: schema,
+          ...toolSemantics({ type: 'object' }, 'read', [])
+        }
+      ]
+    }
+  )
+  const definition = owner.definitions.find(
+    (d) => d.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const example =
+    /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/.exec(
+      definition.description
+    )?.[1]
+  expect(example).toBeTruthy()
+  if (!example) throw new Error('Missing advertised example')
+  const values = new Map<string, unknown>()
+  const text = vi.fn()
+  const forward = (result: string) =>
+    runInNewContext(example, {
+      result,
+      deliveryKey: 'proof',
+      text,
+      load: (key: string) => values.get(key),
+      store: (key: string, value: unknown) => values.set(key, value)
+    })
+  let args: Record<string, unknown> = { names: ['proof.choose'] }
+  const pages: string[] = []
+  for (let i = 0; i < 20; i++) {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      args,
+      new AbortController().signal
+    )
+    expect(reply.success).toBe(true)
+    pages.push(reply.text)
+    forward(reply.text)
+    const page = JSON.parse(reply.text).contentDelivery
+    if (!page || page.lastPage) break
+    args = page.next.arguments
+  }
+  expect(pages.length).toBeGreaterThan(1)
+  expect(values.get('proof')).toMatchObject({
+    complete: true,
+    value: { tools: [{ inputSchema: schema }] }
+  })
+  const before = values.get('proof')
+  pages.forEach(forward)
+  expect(values.get('proof')).toEqual(before)
+  expect(text.mock.calls.map((call) => call[0])).toEqual([...pages, ...pages])
+  expect(dispatch).not.toHaveBeenCalled()
+})
+
+it('execution proof selects nested Knowledge without reading sibling bodies', async () => {
+  const { createLocalKnowledgeTools } = await import('../local-knowledge')
+  const tools = createLocalKnowledgeTools('nested-proof')
+  const abortSignal = new AbortController().signal
+  try {
+    const contexts = ['architectural-illustration']
+    const found = JSON.parse(
+      await tools.call('discover_knowledge', { contexts }, abortSignal)
+    )
+    const root = found.entries.find(
+      (item: { id: string }) => item.id === 'design.architectural-illustration'
+    )
+    const branch = found.entries.find(
+      (item: { id: string }) =>
+        item.id ===
+        root.children.find((id: string) => id.endsWith('.materials'))
+    )
+    const id = branch.children.find((item: string) =>
+      item.endsWith('.correction')
+    )
+    const read = JSON.parse(
+      await readCompleteInformation(
+        (input) => tools.call('read_knowledge', input, abortSignal),
+        { ids: [id], contexts }
+      )
+    )
+    expect(
+      read.documents.map((item: { target: string }) => item.target)
+    ).toEqual([
+      'design.architectural-illustration',
+      'design.architectural-illustration.contracts',
+      'illustration.architecture',
+      'illustration.architecture.materials',
+      id
+    ])
+    expect(JSON.stringify(read)).toContain('edits create local overrides')
+    expect(JSON.stringify(read)).toContain('Never retry a settled drawing')
+    expect(JSON.stringify(read)).not.toContain(
+      '## Represent a repeated multi-face component once'
+    )
+  } finally {
+    tools.dispose()
+  }
+})
+
+async function readKnowledgeTopic(id: string): Promise<string> {
+  const { createLocalKnowledgeTools } = await import('../local-knowledge')
+  const owner = createLocalKnowledgeTools('published-topic')
+  try {
+    const result = JSON.parse(
+      await readCompleteInformation(
+        (input) =>
+          owner.call('read_knowledge', input, new AbortController().signal),
+        { ids: [id], contexts: ['architectural-illustration'] }
+      )
+    )
+    const document = result.documents.find(
+      (item: { target: string }) => item.target === id
+    )
+    if (!document) throw new Error('Missing selected Knowledge topic')
+    return document.text
+  } finally {
+    owner.dispose()
+  }
+}
+
+it('execution proof distinguishes native output observation from tool execution and unavailable argument progress', async () => {
+  const { nativeOutputVisibility } = await import('../local-ai-provider')
+  const records: ExecutionRecord[] = []
+  const profile = createAiExecutionProfiler(
+    { intent: 'private', context: {}, actions: [], attempt: 1 },
+    'test-model',
+    {
+      sink: {
+        write: (record) => records.push(record),
+        flush: async () => ({ status: 'saved', path: null })
+      }
+    }
+  )
+  profile.trace('provider_notification', nativeOutputVisibility)
+  profile.recordTransport('received', 64000, 'diagnostic')
+  const visibility = records.find(
+    (r) =>
+      r.stage === 'provider_notification' &&
+      (r.evidence as { method?: string })?.method === 'app/output-visibility'
+  )
+  expect(visibility?.evidence).toEqual({
+    method: nativeOutputVisibility.method,
+    source: nativeOutputVisibility.source,
+    coverage: {
+      count: 5,
+      truncated: false,
+      items: nativeOutputVisibility.coverage
+    }
+  })
+  expect(visibility?.evidence).toMatchObject({
+    coverage: {
+      items: expect.arrayContaining([
+        { kind: 'pre-dispatch-output-item', status: 'unavailable' },
+        { kind: 'tool-argument-deltas', status: 'unavailable', bytes: null },
+        { kind: 'generation-versus-stall', status: 'unavailable' }
+      ])
+    }
+  })
+  expect(
+    records.some(
+      (r) => r.stage === 'tool_started' || r.stage === 'provider_item_started'
+    )
+  ).toBe(false)
+  expect(records.find((r) => r.stage === 'transport_chunk')?.evidence).toEqual({
+    direction: 'received',
+    bytes: 64000,
+    stream: 'diagnostic'
+  })
+})
+
+it('execution proof delivers selected Knowledge decisions completely without optional bodies', async () => {
+  const { createLocalKnowledgeTools } = await import('../local-knowledge')
+  const owner = createLocalKnowledgeTools('complete-topic-proof')
+  try {
+    const contexts = ['architectural-illustration']
+    const catalog = JSON.parse(
+      await owner.call(
+        'discover_knowledge',
+        { contexts },
+        new AbortController().signal
+      )
+    )
+    const method = catalog.entries.find(
+      (item: { id: string }) =>
+        item.id === 'design.architectural-illustration.materials.method'
+    )
+    const detail = catalog.entries.find(
+      (item: { id: string }) => item.id === method.children[0]
+    )
+    expect(method.description).toMatch(/ordinary.*representation.*lighting/i)
+    expect(method.description).toMatch(/without.*parameter walkthrough/i)
+    expect(detail.description).toMatch(
+      /only when.*local-coordinate conversion.*worked example/i
+    )
+    expect(detail.description).toMatch(
+      /known supported representation.*does not require/i
+    )
+    for (const suffix of ['method', 'review']) {
+      const id = `design.architectural-illustration.materials.${suffix}`
+      expect(
+        catalog.entries.some((item: { id: string }) => item.id === id)
+      ).toBe(true)
+      const result = JSON.parse(
+        await owner.call(
+          'read_knowledge',
+          { ids: [id], contexts },
+          new AbortController().signal
+        )
+      )
+      expect(result.contentDelivery).toBeUndefined()
+      expect(
+        result.documents.some((doc: { target: string }) => doc.target === id)
+      ).toBe(true)
+      expect(
+        result.documents.some((doc: { target: string }) =>
+          /\.(operations|parameters)$/.test(doc.target)
+        )
+      ).toBe(false)
+      expect(JSON.stringify(result)).toContain('Never retry a settled drawing')
+    }
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('execution proof delivers selected operation contracts without exhaustive discovery', async () => {
+  const { operationInputIssue } = await import('../operation-input-schema')
+  const designs = createLocalDesignTools([
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ])
+  const execute = vi.fn()
+  const operations = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.APPLY_PREPARED_DESIGN,
+        description: 'Apply',
+        inputSchema: {}
+      }
+    ],
+    designs,
+    execute,
+    {
+      getNativeTools: () =>
+        workflow.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design'
+        }))
+    }
+  )
+  const workflow = createLocalDesignWorkflow(designs, operations)
+  const counts: number[] = []
+  const read = async (input: unknown) =>
+    JSON.parse(
+      await readCompleteInformation(async (args) => {
+        const text = await operations.call(
+          'describe_design_apis',
+          args,
+          new AbortController().signal
+        )
+        counts.push(Buffer.byteLength(text))
+        return text
+      }, input)
+    )
+  const names = ['prepare_and_apply_design']
+  const full = await read({ names })
+  const fullCounts = counts.splice(0)
+  const inputScope = { operation: 'draft', nodeTypes: ['vector'] }
+  const scoped = await read({ names, inputScope })
+  expect(counts.length).toBeLessThan(fullCounts.length)
+  expect(counts.reduce((sum, bytes) => sum + bytes, 0)).toBeLessThan(
+    fullCounts.reduce((sum, bytes) => sum + bytes, 0)
+  )
+  expect(scoped.tools[0].outputSchema).toEqual(full.tools[0].outputSchema)
+  expect(scoped.tools[0].partialOutputSchema).toEqual(
+    full.tools[0].partialOutputSchema
+  )
+  expect(scoped.tools[0].recoveryOutputSchema).toEqual(
+    full.tools[0].recoveryOutputSchema
+  )
+  expect(scoped.tools[0].definition.recover.arguments.inputScope).toEqual(
+    inputScope
+  )
+  counts.splice(0)
+  const guide = await read({ names, inputScope, view: 'usage' })
+  expect(counts).toHaveLength(1)
+  expect(counts[0]).toBeLessThan(23000)
+  expect(guide.tools[0].definition.coverage).toBe('scoped-usage')
+  expect(guide.tools[0].outputSchema).toBeUndefined()
+  expect(guide.tools[0].usageGuide.recovery).toContain(
+    'Never replay completed writes'
+  )
+  expect(
+    operationInputIssue(
+      guide.tools[0].invocationExample.invocation.arguments,
+      scoped.tools[0].inputSchema
+    )
+  ).toBeUndefined()
+  expect(execute).not.toHaveBeenCalled()
 })

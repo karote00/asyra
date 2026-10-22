@@ -6,7 +6,7 @@ import { createAiInvoker } from '@asyra/ai-agent-runtime'
 import { nativeToolInputSchema } from './operation-input-schema'
 import { requireBatchSuccess } from './batch-exchange'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { observeActionBatch } from './local-action-observation'
 import {
@@ -80,6 +80,19 @@ const localProviderIsolationConfig = Object.freeze({
   'analytics.enabled': false,
   'history.persistence': 'none'
 })
+
+// Capabilities of this adapter, not a classification of an in-flight model response.
+export const nativeOutputVisibility = {
+  method: 'app/output-visibility',
+  source: 'native-public-protocol',
+  coverage: [
+    { kind: 'public-item-lifecycle', status: 'available' },
+    { kind: 'app-invocation', status: 'available' },
+    { kind: 'pre-dispatch-output-item', status: 'unavailable' },
+    { kind: 'tool-argument-deltas', status: 'unavailable', bytes: null },
+    { kind: 'generation-versus-stall', status: 'unavailable' }
+  ]
+} as const
 
 const maximumProtocolBytes = 32 * 1024 * 1024
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -244,6 +257,11 @@ const runLocalAiProvider = async (
       image: { dataUrl: string; mediaType: string },
       attachmentIndex: number
     ) => unknown
+    readonly retainToolImage?: (
+      imageUrl: string,
+      callId: string,
+      contentIndex: number
+    ) => void
     readonly checkOnly?: boolean
     readonly assessmentOnly?: boolean
     readonly toolLibraryDirectory?: string
@@ -1093,6 +1111,14 @@ const runLocalAiProvider = async (
               }
             }) + '\n'
           )
+          contentItems.forEach((item, contentIndex) => {
+            if (item.type === 'inputImage')
+              options.retainToolImage?.(
+                item.imageUrl,
+                params.callId as string,
+                contentIndex
+              )
+          })
         })
         .catch((error: unknown) => {
           const code = 'TOOL_DELIVERY_TRANSPORT_FAILED'
@@ -1233,6 +1259,33 @@ const runLocalAiProvider = async (
           kind: params.item.type,
           actor: 'provider',
           executor: 'native-provider',
+          ...(value.method === 'item/completed' &&
+          params.item.type === 'dynamicToolCall' &&
+          typeof params.item.namespace === 'string' &&
+          typeof params.item.tool === 'string' &&
+          toolBindings.has(`${params.item.namespace}.${params.item.tool}`) &&
+          toolCalls.has(params.item.id) &&
+          ['describe_design_apis', 'read_knowledge'].includes(
+            params.item.tool
+          ) &&
+          ['completed', 'failed'].includes(String(params.item.status))
+            ? {
+                tool: params.item.tool,
+                nativeOutput: {
+                  stage: 'native-completed-result',
+                  modelVisibility: 'unavailable',
+                  toolCallId: params.item.id,
+                  nativeThreadId: params.threadId,
+                  nativeTurnId: params.turnId,
+                  nativeStatus: params.item.status,
+                  success:
+                    typeof params.item.success === 'boolean'
+                      ? params.item.success
+                      : null,
+                  ...retainNativeText(params.item.contentItems)
+                }
+              }
+            : {}),
           ...(params.item.type === 'mcpToolCall' &&
           typeof params.item.tool === 'string'
             ? { tool: params.item.tool }
@@ -1347,7 +1400,13 @@ const runLocalAiProvider = async (
         // Native orchestration output is not an App receipt or final batch.
         usage?.trace('orchestration_completed', {
           tool: String(item.name),
-          callId: String(item.id)
+          callId: String(item.id),
+          nativeOutput: {
+            stage: 'native-orchestration-result',
+            status: 'unavailable',
+            reason: 'child-call-correlation-not-exposed',
+            modelVisibility: 'unavailable'
+          }
         })
       } else if (
         !['agentMessage', 'userMessage', 'reasoning', 'plan'].includes(
@@ -1418,6 +1477,7 @@ const runLocalAiProvider = async (
   child.stdout.on('error', () => settleRequiredStream('stdout', 'error'))
   child.stdout.once('end', () => settleRequiredStream('stdout', 'end'))
   child.stdout.once('close', () => settleRequiredStream('stdout', 'close'))
+  usage?.trace('provider_notification', nativeOutputVisibility)
   child.stderr.on('data', (chunk: Buffer) => {
     usage?.recordTransport('received', chunk.byteLength, 'diagnostic')
   })
@@ -1564,7 +1624,7 @@ const runLocalAiProvider = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} Available App tool namespaces: ${nativeDefinitions.map(({ name, tools }) => `${name} (${tools.map(({ name }) => name).join(', ')})`).join('; ')}. Native discovery provides callable declarations. Keep large query values and intermediate geometry inside Code Mode for invocation and data binding; return only findings or counts needed for the next decision. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Native wrappers and recipe registeredName/revision are different fields; use the returned exact route. ${localToolResultInstructions}`,
+            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Decision-required contract fields use the bounded information example, preserving their complete selected restrictions. Keep other large query values and intermediate geometry inside Code Mode for invocation and data binding; return only findings or counts needed for the next decision. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Native wrappers and recipe registeredName/revision are different fields; use the returned exact route. ${localToolResultInstructions}`,
         config: {
           model_reasoning_effort: 'medium',
           ...localProviderIsolationConfig,
@@ -1802,9 +1862,35 @@ const requestRecordedLocalAi = async (
           )
       })
     }
+    const retainToolImage = (
+      imageUrl: string,
+      callId: string,
+      contentIndex: number
+    ) => {
+      // The native reply already validated these bytes. Preserve the submitted
+      // payload without another capture or codec pass; recording is not authority.
+      const mediaType = imageUrl.slice(5, imageUrl.indexOf(';'))
+      let asset
+      try {
+        asset = sink.writeAsset?.(
+          usage.requestId,
+          Buffer.from(imageUrl.split(',')[1], 'base64'),
+          mediaType
+        ) ?? { status: 'failed', path: null }
+      } catch {
+        asset = { status: 'failed', path: null }
+      }
+      usage.trace('asset_retained', {
+        callId,
+        contentIndex,
+        mediaType,
+        status: 'submitted',
+        asset
+      })
+    }
     const result = await runLocalAiProvider(
       input,
-      { ...options, retainReference },
+      { ...options, retainReference, retainToolImage },
       usage
     )
     outcome = 'completed'
@@ -1855,4 +1941,49 @@ export const checkLocalAiProvider = async (
     { intent: '', context: {}, actions: [], attempt: 1 },
     { ...options, checkOnly: true }
   )
+}
+
+/** Select public text results only; opaque text is not safe structured evidence. */
+function retainNativeText(contentItems: unknown) {
+  if (contentItems == null)
+    return { status: 'unavailable', reason: 'content-not-exposed' }
+  if (!Array.isArray(contentItems))
+    return { status: 'malformed', reason: 'content-not-array' }
+  if (!contentItems.length) return { status: 'empty', content: [] }
+  return {
+    status: 'available',
+    content: contentItems.map((item, contentIndex) => {
+      if (
+        !isRecord(item) ||
+        item.type !== 'inputText' ||
+        typeof item.text !== 'string'
+      )
+        return {
+          contentIndex,
+          status: 'unavailable',
+          reason: 'not-public-text'
+        }
+      const identity = {
+        contentIndex,
+        bytes: Buffer.byteLength(item.text),
+        sha256: createHash('sha256').update(item.text).digest('hex')
+      }
+      try {
+        const value: unknown = JSON.parse(item.text)
+        if (!isRecord(value) && !Array.isArray(value))
+          return {
+            ...identity,
+            status: 'unavailable',
+            reason: 'not-structured-text'
+          }
+        return { ...identity, status: 'available', value }
+      } catch {
+        return {
+          ...identity,
+          status: 'unavailable',
+          reason: 'not-structured-text'
+        }
+      }
+    })
+  }
 }

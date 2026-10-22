@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import {
   architectureFiles,
+  observationDeadline,
   architectureScenario
 } from '../architecture-protocol.mjs'
 const spec = JSON.parse(
@@ -25,4 +26,20 @@ test('the ablation changes only the two new advisory bodies, never unrelated kno
   assert.equal(spec.attachments.length, 2)
   for (const attachment of spec.attachments)
     assert.match(attachment.sha256, /^[a-f0-9]{64}$/)
+})
+
+test('a run-scoped deadline can shorten but never extend the canonical scenario', () => {
+  assert.equal(observationDeadline(spec, []), 600000)
+  assert.equal(observationDeadline(spec, ['--deadline-ms=120000']), 120000)
+  assert.equal(spec.deadlineMs, 600000)
+  for (const args of [
+    ['--deadline-ms=600001'],
+    ['--deadline-ms=0'],
+    ['--deadline-ms=NaN'],
+    ['--deadline-ms=1.5'],
+    ['--deadline-ms=-1'],
+    ['--unknown=120000'],
+    ['--deadline-ms=120000', '--deadline-ms=60000']
+  ])
+    assert.throws(() => observationDeadline(spec, args))
 })

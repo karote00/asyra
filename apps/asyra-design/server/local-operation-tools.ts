@@ -1,4 +1,17 @@
 import {
+  workflowUsageGuide,
+  workflowInputScopes,
+  projectWorkflowInput
+} from './design-workflow-discovery'
+import {
+  contentPageSchema,
+  deliverInformation,
+  informationDeliveryInstructions,
+  informationDeliveryExampleInstructions,
+  informationDeliverySchema,
+  informationDeliveryBytes
+} from './local-information-delivery'
+import {
   prescribedPositionsSchema,
   type PrescribedPosition
 } from '../src/ai/prescribed-position-contract'
@@ -247,6 +260,7 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
       (key) =>
         !selectors.includes(key) &&
         ![
+          'inputScope',
           'includeSchemas',
           'refresh',
           'refreshReason',
@@ -274,6 +288,10 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
         args.schemaPaths.some(
           (path) => typeof path !== 'string' || !path.startsWith('/')
         ))) ||
+    (args.inputScope !== undefined &&
+      (args.schemaPaths !== undefined ||
+        !Array.isArray(args.names) ||
+        args.names.length !== 1)) ||
     (args.view !== undefined && args.schemaPaths !== undefined) ||
     (args.view !== undefined &&
       !selectors.some((key) => args[key] !== undefined)) ||
@@ -304,7 +322,7 @@ const discoveryInputIssue = (args: unknown): string | undefined => {
         !args.operations.length ||
         args.operations.some((v) => typeof v !== 'string' || !v.trim())))
   )
-    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
+    return 'Provide one selector: operations, operation, category, names or query; omit selectors for categories. includeSchemas requires category. view (usage/full) requires a selector; nonempty schemaPaths requires exact names/operations. inputScope requires one exact name and cannot combine with schemaPaths; use owner-published scope choices. Partial views cannot combine with each other. refreshReason requires refresh=true and must be context-loss, delivery-failure or missing-fields.'
   return undefined
 }
 
@@ -981,7 +999,10 @@ export const createLocalOperationTools = (
     admittedApiCategories.set(category, entries)
   }
   const definitionPageSize = 16
-  const returnedDefinitions = new Map<string, string>()
+  const returnedDefinitions = new Map<
+    string,
+    { text: string; registryRevision: number }
+  >()
   const deliverDefinition = (
     identity: string,
     descriptor: Record<string, unknown>,
@@ -1019,7 +1040,9 @@ export const createLocalOperationTools = (
       arguments: {
         names: [identity],
         refresh: true,
-        refreshReason: 'context-loss'
+        refreshReason: 'context-loss',
+        ...(args.inputScope ? { inputScope: args.inputScope } : {}),
+        ...(args.view === 'usage' ? { view: 'usage' } : {})
       }
     }
     let coverage = 'full'
@@ -1066,90 +1089,93 @@ export const createLocalOperationTools = (
           }
         }
     }
-    const deliveryKey = JSON.stringify([identity, coverage, requestedPaths])
-    const previousRevision = returnedDefinitions.get(deliveryKey)
-    let deliveryReason = 'initial'
-    if (args.refresh === true) deliveryReason = 'recovery'
-    else if (previousRevision !== undefined)
-      deliveryReason =
-        previousRevision === revision ? 'unchanged' : 'version-changed'
-    const provenance = {
-      deliveryReason,
-      ...(args.refresh === true
-        ? { recoveryReason: args.refreshReason ?? 'unknown' }
-        : {})
-    }
-    if (args.view === 'usage' || Array.isArray(args.schemaPaths)) {
-      const repeated = args.refresh !== true && previousRevision === revision
-      let projection = reference
-      if (!repeated) {
-        projection =
-          args.view === 'usage'
-            ? {
-                ...usage,
-                inputFields: inputFieldPaths(inputSchema),
-                outputFields: inputFieldPaths(descriptor.outputSchema),
-                elementBindings: schemaSlots(inputSchema).flatMap(
-                  ({ path, schema }) =>
-                    ['all', 'each', 'one'].includes(
-                      String(schema['x-design-element-binding'])
-                    )
-                      ? [
-                          {
-                            schemaPath: path,
-                            mode: schema['x-design-element-binding']
-                          }
-                        ]
-                      : []
-                ),
-                invocationExample: usageInvocation(descriptor)
-              }
-            : {
-                ...reference,
-                ...schemaFragments(inputSchema, args.schemaPaths as string[])
-              }
-      }
-      returnedDefinitions.set(deliveryKey, revision)
-      return {
-        ...projection,
-        definition: {
-          revision,
-          state: repeated ? 'previously-returned' : 'included',
-          coverage: repeated ? 'reference' : coverage,
-          requestedCoverage: coverage,
-          availableInResponse: !repeated,
-          nextAction: repeated
-            ? 'reuse-or-recover-requested-scope'
-            : 'use-response-or-recover-requested-scope',
-          ...provenance,
-          recover: {
-            tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
-            arguments: {
-              names: [identity],
-              ...(args.view === 'usage'
-                ? { view: 'usage' }
-                : { schemaPaths: args.schemaPaths }),
-              refresh: true,
-              refreshReason: 'delivery-failure'
-            }
-          },
-          refresh
+    let projection = descriptor
+    if (args.inputScope !== undefined) {
+      try {
+        projection = {
+          ...descriptor,
+          inputSchema: projectWorkflowInput(inputSchema, args.inputScope)
         }
+        coverage = 'scoped'
+      } catch (error) {
+        throw new LocalOperationPreparationError(
+          error instanceof Error ? error.message : 'Invalid inputScope'
+        )
       }
     }
-    const repeated = args.refresh !== true && previousRevision === revision
-    returnedDefinitions.set(deliveryKey, revision)
+    if (args.view === 'usage' && args.inputScope !== undefined) {
+      const selected = projection.inputSchema
+      let guide
+      try {
+        guide = workflowUsageGuide(inputSchema, args.inputScope, selected)
+      } catch (error) {
+        throw new LocalOperationPreparationError(
+          error instanceof Error ? error.message : 'Invalid selected usage'
+        )
+      }
+      coverage = 'scoped-usage'
+      projection = {
+        ...usage,
+        description:
+          'Selected operation usage. Follow the included guide and registered execution route.',
+        usageGuide: guide,
+        invocationExample: usageInvocation({
+          ...descriptor,
+          inputSchema: selected
+        })
+      }
+    } else if (args.view === 'usage') {
+      projection = {
+        ...usage,
+        inputScopes: workflowInputScopes(inputSchema),
+        inputFields:
+          isRecord(inputSchema) && isRecord(inputSchema.properties)
+            ? Object.keys(inputSchema.properties).map(
+                (key) =>
+                  `/properties/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`
+              )
+            : [],
+        outputFields: inputFieldPaths(descriptor.outputSchema),
+        elementBindings: schemaSlots(inputSchema).flatMap(({ path, schema }) =>
+          ['all', 'each', 'one'].includes(
+            String(schema['x-design-element-binding'])
+          )
+            ? [{ schemaPath: path, mode: schema['x-design-element-binding'] }]
+            : []
+        ),
+        invocationExample: usageInvocation(descriptor)
+      }
+    } else if (Array.isArray(args.schemaPaths)) {
+      projection = {
+        ...reference,
+        ...schemaFragments(inputSchema, args.schemaPaths as string[])
+      }
+    }
     return {
-      ...(repeated ? reference : descriptor),
+      ...projection,
       definition: {
         revision,
-        state: repeated ? 'previously-returned' : 'included',
-        coverage: repeated ? 'reference' : 'full',
-        availableInResponse: !repeated,
-        ...provenance,
-        nextAction: repeated
-          ? 'reuse-or-refresh-if-missing'
-          : 'use-current-response',
+        state: 'included',
+        coverage,
+        requestedCoverage: coverage,
+        ...(args.inputScope ? { inputScope: args.inputScope } : {}),
+        availableInResponse: true,
+        deliveryReason: args.refresh === true ? 'recovery' : 'requested',
+        ...(args.refresh === true
+          ? { recoveryReason: args.refreshReason ?? 'unknown' }
+          : {}),
+        nextAction: 'use-response-or-recover-requested-scope',
+        recover: {
+          tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+          arguments: {
+            names: [identity],
+            ...(args.inputScope ? { inputScope: args.inputScope } : {}),
+            ...(args.view === 'usage' ? { view: 'usage' } : {}),
+            ...(args.schemaPaths ? { schemaPaths: args.schemaPaths } : {}),
+            refresh: true,
+            refreshReason: 'delivery-failure'
+          }
+        },
         refresh
       }
     }
@@ -1171,7 +1197,9 @@ export const createLocalOperationTools = (
     const revision = options.getNativeToolsRevision?.() ?? 0
     if (!nativeToolsByName || nativeToolsRevision !== revision) {
       nativeToolsByName = new Map()
-      nativeTools = options.getNativeTools?.() ?? []
+      nativeTools = (options.getNativeTools?.() ?? []).map((tool) => ({
+        ...tool
+      }))
       // The host counter invalidates reads even after rejected/no-op library work.
       // Page identity changes only when the ordered published catalog changes.
       const fingerprint = createHash('sha256')
@@ -1248,7 +1276,8 @@ export const createLocalOperationTools = (
     description: tool.description,
     effect: tool.effect,
     composition: tool.composition,
-    execution: nativeExecution(tool)
+    execution: nativeExecution(tool),
+    inputScopes: workflowInputScopes(tool.inputSchema)
   })
   const nativeDefinition = (
     tool: NativeToolDescriptor,
@@ -2446,7 +2475,7 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors remain unpaged. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Definitions are included once per request/revision/representation/field set; repeated reads return references. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -2467,7 +2496,30 @@ export const createLocalOperationTools = (
                     type: 'string',
                     enum: ['usage', 'full'],
                     description:
-                      'With any selector. usage returns purpose, execution route and root input paths without input/output/delivery validation schemas; full is the exact-selector default; category/query default to menus.'
+                      'With any selector. usage with inputScope returns the selected complete parameter guide, example and recovery instructions; without scope it returns purpose, route and root input paths. No validation schemas in usage; full is the exact-selector default; category/query default to menus.'
+                  },
+                  inputScope: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['operation', 'nodeTypes'],
+                    properties: {
+                      optionalInputs: {
+                        type: 'array',
+                        uniqueItems: true,
+                        items: { type: 'string' },
+                        description:
+                          'Optional input groups published by this owner, such as plan when defining criteria in the same invocation. Omitted groups are outside the selected contract.'
+                      },
+                      operation: { type: 'string' },
+                      nodeTypes: {
+                        type: 'array',
+                        minItems: 1,
+                        uniqueItems: true,
+                        items: { type: 'string' }
+                      }
+                    },
+                    description:
+                      'Exact single native name only. Select operation and nodeTypes from its inputScopes; returns complete constraints for that subset with full output/recovery. Combine with view=usage for a complete actionable selected guide; omit view for full validation schemas. Cannot combine with schemaPaths. Full remains available for unrestricted composition.'
                   },
                   schemaPaths: {
                     type: 'array',
@@ -2637,6 +2689,11 @@ export const createLocalOperationTools = (
     ],
     resultIssue: (name: string, value: unknown): string | undefined => {
       if (!isRecord(value)) return 'Operation returned no result object'
+      if (
+        name === AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
+        'contentDelivery' in value
+      )
+        return operationInputIssue(value, informationDeliverySchema)
       if (value.available === false) return
       if (name === AiDesignToolIds.REVIEW_PREPARED_DESIGN) {
         if (
@@ -4077,7 +4134,86 @@ export const createLocalOperationTools = (
     }
   }
   const execute = owner.call.bind(owner)
-  return owner
+  const definitions = owner.definitions.map((definition) =>
+    definition.name === AiDesignToolIds.DESCRIBE_DESIGN_APIS
+      ? {
+          ...definition,
+          description:
+            definition.description +
+            ' ' +
+            informationDeliveryInstructions +
+            informationDeliveryExampleInstructions,
+          inputSchema: {
+            ...definition.inputSchema,
+            properties: {
+              ...definition.inputSchema.properties,
+              contentPage: contentPageSchema
+            }
+          },
+          outputSchema: {
+            anyOf: [definition.outputSchema, informationDeliverySchema]
+          }
+        }
+      : definition
+  )
+  const deliveredOwner = {
+    ...owner,
+    definitions,
+    callInternal(
+      name: string,
+      args: unknown,
+      signal: AbortSignal,
+      inspectionTargets?: Set<string>
+    ): Promise<string> {
+      return name === AiDesignToolIds.DESCRIBE_DESIGN_APIS
+        ? deliveredCall(name, args, signal, inspectionTargets)
+        : owner.callInternal(name, args, signal, inspectionTargets)
+    },
+    call: async (
+      ...parameters: Parameters<typeof execute>
+    ): Promise<string> => {
+      const [name, args, signal] = parameters
+      if (name !== AiDesignToolIds.DESCRIBE_DESIGN_APIS)
+        return execute(...parameters)
+      signal.throwIfAborted()
+      if (!isRecord(args)) return execute(...parameters)
+      const { contentPage, ...query } = args
+      if (contentPage !== undefined) {
+        const issue = operationInputIssue(contentPage, contentPageSchema)
+        if (issue) throw new LocalOperationPreparationError(issue)
+      }
+      const key = JSON.stringify(
+        Object.keys(query)
+          .sort()
+          .map((key) => [key, query[key]])
+      )
+      const revision = discoveryRevision()
+      let retained = returnedDefinitions.get(key)
+      if (
+        contentPage !== undefined &&
+        (!retained || retained.registryRevision !== revision)
+      )
+        throw new LocalOperationPreparationError(
+          'Content continuation expired or registry changed; restart the original read.'
+        )
+      if (
+        !retained ||
+        retained.registryRevision !== revision ||
+        (args.refresh === true && contentPage === undefined)
+      ) {
+        const text = await execute(name, query, signal)
+        signal.throwIfAborted()
+        retained = { text, registryRevision: revision }
+        if (Buffer.byteLength(text) > informationDeliveryBytes) {
+          if (returnedDefinitions.size >= 64) returnedDefinitions.clear()
+          returnedDefinitions.set(key, retained)
+        }
+      }
+      return deliverInformation(retained.text, name, args, requestId)
+    }
+  }
+  const deliveredCall = deliveredOwner.call.bind(deliveredOwner)
+  return deliveredOwner
 }
 
 // This recipe is tested against native Code Mode's actual dynamic-tool adapter.
@@ -4085,10 +4221,14 @@ export const localToolResultExample = `const [receipt, ...images] = result.split
 text(JSON.parse(receipt));
 for (const uri of images) image(uri);`
 
-export const localToolResultInstructions = `App tool results in Code Mode are STRINGS, not MCP objects with a content array.
-The first line is JSON; any following lines are image data URLs. After const result = await tools.<discovered_tool>(input), forward the result in that SAME exec:
+export const localToolResultInstructions =
+  informationDeliveryInstructions +
+  informationDeliveryExampleInstructions +
+  `
+App tool results in Code Mode are STRINGS, not MCP objects with a content array.
+For other receipts, the first line is JSON; any following lines are image data URLs. After const result = await tools.<discovered_tool>(input), forward the result in that SAME exec using the following receipt example. Informational discovery uses the bounded example above instead:
 ${localToolResultExample}
-Do not print the whole string: that prints base64 instead of showing images. Retain result with store if needed; redisplay that retained result with this recipe instead of importing again. Text-only receipts have no following image lines.`
+Do not print a whole image-bearing result string: that prints base64 instead of showing images. Retain result with store if needed; redisplay that retained result with this recipe instead of importing again. Text-only receipts have no following image lines.`
 
 /** Separate validated original reference rasters and bounded canvas snapshots from text. */
 export const localToolContent = async (

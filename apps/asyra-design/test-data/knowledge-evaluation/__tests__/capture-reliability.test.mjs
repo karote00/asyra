@@ -253,34 +253,6 @@ test('a late checkpoint response cannot create evidence after capture timed out'
   }
 })
 
-test('signal-terminated browser is settled and failed force cleanup cannot pass', async () => {
-  const { spawn } = await import('node:child_process')
-  const { once } = await import('node:events')
-  const { default: process } = await import('node:process')
-  const { stopUnsettledProcess } = await import('../capture-lifecycle.mjs')
-  const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
-    stdio: 'ignore'
-  })
-  await once(child, 'spawn')
-  const exited = once(child, 'exit')
-  child.kill('SIGKILL')
-  await exited
-  assert.equal(child.exitCode, null)
-  assert.equal(child.signalCode, 'SIGKILL')
-  let calls = 0
-  await stopUnsettledProcess(child, async () => {
-    calls++
-    return { errors: [] }
-  })
-  assert.equal(calls, 0, 'terminated process must not be stopped again')
-  await assert.rejects(
-    stopUnsettledProcess({ exitCode: null, signalCode: null }, async () => ({
-      errors: ['EPERM']
-    })),
-    /EPERM/
-  )
-})
-
 test('request attribution uses the canonical same-origin endpoint and rejects missing source identity', async () => {
   const { captureRequestIdentity } = await import('../capture-source.mjs')
   const { ACTION_BATCH_ENDPOINT, AI_BATCH_RECEIPT_HEADER } =

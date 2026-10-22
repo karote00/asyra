@@ -6,9 +6,9 @@ import process from 'node:process'
 import { createHash } from 'node:crypto'
 import { fileURLToPath, URL } from 'node:url'
 import { chromium } from 'playwright'
+import { launchCaptureBrowser } from './capture-browser.mjs'
 import { loadEnvironment, resolveEnvironment } from '../../app-environment.mjs'
 import {
-  boundedCapture,
   captureReload,
   captureSessionOnPage,
   collectEvidenceStage
@@ -56,9 +56,16 @@ const save = () =>
     path.join(directory, 'replay.json'),
     JSON.stringify(meta, null, 2)
   )
-let browser
+let ownedBrowser
 try {
-  browser = await chromium.launch({ channel: 'chrome', headless: true })
+  ownedBrowser = await launchCaptureBrowser({
+    chromium,
+    evidencePath: path.join(directory, 'cleanup-stop.json'),
+    record: (event) => {
+      ;(meta.browserLifecycle ??= []).push(event)
+      save()
+    }
+  })
   await collectEvidenceStage(
     meta,
     'reload',
@@ -66,7 +73,7 @@ try {
       captureReload({
         browser: {
           newContext: async (options) => {
-            const context = await browser.newContext({
+            const context = await ownedBrowser.newContext({
               ...options,
               serviceWorkers: 'block'
             })
@@ -99,7 +106,7 @@ try {
   await collectEvidenceStage(
     meta,
     'browser-cleanup',
-    () => boundedCapture('browser close', () => browser?.close(), 5000),
+    () => ownedBrowser?.close(),
     save
   )
   meta.sourceUnchanged = fs.readFileSync(source).equals(original)

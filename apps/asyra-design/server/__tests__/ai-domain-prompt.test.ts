@@ -23,6 +23,14 @@ describe('stage-owned App guidance', () => {
   it('offers selective advisory knowledge without gating known-value edits', () => {
     expect(AI_APP_PROMPT).toContain('discover_knowledge')
     expect(AI_APP_PROMPT).toContain('read_knowledge')
+    expect(AI_APP_PROMPT).toContain(
+      'Select the sufficient parent or child directly'
+    )
+    expect(AI_APP_PROMPT).toContain(
+      'hierarchy depth does not mean more complete advice'
+    )
+    expect(AI_APP_PROMPT).toContain('unresolved need described in the catalog')
+    expect(AI_APP_PROMPT).toContain('do not read every parent or sibling')
     expect(AI_APP_PROMPT).toContain('Omit contexts for general advice')
     expect(AI_APP_PROMPT).toContain('reuse already delivered advice')
     expect(AI_APP_PROMPT).toContain('rehydrate: true')

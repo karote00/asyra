@@ -5,6 +5,8 @@ export interface AiKnowledgeMetadata {
   readonly description: string
   readonly provenance: readonly string[]
   readonly contexts?: readonly string[]
+  /** Optional navigation only; never an automatic content dependency. */
+  readonly children?: readonly string[]
   readonly references?: readonly string[]
   readonly extends?: readonly string[]
   readonly overrides?: readonly {

@@ -25,3 +25,13 @@ export function architectureScenario(specification) {
     specification.id
   )
 }
+
+export function observationDeadline(specification, args) {
+  if (!args.length) return specification.deadlineMs
+  if (args.length !== 1 || !/^--deadline-ms=[1-9][0-9]*$/.test(args[0]))
+    throw new Error('Expected one positive integer --deadline-ms override')
+  const limit = Number(args[0].slice('--deadline-ms='.length))
+  if (!Number.isSafeInteger(limit) || limit > specification.deadlineMs)
+    throw new Error('Observation deadline cannot extend the scenario deadline')
+  return limit
+}

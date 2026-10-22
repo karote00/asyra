@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "projectId": "design-knowledge-evaluation",
   "flowId": "design-knowledge-evaluation",
-  "revision": 149,
+  "revision": 184,
   "definition": {
     "title": "Design knowledge behavior evaluation",
-    "purpose": "Complete canonical shared-property editing through existing owners, then verify one recorded Knowledge-only Taipei 101 acceptance. Knowledge remains advisory. No new UI, Asyra Skill, subsequent push or monitoring.",
+    "purpose": "Evaluate canonical Design behavior and evidence-bound offline attribution. Model execution requires explicit authorization; no automatic Knowledge updates.",
     "nodes": [
       {
         "id": "prepare-and-apply-property-batch",
@@ -530,6 +530,84 @@
           "apps/asyra-design/src/common-apis/__tests__"
         ],
         "actions": []
+      },
+      {
+        "id": "assess-recorded-changes",
+        "title": "Assess recorded changes",
+        "owner": "Asyra Design offline evaluation",
+        "objective": "Bind per-change observations and scoped report lessons to preserved evidence without inferring causal model efficacy. Compare actual native successor requests with saved replies and current bounded informational owner pages using a scripted local endpoint without inference.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "contract-review",
+            "title": "Evidence boundaries and unchanged behavior reviewed",
+            "kind": "manual"
+          },
+          {
+            "id": "integration",
+            "title": "Evidence-bound analysis and refusal regressions",
+            "kind": "automated"
+          }
+        ],
+        "specRefs": [
+          "apps/asyra-design/test-data/knowledge-evaluation/README.md",
+          "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
+          "docs/ai/apps/asyra-design/specs/ai-execution-flow.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/test-data/knowledge-evaluation/analyze.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/assessment.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/__tests__",
+          "apps/asyra-design/package.json",
+          "apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-delivery.test.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery",
+          "apps/asyra-design/server/__tests__/information-delivery.integration.test.ts",
+          "apps/asyra-design/server/local-information-delivery.ts",
+          "apps/asyra-design/server/local-knowledge.ts",
+          "apps/asyra-design/server/local-operation-tools.ts",
+          "packages/ai-agent-runtime/src/knowledge.ts"
+        ],
+        "actions": []
+      },
+      {
+        "id": "capture-recorded-document",
+        "title": "Capture recorded document reload",
+        "owner": "Asyra Design evaluation",
+        "objective": "Preserve video and exact read-only reload evidence without a remote control payload limit; retain identity-bound independent cleanup. An explicit shorter observation deadline is validated before launch, retained per run and enforced from Send by the same watchdog.",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "contract-review",
+            "title": "Browser ownership and failure preservation reviewed",
+            "kind": "manual"
+          },
+          {
+            "id": "integration",
+            "title": "Large-frame reload and force-stop regressions",
+            "kind": "automated"
+          }
+        ],
+        "specRefs": [
+          "apps/asyra-design/test-data/knowledge-evaluation/README.md"
+        ],
+        "implementationRefs": [
+          "apps/asyra-design/test-data/knowledge-evaluation/capture-browser.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/capture-lifecycle.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/run-101.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/run.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/replay-saved-document.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/__tests__/capture-browser.test.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/__tests__/capture-reliability.test.mjs",
+          "apps/asyra-design/test-data/ai-drawing/live-test-deadline.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/architecture-protocol.mjs",
+          "apps/asyra-design/test-data/knowledge-evaluation/__tests__/architecture-protocol.test.mjs"
+        ],
+        "actions": []
       }
     ],
     "criteria": [
@@ -606,6 +684,11 @@
           "id": "durability",
           "title": "Local Durability",
           "order": 5
+        },
+        {
+          "id": "offline-evaluation",
+          "title": "Offline evaluation",
+          "order": 6
         }
       ],
       "steps": [
@@ -1487,6 +1570,114 @@
             "#contract-admission-canonical-shared-property-layers"
           ],
           "failureOwnerStepId": "persist-local-commit"
+        },
+        {
+          "id": "assess-recorded-changes",
+          "order": 1,
+          "laneId": "offline-evaluation",
+          "title": "Assess recorded changes",
+          "ownerPackage": "Asyra Design offline evaluation",
+          "purpose": "Validate evidence identity and publish descriptive attribution with explicit lesson eligibility.",
+          "inputs": [
+            "captured run.json and parsed provider streams",
+            "optional analyst assessment",
+            "explicit offline scripted executions and permanent saved-reply fixtures"
+          ],
+          "outputs": [
+            "artifact:change-assessment"
+          ],
+          "conditions": [
+            "Exact run digest and contained evidence references with SHA-256 and locators.",
+            "Single-run and historical helped/hurt claims remain confounded.",
+            "Retained report lessons require support, limits and explicit analyst review.",
+            "Native delivery evidence uses actual pinned native execution with fixed loopback Responses events, existing payload sink and deadline. Never override output limits, call a real model or claim historical causality from a scripted result.",
+            "Cross-execution native proofs preserve each actual successor request and scripted identity, reject incomplete or mixed-revision assembly, and distinguish retained content from printed output and unavailable public internals."
+          ],
+          "bypasses": [
+            "Absent assessment yields not-assessed and NO_ENTRY.",
+            "Unsupported lesson yields NO_ENTRY; malformed evidence rejects analysis before write."
+          ],
+          "allowedContributors": [
+            "existing capture and execution parser",
+            "analyst self-review or human review",
+            "existing isolated native handoff adapter and Runtime evidence sink"
+          ],
+          "forbiddenContributors": [
+            "model invocation",
+            "automatic Knowledge mutation",
+            "causal inference from delivery or final success",
+            "duplicate evaluation state registry"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/test-data/knowledge-evaluation/analyze.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/assessment.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/__tests__",
+            "apps/asyra-design/package.json",
+            "apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-delivery.test.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery"
+          ],
+          "specRefs": [
+            "apps/asyra-design/test-data/knowledge-evaluation/README.md",
+            "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md"
+          ],
+          "failureOwnerStepId": "assess-recorded-changes"
+        },
+        {
+          "id": "capture-recorded-document",
+          "order": 2,
+          "laneId": "offline-evaluation",
+          "title": "Capture recorded document reload",
+          "ownerPackage": "Asyra Design evaluation",
+          "purpose": "Preserve video and reload evidence with owned local browser lifecycle",
+          "inputs": [
+            "saved document URL and durable receipt",
+            "viewport and local launch options",
+            "public native process identity"
+          ],
+          "outputs": [
+            "artifact:reload-capture"
+          ],
+          "conditions": [
+            "Direct local control does not retransmit document frames through a remote Playwright WebSocket.",
+            "Existing watchdog owns forced termination with native PID/start identity.",
+            "Retain recording and original failed evidence; no retries or loosened comparison.",
+            "Await post-fit presentation frames before screenshot within the existing deadline.",
+            "Native process settlement requires observed disappearance of its captured identity after force-stop.",
+            "An explicit positive integer run deadline may shorten but never extend the canonical deadline; record the actual limit and reuse the independent watchdog from Send."
+          ],
+          "bypasses": [
+            "No original receipt permits recovery-only evidence, never equality acceptance."
+          ],
+          "allowedContributors": [
+            "existing capture session and recording helpers",
+            "public Chromium diagnostics",
+            "existing independent deadline worker"
+          ],
+          "forbiddenContributors": [
+            "model calls",
+            "canonical document rewrites",
+            "payload limit increases",
+            "second scheduler"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-design/test-data/knowledge-evaluation/capture-browser.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/capture-lifecycle.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/run-101.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/run.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/replay-saved-document.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/__tests__/capture-browser.test.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/__tests__/capture-reliability.test.mjs",
+            "apps/asyra-design/test-data/ai-drawing/live-test-deadline.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/architecture-protocol.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/__tests__/architecture-protocol.test.mjs"
+          ],
+          "specRefs": [
+            "apps/asyra-design/test-data/knowledge-evaluation/README.md"
+          ],
+          "failureOwnerStepId": "capture-recorded-document"
         }
       ],
       "routes": [
@@ -1991,6 +2182,21 @@
           "channel": "Public target views, locally accepted owner IDs or recoverable failure; not durable save confirmation",
           "consumerStepIds": [],
           "terminal": true
+        },
+        {
+          "id": "artifact:change-assessment",
+          "title": "Evidence-bound change assessment",
+          "ownerStepId": "assess-recorded-changes",
+          "consumerStepIds": [],
+          "terminal": true,
+          "channel": "analysis.json"
+        },
+        {
+          "id": "artifact:reload-capture",
+          "ownerStepId": "capture-recorded-document",
+          "channel": "existing run/replay evidence",
+          "consumerStepIds": [],
+          "terminal": true
         }
       ],
       "invariants": [
@@ -2281,6 +2487,50 @@
         "actor": "Codex",
         "summary": "Reviewed selected-owner mapping and surviving-link validation with exact failures, canonical ordering, retained receipt cleanup and save/reload consumers. Automated results stay source-bound.",
         "at": "2026-10-19T21:46:30.852Z"
+      },
+      {
+        "nodeId": "assess-recorded-changes",
+        "criterionId": "contract-review",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "de591bbd237f389acf5de4f8dbace7e2f6ae0cb4fe3520ab7f8fc0f704d409cf",
+        "actor": "Codex bounded self-review",
+        "summary": "Bounded self-review: existing observe adapter/sink/deadline retained, exact successor outputs distinguished from native completions and hidden storage. Static admission/2 tests, 3 selected observe cases, naming and scoped lint pass. No production refresh/Knowledge changes or historical-cause claim.",
+        "at": "2026-10-21T14:04:18.913Z"
+      },
+      {
+        "nodeId": "assess-recorded-changes",
+        "criterionId": "integration",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "80bdbda6241b98e553b239c265552382d67bb9cc42029b7958d826822cb6cec2",
+        "actor": "Codex bounded self-review",
+        "summary": "Offline native suite 15 passed; canonical information-owner integration 4 passed; analysis/assessment 17 passed. Cross-exec store/load and assembly retain exact saved schema/advice; full print loses bytes while later slices remain intact; missing/mixed pages reject. Evidence: tmp/code-mode-native-final.log, tmp/code-mode-owner-integration.log, tmp/code-mode-consumers.log. No real inference.",
+        "at": "2026-10-21T14:04:18.906Z",
+        "executionId": "code-mode-cross-execution-20261021",
+        "caseId": "native-cross-execution-assembly"
+      },
+      {
+        "nodeId": "capture-recorded-document",
+        "criterionId": "contract-review",
+        "kind": "manual",
+        "status": "accepted",
+        "binding": "8bf7d9753774a17a11a8cb5b6e8da5701fb80d968f68c982328679d35e3a53cc",
+        "actor": "Codex bounded review",
+        "summary": "19 capture/browser and 11 deadline/recording/protocol regressions passed. Short run uses existing watchdog, no scenario or browser behavior change. Source-bound review complete; not a model-visibility claim.",
+        "at": "2026-10-21T10:08:18.294Z"
+      },
+      {
+        "nodeId": "capture-recorded-document",
+        "criterionId": "integration",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "3a08c0e7be083739c3334c7426e23bb93ba2fc2a3567054cc4aa4ee67689c36a",
+        "actor": "Codex bounded review",
+        "summary": "19 capture/browser and 11 deadline/recording/protocol regressions passed. Short run uses existing watchdog, no scenario or browser behavior change. Source-bound review complete; not a model-visibility claim.",
+        "at": "2026-10-21T10:08:18.287Z",
+        "executionId": "native-delivery-deadline-20261021",
+        "caseId": "short-deadline-and-capture"
       }
     ],
     "notes": [],
@@ -2291,7 +2541,16 @@
         "reason": "Props owner and preserved Core gates passed; review exact Scene binding handoff before implementation."
       }
     ],
-    "sources": [],
+    "sources": [
+      {
+        "nodeId": "assess-recorded-changes",
+        "revision": "71f9f00c166906370dfaa6c3979d09e0622f11e79e37eac63dde6f63963bb046"
+      },
+      {
+        "nodeId": "capture-recorded-document",
+        "revision": "b27e8bbc2b504b315027c95845630d3910dcbe3b959fe4da76b42cec280c7cbd"
+      }
+    ],
     "warnings": []
   }
 }

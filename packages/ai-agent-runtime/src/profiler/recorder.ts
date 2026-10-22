@@ -80,6 +80,8 @@ const evidenceKeys = new Set([
   'sha256',
   'path',
   'attachmentIndex',
+  'contentIndex',
+  'mediaType',
   'stream',
   'executor',
   'channel',
@@ -751,6 +753,21 @@ export const createAiExecutionProfiler = (
               }
             }
           }
+          if (
+            (stage === 'provider_item_completed' ||
+              stage === 'orchestration_completed') &&
+            isRecord(evidence.nativeOutput)
+          ) {
+            try {
+              diagnostic = {
+                output: { payload: payload('output', evidence.nativeOutput) }
+              }
+            } catch {
+              diagnostic = {
+                output: { payload: { status: 'failed', path: null } }
+              }
+            }
+          }
           if (stage === 'visual_assessment_context')
             diagnostic = {
               input: { payload: payload('input', evidence.arguments) }
@@ -809,7 +826,15 @@ export const createAiExecutionProfiler = (
             }
           }
         }
-        const summarized = summarizeEvidence(evidence)
+        const summarized = summarizeEvidence(
+          isRecord(evidence) && 'nativeOutput' in evidence
+            ? Object.fromEntries(
+                Object.entries(evidence).filter(
+                  ([key]) => key !== 'nativeOutput'
+                )
+              )
+            : evidence
+        )
         const serialized = JSON.stringify(summarized)
         const record = {
           event: 'ai_request_trace',

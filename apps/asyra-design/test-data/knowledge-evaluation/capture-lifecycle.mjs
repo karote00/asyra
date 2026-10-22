@@ -1,4 +1,4 @@
-/* global AbortController, setTimeout, clearTimeout */
+/* global AbortController, setTimeout, clearTimeout, requestAnimationFrame */
 /** Evaluation-only bounds. Late reads cannot become successful evidence. */
 export async function boundedCapture(label, task, timeoutMs = 30000) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0)
@@ -81,23 +81,6 @@ export async function collectEvidenceStage(meta, name, task, save) {
   } finally {
     save()
   }
-}
-
-/** Evaluator process settlement; native process status owns terminal state. */
-export async function stopUnsettledProcess(child, stop) {
-  if (!child || child.exitCode !== null || child.signalCode !== null)
-    return undefined
-  const receipt = await stop()
-  if (
-    !receipt ||
-    receipt.status !== 'failed' ||
-    !Array.isArray(receipt.errors) ||
-    receipt.errors.length
-  )
-    throw new Error(
-      `Force cleanup failed: ${receipt?.errors?.join('; ') ?? 'Missing stop receipt'}`
-    )
-  return receipt
 }
 
 /** Settle the existing generation watchdog from the observed product outcome. */
@@ -199,6 +182,13 @@ export async function captureReload({
         )
           throw new Error('Reload root/order or durable receipt mismatch')
         await reloaded.keyboard.press('Meta+1')
+        signal.throwIfAborted()
+        await reloaded.evaluate(
+          () =>
+            new Promise((resolve) => {
+              requestAnimationFrame(() => requestAnimationFrame(resolve))
+            })
+        )
         signal.throwIfAborted()
         await reloaded.screenshot({
           path: screenshotPath

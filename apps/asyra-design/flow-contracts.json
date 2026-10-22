@@ -25,7 +25,12 @@
         "design.landing-page.md",
         "icons.md",
         "typography.md",
-        "illustration.architecture.md"
+        "illustration.architecture.md",
+        "illustration.architecture.spatial.md",
+        "illustration.architecture.projection.md",
+        "illustration.architecture.repetition.md",
+        "illustration.architecture.materials.md",
+        "illustration.architecture.materials.method.md"
       ],
       "entry": null
     },
@@ -208,7 +213,8 @@
           "stepId": "observe",
           "testName": "execution proof records timestamped transport without storing transport content",
           "implementationPaths": [
-            "packages/ai-agent-runtime/src/profiler/recorder.ts"
+            "packages/ai-agent-runtime/src/profiler/recorder.ts",
+            "apps/asyra-design/server/local-ai-provider.ts"
           ]
         },
         {
@@ -475,7 +481,7 @@
           "testName": "execution proof dispatches the published chosen-method route without converting record success into acceptance",
           "implementationPaths": [
             "apps/asyra-design/server/ai-domain-prompt.ts",
-            "apps/asyra-design/knowledge/design.architectural-illustration.md",
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.review.md",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
@@ -484,7 +490,7 @@
           "stepId": "compose",
           "testName": "execution proof admits complete per-target material corrections from the published route",
           "implementationPaths": [
-            "apps/asyra-design/knowledge/design.architectural-illustration.md",
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.correction.md",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
@@ -540,6 +546,67 @@
           "testName": "execution proof keeps material provenance independent of viewport transforms",
           "implementationPaths": [
             "apps/asyra-design/src/ai/prepared-material-action.ts"
+          ]
+        },
+        {
+          "id": "observe.tool-images",
+          "stepId": "observe",
+          "testName": "execution proof preserves exact submitted inspection pixels and delivery identity",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "packages/ai-agent-runtime/src/profiler/recorder.ts",
+            "packages/ai-agent-runtime/src/node/record-sink.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/analyze.mjs"
+          ]
+        },
+        {
+          "id": "compose.information-forwarding",
+          "stepId": "compose",
+          "testName": "execution proof executes the published bounded information example without replaying operations",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-information-delivery.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
+        },
+        {
+          "id": "compose.knowledge-selection",
+          "stepId": "compose",
+          "testName": "execution proof selects nested Knowledge without reading sibling bodies",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-knowledge.ts",
+            "packages/ai-agent-runtime/src/knowledge.ts"
+          ]
+        },
+        {
+          "id": "observe.native-output",
+          "stepId": "observe",
+          "testName": "execution proof distinguishes native output observation from tool execution and unavailable argument progress",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "packages/ai-agent-runtime/src/profiler/recorder.ts"
+          ]
+        },
+        {
+          "id": "compose.knowledge-complete-topic",
+          "stepId": "compose",
+          "testName": "execution proof delivers selected Knowledge decisions completely without optional bodies",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-knowledge.ts",
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.method.md",
+            "apps/asyra-design/knowledge/design.architectural-illustration.contracts.md",
+            "apps/asyra-design/knowledge/design.architectural-illustration.materials.review.md"
+          ]
+        },
+        {
+          "id": "compose.selected-operation-contract",
+          "stepId": "compose",
+          "testName": "execution proof delivers selected operation contracts without exhaustive discovery",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-workflow-discovery.ts",
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/server/ai-domain-prompt.ts"
           ]
         }
       ],

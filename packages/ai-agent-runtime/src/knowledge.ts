@@ -66,6 +66,7 @@ const admit = (value: AiKnowledgeMetadata): AiKnowledgeMetadata => {
     description: value.description,
     provenance: Object.freeze([...value.provenance]),
     contexts: list(value.contexts),
+    children: list(value.children),
     references: list(value.references),
     extends: list(value.extends),
     overrides: Object.freeze(
@@ -178,12 +179,17 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
       entries.delete(id)
       changed()
     },
-    openSession(principal: unknown, taskId: string): AiKnowledgeSession {
+    openSession(
+      principal: unknown,
+      taskId: string,
+      delivery: { retainResults?: boolean } = {}
+    ): AiKnowledgeSession {
       active()
       if (!boundedText(taskId, 256)) return fail('KNOWLEDGE_INVALID_IDENTITY')
       if (sessions.size >= 32) return fail('KNOWLEDGE_LIMIT')
+      const retainResults = delivery.retainResults === true
       const who = identity(principal, taskId)
-      const delivered = new Set<string>()
+      const delivered = new Map<string, AiKnowledgeResult | undefined>()
       let contextEpoch = 0
       let deliveryGeneration = generation
       let closed = false
@@ -207,14 +213,37 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
           assertSession()
           const labels = list(contexts)
           requirePermission('discover', who)
+          const visible = [...entries.values()].filter(
+            (metadata) =>
+              relevant(metadata, labels) && permitted('discover', who, metadata)
+          )
+          const choices = new Map(
+            visible.map((metadata) => [metadata.id, metadata])
+          )
+          const visited = new Set<string>()
+          const visiting = new Set<string>()
+          const visit = (id: string, depth: number) => {
+            if (visiting.has(id)) fail('KNOWLEDGE_CYCLE')
+            if (visited.has(id)) return
+            if (depth > 16) fail('KNOWLEDGE_LIMIT')
+            visiting.add(id)
+            for (const child of choices.get(id)?.children ?? [])
+              if (choices.has(child)) visit(child, depth + 1)
+            visiting.delete(id)
+            visited.add(id)
+          }
+          for (const metadata of visible) visit(metadata.id, 0)
           return Object.freeze(
-            [...entries.values()]
-              .filter(
-                (metadata) =>
-                  relevant(metadata, labels) &&
-                  permitted('discover', who, metadata)
-              )
+            visible
               .sort((a, b) => (a.id < b.id ? -1 : 1))
+              .map((metadata) =>
+                Object.freeze({
+                  ...metadata,
+                  children: Object.freeze(
+                    (metadata.children ?? []).filter((id) => choices.has(id))
+                  )
+                })
+              )
           )
         },
         async retrieve(
@@ -298,6 +327,8 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
             }
             recheck()
             const sources = Object.freeze(ordered.map(source))
+            const retained = delivered.get(key)
+            if (retainResults && retained) return retained
             if (delivered.has(key))
               return Object.freeze({
                 trust: 'untrusted-advice',
@@ -366,8 +397,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               fail('KNOWLEDGE_LIMIT')
             recheck()
             if (delivered.size >= 64) delivered.clear()
-            delivered.add(key)
-            return Object.freeze({
+            const result: AiKnowledgeResult = Object.freeze({
               trust: 'untrusted-advice',
               generation: version,
               contextKey: key,
@@ -375,6 +405,8 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               documents: Object.freeze(documents),
               sources
             })
+            delivered.set(key, retainResults ? result : undefined)
+            return result
           } finally {
             pendingReads -= 1
           }

@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import { launchCaptureBrowser } from './capture-browser.mjs'
 import { loadEnvironment, resolveEnvironment } from '../../app-environment.mjs'
 import {
   createLiveTestDeadline,
@@ -122,14 +123,17 @@ const snapshot = async (page) =>
       session: getActiveCollaborationHandle()?.getSessionState()
     }
   })
-let browserServer, browser, context, deadline
+let ownedBrowser, context, deadline
 try {
-  browserServer = await chromium.launchServer({
-    channel: 'chrome',
-    headless: true
+  ownedBrowser = await launchCaptureBrowser({
+    chromium,
+    evidencePath: path.join(directory, 'cleanup-stop.json'),
+    record: (event) => {
+      ;(meta.browserLifecycle ??= []).push(event)
+      save()
+    }
   })
-  browser = await chromium.connect(browserServer.wsEndpoint())
-  context = await browser.newContext({
+  context = await ownedBrowser.newContext({
     viewport: meta.viewport,
     recordVideo: { dir: path.join(directory, 'video'), size: meta.viewport },
     deviceScaleFactor: 1
@@ -197,7 +201,7 @@ try {
   deadline = createLiveTestDeadline({
     deadlineAt: Date.parse(meta.sentAt) + limitMs,
     groups: [vite.pid],
-    processes: [browserServer.process().pid],
+    processes: [ownedBrowser.pid],
     evidencePath: path.join(directory, 'deadline.json')
   })
   await deadline.ready
@@ -311,7 +315,6 @@ try {
 } finally {
   if (deadline) await deadline.finish()
   await context?.close()
-  await browser?.close()
-  await browserServer?.close()
+  await ownedBrowser?.close()
   save()
 }

@@ -1,5 +1,6 @@
 /* global structuredClone, Response */
 import test from 'node:test'
+import { Buffer } from 'node:buffer'
 import assert from 'node:assert/strict'
 import { summarizeCalls, verifyPreservation, readPayload } from '../analyze.mjs'
 import fs from 'node:fs'
@@ -343,6 +344,40 @@ test('analysis requires exact request records, complete Runtime evidence and eve
       ['nested', 'wanted']
     )
     fs.rmSync(path.join(records, 'nested.jsonl'))
+    const imageRows = entry('wanted')
+    imageRows.splice(
+      1,
+      0,
+      {
+        event: 'ai_request_trace',
+        schemaVersion: 2,
+        sequence: 1,
+        requestId: 'wanted',
+        stage: 'tool_started',
+        callId: 'image-call',
+        tool: 'inspect_drawing',
+        elapsedMs: 1
+      },
+      {
+        event: 'ai_request_trace',
+        schemaVersion: 2,
+        sequence: 2,
+        requestId: 'wanted',
+        stage: 'tool_completed',
+        callId: 'image-call',
+        tool: 'inspect_drawing',
+        elapsedMs: 2,
+        evidence: { imageCount: 1 }
+      }
+    )
+    imageRows.at(-1).sequence = 3
+    write(records, 'wanted', imageRows)
+    assert.notEqual(
+      invoke(base).status,
+      0,
+      'submitted image count without retained pixels cannot produce complete analysis'
+    )
+    write(records, 'wanted', entry('wanted'))
     const missingStage = structuredClone(base)
     delete missingStage.evidence.reload
     assert.notEqual(invoke(missingStage).status, 0)
@@ -401,6 +436,106 @@ test('payload evidence refuses missing, corrupted and escaped content', () => {
     )
     assert.throws(
       () => readPayload(directory, { path: '../other.json', sha256: 'wrong' }),
+      /escapes/
+    )
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+test('submitted image restoration verifies exact files and every delivery identity', async () => {
+  const { createHash } = await import('node:crypto')
+  const { restoreToolImages } = await import('../analyze.mjs')
+  const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+  const directory = fs.mkdtempSync(path.join(root, 'tmp/image-evidence-'))
+  const pixels = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6CwAAAABJRU5ErkJggg==',
+    'base64'
+  )
+  const sha256 = createHash('sha256').update(pixels).digest('hex')
+  fs.writeFileSync(path.join(directory, 'pixels.png'), pixels)
+  const completion = {
+    stage: 'tool_completed',
+    callId: 'capture',
+    evidence: { imageCount: 2 }
+  }
+  const retained = {
+    stage: 'asset_retained',
+    evidence: {
+      callId: 'capture',
+      contentIndex: 1,
+      mediaType: 'image/png',
+      status: 'submitted',
+      asset: {
+        status: 'queued',
+        path: 'pixels.png',
+        sha256,
+        bytes: pixels.length
+      }
+    }
+  }
+  const second = structuredClone(retained)
+  second.evidence.contentIndex = 2
+  try {
+    const restored = restoreToolImages(directory, [
+      completion,
+      retained,
+      second
+    ])
+    assert.deepEqual(
+      restored.map((x) => x.contentIndex),
+      [1, 2]
+    )
+    assert.ok(
+      restored.every((x) =>
+        fs.readFileSync(path.join(directory, x.path)).equals(pixels)
+      )
+    )
+    assert.throws(
+      () => restoreToolImages(directory, [completion, retained]),
+      /Incomplete/
+    )
+    assert.throws(
+      () => restoreToolImages(directory, [completion, retained, retained]),
+      /duplicate/
+    )
+    for (const edit of [
+      (r) => {
+        r.evidence.asset.sha256 = 'wrong'
+      },
+      (r) => {
+        r.evidence.asset.bytes++
+      },
+      (r) => {
+        r.evidence.asset.status = 'failed'
+      },
+      (r) => {
+        r.evidence.status = 'prepared'
+      },
+      (r) => {
+        r.evidence.callId = 'other'
+      },
+      (r) => {
+        r.evidence.contentIndex = 0
+      }
+    ]) {
+      const changed = structuredClone(retained)
+      edit(changed)
+      assert.throws(() =>
+        restoreToolImages(directory, [completion, changed, second])
+      )
+    }
+    fs.unlinkSync(path.join(directory, 'pixels.png'))
+    assert.throws(
+      () => restoreToolImages(directory, [completion, retained, second]),
+      /ENOENT/
+    )
+    fs.symlinkSync(
+      path.join(root, 'package.json'),
+      path.join(directory, 'pixels.png')
+    )
+    assert.throws(
+      () => restoreToolImages(directory, [completion, retained, second]),
       /escapes/
     )
   } finally {

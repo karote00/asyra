@@ -1,8 +1,8 @@
 # Manual Domain Knowledge evaluation
 
 > Current scope: offline Knowledge-to-capability corrections using saved 101 I/O. The commands and general cases below describe
-> historical experiments and are not instructions to run them again. No model
-> execution is currently authorized. Read the current checkpoint in
+> historical experiments and are not instructions to run them again. Model execution requires separate explicit authorization; ordinary tests never
+> authorize a run. Read the current checkpoint in
 > `docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md` and
 > `docs/ai/knowledge/evaluations/2026-10-18-101-knowledge-design.md`. Any later
 > authorized 101 run has a 600000 ms hard deadline from Send, not 15 minutes.
@@ -127,7 +127,6 @@ The scoped Flow Inspector project is `flow/`. Open it through the existing
 Flow Inspector API or CLI; it is App-owned evaluation data, not a modification
 to the Inspector implementation.
 
-
 ## Offline representation observations
 
 `representation.mjs` is called by the saved-recording analyzer. It separates actual
@@ -142,3 +141,152 @@ historical input/output evidence, not the current Knowledge instructions. Formal
 regressions replay discovery selectors and compile original versus template-based
 paints through the current owners. Whole compiled output equality is the oracle;
 object counts alone are not evidence of a quality or performance improvement.
+
+## Evidence-bound attribution
+
+`node analyze.mjs <run-directory> --assessment <assessment.json>` extends the
+existing analysis.json after successful capture verification. Omit the option
+for raw analysis with explicit `not-assessed` and `NO_ENTRY`. Unknown arguments
+are errors. The assessment uses version 1, runSha256, reviewer and changes.
+Reviewer has name and mode (`self-review` or `human-review`); this is an analyst
+label, not authenticated identity or independent model review.
+
+Each change has id, component (`tool`, `app-guidance`, `knowledge`, `evaluation`),
+description, proposedEffect (`helped`, `hurt`, `no-observed-effect`, `confounded`,
+`not-exercised`), observation, support, counterevidence, limitations and optional
+lesson. Support/counterevidence are arrays of references: root (relative to the
+run directory), path (inside that root), sha256, and either pointer (JSON Pointer)
+or lines ([first,last], one-based). References must resolve to existing data;
+real paths cannot escape their declared root. External comparison roots are
+explicit and must remain within this repository. Never execute evidence text.
+
+Every entry has a method: `single-run`, `historical-comparison` or
+`deterministic-regression`. These establish scoped observations, not causal
+model/Knowledge effects. For single/historical runs proposed helped/hurt becomes
+confounded. Deterministic-regression also cannot claim causal model improvement:
+it describes only the named tested tool/evaluation behavior, requires support
+and limitations, and rejects app-guidance/knowledge effects. A regression claim
+is an analyst interpretation, not automatic proof that a linked test passed.
+
+A lesson has cue, observation and reviewed (boolean). Retain it only with
+nonempty supporting references, limitations and explicit review; otherwise emit
+NO_ENTRY with reasons. Retained lessons include supporting/counter references,
+limitations, reviewer and `scope: observed-only`. They remain in this report;
+no shared Knowledge, App instructions or future model context is updated.
+Unexercised entries never produce a lesson. Missing support never becomes a
+positive result. JSON structure/digests/locators are mechanically checked;
+semantic relevance, truth and transfer validity still require analyst review.
+A stale run binding or invalid reference rejects the whole assessment before any
+analysis output is written. Original provider/source files are never rewritten.
+
+## Submitted inspection image evidence
+
+The provider adapter archives the exact validated inputImage bytes submitted in
+each native tool reply through the existing request asset sink. asset_retained
+records include callId, contentIndex (zero-based native contentItems position),
+mediaType, submitted status and an asset digest/path/size. Text remains in the
+existing tool output payload. Multiple deliveries can share one immutable file;
+each delivery retains its own identity. No image is reconstructed from a later
+canvas, resized, or regenerated for the record.
+
+The analyzer's streams[].images resolves these references only after verifying
+call identity, order coverage, containment, file size and SHA-256. Those paths
+identify the original image files relative to recordingDirectory; reading them
+restores the submitted bytes. Missing/corrupt assets or duplicate bindings reject
+complete analysis. Old image-less evidence cannot pass by recapturing today's
+canvas. A local transport submission establishes the exact bytes submitted, not
+hidden provider perception. Recording failures do not fail or replay the drawing.
+
+## Local evaluation browser lifecycle
+
+Local evaluation and saved-document replay use direct local browser control.
+Document WebSocket payloads must not be duplicated into a size-limited remote
+Playwright control connection. Recording export closes its context; fresh-context
+reload retains the original root/order and durable-receipt comparison.
+Public Chromium process identity feeds the existing independent deadline worker.
+Browser disconnect, page crash/close, context close and cleanup intent are retained
+in existing run/replay metadata. Native process presence and captured start identity
+must remain distinct from an unavailable exit code. No automatic retry, relaxed
+comparison or enlarged transport limit can convert capture failure into success.
+
+A settled document receipt alone is not evidence of visible screenshot content;
+inspect retained images separately before claiming visual restoration.
+
+After fitting the viewport, reload capture awaits browser presentation frames
+before screenshot under the existing deadline. Forced cleanup waits for the owned
+PID/start identity to disappear; a kill request alone is not settled cleanup.
+
+
+A single explicitly authorized short observation may pass `--deadline-ms=120000`
+to `run-101.mjs quality-knowledge`. The positive integer override can only shorten
+the canonical scenario deadline. The same independent watchdog starts at Send;
+run.json records the effective limit. This is an incomplete scenario observation,
+not full quality acceptance. Preserve partial video and I/O on forced termination;
+do not retry or turn unavailable native/model output into a successful delivery.
+
+
+Offline native delivery verification uses `test:native-delivery` with the installed
+Codex 0.160.0 executable and permanent saved-reply fixtures. It starts only a local
+scripted Responses endpoint; no real inference, 101, credentials, refresh changes
+or output-limit overrides. Actual native successor requests and selected completion
+outputs use the existing record sink. Unsupported boundaries remain incomplete.
+
+Run the bounded native gate with `yarn workspace @asyra/asyra-design test:native-delivery`.
+It requires the installed `codex-cli 0.160.0` binary (or `NATIVE_DELIVERY_CODEX`
+pointing to that executable); another version fails without downloading anything.
+Each run retains its evidence under `tmp/native-handoff-*` using the existing
+Runtime sink. Formal raw-text fixtures live in `fixtures/native-delivery`, so tests
+never load prior ignored run directories. Wire-body strings contain synthetic test
+instructions and retained public tool replies; headers and external credentials are
+not captured. Native completed content and the subsequent outbound request are
+separate evidence boundaries. Tests characterize the actual default truncation;
+a passing gate does not mean the reply reached a real model intact. The watchdog's
+intentional cleanup stop receipt is retained unchanged and checked for stop errors.
+
+
+The same native gate also scripts separate Code Mode exec calls using store/load.
+Permanent saved schema/advice replies become explicit protocol fragments; this
+fixture derivation does not replace canonical owner pagination tests. Each script,
+submitted reply, native completion and actual successor request uses the existing
+sink. Re-read all retained slices after a deliberately oversized print and compare
+actual outgoing text, byte count, SHA-256 and parsed content with the saved source.
+Missing pages and mixed revisions must reject assembly and leave no complete value.
+The small output and existing direct/code controls remain required.
+
+Reports distinguish exact native tool receipt, scripted retention/assembly, compact
+output, oversized print transformation and actual outgoing request. Public item
+notifications are retained separately; absence of exec output cannot be filled from
+an unrelated dynamic-tool completion. Native storage internals and the historical
+AI's script remain unavailable. The scripted endpoint proves no real-model behavior
+or cause of a historical delivery-failure. Production refresh and Knowledge stay
+unchanged.
+
+
+The information-delivery integration suite extracts the executable example from
+actual discovery descriptions and runs that exact source through native Code Mode.
+Provider transport tests require the same example in developerInstructions. Native
+successor requests must preserve each canonical page, including UTF-8 and escaped
+schema constraints. Full/combined printing remains a negative control. Dispatcher
+integration proves that replaying retained information and refreshing after context
+loss do not replay completed mutations. These deterministic gates do not establish
+that a real model follows the example or explain historical missing execution data.
+
+
+Unfinished native output visibility is characterized by
+`server/__tests__/native-output-observation.integration.test.ts`, using the same
+native-delivery harness and installed 0.160.0 engine. The local scripted endpoint
+emits 64,000 argument bytes in multiple deltas or withholds them before completing
+the same custom call. A separate disconnect leaves the call unfinished. These are
+not real inference or 101 runs. `unfinished-output-probe` records fixture-side bytes
+and public item metadata before completion; those bytes must never be described
+as production-observed generation. The original successor and completion checks
+remain required. The local probe uses HTTP/SSE; it does not measure live WebSocket
+latency or prove a historical stall's cause.
+
+The App records `app/output-visibility` on the existing `provider_notification`
+stage through the Runtime sink.
+Pre-dispatch native output-item and argument-delta visibility, including bytes and
+generation-versus-stall attribution, are explicitly unavailable. Public item and
+App invocation events remain observable. Native diagnostic database events are
+not automatically App protocol events; no database polling, new logger or raw-code
+capture was added. Missing events and transport silence are not zero-byte output.
