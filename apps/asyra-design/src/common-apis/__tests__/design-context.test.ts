@@ -86,18 +86,16 @@ describe('bounded document context', () => {
     expect(source.getElementMetadata).toHaveBeenCalledTimes(4)
     expect(source.getElementComputedData).toHaveBeenCalledTimes(4)
   })
-  it('reads native textColor using its canonical field name', () => {
+  it('reads native text fills using the shared canonical field', () => {
     const { read, source, computed } = fixture()
-    computed.textColor = '#123456'
+    computed.fills = [{ color: '#123456' }]
     const result = read({
       scope: 'selection',
       limit: 1,
-      fields: ['text', 'textColor', 'fills']
+      fields: ['text', 'fills']
     })
-    expect(source.getElementComputedData.mock.calls[0][1]).toContain(
-      'textColor'
-    )
-    expect(result.elements[0].properties.textColor).toBe('#123456')
+    expect(source.getElementComputedData.mock.calls[0][1]).toContain('fills')
+    expect(result.elements[0].properties.fills).toEqual([{ color: '#123456' }])
   })
   it('reports preview truncation without claiming complete data', () => {
     const { read, computed } = fixture()
@@ -106,7 +104,7 @@ describe('bounded document context', () => {
     const entry = read({
       scope: 'selection',
       limit: 1,
-      fields: ['text', 'textColor', 'fills']
+      fields: ['text', 'fills']
     }).elements[0]
     expect(entry.properties.text).toHaveLength(2000)
     expect(entry.properties.fills).toHaveLength(8)

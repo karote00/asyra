@@ -1,4 +1,5 @@
 import core from '@asyra/core'
+import { createDefaultFill, PropertyTypes } from '@asyra/utils'
 import { RenderGraphics } from '@asyra/render'
 import { describe, expect, it } from 'vitest'
 import {
@@ -47,7 +48,6 @@ describe('native editable text', () => {
     ['fontWeight', 'heavy'],
     ['fontStyle', 'oblique'],
     ['textAlign', 'justify'],
-    ['textColor', 'url(evil)'],
     ['text', null],
     ['text', 'x'.repeat(100_001)]
   ])('rejects invalid %s values through its canonical schema', (key, value) => {
@@ -62,6 +62,50 @@ describe('native editable text', () => {
     expect(definition?.alias).toEqual(Object.keys(DEFAULT_TEXT_DATA))
   })
 
+  it('registers the same canonical fills property as other paintable elements', () => {
+    expect(
+      TEXT_COMPONENT_DEFINITION.properties.some(
+        (entry) => entry.type === PropertyTypes.FILLS
+      )
+    ).toBe(true)
+  })
+
+  it('projects only visible fills with independent opacity and preserves layer order', () => {
+    const graphics = new RenderGraphics()
+    TEXT_RENDER_STRATEGY(graphics, {
+      ...DEFAULT_TEXT_DATA,
+      text: 'Painted',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 80,
+      fills: [
+        createDefaultFill({ color: '#ff0000', opacity: 0.25 }),
+        createDefaultFill({ color: '#00ff00', visible: false }),
+        createDefaultFill({ color: '#0000ff', opacity: 0.75 })
+      ]
+    } as never)
+    const operations = graphics
+      .getDrawOperations()
+      .filter((operation) => operation.type === 'text')
+    expect(operations).toHaveLength(2)
+    expect(operations.map((operation) => operation.paint)).toEqual([
+      { color: 0xff0000, alpha: 0.25 },
+      { color: 0x0000ff, alpha: 0.75 }
+    ])
+    TEXT_RENDER_STRATEGY(graphics, {
+      ...DEFAULT_TEXT_DATA,
+      text: 'Painted',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 80,
+      fills: []
+    } as never)
+    expect(graphics.getDrawOperations()).toEqual([{ type: 'clear' }])
+    expect(graphics.hitArea).toBeDefined()
+  })
+
   it('projects editable content and typography without outlined glyphs', () => {
     const graphics = new RenderGraphics()
     TEXT_RENDER_STRATEGY(graphics, {
@@ -73,6 +117,7 @@ describe('native editable text', () => {
       height: 80,
       ...DEFAULT_TEXT_DATA,
       text: 'Editable',
+      fills: [createDefaultFill({ color: '#000000' })],
       fontSize: 30
     } as never)
     expect(graphics.getDrawOperations()).toEqual([

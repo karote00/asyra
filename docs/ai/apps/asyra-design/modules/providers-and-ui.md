@@ -67,6 +67,9 @@ projection; the design-system package owns no canonical document behavior.
   - supports selected target (`anchor` / `inHandle` / `outHandle`) coordinate editing
   - supports anchor point type control (`sharp` / `smooth`)
   - supports handle mode control (`none` / `mirror-angle` / `mirror-angle-length`)
+- `text.tsx`: single-Text Typography layout and alignment controls
+- `text-field.tsx`: schema-validated text, number and choice controls; field drafts
+  remain local until a commit through the existing scene-tree controller
 - `number-input.ts`: finite-number parser for layout edits
 
 ## Rules
@@ -82,6 +85,8 @@ projection; the design-system package owns no canonical document behavior.
 
 - No selection -> no layout fields shown.
 - Element selection -> layout, fills, and stroke color rows shown.
+- Single Text selection -> layout and Typography; unsupported Fill/Stroke lists
+  are hidden. See [Editable text](../specs/editable-text.md).
 - Selected vector element in element-properties mode -> fills section shown.
 - Selected vector point in active path editing -> point panel shown.
 - Invalid numeric input must not write computed data.

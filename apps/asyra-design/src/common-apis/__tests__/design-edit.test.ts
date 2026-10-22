@@ -22,7 +22,6 @@ const fixture = () => {
     rotation: 0,
     text: 'Before',
     fontSize: 16,
-    textColor: '#000000',
     fills: [{ color: '#000000' }],
     strokes: []
   }

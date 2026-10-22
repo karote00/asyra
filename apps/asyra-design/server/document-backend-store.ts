@@ -1,3 +1,4 @@
+import { migrateTextFills } from '../src/collaboration/migrate-text-fills'
 import {
   persistenceSpan,
   persistenceDetail,
@@ -89,6 +90,7 @@ const parseStoredRecord = (
     input.record as unknown as MaterializedDocumentRecord<AppDocumentData>
   return {
     ...record,
+    document: migrateTextFills(record.document) as unknown as AppDocumentData,
     documentGeneration:
       record.documentGeneration ?? inferLegacyDocumentGeneration(input.record)
   }

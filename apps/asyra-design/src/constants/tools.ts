@@ -2,7 +2,8 @@ export const PrimaryToolType = {
   SELECT: 'select',
   RECTANGLE: 'rect',
   OVAL: 'oval',
-  PEN: 'pen'
+  PEN: 'pen',
+  TEXT: 'text'
 } as const
 
 export type PrimaryToolType =

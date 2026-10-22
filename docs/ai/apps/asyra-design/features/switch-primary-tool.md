@@ -26,6 +26,9 @@
 ## UI Contract
 
 - Toolbar active state must reflect `primaryTool`.
+- The Text toolbar entry selects `text` through this same controller/Feature.
+  Its T SVG is shared with Text rows in Layers. Canvas Text creation/editing and
+  a T keyboard shortcut are deferred; the entry changes tool state only.
 - Keyboard shortcuts and toolbar click should produce the same final state.
 - Every path-editing exit leaves Select active.
 

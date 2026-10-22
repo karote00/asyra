@@ -69,8 +69,7 @@ export const DesignTextDefaults = Object.freeze({
   fontStyle: 'normal',
   textAlign: 'left',
   lineHeight: 20,
-  letterSpacing: 0,
-  textColor: '#000000'
+  letterSpacing: 0
 })
 const finiteTextRange = (value: unknown, min: number, max: number) =>
   typeof value === 'number' &&
@@ -92,7 +91,5 @@ export const DesignTextValidators: Readonly<
     value === 'left' || value === 'center' || value === 'right',
   lineHeight: (value: unknown) =>
     finiteTextRange(value, Number.MIN_VALUE, 8192),
-  letterSpacing: (value: unknown) => finiteTextRange(value, -100, 100),
-  textColor: (value: unknown) =>
-    typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)
+  letterSpacing: (value: unknown) => finiteTextRange(value, -100, 100)
 })

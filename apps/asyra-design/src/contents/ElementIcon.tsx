@@ -1,4 +1,5 @@
 import { Icon, type IconName } from '@asyra/design-system'
+import { TEXT_COMPONENT_TYPE } from '@asyra/preset'
 import { EntityTypes } from '@asyra/utils'
 import { VectorShapeIcon } from './VectorShapeIcon'
 
@@ -8,7 +9,8 @@ const ELEMENT_ICON_MAP: Record<string, IconName> = {
   [EntityTypes.WORKSPACE]: 'Group',
   rect: 'Rect',
   oval: 'Oval',
-  vector: 'Pen'
+  vector: 'Pen',
+  [TEXT_COMPONENT_TYPE]: 'Text'
 }
 
 const getElementIconName = (type: string): IconName => {

@@ -37,7 +37,7 @@ const editorial = {
       fontSize: 16,
       lineHeight: 24,
       fontWeight: 'bold',
-      textColor: '#264637'
+      fill: '#264637'
     },
     {
       key: 'heading',
@@ -51,7 +51,7 @@ const editorial = {
       fontSize: 46,
       lineHeight: 58,
       fontWeight: 'bold',
-      textColor: '#264637'
+      fill: '#264637'
     },
     {
       key: 'body',
@@ -64,7 +64,7 @@ const editorial = {
       text: 'A quiet place to collect, connect and create.\nStart with a thought. Make something meaningful.',
       fontSize: 18,
       lineHeight: 26,
-      textColor: '#53685B'
+      fill: '#53685B'
     },
     ...['Collect', 'Connect', 'Create'].map((text, index) => ({
       key: `card${index}`,
@@ -86,7 +86,7 @@ const editorial = {
           text: `0${index + 1}`,
           fontSize: 14,
           lineHeight: 20,
-          textColor: '#65755C'
+          fill: '#65755C'
         },
         {
           key: `title${index}`,
@@ -100,7 +100,7 @@ const editorial = {
           fontSize: 25,
           lineHeight: 32,
           fontWeight: 'bold',
-          textColor: '#264637'
+          fill: '#264637'
         }
       ]
     })),
@@ -125,7 +125,7 @@ const editorial = {
           fontSize: 16,
           lineHeight: 24,
           textAlign: 'center',
-          textColor: '#FFFFFF'
+          fill: '#FFFFFF'
         }
       ]
     }
