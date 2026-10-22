@@ -1,3 +1,5 @@
+import { runInNewContext } from 'node:vm'
+import inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20261022.json'
 import { createHash } from 'node:crypto'
 import { designPreparationExamples } from '../design-preparation-examples'
 import orderedPreparation from './fixtures/recorded-101/ordered-preparation-20261019.json'
@@ -107,7 +109,7 @@ const setup = (unrelatedCount = 0) => {
       const next = await invokeLocalTool(owner, definition, input, signal)
       deliveries.push(Buffer.byteLength(next.text))
       replies.push({ input, raw: next.text })
-      expect(next.success).toBe(true)
+      expect(next.success).toBe(reply.success)
       return next.text
     }, args)
     return { ...reply, value: JSON.parse(text) }
@@ -934,4 +936,173 @@ it('bounds selected usage delivery under unrelated catalog growth and exposes ex
   expect(complete.value.tools[0].inputSchema.properties.plan).not.toBe(false)
   expect(complete.value.tools[0].outputSchema).toBeDefined()
   expect(large.execute).not.toHaveBeenCalled()
+})
+
+it('rejects recorded foreign inspection fields and executes each narrower recovery without writes', async () => {
+  const { call, execute, owners } = setup()
+  const definition = owners
+    .flatMap((owner) => owner.definitions)
+    .find((d) => d.name === 'describe_design_apis')
+  if (!definition) throw new Error('Missing discovery definition')
+  const failed = await call('describe_design_apis', inspectionDiscovery.query)
+  expect(failed.value.tools).toHaveLength(2)
+  expect(
+    failed.value.tools.every(
+      (t: { definition: { coverage: string } }) =>
+        t.definition.coverage === 'none'
+    )
+  ).toBe(true)
+  expect(failed.success).toBe(false)
+  expect(definition.description).toContain('same schemaPaths list')
+  expect(definition.description).toContain('parallel')
+  expect(failed.value.toolOutcome).toMatchObject({
+    status: 'failed',
+    settlement: 'completed'
+  })
+  expect(failed.value.toolOutcome.issues.length).toBeGreaterThan(0)
+  for (const tool of failed.value.tools) {
+    expect(tool.definition.recover.arguments.schemaPaths).toEqual(
+      inspectionDiscovery.query.schemaPaths
+    )
+    const narrowed = tool.schemaResolution.narrowerQuery
+    expect(narrowed.arguments.names).toHaveLength(1)
+    const corrected = await call(narrowed.tool, narrowed.arguments)
+    expect(corrected.success).toBe(true)
+    expect(corrected.value.tools[0].definition.coverage).toBe('partial')
+    expect(
+      corrected.value.tools[0].schemaFragments.map(
+        (f: { path: string }) => f.path
+      )
+    ).toEqual(narrowed.arguments.schemaPaths)
+    expect(corrected.value.tools[0].schemaContext.length).toBeGreaterThan(0)
+  }
+  const repeated = await call('describe_design_apis', inspectionDiscovery.query)
+  expect(repeated.value.toolOutcome.status).toBe('failed')
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('distinguishes mixed exact coverage from successful shared paths and empty discovery', async () => {
+  const { call, execute } = setup()
+  const names = inspectionDiscovery.query.names
+  const mixed = await call('describe_design_apis', {
+    names,
+    schemaPaths: ['/properties/inspections']
+  })
+  expect(mixed.success).toBe(false)
+  expect(mixed.value.toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(mixed.value.tools[0].schemaFragments[0].path).toBe(
+    '/properties/inspections'
+  )
+  expect(mixed.value.tools[1].definition.coverage).toBe('none')
+  const shared = await call('describe_design_apis', {
+    names,
+    schemaPaths: ['/properties/phase']
+  })
+  expect(shared.success).toBe(true)
+  expect(
+    shared.value.tools.every(
+      (t: { definition: { coverage: string } }) =>
+        t.definition.coverage === 'partial'
+    )
+  ).toBe(true)
+  for (const args of [
+    { names: [] },
+    { query: 'no lexical capability match xyz' },
+    {}
+  ]) {
+    expect((await call('describe_design_apis', args)).success).toBe(true)
+  }
+  expect(
+    (await call('describe_design_apis', { names: ['missing-tool'] })).value
+      .toolOutcome.status
+  ).toBe('failed')
+  expect(
+    (
+      await call('describe_design_apis', {
+        names: ['review_drawing', 'missing-tool'],
+        view: 'usage'
+      })
+    ).value.toolOutcome.status
+  ).toBe('partial')
+  await expect(
+    call('describe_design_apis', { names }, AbortSignal.abort())
+  ).rejects.toThrow()
+  expect(execute).not.toHaveBeenCalled()
+})
+
+it('forwards paged partial discovery through the published example without promoting coverage or replaying writes', async () => {
+  const { owners, call, execute } = setup()
+  const usage = (
+    await call('describe_design_apis', {
+      names: ['prepare_and_apply_design'],
+      view: 'usage',
+      inputScope: { operation: 'draft', nodeTypes: ['vector'] }
+    })
+  ).value.tools[0]
+  await call(
+    usage.invocationExample.invocation.tool,
+    usage.invocationExample.invocation.arguments
+  )
+  const writes = execute.mock.calls.length
+  const owner = owners.find((o) =>
+    o.definitions.some((d) => d.name === 'describe_design_apis')
+  )
+  if (!owner) throw new Error('Missing discovery owner')
+  const definition = owner.definitions.find(
+    (d) => d.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const example =
+    /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/.exec(
+      definition.description
+    )?.[1]
+  if (!example) throw new Error('Missing forwarding example')
+  const values = new Map<string, unknown>()
+  const printed: string[] = []
+  let args: Record<string, unknown> = {
+    names: ['prepare_and_apply_design', 'missing-tool']
+  }
+  let pages = 0
+  for (; pages < 30; pages++) {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      args,
+      new AbortController().signal
+    )
+    const receipt = JSON.parse(reply.text)
+    expect(reply.success).toBe(false)
+    expect(receipt.toolOutcome).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
+    })
+    expect(Buffer.byteLength(reply.text)).toBeLessThanOrEqual(24000)
+    runInNewContext(example, {
+      result: reply.text,
+      deliveryKey: 'partial-contract',
+      text: (v: string) => printed.push(v),
+      load: (k: string) => values.get(k),
+      store: (k: string, v: unknown) => values.set(k, v)
+    })
+    expect(printed.at(-1)).toBe(reply.text)
+    if (!receipt.contentDelivery || receipt.contentDelivery.lastPage) break
+    args = receipt.contentDelivery.next.arguments
+  }
+  expect(pages).toBeGreaterThan(0)
+  expect(pages).toBeLessThan(30)
+  expect(values.get('partial-contract')).toMatchObject({
+    complete: true,
+    value: { status: 'partial', missingNames: ['missing-tool'] }
+  })
+  const refresh = await call('describe_design_apis', {
+    names: ['review_drawing'],
+    schemaPaths: ['/properties/phase'],
+    refresh: true,
+    refreshReason: 'delivery-failure'
+  })
+  expect(refresh.success).toBe(true)
+  expect(execute).toHaveBeenCalledTimes(writes)
 })

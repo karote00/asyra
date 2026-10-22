@@ -2896,3 +2896,32 @@ and explains how to select it; drawing can proceed without it. Full unscoped que
 retain all inputs. Only optional canonical root fields can be declared this way;
 unknown or duplicate choices reject. Broader selections may still use existing paging
 and must not claim single-response coverage when continuation is present.
+
+### Inspection discovery field ownership and receipts
+
+The existing schemaPaths array applies independently to every selected exact
+identity. Different tools requiring different fields use separate queries, which
+may run in parallel in the same Code Mode execution. Shared-path multi-tool reads
+remain valid. Never infer ownership from a field name or silently rewrite a pointer.
+A tool with any invalid requested path keeps its whole requested scope unavailable;
+other identities retain their complete requested fragments, constraints and references.
+Its recovery includes a narrower same-tool query for valid requested paths when any
+exist, explicitly distinguished from full recovery. Scoped recovery retains original paths; the existing full refresh route remains.
+
+Exact lookup receipts report success only when every requested identity is delivered,
+partial when some are delivered, and failed when none are delivered. Missing and
+ambiguous identities count as unavailable. Completed read settlement means lookup
+finished, not requested coverage or visual acceptance. Empty lexical searches,
+menus, empty selections and valid pagination remain successful read operations.
+No new invocation state or status mechanism is introduced.
+
+Existing bounded content pages preserve the lookup outcome, including partial and
+failed results. The published forwarding example may assemble these valid pages;
+complete assembly never promotes lookup coverage to success. Malformed pages and
+ordinary read failures preserve previously retained content. Existing refresh,
+cancellation, revision invalidation, full retrieval and no-write-replay remain.
+
+DoD: saved mixed-field query, all-failed/mixed/success outcomes through invocation,
+executable narrower recovery and per-tool usage guidance, reference and cross-field
+constraint preservation, partial-page forwarding, repeat/refresh/stale/cancellation,
+empty search/menu and zero mutation replay through actual downstream owners.

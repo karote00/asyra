@@ -66,7 +66,7 @@ export const informationDeliveryExample = `(() => {
   if (typeof deliveryKey !== "string" || !deliveryKey || typeof result !== "string" || bytes(result) > ${informationDeliveryBytes + 1000}) throw new Error("Use one bounded informational reply and a query-specific key.");
   const receipt = JSON.parse(result);
   if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) throw new Error("Expected an informational object.");
-  if (receipt.toolOutcome && receipt.toolOutcome.status !== "success") { text(result); return; }
+  if (receipt.toolOutcome && receipt.toolOutcome.status !== "success" && !receipt.contentDelivery) { text(result); return; }
   const previous = load(deliveryKey);
   const page = receipt.contentDelivery;
   if (!page) {
@@ -92,14 +92,15 @@ Information forwarding example (one execution):
 \`\`\`javascript
 ${informationDeliveryExample}
 \`\`\`
-To redisplay a page after output loss, bind result = load(deliveryKey).pages[index] and run the SAME example once, without calling a tool. Never print the assembled value. Retained completeness is not model receipt. Missing storage or stale content permits normal read/refresh using a fresh key; never repeat a completed mutation to recover informational output. This example does not intercept arbitrary Code Mode output.
+To redisplay a page after output loss, bind result = load(deliveryKey).pages[index] and run the SAME example once, without calling a tool. Never print the assembled value. Retained completeness is not model receipt or successful lookup coverage; partial/failed lookup pages keep their outcome and may contain useful sibling definitions. Missing storage or stale content permits normal read/refresh using a fresh key; never repeat a completed mutation to recover informational output. This example does not intercept arbitrary Code Mode output.
 `
 
 export const deliverInformation = (
   text: string,
   tool: string,
   args: Record<string, unknown>,
-  requestId: string
+  requestId: string,
+  receipt: Readonly<Record<string, unknown>> = {}
 ): string => {
   const { contentPage, rehydrate: _rehydrate, ...query } = args
   const bytes = Buffer.from(text, 'utf8')
@@ -149,6 +150,7 @@ export const deliverInformation = (
   }
   const encode = (end: number) =>
     JSON.stringify({
+      ...receipt,
       contentDelivery: {
         kind: 'json-fragment',
         revision,

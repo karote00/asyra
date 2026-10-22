@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Selected-operation usage delivery is verified, with one completed 120-second observation. The selected guide was adopted; full design acceptance and deferred review-tool improvements are not claimed.**
+Status: **Inspection discovery handoff correction and deterministic review complete. One 120-second observation completed without reaching the corrected negative branch. Prior work is pushed at 15df01db9.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,10 +20,11 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `3d503aa714336946839374dc948e9c171cfb8182`.
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: selected-operation usage delivery under Task 3 compose. Preserve
-  canonical execution, paging, Knowledge, refresh and recovery. After validation,
-  run one recorded 120000 ms 101 observation, stop immediately at the deadline,
-  and preserve complete observable input/output. No retry, push or new goal.
+- Current scope: inspection discovery field ownership and truthful lookup receipts under
+  Task 3 compose. Prior completed work was explicitly authorized and pushed first.
+  After deterministic validation, run exactly one recorded 120000 ms 101 observation;
+  stop immediately at the deadline and preserve observable input/output. No retry,
+  extra model, new goal, Knowledge change or inspection acceptance redesign.
 - Future implementation requires the exact affected contract to be reconciled and
   admitted first. A previous accepted Inspector snapshot does not admit these changes.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
@@ -82,6 +83,101 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Inspection discovery field ownership and receipts - 2026-10-22
+
+Status: implementation, bounded review and final gates complete. The single authorized
+live observation is complete; its corrected negative branch remains unexercised. Formal saved-input tests first reproduced false
+success, then exercised actual narrow recovery and partial-page forwarding. Native
+protocol tests verify failed lookup and successful recovery without a browser write.
+
+Final gates: 506 focused tests passed with one pre-existing optional native probe
+skipped; complete operation/discovery rechecks passed after test-only review edits.
+All 58 mapped Inspector cases passed (attempt
+695428eb-88f7-49a9-8e20-37a05e18b87e; source
+220302f0ad47abe658a530ff6557fb6cd4c6c91d533a9f2feca68be82c40620b).
+Production App/server/proof types, naming (15), static contracts (6) and diff check
+passed; lint has no errors and two pre-existing warnings.
+
+Live run 1792643796914: gpt-6-astra/medium; stop expired at 120.003 s and completed
+at 120.118 s. Thirteen calls completed with 0.104820 s aggregate App duration.
+No drawing, schemaPaths query, failed lookup or canvas inspection occurred. The
+initial selected guide remained one reply; adding surface-grid later required two
+pages. Final contract returned at 88.158 s, last public reasoning event at 96.565 s,
+then the deadline. Blank near-deadline video frame confirmed. This does not prove
+live adoption of failed-scope recovery or a speed improvement. The raw video receipt
+remains unexported; a separate remux was retained. All 38 text payloads and two
+reference assets match retained digests. Original lifecycle incompleteness remains.
+Detailed timing/evidence tables: `tmp/knowledge-evaluation/knowledge-quality-knowledge-taipei-101-1792643796914/observation-report.md`.
+No further model invocation is authorized by this completed checkpoint.
+
+Self-review correction: preserve the existing full definition.refresh route alongside
+scope-preserving definition.recover. The first implementation incorrectly narrowed
+that full refresh; existing formal consumers caught it, and it was restored. No
+compatibility alias was added. Final source retains original requested paths on
+failed-scope recovery and separately labels valid-path narrowing. Ordinary menu
+pagination remains successful. Partial-page outcome is included inside the existing
+byte budget and retained with the existing continuation entry. No inspection verdict,
+criteria, binding or document owner changed. Follow-up test cleanup removed non-null
+assertions; a title-filtered owner-suite run hit its intentional whole-suite coverage
+guard, so its entire focused file is rerun rather than weakening the guard.
+
+Evidence: preserved run 1792610978725, drawing provider
+b81cadcf-c7db-49a5-a55e-0276aea9f8ce, payloads 28-32. Usage correctly separated
+review_drawing and define_design_criteria inputFields. The next query applied four
+paths to both identities. Each identity rejected foreign paths and returned
+coverage=none, but the invocation reported success/completed with no issues.
+The input description did not explicitly explain shared-list semantics. This
+supports a handoff defect; model reasoning and whether the success flag changed
+its decisions are not observable. Existing per-identity failure isolation is valid.
+
+Step Execution Card - compose:
+- Product clause: Inspection discovery field ownership and receipts. Owner/failure
+  owner compose; registered descriptors are inputs, scoped contract or explicit
+  failed-scope recovery is output, consumed by native invocation and Code Mode.
+- Keep one schemaPaths list applied independently to every selected identity.
+  Explain that different per-tool fields need separate queries, which can be issued
+  in parallel in one exec. Never infer field ownership or rewrite pointers. Keep
+  valid shared-path multi-tool queries and whole-scope rejection within an identity.
+- On invalid paths retain existing root/field diagnostics and failed identity.
+  Publish a same-tool correction query containing only that identity's valid
+  requested paths when any exist; label it as a narrower scope, not full recovery.
+  Existing usage/full recovery remains. Scoped recovery retains the original requested paths; the existing full refresh route remains.
+- Aggregate exact lookup results at the discovery owner: all requested identities
+  delivered is success; mixed delivered/unavailable is partial; none is failed.
+  Explicit missing/ambiguous identities count as unavailable. An empty lexical
+  search, category menu, empty names query or ordinary next page is not a failure.
+  Read settlement is completed (the lookup settled), independent of usable coverage.
+- Reuse status/settlement/code/message and the common invocation result boundary.
+  Carry the same lookup status through existing content fragments; the published
+  forwarding example must retain legitimate partial-result pages without treating
+  assembly completeness as successful requested coverage. No duplicate state/registry.
+- Boundary: local-operation-tools, local-information-delivery, their formal direct
+  integration tests and existing execution-flow proof; active plan/spec/Inspector/
+  mapping. No production inspection, criteria, mutations, persistence or Knowledge
+  owner changes. New nonpersisted names belong to App discovery only.
+- Work/lifetime: one outcome aggregation per canonical lookup; continuation reuses
+  existing returnedDefinitions content and registry revision. No new cache, scan of
+  unrelated descriptors, limit increase or per-field metadata expansion.
+- DoD: saved query reproduces failed coverage and false success before production
+  edits; corrected per-tool queries retain canonical cross-field/reference closure;
+  all-failed/mixed/all-success/missing/ambiguous/empty/valid-paging are truthful;
+  execute published narrower recovery and forwarding example; partial paging,
+  repeat/refresh/stale/cancel preserve results and never replay completed writes.
+  Verify invocation success boolean and outcome consumers, not only owner JSON.
+- Gates: naming, task context, structural admission, failing formal regression,
+  discovery/information/provider/flow suites, production types, scoped lint/static
+  contracts, Inspector candidate, bounded self-review. Then the single 120-second
+  recording: report observed query choice, receipt coverage, recovery and timings;
+  no claim that absence of the failure proves all inspection behavior correct.
+- Stop/replan: new state/executor needed, status lost through paging, legitimate
+  partial consumers broken, or failure requires broad tool-owner changes.
+
+Design self-review: preserve per-identity all-requested-path integrity rather than
+silently omitting invalid fields. Narrow correction is explicitly distinct from
+full recovery. Partial page forwarding is a direct consumer requirement: otherwise
+truthful non-success receipts would prevent assembly of valid sibling contracts.
+The plan does not assume AI misuse is the sole cause, and does not auto-run repairs.
 
 ### Selected operation usage guide - 2026-10-22
 
