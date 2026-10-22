@@ -3357,7 +3357,6 @@
             "target",
             "text",
             "textAlign",
-            "textColor",
             "toLocaleLowerCase",
             "toLocaleString",
             "toLocaleUpperCase",
