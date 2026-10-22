@@ -2,6 +2,7 @@ import React from 'react'
 import type { HSVAColor, RGBAColor } from './color-utils.js'
 
 interface ColorPickerSlidersProps {
+  showAlpha: boolean
   hsva: HSVAColor
   currentRgba: RGBAColor
   hueRef: React.RefObject<HTMLDivElement | null>
@@ -22,6 +23,7 @@ const CHECKERBOARD_BACKGROUND = {
 }
 
 export const ColorPickerSliders: React.FC<ColorPickerSlidersProps> = ({
+  showAlpha,
   hsva,
   currentRgba,
   hueRef,
@@ -83,34 +85,36 @@ export const ColorPickerSliders: React.FC<ColorPickerSlidersProps> = ({
           />
         </div>
 
-        <div
-          ref={alphaRef}
-          className="relative h-4 w-full cursor-ew-resize rounded-full border border-[#4B4B4B]"
-          style={CHECKERBOARD_BACKGROUND}
-          onPointerDown={(event) => onSliderPointerDown('alpha', event)}
-          data-testid={dataTestId ? `${dataTestId}-alpha` : undefined}
-        >
+        {showAlpha && (
           <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(90deg, rgba(${Math.round(
-                currentRgba.r
-              )}, ${Math.round(currentRgba.g)}, ${Math.round(
-                currentRgba.b
-              )}, 0) 0%, rgba(${Math.round(
-                currentRgba.r
-              )}, ${Math.round(currentRgba.g)}, ${Math.round(
-                currentRgba.b
-              )}, 1) 100%)`
-            }}
-          />
-          <div
-            className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-transparent shadow-[0_0_0_1px_rgba(0,0,0,0.55)]"
-            style={{
-              left: `calc(${SLIDER_THUMB_RADIUS}px + ${hsva.a} * (100% - ${SLIDER_THUMB_SIZE}px))`
-            }}
-          />
-        </div>
+            ref={alphaRef}
+            className="relative h-4 w-full cursor-ew-resize rounded-full border border-[#4B4B4B]"
+            style={CHECKERBOARD_BACKGROUND}
+            onPointerDown={(event) => onSliderPointerDown('alpha', event)}
+            data-testid={dataTestId ? `${dataTestId}-alpha` : undefined}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(90deg, rgba(${Math.round(
+                  currentRgba.r
+                )}, ${Math.round(currentRgba.g)}, ${Math.round(
+                  currentRgba.b
+                )}, 0) 0%, rgba(${Math.round(
+                  currentRgba.r
+                )}, ${Math.round(currentRgba.g)}, ${Math.round(
+                  currentRgba.b
+                )}, 1) 100%)`
+              }}
+            />
+            <div
+              className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-transparent shadow-[0_0_0_1px_rgba(0,0,0,0.55)]"
+              style={{
+                left: `calc(${SLIDER_THUMB_RADIUS}px + ${hsva.a} * (100% - ${SLIDER_THUMB_SIZE}px))`
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -86,18 +86,20 @@ ordinary primary-tool switching. Text rows in Layers use that same SVG. Canvas
 creation, direct text editing, and a T keyboard shortcut are deferred; selecting
 this toolbar entry does not create or edit a document object.
 
-A single selected Text object shows geometry and a compact Typography section:
-font family, normal/bold weight, font size, normal/italic style, line height,
-letter spacing, solid text color, left/center/right alignment, and multiline
-content. Single-line fields reuse the shared Input inside PropertyControl, with
-24px controls in 32px rows matching geometry fields. Inline prefixes and accessible
-names identify fields without stacked labels. Weight/style and line-height/spacing
-share paired rows; multiline content keeps the same horizontal inset.
-Text color reuses ColorPicker and the existing color-format definitions; picker
-input commits immediately and a completed picker drag owns one Undo step.
-Text color has a swatch;
-Text does not expose unsupported Fill or Stroke lists. Non-text selections retain
-their existing appearance panels. Multiple-selection typography is not exposed.
+A single selected Text object shows geometry followed by Typography, Fill, and
+Content sections. Typography follows the Figma reference layout while retaining
+Asyra shared controls: a full-width font family; one combined font style selector
+beside font size; line height beside letter spacing with visible labels; and a
+labeled horizontal alignment group. The combined styles are Regular, Italic,
+Bold, and Bold Italic, backed by the existing weight/style properties. A style
+selection submits both values in one common-API mutation and one Undo step.
+Single-line fields reuse Input inside PropertyControl. Text color is in a separate
+Fill section using ColorPicker and existing color-format definitions. Its alpha
+controls are hidden because this interface edits solid text color only. Content
+remains a multiline field in its own section because Canvas editing is deferred.
+Unsupported vertical alignment, resizing, and advanced type controls are omitted.
+Text does not expose unsupported Fill lists or Stroke lists. Non-text selections
+retain their existing appearance panels; multiple-selection typography is not exposed.
 
 Text and number drafts commit on blur (Enter also commits single-line fields),
 while weight, style, and alignment choices commit immediately. Escape discards

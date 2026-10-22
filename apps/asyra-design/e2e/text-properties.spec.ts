@@ -133,8 +133,8 @@ const cases = [
   },
   { key: 'fontFamily', label: 'Font family', value: 'serif', control: 'input' },
   { key: 'fontSize', label: 'Font size', value: 40, control: 'input' },
-  { key: 'fontWeight', label: 'Weight', value: 'bold', control: 'select' },
-  { key: 'fontStyle', label: 'Style', value: 'italic', control: 'select' },
+  { key: 'fontWeight', label: 'Font style', value: 'bold', control: 'select' },
+  { key: 'fontStyle', label: 'Font style', value: 'italic', control: 'select' },
   {
     key: 'textAlign',
     label: 'Align center',
@@ -162,7 +162,10 @@ for (const entry of cases) {
         .getByRole('combobox', { name: entry.label, exact: true })
         .selectOption(entry.value)
     } else {
-      const input = page.getByLabel(entry.label, { exact: true })
+      const input = page.getByRole(
+        typeof entry.value === 'number' ? 'spinbutton' : 'textbox',
+        { name: entry.label, exact: true }
+      )
       await input.fill(String(entry.value))
       await input.press('Tab')
     }
@@ -277,7 +280,35 @@ test('Typography controls match the compact geometry rows', async ({
     throw new Error('Missing property controls')
   expect(size.height).toBe(geometry.height)
   expect(Math.abs(spacing.y - height.y)).toBeLessThan(1)
-  expect(spacing.y - size.y).toBe(32)
+  const style = await page
+    .getByRole('combobox', { name: 'Font style', exact: true })
+    .boundingBox()
+  if (!style) throw new Error('Missing font style selector')
+  expect(Math.abs(style.y - size.y)).toBeLessThan(1)
+  expect(spacing.y).toBeGreaterThan(size.y + size.height)
+  const typography = page.getByRole('region', {
+    name: 'Typography',
+    exact: true
+  })
+  await expect(
+    typography.getByText('Line height', { exact: true })
+  ).toBeVisible()
+  await expect(
+    typography.getByText('Letter spacing', { exact: true })
+  ).toBeVisible()
+  await expect(
+    typography.getByLabel('Text color', { exact: true })
+  ).toHaveCount(0)
+  await expect(
+    page
+      .getByRole('region', { name: 'Fill', exact: true })
+      .getByLabel('Text color', { exact: true })
+  ).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Content', exact: true })
+      .getByRole('textbox')
+  ).toBeVisible()
   await page.screenshot({
     path: testInfo.outputPath('compact-typography.png'),
     fullPage: true
@@ -291,6 +322,7 @@ test('Shared text color picker commits a color with one undo step', async ({
   const before = await captureText(page)
   const depth = await getUndoHistoryDepth(page)
   await page.getByTestId('prop-text-color-picker-trigger').click()
+  await expect(page.getByTestId('prop-text-color-picker-alpha')).toHaveCount(0)
   const hex = page.getByTestId('prop-text-color-picker-hex')
   await hex.fill('43CBA5')
   await hex.press('Tab')
@@ -304,4 +336,43 @@ test('Shared text color picker commits a color with one undo step', async ({
   expect((await captureText(page)).hash).not.toBe(before.hash)
   await undo(page)
   expect((await captureText(page)).hash).toBe(before.hash)
+})
+
+test('Combined font style changes both properties in one reversible action', async ({
+  page
+}) => {
+  await createTextFixture(page)
+  const before = await captureText(page)
+  const depth = await getUndoHistoryDepth(page)
+  const style = page.getByRole('combobox', { name: 'Font style', exact: true })
+  await style.selectOption('bold-italic')
+  await expect
+    .poll(async () => {
+      const data = await readTypography(page)
+      return [data.fontWeight, data.fontStyle]
+    })
+    .toEqual(['bold', 'italic'])
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  const after = await captureText(page)
+  expect(after.hash).not.toBe(before.hash)
+  await undo(page)
+  await expect(style).toHaveValue('regular')
+  expect((await captureText(page)).hash).toBe(before.hash)
+  await redo(page)
+  await expect(style).toHaveValue('bold-italic')
+  expect((await captureText(page)).hash).toBe(after.hash)
+  await style.selectOption('bold-italic')
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  await style.selectOption('regular')
+  await expect
+    .poll(async () => {
+      const data = await readTypography(page)
+      return [data.fontWeight, data.fontStyle]
+    })
+    .toEqual(['normal', 'normal'])
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 2)
+  expect((await captureText(page)).hash).toBe(before.hash)
+  await undo(page)
+  await expect(style).toHaveValue('bold-italic')
+  expect((await captureText(page)).hash).toBe(after.hash)
 })

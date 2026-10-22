@@ -3,25 +3,16 @@ import { ColorPicker, Input, PropertyControl } from '@asyra/design-system'
 import { TEXT_PROPERTY_SCHEMA, type TextData } from '@asyra/preset'
 import { COLOR_PICKER_FORMAT_DEFINITIONS } from './fills/color-picker-config'
 
-const choices: Partial<Record<keyof TextData, readonly [string, string][]>> = {
-  fontWeight: [
-    ['normal', 'Regular'],
-    ['bold', 'Bold']
-  ],
-  fontStyle: [
-    ['normal', 'Normal'],
-    ['italic', 'Italic']
-  ]
-}
-
 export const TextField = ({
   field,
   label,
+  showLabel = false,
   value,
   onCommit
 }: {
   field: keyof TextData
   label: string
+  showLabel?: boolean
   value: string | number
   onCommit(value: string | number): void
 }) => {
@@ -87,10 +78,7 @@ export const TextField = ({
     onKeyUp: (event: React.KeyboardEvent) => event.stopPropagation()
   }
 
-  const options = choices[field]
   const prefixes: Partial<Record<keyof TextData, string>> = {
-    fontFamily: 'T',
-    fontSize: 'Ag',
     lineHeight: '↕',
     letterSpacing: '↔'
   }
@@ -133,28 +121,13 @@ export const TextField = ({
         className={`${props.className} resize-y px-2 py-1.5`}
       />
     )
-  } else if (options) {
-    control = (
-      <select
-        aria-label={label}
-        className={`${props.className} pl-2 [color-scheme:dark]`}
-        value={String(value)}
-        onChange={(event) => commit(event.target.value)}
-        onKeyDown={(event) => event.stopPropagation()}
-        onKeyUp={(event) => event.stopPropagation()}
-      >
-        {options.map(([key, title]) => (
-          <option key={key} value={key}>
-            {title}
-          </option>
-        ))}
-      </select>
-    )
   }
 
   return (
     <div title={label} className="flex min-w-0 flex-col text-[11px] text-white">
-      <span className="sr-only">{label}</span>
+      <span className={showLabel ? 'mb-1 text-text-secondary' : 'sr-only'}>
+        {label}
+      </span>
       <PropertyControl className={field === 'text' ? '!h-auto min-h-16' : ''}>
         {field === 'textColor' && (
           <ColorPicker

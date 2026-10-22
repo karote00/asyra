@@ -595,6 +595,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
                     />
 
                     <ColorPickerSliders
+                      showAlpha={showAlpha}
                       hsva={hsva}
                       currentRgba={currentRgba}
                       hueRef={hueRef}

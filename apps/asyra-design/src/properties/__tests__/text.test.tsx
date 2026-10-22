@@ -5,14 +5,17 @@ import TextProperties from '../text'
 const mocks = vi.hoisted(() => ({
   value: null as unknown,
   selection: new Set(['first']),
-  update: vi.fn()
+  update: vi.fn(),
+  style: vi.fn()
 }))
 vi.mock('../../hooks', () => ({
   useProperty: (key: string) =>
     key === 'elementSelection' ? mocks.selection : mocks.value
 }))
 vi.mock('../../controllers/scene-tree', () => ({
-  updateSelectedElementProperties: (...args: unknown[]) => mocks.update(...args)
+  updateSelectedElementProperties: (...args: unknown[]) =>
+    mocks.update(...args),
+  updateSelectedTextStyle: (...args: unknown[]) => mocks.style(...args)
 }))
 
 describe('manual text editing', () => {
@@ -21,6 +24,7 @@ describe('manual text editing', () => {
     mocks.selection = new Set(['first'])
     mocks.value = { ...DEFAULT_TEXT_DATA, text: 'Heading' }
     mocks.update.mockClear()
+    mocks.style.mockClear()
   })
   it('commits content on blur rather than every keystroke', () => {
     render(<TextProperties />)
@@ -58,15 +62,31 @@ describe('manual text editing', () => {
 
   it('commits typography choices immediately and exposes alignment state', () => {
     render(<TextProperties />)
-    fireEvent.change(screen.getByRole('combobox', { name: 'Weight' }), {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Font style' }), {
       target: { value: 'bold' }
     })
-    expect(mocks.update).toHaveBeenCalledExactlyOnceWith('fontWeight', 'bold')
+    expect(mocks.style).toHaveBeenCalledExactlyOnceWith({
+      fontWeight: 'bold',
+      fontStyle: 'normal'
+    })
     mocks.update.mockClear()
+    mocks.style.mockClear()
     const center = screen.getByRole('button', { name: 'Align center' })
     expect(center.getAttribute('aria-pressed')).toBe('false')
     fireEvent.click(center)
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith('textAlign', 'center')
+  })
+
+  it('combines bold and italic in one style update', () => {
+    render(<TextProperties />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Font style' }), {
+      target: { value: 'bold-italic' }
+    })
+    expect(mocks.style).toHaveBeenCalledExactlyOnceWith({
+      fontWeight: 'bold',
+      fontStyle: 'italic'
+    })
+    expect(mocks.update).not.toHaveBeenCalled()
   })
 
   it('keeps IME confirmation inside a typography field', () => {
