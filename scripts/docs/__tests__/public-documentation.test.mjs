@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import {
   checkPublicDocumentation,
   createPublicDocumentationBundle,
+  publicApiEntries,
   WEBSITE_LLM_DISCOVERY_PATH
 } from '../public-documentation.mjs'
 
@@ -14,6 +15,80 @@ const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../..'
 )
+
+test('public API inventories use source exports regardless of dependency build state', (context) => {
+  const temporaryRoot = path.join(repositoryRoot, 'tmp')
+  fs.mkdirSync(temporaryRoot, { recursive: true })
+  const fixtureRoot = fs.mkdtempSync(path.join(temporaryRoot, 'public-api-'))
+  context.after(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }))
+  const write = (relativePath, source) => {
+    const destination = path.join(fixtureRoot, relativePath)
+    fs.mkdirSync(path.dirname(destination), { recursive: true })
+    fs.writeFileSync(destination, source)
+  }
+  const packages = ['consumer', 'provider'].map((directory) => ({
+    directory,
+    name: `@fixture/${directory}`,
+    manifestPath: `packages/${directory}/package.json`,
+    publicEntries: ['.', './contracts']
+  }))
+  for (const record of packages) {
+    write(
+      record.manifestPath,
+      JSON.stringify({
+        name: record.name,
+        type: 'module',
+        exports: {
+          '.': { types: './dist/index.d.ts' },
+          './contracts': { types: './dist/contracts.d.ts' }
+        }
+      })
+    )
+  }
+  write(
+    'packages/provider/src/index.ts',
+    'export class Provider { current = true }'
+  )
+  write(
+    'packages/provider/src/contracts.ts',
+    'export interface Contract { current: boolean }'
+  )
+  write('packages/consumer/src/index.ts', "export * from '@fixture/provider'")
+  write(
+    'packages/consumer/src/contracts.ts',
+    "export * from '@fixture/provider/contracts'"
+  )
+  fs.mkdirSync(path.join(fixtureRoot, 'node_modules/@fixture'), {
+    recursive: true
+  })
+  fs.symlinkSync(
+    '../../packages/provider',
+    path.join(fixtureRoot, 'node_modules/@fixture/provider')
+  )
+  const expected = [
+    { members: ['current'], path: '.', symbols: ['Provider'] },
+    { members: ['current'], path: './contracts', symbols: ['Contract'] }
+  ]
+  for (const state of ['missing', 'stale', 'current']) {
+    if (state !== 'missing') {
+      const member = state === 'stale' ? 'outdated' : 'current'
+      write(
+        'packages/provider/dist/index.d.ts',
+        `export declare class Provider { ${member}: boolean }`
+      )
+      write(
+        'packages/provider/dist/contracts.d.ts',
+        `export interface Contract { ${member}: boolean }`
+      )
+    }
+    const entries = publicApiEntries({
+      packageReference: { packages },
+      repositoryRoot: fixtureRoot
+    })
+    assert.deepEqual(entries.get('@fixture/consumer'), expected, state)
+    assert.deepEqual(entries.get('@fixture/provider'), expected, state)
+  }
+})
 
 test('public indexes derive the exact page, source, and API inventories', async () => {
   const bundle = await createPublicDocumentationBundle({ repositoryRoot })
