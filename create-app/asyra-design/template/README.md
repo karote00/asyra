@@ -289,6 +289,16 @@ server-prepared action batch, permission checks, and canonical transaction flow.
 A missing model, executable, or subscription login fails without falling back
 to HTTP. Check your local Codex login and version when setup fails.
 
+## Text properties
+
+Select an existing Text object in Layers to edit its content, font family, size,
+weight, style, line height, letter spacing, and alignment in the Typography panel.
+Use the shared Fill panel for layered colors, gradients, opacity, and visibility. Text and numeric fields commit on blur; choices apply
+immediately. Escape discards a draft, and each accepted change supports Undo/Redo.
+Fonts must be available to the browser. The toolbar and Text layers share a T icon;
+the toolbar selects Text mode, while Canvas creation and direct text editing are
+reserved for the next stage.
+
 ## Support and contribution policy
 
 This repository does not accept external issues or contributions, including
