@@ -2,6 +2,7 @@ import Group from './svgs/Group.svg?react'
 import Rect from './svgs/Rect.svg?react'
 import Oval from './svgs/Oval.svg?react'
 import Pen from './svgs/Pen.svg?react'
+import Text from './svgs/Text.svg?react'
 import Visible from './svgs/Visible.svg?react'
 import Invisible from './svgs/Invisible.svg?react'
 import Lock from './svgs/Lock.svg?react'
@@ -14,6 +15,7 @@ const Icons = {
   Rect,
   Oval,
   Pen,
+  Text,
   Visible,
   Invisible,
   Lock,

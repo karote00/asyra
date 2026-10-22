@@ -56,6 +56,29 @@ describe('manual text editing', () => {
     expect(mocks.update).not.toHaveBeenCalled()
   })
 
+  it('commits typography choices immediately and exposes alignment state', () => {
+    render(<TextProperties />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Weight' }), {
+      target: { value: 'bold' }
+    })
+    expect(mocks.update).toHaveBeenCalledExactlyOnceWith('fontWeight', 'bold')
+    mocks.update.mockClear()
+    const center = screen.getByRole('button', { name: 'Align center' })
+    expect(center.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(center)
+    expect(mocks.update).toHaveBeenCalledExactlyOnceWith('textAlign', 'center')
+  })
+
+  it('keeps IME confirmation inside a typography field', () => {
+    render(<TextProperties />)
+    const family = screen.getByRole('textbox', { name: 'Font family' })
+    family.focus()
+    fireEvent.change(family, { target: { value: 'serif' } })
+    fireEvent.keyDown(family, { key: 'Enter', isComposing: true })
+    expect(document.activeElement).toBe(family)
+    expect(mocks.update).not.toHaveBeenCalled()
+  })
+
   it('has no text controls without an editable text selection', () => {
     mocks.value = null
     render(<TextProperties />)

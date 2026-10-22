@@ -1,3 +1,4 @@
+import { TEXT_COMPONENT_TYPE } from '@asyra/preset'
 import Header from '../header'
 import TextProperties from '../text'
 import Position from '../position'
@@ -5,9 +6,23 @@ import Dimension from '../dimension'
 import Rotation from '../rotation'
 import Fills from '../fills'
 import Strokes from '../strokes'
-import { useElementSelection } from '../../providers'
+import { useElementData, useElementSelection } from '../../providers'
 
 const SectionDivider = () => <div className="h-[1px] bg-white/5 my-1" />
+
+const ElementAppearance = ({ elementId }: { elementId: string }) => {
+  const element = useElementData(elementId)
+  if (element.type === TEXT_COMPONENT_TYPE) return null
+
+  return (
+    <>
+      <SectionDivider />
+      <Fills />
+      <SectionDivider />
+      <Strokes />
+    </>
+  )
+}
 
 const ElementPropertiesPanel = ({ title }: { title: string }) => {
   const elementSelection = useElementSelection()
@@ -27,15 +42,9 @@ const ElementPropertiesPanel = ({ title }: { title: string }) => {
       </div>
 
       <TextProperties />
-      <SectionDivider />
-
-      {/* Fill section */}
-      <Fills />
-
-      <SectionDivider />
-
-      {/* Stroke section */}
-      <Strokes />
+      <ElementAppearance
+        elementId={elementSelection.size === 1 ? [...elementSelection][0] : ''}
+      />
     </div>
   )
 }

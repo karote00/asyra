@@ -78,3 +78,30 @@ The Render/Core facade observes at most 200 unique current IDs, flushing pending
 projection once per call then querying each target once. App review compares text
 content bounds with declared layout dimensions, recording unavailable fonts or
 measurements explicitly; it must not equate missing evidence with a fit.
+
+## Text interface
+
+The toolbar exposes a Text button with a shared T SVG and an active state through
+ordinary primary-tool switching. Text rows in Layers use that same SVG. Canvas
+creation, direct text editing, and a T keyboard shortcut are deferred; selecting
+this toolbar entry does not create or edit a document object.
+
+A single selected Text object shows geometry and a compact Typography section:
+font family, normal/bold weight, font size, normal/italic style, line height,
+letter spacing, solid text color, left/center/right alignment, and multiline
+content. The controls use Asyra Design field styling. Text color has a swatch;
+Text does not expose unsupported Fill or Stroke lists. Non-text selections retain
+their existing appearance panels. Multiple-selection typography is not exposed.
+
+Text and number drafts commit on blur (Enter also commits single-line fields),
+while weight, style, and alignment choices commit immediately. Escape discards
+the current draft; IME confirmation stays inside the field. Invalid drafts show
+an error without changing canonical properties. Each effective commit uses the
+existing controller/common API and owns one Undo step. UI state follows selection
+and canonical changes, including Undo/Redo. Font names use fonts available to the
+browser; this interface does not install or fetch fonts.
+
+`e2e/text-properties.spec.ts` verifies all nine typography properties against
+canonical values and actual rendered text pixels, plus Undo/Redo and validation.
+`e2e/native-text.spec.ts` covers content persistence and reload. Canvas editing
+semantics remain outside these interface tests.
