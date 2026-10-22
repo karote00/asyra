@@ -22,6 +22,66 @@ describe('Render', () => {
     render = new Render({ engine })
   })
 
+  it('suspends presentation with an idempotent lease without changing element geometry', async () => {
+    await render.init(800, 600, 0xffffff)
+    const graphic = new RenderGraphics().rect(0, 0, 80, 40)
+    render.viewport.view.addChild(graphic)
+    render.viewport.getElementById = vi.fn(() => graphic)
+    const redraw = vi.spyOn(render, 'requestRender')
+    const resume = render.suspendElementPresentation('text')
+    const second = render.suspendElementPresentation('text')
+    expect(graphic.renderable).toBe(false)
+    expect(graphic.presentationSuppressed).toBe(true)
+    expect(graphic.visible).toBe(false)
+    graphic.renderable = true
+    expect(graphic.renderable).toBe(false)
+    resume?.()
+    resume?.()
+    expect(graphic.renderable).toBe(false)
+    second?.()
+    expect(graphic.renderable).toBe(true)
+    expect(graphic.visible).toBe(true)
+    expect(graphic.getLocalBounds().width).toBe(80)
+    expect(redraw).toHaveBeenCalledTimes(4)
+  })
+
+  it('measures detached text once without flushing the scene and rejects unsupported engines', async () => {
+    await render.init(800, 600, 0xffffff)
+    const layout = {
+      text: 'Hello',
+      fontFamily: 'sans-serif',
+      fontSize: 16,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      lineHeight: 20,
+      letterSpacing: 0
+    } as const
+    expect(() => render.measureText(layout)).toThrow()
+    const capable = new RecordingRenderEngine({
+      name: 'text-test',
+      capabilities: [...engine.capabilities, 'text-measurement']
+    })
+    const measuredRender = new Render({ engine: capable })
+    await measuredRender.init(800, 600, 0xffffff)
+    capable.query = vi.fn(() => ({
+      type: 'text-measurement' as const,
+      width: 45,
+      height: 20,
+      lines: ['Hello']
+    }))
+    const flush = vi.spyOn(measuredRender, 'flushFrame')
+    expect(measuredRender.measureText(layout).width).toBe(45)
+    expect(capable.query).toHaveBeenCalledExactlyOnceWith({
+      type: 'measure-text',
+      layout
+    })
+    expect(flush).not.toHaveBeenCalled()
+    expect(() =>
+      measuredRender.measureText({ ...layout, fontSize: NaN })
+    ).toThrow('Invalid text measurement input')
+    expect(capable.query).toHaveBeenCalledTimes(1)
+  })
+
   it('measures current content with one flush and one query per present target', async () => {
     await render.init(800, 600, 0xffffff)
     const element = new RenderContainer()

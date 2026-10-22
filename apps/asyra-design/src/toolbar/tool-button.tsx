@@ -122,7 +122,7 @@ const ToolButton = () => {
         onClick={handleSwitchToTextTool}
         data-testid="tool-text"
         data-active={primaryTool === PrimaryToolType.TEXT}
-        title="Text"
+        title="Text (T)"
         type="button"
       >
         <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.TEXT]} />

@@ -115,6 +115,26 @@ export type RenderEngineTextOperation = Readonly<{
   lineHeight: number
   letterSpacing: number
   paint: RenderEnginePaint
+  wordWrap?: boolean
+}>
+
+export type RenderEngineTextLayout = Pick<
+  RenderEngineTextOperation,
+  | 'text'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'fontWeight'
+  | 'fontStyle'
+  | 'lineHeight'
+  | 'letterSpacing'
+> &
+  Readonly<{ width?: number }>
+
+export type RenderEngineTextMeasurement = Readonly<{
+  type: 'text-measurement'
+  width: number
+  height: number
+  lines: readonly string[]
 }>
 
 export type RenderEngineDrawOperation =
@@ -264,6 +284,7 @@ export type RenderEngineSnapshotResult = Readonly<{
 }>
 
 export type RenderEngineQuery =
+  | Readonly<{ type: 'measure-text'; layout: RenderEngineTextLayout }>
   | RenderEngineLocalContentBoundsQuery
   | RenderEngineSnapshotQuery
   | RenderEngineGetBoundsQuery
@@ -288,6 +309,7 @@ export type RenderEngineHitQueryResult = Readonly<{
 }>
 
 export type RenderEngineQueryResult =
+  | RenderEngineTextMeasurement
   | RenderEngineSnapshotResult
   | RenderEngineBoundsQueryResult
   | RenderEnginePointQueryResult

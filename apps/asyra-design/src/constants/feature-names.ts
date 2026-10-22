@@ -4,6 +4,9 @@ export const ToolFeatureNames = {
 
 export const ElementFeatureNames = {
   CREATE_ELEMENT: 'createElement',
+  CREATE_TEXT: 'createText',
+  EDIT_TEXT: 'editText',
+  CANCEL_TEXT: 'cancelText',
   MOVE_ELEMENTS: 'moveElements',
   HOVER_ELEMENT: 'hoverElement',
   SELECTION: 'selection',

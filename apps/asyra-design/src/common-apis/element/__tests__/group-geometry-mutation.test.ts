@@ -22,11 +22,13 @@ const mocks = vi.hoisted(() => ({
   setVectorElementPosition: vi.fn()
 }))
 
-vi.mock('@asyra/core', () => ({
+vi.mock('@asyra/core', async (original) => ({
+  ...(await original<typeof import('@asyra/core')>()),
   runTransaction: mocks.runTransaction
 }))
 
-vi.mock('@asyra/preset', () => ({
+vi.mock('@asyra/preset', async (original) => ({
+  ...(await original<typeof import('@asyra/preset')>()),
   InputSystemEvents: {},
   moveElementsWithGroupGeometry: mocks.moveElementsWithGroupGeometry,
   normalizeGroupsForElements: mocks.normalizeGroupsForElements,

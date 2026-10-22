@@ -24,7 +24,7 @@
         },
         {
           "path": "create-app/asyra-design/template/README.md",
-          "sha256": "791538092e98426a40e000f309ffbb6afc1c94dac9cf27424bae6f7453806f24"
+          "sha256": "5563440186cec64f6e27f3ba552d09049e3bf45ce966d41c64f409bcec567ed7"
         }
       ]
     },
@@ -170,7 +170,7 @@
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
-          "sha256": "ff1ee0b91ca601c5679d391c0e04b07b963882c00862b5029c3692f05d4c0113"
+          "sha256": "5311827ccfeac8bba3500fe8f9671169f1bd90c53ee930741e815e14289679ca"
         },
         {
           "path": "docs/ai/framework/golden-paths/replace-render-engine.md",
@@ -242,7 +242,7 @@
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
-          "sha256": "ff1ee0b91ca601c5679d391c0e04b07b963882c00862b5029c3692f05d4c0113"
+          "sha256": "5311827ccfeac8bba3500fe8f9671169f1bd90c53ee930741e815e14289679ca"
         }
       ]
     },
@@ -494,7 +494,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render-engine.md",
-          "sha256": "ff1ee0b91ca601c5679d391c0e04b07b963882c00862b5029c3692f05d4c0113"
+          "sha256": "5311827ccfeac8bba3500fe8f9671169f1bd90c53ee930741e815e14289679ca"
         },
         {
           "path": "packages/render-engine/package.json",

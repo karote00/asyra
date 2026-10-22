@@ -114,3 +114,14 @@ contain Pixi objects, document IDs, shape topology or editable canonical state.
 The concrete engine owns GPU representation and resource lifetime. Omitting a
 material retains existing solid mesh tint/alpha behavior. This is an additive
 runtime property contract, not a saved-file format change.
+
+## Detached text measurement
+
+The optional `TEXT_MEASUREMENT` capability admits `measure-text` queries with a
+`RenderEngineTextLayout`. The layout contains plain text and typography plus an
+optional wrapping width. `RenderEngineTextMeasurement` returns native width,
+height and wrapped lines without allocating a scene object or changing a document.
+Text draw operations accept an optional `wordWrap` flag (true when omitted).
+The Pixi adapter shares the typography/wrapping style between measurement and
+native Text construction. Recording and spatial engines reject measurement
+explicitly; consumers must check capability support through the Render/Core facade.

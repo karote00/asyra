@@ -4,7 +4,14 @@ import { PRESET_REGISTRATION } from '../../registration.js'
 
 export const TEXT_PROPERTY_TYPE = 'typography'
 
+export const TextSizing = {
+  AUTO_WIDTH: 'auto-width',
+  AUTO_HEIGHT: 'auto-height',
+  FIXED: 'fixed'
+} as const
+
 export interface TextData {
+  textSizing: (typeof TextSizing)[keyof typeof TextSizing]
   text: string
   fontFamily: string
   fontSize: number
@@ -17,6 +24,7 @@ export interface TextData {
 
 export const DEFAULT_TEXT_DATA: Readonly<TextData> = Object.freeze({
   text: '',
+  textSizing: TextSizing.FIXED,
   fontFamily: 'sans-serif',
   fontSize: 16,
   fontWeight: 'normal',
@@ -35,6 +43,13 @@ const finiteRange = (value: unknown, min: number, max: number) =>
 export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
   type: TEXT_PROPERTY_TYPE,
   fields: [
+    {
+      key: 'textSizing',
+      kind: 'string',
+      defaultValue: DEFAULT_TEXT_DATA.textSizing,
+      validate: (value) =>
+        Object.values(TextSizing).some((mode) => mode === value)
+    },
     {
       key: 'text',
       kind: 'string',

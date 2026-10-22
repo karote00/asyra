@@ -54,6 +54,11 @@ export const isEditableShortcutTarget = (target: Element | null): boolean => {
   )
 }
 
+const updateToolShortcutState = (raw: RawInputEvent) => {
+  if (isEditableShortcutTarget(document.activeElement)) return false
+  updateKeyState(raw)
+}
+
 const updateGroupShortcutState = (raw: RawInputEvent) => {
   updateKeyState(raw)
   raw.detail = {
@@ -242,27 +247,33 @@ export const keyCombinations = {
   [InputSystemEvents.INPUT_SHORTCUT_SWITCH_PRIMARY_TOOL]: [
     {
       type: InputType.KEYBOARD,
+      keys: [keyMap.keys.KeyT],
+      detail: { primaryTool: PrimaryToolType.TEXT },
+      callback: updateToolShortcutState
+    },
+    {
+      type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyR],
       detail: { primaryTool: PrimaryToolType.RECTANGLE },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyV],
       detail: { primaryTool: PrimaryToolType.SELECT },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyO],
       detail: { primaryTool: PrimaryToolType.OVAL },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     },
     {
       type: InputType.KEYBOARD,
       keys: [keyMap.keys.KeyP],
       detail: { primaryTool: PrimaryToolType.PEN },
-      callback: updateKeyState
+      callback: updateToolShortcutState
     }
   ],
   [InputSystemEvents.INPUT_SHORTCUT_CANCEL]: [

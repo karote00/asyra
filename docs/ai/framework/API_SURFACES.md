@@ -27,6 +27,12 @@ Core API tier types (explicit ownership contract):
 
 Lifecycle and integration:
 
+- `suspendElementPresentation(elementId)`: temporary render-only suppression,
+  returning an idempotent release function or null for an unavailable target.
+  Canonical data, geometry, visibility and history remain unchanged.
+- `measureText(layout)`: capability-checked native text metrics for a detached
+  draft, with optional wrapping width; returns width, height and wrapped lines
+  without a scene flush or canonical object.
 - `measureElementContentBounds(elementIds)`: actual local rendered content bounds
   for 1..200 unique current IDs; one projection flush then one query per present
   object. Missing targets return null bounds. Requires the optional renderer
@@ -753,7 +759,7 @@ See `packages/collaboration.md` and
   and `CUSTOM` are currently available
 - optional canonical text exports: `TEXT_COMPONENT_TYPE`, `TEXT_COMPONENT_DEFINITION`,
   `TEXT_PROPERTY_TYPE`, `TEXT_PROPERTY_DEFINITION`, `TEXT_PROPERTY_SCHEMA`,
-  `DEFAULT_TEXT_DATA` and `TEXT_RENDER_STRATEGY`; install explicitly without changing
+  `DEFAULT_TEXT_DATA`, `TextSizing` and `TEXT_RENDER_STRATEGY`; install explicitly without changing
   default profiles. Plain editable text and typography use normal schema/history owners.
 - `PresetDefaults`: eight official selectable default ids
 - grouped `ViewportSystemPropertyKeys`, `InputSystemPropertyKeys`,

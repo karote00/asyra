@@ -23,6 +23,9 @@ describe('native editable text', () => {
     })
     property.set('text' as never, 'Hello 世界\n<b>literal</b>' as never)
     property.set('fontSize' as never, 32 as never)
+    property.set('textSizing' as never, 'auto-width' as never)
+    property.set('textSizing' as never, 'invalid-mode' as never)
+    expect(property.get('textSizing' as never)).toBe('auto-width')
     expect(property.save()).toMatchObject({
       text: 'Hello 世界\n<b>literal</b>',
       fontSize: 32
@@ -33,13 +36,16 @@ describe('native editable text', () => {
       id: 'text-property-test',
       type: TEXT_PROPERTY_TYPE,
       fontSize: -5,
+      textSizing: 'invalid-mode',
       text: 'Restored'
     } as never)
     expect(property.get('fontSize' as never)).toBe(DEFAULT_TEXT_DATA.fontSize)
     expect(property.get('text' as never)).toBe('Restored')
+    expect(property.get('textSizing' as never)).toBe('fixed')
   })
 
   it.each([
+    ['textSizing', 'unknown'],
     ['fontSize', 0],
     ['fontSize', Infinity],
     ['lineHeight', -1],
@@ -134,4 +140,36 @@ describe('native editable text', () => {
     expect(graphics.y).toBe(40)
     expect(graphics.hitArea).toBeDefined()
   })
+})
+
+it('projects canonical text rotation into the render transform', () => {
+  const graphics = new RenderGraphics()
+  TEXT_RENDER_STRATEGY(graphics, {
+    ...DEFAULT_TEXT_DATA,
+    x: 10,
+    y: 20,
+    width: 200,
+    height: 80,
+    rotation: 0.3,
+    fills: []
+  } as never)
+  expect(graphics.rotation).toBe(0.3)
+})
+
+it('keeps imported fixed boxes and projects auto-width text without wrapping', () => {
+  expect(DEFAULT_TEXT_DATA.textSizing).toBe('fixed')
+  const graphics = new RenderGraphics()
+  TEXT_RENDER_STRATEGY(graphics, {
+    ...DEFAULT_TEXT_DATA,
+    textSizing: 'auto-width',
+    text: 'Long line',
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 20,
+    fills: [createDefaultFill({ color: '#000000' })]
+  } as never)
+  expect(
+    graphics.getDrawOperations().find((op) => op.type === 'text')
+  ).toMatchObject({ wordWrap: false })
 })

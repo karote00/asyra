@@ -11,6 +11,7 @@ import {
 import {
   TEXT_PROPERTY_TYPE,
   DEFAULT_TEXT_DATA,
+  TextSizing,
   type TextData
 } from '../props/components/text-component.js'
 import { getRenderableFills } from './fills.js'
@@ -63,6 +64,7 @@ export const TEXT_RENDER_STRATEGY: EngineNeutralRenderStrategy<
       {
         ...bounds,
         text: data.text,
+        wordWrap: data.textSizing !== TextSizing.AUTO_WIDTH,
         fontFamily: data.fontFamily,
         fontSize: data.fontSize,
         fontWeight: data.fontWeight,
@@ -78,4 +80,5 @@ export const TEXT_RENDER_STRATEGY: EngineNeutralRenderStrategy<
   }
   graphic.x = data.x
   graphic.y = data.y
+  graphic.rotation = data.rotation ?? 0
 }

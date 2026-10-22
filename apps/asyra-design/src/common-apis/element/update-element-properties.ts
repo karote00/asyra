@@ -7,6 +7,7 @@ import {
   type EVENT_OPTIONS
 } from '@asyra/utils'
 import core from '../../contexts'
+import { projectTextLayoutUpdate } from '../text-layout'
 
 const GROUP_GEOMETRY_KEYS = new Set(['x', 'y', 'width', 'height'])
 
@@ -24,7 +25,7 @@ export const updateElementProperties = (
     runTransaction(() => {
       const directRequest = elementIds.map((elementId) => ({
         elementId,
-        values
+        values: projectTextLayoutUpdate(elementId, values)
       }))
       const explicitGroupElementIds = entries.some(([key]) =>
         GROUP_GEOMETRY_KEYS.has(key)

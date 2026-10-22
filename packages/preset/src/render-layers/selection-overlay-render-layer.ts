@@ -33,6 +33,7 @@ export const SELECTION_OVERLAY_VECTOR_HOVER_STROKE_WIDTH = 2
 type LocalBounds = Rect
 
 interface RenderElementShape {
+  readonly presentationSuppressed?: boolean
   getBounds: () => LocalBounds
   worldTransform: GeometryTransformMatrix
 }
@@ -662,12 +663,19 @@ export const registerSelectionOverlayRenderLayer = (
           PresetSystemPropertyKeys.PATH_EDITING_VECTOR_ID
         ) ?? null
 
-      const selectedIds = getElementSelectionIds(deps)
+      const isSuppressed = (elementId: string) =>
+        (deps.render.getElementById(elementId) as RenderElementShape | null)
+          ?.presentationSuppressed === true
+      const selectedIds = getElementSelectionIds(deps).filter(
+        (id) => !isSuppressed(id)
+      )
       const selectedElementId = selectedIds.length === 1 ? selectedIds[0] : null
-      const hoveredElementId =
+      let hoveredElementId =
         deps.systemContext.getManagedProperty<string | null>(
           PresetSystemPropertyKeys.HOVERED_ELEMENT_ID
         ) ?? null
+      if (hoveredElementId && isSuppressed(hoveredElementId))
+        hoveredElementId = null
       const drawSignatureParts = [
         pathEditingVectorId ?? '',
         selectedIds.join(','),
