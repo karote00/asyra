@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import { expect, test, type Page } from '@playwright/test'
 import {
   createTestDocumentIdentity,
@@ -9,6 +10,11 @@ import {
 
 const editor = (page: Page) =>
   page.getByRole('textbox', { name: 'Canvas text editor', exact: true })
+const editorBounds = async (page: Page) => {
+  const bounds = await editor(page).boundingBox()
+  if (!bounds) throw new Error('Missing visible text editor')
+  return bounds
+}
 const readTexts = (page: Page) =>
   page.evaluate(async () => {
     const { core } = await import('../src/testing/runtime-access')
@@ -34,6 +40,16 @@ const startText = async (page: Page, drag = false) => {
 test.beforeEach(async ({ page }) => {
   await page.goto(createTestDocumentIdentity().url)
   await waitForAppReady(page)
+})
+test('Canvas text input keeps the underlying scene visible', async ({
+  page
+}, testInfo) => {
+  await startText(page)
+  await editor(page).fill('Transparent editor')
+  await expect(editor(page)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await expect(editor(page)).toHaveCSS('background-image', 'none')
+  await page.screenshot({ path: testInfo.outputPath('transparent-editor.png') })
+  await editor(page).press('Escape')
 })
 test('Click creation stays provisional and commits one reversible Unicode text object', async ({
   page
@@ -165,6 +181,14 @@ test('Canvas edit survives durable save and reload', async ({ page }) => {
   await page.reload()
   await waitForAppReady(page)
   await expect.poll(() => readTexts(page)).toEqual(before)
+  await page.getByRole('button', { name: 'Select (V)', exact: true }).click()
+  await page.mouse.click(510, 310)
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  await editor(page).fill('A much longer durable text line')
+  expect((await editorBounds(page)).width).toBeGreaterThan(
+    Number(before[0].width)
+  )
+  await editor(page).press('Control+Enter')
 })
 
 test('Rotated text editor follows Canvas projection and preserves geometry', async ({
@@ -221,10 +245,15 @@ test('Rotated text editor follows Canvas projection and preserves geometry', asy
   )
   await page.screenshot({ path: testInfo.outputPath('text-canvas-editor.png') })
   await editor(page).fill('Edited on Canvas\n台灣 text')
+  await page.screenshot({ path: testInfo.outputPath('text-canvas-draft.png') })
+  const editedSize = await editor(page).evaluate((node) => ({
+    width: parseFloat(node.style.width),
+    height: parseFloat(node.style.height)
+  }))
   await editor(page).press('Control+Enter')
   const after = (await readTexts(page))[0]
-  expect(after.width).toBe(before.width)
-  expect(after.height).toBe(before.height)
+  expect(after.width).toBe(editedSize.width)
+  expect(after.height).toBe(editedSize.height)
   expect(after.rotation).toBe(before.rotation)
   await page.screenshot({
     path: testInfo.outputPath('text-canvas-committed.png')
@@ -271,4 +300,158 @@ test('Native text Undo and select-all do not consume document history or delete 
   expect((await readTexts(page))[0].text).toBe('Original')
   await editor(page).press('Escape')
   expect(await getUndoHistoryDepth(page)).toBe(before)
+})
+
+test('Point text grows and shrinks with content and keeps its committed dimensions', async ({
+  page
+}, testInfo) => {
+  await startText(page)
+  const initial = await editorBounds(page)
+  expect(initial?.width).toBeLessThan(10)
+  expect(initial?.height).toBe(20)
+  await editor(page).fill(
+    'A line of text that is wider than the former default text box '.repeat(2)
+  )
+  const wide = await editorBounds(page)
+  expect(wide.width).toBeGreaterThan(240)
+  expect(wide.height).toBe(20)
+  await editor(page).fill('Hello\n台灣')
+  const multiline = await editorBounds(page)
+  expect(multiline.width).toBeLessThan(wide.width)
+  expect(multiline.height).toBe(40)
+  await page.screenshot({ path: testInfo.outputPath('point-text-sizing.png') })
+  await editor(page).press('Control+Enter')
+  const committed = (await readTexts(page))[0]
+  expect(committed.width).toBeCloseTo(multiline.width, 0)
+  expect(committed.height).toBe(multiline.height)
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  await editor(page).fill('Hi')
+  const small = await editorBounds(page)
+  expect(small.width).toBeLessThan(multiline.width)
+  expect(small.height).toBe(20)
+  await editor(page).press('Control+Enter')
+  expect((await readTexts(page))[0].width).toBeCloseTo(small.width, 0)
+  await undo(page)
+  expect((await readTexts(page))[0].width).toBe(committed.width)
+  await redo(page)
+  expect((await readTexts(page))[0].width).toBeCloseTo(small.width, 0)
+})
+
+test('Dragged text keeps its width and fits its height during and after editing', async ({
+  page
+}, testInfo) => {
+  await startText(page, true)
+  expect((await editorBounds(page)).width).toBe(260)
+  await editor(page).fill('Wrapped text '.repeat(50))
+  const tall = await editorBounds(page)
+  expect(tall.width).toBe(260)
+  expect(tall.height).toBeGreaterThan(120)
+  expect(
+    await editor(page).evaluate(
+      (node) => node.scrollHeight <= node.clientHeight
+    )
+  ).toBe(true)
+  await editor(page).fill('Short text')
+  const short = await editorBounds(page)
+  expect(short.width).toBe(260)
+  expect(short.height).toBe(20)
+  await page.screenshot({
+    path: testInfo.outputPath('dragged-text-sizing.png')
+  })
+  await editor(page).press('Control+Enter')
+  const committed = (await readTexts(page))[0]
+  expect(committed.width).toBe(260)
+  expect(committed.height).toBe(short.height)
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  await editor(page).fill('Wrapped again '.repeat(20))
+  const reopened = await editorBounds(page)
+  expect(reopened.width).toBe(260)
+  expect(reopened.height).toBeGreaterThan(20)
+  await editor(page).press('Control+Enter')
+  expect((await readTexts(page))[0].height).toBe(reopened.height)
+})
+
+for (const entry of ['armed', 'click', 'drag']) {
+  test(`Leaving empty text cancels without an object or history - ${entry}`, async ({
+    page
+  }) => {
+    const depth = await getUndoHistoryDepth(page)
+    await page.keyboard.press('t')
+    if (entry !== 'armed') {
+      await startText(page, entry === 'drag')
+      await editor(page).press('Tab')
+    } else {
+      await page
+        .getByRole('button', { name: 'Select (V)', exact: true })
+        .click()
+    }
+    await expect(editor(page)).toHaveCount(0)
+    expect(await readTexts(page)).toEqual([])
+    expect(await getUndoHistoryDepth(page)).toBe(depth)
+  })
+}
+
+test('Typography edits resize point text and Undo restores content dimensions together', async ({
+  page
+}) => {
+  await startText(page)
+  await editor(page).fill('Auto typography')
+  await editor(page).press('Control+Enter')
+  const before = (await readTexts(page))[0]
+  const size = page.getByLabel('Font size', { exact: true })
+  await size.fill('32')
+  await size.press('Enter')
+  const after = (await readTexts(page))[0]
+  expect(Number(after.width)).toBeGreaterThan(Number(before.width))
+  await undo(page)
+  expect((await readTexts(page))[0].width).toBe(before.width)
+  await redo(page)
+  expect((await readTexts(page))[0].width).toBe(after.width)
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  const bounds = await editorBounds(page)
+  expect(bounds.width).toBeCloseTo(Number(after.width), 0)
+  expect(
+    await editor(page).evaluate(
+      (node) => node.scrollHeight <= node.clientHeight
+    )
+  ).toBe(true)
+  await editor(page).press('Escape')
+})
+
+test('Editing replaces the old glyph projection and cancellation restores it without changing data', async ({
+  page
+}, testInfo) => {
+  await startText(page)
+  await editor(page).fill('Original red text')
+  await editor(page).press('Control+Enter')
+  const id = (await readTexts(page))[0].id
+  await page.evaluate(async (id) => {
+    const { fillApis } = await import('../src/common-apis/fills')
+    fillApis.updatePrimaryFillColor(id, '#ff0000')
+  }, id)
+  const countRed = async () => {
+    const { data, info } = await sharp(
+      await page.screenshot({
+        clip: { x: 480, y: 280, width: 400, height: 200 }
+      })
+    )
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+    let count = 0
+    for (let i = 0; i < data.length; i += info.channels)
+      if (data[i] > 180 && data[i + 1] < 80 && data[i + 2] < 80) count++
+    return count
+  }
+  await expect.poll(countRed).toBeGreaterThan(0)
+  const depth = await getUndoHistoryDepth(page)
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  await editor(page).fill('Draft')
+  await expect.poll(countRed).toBe(0)
+  expect((await readTexts(page))[0].text).toBe('Original red text')
+  await page.screenshot({
+    path: testInfo.outputPath('editing-without-old-glyphs.png')
+  })
+  await editor(page).press('Escape')
+  await expect.poll(countRed).toBeGreaterThan(0)
+  expect(await getUndoHistoryDepth(page)).toBe(depth)
 })

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { TextSizing } from '@asyra/preset'
 import { getFeature, subscribeToFileLoadComplete } from '@asyra/core'
 import core from '../contexts'
 import { FeatureNames } from '../constants'
@@ -19,8 +20,12 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
   const draft = useRef(session.typography.text)
   const [error, setError] = useState(session.error)
   const [transform, setTransform] = useState('')
+  const [bounds, setBounds] = useState(session.bounds)
 
   useEffect(() => {
+    const resumePresentation = session.elementId
+      ? core.suspendElementPresentation(session.elementId)
+      : null
     const update = () => {
       const project = (x: number, y: number) => {
         let point = { x: x + session.bounds.x, y: y + session.bounds.y }
@@ -65,9 +70,16 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
       }
     }
     window.addEventListener('pointerdown', outsidePointer, true)
+    const refreshLayout = () => {
+      const next = textCanvasApis.updateDraft(draft.current, true)
+      if (next) setBounds(next)
+    }
+    document.fonts?.addEventListener('loadingdone', refreshLayout)
     const load = subscribeToFileLoadComplete(() => textCanvasApis.cancel())
     return () => {
       window.removeEventListener('pointerdown', outsidePointer, true)
+      resumePresentation?.()
+      document.fonts?.removeEventListener('loadingdone', refreshLayout)
       frame()
       publication()
       load.unsubscribe()
@@ -87,12 +99,17 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         aria-invalid={Boolean(error || session.error)}
         defaultValue={session.typography.text}
         spellCheck={false}
+        wrap={
+          session.typography.textSizing === TextSizing.AUTO_WIDTH
+            ? 'off'
+            : 'soft'
+        }
         maxLength={100_000}
-        className="absolute left-0 top-0 m-0 resize-none border-0 bg-panel-surface p-0 text-text-primary outline-1 outline-accent origin-top-left"
+        className="absolute left-0 top-0 m-0 resize-none border-0 bg-transparent p-0 text-text-primary outline-1 outline-accent origin-top-left"
         style={{
           transform,
-          width: session.bounds.width,
-          height: session.bounds.height,
+          width: bounds.width,
+          height: bounds.height,
           fontFamily: session.typography.fontFamily,
           fontSize: session.typography.fontSize,
           fontStyle: session.typography.fontStyle,
@@ -100,11 +117,17 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
           lineHeight: `${session.typography.lineHeight}px`,
           letterSpacing: session.typography.letterSpacing,
           textAlign: session.typography.textAlign,
-          whiteSpace: 'pre-wrap',
+          whiteSpace:
+            session.typography.textSizing === TextSizing.AUTO_WIDTH
+              ? 'pre'
+              : 'pre-wrap',
+          overflow: 'hidden',
           overflowWrap: 'break-word'
         }}
         onChange={(event) => {
           draft.current = event.target.value
+          const next = textCanvasApis.updateDraft(draft.current)
+          if (next) setBounds(next)
         }}
         onCompositionStart={() => {
           composing.current = true

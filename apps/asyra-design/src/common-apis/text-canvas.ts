@@ -1,12 +1,14 @@
 import { runTransaction } from '@asyra/core'
 import {
   DEFAULT_TEXT_DATA,
+  TextSizing,
   TEXT_COMPONENT_TYPE,
   type TextData
 } from '@asyra/preset'
 import { createDefaultFills, type Rect } from '@asyra/utils'
 import core from '../contexts'
 import { PrimaryToolType, DEFAULT_ELEMENT_FILL_COLOR } from '../constants'
+import { measureTextBox } from './text-layout'
 import { selectionApis } from './selection'
 import { systemContextApis } from './system-context'
 
@@ -19,9 +21,11 @@ export interface TextCanvasSession {
   readonly error?: string
 }
 let session: TextCanvasSession | null = null
+let draft: { text: string; bounds: Rect } | null = null
 const listeners = new Set<() => void>()
 const publish = (next: TextCanvasSession | null) => {
   session = next
+  draft = next ? { text: next.typography.text, bounds: next.bounds } : null
   listeners.forEach((listener) => listener())
 }
 const readTarget = (id: string) => {
@@ -44,14 +48,18 @@ export const textCanvasApis = {
       listeners.delete(listener)
     }
   },
-  beginCreate: (bounds: Rect) => {
+  beginCreate: (
+    bounds: Rect,
+    textSizing: TextData['textSizing'] = TextSizing.FIXED
+  ) => {
     const workspaceId = core.getCurrentWorkspaceId()
     if (!workspaceId) return
+    const typography = { ...DEFAULT_TEXT_DATA, textSizing }
     publish({
       elementId: null,
       workspaceId,
-      bounds: { ...bounds },
-      typography: { ...DEFAULT_TEXT_DATA },
+      bounds: measureTextBox(typography, bounds, ''),
+      typography,
       baseline: ''
     })
   },
@@ -74,6 +82,16 @@ export const textCanvasApis = {
       typography,
       baseline: JSON.stringify(data)
     })
+  },
+  updateDraft: (text: string, remeasure = false) => {
+    if (!session || !draft) return null
+    if (draft.text !== text || remeasure) {
+      draft = {
+        text,
+        bounds: measureTextBox(session.typography, session.bounds, text)
+      }
+    }
+    return draft.bounds
   },
   isCurrent: (current: TextCanvasSession) => {
     if (core.getCurrentWorkspaceId() !== current.workspaceId) return false
@@ -99,6 +117,7 @@ export const textCanvasApis = {
       })
       return
     }
+    const bounds = textCanvasApis.updateDraft(text) ?? current.bounds
     if (
       (current.elementId && text !== current.typography.text) ||
       (!current.elementId && text.length > 0)
@@ -106,14 +125,22 @@ export const textCanvasApis = {
       runTransaction(() => {
         if (current.elementId) {
           core.updateElementProperties([
-            { elementId: current.elementId, values: { text } }
+            {
+              elementId: current.elementId,
+              values: {
+                text,
+                ...(current.typography.textSizing === TextSizing.FIXED
+                  ? {}
+                  : { width: bounds.width, height: bounds.height })
+              }
+            }
           ])
         } else {
           const id = core.createElementInParent(
             {
               type: TEXT_COMPONENT_TYPE,
               fills: createDefaultFills({ color: DEFAULT_ELEMENT_FILL_COLOR }),
-              ...current.bounds,
+              ...bounds,
               ...current.typography,
               text
             },

@@ -45,7 +45,8 @@ invalid loaded values use documented defaults. The additive `typography` propert
 uses text (empty by default, at most 100,000 characters), fontFamily (`sans-serif`,
 1–128 characters), fontSize (16, greater than 0 and at most 4096), fontWeight
 (normal or bold), fontStyle (normal or italic), textAlign (left/center/right),
-lineHeight (20, greater than 0 and at most 8192), letterSpacing (0, -100 to 100). Text paint belongs to the standard `fills`
+lineHeight (20, greater than 0 and at most 8192), letterSpacing (0, -100 to 100),
+and textSizing (`fixed` by default, `auto-width`, or `auto-height`). Text paint belongs to the standard `fills`
 property, initially one opaque visible black solid fill. Canonical element input and computed output expose these fields flat, just as
 position and dimension fields; the `typography` name identifies the property
 owner, not a nested element payload. Position and dimensions reuse existing schemas. All numeric values must be finite. Existing preset default
@@ -66,7 +67,6 @@ prove a layout fits.
 
 The foundation is incomplete until neutral, engine, property, component and App
 editing gates pass. A facade-only test is not proof of visible text or full AI UI.
-
 
 ## Native content measurement
 
@@ -122,8 +122,8 @@ property IDs, and removes the old typography color from the migrated snapshot.
 It does not mutate the input or rewrite already-upgraded Fill records.
 The former typography `textColor` field is removed from the current schema; semantic design input uses
 `fill`, targeted edits use `fillColor`, and computed context reads `fills`.
-Content remains a multiline field because Canvas editing is deferred.
-Unsupported vertical alignment, resizing, advanced type controls, and Text
+Content remains a multiline field alongside direct Canvas editing.
+Unsupported vertical alignment, advanced type controls, and Text
 Stroke lists are omitted. Multiple-selection typography is not exposed.
 
 Text and number drafts commit on blur (Enter also commits single-line fields),
@@ -139,7 +139,6 @@ canonical values and actual rendered text pixels, plus Undo/Redo and validation.
 `e2e/native-text.spec.ts` covers content persistence and reload. Canvas editing
 semantics remain outside these interface tests.
 
-
 ## Canvas authoring session
 
 The standalone Canvas task follows `bdd-features/text-canvas.feature`; completed
@@ -150,25 +149,43 @@ activate or close the broader text-authoring plan.
   and the accessible Edit text on Canvas command in Typography.
 - `common-apis/text-canvas` owns the transient session and the finite canonical
   commit. No draft is stored in document properties or published remotely.
-- A click creates an insertion-point draft with a fixed 240 by 80 layout box.
-  A drag above the existing creation threshold uses its workspace rectangle;
-  collapsed axes have a four-screen-pixel minimum. Creation currently targets
-  the workspace. Automatic sizing policies and group-targeted creation are not
-  introduced in this slice.
+- A click creates an `auto-width` draft: an empty caret-width box with one line,
+  no automatic wrapping, content-measured width and explicit-newline height.
+  A drag above the existing threshold creates `auto-height` text: its workspace
+  width stays fixed while wrapped content determines height. Collapsed widths
+  have a four-screen-pixel minimum. Creation targets the workspace.
+- `common-apis/text-layout` consumes Core's detached `measureText` query. Pixi
+  uses native CanvasTextMetrics and the same style builder as native rendering.
+  The engine returns native measured width and line-height/content height;
+  viewport transforms never enter measurement. No character-count heuristic or
+  temporary canonical object is used.
+- One transient draft owns each input revision's measured box. The editor and
+  final transaction consume that same box; unchanged input and viewport frames
+  do not remeasure. Cancellation disposes it. The sizing mode and accepted box
+  persist with the text and share its Undo/Redo entry.
+- Typography/content changes through the ordinary App property API remeasure
+  automatic text in the same transaction. An explicit width switches automatic
+  text to fixed-width/auto-height; an explicit height selects fixed sizing.
+  Existing fixed boxes retain their explicit dimensions.
 - New text uses the ordinary App default Fill. One accepted nonempty draft creates
   and selects one canonical Text object in one transaction. Empty creation and
   Escape create neither a document object nor document history.
 - Double-click edits only the selected Text target. A selected Group first uses
   the ordinary child-selection step, preserving existing hierarchy navigation.
 - An existing visible, unlocked text object is edited without replacing its ID,
-  typography, fills, or layout box. Clearing its content retains that object.
+  typography or fills. Automatic layout follows the edited content; fixed boxes
+  preserve dimensions. Clearing existing content retains that object.
   An unchanged draft creates no history. Each accepted content change has one
   document Undo/Redo unit.
 - The native textarea owns caret, selection, word selection, navigation, plain
   text paste and character-level undo while focused. Enter inserts a newline;
   Cmd/Ctrl+Enter commits; Escape discards only the current draft. IME composition
-  owns its key events, including Enter. The editor uses the shared panel surface
-  as an explicit temporary input surface; it is not document paint or export data.
+  owns its key events, including Enter. The editor background is transparent;
+  it is not document paint or export data. Leaving an empty new editor cancels
+  without an object or history entry. Arming T alone never creates an object.
+- While the native editor owns an existing text, a render-only presentation
+  lease suppresses its old glyphs and selection/hover outline. Cleanup restores
+  the current canonical presentation; it does not mutate fills or visibility.
 - An outside pointer commits before the clicked target's event handler runs.
   Panel changes remain separate actions. The tool returns to Select after finish
   or cancellation. Toolbar selection then performs its normal requested action.

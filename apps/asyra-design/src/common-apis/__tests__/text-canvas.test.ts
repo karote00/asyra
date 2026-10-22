@@ -1,8 +1,13 @@
+import { DEFAULT_TEXT_DATA, TextSizing } from '@asyra/preset'
 import { beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   getElementData: vi.fn(),
   getElementComputedData: vi.fn(),
   getCurrentWorkspaceId: vi.fn(() => 'workspace'),
+  measureText: vi.fn((layout: { width?: number }) => ({
+    width: layout.width ?? 45,
+    height: 40
+  })),
   createElementInParent: vi.fn(() => 'new-text'),
   updateElementProperties: vi.fn(),
   selectElements: vi.fn(),
@@ -16,6 +21,7 @@ vi.mock('@asyra/core', async (original) => ({
   ...(await original<typeof import('@asyra/core')>()),
   runTransaction: mocks.runTransaction
 }))
+import { projectTextLayoutUpdate } from '../text-layout'
 import { textCanvasApis } from '../text-canvas'
 
 beforeEach(() => {
@@ -27,6 +33,7 @@ beforeEach(() => {
     lock: false
   })
   mocks.getElementComputedData.mockReturnValue({
+    ...DEFAULT_TEXT_DATA,
     text: 'Before',
     width: 200,
     height: 80
@@ -91,4 +98,81 @@ it('uses the app default Fill for newly authored text', () => {
   expect(mocks.createElementInParent.mock.calls[0][0].fills[0].color).toBe(
     '#cccccc'
   )
+})
+
+it('reuses the measured draft for the editor and the single canonical commit', () => {
+  textCanvasApis.beginCreate(
+    { x: 10, y: 20, width: 1, height: 1 },
+    TextSizing.AUTO_WIDTH
+  )
+  mocks.measureText.mockClear()
+  expect(textCanvasApis.updateDraft('Two\nlines')).toEqual({
+    x: 10,
+    y: 20,
+    width: 45,
+    height: 40
+  })
+  textCanvasApis.updateDraft('Two\nlines')
+  textCanvasApis.finish('Two\nlines')
+  expect(mocks.measureText).toHaveBeenCalledTimes(1)
+  expect(mocks.createElementInParent).toHaveBeenCalledWith(
+    expect.objectContaining({
+      text: 'Two\nlines',
+      textSizing: TextSizing.AUTO_WIDTH,
+      width: 45,
+      height: 40
+    }),
+    'workspace'
+  )
+  expect(mocks.runTransaction).toHaveBeenCalledTimes(1)
+})
+it('remeasures changed content and disposes measurements between sessions', () => {
+  textCanvasApis.beginCreate(
+    { x: 0, y: 0, width: 100, height: 80 },
+    TextSizing.AUTO_HEIGHT
+  )
+  textCanvasApis.updateDraft('Long text')
+  expect(mocks.measureText).toHaveBeenLastCalledWith(
+    expect.objectContaining({ width: 100, text: 'Long text' })
+  )
+  textCanvasApis.updateDraft('Short')
+  expect(mocks.measureText).toHaveBeenCalledTimes(3)
+  textCanvasApis.cancel()
+  expect(textCanvasApis.updateDraft('Ignored')).toBeNull()
+  textCanvasApis.beginCreate(
+    { x: 0, y: 0, width: 1, height: 1 },
+    TextSizing.AUTO_WIDTH
+  )
+  expect(mocks.measureText).toHaveBeenCalledTimes(4)
+})
+
+it('keeps automatic sizing when typography changes and makes explicit dimensions authoritative', () => {
+  mocks.getElementComputedData.mockReturnValue({
+    ...DEFAULT_TEXT_DATA,
+    text: 'Hello',
+    textSizing: TextSizing.AUTO_WIDTH,
+    width: 100,
+    height: 20
+  })
+  expect(projectTextLayoutUpdate('text', { fontSize: 32 })).toEqual({
+    fontSize: 32,
+    textSizing: TextSizing.AUTO_WIDTH,
+    width: 45,
+    height: 40
+  })
+  expect(projectTextLayoutUpdate('text', { width: 150 })).toEqual({
+    width: 150,
+    height: 40,
+    textSizing: TextSizing.AUTO_HEIGHT
+  })
+  expect(projectTextLayoutUpdate('text', { height: 80 })).toEqual({
+    height: 80,
+    textSizing: TextSizing.FIXED
+  })
+  mocks.measureText.mockClear()
+  expect(projectTextLayoutUpdate('text', { x: 15 })).toEqual({ x: 15 })
+  expect(projectTextLayoutUpdate('text', { textAlign: 'center' })).toEqual({
+    textAlign: 'center'
+  })
+  expect(mocks.measureText).not.toHaveBeenCalled()
 })

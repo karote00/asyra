@@ -138,6 +138,56 @@ class Render {
     return this.viewport.getElementIdsInBounds(bounds)
   }
 
+  suspendElementPresentation(elementId: string): (() => void) | null {
+    this.flushFrame()
+    const element = this.viewport.getElementById(elementId)
+    if (!element) return null
+    const generation = this.runtimeGeneration
+    const resume = element.suspendPresentation()
+    this.requestRender()
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      resume()
+      if (generation === this.runtimeGeneration) this.requestRender()
+    }
+  }
+
+  measureText(
+    layout: import('@asyra/render-engine').RenderEngineTextLayout
+  ): import('@asyra/render-engine').RenderEngineTextMeasurement {
+    const engine = this.requireEngine()
+    assertRenderEngineCapabilities(engine, [
+      RenderEngineCapabilities.TEXT_MEASUREMENT
+    ])
+    if (
+      typeof layout.text !== 'string' ||
+      layout.text.length > 100_000 ||
+      typeof layout.fontFamily !== 'string' ||
+      !layout.fontFamily.trim() ||
+      layout.fontFamily.length > 128 ||
+      !Number.isFinite(layout.fontSize) ||
+      layout.fontSize <= 0 ||
+      layout.fontSize > 4096 ||
+      !Number.isFinite(layout.lineHeight) ||
+      layout.lineHeight <= 0 ||
+      layout.lineHeight > 8192 ||
+      !Number.isFinite(layout.letterSpacing) ||
+      Math.abs(layout.letterSpacing) > 100 ||
+      !['normal', 'bold'].includes(layout.fontWeight) ||
+      !['normal', 'italic'].includes(layout.fontStyle) ||
+      (layout.width !== undefined &&
+        (!Number.isFinite(layout.width) || layout.width <= 0))
+    ) {
+      throw new Error('Invalid text measurement input')
+    }
+    const result = engine.query({ type: 'measure-text', layout: { ...layout } })
+    if (result.type !== 'text-measurement')
+      throw new Error('Invalid text measurement result')
+    return result
+  }
+
   measureElementContentBounds(
     elementIds: readonly string[]
   ): RenderContentMeasurement[] {

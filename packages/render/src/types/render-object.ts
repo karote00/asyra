@@ -652,6 +652,7 @@ export class RenderNode {
   private _height = 0
   private _visible = true
   private _renderable = true
+  private presentationSuspensions = 0
   private _label = ''
   private _eventMode = 'auto'
   private _cursor = 'default'
@@ -751,21 +752,46 @@ export class RenderNode {
   }
 
   get visible(): boolean {
-    return this._visible
+    return this._visible && !this.presentationSuppressed
   }
 
   set visible(value: boolean) {
     this._visible = value
-    this.updateEngineProperties({ visible: value })
+    this.updateEngineProperties({ visible: this.visible })
+  }
+
+  get presentationSuppressed(): boolean {
+    return this.presentationSuspensions > 0
+  }
+
+  suspendPresentation(): () => void {
+    this.presentationSuspensions++
+    this.updateEngineProperties({
+      renderable: this.renderable,
+      visible: this.visible
+    })
+    let resumed = false
+    return () => {
+      if (resumed) return
+      resumed = true
+      this.presentationSuspensions--
+      this.updateEngineProperties({
+        renderable: this.renderable,
+        visible: this.visible
+      })
+    }
   }
 
   get renderable(): boolean {
-    return this._renderable
+    return this._renderable && !this.presentationSuppressed
   }
 
   set renderable(value: boolean) {
     this._renderable = value
-    this.updateEngineProperties({ renderable: value })
+    this.updateEngineProperties({
+      renderable: this.renderable,
+      visible: this.visible
+    })
   }
 
   get label(): string {

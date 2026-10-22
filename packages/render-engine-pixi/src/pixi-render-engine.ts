@@ -1,3 +1,4 @@
+import { createTextLayoutStyle, measureTextLayout } from './text-layout.js'
 import { MaterialMesh } from './mesh-material-batch.js'
 import { MeshMaterialResources } from './mesh-material-resources.js'
 import { PixiBatchPartitions } from './pixi-batch-partitions.js'
@@ -277,6 +278,8 @@ export class PixiRenderEngine implements RenderEngine {
     const app = this.assertReady()
 
     switch (query.type) {
+      case 'measure-text':
+        return measureTextLayout(query.layout)
       case 'snapshot': {
         if (
           !Number.isInteger(query.maxDimension) ||
@@ -673,21 +676,18 @@ export class PixiRenderEngine implements RenderEngine {
       case 'text': {
         const text = new Text({
           text: operation.text,
-          style: {
-            fontFamily: operation.fontFamily,
-            fontSize: operation.fontSize,
-            fontWeight: operation.fontWeight,
-            fontStyle: operation.fontStyle,
-            align: operation.align,
-            lineHeight: operation.lineHeight,
-            letterSpacing: operation.letterSpacing,
-            fill: operation.paint.resource
-              ? '#ffffff'
-              : (this.resolvePaint(operation.paint) as never),
-            wordWrap: true,
-            wordWrapWidth: operation.width,
-            breakWords: true
-          }
+          style: Object.assign(
+            createTextLayoutStyle({
+              ...operation,
+              width: operation.wordWrap === false ? undefined : operation.width
+            }),
+            {
+              align: operation.align,
+              fill: operation.paint.resource
+                ? '#ffffff'
+                : (this.resolvePaint(operation.paint) as never)
+            }
+          )
         })
         const remainingWidth = Math.max(0, operation.width - text.width)
         text.x = operation.x

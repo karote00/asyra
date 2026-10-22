@@ -77,5 +77,6 @@ export {
   TEXT_PROPERTY_SCHEMA,
   TEXT_PROPERTY_DEFINITION,
   DEFAULT_TEXT_DATA,
+  TextSizing,
   type TextData
 } from './props/components/text-component.js'

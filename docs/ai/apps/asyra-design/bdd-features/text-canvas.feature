@@ -17,7 +17,7 @@ Feature: Canvas plain-text authoring
   Scenario: Create a text box by dragging
     Given the Text tool is active
     When I drag a nonzero rectangle on Canvas
-    Then the editor should use the chosen layout box
+    Then the editor should keep the chosen layout width and fit its content height
     When I enter multiline text and finish editing
     Then Canvas should render the content using that box and ordinary text wrapping
     And one Undo should remove the entire creation
@@ -46,7 +46,8 @@ Feature: Canvas plain-text authoring
     Then a focused editor should show its existing content
     When I replace its content and finish editing
     Then that same object should contain the new plain text
-    And its typography, fills and layout box should be preserved
+    And its typography and fills should be preserved
+    And its layout box should follow its saved sizing mode
     And one Undo should restore the original content
 
   Scenario: Cancel only the current editing session
@@ -94,7 +95,7 @@ Feature: Canvas plain-text authoring
     Given an existing Text object is rotated inside a transformed parent
     When I edit it at a changed viewport zoom and pan
     Then the editor should follow the object's full Canvas transform
-    And finishing should preserve the object's geometry
+    And finishing should preserve position and rotation and commit the measured dimensions
 
   Scenario: Reject unavailable editing targets
     Given a Text object is hidden or locked
@@ -126,3 +127,51 @@ Feature: Canvas plain-text authoring
     And the text editor should not bypass that hierarchy step
     When I double-click the selected Text again
     Then the text editor should open
+
+  Scenario: Keep the scene visible while entering text
+    Given the Canvas text editor has focus
+    When I enter a text draft
+    Then the editor background should remain transparent
+    And the underlying Canvas scene should remain visible through the text box
+
+  Scenario: Size point text from its content
+    Given I click Canvas with the Text tool
+    Then the empty editor should occupy only a caret and one line
+    When I type a longer line
+    Then the editor width should grow without wrapping
+    When I delete characters or insert an explicit newline
+    Then its width and height should follow the current content
+    When I finish editing
+    Then the canonical layout box should equal the last editor layout box
+    And reopening or reloading should preserve content-based sizing
+
+  Scenario: Size dragged text vertically within its chosen width
+    Given I drag a text box on Canvas
+    When I enter enough text to wrap
+    Then its width should remain the dragged width
+    And its height should grow and shrink with its wrapped lines
+    When I finish editing
+    Then the canonical layout box should equal the last editor layout box
+    And reopening should retain fixed-width sizing
+
+  Scenario Outline: Leave an empty Text tool session
+    Given I press T
+    And I "<entry>"
+    When I leave without entering text
+    Then no Text object or document Undo entry should remain
+    And no text editor should remain
+
+    Examples:
+      | entry                      |
+      | select a different tool    |
+      | click to open an editor    |
+      | drag to open an editor     |
+
+  Scenario: Replace the original glyph projection while editing
+    Given an existing Text object has a visible Fill
+    When I replace its content in the Canvas editor
+    Then only the current draft should be visible at that position
+    And the original glyphs and stale selection outline should not overlap it
+    And the canonical text and document Undo history should remain unchanged
+    When I cancel editing
+    Then the original text and Fill should be visible again

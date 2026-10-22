@@ -1,3 +1,4 @@
+import { TextSizing } from '@asyra/preset'
 import { beforeEach, expect, it, vi } from 'vitest'
 interface FixtureDefinition {
   priority: number
@@ -68,12 +69,15 @@ it('owns Text gestures only and leaves provisional creation until release', () =
   const state = feature.session.onStart(snapshot)
   expect(mocks.beginCreate).not.toHaveBeenCalled()
   feature.session.onEnd(snapshot, state)
-  expect(mocks.beginCreate).toHaveBeenCalledWith({
-    x: 30,
-    y: 40,
-    width: 240,
-    height: 80
-  })
+  expect(mocks.beginCreate).toHaveBeenCalledWith(
+    {
+      x: 30,
+      y: 40,
+      width: 1,
+      height: 1
+    },
+    TextSizing.AUTO_WIDTH
+  )
 })
 it('uses drag bounds and does not start an editor when interrupted', () => {
   const feature = mocks.definitions.get(FeatureNames.CREATE_TEXT)
@@ -84,12 +88,15 @@ it('uses drag bounds and does not start an editor when interrupted', () => {
   })
   mocks.moved.mockReturnValueOnce(true)
   feature.session.onEnd({ mousePosition: { x: 130, y: 90 } }, state)
-  expect(mocks.beginCreate).toHaveBeenCalledWith({
-    x: 30,
-    y: 40,
-    width: 100,
-    height: 50
-  })
+  expect(mocks.beginCreate).toHaveBeenCalledWith(
+    {
+      x: 30,
+      y: 40,
+      width: 100,
+      height: 50
+    },
+    TextSizing.AUTO_HEIGHT
+  )
   mocks.beginCreate.mockClear()
   feature.session.onEnd({ detail: { cancelled: true } }, state)
   expect(mocks.beginCreate).not.toHaveBeenCalled()

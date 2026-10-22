@@ -5,8 +5,11 @@ const mocks = vi.hoisted(() => ({
   frame: undefined as (() => void) | undefined,
   publication: undefined as (() => void) | undefined,
   load: undefined as (() => void) | undefined,
+  resumePresentation: vi.fn(),
+  suspendElementPresentation: vi.fn(),
   cancel: vi.fn(),
   finish: vi.fn(),
+  updateDraft: vi.fn(() => ({ x: 0, y: 0, width: 40, height: 20 })),
   isCurrent: vi.fn(() => true),
   unsubscribe: vi.fn(),
   subscribe: vi.fn(() => vi.fn()),
@@ -31,6 +34,7 @@ vi.mock('@asyra/core', async (original) => ({
 }))
 vi.mock('../../contexts', () => ({
   default: {
+    suspendElementPresentation: mocks.suspendElementPresentation,
     elementLocalToWorkspace: mocks.elementLocalToWorkspace,
     workspaceToCanvas: mocks.workspaceToCanvas,
     subscribeToFrameComplete: (fn: () => void) => {
@@ -48,13 +52,15 @@ vi.mock('../../common-apis/text-canvas', () => ({
     getSnapshot: () => mocks.current,
     subscribe: mocks.subscribe,
     cancel: mocks.cancel,
-    isCurrent: mocks.isCurrent
+    isCurrent: mocks.isCurrent,
+    updateDraft: mocks.updateDraft
   }
 }))
 import { TextCanvasEditor } from '../text-canvas-editor'
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.suspendElementPresentation.mockReturnValue(mocks.resumePresentation)
   mocks.current = {
     elementId: 'text',
     workspaceId: 'workspace',
@@ -122,4 +128,25 @@ it('commits an outside pointer before the clicked target handles its action', ()
   fireEvent.pointerDown(button)
   expect(calls).toEqual(['commit', 'target'])
   button.remove()
+})
+
+it('uses measured draft bounds and does not measure again on viewport frames', () => {
+  render(<TextCanvasEditor />)
+  const input = screen.getByRole('textbox')
+  fireEvent.change(input, { target: { value: 'Small' } })
+  expect(input.style.width).toBe('40px')
+  expect(input.style.height).toBe('20px')
+  act(() => {
+    for (let i = 0; i < 10; i++) mocks.frame?.()
+  })
+  expect(mocks.updateDraft).toHaveBeenCalledExactlyOnceWith('Small')
+})
+
+it('suspends the canonical glyph projection only for the native editing lifetime', () => {
+  const view = render(<TextCanvasEditor />)
+  expect(mocks.suspendElementPresentation).toHaveBeenCalledExactlyOnceWith(
+    'text'
+  )
+  view.unmount()
+  expect(mocks.resumePresentation).toHaveBeenCalledTimes(1)
 })

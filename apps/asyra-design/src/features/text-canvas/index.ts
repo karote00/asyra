@@ -5,7 +5,7 @@ import {
   type SystemContextSnapshot,
   type SystemContextSnapshotWithDetail
 } from '@asyra/utils'
-import { TEXT_COMPONENT_TYPE } from '@asyra/preset'
+import { TEXT_COMPONENT_TYPE, TextSizing } from '@asyra/preset'
 import {
   elementApis,
   selectionApis,
@@ -86,7 +86,7 @@ export const createTextFeature = defineFeature(
           snapshot.mousePosition,
           FEATURE_MOVEMENT_THRESHOLD.createElement
         )
-        let bounds = { ...state.position, width: 240, height: 80 }
+        let bounds = { ...state.position, width: 1, height: 1 }
         if (dragged) {
           const rectangle = rectFromPoints(state.position, position)
           const minimum = 4 / viewportApis.getScale()
@@ -96,7 +96,10 @@ export const createTextFeature = defineFeature(
             height: Math.max(minimum, rectangle.height)
           }
         }
-        textCanvasApis.beginCreate(bounds)
+        textCanvasApis.beginCreate(
+          bounds,
+          dragged ? TextSizing.AUTO_HEIGHT : TextSizing.AUTO_WIDTH
+        )
       },
       onCancel: (): undefined => {
         textCanvasApis.cancel()

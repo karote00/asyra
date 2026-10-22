@@ -70,6 +70,12 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
   }))
   const projectLocalComputedDataFromPropertyIds = vi.fn()
   const getAllElements = vi.fn(() => new Map([['element-1', sceneElement]]))
+  const measureText = vi.fn(() => ({
+    type: 'text-measurement',
+    width: 40,
+    height: 20,
+    lines: ['Text']
+  }))
   const measureElementContentBounds = vi.fn((ids: readonly string[]) =>
     ids.map((elementId) => ({
       elementId,
@@ -90,6 +96,7 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
     } as never,
     props: { save: vi.fn(() => ({ property: {} })) } as never,
     render: {
+      measureText,
       measureElementContentBounds,
       setEngineProvider: vi.fn(() => vi.fn()),
       requestRender: vi.fn(),
@@ -132,6 +139,7 @@ const createCoreForTest = (viewportPosition = { x: 1, y: 2 }) => {
   core.applyCanonicalChanges = vi.fn()
   return {
     core,
+    measureText,
     measureElementContentBounds,
     getAllElements,
     sceneElement,
@@ -177,6 +185,22 @@ describe('Core app runtime facade', () => {
     page.elementIds.push('changed')
     expect(core.getElementChildren('element-1', 0, 1).elementIds).toEqual(['a'])
     expect(() => core.getElementChildren('element-1', -1, 1)).toThrow()
+  })
+
+  it('forwards detached text layout without scanning or mutating the document', () => {
+    const { core, measureText, getAllElements } = createCoreForTest()
+    const layout = {
+      text: 'Text',
+      fontFamily: 'sans-serif',
+      fontSize: 16,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      lineHeight: 20,
+      letterSpacing: 0
+    } as const
+    expect(core.measureText(layout)).toMatchObject({ width: 40, height: 20 })
+    expect(measureText).toHaveBeenCalledExactlyOnceWith(layout)
+    expect(getAllElements).not.toHaveBeenCalled()
   })
 
   it('forwards bounded content measurement to the render owner without document scans', () => {

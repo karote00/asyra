@@ -406,6 +406,10 @@ export class ThreeEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     this.assertActive()
+    if (query.type === 'measure-text')
+      throw new UnsupportedRenderEngineCapabilityError(this.name, [
+        RenderEngineCapabilities.TEXT_MEASUREMENT
+      ])
     if (query.type === 'snapshot')
       throw new UnsupportedRenderEngineCapabilityError(this.name, [
         RenderEngineCapabilities.SNAPSHOT

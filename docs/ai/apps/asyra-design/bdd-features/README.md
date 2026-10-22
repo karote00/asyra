@@ -34,5 +34,7 @@ behavior remains covered by `e2e/fill-patch.spec.ts`.
 `text-canvas.feature` was written before the standalone Canvas implementation.
 Its browser verification is `e2e/text-canvas.spec.ts`; session, event ordering,
 teardown and projection work counts are covered by the text Canvas common-API,
-feature and editor unit suites. Full automatic sizing modes, mixed-selection
-typography, and collaboration draft recovery UI remain outside this task.
+feature and editor unit suites. Point-text auto width and dragged-text auto
+height are covered, including persistence and empty-session cancellation.
+Mixed-selection typography and collaboration draft recovery UI remain outside
+this task.

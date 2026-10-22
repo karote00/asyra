@@ -17,6 +17,10 @@ import type {
 
 export interface RenderRequests {
   getElementIdsInBounds: (bounds: import('@asyra/utils').Rect) => string[]
+  suspendElementPresentation: (elementId: string) => (() => void) | null
+  measureText: (
+    layout: import('@asyra/render-engine').RenderEngineTextLayout
+  ) => import('@asyra/render-engine').RenderEngineTextMeasurement
   measureElementContentBounds: (
     elementIds: readonly string[]
   ) => import('@asyra/render').RenderContentMeasurement[]
@@ -69,6 +73,12 @@ export const createRenderAPIs = (requests: RenderRequests) => {
   return {
     getElementIdsInBounds(bounds: import('@asyra/utils').Rect) {
       return requests.getElementIdsInBounds(bounds)
+    },
+    suspendElementPresentation(elementId: string) {
+      return requests.suspendElementPresentation(elementId)
+    },
+    measureText(layout: import('@asyra/render-engine').RenderEngineTextLayout) {
+      return requests.measureText(layout)
     },
     measureElementContentBounds(elementIds: readonly string[]) {
       return requests.measureElementContentBounds(elementIds)

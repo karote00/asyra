@@ -303,3 +303,15 @@ describe('selection overlay render layer', () => {
     }
   })
 })
+
+it('does not draw stale selection or hover outlines for a suspended presentation', () => {
+  const { registration, graphics } = createOverlayProbe({
+    renderElement: { presentationSuppressed: true },
+    sceneElement: { get: () => 'text' },
+    selectedIds: ['text'],
+    hoveredElementId: 'text'
+  })
+  const move = vi.spyOn(graphics, 'moveTo')
+  registration.update?.()
+  expect(move).not.toHaveBeenCalled()
+})

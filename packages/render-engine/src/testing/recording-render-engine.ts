@@ -66,6 +66,7 @@ export class RecordingRenderEngine implements RenderEngine {
         Object.values(RenderEngineCapabilities).filter(
           (value) =>
             value !== RenderEngineCapabilities.SNAPSHOT &&
+            value !== RenderEngineCapabilities.TEXT_MEASUREMENT &&
             value !== RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
         )
     )
@@ -98,6 +99,8 @@ export class RecordingRenderEngine implements RenderEngine {
     this.assertReady()
 
     switch (query.type) {
+      case 'measure-text':
+        throw new Error('Recording engine does not measure text')
       case 'get-local-content-bounds':
         throw new Error('Recording engine does not measure rendered content')
       case 'snapshot':
