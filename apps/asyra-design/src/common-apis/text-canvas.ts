@@ -13,7 +13,6 @@ import { selectionApis } from './selection'
 import { systemContextApis } from './system-context'
 
 export interface TextCanvasSession {
-  readonly inputSurface: 'canvas' | 'panel'
   readonly elementId: string | null
   readonly workspaceId: string
   readonly bounds: Rect
@@ -45,8 +44,6 @@ const readTarget = (id: string) => {
 export const textCanvasApis = {
   getSnapshot: () => session,
   getDraftSnapshot: () => draft,
-  getDraftText: (elementId: string) =>
-    session?.elementId === elementId ? (draft?.text ?? null) : null,
   subscribe: (listener: () => void) => {
     listeners.add(listener)
     return () => {
@@ -62,17 +59,13 @@ export const textCanvasApis = {
     const typography = { ...DEFAULT_TEXT_DATA, textSizing }
     publish({
       elementId: null,
-      inputSurface: 'canvas',
       workspaceId,
       bounds: measureTextBox(typography, bounds, ''),
       typography,
       baseline: ''
     })
   },
-  beginEdit: (
-    elementId: string,
-    inputSurface: TextCanvasSession['inputSurface'] = 'canvas'
-  ) => {
+  beginEdit: (elementId: string) => {
     const data = readTarget(elementId)
     const workspaceId = core.getCurrentWorkspaceId()
     if (!data || !workspaceId) return
@@ -81,7 +74,6 @@ export const textCanvasApis = {
     ) as unknown as TextData
     publish({
       elementId,
-      inputSurface,
       workspaceId,
       bounds: {
         x: 0,

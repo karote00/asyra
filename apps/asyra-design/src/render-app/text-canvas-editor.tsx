@@ -52,10 +52,8 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
       setTransform((previous) => (previous === next ? previous : next))
     }
     update()
-    if (session.inputSurface !== 'panel') {
-      input.current?.focus()
-      if (session.elementId) input.current?.select()
-    }
+    input.current?.focus()
+    if (session.elementId) input.current?.select()
     const frame = core.subscribeToFrameComplete(update)
     const publication = core.subscribeToSharedPublication(() => {
       if (
@@ -69,7 +67,6 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
     })
     const outsidePointer = (event: PointerEvent) => {
       if (
-        session.inputSurface !== 'panel' &&
         !composing.current &&
         event.target instanceof Node &&
         !input.current?.contains(event.target)
@@ -105,8 +102,6 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         aria-description={error || session.error || undefined}
         aria-invalid={Boolean(error || session.error)}
         value={draft.current}
-        readOnly={session.inputSurface === 'panel'}
-        tabIndex={session.inputSurface === 'panel' ? -1 : undefined}
         spellCheck={false}
         wrap={
           session.typography.textSizing === TextSizing.AUTO_WIDTH
@@ -117,7 +112,6 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         className="absolute left-0 top-0 m-0 resize-none border-0 bg-transparent p-0 text-text-primary outline-1 outline-accent origin-top-left"
         style={{
           transform,
-          pointerEvents: session.inputSurface === 'panel' ? 'none' : undefined,
           width: bounds.width,
           height: bounds.height,
           fontFamily: session.typography.fontFamily,

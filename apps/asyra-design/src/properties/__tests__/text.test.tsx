@@ -6,23 +6,7 @@ const mocks = vi.hoisted(() => ({
   value: null as unknown,
   selection: new Set(['first']),
   update: vi.fn(),
-  style: vi.fn(),
-  session: null as { elementId: string; inputSurface: string } | null,
-  finish: vi.fn(),
-  cancel: vi.fn()
-}))
-vi.mock('../../common-apis/text-canvas', () => ({
-  textCanvasApis: {
-    subscribe: () => () => undefined,
-    getDraftText: () => null,
-    getSnapshot: () => mocks.session,
-    beginEdit: (elementId: string, inputSurface: string) => {
-      mocks.session = { elementId, inputSurface }
-    },
-    updateDraft: vi.fn(),
-    finish: mocks.finish,
-    cancel: mocks.cancel
-  }
+  style: vi.fn()
 }))
 vi.mock('../../hooks', () => ({
   useProperty: (key: string) =>
@@ -37,47 +21,27 @@ vi.mock('../../controllers/scene-tree', () => ({
 describe('manual text editing', () => {
   afterEach(cleanup)
   beforeEach(() => {
-    mocks.session = null
-    mocks.finish.mockClear()
-    mocks.cancel.mockClear()
     mocks.selection = new Set(['first'])
     mocks.value = { ...DEFAULT_TEXT_DATA, text: 'Heading' }
     mocks.update.mockClear()
     mocks.style.mockClear()
   })
-  it('commits content on blur rather than every keystroke', () => {
+  it('keeps content editing on Canvas and exposes only typography controls', () => {
     render(<TextProperties />)
-    const content = screen.getByRole('textbox', { name: 'Content' })
-    fireEvent.change(content, { target: { value: 'New heading' } })
-    expect(mocks.update).not.toHaveBeenCalled()
-    expect(mocks.finish).not.toHaveBeenCalled()
-    fireEvent.blur(content)
-    expect(mocks.finish).toHaveBeenCalledWith('New heading')
+    expect(screen.queryByRole('textbox', { name: 'Content' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Content' })).toBeNull()
+    expect(
+      screen.getByRole('button', { name: 'Edit text on Canvas' })
+    ).toBeTruthy()
+    expect(screen.getByRole('spinbutton', { name: 'Font size' })).toBeTruthy()
   })
-  it('discards an edit with Escape and rejects invalid typography', () => {
+  it('rejects invalid typography', () => {
     render(<TextProperties />)
-    const content = screen.getByRole('textbox', { name: 'Content' })
-    fireEvent.change(content, { target: { value: 'Discard' } })
-    fireEvent.keyDown(content, { key: 'Escape' })
-    fireEvent.blur(content)
     const size = screen.getByRole('spinbutton', { name: 'Font size' })
     fireEvent.change(size, { target: { value: '-3' } })
     fireEvent.blur(size)
     expect(mocks.update).not.toHaveBeenCalled()
     expect(size.getAttribute('aria-invalid')).toBe('true')
-  })
-  it('discards uncommitted drafts when selection changes to identical text', () => {
-    const view = render(<TextProperties />)
-    fireEvent.change(screen.getByRole('textbox', { name: 'Content' }), {
-      target: { value: 'Uncommitted' }
-    })
-    mocks.selection = new Set(['second'])
-    view.rerender(<TextProperties />)
-    expect(
-      (screen.getByRole('textbox', { name: 'Content' }) as HTMLTextAreaElement)
-        .value
-    ).toBe('Heading')
-    expect(mocks.update).not.toHaveBeenCalled()
   })
 
   it('commits typography choices immediately and exposes alignment state', () => {

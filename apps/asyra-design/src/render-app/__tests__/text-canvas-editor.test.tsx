@@ -188,15 +188,13 @@ it('suspends the canonical glyph projection only for the native editing lifetime
   expect(mocks.resumePresentation).toHaveBeenCalledTimes(1)
 })
 
-it('projects panel drafts without taking focus or restarting presentation ownership', () => {
-  const panelInput = document.createElement('textarea')
-  document.body.append(panelInput)
-  panelInput.focus()
-  mocks.current = { ...(mocks.current as object), inputSurface: 'panel' }
+it('projects live Canvas drafts without restarting presentation ownership', () => {
   const view = render(<TextCanvasEditor />)
-  expect(document.activeElement).toBe(panelInput)
+  expect(document.activeElement).toBe(
+    screen.getByRole('textbox', { name: 'Canvas text editor' })
+  )
   act(() => {
-    mocks.updateDraft('Panel preview')
+    mocks.updateDraft('Canvas preview')
   })
   expect(
     (
@@ -204,10 +202,11 @@ it('projects panel drafts without taking focus or restarting presentation owners
         name: 'Canvas text editor'
       }) as HTMLTextAreaElement
     ).value
-  ).toBe('Panel preview')
-  expect(document.activeElement).toBe(panelInput)
+  ).toBe('Canvas preview')
+  expect(document.activeElement).toBe(
+    screen.getByRole('textbox', { name: 'Canvas text editor' })
+  )
   expect(mocks.suspendElementPresentation).toHaveBeenCalledTimes(1)
   expect(mocks.resumePresentation).not.toHaveBeenCalled()
   view.unmount()
-  panelInput.remove()
 })

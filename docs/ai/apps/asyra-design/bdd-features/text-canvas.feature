@@ -193,19 +193,16 @@ Feature: Canvas plain-text authoring
     And supported sizing values should pass the same semantic and canonical validation
     And unsupported sizing values should be rejected
 
-  Scenario Outline: Preview shared text drafts immediately
+  Scenario: Publish Canvas drafts immediately without a second content editor
     Given an existing Text object is selected
-    When I type in "<surface>" without finishing the edit
-    Then Canvas and Content should immediately show the same draft
-    And keyboard focus should remain in the surface I am editing
+    Then the Property Panel should have no Content section or content input
+    When I type in the Canvas editor without finishing the edit
+    Then system draft subscribers should immediately receive the current text and measured box
+    And Canvas should display the current draft and retain keyboard focus
     And canonical text and document Undo history should remain unchanged
     When I cancel the draft
-    Then Canvas and Content should both show the original text
+    Then the system draft should be cleared and Canvas should show the original text
     When I edit again and finish
-    Then both surfaces should show the committed text
-    And one Undo should restore the original text on both surfaces
-
-    Examples:
-      | surface       |
-      | Canvas editor |
-      | Content       |
+    Then Canvas should show the committed text
+    And one Undo should restore the original text
+    And Redo should restore the accepted text
