@@ -1037,3 +1037,13 @@ replace existing fields of the retained immutable source, run the same admission
 and compilation, and never replay prior writes. References are request-local,
 FIFO bounded to four drafts / 8 MiB; an unavailable reference requires resending
 source. Prepared artifact IDs and canonical element IDs are unchanged.
+
+
+## Canvas text authoring
+
+`features/text-canvas` exposes edit-selected, finish and cancel through the
+registered feature API. `common-apis/text-canvas` retains a transient input draft
+session and commits through Core creation/property APIs inside one transaction.
+The Canvas editor subscribes only while active and derives placement through
+`elementLocalToWorkspace` and `workspaceToCanvas`. See `specs/editable-text.md`
+and `bdd-features/text-canvas.feature` for lifecycle and accepted behavior.

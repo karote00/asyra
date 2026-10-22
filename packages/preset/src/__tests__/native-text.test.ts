@@ -135,3 +135,17 @@ describe('native editable text', () => {
     expect(graphics.hitArea).toBeDefined()
   })
 })
+
+it('projects canonical text rotation into the render transform', () => {
+  const graphics = new RenderGraphics()
+  TEXT_RENDER_STRATEGY(graphics, {
+    ...DEFAULT_TEXT_DATA,
+    x: 10,
+    y: 20,
+    width: 200,
+    height: 80,
+    rotation: 0.3,
+    fills: []
+  } as never)
+  expect(graphics.rotation).toBe(0.3)
+})

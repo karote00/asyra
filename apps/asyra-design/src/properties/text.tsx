@@ -1,3 +1,5 @@
+import { getFeature } from '@asyra/core'
+import { FeatureNames } from '../constants'
 import { TEXT_PROPERTY_TYPE, type TextData } from '@asyra/preset'
 import { useProperty } from '../hooks'
 import {
@@ -53,6 +55,16 @@ const TextProperties = () => {
   return (
     <div onPointerDown={(event) => event.stopPropagation()}>
       <section aria-label="Typography">
+        <button
+          className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
+          onClick={() => {
+            const edit = getFeature(FeatureNames.EDIT_TEXT)?.editSelected as
+              (() => void) | undefined
+            edit?.()
+          }}
+        >
+          Edit text on Canvas
+        </button>
         <Header label="Typography" />
         <div className="flex flex-col pb-4">
           <div className="grid grid-cols-1 items-center pl-4 pr-2 h-8 min-h-8">

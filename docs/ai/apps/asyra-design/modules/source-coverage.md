@@ -66,3 +66,9 @@ Purpose: keep app docs aligned with implemented source modules.
   - test/infra typing files
 
 If any placeholder area becomes runtime behavior, add a dedicated module/feature doc in the same change.
+
+
+- Canvas text authoring
+
+  - `src/features/text-canvas/*`, `src/common-apis/text-canvas.ts`, `src/render-app/text-canvas-editor.tsx`
+  - docs: `specs/editable-text.md`, `bdd-features/text-canvas.feature`, `bdd-features/text-properties.feature`

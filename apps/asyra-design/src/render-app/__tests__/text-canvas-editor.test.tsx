@@ -1,0 +1,125 @@
+import { act, fireEvent, render, screen, cleanup } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+const mocks = vi.hoisted(() => ({
+  current: null as unknown,
+  frame: undefined as (() => void) | undefined,
+  publication: undefined as (() => void) | undefined,
+  load: undefined as (() => void) | undefined,
+  cancel: vi.fn(),
+  finish: vi.fn(),
+  isCurrent: vi.fn(() => true),
+  unsubscribe: vi.fn(),
+  subscribe: vi.fn(() => vi.fn()),
+  elementLocalToWorkspace: vi.fn(
+    (_id: string, p: { x: number; y: number }) => ({
+      x: 100 - p.y,
+      y: 50 + p.x
+    })
+  ),
+  workspaceToCanvas: vi.fn((p: { x: number; y: number }) => ({
+    x: p.x * 2 + 10,
+    y: p.y * 2 + 20
+  }))
+}))
+vi.mock('@asyra/core', async (original) => ({
+  ...(await original<typeof import('@asyra/core')>()),
+  getFeature: () => ({ finish: mocks.finish, cancel: mocks.cancel }),
+  subscribeToFileLoadComplete: (fn: () => void) => {
+    mocks.load = fn
+    return { unsubscribe: mocks.unsubscribe }
+  }
+}))
+vi.mock('../../contexts', () => ({
+  default: {
+    elementLocalToWorkspace: mocks.elementLocalToWorkspace,
+    workspaceToCanvas: mocks.workspaceToCanvas,
+    subscribeToFrameComplete: (fn: () => void) => {
+      mocks.frame = fn
+      return mocks.unsubscribe
+    },
+    subscribeToSharedPublication: (fn: () => void) => {
+      mocks.publication = fn
+      return mocks.unsubscribe
+    }
+  }
+}))
+vi.mock('../../common-apis/text-canvas', () => ({
+  textCanvasApis: {
+    getSnapshot: () => mocks.current,
+    subscribe: mocks.subscribe,
+    cancel: mocks.cancel,
+    isCurrent: mocks.isCurrent
+  }
+}))
+import { TextCanvasEditor } from '../text-canvas-editor'
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mocks.current = {
+    elementId: 'text',
+    workspaceId: 'workspace',
+    bounds: { x: 0, y: 0, width: 200, height: 80 },
+    typography: {
+      text: 'Hello',
+      fontFamily: 'sans-serif',
+      fontSize: 16,
+      fontStyle: 'normal',
+      fontWeight: 'normal',
+      lineHeight: 20,
+      letterSpacing: 0,
+      textAlign: 'left'
+    },
+    baseline: ''
+  }
+})
+afterEach(cleanup)
+it('uses the full affine transform and does no canonical validation on unchanged frames', () => {
+  const view = render(<TextCanvasEditor />)
+  const input = screen.getByRole('textbox')
+  expect(input.style.transform).toBe('matrix(0,2,-2,0,210,120)')
+  act(() => {
+    for (let i = 0; i < 10; i++) mocks.frame?.()
+  })
+  expect(mocks.elementLocalToWorkspace).toHaveBeenCalledTimes(33)
+  expect(mocks.isCurrent).not.toHaveBeenCalled()
+  act(() => mocks.publication?.())
+  expect(mocks.isCurrent).toHaveBeenCalledTimes(1)
+  view.unmount()
+  expect(mocks.unsubscribe).toHaveBeenCalledTimes(3)
+})
+it('keeps composing Enter local and commits the complete native draft afterwards', () => {
+  render(<TextCanvasEditor />)
+  const input = screen.getByRole('textbox')
+  fireEvent.compositionStart(input)
+  fireEvent.change(input, { target: { value: '台灣' } })
+  fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
+  expect(mocks.finish).not.toHaveBeenCalled()
+  fireEvent.compositionEnd(input)
+  fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
+  expect(mocks.finish).toHaveBeenCalledWith('台灣')
+})
+it('retains a stale draft for copying and prevents blur from committing it', () => {
+  render(<TextCanvasEditor />)
+  mocks.isCurrent.mockReturnValueOnce(false)
+  act(() => mocks.publication?.())
+  expect(screen.getByRole('alert').textContent).toContain('changed')
+  fireEvent.blur(screen.getByRole('textbox'))
+  expect(mocks.finish).not.toHaveBeenCalled()
+})
+it('cancels transient state when a new document is loaded', () => {
+  render(<TextCanvasEditor />)
+  act(() => mocks.load?.())
+  expect(mocks.cancel).toHaveBeenCalled()
+})
+
+it('commits an outside pointer before the clicked target handles its action', () => {
+  render(<TextCanvasEditor />)
+  const calls: string[] = []
+  mocks.finish.mockImplementationOnce(() => calls.push('commit'))
+  const button = document.createElement('button')
+  document.body.append(button)
+  button.addEventListener('pointerdown', () => calls.push('target'))
+  fireEvent.pointerDown(button)
+  expect(calls).toEqual(['commit', 'target'])
+  button.remove()
+})

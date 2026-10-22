@@ -296,8 +296,12 @@ weight, style, line height, letter spacing, and alignment in the Typography pane
 Use the shared Fill panel for layered colors, gradients, opacity, and visibility. Text and numeric fields commit on blur; choices apply
 immediately. Escape discards a draft, and each accepted change supports Undo/Redo.
 Fonts must be available to the browser. The toolbar and Text layers share a T icon;
-the toolbar selects Text mode, while Canvas creation and direct text editing are
-reserved for the next stage.
+press T outside editable controls to arm Text, then click for a fixed-size text
+box or drag to choose its bounds. Double-click existing text or choose Edit text
+on Canvas in Typography. Enter inserts a newline, Cmd/Ctrl+Enter finishes, and
+Escape cancels the current draft. Native text input supports IME and text-local
+Undo/Redo. Finishing creates one document Undo action; empty new drafts are
+discarded. Existing text retains its typography, fills and dimensions.
 
 ## Support and contribution policy
 

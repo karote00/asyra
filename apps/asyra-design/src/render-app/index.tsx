@@ -13,6 +13,7 @@ import { createEmptyDocument } from '../config/empty-document'
 import { getConfiguredCollaborationMode } from './collaboration-mode'
 import AiDrawingProgressIndicator from './ai-drawing-progress-indicator'
 import { StatusToastStack } from './status-toast-stack'
+import { TextCanvasEditor } from './text-canvas-editor'
 
 export interface CanvasContextMenuInvocation {
   clientX: number
@@ -189,6 +190,7 @@ const RenderApp: React.FC<RenderAppProps> = ({
         />
       )}
       <AiDrawingProgressIndicator />
+      <TextCanvasEditor />
     </div>
   )
 }

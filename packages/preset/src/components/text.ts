@@ -78,4 +78,5 @@ export const TEXT_RENDER_STRATEGY: EngineNeutralRenderStrategy<
   }
   graphic.x = data.x
   graphic.y = data.y
+  graphic.rotation = data.rotation ?? 0
 }
