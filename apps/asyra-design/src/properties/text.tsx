@@ -41,7 +41,11 @@ const TextProperties = () => {
   )
   if (!selectedId || !typography || typeof typography !== 'object') return null
 
-  const field = (key: keyof TextData, label: string, showLabel = false) => (
+  const field = (
+    key: Exclude<keyof TextData, 'text'>,
+    label: string,
+    showLabel = false
+  ) => (
     <TextField
       key={`${selectedId}:${key}`}
       field={key}
@@ -155,10 +159,6 @@ const TextProperties = () => {
             </div>
           </div>
         </div>
-      </section>
-      <section aria-label="Content" className="border-t border-white/5 pb-4">
-        <Header label="Content" />
-        <div className="pl-4 pr-2">{field('text', 'Content')}</div>
       </section>
     </div>
   )

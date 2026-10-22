@@ -153,12 +153,6 @@ const captureText = async (page: Page) => {
 
 const cases = [
   {
-    key: 'text',
-    label: 'Content',
-    value: 'Updated typography\nSecond line',
-    control: 'input'
-  },
-  {
     key: 'fontFamily',
     label: 'Font family',
     value: 'serif',
@@ -280,11 +274,9 @@ test('Text toolbar and layer share their SVG and typography drafts preserve cano
   await size.press('Escape')
   await expect(size).toHaveValue('32')
 
-  const content = page.getByRole('textbox', { name: 'Content', exact: true })
-  await content.fill('Discard this draft')
-  await content.press('Escape')
-  await expect(content).toHaveValue('Design with words\nType')
-  expect(await getUndoHistoryDepth(page)).toBe(depth)
+  await expect(
+    page.getByRole('textbox', { name: 'Content', exact: true })
+  ).toHaveCount(0)
   await page.screenshot({
     path: testInfo.outputPath('text-ui.png'),
     fullPage: true
@@ -352,10 +344,8 @@ test('Typography controls match the compact geometry rows', async ({
   await expect(page.getByTestId('prop-fills-section')).toBeVisible()
   await expect(page.getByTestId('prop-fill-opacity-0')).toBeVisible()
   await expect(
-    page
-      .getByRole('region', { name: 'Content', exact: true })
-      .getByRole('textbox')
-  ).toBeVisible()
+    page.getByRole('region', { name: 'Content', exact: true })
+  ).toHaveCount(0)
   await page.screenshot({
     path: testInfo.outputPath('compact-typography.png'),
     fullPage: true

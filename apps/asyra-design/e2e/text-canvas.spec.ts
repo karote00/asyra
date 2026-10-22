@@ -466,3 +466,47 @@ test('Editing replaces the old glyph projection and cancellation restores it wit
   await expect.poll(countRed).toBeGreaterThan(0)
   expect(await getUndoHistoryDepth(page)).toBe(depth)
 })
+
+test('Canvas publishes live drafts without a Content field and preserves cancel and Undo', async ({
+  page
+}, testInfo) => {
+  await startText(page)
+  await editor(page).fill('Original')
+  await editor(page).press('Control+Enter')
+  const history = await getUndoHistoryDepth(page)
+  await expect(
+    page.getByRole('textbox', { name: 'Content', exact: true })
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('region', { name: 'Content', exact: true })
+  ).toHaveCount(0)
+  const readDraft = () =>
+    page.evaluate(async () => {
+      const { textCanvasApis } = await import('../src/testing/runtime-access')
+      return textCanvasApis.getDraftSnapshot()
+    })
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  for (const draft of ['Live', 'Live 台灣', '']) {
+    await editor(page).fill(draft)
+    expect((await readDraft())?.text).toBe(draft)
+    await expect(editor(page)).toBeFocused()
+    expect((await readTexts(page))[0].text).toBe('Original')
+    expect(await getUndoHistoryDepth(page)).toBe(history)
+  }
+  await editor(page).press('Escape')
+  expect(await readDraft()).toBeNull()
+  expect((await readTexts(page))[0].text).toBe('Original')
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  await editor(page).fill('Accepted Canvas draft')
+  await page.screenshot({
+    path: testInfo.outputPath('canvas-only-text-editing.png')
+  })
+  await editor(page).press('Control+Enter')
+  expect(await readDraft()).toBeNull()
+  expect((await readTexts(page))[0].text).toBe('Accepted Canvas draft')
+  expect(await getUndoHistoryDepth(page)).toBe(history + 1)
+  await undo(page)
+  expect((await readTexts(page))[0].text).toBe('Original')
+  await redo(page)
+  expect((await readTexts(page))[0].text).toBe('Accepted Canvas draft')
+})

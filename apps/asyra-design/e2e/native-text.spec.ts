@@ -125,11 +125,15 @@ test('native text stays editable and survives undo, redo and save', async ({
   await undo(page)
   expect(captures[0].width).toBeGreaterThan(0)
   expect(captures[0].dataUrl === captures[1].dataUrl).toBe(true)
-  const content = page.getByRole('textbox', { name: 'Content', exact: true })
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  const content = page.getByRole('textbox', {
+    name: 'Canvas text editor',
+    exact: true
+  })
   await expect(content).toHaveValue('Editable design\nHello 世界')
   const depth = await getUndoHistoryDepth(page)
   await content.fill('Updated heading\nHello 世界')
-  await content.press('Tab')
+  await content.press('Control+Enter')
   await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + 1)
   const readText = () =>
     page.evaluate(async () => {
@@ -187,7 +191,9 @@ test('native text stays editable and survives undo, redo and save', async ({
     const { selectionApis } = await import('../src/common-apis/selection')
     selectionApis.selectElements(['native-text-example'])
   })
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
   await expect(content).toHaveValue('Updated heading\nHello 世界')
+  await content.press('Escape')
   await page.screenshot({
     path: testInfo.outputPath('native-text.png'),
     fullPage: true

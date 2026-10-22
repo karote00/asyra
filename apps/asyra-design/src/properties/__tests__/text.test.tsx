@@ -26,38 +26,22 @@ describe('manual text editing', () => {
     mocks.update.mockClear()
     mocks.style.mockClear()
   })
-  it('commits content on blur rather than every keystroke', () => {
+  it('keeps content editing on Canvas and exposes only typography controls', () => {
     render(<TextProperties />)
-    const content = screen.getByRole('textbox', { name: 'Content' })
-    fireEvent.change(content, { target: { value: 'New heading' } })
-    expect(mocks.update).not.toHaveBeenCalled()
-    fireEvent.blur(content)
-    expect(mocks.update).toHaveBeenCalledWith('text', 'New heading')
+    expect(screen.queryByRole('textbox', { name: 'Content' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Content' })).toBeNull()
+    expect(
+      screen.getByRole('button', { name: 'Edit text on Canvas' })
+    ).toBeTruthy()
+    expect(screen.getByRole('spinbutton', { name: 'Font size' })).toBeTruthy()
   })
-  it('discards an edit with Escape and rejects invalid typography', () => {
+  it('rejects invalid typography', () => {
     render(<TextProperties />)
-    const content = screen.getByRole('textbox', { name: 'Content' })
-    fireEvent.change(content, { target: { value: 'Discard' } })
-    fireEvent.keyDown(content, { key: 'Escape' })
-    fireEvent.blur(content)
     const size = screen.getByRole('spinbutton', { name: 'Font size' })
     fireEvent.change(size, { target: { value: '-3' } })
     fireEvent.blur(size)
     expect(mocks.update).not.toHaveBeenCalled()
     expect(size.getAttribute('aria-invalid')).toBe('true')
-  })
-  it('discards uncommitted drafts when selection changes to identical text', () => {
-    const view = render(<TextProperties />)
-    fireEvent.change(screen.getByRole('textbox', { name: 'Content' }), {
-      target: { value: 'Uncommitted' }
-    })
-    mocks.selection = new Set(['second'])
-    view.rerender(<TextProperties />)
-    expect(
-      (screen.getByRole('textbox', { name: 'Content' }) as HTMLTextAreaElement)
-        .value
-    ).toBe('Heading')
-    expect(mocks.update).not.toHaveBeenCalled()
   })
 
   it('commits typography choices immediately and exposes alignment state', () => {

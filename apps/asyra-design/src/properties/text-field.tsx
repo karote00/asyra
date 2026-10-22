@@ -9,19 +9,17 @@ export const TextField = ({
   value,
   onCommit
 }: {
-  field: keyof TextData
+  field: Exclude<keyof TextData, 'text'>
   label: string
   showLabel?: boolean
   value: string | number
   onCommit(value: string | number): void
 }) => {
-  const [draft, setDraft] = useState(String(value))
   const [invalid, setInvalid] = useState(false)
   const cancelled = useRef(false)
   const [inputRevision, setInputRevision] = useState(0)
 
   useEffect(() => {
-    setDraft(String(value))
     setInvalid(false)
   }, [value])
 
@@ -42,37 +40,15 @@ export const TextField = ({
   }
 
   const props = {
-    'aria-label': label,
-    'aria-invalid': invalid,
-    className:
-      'w-full min-w-0 h-full bg-transparent pr-1 text-[11px] text-text-primary caret-accent outline-none',
-    value: draft,
-    onChange: (
-      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-      cancelled.current = false
-      setDraft(event.target.value)
-      setInvalid(false)
-    },
-    onBlur: () => {
-      if (cancelled.current) {
-        cancelled.current = false
-        return
-      }
-      commit(draft)
-    },
-    onKeyDown: (
-      event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
+    onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
       event.stopPropagation()
       if (event.nativeEvent.isComposing || event.keyCode === 229) return
       if (event.key === 'Escape') {
         cancelled.current = true
-        setDraft(String(value))
         setInvalid(false)
         event.currentTarget.blur()
       }
-      if (event.key === 'Enter' && field !== 'text') event.currentTarget.blur()
+      if (event.key === 'Enter') event.currentTarget.blur()
     },
     onKeyUp: (event: React.KeyboardEvent) => event.stopPropagation()
   }
@@ -83,7 +59,7 @@ export const TextField = ({
     lineHeight: 'LineHeight',
     letterSpacing: 'LetterSpacing'
   }
-  let control = (
+  const control = (
     <Input
       key={inputRevision}
       value={value}
@@ -125,15 +101,6 @@ export const TextField = ({
       onKeyUp={props.onKeyUp}
     />
   )
-  if (field === 'text') {
-    control = (
-      <textarea
-        {...props}
-        rows={3}
-        className={`${props.className} resize-y px-2 py-1.5`}
-      />
-    )
-  }
 
   return (
     <div
@@ -143,9 +110,7 @@ export const TextField = ({
       <span className={showLabel ? 'mb-1 text-text-secondary' : 'sr-only'}>
         {label}
       </span>
-      <PropertyControl className={field === 'text' ? '!h-auto min-h-16' : ''}>
-        {control}
-      </PropertyControl>
+      <PropertyControl>{control}</PropertyControl>
       {invalid && (
         <span role="alert" className="text-amber-300">
           Enter a valid value.

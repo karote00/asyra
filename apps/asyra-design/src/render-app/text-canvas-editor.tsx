@@ -17,10 +17,15 @@ const action = (name: 'finish' | 'cancel', value?: string) => {
 const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
   const input = useRef<HTMLTextAreaElement>(null)
   const composing = useRef(false)
+  const sharedDraft = useSyncExternalStore(
+    textCanvasApis.subscribe,
+    textCanvasApis.getDraftSnapshot
+  )
   const draft = useRef(session.typography.text)
+  draft.current = sharedDraft?.text ?? session.typography.text
   const [error, setError] = useState(session.error)
   const [transform, setTransform] = useState('')
-  const [bounds, setBounds] = useState(session.bounds)
+  const bounds = sharedDraft?.bounds ?? session.bounds
 
   useEffect(() => {
     const resumePresentation = session.elementId
@@ -71,8 +76,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
     }
     window.addEventListener('pointerdown', outsidePointer, true)
     const refreshLayout = () => {
-      const next = textCanvasApis.updateDraft(draft.current, true)
-      if (next) setBounds(next)
+      textCanvasApis.updateDraft(draft.current, true)
     }
     document.fonts?.addEventListener('loadingdone', refreshLayout)
     const load = subscribeToFileLoadComplete(() => textCanvasApis.cancel())
@@ -97,7 +101,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         aria-label="Canvas text editor"
         aria-description={error || session.error || undefined}
         aria-invalid={Boolean(error || session.error)}
-        defaultValue={session.typography.text}
+        value={draft.current}
         spellCheck={false}
         wrap={
           session.typography.textSizing === TextSizing.AUTO_WIDTH
@@ -126,8 +130,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         }}
         onChange={(event) => {
           draft.current = event.target.value
-          const next = textCanvasApis.updateDraft(draft.current)
-          if (next) setBounds(next)
+          textCanvasApis.updateDraft(draft.current)
         }}
         onCompositionStart={() => {
           composing.current = true

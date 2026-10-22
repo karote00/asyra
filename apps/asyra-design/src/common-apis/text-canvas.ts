@@ -23,9 +23,10 @@ export interface TextCanvasSession {
 let session: TextCanvasSession | null = null
 let draft: { text: string; bounds: Rect } | null = null
 const listeners = new Set<() => void>()
-const publish = (next: TextCanvasSession | null) => {
+const publish = (next: TextCanvasSession | null, preserveDraft = false) => {
   session = next
-  draft = next ? { text: next.typography.text, bounds: next.bounds } : null
+  if (!preserveDraft)
+    draft = next ? { text: next.typography.text, bounds: next.bounds } : null
   listeners.forEach((listener) => listener())
 }
 const readTarget = (id: string) => {
@@ -42,6 +43,7 @@ const readTarget = (id: string) => {
 
 export const textCanvasApis = {
   getSnapshot: () => session,
+  getDraftSnapshot: () => draft,
   subscribe: (listener: () => void) => {
     listeners.add(listener)
     return () => {
@@ -90,6 +92,7 @@ export const textCanvasApis = {
         text,
         bounds: measureTextBox(session.typography, session.bounds, text)
       }
+      listeners.forEach((listener) => listener())
     }
     return draft.bounds
   },
@@ -103,18 +106,24 @@ export const textCanvasApis = {
     const current = session
     if (!current || current.error) return
     if (!textCanvasApis.isCurrent(current)) {
-      publish({
-        ...current,
-        error:
-          'This text changed or is unavailable. Copy your draft before closing.'
-      })
+      publish(
+        {
+          ...current,
+          error:
+            'This text changed or is unavailable. Copy your draft before closing.'
+        },
+        true
+      )
       return
     }
     if (text.length > 100_000) {
-      publish({
-        ...current,
-        error: 'Text must contain at most 100,000 characters.'
-      })
+      publish(
+        {
+          ...current,
+          error: 'Text must contain at most 100,000 characters.'
+        },
+        true
+      )
       return
     }
     const bounds = textCanvasApis.updateDraft(text) ?? current.bounds

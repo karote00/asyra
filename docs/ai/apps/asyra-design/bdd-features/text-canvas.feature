@@ -192,3 +192,17 @@ Feature: Canvas plain-text authoring
     And applying the design should create the text with its declared dimensions
     And supported sizing values should pass the same semantic and canonical validation
     And unsupported sizing values should be rejected
+
+  Scenario: Publish Canvas drafts immediately without a second content editor
+    Given an existing Text object is selected
+    Then the Property Panel should have no Content section or content input
+    When I type in the Canvas editor without finishing the edit
+    Then system draft subscribers should immediately receive the current text and measured box
+    And Canvas should display the current draft and retain keyboard focus
+    And canonical text and document Undo history should remain unchanged
+    When I cancel the draft
+    Then the system draft should be cleared and Canvas should show the original text
+    When I edit again and finish
+    Then Canvas should show the committed text
+    And one Undo should restore the original text
+    And Redo should restore the accepted text

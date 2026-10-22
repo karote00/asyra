@@ -88,8 +88,8 @@ creation and direct plain-text editing are available through the standalone
 Canvas authoring feature. T arms the Text tool outside editable controls; Escape
 returns an armed tool to Select.
 
-A single selected Text object shows geometry followed by Typography, Fill, and
-Content sections. Typography follows the Figma reference layout while retaining
+A single selected Text object shows geometry followed by Typography and Fill
+sections. Typography follows the Figma reference layout while retaining
 Asyra shared controls: a full-width font-family menu; one combined font style selector
 beside font size; line height beside letter spacing with visible labels; and a
 labeled horizontal alignment group. The combined styles are Regular, Italic,
@@ -122,11 +122,16 @@ property IDs, and removes the old typography color from the migrated snapshot.
 It does not mutate the input or rewrite already-upgraded Fill records.
 The former typography `textColor` field is removed from the current schema; semantic design input uses
 `fill`, targeted edits use `fillColor`, and computed context reads `fills`.
-Content remains a multiline field alongside direct Canvas editing.
+Text content is edited directly on Canvas; the Property Panel has no Content
+section or text content input. Each valid Canvas input publishes the current
+transient draft and measured box to system subscribers immediately without
+writing canonical data or adding document Undo entries. The Canvas editor
+retains focus. Finishing accepts one transaction; cancellation clears the draft
+and restores the existing text.
 Unsupported vertical alignment, advanced type controls, and Text
 Stroke lists are omitted. Multiple-selection typography is not exposed.
 
-Text and number drafts commit on blur (Enter also commits single-line fields),
+Numeric typography drafts commit on blur (Enter also commits),
 while weight, style, and alignment choices commit immediately. Escape discards
 the current draft; IME confirmation stays inside the field. Invalid drafts show
 an error without changing canonical properties. Each effective commit uses the
@@ -134,7 +139,7 @@ existing controller/common API and owns one Undo step. UI state follows selectio
 and canonical changes, including Undo/Redo. Font names use fonts available to the
 browser; this interface does not install or fetch fonts.
 
-`e2e/text-properties.spec.ts` verifies all nine typography properties against
+`e2e/text-properties.spec.ts` verifies the exposed typography properties against
 canonical values and actual rendered text pixels, plus Undo/Redo and validation.
 `e2e/native-text.spec.ts` covers content persistence and reload. Canvas editing
 semantics remain outside these interface tests.
@@ -159,8 +164,8 @@ activate or close the broader text-authoring plan.
   The engine returns native measured width and line-height/content height;
   viewport transforms never enter measurement. No character-count heuristic or
   temporary canonical object is used.
-- One transient draft owns each input revision's measured box. The editor and
-  final transaction consume that same box; unchanged input and viewport frames
+- One transient draft owns each input revision's measured box. The editor, system draft subscribers and
+  final transaction consume that same draft and measured box; unchanged input and viewport frames
   do not remeasure. Cancellation disposes it. The sizing mode and accepted box
   persist with the text and share its Undo/Redo entry.
 - Typography/content changes through the ordinary App property API remeasure

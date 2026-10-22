@@ -2,6 +2,11 @@ import { act, fireEvent, render, screen, cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   current: null as unknown,
+  draft: null as {
+    text: string
+    bounds: { x: number; y: number; width: number; height: number }
+  } | null,
+  listeners: new Set<() => void>(),
   frame: undefined as (() => void) | undefined,
   publication: undefined as (() => void) | undefined,
   load: undefined as (() => void) | undefined,
@@ -9,10 +14,15 @@ const mocks = vi.hoisted(() => ({
   suspendElementPresentation: vi.fn(),
   cancel: vi.fn(),
   finish: vi.fn(),
-  updateDraft: vi.fn(() => ({ x: 0, y: 0, width: 40, height: 20 })),
+  updateDraft: vi.fn((_text?: string) => ({
+    x: 0,
+    y: 0,
+    width: 40,
+    height: 20
+  })),
   isCurrent: vi.fn(() => true),
   unsubscribe: vi.fn(),
-  subscribe: vi.fn(() => vi.fn()),
+  subscribe: vi.fn((_listener?: () => void) => vi.fn()),
   elementLocalToWorkspace: vi.fn(
     (_id: string, p: { x: number; y: number }) => ({
       x: 100 - p.y,
@@ -50,6 +60,7 @@ vi.mock('../../contexts', () => ({
 vi.mock('../../common-apis/text-canvas', () => ({
   textCanvasApis: {
     getSnapshot: () => mocks.current,
+    getDraftSnapshot: () => mocks.draft,
     subscribe: mocks.subscribe,
     cancel: mocks.cancel,
     isCurrent: mocks.isCurrent,
@@ -60,6 +71,20 @@ import { TextCanvasEditor } from '../text-canvas-editor'
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.draft = null
+  mocks.listeners.clear()
+  mocks.subscribe.mockImplementation((listener?: () => void) => {
+    if (listener) mocks.listeners.add(listener)
+    return vi.fn(() => {
+      if (listener) mocks.listeners.delete(listener)
+    })
+  })
+  mocks.updateDraft.mockImplementation((text?: string) => {
+    const bounds = { x: 0, y: 0, width: 40, height: 20 }
+    mocks.draft = { text: text ?? '', bounds }
+    mocks.listeners.forEach((listener) => listener())
+    return bounds
+  })
   mocks.suspendElementPresentation.mockReturnValue(mocks.resumePresentation)
   mocks.current = {
     elementId: 'text',
@@ -161,4 +186,27 @@ it('suspends the canonical glyph projection only for the native editing lifetime
   )
   view.unmount()
   expect(mocks.resumePresentation).toHaveBeenCalledTimes(1)
+})
+
+it('projects live Canvas drafts without restarting presentation ownership', () => {
+  const view = render(<TextCanvasEditor />)
+  expect(document.activeElement).toBe(
+    screen.getByRole('textbox', { name: 'Canvas text editor' })
+  )
+  act(() => {
+    mocks.updateDraft('Canvas preview')
+  })
+  expect(
+    (
+      screen.getByRole('textbox', {
+        name: 'Canvas text editor'
+      }) as HTMLTextAreaElement
+    ).value
+  ).toBe('Canvas preview')
+  expect(document.activeElement).toBe(
+    screen.getByRole('textbox', { name: 'Canvas text editor' })
+  )
+  expect(mocks.suspendElementPresentation).toHaveBeenCalledTimes(1)
+  expect(mocks.resumePresentation).not.toHaveBeenCalled()
+  view.unmount()
 })

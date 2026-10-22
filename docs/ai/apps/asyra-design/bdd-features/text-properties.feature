@@ -22,6 +22,11 @@ Feature: Text properties and shared appearance
     And font size should use themed increment and decrement controls
     And native number-input spinner controls should not be visible
 
+  Scenario: Keep content editing on Canvas
+    When I inspect the Property Panel
+    Then no Content section or content input should appear
+    And Typography and the shared Fill section should remain available
+
   Scenario: Select a font from the dropdown
     When I choose an available font family from the font menu
     Then the canonical font family should change
@@ -37,7 +42,6 @@ Feature: Text properties and shared appearance
 
     Examples:
       | parameter      |
-      | content        |
       | font size      |
       | font weight    |
       | font style     |

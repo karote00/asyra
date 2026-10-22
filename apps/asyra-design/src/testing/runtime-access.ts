@@ -165,3 +165,5 @@ export type { AiDrawingPerformanceProfile, CollaborationDebugHandle }
 
 export { subscribeToUndo, subscribeToRedo } from '@asyra/core'
 export { historyApis } from '../common-apis/history'
+
+export { textCanvasApis } from '../common-apis/text-canvas'
