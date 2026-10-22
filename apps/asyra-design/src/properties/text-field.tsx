@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ColorPicker, Input, PropertyControl } from '@asyra/design-system'
+import { ColorPicker, Icon, Input, PropertyControl } from '@asyra/design-system'
 import { TEXT_PROPERTY_SCHEMA, type TextData } from '@asyra/preset'
 import { COLOR_PICKER_FORMAT_DEFINITIONS } from './fills/color-picker-config'
 
@@ -36,10 +36,11 @@ export const TextField = ({
     )
     if (!schema?.validate?.(next)) {
       setInvalid(true)
-      return
+      return false
     }
     setInvalid(false)
     if (next !== value) onCommit(next)
+    return true
   }
 
   const props = {
@@ -78,25 +79,40 @@ export const TextField = ({
     onKeyUp: (event: React.KeyboardEvent) => event.stopPropagation()
   }
 
-  const prefixes: Partial<Record<keyof TextData, string>> = {
-    lineHeight: '↕',
-    letterSpacing: '↔'
+  const prefixes: Partial<
+    Record<keyof TextData, 'LineHeight' | 'LetterSpacing'>
+  > = {
+    lineHeight: 'LineHeight',
+    letterSpacing: 'LetterSpacing'
   }
   let control = (
     <Input
       key={inputRevision}
       value={value}
-      prefix={prefixes[field]}
+      prefix={
+        prefixes[field] ? (
+          <Icon
+            name={prefixes[field]}
+            showCursor={false}
+            className="[&>svg]:h-4 [&>svg]:w-4"
+          />
+        ) : undefined
+      }
+      stepControls={numeric}
+      isStepAllowed={(next) =>
+        TEXT_PROPERTY_SCHEMA.fields
+          .find((entry) => entry.key === field)
+          ?.validate?.(next) === true
+      }
       noOutline
+      size={field === 'textColor' ? 'small' : 'medium'}
+      inputClassName={field === 'textColor' ? '!pl-0' : undefined}
       containerClassName="w-full min-w-0"
       aria-label={label}
       aria-invalid={invalid}
       type={numeric ? 'number' : 'text'}
       step={numeric ? 'any' : undefined}
-      onChange={(next) => {
-        commit(next)
-        return undefined
-      }}
+      onChange={commit}
       onBlur={(event) => {
         if (cancelled.current) {
           cancelled.current = false
@@ -124,7 +140,10 @@ export const TextField = ({
   }
 
   return (
-    <div title={label} className="flex min-w-0 flex-col text-[11px] text-white">
+    <div
+      title={label}
+      className="flex flex-1 min-w-0 flex-col text-[11px] text-white"
+    >
       <span className={showLabel ? 'mb-1 text-text-secondary' : 'sr-only'}>
         {label}
       </span>
@@ -152,6 +171,7 @@ export const TextField = ({
               borderRadius: '2px'
             }}
             triggerClassName="group flex h-6 w-6 items-center justify-center flex-shrink-0 rounded-l-[3px] transition-all text-text-secondary hover:text-text-primary"
+            triggerStyle={{ borderRadius: '3px 0 0 3px', borderRight: 'none' }}
             data-testid="prop-text-color-picker"
           />
         )}

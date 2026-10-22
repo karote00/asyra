@@ -1,4 +1,3 @@
-import { PropertyControl } from '@asyra/design-system'
 import { TEXT_PROPERTY_TYPE, type TextData } from '@asyra/preset'
 import { useProperty } from '../hooks'
 import {
@@ -7,6 +6,8 @@ import {
 } from '../controllers/scene-tree'
 import Header from './header'
 import { TextField } from './text-field'
+import { FontFamilySelect, TextSelect } from './text-select'
+import AppearanceSection from './appearance-section'
 
 const alignmentPaths = {
   left: 'M3 4h12M3 8h8M3 12h12M3 16h8',
@@ -56,46 +57,42 @@ const TextProperties = () => {
         <Header label="Typography" />
         <div className="flex flex-col pb-4">
           <div className="grid grid-cols-1 items-center pl-4 pr-2 h-8 min-h-8">
-            {field('fontFamily', 'Font family')}
+            <FontFamilySelect
+              value={typography.fontFamily}
+              onChange={(value) => {
+                if (value !== typography.fontFamily)
+                  updateSelectedElementProperties('fontFamily', value)
+              }}
+            />
           </div>
           <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
-            <PropertyControl>
-              <select
-                aria-label="Font style"
-                title="Font style"
-                className="h-full w-full min-w-0 bg-transparent px-2 text-[11px] text-text-primary outline-none [color-scheme:dark]"
-                value={
-                  fontStyles.find(
-                    (style) =>
-                      style.fontWeight === typography.fontWeight &&
-                      style.fontStyle === typography.fontStyle
-                  )?.id
+            <TextSelect
+              label="Font style"
+              value={
+                fontStyles.find(
+                  (style) =>
+                    style.fontWeight === typography.fontWeight &&
+                    style.fontStyle === typography.fontStyle
+                )?.id ?? ''
+              }
+              options={fontStyles.map((style) => ({
+                value: style.id,
+                label: style.label
+              }))}
+              onChange={(value) => {
+                const style = fontStyles.find((entry) => entry.id === value)
+                if (
+                  style &&
+                  (style.fontWeight !== typography.fontWeight ||
+                    style.fontStyle !== typography.fontStyle)
+                ) {
+                  updateSelectedTextStyle({
+                    fontWeight: style.fontWeight,
+                    fontStyle: style.fontStyle
+                  })
                 }
-                onKeyDown={(event) => event.stopPropagation()}
-                onKeyUp={(event) => event.stopPropagation()}
-                onChange={(event) => {
-                  const style = fontStyles.find(
-                    (entry) => entry.id === event.target.value
-                  )
-                  if (
-                    style &&
-                    (style.fontWeight !== typography.fontWeight ||
-                      style.fontStyle !== typography.fontStyle)
-                  ) {
-                    updateSelectedTextStyle({
-                      fontWeight: style.fontWeight,
-                      fontStyle: style.fontStyle
-                    })
-                  }
-                }}
-              >
-                {fontStyles.map((style) => (
-                  <option key={style.id} value={style.id}>
-                    {style.label}
-                  </option>
-                ))}
-              </select>
-            </PropertyControl>
+              }}
+            />
             {field('fontSize', 'Font size')}
           </div>
           <div className="grid grid-cols-2 items-start gap-2 pl-4 pr-2 pt-2 pb-1">
@@ -148,9 +145,12 @@ const TextProperties = () => {
           </div>
         </div>
       </section>
-      <section aria-label="Fill" className="border-t border-white/5 pb-3">
-        <Header label="Fill" />
-        <div className="pl-4 pr-2">{field('textColor', 'Text color')}</div>
+      <section aria-label="Fill" className="border-t border-white/5">
+        <AppearanceSection label="Fill">
+          <div className="flex items-center pl-4 pr-2 h-8 min-h-8">
+            {field('textColor', 'Text color')}
+          </div>
+        </AppearanceSection>
       </section>
       <section aria-label="Content" className="border-t border-white/5 pb-4">
         <Header label="Content" />

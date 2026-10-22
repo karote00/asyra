@@ -88,12 +88,21 @@ this toolbar entry does not create or edit a document object.
 
 A single selected Text object shows geometry followed by Typography, Fill, and
 Content sections. Typography follows the Figma reference layout while retaining
-Asyra shared controls: a full-width font family; one combined font style selector
+Asyra shared controls: a full-width font-family menu; one combined font style selector
 beside font size; line height beside letter spacing with visible labels; and a
 labeled horizontal alignment group. The combined styles are Regular, Italic,
 Bold, and Bold Italic, backed by the existing weight/style properties. A style
 selection submits both values in one common-API mutation and one Undo step.
-Single-line fields reuse Input inside PropertyControl. Text color is in a separate
+Single-line fields reuse Input inside PropertyControl. Numeric typography fields
+use themed chevron step buttons with native spinners hidden; steps validate through
+the existing text schema and commit once, including when stepping an uncommitted
+draft. Line height and letter spacing use the shared typography SVG icons.
+The font menu offers browser generic families plus detected common installed fonts;
+it preserves the document's current family. Font discovery is owned by the
+per-document catalog, reused across field updates and selection changes, and
+invalidated when the browser reports a completed font load. Permanent tests prove
+both the available choices and measurement counts across reuse/invalidation.
+Fill shares the existing Asyra appearance-section header and compact color controls. Text color is in a separate
 Fill section using ColorPicker and existing color-format definitions. Its alpha
 controls are hidden because this interface edits solid text color only. Content
 remains a multiline field in its own section because Canvas editing is deferred.

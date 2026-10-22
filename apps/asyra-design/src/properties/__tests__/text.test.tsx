@@ -91,12 +91,26 @@ describe('manual text editing', () => {
 
   it('keeps IME confirmation inside a typography field', () => {
     render(<TextProperties />)
-    const family = screen.getByRole('textbox', { name: 'Font family' })
+    const family = screen.getByRole('spinbutton', { name: 'Font size' })
     family.focus()
-    fireEvent.change(family, { target: { value: 'serif' } })
+    fireEvent.change(family, { target: { value: '40' } })
     fireEvent.keyDown(family, { key: 'Enter', isComposing: true })
     expect(document.activeElement).toBe(family)
     expect(mocks.update).not.toHaveBeenCalled()
+  })
+
+  it('selects a font family without free-form input', () => {
+    render(<TextProperties />)
+    expect(screen.queryByRole('textbox', { name: 'Font family' })).toBeNull()
+    expect(
+      screen
+        .getByRole('combobox', { name: 'Font family' })
+        .parentElement?.querySelector('svg')
+    ).toBeNull()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Font family' }), {
+      target: { value: 'serif' }
+    })
+    expect(mocks.update).toHaveBeenCalledExactlyOnceWith('fontFamily', 'serif')
   })
 
   it('has no text controls without an editable text selection', () => {

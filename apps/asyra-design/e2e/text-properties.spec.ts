@@ -131,7 +131,12 @@ const cases = [
     value: 'Updated typography\nSecond line',
     control: 'input'
   },
-  { key: 'fontFamily', label: 'Font family', value: 'serif', control: 'input' },
+  {
+    key: 'fontFamily',
+    label: 'Font family',
+    value: 'serif',
+    control: 'select'
+  },
   { key: 'fontSize', label: 'Font size', value: 40, control: 'input' },
   { key: 'fontWeight', label: 'Font style', value: 'bold', control: 'select' },
   { key: 'fontStyle', label: 'Font style', value: 'italic', control: 'select' },
@@ -375,4 +380,60 @@ test('Combined font style changes both properties in one reversible action', asy
   await undo(page)
   await expect(style).toHaveValue('bold-italic')
   expect((await captureText(page)).hash).toBe(after.hash)
+})
+
+test('Font menu, spacing icons, and themed size steps update real text', async ({
+  page
+}, testInfo) => {
+  await createTextFixture(page)
+  const family = page.getByRole('combobox', {
+    name: 'Font family',
+    exact: true
+  })
+  await expect(family).toBeVisible()
+  expect(
+    await family.evaluate((select) => getComputedStyle(select).appearance)
+  ).toBe('none')
+  await expect(page.getByRole('textbox', { name: 'Font family' })).toHaveCount(
+    0
+  )
+  const before = await captureText(page)
+  await family.selectOption('monospace')
+  await expect
+    .poll(async () => (await readTypography(page)).fontFamily)
+    .toBe('monospace')
+  const mono = await captureText(page)
+  expect(mono.hash).not.toBe(before.hash)
+  const depth = await getUndoHistoryDepth(page)
+  const size = page.getByRole('spinbutton', { name: 'Font size', exact: true })
+  expect(
+    await size.evaluate((input) => getComputedStyle(input).appearance)
+  ).toBe('textfield')
+  await page
+    .getByRole('button', { name: 'Increase Font size', exact: true })
+    .click()
+  await expect(size).toHaveValue('33')
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+  expect((await captureText(page)).hash).not.toBe(mono.hash)
+  await undo(page)
+  await expect(size).toHaveValue('32')
+  expect((await captureText(page)).hash).toBe(mono.hash)
+  await page
+    .getByRole('button', { name: 'Decrease Font size', exact: true })
+    .click()
+  await expect(size).toHaveValue('31')
+  await expect.poll(async () => (await readTypography(page)).fontSize).toBe(31)
+  const draftDepth = await getUndoHistoryDepth(page)
+  await size.fill('40')
+  await page
+    .getByRole('button', { name: 'Increase Font size', exact: true })
+    .click()
+  await expect(size).toHaveValue('41')
+  expect(await getUndoHistoryDepth(page)).toBe(draftDepth + 1)
+  await undo(page)
+  await expect(size).toHaveValue('31')
+  await page.screenshot({
+    path: testInfo.outputPath('text-controls.png'),
+    fullPage: true
+  })
 })
