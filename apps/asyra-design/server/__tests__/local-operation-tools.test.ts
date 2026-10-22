@@ -51,7 +51,10 @@ import {
   localToolContent,
   localToolResultExample
 } from '../local-operation-tools'
-import { withToolContractAssertions } from './tool-contract-assertions'
+import {
+  withToolContractAssertions,
+  readCompleteInformation
+} from './tool-contract-assertions'
 const createLocalOperationTools = (...args: Parameters<typeof createOwner>) =>
   withReviewBindingActor(withToolContractAssertions(createOwner(...args)))
 import { createLocalImageTools } from '../local-image-tools'
@@ -94,13 +97,11 @@ it('refreshes discovery after recipe registration, revision and removal without 
   const first = (await lookup()).tools[0]
   expect(first.execution).toEqual(tools[0].execution)
   expect(first.outputSchema).toEqual({ type: 'number' })
-  expect((await lookup()).tools[0].definition.state).toBe('previously-returned')
+  expect((await lookup()).tools[0].definition.state).toBe('included')
   expect(getNativeTools).toHaveBeenCalledTimes(2)
   tools[0] = { ...tools[0], revision: 3, description: 'Updated contract.' }
   generation++
-  expect((await lookup()).tools[0].definition.deliveryReason).toBe(
-    'version-changed'
-  )
+  expect((await lookup()).tools[0].definition.deliveryReason).toBe('requested')
   tools.splice(0)
   generation++
   expect((await lookup()).missingNames).toEqual(['repeat-fill'])
@@ -357,10 +358,14 @@ it('resolves multiple semantic operations and semantic names from the admitted r
   expect(selected).toHaveLength(2)
   const call = async (args: unknown) =>
     JSON.parse(
-      await tools.call(
-        'describe_design_apis',
-        args,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          tools.call(
+            'describe_design_apis',
+            input,
+            new AbortController().signal
+          ),
+        args
       )
     )
   const result = await call({
@@ -4138,7 +4143,7 @@ it.each([
   }
 )
 
-it('retrieves exact admitted category schemas in one read-only discovery call', async () => {
+it('retrieves exact admitted category schemas through bounded read-only discovery', async () => {
   const execute = vi.fn(async () => ({ actionResults: [], context: {} }))
   const admitted = basicApiContracts.filter((api) => api.owner === 'fill')
   const tools = createLocalOperationTools(
@@ -4148,10 +4153,14 @@ it('retrieves exact admitted category schemas in one read-only discovery call', 
   )
   const call = async (args: unknown) =>
     JSON.parse(
-      await tools.call(
-        'describe_design_apis',
-        args,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          tools.call(
+            'describe_design_apis',
+            input,
+            new AbortController().signal
+          ),
+        args
       )
     )
   const expanded = await call({ category: 'fill', includeSchemas: true })
@@ -4162,7 +4171,7 @@ it('retrieves exact admitted category schemas in one read-only discovery call', 
   expect(exact.apis.map((api: { name: string }) => api.name)).toEqual(
     expanded.apis.map((api: { name: string }) => api.name)
   )
-  for (const api of exact.apis) expect(api.inputSchema).toBeUndefined()
+  for (const api of exact.apis) expect(api.inputSchema).toBeDefined()
   for (const api of expanded.apis) expect(api.inputSchema).toBeDefined()
   const compact = await call({ category: 'fill' })
   expect(compact.apis.map((api: { name: string }) => api.name)).toEqual(
@@ -4270,8 +4279,8 @@ it('resolves mixed action and native names without discarding known matches or d
   const repeated = (
     await lookup(['registered_preparation.prepare_new_capability'])
   ).tools[0]
-  expect(repeated.inputSchema).toBeUndefined()
-  expect(repeated.definition.state).toBe('previously-returned')
+  expect(repeated.inputSchema).toBeDefined()
+  expect(repeated.definition.state).toBe('included')
   const refreshed = JSON.parse(
     await tools.call(
       'describe_design_apis',
@@ -4370,8 +4379,8 @@ it('delivers both same-name route schemas in one lookup and invokes each without
       arguments: values
     })
   const repeated = await read({ names: [action.name] })
-  expect(repeated.apis[0].definition.state).toBe('previously-returned')
-  expect(repeated.tools[0].definition.state).toBe('previously-returned')
+  expect(repeated.apis[0].definition.state).toBe('included')
+  expect(repeated.tools[0].definition.state).toBe('included')
   expect(repeated.apis[0].definition.refresh.arguments.names).toEqual([
     action.name
   ])
@@ -4440,11 +4449,13 @@ it('retrieves usage and exact schema fragments without consuming full definition
   })
   const repeated = (await read({ names: [action.name] })).apis[0]
   expect(repeated.definition).toMatchObject({
-    state: 'previously-returned',
-    coverage: 'reference',
-    availableInResponse: false
+    state: 'included',
+    coverage: 'full',
+    availableInResponse: true
   })
-  expect(repeated.definition.nextAction).toBe('reuse-or-refresh-if-missing')
+  expect(repeated.definition.nextAction).toBe(
+    'use-response-or-recover-requested-scope'
+  )
   expect(
     (await read(repeated.definition.refresh.arguments)).apis[0].inputSchema
   ).toEqual(action.inputSchema)
@@ -4538,7 +4549,7 @@ it('uses exact native schema paths with escaped names and keeps unknown paths re
   expect(getNativeTools).toHaveBeenCalledOnce()
 })
 
-it('returns one action definition per request revision with explicit context recovery', async () => {
+it('returns requested action definitions on repeated reads with explicit context recovery', async () => {
   const action = {
     name: AiActionNames.ORGANIZE_DESIGN,
     description: 'An admitted operation',
@@ -4560,10 +4571,10 @@ it('returns one action definition per request revision with explicit context rec
   expect(first.inputSchema).toEqual(action.inputSchema)
   expect(first.definition.state).toBe('included')
   const repeated = (await read({ operation: action.name })).apis[0]
-  expect(repeated.inputSchema).toBeUndefined()
+  expect(repeated.inputSchema).toBeDefined()
   expect(repeated.definition).toMatchObject({
     revision: first.definition.revision,
-    state: 'previously-returned'
+    state: 'included'
   })
   const recovered = (await read(repeated.definition.refresh.arguments)).apis[0]
   expect(recovered.inputSchema).toEqual(action.inputSchema)
@@ -4926,14 +4937,18 @@ it('recovers only missing definition fields with explicit provenance and a reusa
   )
   const read = async (args: unknown) =>
     JSON.parse(
-      await tools.call(
-        'describe_design_apis',
-        args,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          tools.call(
+            'describe_design_apis',
+            input,
+            new AbortController().signal
+          ),
+        args
       )
     )
   const full = (await read({ names: [action.name] })).apis[0]
-  expect(full.definition.deliveryReason).toBe('initial')
+  expect(full.definition.deliveryReason).toBe('requested')
   const paths = ['/properties/elementIds']
   const partial = (
     await read({
@@ -4964,7 +4979,7 @@ it('recovers only missing definition fields with explicit provenance and a reusa
   expect(recovered.inputSchema).toBeUndefined()
   expect(
     (await read({ names: [action.name] })).apis[0].definition.deliveryReason
-  ).toBe('unchanged')
+  ).toBe('requested')
   const restored = (await read(partial.definition.refresh.arguments)).apis[0]
   expect(restored.inputSchema).toEqual(action.inputSchema)
   expect(restored.definition.recoveryReason).toBe('context-loss')
@@ -5739,10 +5754,14 @@ it('reuses each exact partial definition scope and retains its parent constraint
   )
   const read = async (args: unknown) =>
     JSON.parse(
-      await tools.call(
-        'describe_design_apis',
-        args,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          tools.call(
+            'describe_design_apis',
+            input,
+            new AbortController().signal
+          ),
+        args
       )
     ).apis[0]
   const selector = { names: [action.name], schemaPaths: ['/properties/x'] }
@@ -5758,11 +5777,11 @@ it('reuses each exact partial definition scope and retains its parent constraint
   )
   const again = await read(selector)
   expect(again.definition).toMatchObject({
-    state: 'previously-returned',
-    availableInResponse: false,
+    state: 'included',
+    availableInResponse: true,
     requestedCoverage: 'partial'
   })
-  expect(again.schemaFragments).toBeUndefined()
+  expect(again.schemaFragments).toEqual(first.schemaFragments)
   const other = await read({
     names: [action.name],
     schemaPaths: ['/properties/y']
@@ -5783,10 +5802,14 @@ it('pages broad category discovery and gives registry candidates for an unknown 
   )
   const read = async (args: unknown) =>
     JSON.parse(
-      await tools.call(
-        'describe_design_apis',
-        args,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          tools.call(
+            'describe_design_apis',
+            input,
+            new AbortController().signal
+          ),
+        args
       )
     )
   const inventory = await read({})
@@ -8063,7 +8086,7 @@ it('delivers usage pages across native and action discovery without consuming fu
   expect(last.complete).toBe(true)
   expect(last.tools.at(-1).definition.coverage).toBe('usage')
   const category = await read({ category: 'tools', view: 'usage' })
-  expect(category.tools[0].definition.state).toBe('previously-returned')
+  expect(category.tools[0].definition.state).toBe('included')
   const full = await read({ names: ['saved_tools.probe-0'] })
   expect(full.tools[0].definition.state).toBe('included')
   expect(full.tools[0].inputSchema).toEqual(native[0].inputSchema)
@@ -8071,7 +8094,7 @@ it('delivers usage pages across native and action discovery without consuming fu
     query: 'discovery representation probe',
     view: 'usage'
   })
-  expect(repeated.tools[0].definition.state).toBe('previously-returned')
+  expect(repeated.tools[0].definition.state).toBe('included')
   const restored = await read({
     ...page.next.arguments,
     refresh: true,
@@ -8207,7 +8230,7 @@ it('delivers API, native and mixed discovery pages through the actual invocation
     (tool) => tool.name === 'describe_design_apis'
   )
   if (!definition) throw new Error('Missing discovery definition')
-  const read = async (args: unknown) => {
+  const readPage = async (args: unknown) => {
     const reply = await invokeLocalTool(
       owner,
       definition,
@@ -8215,8 +8238,10 @@ it('delivers API, native and mixed discovery pages through the actual invocation
       new AbortController().signal
     )
     expect(reply.success, reply.text).toBe(true)
-    return JSON.parse(reply.text)
+    return reply.text
   }
+  const read = async (args: unknown) =>
+    JSON.parse(await readCompleteInformation(readPage, args))
   const menu = await read({})
   const selectors = [
     { query: 'pagination probe' },
@@ -8273,7 +8298,7 @@ it('delivers API, native and mixed discovery pages through the actual invocation
   expect(
     (await read({ names: ['saved_tools.pagination-0'] })).tools[0].definition
       .state
-  ).toBe('previously-returned')
+  ).toBe('included')
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -8560,7 +8585,7 @@ it('preserves successful mixed schema lookups and returns exact recovery for a u
   expect(first.tools[0].schemaFragments[0].path).toBe('/properties')
   const repeated = await read(input)
   expect(repeated.apis[0].definition.state).toBe('unavailable')
-  expect(repeated.tools[0].definition.state).toBe('previously-returned')
+  expect(repeated.tools[0].definition.state).toBe('included')
   const corrected = await read({
     names: [AiActionNames.READ_DESIGN_CONTEXT],
     schemaPaths: ['/oneOf/0/properties']
@@ -8608,10 +8633,14 @@ it('keeps recorded usage schema-free and groups only canonical basic wrapper rou
   )
   const read = async (args: unknown) =>
     JSON.parse(
-      await tools.call(
-        'describe_design_apis',
-        args,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          tools.call(
+            'describe_design_apis',
+            input,
+            new AbortController().signal
+          ),
+        args
       )
     )
   const recorded = recordedDiscovery.calls.find((call) => 'query' in call.input)
@@ -8651,7 +8680,7 @@ it('keeps recorded usage schema-free and groups only canonical basic wrapper rou
   expect(usage.tools[0].definition.availableInResponse).toBe(true)
   expect(usage.tools[0].inputFields).toContain('/properties/arguments')
   const reused = await read({ names: [native.registeredName], view: 'usage' })
-  expect(reused.tools[0].definition.state).toBe('previously-returned')
+  expect(reused.tools[0].definition.state).toBe('included')
   const restored = await read(reused.tools[0].definition.recover.arguments)
   expect(restored.tools[0].inputFields).toEqual(usage.tools[0].inputFields)
   expect(restored.tools[0].outputSchema).toBeUndefined()
@@ -8720,10 +8749,14 @@ it('replays all recorded discovery selectors without losing exact contracts or d
   let usageBytes = 0
   for (const call of saved.calls) {
     const result = JSON.parse(
-      await owner.call(
-        'describe_design_apis',
-        call.input,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          owner.call(
+            'describe_design_apis',
+            input,
+            new AbortController().signal
+          ),
+        call.input
       )
     )
     bytes += Buffer.byteLength(JSON.stringify(result))
@@ -8841,7 +8874,7 @@ it('routes exact final-action discovery to the current final-response contract w
       signal
     )
   )
-  expect(repeated.apis[0].definition.availableInResponse).toBe(false)
+  expect(repeated.apis[0].definition.availableInResponse).toBe(true)
 })
 
 it('declares the shared bounded result projection in visual review outcomes', async () => {
@@ -9126,7 +9159,7 @@ it('delivers a validated usage invocation with canonical identity cardinality an
       .call('describe_design_apis', args, new AbortController().signal)
       .then(JSON.parse)
   const usage = (await read({ names: [action.name], view: 'usage' })).apis[0]
-  expect(usage.inputFields).toContain('/properties/request/properties/anchorId')
+  expect(usage.inputFields).toContain('/properties/request')
   expect(usage.outputFields).toContain('/properties/applied')
   expect(usage.elementBindings).toContainEqual({
     schemaPath: '/properties/request/properties/anchorId',
@@ -9149,7 +9182,7 @@ it('delivers a validated usage invocation with canonical identity cardinality an
   expect(
     (await read({ names: [action.name], view: 'usage' })).apis[0]
       .invocationExample
-  ).toBeUndefined()
+  ).toEqual(usage.invocationExample)
   const refreshed = (
     await read({
       names: [action.name],

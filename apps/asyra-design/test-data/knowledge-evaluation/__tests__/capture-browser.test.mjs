@@ -1,4 +1,4 @@
-/* global Response, fetch */
+/* global Response, fetch, window */
 import { setTimeout } from 'node:timers'
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -507,6 +507,249 @@ test(
       assert.equal(browser.contexts().length, 0)
     } finally {
       await browser.close()
+      await fs.rm(folder, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'recording export and fresh reload preserve a document frame above the remote control limit',
+  { timeout: 60000 },
+  async () => {
+    const { createServer } = await import('node:http')
+    const { WebSocketServer } = await import('ws')
+    const { captureReload } = await import('../capture-lifecycle.mjs')
+    const folder = await fs.mkdtemp(path.join(root, 'tmp/capture-large-frame-'))
+    const length = 257 * 1024 * 1024
+    const receipt = { documentGeneration: 2, sequence: 9, durableSequence: 9 }
+    let received = 0
+    const server = createServer((request, response) => {
+      if (request.url === '/src/testing/runtime-access.ts') {
+        response.setHeader('content-type', 'text/javascript')
+        response.end(
+          "export const getActiveCollaborationHandle=()=>({getStatus:()=> 'connected'});export const core={getCurrentWorkspaceId:()=> 'workspace',getElementData:()=>window.received ? {children:['saved-root']} : undefined};"
+        )
+        return
+      }
+      response.setHeader('content-type', 'text/html')
+      response.end(
+        `<body>Saved document fixture<script>if(location.pathname==='/reload'){const socket=new WebSocket('ws://'+location.host);socket.onmessage=e=>{window.received=e.data.length;window.valid=e.data[0]==='x'&&e.data[e.data.length-1]==='x';};}</script>`
+      )
+    })
+    const sockets = new WebSocketServer({ server })
+    sockets.on('connection', (socket) => {
+      received++
+      socket.send('x'.repeat(length))
+    })
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const url = `http://127.0.0.1:${server.address().port}`
+    let owned, browser
+    try {
+      const { launchCaptureBrowser } = await import('../capture-browser.mjs')
+      owned = await launchCaptureBrowser({
+        chromium,
+        evidencePath: path.join(folder, 'stop.json')
+      })
+      browser = owned.browser
+      const context = await owned.newContext({
+        recordVideo: { dir: path.join(folder, 'video') }
+      })
+      const page = await context.newPage()
+      await page.goto(url)
+      await page.waitForTimeout(200)
+      const video = await saveRemoteRecording(
+        context,
+        page,
+        path.join(folder, 'recording.webm')
+      )
+      assert.ok(video.bytes > 0)
+      assert.equal(browser.isConnected(), true)
+      const captured = { roots: ['saved-root'], receipt }
+      const result = await captureReload({
+        browser: owned,
+        viewport: { width: 640, height: 480 },
+        url: url + '/reload',
+        captured,
+        capturePage: async (page) => {
+          assert.deepEqual(
+            await page.evaluate(() => ({
+              length: window.received,
+              valid: window.valid
+            })),
+            { length, valid: true }
+          )
+          return captured
+        },
+        screenshotPath: path.join(folder, 'reload.png'),
+        recordCleanup: (task) => task(),
+        timeoutMs: 40000
+      })
+      assert.deepEqual(result.receipt, receipt)
+      assert.equal(received, 1, 'Reload must not retry the document')
+      assert.equal(browser.isConnected(), true)
+      assert.ok((await fs.stat(path.join(folder, 'reload.png'))).size > 0)
+    } finally {
+      await owned?.close()
+      for (const socket of sockets.clients) socket.terminate()
+      await new Promise((resolve) => sockets.close(resolve))
+      await new Promise((resolve) => server.close(resolve))
+      await fs.rm(folder, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'local capture keeps native process ownership and independent blocked-RPC termination',
+  { timeout: 15000 },
+  async () => {
+    const { launchCaptureBrowser } = await import('../capture-browser.mjs')
+    const { createLiveTestDeadline, processIdentity } =
+      await import('../../ai-drawing/live-test-deadline.mjs')
+    const folder = await fs.mkdtemp(path.join(root, 'tmp/capture-local-stop-'))
+    const events = []
+    const owned = await launchCaptureBrowser({
+      chromium,
+      evidencePath: path.join(folder, 'cleanup.json'),
+      record: (event) => events.push(event)
+    })
+    const disconnected = new Promise((resolve) =>
+      owned.browser.once('disconnected', resolve)
+    )
+    let deadline
+    try {
+      assert.ok(processIdentity(owned.pid))
+      const context = await owned.newContext()
+      const page = await context.newPage()
+      const meta = {}
+      const blocked = collectEvidenceStage(
+        meta,
+        'capture',
+        () =>
+          page.evaluate(() => {
+            for (;;) {
+              /* Deliberately blocked renderer. */
+            }
+          }),
+        () => undefined
+      )
+      deadline = createLiveTestDeadline({
+        deadlineAt: Date.now() + 300,
+        processes: [owned.pid],
+        evidencePath: path.join(folder, 'deadline.json')
+      })
+      const receipt = await boundedCapture(
+        'native stop',
+        () => deadline.result,
+        6000
+      )
+      await boundedCapture('capture failure', () => blocked, 3000)
+      assert.equal(receipt.status, 'failed')
+      assert.deepEqual(receipt.errors, [])
+      assert.ok(receipt.stopped.some((entry) => entry.pid === owned.pid))
+      assert.equal(meta.evidence.capture.status, 'failed')
+      await boundedCapture('disconnect notification', () => disconnected, 3000)
+      assert.ok(events.some((event) => event.event === 'browser-disconnected'))
+      assert.equal(events[0].event, 'browser-started')
+    } finally {
+      if (deadline) await deadline.stop()
+      await owned.close()
+      assert.equal(events.at(-1).event, 'browser-process-settled')
+      assert.equal(events.at(-1).processPresent, false)
+      assert.equal(
+        events.filter((event) => event.event === 'browser-force-stop-requested')
+          .length,
+        0,
+        'Already terminated browser must not be killed again'
+      )
+      await fs.rm(folder, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'reload screenshot includes the post-fit presentation instead of the prior frame',
+  { timeout: 10000 },
+  async () => {
+    const { captureReload } = await import('../capture-lifecycle.mjs')
+    const { default: sharp } = await import('sharp')
+    const folder = await fs.mkdtemp(path.join(root, 'tmp/reload-presentation-'))
+    const browser = await chromium.launch({ channel: 'chrome', headless: true })
+    try {
+      await captureReload({
+        browser: {
+          newContext: async (options) => {
+            const context = await browser.newContext(options)
+            await context.route('**/*', (route) =>
+              route.fulfill(
+                route.request().url().endsWith('/runtime-access.ts')
+                  ? {
+                      contentType: 'text/javascript',
+                      body: "export const getActiveCollaborationHandle=()=>({getStatus:()=> 'connected'});export const core={getCurrentWorkspaceId:()=> 'workspace',getElementData:()=>({children:[]})};"
+                    }
+                  : {
+                      contentType: 'text/html',
+                      body: '<body style="margin:0;background:white"><script>document.addEventListener("keydown",()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.background="rgb(0,0,255)"})));</script>'
+                    }
+              )
+            )
+            return context
+          }
+        },
+        viewport: { width: 100, height: 100 },
+        url: 'http://fixture/',
+        capturePage: async () => ({
+          roots: [],
+          receipt: { sequence: 0, durableSequence: 0, documentGeneration: 0 }
+        }),
+        screenshotPath: path.join(folder, 'reload.png'),
+        recordCleanup: (task) => task()
+      })
+      const pixel = await sharp(path.join(folder, 'reload.png'))
+        .extract({ left: 50, top: 50, width: 1, height: 1 })
+        .raw()
+        .toBuffer()
+      assert.deepEqual(
+        [...pixel],
+        [0, 0, 255],
+        'Capture must show the fitted presentation'
+      )
+    } finally {
+      await browser.close()
+      await fs.rm(folder, { recursive: true, force: true })
+    }
+  }
+)
+
+test(
+  'stalled local browser cleanup uses the existing force-stop owner and preserves failure',
+  { timeout: 15000 },
+  async () => {
+    const { launchCaptureBrowser } = await import('../capture-browser.mjs')
+    const { processIdentity } =
+      await import('../../ai-drawing/live-test-deadline.mjs')
+    const folder = await fs.mkdtemp(path.join(root, 'tmp/capture-close-stop-'))
+    const events = []
+    const owned = await launchCaptureBrowser({
+      chromium,
+      evidencePath: path.join(folder, 'stop.json'),
+      record: (event) => events.push(event)
+    })
+    const close = owned.browser.close.bind(owned.browser)
+    try {
+      owned.browser.close = () => new Promise(() => undefined)
+      await assert.rejects(
+        owned.close(),
+        /browser close capture deadline exceeded/
+      )
+      assert.equal(processIdentity(owned.pid), undefined)
+      const forced = events.find(
+        (event) => event.event === 'browser-force-stop-completed'
+      )
+      assert.deepEqual(forced.receipt.errors, [])
+      assert.ok(forced.receipt.stopped.some((entry) => entry.pid === owned.pid))
+    } finally {
+      owned.browser.close = close
+      await owned.close()
       await fs.rm(folder, { recursive: true, force: true })
     }
   }

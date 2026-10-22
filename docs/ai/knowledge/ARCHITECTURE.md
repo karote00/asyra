@@ -11,7 +11,11 @@ All shared knowledge files occupy one directory level. The filename without
 `.md` is the knowledge ID. Dots are part of the ID, not a directory hierarchy.
 Markdown plus YAML frontmatter carries advisory What, Why, How, provenance and
 Evaluation Guidance. References, extensions and explicitly targeted overrides
-compose content without changing the shared sources.
+compose required content without changing the shared sources. Optional `children`
+metadata provides nested navigation without including child bodies. A directory
+module is thin advice, not a reference to all descendants. Leaf modules declare
+only necessary dependencies; direct reads preserve necessary constraints without
+requiring parent-first reading. Shared files remain portable and advisory.
 
 ## Responsibility boundaries
 

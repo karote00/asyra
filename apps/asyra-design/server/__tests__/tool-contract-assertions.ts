@@ -157,3 +157,36 @@ export const withToolContractAssertions = <
   }
   return owner
 }
+
+/** A consumer follows published continuations before using the complete contract. */
+export const readCompleteInformation = async (
+  call: (input: unknown) => Promise<string>,
+  input: unknown
+): Promise<string> => {
+  let raw = await call(input)
+  let text = ''
+  let offset = 0
+  let revision: string | undefined
+  for (let count = 0; count < 256; count++) {
+    const page = JSON.parse(raw).contentDelivery
+    if (!page) {
+      expect(offset).toBe(0)
+      return raw
+    }
+    expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
+    expect(page.startByte).toBe(offset)
+    revision ??= page.revision
+    expect(page.revision).toBe(revision)
+    text += page.text
+    offset += Buffer.byteLength(page.text)
+    expect(page.endByte).toBe(offset)
+    if (page.lastPage) {
+      expect(offset).toBe(page.totalBytes)
+      expect(page.next).toBeNull()
+      JSON.parse(text)
+      return text
+    }
+    raw = await call(page.next.arguments)
+  }
+  throw new Error('Information continuation did not terminate')
+}

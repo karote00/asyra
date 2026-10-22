@@ -1,3 +1,4 @@
+import { readCompleteInformation } from '../../../server/__tests__/tool-contract-assertions'
 import type {
   AiActionBatch,
   AiBatchReceipt,
@@ -15,8 +16,8 @@ import { prepareOperationBatch } from '../../../server/local-operation-batch'
 import { createBasicApiActions } from '../basic-api-actions'
 import { createPreparedDesignAction } from '../design-actions'
 import { admitPreparedDesign } from '../prepared-design-admission'
-import { createLocalKnowledgeTools } from '../../../server/local-knowledge'
-import { createLocalOperationTools } from '../../../server/local-operation-tools'
+import { createLocalKnowledgeTools as createKnowledgeOwner } from '../../../server/local-knowledge'
+import { createLocalOperationTools as createOperationOwner } from '../../../server/local-operation-tools'
 import { createLocalDesignTools } from '../../../server/local-design-tools'
 import { createLocalDesignWorkflow } from '../../../server/local-design-workflow'
 import {
@@ -34,18 +35,23 @@ it('hands App-only method examples from real Knowledge reads to current discover
     await knowledge.call(
       AiDesignToolIds.READ_KNOWLEDGE,
       {
-        ids: ['design.architectural-illustration'],
+        ids: [
+          'design.architectural-illustration.materials.method.parameters',
+          'design.architectural-illustration.contracts.operations'
+        ],
         contexts: ['architectural-illustration']
       },
       signal()
     )
   )
   const domain = read.documents.find(
-    (doc: { target: string }) => doc.target === 'illustration.architecture'
+    (doc: { target: string }) =>
+      doc.target === 'illustration.architecture.materials.method'
   )
   const app = read.documents.find(
     (doc: { target: string }) =>
-      doc.target === 'design.architectural-illustration'
+      doc.target ===
+      'design.architectural-illustration.materials.method.parameters'
   )
   expect(domain.text).toContain('Choose a material method')
   expect(domain.text).not.toContain('map_retained_fills')
@@ -62,7 +68,7 @@ it('hands App-only method examples from real Knowledge reads to current discover
   ).toBe(true)
   const appMarkdown = readFileSync(
     new URL(
-      '../../../knowledge/design.architectural-illustration.md',
+      '../../../knowledge/design.architectural-illustration.materials.method.parameters.md',
       import.meta.url
     ),
     'utf8'
@@ -90,7 +96,14 @@ it('hands App-only method examples from real Knowledge reads to current discover
       }))
   })
   const workflow = createLocalDesignWorkflow(designs, operations)
-  const samples = [...app.text.matchAll(/```json\n([\s\S]*?)\n```/g)].filter(
+  const exampleText = [
+    app.text,
+    read.documents.find(
+      (doc: { target: string }) =>
+        doc.target === 'design.architectural-illustration.contracts.operations'
+    ).text
+  ].join('\n')
+  const samples = [...exampleText.matchAll(/```json\n([\s\S]*?)\n```/g)].filter(
     (match) =>
       JSON.parse(match[1]).tool !== AiDesignToolIds.EXECUTE_DESIGN_BATCH
   )
@@ -269,15 +282,25 @@ it('carries the recorded material decision into initial preparation without chan
       await knowledge.call(
         AiDesignToolIds.READ_KNOWLEDGE,
         {
-          ids: ['design.architectural-illustration'],
+          ids: ['design.architectural-illustration.materials.method'],
           contexts: ['architectural-illustration']
         },
         signal()
       )
     )
     expect(
-      read.sources.map((source: { revision: number }) => source.revision)
-    ).toEqual([4, 17])
+      read.sources.map((source: { id: string; revision: number }) => [
+        source.id,
+        source.revision
+      ])
+    ).toEqual([
+      ['design.architectural-illustration', 18],
+      ['design.architectural-illustration.contracts', 2],
+      ['illustration.architecture', 5],
+      ['illustration.architecture.materials', 1],
+      ['illustration.architecture.materials.method', 1],
+      ['design.architectural-illustration.materials.method', 3]
+    ])
     for (const action of [
       ...createBasicApiActions(),
       createPreparedDesignAction()
@@ -777,7 +800,7 @@ it('hands a declared color-only method through exact discovery to retained mappi
       await knowledge.call(
         AiDesignToolIds.READ_KNOWLEDGE,
         {
-          ids: ['design.architectural-illustration'],
+          ids: ['design.architectural-illustration.materials.method'],
           contexts: ['architectural-illustration']
         },
         activeSignal
@@ -786,7 +809,7 @@ it('hands a declared color-only method through exact discovery to retained mappi
     expect(
       read.documents.find(
         (doc: { target: string }) =>
-          doc.target === 'design.architectural-illustration'
+          doc.target === 'design.architectural-illustration.materials.method'
       ).text
     ).toContain('map_retained_fills')
     const operations = createLocalOperationTools(
@@ -915,13 +938,15 @@ it.each([false, true])(
           await knowledge.call(
             AiDesignToolIds.READ_KNOWLEDGE,
             {
-              ids: ['design.architectural-illustration'],
+              ids: ['design.architectural-illustration.spatial'],
               contexts: ['architectural-illustration']
             },
             signal()
           )
         )
-        expect(response.documents).toHaveLength(2)
+        expect(
+          response.documents.map((doc: { target: string }) => doc.target)
+        ).toContain('illustration.architecture.spatial')
       }
       // The recorded agent selected massing advice but its criteria did not isolate
       // relationships. We control that decision here; no automated visual judgment.
@@ -1065,7 +1090,9 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
       await knowledge.call(
         AiDesignToolIds.READ_KNOWLEDGE,
         {
-          ids: ['design.architectural-illustration'],
+          ids: [
+            'design.architectural-illustration.materials.method.parameters'
+          ],
           contexts: ['architectural-illustration']
         },
         signal()
@@ -1073,7 +1100,8 @@ it('joins advisory reads, real preparation and scoped material verdict recovery 
     )
     const advice = read.documents.find(
       (document: { target: string }) =>
-        document.target === 'design.architectural-illustration'
+        document.target ===
+        'design.architectural-illustration.materials.method.parameters'
     )
     const sample = [...advice.text.matchAll(/```json\n([\s\S]*?)\n```/g)]
       .map((match) => JSON.parse(match[1]))
@@ -1391,7 +1419,7 @@ it('uses the current qualified route across partial, full and recovery retrieval
     const recoveredUsage = (
       await read(wrong.schemaResolution.recover.arguments)
     ).tools[0]
-    expect(recoveredUsage.definition.state).toBe('previously-returned')
+    expect(recoveredUsage.definition.state).toBe('included')
     const partial = (
       await read({ names: [name], schemaPaths: ['/properties/draft'] })
     ).tools[0]
@@ -1413,11 +1441,11 @@ it('uses the current qualified route across partial, full and recovery retrieval
     })
     const repeated = (await read({ names: [name] })).tools[0]
     expect(repeated.definition).toMatchObject({
-      coverage: 'reference',
-      state: 'previously-returned',
-      availableInResponse: false
+      coverage: 'full',
+      state: 'included',
+      availableInResponse: true
     })
-    expect(repeated.inputSchema).toBeUndefined()
+    expect(repeated.inputSchema).toEqual(full.inputSchema)
     const restored = (
       await read({
         ...repeated.definition.refresh.arguments,
@@ -1434,7 +1462,7 @@ it('uses the current qualified route across partial, full and recovery retrieval
     const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
     expect(bytes(usage)).toBeLessThan(bytes(full))
     expect(bytes(partial)).toBeLessThan(bytes(full))
-    expect(bytes(repeated)).toBeLessThan(bytes(full))
+    expect(repeated).toEqual(full)
     expect(dispatch).not.toHaveBeenCalled()
   } finally {
     registry.dispose()
@@ -1503,7 +1531,7 @@ it('executes documented exclusive direct and retained target inputs through cano
       await knowledge.call(
         AiDesignToolIds.READ_KNOWLEDGE,
         {
-          ids: ['design.architectural-illustration'],
+          ids: ['design.architectural-illustration.contracts.operations'],
           contexts: ['architectural-illustration']
         },
         signal()
@@ -1511,7 +1539,7 @@ it('executes documented exclusive direct and retained target inputs through cano
     )
     const app = result.documents.find(
       (item: { target: string }) =>
-        item.target === 'design.architectural-illustration'
+        item.target === 'design.architectural-illustration.contracts.operations'
     )
     const examples = [...app.text.matchAll(/```json\n([\s\S]*?)\n```/g)]
       .map((match) => JSON.parse(String(match[1])))
@@ -1605,7 +1633,7 @@ it('executes the documented representative review through recorded wrong-crop re
       await knowledge.call(
         AiDesignToolIds.READ_KNOWLEDGE,
         {
-          ids: ['design.architectural-illustration'],
+          ids: ['design.architectural-illustration.materials.review'],
           contexts: ['architectural-illustration']
         },
         signal()
@@ -1613,7 +1641,7 @@ it('executes the documented representative review through recorded wrong-crop re
     )
     const app = delivery.documents.find(
       (document: { target: string }) =>
-        document.target === 'design.architectural-illustration'
+        document.target === 'design.architectural-illustration.materials.review'
     )
     const match = app.text.match(
       /```json representative-review\n([\s\S]*?)\n```/
@@ -1838,7 +1866,7 @@ it.each(['unverified', 'fail'] as const)(
         await knowledge.call(
           AiDesignToolIds.READ_KNOWLEDGE,
           {
-            ids: ['design.architectural-illustration'],
+            ids: ['design.architectural-illustration.materials.review'],
             contexts: ['architectural-illustration']
           },
           signal()
@@ -1846,7 +1874,8 @@ it.each(['unverified', 'fail'] as const)(
       )
       const text = response.documents.find(
         (document: { target: string }) =>
-          document.target === 'design.architectural-illustration'
+          document.target ===
+          'design.architectural-illustration.materials.review'
       ).text
       const example = (label: string) => {
         const match = text.match(
@@ -1924,7 +1953,7 @@ it.each(['unverified', 'fail'] as const)(
         ).toBeUndefined()
         const repeated = (await call('describe_design_apis', { names: [name] }))
           .tools[0]
-        expect(repeated.definition.availableInResponse).toBe(false)
+        expect(repeated.definition.availableInResponse).toBe(true)
         const restored = (
           await call('describe_design_apis', {
             ...repeated.definition.refresh.arguments,
@@ -2087,3 +2116,23 @@ it.each(['unverified', 'fail'] as const)(
     }
   }
 )
+
+// These scenario consumers assemble read pages before interpreting domain advice.
+const createLocalKnowledgeTools = (
+  ...args: Parameters<typeof createKnowledgeOwner>
+) => {
+  const owner = createKnowledgeOwner(...args)
+  const call = owner.call.bind(owner)
+  owner.call = (name, input, signal) =>
+    readCompleteInformation((next) => call(name, next, signal), input)
+  return owner
+}
+const createLocalOperationTools = (
+  ...args: Parameters<typeof createOperationOwner>
+) => {
+  const owner = createOperationOwner(...args)
+  const call = owner.call.bind(owner)
+  owner.call = (name, input, signal) =>
+    readCompleteInformation((next) => call(name, next, signal), input)
+  return owner
+}

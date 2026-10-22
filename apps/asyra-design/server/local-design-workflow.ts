@@ -1,3 +1,4 @@
+import { designRepresentationGuidance } from './design-preparation-examples'
 import type { AiInvocationMiddleware } from '@asyra/ai-agent-runtime'
 import {
   toolSemantics,
@@ -121,7 +122,7 @@ export const createLocalDesignWorkflow = (
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
                 'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
-                preparation.description,
+                designRepresentationGuidance,
               inputSchema: {
                 ...preparation.inputSchema,
                 properties: {
@@ -369,6 +370,27 @@ export const createLocalDesignWorkflow = (
     inspection: 'defer'
   }
   const inputSchema = {
+    'x-design-input-scope': {
+      operations: '/oneOf',
+      nodes: '/$defs/node/anyOf',
+      optionalInputs: review ? ['plan'] : [],
+      usage: {
+        instructions:
+          'Prepare and apply ready editable content through the existing owners. This tool writes to the canvas. Send ready work before generating later details. The backend computes projection, template repetition and bounds; supply design choices and source geometry, not expanded vertices. Preserve existing unrelated objects; use registered edits for existing objects. parentId uses parent-local coordinates. inspection=defer postpones inspection, not writing. response=compact is sufficient for continuation; full adds identity maps. Optional plan defines criteria in this call; without it draw now and define criteria before primary-agent review. Established criteria cannot be rewritten after drawing. Group bounds follow children; Frame owns size. Layout is computed once, not live Auto Layout; clipping, frame borders and corner radii are unavailable. Preserve supplied 2D geometry; do not invent depth or hidden faces to use projection. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Visual judgment remains with the main agent.',
+        operations: {
+          draft:
+            'Supply draft only, not repair or parts. Adapt the matching example to the request. Unique node keys identify authored nodes, never canonical element IDs.',
+          repair:
+            'Supply repair only, not draft or parts. Use an owned current source artifact and exact repair operations; keep unaffected geometry and valid artifacts. Repair preparation does not authorize replay of an earlier application.',
+          parts:
+            'Supply ordered parts envelopes, each with key and draft or repair. parentPart may refer only to an earlier successful part; parentId is mutually exclusive and belongs inside that part. No top-level parentId or materialSourceId. Each part is prepared and applied before the next. This is not one atomic batch. Earlier successful parts remain on later failure; successors stop. Intermediate inspections defer until the end.'
+        },
+        results:
+          'Read toolOutcome.status and settlement together with actual receipts, not transport success. success means this invocation completed, not visual acceptance or durable save. No-op changes nothing and is valid only when acknowledged by the owner; do not infer it from an empty response. partial preserves completed work even if a later operation, measurement or image delivery failed. failed or cancelled does not erase already acknowledged work. Unconfirmed settlement is not success. completedSteps and actionResults identify completed work; parts preserves ordered per-part receipts. actionResults[].result.compositionId is the actual new root for continuation; artifactId identifies retained preparation, not proof of canvas application. applicable/findings describe preparation; failedStep locates a stop. checks, measurementIssues and inspectionIssues describe outstanding follow-up. Full identity maps are optional; resolve retained artifact targets for local edits. Negative visual judgments remain failures even when recording them succeeds.',
+        recovery:
+          'Never replay completed writes to recover missing output, measurement, inspection or later parts. Reuse completed receipts and inspect current state when settlement is unconfirmed. Reacquire missing information with the same usage/scope or refresh; stale continuation restarts only that read. Invalid preparation applies nothing: correct its findings before a new submission. Expired or stale artifact credentials require fresh preparation/current binding, not bypass or blind application retry. On partial completion submit only confirmed remaining work after checking receipts; for failed follow-up repeat only the required check/capture. Cancellation retains acknowledged work and never authorizes automatic retry. Reuse instanceRanges only for confirmed missing complete instances, never an uncertain partial write.'
+      }
+    },
     ...definition.inputSchema,
     $defs: {
       ...definition.inputSchema.$defs,

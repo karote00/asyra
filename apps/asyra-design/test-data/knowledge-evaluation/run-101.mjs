@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import { launchCaptureBrowser } from './capture-browser.mjs'
 import { loadEnvironment, resolveEnvironment } from '../../app-environment.mjs'
 import { createLiveTestDeadline } from '../ai-drawing/live-test-deadline.mjs'
 
@@ -15,7 +16,6 @@ import { captureCheckpoint } from './checkpoint.mjs'
 import {
   boundedCapture,
   collectEvidenceStage,
-  stopUnsettledProcess,
   settleGeneration,
   captureReload,
   captureSessionOnPage,
@@ -26,7 +26,10 @@ import {
   verifyEvaluationService,
   captureRequestIdentity
 } from './capture-source.mjs'
-import { architectureScenario } from './architecture-protocol.mjs'
+import {
+  architectureScenario,
+  observationDeadline
+} from './architecture-protocol.mjs'
 import { saveRemoteRecording } from '../ai-drawing/remote-recording.mjs'
 
 import { createRequire } from 'node:module'
@@ -37,14 +40,14 @@ const { createRecordingBoundsFit } = require('./fit-101.cjs')
 const here = path.dirname(fileURLToPath(import.meta.url))
 const app = path.resolve(here, '../..')
 const root = path.resolve(app, '../..')
-const [arm] = process.argv.slice(2)
+const [arm, ...deadlineArguments] = process.argv.slice(2)
 if (arm !== 'quality-knowledge') throw new Error('Unknown 101 arm')
 const caseId = 'taipei-101'
 const specification = JSON.parse(
   fs.readFileSync(path.join(here, 'architecture-101.json'))
 )
 const scenario = architectureScenario(specification)
-const limitMs = specification.deadlineMs
+const limitMs = observationDeadline(specification, deadlineArguments)
 const environment = resolveEnvironment(loadEnvironment())
 const services = JSON.parse(
   fs.readFileSync(path.join(root, 'tmp/knowledge-services.json'))
@@ -112,21 +115,21 @@ const snapshot = async (page) =>
     }
   })
 const stage = (name, task) => collectEvidenceStage(meta, name, task, save)
-let browserServer,
-  browser,
+let ownedBrowser,
   context,
   deadline,
   page,
   generationSettled = false
 try {
-  fs.mkdirSync(path.join(directory, 'browser-artifacts'), { recursive: true })
-  browserServer = await chromium.launchServer({
-    channel: 'chrome',
-    headless: true,
-    artifactsDir: path.join(directory, 'browser-artifacts')
+  ownedBrowser = await launchCaptureBrowser({
+    chromium,
+    evidencePath: path.join(directory, 'cleanup-stop.json'),
+    record: (event) => {
+      ;(meta.browserLifecycle ??= []).push(event)
+      save()
+    }
   })
-  browser = await chromium.connect(browserServer.wsEndpoint())
-  context = await browser.newContext({
+  context = await ownedBrowser.newContext({
     viewport: meta.viewport,
     recordVideo: { dir: path.join(directory, 'video'), size: meta.viewport },
     deviceScaleFactor: 1
@@ -227,7 +230,7 @@ try {
   deadline = createLiveTestDeadline({
     deadlineAt: Date.parse(meta.sentAt) + limitMs,
     groups: [vite.pid],
-    processes: [browserServer.process().pid],
+    processes: [ownedBrowser.pid],
     evidencePath: path.join(directory, 'deadline.json')
   })
   await deadline.ready
@@ -349,7 +352,7 @@ try {
   }
   await stage(captured ? 'reload' : 'read-only-recovery', () =>
     captureReload({
-      browser,
+      browser: ownedBrowser,
       viewport: meta.viewport,
       url: meta.url,
       captured,
@@ -411,43 +414,26 @@ try {
   }
   for (const [name, resource] of [
     ['context', context],
-    ['browser', browser],
-    ['browser-server', browserServer]
+    ['browser', ownedBrowser]
   ]) {
     if (!resource) continue
     await stage(`cleanup-${name}`, () =>
-      boundedCapture(name, () => resource.close(), 5000)
+      name === 'browser'
+        ? resource.close()
+        : boundedCapture(name, () => resource.close(), 5000)
     )
   }
   // Preserve spool files when forced termination prevents a playable export.
   meta.video ??= {
     status: 'unexported',
-    artifactsDirectory: path.join(directory, 'browser-artifacts'),
     videoDirectory: path.join(directory, 'video'),
     limitation: 'Raw files may be truncated after forced termination'
-  }
-  try {
-    await stopUnsettledProcess(browserServer?.process(), async () => {
-      const cleanup = createLiveTestDeadline({
-        deadlineAt: Date.now(),
-        processes: [browserServer.process().pid],
-        evidencePath: path.join(directory, 'cleanup-stop.json')
-      })
-      return boundedCapture(
-        'browser force cleanup',
-        () => cleanup.result,
-        10000
-      )
-    })
-  } catch (error) {
-    meta.cleanupStopFailure = error.message
   }
   if (
     Object.values(meta.evidence ?? {}).some(
       (value) => value.status === 'failed'
     ) ||
-    meta.stopFailure ||
-    meta.cleanupStopFailure
+    meta.stopFailure
   )
     process.exitCode = 1
   save()

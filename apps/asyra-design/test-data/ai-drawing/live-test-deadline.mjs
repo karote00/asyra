@@ -9,7 +9,7 @@ import { writeFileSync } from 'node:fs'
 import process from 'node:process'
 import { URL } from 'node:url'
 import { setTimeout, clearTimeout } from 'node:timers'
-const processIdentity = (pid) => {
+export const processIdentity = (pid) => {
   try {
     return execFileSync('ps', ['-o', 'lstart=', '-p', String(pid)], {
       encoding: 'utf8',

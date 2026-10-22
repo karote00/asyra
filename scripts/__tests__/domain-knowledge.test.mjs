@@ -12,6 +12,11 @@ const ids = [
   'design.landing-page',
   'icons',
   'illustration.architecture',
+  'illustration.architecture.spatial',
+  'illustration.architecture.projection',
+  'illustration.architecture.repetition',
+  'illustration.architecture.materials',
+  'illustration.architecture.materials.method',
   'typography'
 ]
 
@@ -48,7 +53,10 @@ test('shared advice has provenance, practical guidance and resolvable compositio
     const metadata = JSON.parse(match[1])
     assert.ok(metadata.description.length > 20)
     assert.ok(metadata.provenance.length > 0)
-    for (const reference of metadata.references ?? [])
+    for (const reference of [
+      ...(metadata.references ?? []),
+      ...(metadata.children ?? [])
+    ])
       assert.ok(ids.includes(reference))
     for (const heading of [
       'What',
@@ -63,10 +71,10 @@ test('shared advice has provenance, practical guidance and resolvable compositio
 })
 
 test('architectural methods stay portable and contain no App execution contract', () => {
-  const text = fs.readFileSync(
-    path.join(directory, 'illustration.architecture.md'),
-    'utf8'
-  )
+  const text = ids
+    .filter((id) => id.startsWith('illustration.architecture'))
+    .map((id) => fs.readFileSync(path.join(directory, `${id}.md`), 'utf8'))
+    .join('\n')
   for (const forbidden of [
     'Asyra',
     'Taipei',
@@ -97,4 +105,24 @@ test('architectural methods stay portable and contain no App execution contract'
   }
   assert.ok(text.includes('requested style takes precedence'))
   assert.ok(text.includes('not every unrelated part'))
+})
+
+test('architectural navigation does not eagerly compose descendants', () => {
+  const entries = new Map(
+    ids.map((id) => {
+      const text = fs.readFileSync(path.join(directory, `${id}.md`), 'utf8')
+      return [id, JSON.parse(/^---\n([\s\S]*?)\n---\n/.exec(text)[1])]
+    })
+  )
+  const root = entries.get('illustration.architecture')
+  assert.equal(root.references, undefined)
+  assert.ok(root.children.includes('illustration.architecture.materials'))
+  const material = entries.get('illustration.architecture.materials')
+  assert.deepEqual(material.references, ['illustration.architecture'])
+  assert.deepEqual(material.children, [
+    'illustration.architecture.materials.method'
+  ])
+  assert.deepEqual(entries.get(material.children[0]).references, [
+    'illustration.architecture.materials'
+  ])
 })

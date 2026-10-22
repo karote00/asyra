@@ -4,6 +4,7 @@ import type {} from '../../src/types'
 import recordedDiscoveryDelivery from './fixtures/recorded-101/discovery-delivery-20261020.json'
 import recordedPurpose from './fixtures/recorded-101/purpose-20261017.json'
 import sharp from 'sharp'
+import { runInNewContext } from 'node:vm'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
@@ -53,9 +54,10 @@ import type { AiToolStoreEntry } from '@asyra/ai-agent-runtime'
 import { createAiActivityProjection } from '../../src/ai/activity-state'
 import { createServerActionBatchProvider } from '../../src/ai/server-action-batch-provider'
 
-const { spawn, retainedRecords } = vi.hoisted(() => ({
+const { spawn, retainedRecords, retainedPayloads } = vi.hoisted(() => ({
   spawn: vi.fn(),
-  retainedRecords: [] as unknown[]
+  retainedRecords: [] as unknown[],
+  retainedPayloads: [] as { callId: string; value: unknown }[]
 }))
 vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@asyra/ai-agent-runtime/node')>()),
@@ -66,6 +68,15 @@ vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
   })),
   createExecutionRecordSink: () => ({
     write: (record: unknown) => retainedRecords.push(record),
+    writePayload: (
+      _requestId: string,
+      callId: string,
+      _phase: string,
+      value: unknown
+    ) => {
+      retainedPayloads.push({ callId, value })
+      return { status: 'queued', path: 'fixture.json' }
+    },
     flush: async () => ({ status: 'saved', path: null })
   })
 }))
@@ -130,6 +141,7 @@ const environment = {
 }
 
 interface Packet {
+  result?: unknown
   id?: number
   method: string
   params: Record<string, unknown>
@@ -187,6 +199,7 @@ const fakeServer = (
     kill: ReturnType<typeof vi.fn>
   }
   const packets: Packet[] = []
+  const fragments = new Map<number, string>()
   let analysisReplies = 0
   let imageReplies = 0
   const send = (packet: unknown) => {
@@ -254,6 +267,36 @@ const fakeServer = (
   child.stdin = new Writable({
     write(chunk, _encoding, done) {
       const packet = JSON.parse(String(chunk)) as Packet
+      const result = packet.result as
+        { contentItems?: { text: string }[] } | undefined
+      const text = result?.contentItems?.[0]?.text
+      const fragment = text ? JSON.parse(text).contentDelivery : undefined
+      if (fragment && packet.id !== undefined && result?.contentItems) {
+        const previous = fragments.get(packet.id) ?? ''
+        expect(fragment.startByte).toBe(Buffer.byteLength(previous))
+        const complete = previous + fragment.text
+        fragments.set(packet.id, complete)
+        if (!fragment.lastPage) {
+          queueMicrotask(() =>
+            send({
+              id: packet.id,
+              method: 'item/tool/call',
+              params: {
+                threadId: 'thread-1',
+                turnId: 'turn-1',
+                callId: `fragment-${packet.id}-${fragment.endByte}`,
+                tool: fragment.next.tool,
+                arguments: fragment.next.arguments
+              }
+            })
+          )
+          done()
+          return
+        }
+        expect(Buffer.byteLength(complete)).toBe(fragment.totalBytes)
+        result.contentItems[0].text = complete
+        fragments.delete(packet.id)
+      }
       packets.push(packet)
       queueMicrotask(() => {
         if ('result' in packet) {
@@ -475,6 +518,7 @@ const untilTurn = async (packets: Packet[]) => {
 
 afterEach(() => {
   retainedRecords.length = 0
+  retainedPayloads.length = 0
   vi.useRealTimers()
   vi.resetAllMocks()
   vi.restoreAllMocks()
@@ -721,7 +765,7 @@ describe('local subscription AI backend', () => {
             found.tools.find(
               (tool: { name: string }) => tool.name === 'prepare_design'
             ).definition
-          ).toMatchObject({ availableInResponse: false })
+          ).toMatchObject({ availableInResponse: true })
           const restored = await call('describe_design_apis', {
             names: ['design_preparation.prepare_design'],
             refresh: true,
@@ -1439,7 +1483,8 @@ describe('local subscription AI backend', () => {
     expect(instructions).toContain(
       'input.actions lists final-response actions, not the complete capability catalog'
     )
-    for (const { name } of definitions) expect(instructions).toContain(name)
+    expect(instructions).not.toContain('Available App tool namespaces:')
+    expect(instructions).toContain('Discover tools by operation purpose')
     expect(String(thread?.baseInstructions)).toContain(
       'Use native web research'
     )
@@ -1863,6 +1908,45 @@ describe('local subscription AI backend', () => {
     ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_INVALID_CONFIGURATION' })
   })
 
+  it('keeps initial instructions bounded when unrelated deferred tools grow', async () => {
+    const baseline = fakeServer()
+    await requestConfiguredAiActionBatch(input, { environment })
+    const before = baseline.packets.find(
+      ({ method }) => method === 'thread/start'
+    )?.params
+    const create = referenceTools.createLocalReferenceTools
+    vi.spyOn(referenceTools, 'createLocalReferenceTools').mockImplementation(
+      (...args) => {
+        const owner = create(...args)
+        return {
+          ...owner,
+          definitions: [
+            ...owner.definitions,
+            ...Array.from({ length: 1000 }, (_, index) => ({
+              ...owner.definitions[0],
+              // Synthetic registry entries are never invoked through this owner.
+              name: `unrelated_${index}` as (typeof owner.definitions)[number]['name'],
+              description: 'Unrelated capability'
+            }))
+          ]
+        }
+      }
+    )
+    const expanded = fakeServer()
+    await requestConfiguredAiActionBatch(input, { environment })
+    const after = expanded.packets.find(
+      ({ method }) => method === 'thread/start'
+    )?.params
+    expect(after?.developerInstructions).toEqual(before?.developerInstructions)
+    expect(after?.baseInstructions).toEqual(before?.baseInstructions)
+    expect(nativeToolDefinitions(after).length).toBe(
+      nativeToolDefinitions(before).length + 1000
+    )
+    expect(
+      nativeToolDefinitions(after).every((tool) => tool.deferLoading)
+    ).toBe(true)
+  })
+
   it('uses one tool-free ephemeral process, exact model, and no HTTP/API key or account output', async () => {
     const server = fakeServer()
     const fetch = vi.fn()
@@ -1899,6 +1983,9 @@ describe('local subscription AI backend', () => {
       runtimeWorkspaceRoots: [],
       allowProviderModelFallback: false
     })
+    expect(thread?.developerInstructions).not.toContain(
+      'Available App tool namespaces:'
+    )
     // Native app-server DynamicToolSpec requires the function discriminator.
     // Check every advertised definition, not only one known tool name.
     expect(thread?.dynamicTools).toBeInstanceOf(Array)
@@ -5068,6 +5155,12 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
   )?.params
   expect(thread?.baseInstructions).toContain('discover_knowledge')
   expect(thread?.baseInstructions).toContain(
+    'Select the sufficient parent or child directly'
+  )
+  expect(thread?.baseInstructions).toContain(
+    'hierarchy depth does not mean more complete advice'
+  )
+  expect(thread?.baseInstructions).toContain(
     'Known-value edits can proceed without a lookup'
   )
   const knowledge = groups.find((group) => group.name === 'design_knowledge')
@@ -5076,6 +5169,9 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
     'read_knowledge'
   ])
   expect(JSON.stringify(knowledge)).not.toContain('## How')
+  expect(
+    knowledge?.tools.find((tool) => tool.name === 'read_knowledge')?.description
+  ).toContain('Do not read all siblings')
   let id = 800
   const call = async (tool: string, args: unknown, success = true) => {
     const current = ++id
@@ -5132,17 +5228,50 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
         (entry: { id: string }) => entry.id === architecture.ids[0]
       )
     ).toBe(true)
+    const method = architecturalCatalog.entries.find(
+      (entry: { id: string }) =>
+        entry.id === 'design.architectural-illustration.materials.method'
+    )
+    const detail = architecturalCatalog.entries.find(
+      (entry: { id: string }) => entry.id === method.children[0]
+    )
+    expect(method.description).toMatch(/without.*parameter walkthrough/i)
+    expect(detail.description).toMatch(
+      /only when.*local-coordinate conversion.*worked example/i
+    )
+    expect(detail.description).toMatch(
+      /known supported representation.*does not require/i
+    )
+    const directory = architecturalCatalog.entries.find(
+      (entry: { id: string }) => entry.id === architecture.ids[0]
+    )
+    const materials = architecturalCatalog.entries.find(
+      (entry: { id: string }) =>
+        entry.id ===
+        directory.children.find((child: string) => child.endsWith('.materials'))
+    )
+    architecture.ids = [
+      materials.children.find((child: string) => child.endsWith('.correction'))
+    ]
     const architecturalRead = await call('read_knowledge', architecture)
     expect(architecturalRead.alreadyDelivered).toBe(false)
     expect(
       architecturalRead.documents.map((doc: { target: string }) => doc.target)
     ).toEqual([
+      'design.architectural-illustration',
+      'design.architectural-illustration.contracts',
       'illustration.architecture',
-      'design.architectural-illustration'
+      'illustration.architecture.materials',
+      'design.architectural-illustration.materials.correction'
     ])
-    expect(JSON.stringify(architecturalRead)).toContain('draft.fillTemplates')
+    expect(JSON.stringify(architecturalRead)).toContain(
+      'edits create local overrides'
+    )
+    expect(JSON.stringify(architecturalRead)).not.toContain(
+      '## Represent a repeated multi-face component once'
+    )
     expect((await call('read_knowledge', architecture)).alreadyDelivered).toBe(
-      true
+      false
     )
     const architecturalRestored = await call('read_knowledge', {
       ...architecture,
@@ -5174,7 +5303,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
           contexts: ['docs-page']
         })
       ).alreadyDelivered
-    ).toBe(true)
+    ).toBe(false)
     server.send({
       method: 'item/completed',
       params: {
@@ -5190,7 +5319,7 @@ it('discovers and retrieves both knowledge contexts through the normal provider 
           contexts: ['docs-page']
         })
       ).alreadyDelivered
-    ).toBe(true)
+    ).toBe(false)
     server.send({
       method: 'item/started',
       params: {
@@ -6022,9 +6151,7 @@ it.each([
         const invocation = usage.invocationExample.invocation
         expect(invocation.tool).toBe(name)
         if (name !== 'define_design_criteria')
-          expect(usage.inputFields).toContain(
-            '/$defs/node/anyOf/0/properties/type'
-          )
+          expect(usage.inputFields).toContain('/properties/draft')
         return {
           name: invocation.tool,
           args: {
@@ -6071,6 +6198,40 @@ it.each([
       (packet) => packet.method === 'thread/start'
     )?.params
     expect(String(thread?.baseInstructions)).toContain('schemaPaths')
+    const description =
+      nativeToolDefinitions(thread).find(
+        (tool) => tool.name === 'describe_design_apis'
+      )?.description ?? ''
+    const pattern =
+      /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/
+    expect(String(thread?.developerInstructions)).toContain(
+      'Decision-required contract fields use the bounded information example'
+    )
+    const published = pattern.exec(description)?.[1]
+    expect(published).toBeTruthy()
+    if (!published) throw new Error('Missing advertised information example')
+    expect(pattern.exec(String(thread?.developerInstructions))?.[1]).toBe(
+      published
+    )
+    const values = new Map<string, unknown>()
+    const forward = vi.fn()
+    const original = JSON.stringify({
+      route: 'text-only-control',
+      toolOutcome: { status: 'success', settlement: 'completed' }
+    })
+    runInNewContext(published, {
+      result: original,
+      deliveryKey: 'provider-control',
+      text: forward,
+      load: (key: string) => values.get(key),
+      store: (key: string, value: unknown) => values.set(key, value)
+    })
+    expect(forward).toHaveBeenCalledExactlyOnceWith(original)
+    expect(values.get('provider-control')).toMatchObject({
+      complete: true,
+      value: JSON.parse(original)
+    })
+
     expect(
       nativeToolDefinitions(thread).find(
         (tool) => tool.name === 'describe_design_apis'
@@ -6156,3 +6317,276 @@ it('replays saved full discovery and delivery recovery through the provider with
   })
   expect(executeBatch).not.toHaveBeenCalled()
 })
+
+it.each([
+  [
+    'full',
+    [
+      {
+        type: 'inputText',
+        text: JSON.stringify({
+          schema: {
+            additionalProperties: false,
+            required: ['color'],
+            title: '材質'
+          }
+        })
+      }
+    ],
+    'available'
+  ],
+  [
+    'changed',
+    [{ type: 'inputText', text: JSON.stringify({ omitted: ['schema'] }) }],
+    'available'
+  ],
+  ['missing', undefined, 'unavailable'],
+  ['null', null, 'unavailable'],
+  ['empty', [], 'empty'],
+  ['malformed', 'invalid', 'malformed'],
+  [
+    'invalid-text',
+    [{ type: 'inputText', text: 'opaque secret text' }],
+    'available'
+  ]
+])(
+  'retains native delivery boundary %s without claiming model visibility',
+  async (_name, contentItems, status) => {
+    const server = fakeServer({ hold: true, manualToolReplies: true })
+    const executeBatch = vi.fn()
+    const request = requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          ...input.actions,
+          {
+            name: AiActionNames.APPLY_PREPARED_DESIGN,
+            description: 'Apply',
+            inputSchema: {}
+          },
+          {
+            name: AiActionNames.INSPECT_DRAWING,
+            description: 'Inspect',
+            inputSchema: {}
+          }
+        ]
+      },
+      { environment, executeBatch }
+    )
+    await untilTurn(server.packets)
+    server.send({
+      id: 99,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: 'delivery-1',
+        tool: 'describe_design_apis',
+        arguments: { names: ['create_rectangle'] }
+      }
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((p) => p.id === 99)).toBe(true)
+    )
+    server.notify('item/completed', {
+      item: {
+        type: 'dynamicToolCall',
+        id: 'delivery-1',
+        tool: 'describe_design_apis',
+        status: 'completed',
+        success: true,
+        contentItems
+      }
+    })
+    server.finish()
+    await request
+    const saved = retainedPayloads.find((p) => p.callId === 'item:delivery-1')
+    expect(saved?.value).toMatchObject({
+      stage: 'native-completed-result',
+      status,
+      modelVisibility: 'unavailable'
+    })
+    if (
+      Array.isArray(contentItems) &&
+      contentItems.length &&
+      _name !== 'invalid-text'
+    ) {
+      expect(saved?.value).toMatchObject({
+        content: [
+          {
+            value: JSON.parse(contentItems[0].text),
+            bytes: Buffer.byteLength(contentItems[0].text)
+          }
+        ]
+      })
+    }
+    if (_name === 'invalid-text')
+      expect(JSON.stringify(saved)).not.toContain('opaque secret text')
+    expect(executeBatch).not.toHaveBeenCalled()
+  }
+)
+
+it('correlates interleaved native delivery results with their original calls and preserves real schemas', async () => {
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  const executeBatch = vi.fn()
+  const request = requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        ...input.actions,
+        {
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          description: 'Apply',
+          inputSchema: {}
+        },
+        {
+          name: AiActionNames.INSPECT_DRAWING,
+          description: 'Inspect',
+          inputSchema: {}
+        }
+      ]
+    },
+    { environment, executeBatch }
+  )
+  await untilTurn(server.packets)
+  for (const [id, tool, args] of [
+    [91, 'describe_design_apis', recordedDiscoveryDelivery.calls[0].input],
+    [
+      92,
+      'read_knowledge',
+      {
+        ids: ['design.architectural-illustration'],
+        contexts: ['architectural-illustration']
+      }
+    ]
+  ] as const) {
+    server.send({
+      id,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: `delivery-${id}`,
+        tool,
+        arguments: args
+      }
+    })
+  }
+  await vi.waitFor(() =>
+    expect(
+      server.packets.filter((p) => p.id === 91 || p.id === 92)
+    ).toHaveLength(2)
+  )
+  for (const [id, tool] of [
+    [92, 'read_knowledge'],
+    [91, 'describe_design_apis']
+  ] as const) {
+    const response = server.packets.find((p) => p.id === id) as unknown as {
+      result: { contentItems: { type: string; text: string }[] }
+    }
+    server.notify('item/completed', {
+      item: {
+        type: 'dynamicToolCall',
+        id: `delivery-${id}`,
+        tool,
+        status: 'completed',
+        success: true,
+        contentItems: response.result.contentItems
+      }
+    })
+  }
+  server.finish()
+  await request
+  for (const id of [91, 92]) {
+    const response = server.packets.find((p) => p.id === id) as unknown as {
+      result: { contentItems: { text: string }[] }
+    }
+    const saved = retainedPayloads.find(
+      (p) => p.callId === `item:delivery-${id}`
+    )
+    expect(saved?.value).toMatchObject({
+      toolCallId: `delivery-${id}`,
+      nativeThreadId: 'thread-1',
+      nativeTurnId: 'turn-1',
+      content: [{ value: JSON.parse(response.result.contentItems[0].text) }]
+    })
+  }
+  expect(executeBatch).not.toHaveBeenCalled()
+})
+
+it.each(['complete', 'abort', 'disconnect'] as const)(
+  'declares native output visibility without inventing execution on %s',
+  async (ending) => {
+    vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const server = fakeServer({ hold: true })
+    const controller = new AbortController()
+    const result = requestConfiguredAiActionBatch(input, {
+      environment,
+      signal: controller.signal
+    }).then(
+      (value) => ({ value }),
+      (error) => ({ code: error.code })
+    )
+    await untilTurn(server.packets)
+    const line = (
+      thread: string,
+      turn: string,
+      id: string,
+      completed = false
+    ) =>
+      `2026-10-21T15:16:25.904Z DEBUG codex_core::stream_events_utils: session_loop{thread_id=${thread}}:turn{turn.id="${turn}"}:${completed ? 'handle_output_item_done:' : ''} Output item item_type="custom_tool_call" item_id="${id}"\n`
+    const started = line('thread-1', 'turn-1', 'ctc_pending')
+    server.child.stderr.write(started.slice(0, 71))
+    server.child.stderr.write(started.slice(71))
+    server.child.stderr.write(line('other-thread', 'turn-1', 'ctc_wrong'))
+    server.child.stderr.write(line('thread-1', 'other-turn', 'ctc_wrong'))
+    server.child.stderr.write('PRIVATE DIAGNOSTIC '.repeat(3000) + started)
+    server.child.stderr.write('PRIVATE REASONING\n')
+    if (ending === 'complete') {
+      server.child.stderr.write(line('thread-1', 'turn-1', 'ctc_pending', true))
+      server.finish()
+    } else if (ending === 'abort') controller.abort()
+    else server.child.stdout.end()
+    const outcome = await result
+    if (ending === 'complete') expect(outcome).toEqual({ value: batch })
+    else {
+      const code =
+        ending === 'abort'
+          ? 'AI_MODEL_BACKEND_ABORTED'
+          : 'AI_MODEL_BACKEND_TRANSPORT_FAILED'
+      expect(outcome).toEqual({ code })
+    }
+    server.child.stderr.write(line('thread-1', 'turn-1', 'ctc_late'))
+    const records = retainedRecords as {
+      stage: string
+      evidence: Record<string, unknown>
+    }[]
+    expect(
+      records.filter((r) => r.stage === 'provider_output_item')
+    ).toHaveLength(0)
+    expect(
+      records.find(
+        (r) =>
+          r.stage === 'provider_notification' &&
+          r.evidence?.method === 'app/output-visibility'
+      )?.evidence
+    ).toMatchObject({
+      source: 'native-public-protocol',
+      coverage: {
+        count: 5,
+        truncated: false,
+        items: [
+          { kind: 'public-item-lifecycle', status: 'available' },
+          { kind: 'app-invocation', status: 'available' },
+          { kind: 'pre-dispatch-output-item', status: 'unavailable' },
+          { kind: 'tool-argument-deltas', status: 'unavailable', bytes: null },
+          { kind: 'generation-versus-stall', status: 'unavailable' }
+        ]
+      }
+    })
+    expect(JSON.stringify(records)).not.toMatch(
+      /PRIVATE DIAGNOSTIC|PRIVATE REASONING|ctc_wrong|ctc_late/
+    )
+    expect(records.filter((r) => r.stage === 'tool_started')).toHaveLength(0)
+  }
+)

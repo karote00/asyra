@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Existing owner/tool corrections validated for the authorized pre-implementation push. Evaluation attribution and evidence-supported lessons are the next authorized Task 3 slice; its design/admission precedes implementation.**
+Status: **Selected-operation usage delivery is verified, with one completed 120-second observation. The selected guide was adopted; full design acceptance and deferred review-tool improvements are not claimed.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,17 +20,17 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `3d503aa714336946839374dc948e9c171cfb8182`.
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: push the validated existing correction checkpoint, then integrate
-  per-change attribution and evidence-supported lessons into existing evaluation
-  owners. Preserve historical evidence. One recorded 101 run is authorized only
-  after implementation and deterministic verification; no model tuning runs.
+- Current scope: selected-operation usage delivery under Task 3 compose. Preserve
+  canonical execution, paging, Knowledge, refresh and recovery. After validation,
+  run one recorded 120000 ms 101 observation, stop immediately at the deadline,
+  and preserve complete observable input/output. No retry, push or new goal.
 - Future implementation requires the exact affected contract to be reconciled and
   admitted first. A previous accepted Inspector snapshot does not admit these changes.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
-  edits. The user explicitly authorizes the initial push and a new bounded goal.
-  Prior live-run authorizations are consumed; only the post-implementation run is new.
+  edits. Previous push/goal/live-run authorizations belong to completed historical
+  stages and do not authorize another invocation.
 
 ### Direction and non-negotiable boundaries
 
@@ -82,6 +82,1208 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Selected operation usage guide - 2026-10-22
+
+Status: deterministic implementation and bounded self-review complete. Final gates:
+568 tests passed, one optional native registration probe skipped; 57 mapped Inspector
+cases passed (attempt 05ce8216-24c0-4500-931e-ac764a71e5bb, source
+6670aa47a93516036085e8be9634366d294bc6f9b6e00ce60f53fc443963d81e).
+Production types, naming and six static contracts passed; scoped lint has no errors
+and one pre-existing warning. Final guide receipts: vector 18,534 bytes and
+projected-face/pattern 22,352 bytes, one reply each. Published examples execute via
+real dispatcher/preparation/apply; native Code Mode delivers the larger guide exactly.
+The single authorized live observation completed: run 1792610978725. Selected guide
+adopted in one native reply (22,457 bytes), search plus acquisition two calls versus
+four previously, first visible content 47.484 s. Deadline stop completed at 120.121 s.
+The full design remains unfinished. See the preserved observation report under
+`tmp/knowledge-evaluation/knowledge-quality-knowledge-taipei-101-1792610978725/`.
+No additional model run or production correction followed. Candidate usage verbosity
+and review-tool field-query mismatch remain observed follow-ups, not completed work.
+
+Evidence: the saved selected draft/group/projected-face/pattern contract is 57,018
+bytes: input 36,889, output/partial/recovery 13,763, description 4,895. Query plus
+three pages still costs four reads. The inherited description mixes preparation-only
+and prepare-and-apply effects. Full validation schemas are not the default user guide.
+
+Step Execution Card - compose:
+- Owner/failure owner: compose; specification: Selected operation usage guide;
+  Inspector: compose conditions and request-to-compose/compose-to-prepare handoffs.
+- Inputs: existing exact registered descriptor, explicit inputScope, usage view,
+  canonical owner examples and owner-authored execution/result instructions.
+- Output: selected operation instructions, readable parameter constraints derived
+  from the selected canonical input, one matching executable example when available,
+  actual execution route, outcome interpretation and no-replay recovery guidance.
+  The guide is not a machine validation schema or a prerequisite to execution.
+- Reuse describe_design_apis usage + inputScope. The existing full and fragment
+  paths remain available. No new tool, registry, cache, validator or executor.
+  Repeated field shapes/notes may be referenced within the same guide; all input
+  constraints remain represented. Unknown schema vocabulary must remain explicit,
+  never silently disappear. General native tools retain existing usage behavior.
+- Owner declarations describe main workflow effects, not inherited child effects.
+  Full output schemas stay on the execution/validation path; usage describes
+  actionable success/no-op/partial/failure, completed work, artifacts, cancellation,
+  stale handles and check-only recovery. Do not summarize away recovery semantics.
+- Conditions/bypasses: exact supported scope plus usage opts into the guide; known
+  contracts execute directly; full retrieval remains necessary for new machine
+  recipes. Unsupported scope rejects without side effects. Refresh preserves view
+  and scope; delivery failure never replays completed writes.
+- Boundary: local-design-workflow, design-workflow-discovery, local-operation-tools,
+  ai-domain-prompt and their direct tests; active plan/spec/Inspector/proof mapping.
+  New identifiers are App-owned nonpersisted documentation projections. Compute on
+  selected reads using the existing catalog lifetime, with no new retained state.
+- DoD: search + one selected guide (not three pages), under the existing byte limit
+  including the receipt; actual published examples through dispatcher/preparation/
+  apply; full/scoped restriction parity and invalid cross-field cases; no-op/partial/
+  cancellation/stale handle and informational recovery without duplicate writes;
+  bounded bytes/calls with unrelated tools. Preserve full/field/paged lookup.
+- Gates: task context, naming, structural admission, formal red/green integration,
+  direct discovery/provider/flow/recovery regressions, production types, scoped lint,
+  static contracts, mapped Inspector candidate and bounded self-review. Then exactly
+  one 120-second recorded 101 observation; report live adoption and timings separately.
+- Exclusions: review-tool delivery, Knowledge, rendering/history/persistence changes,
+  output budget increases, model-assisted review and unrelated existing work.
+- Stop/replan: missing constraints, failure semantics, unbounded delivery, or any
+  required new executor/owner; never mark a partial guide as complete.
+
+Bounded iteration: two focused attempts still produced two pages. The vector guide
+alone was 21,707 bytes before route/example/receipt overhead. Reformatting alone is
+insufficient. Keep the same owner/gates and explicitly select optional input groups:
+the workflow declares optionalInputs=[plan] at its canonical scope annotation;
+inputScope.optionalInputs opts into them in the same read. Omission excludes plan
+from the selected contract and publishes its selection condition, never requires
+another query for ordinary drawing. Full unscoped contracts retain all capabilities.
+Required fields cannot be optionalized. Unknown/duplicate selectors reject. This
+changes only informational coverage, not canonical execution admission. Tests cover
+both default absence and explicit inclusion, preservation of all selected constraints,
+and truthful paging for broader selections. No budget adjustment. Self-review: this
+removes an unrelated optional contract rather than weakening required drawing or
+recovery behavior; no additional owner or registry is needed.
+
+Bounded self-review: the projection reads canonical input constraints and preserves
+all nonstructural vocabulary verbatim, including future keywords. Required root or
+operation fields cannot be declared optional. The actual guide example is filtered
+against the selected schema, and actual native Code Mode forwarding uses the delivered
+example. Output-schema omission affects documentation only: dispatcher/owner outcome
+validation remains unchanged. Receipt recovery preserves view/scope and completed
+writes. The main description no longer inherits preparation-only canvas semantics.
+An initial Inspector proof failure was a missing local test import, corrected after
+its focused reproduction; the final candidate must pass before the live run.
+No history, collaboration, save, Knowledge or review-tool execution owner changed.
+The guide still has substantial input detail because the current public draft accepts
+it; broader optional selections can paginate and are explicitly outside the one-page
+representative guarantee. This is not a promise that the model will select the guide.
+
+### Selected operation contract delivery - 2026-10-22
+
+Status: complete for deterministic selected-contract and on-demand discovery delivery;
+no model or 101 adoption claim.
+
+Scope extension: default first delivery must not enumerate all tool names. Existing
+query/exact selection is the normal route; explicit category pagination remains
+available for intentional complete inventory, including complex requests. Add
+thousands of unrelated descriptors and prove fixed small-task reply bytes/calls.
+Native deferred registration remains distinct from model-visible instructions;
+registration cost is measured separately, not claimed constant. No new search index
+or registry. Provider instruction assembly is in this compose slice.
+
+Step Execution Card - compose:
+- Outcome: existing describe_design_apis accepts an explicit inputScope for the
+  ready-part workflow and returns a complete contract for that operation and selected
+  node types, including all successful, partial and recovery output contracts.
+- Inputs: exact registered identity/revision, owner-declared scope paths in its
+  canonical schema, explicit operation and nodeTypes. Output: same execution route,
+  scoped input schema, unchanged lifecycle/output contracts and scope-preserving
+  refresh/continuations. Full and schemaPaths queries remain independent.
+- Owner/failure owner: compose. Boundary: local-design-workflow declares supported
+  scope structure; design-workflow-discovery derives choices/projections; existing
+  local-operation-tools delivers them; existing App prompt advertises the route.
+  Direct discovery/provider/information/flow tests and formal mapping are included.
+- Design: derive operation choices from the canonical exclusive root alternatives
+  and node types from canonical discriminators; never maintain a parallel type list.
+  Explicitly restrict excluded operation fields and node alternatives, preserve all
+  common and branch constraints and retain reachable definitions. No extra schema
+  factoring layer is needed. Unsupported/ambiguous scope rejects before execution.
+  This is a bounded read projection, never a replacement execution validator.
+- Conditions/bypasses: known operation/type selections use inputScope directly;
+  undecided or unrestricted recipe contracts use full. Usage/menu exposes supported
+  choices without a mandatory extra call. A scoped contract covers only its stated
+  subset; new types require widening or full acquisition. Output/recovery is never
+  summarized away. Cancellation, refresh, stale pages and no-replay stay unchanged.
+- Cases/DoD: formal red on absent scoped delivery; actual discovery -> complete
+  scoped result -> real dispatcher/preparation/apply with valid, conflicting and
+  out-of-scope inputs. Cover draft/repair/parts, frame/group, projected and grid
+  mixtures, invalid scope and unsupported owners; compare validation with full
+  within the selected domain. Preserve partial completion, cancellation, failed
+  follow-up and save/recovery semantics with no repeated writes.
+- Measure actual serialized replies and every continuation call, including an
+  optional usage acquisition, against current full discovery on the same source.
+  Both total bytes and calls must decrease from equivalent initial knowledge: direct
+  selected vs direct full; usage+selected vs usage+full. Also report absolute costs
+  against direct full: optional navigation is not free and may erase the call saving.
+  Do not equate deterministic reduction with live model adoption or latency.
+- Gates: task context/naming, structural admission, red/green integration and direct
+  consumers, offline native delivery, mapped Inspector candidate, production types,
+  scoped lint/static contracts, bounded self-review. No new tool/registry/scheduler,
+  no output limit change, model/101 run, Knowledge edit or component-repeat feature.
+- Failure classification: projection/grid/material conversion already exist and
+  were used; full-interface acquisition is a delivery burden. Repeated compound
+  surface components are a separate capability gap. Recipe is finite tool binding,
+  not a design interpreter. Do not classify ambiguous model decisions as tool misuse.
+- Stop: non-equivalent restrictions, missing output recovery, insufficient measured
+  reduction, or required owner expansion blocks closure and requires bounded replan.
+
+Usage navigation exposes root input fields rather than enumerating every nested
+schema path. Exact field queries and their path-resolution recovery remain valid;
+selected/full contracts retain all nested constraints. Evidence: current usage
+inputFields alone occupies 24,166 bytes; usage plus scoped acquisition took five
+calls versus four for full. This superseded exhaustive navigation must be removed.
+
+Bounded iteration review: root usage removed the 24 KB exhaustive path list.
+Selected vector delivery is three pages versus four full; optional usage adds one
+to either route. Keep that limitation explicit rather than increasing budgets or
+dropping constraints to force a page target. Schema factoring alone is insufficient;
+operation/type exclusion plus root navigation are the delivery change.
+
+Feasibility: existing exact-name queries already carry revisions, paged delivery and
+recovery selectors. Schema-owned scope metadata survives the existing registry path.
+Scope projection is pure, request-local and uncached; continued pages reuse existing
+information retention. No execution or canonical document state changes are required.
+
+
+Implementation and self-review evidence:
+- Default provider instructions no longer interpolate the full native tool inventory.
+  Explicit category pagination remains available; no discovery API was removed.
+- The canonical workflow declares scope paths. Existing discovery derives choices,
+  excludes incompatible operation fields/node branches, retains recursive reference
+  closure and keeps output/partial/recovery/lifecycle contracts unchanged.
+- Usage now exposes root input fields; exact nested queries, binding metadata and
+  missing-path recovery remain. Native descriptor getters are materialized once
+  within the existing registry-revision snapshot, preserving the prior work count.
+- Same-source first-use replies: full 82,074 bytes / 4 calls; selected vector draft
+  51,965 bytes / 3 calls. Including usage: 91,951 / 5 versus 61,842 / 4. Optional
+  usage+selected still takes 4 calls, equal to direct full; do not conceal that cost.
+- 10,000 unrelated tools leave purpose-query replies/calls unchanged. A real provider
+  assembly test adds 1,000 deferred tools without changing initial base/developer
+  instructions. Native registration still grows; this is not constant host CPU or
+  proof of live model selection. Full inventory is intentionally still pageable.
+- Formal fixtures validate primitive/projected/pattern/grid and ordered input scopes,
+  real rejection-to-repair and actual browser creation, preserved partial follow-up,
+  cancellation and read recovery without write replay. Existing owner tests retain
+  successful/partial execution and credential-expiry protections.
+- Gates: 499 focused/direct-consumer tests passed; one existing optional native
+  registration probe remains skipped without its executable configuration. Production
+  typecheck passed, naming passed (15 cases), static contracts passed (6 cases),
+  scoped lint has zero errors and four pre-existing console warnings. Formal mapped
+  Inspector adds the selected-operation case to the existing 56 cases.
+- Offline native Code Mode executes the exact delivered forwarding example for
+  selected contract pages and checks outgoing content equality/no truncation. No
+  real model or 101 run. Component repetition and Knowledge were not changed.
+
+### Knowledge selection conditions before reading - 2026-10-22
+
+Status: complete within the pre-read selection-conditions DoD; no model/101 run.
+
+Step Execution Card - compose:
+- Objective: the existing discovery descriptions distinguish an ordinary material
+  method decision from a needed detailed parameter walkthrough before any body read.
+  Direct selection remains possible; hierarchy depth is not a completeness signal.
+- Evidence: run 1792601859074 selected method.parameters together with repetition
+  and spatial advice immediately after discovery. Its catalog described executable
+  parameters without a selection threshold; the parent body's optionality arrived
+  too late. This supports a delivery ambiguity, not a proven model motive. Removing
+  that document alone would still leave a multi-page selection.
+- Inputs/outputs: trusted existing metadata and request decisions -> discoverable
+  descriptions -> selected IDs -> unchanged necessary dependency closure and pages.
+- Owner and failure owner: compose. Spec: Selective nested Knowledge delivery.
+  Inspector: compose conditions, boundaries and existing tool-program output.
+- Boundary: App material-method and parameter Markdown descriptions, their catalog
+  revisions, ai-domain-prompt, direct local-knowledge/prompt/provider/handoff/execution-proof tests,
+  existing plan/spec/Inspector. No new metadata schema, registry, state or tool.
+- Conditions: ordinary representation/lighting decisions can select method directly;
+  unresolved local-coordinate conversion or a needed worked example can select
+  parameters directly, with method restrictions included automatically. An already
+  known supported representation does not require the walkthrough. No parent-first
+  call, forced selection, keyword router or sibling expansion is introduced.
+- Bypasses/preservation: advice stays optional; known-value work and absent advice
+  can continue. References, bodies, permissions, deduplication, paging, rehydrate,
+  cancellation, stale-revision recovery and no-replay behavior stay unchanged.
+- DoD/cases: real discovery contains both positive and negative selection conditions
+  without bodies; direct method selection completes in one reply with necessary
+  restrictions and no parameter/sibling body; direct parameter selection includes
+  its example and required method closure once, following actual continuations.
+  Assert request counts, normal repeat/rehydrate and actual provider instructions.
+  Deterministic tests prove information availability, not autonomous model choice.
+- Gates: supported structural admission before test edits; existing baseline tests,
+  formal failing regression then focused catalog/prompt/handoff/delivery tests;
+  mapped compose proof, production App/server types, naming, scoped lint and static
+  content/Inspector checks; bounded diff and direct-consumer self-review.
+- Exclusions: four-page drawing schema, Knowledge splitting, delivery budgets,
+  provider/runtime algorithms, model/101 runs, historical evidence and other owners.
+  Stop for a lost necessary restriction or a required out-of-scope change.
+
+Feasibility review: discovery already returns the same descriptions and child links
+used for direct selection. Editing those descriptions and the existing prompt is
+sufficient; the resolver need not choose on behalf of the model. Existing mapped
+selected-topic proof can cover pre-read conditions without a duplicate mechanism.
+
+Validation and bounded self-review:
+- Structural admission passed before test edits: digest
+  `106c23cf5a4fb2753993fd8d3ba38ba9977cbaff6e56e2c5a894ef1396f0cc82`,
+  `tmp/knowledge-selection-conditions-admission.json`. Existing 38 tests passed;
+  strengthened tests then failed on missing catalog conditions and child-only
+  prompt guidance (two failures, 37 passes) before production edits.
+- Existing descriptions now distinguish ordinary method decisions from unresolved
+  local conversion or worked-example needs. Prompt and both read/discovery tool
+  descriptions permit direct parent/child selection. Method revision advances to
+  3 and parameters to 2. Bodies, dependencies and all executable examples remain
+  byte-identical; no shared Knowledge or delivery algorithm changed.
+- Focused catalog/prompt/handoff/information-delivery suites: 65 passed, including
+  offline native successor checks. Actual normal-provider handoff: one passed
+  (206 unrelated cases not selected). Fresh detail-owner reads request only the
+  selected detail ID and returned continuations, retaining every parent document
+  once; ordinary method uses discovery plus one read without optional bodies.
+- Repeat/rehydrate, cancellation and stale-content regression cases remain passing.
+  A direct-consumer revision assertion was updated from 2 to 3; a case-sensitive
+  old wording assertion now checks the preserved optional-children semantics.
+  The new test's unknown-input type assertion was corrected; production App/server
+  and flow-proof types pass. Scoped lint has no errors.
+- Review checked only this turn's edits against the saved pre-edit source, direct
+  consumers and frozen gates. No schema acquisition changes, new state/registry,
+  compatibility path, budget increase, forced lookup or mutation path was added.
+  No model or 101 was run. Selection quality and latency remain live-test questions.
+- Final mapped Inspector candidate `46f13985-ae7f-4798-bf93-30e20f09c302`
+  passed all 56 cases on source digest
+  `43359f22317069620cad005ca3cd8139e81914606647191975f91b94607a8c64`.
+  Existing proof mapping remains unchanged; strengthened assertions stay in its
+  registered selected-topic case. No accepted baseline mutation was performed.
+- Final catalog rerun: 22 passed. Static/content gates: six passed; naming: 15
+  passed. Scoped lint: zero errors, two pre-existing console warnings. Task context
+  and whitespace checks passed. Four-page drawing schema remains the next task.
+
+
+### Complete selected Knowledge delivery - 2026-10-22
+
+Status: complete within the selected-topic delivery DoD; no model/101 run.
+
+Step Execution Card - compose:
+- Objective: deliver the material-method and representative-review decision topics
+  with their necessary constraints in one complete reply each, under the existing
+  information budget. This is a topic contract, not a building-specific exception.
+- Evidence: preserved run 1792595690638 returned 40,186 and 27,324 byte closures,
+  each in two pages; shared dependency text was 13,514 bytes. Raw payload digests
+  were checked. Relevant source files match the saved source snapshot.
+- Inputs/outputs: discoverable selected IDs/context and trusted authored metadata
+  enter the existing Knowledge resolver; complete advisory documents and sources
+  pass through existing invocation/forwarding to the native successor request.
+- Owner/boundary: compose; App architectural Markdown and local-knowledge catalog
+  registrations, direct catalog/handoff/information/native integration tests,
+  execution proof/mapping, this plan and the current product spec/Inspector.
+  Runtime resolution and informational delivery algorithms remain unchanged.
+- Design: keep common contract/recovery constraints in the contracts topic; move
+  detailed invocation examples to optional contracts.operations. Keep material
+  selection and representation limits in materials.method; move detailed parameter
+  walkthrough and executable preparation example to optional method.parameters.
+  Existing correction/review topics remain selectable. Required dependencies stay
+  references; optional details use children. No parent eagerly reads children.
+- Naming: new dotted IDs belong to the existing App catalog, with flat Markdown
+  filenames; increment changed document revisions. No persisted document migration,
+  alias, alternate registry, new tool, cache or cross-query read suppression.
+- Preservation: exact examples remain executable at their new topics; current
+  consumers explicitly select details when needed. Preserve shared/local ownership,
+  material-domain limits, evidence adequacy, local versus whole acceptance, exact
+  settlement and no-replay recovery in the decision topics themselves.
+- Conditions/bypasses: Knowledge is advisory; known-value work and absent advice
+  bypass reads. Multi-select and optional detailed reads may still paginate.
+  Repeat/rehydrate, stale revision, cancellation and error behavior stay unchanged.
+- DoD: formal regression fails on current two-page replies; actual discovery ->
+  selected read -> invocation -> delivered forwarding example -> native successor
+  is complete and untruncated. Verify necessary limits, absent sibling bodies,
+  optional detail reachability, shared-dependency uniqueness, and recovery gates.
+  Tests retain selected inputs/provenance in formal fixtures, never depend on tmp.
+- Gates: task context, naming, structural admission, focused App Knowledge and
+  direct-consumer tests, offline native integration, mapped Inspector candidate,
+  production App/provider types, scoped lint, content/static Inspector checks.
+- Failure owner: compose. Forbidden: model/101 calls, output-budget changes,
+  refresh restrictions, mutation replay, portable tool names, unrelated cleanup.
+  Stop for lost constraints or an out-of-scope owner change. The unfinished native
+  call's generation-versus-stall cause remains unresolved and deferred.
+
+Feasibility/self-review: existing children navigation, mandatory closure deduplication,
+request-local retained reads and bounded forwarding already provide the required
+mechanism. The prior tests reconstruct arbitrary page counts and therefore do not
+assert one-reply topic delivery. New tests must measure actual calls and serialized
+replies, not simply helper output or selected-node count. Native scripted transport
+proves delivery bytes, not live model adoption or elapsed-time improvement.
+
+
+Validation and bounded self-review:
+- Structural admission passed before tests: `tmp/complete-knowledge-admission.json`,
+  digest `63c95f80e50ca71010be643e80a3371e7fe12d56061dd81d96eb3cfbcae72a9c`.
+- Formal recorded-input regression failed on the original two-page method response
+  before implementation (`tmp/complete-knowledge-red.log`). Existing tests only
+  reconstructed pages and did not enforce one-reply decision delivery.
+- Content owner now exposes optional contracts.operations and method.parameters
+  children; changed common/method/correction revisions advance to 2. The old eager
+  detail bodies are removed from their former owners, not retained as aliases.
+  All eight published JSON examples are unchanged and their direct consumers select
+  the new detail owners. Shared portable Knowledge and runtime algorithms are unchanged.
+- Self-review kept nonzero dimensions, basis partitioning and shared-value limits
+  in the method decision body, in addition to the detailed walkthrough. Existing
+  no-replay, partial receipt, capture-versus-record and local-versus-whole acceptance
+  constraints remain mandatory. No cross-query suppression was introduced.
+- Catalog/handoff/prompt: 53 passed. Focused normal-provider Knowledge handoff: one
+  passed (206 unrelated cases not selected). Native delivery script: 15 harness
+  cases and 11 information-delivery cases passed before the final constraint edit;
+  rerun the changed native case on final content. Static/content: six passed.
+  App/provider production types passed; scoped lint has no errors.
+- The existing test:native-delivery script now includes the real information
+  forwarding integration suite; no alternative runner or live inference was added.
+- Final native case passed on the last content edit: `tmp/native-handoff-DRAJOX`.
+  Both successor comparisons are exact, without truncation; two selected reads
+  produce two native replies. Method body: 40,186 -> 22,670 bytes; review body:
+  27,324 -> 21,256 bytes (same JSON-body basis, excluding toolOutcome).
+  Final invocation replies including toolOutcome: 22,742 and 21,328 bytes.
+  Each topic changes from two pages to one; optional multi-topic detail still pages.
+- Final Inspector candidate `ab63e44e-e934-48f4-822d-5f42ad1a390c`: 56/56 passed,
+  source `1725a65501a2ca1c3701dee8a647a6b2f282d4f817f39c91d05cc5660a944734`,
+  mapping `609386aa62b9caac03e8320036358f331dcb7bbb6542d113b8264d22809dbd5d`.
+  Final content/handoff/prompt rerun: 53 passed. Native fixture cleanup has no
+  errors; its deliberate offline-test termination is not a live task completion.
+- Unfinished native parameter progress, live adoption and latency remain
+  unconfirmed; no model or 101 was run. Final review found no remaining in-scope
+  constraint loss or owner change. Existing pagination and recovery algorithms,
+  source permissions, Knowledge optionality and write paths remain unchanged.
+
+### Unfinished native tool-output observation - 2026-10-22
+
+Status: bounded visibility declaration and real-native characterization complete;
+pre-dispatch argument progress acquisition remains unsupported.
+
+Step Execution Card - observe:
+- Objective: establish observable boundaries for unfinished native tool output and
+  prove whether current interfaces distinguish argument generation from silence.
+- Inputs: existing child public events/transport metrics and same-version offline
+  scripted Responses inputs. Outputs use the existing Runtime trace and sink.
+- Evidence: run 1792595690638 had a native diagnostic custom_tool_call start at
+  90.957s, absent from the App stream. An actual 0.160.0 offline experiment also
+  exposes no such start on stderr, even with the narrow debug target enabled.
+  The proposed diagnostic parser cannot deliver its contract and is removed.
+- Reviewed feasible contract: publish explicit visibility for pre-dispatch output
+  items, parameter deltas/bytes and generation-versus-stall attribution as
+  unavailable, alongside observable public item and App invocation boundaries.
+  Controlled progressive versus withheld input must prove this limitation against
+  the real native engine, not a mocked event. Completion remains separately tested.
+- Allowed boundary: local-ai-provider and direct tests, existing native-delivery
+  fixture server/tests, execution proof, current spec/Inspector/formal mapping.
+  Runtime recorder uses its existing allowlisted evidence fields unchanged.
+- Conditions/bypasses: missing public events never mean zero generated bytes or a
+  stall. Diagnostics never become product status, tool execution or permission.
+  Existing success, cancellation, disconnect and no-replay behavior remains.
+- Exclusions: no database polling/exporter/proxy, binary or log configuration change,
+  new registry/scheduler/state, raw diagnostics/code/reasoning retention, model/101,
+  Knowledge/paging/refresh or mutation changes. Historical evidence is unchanged.
+- Naming: app/output-visibility is an App diagnostic method on the existing
+  provider_notification stage, using existing
+  source/coverage/kind/status/reason/bytes fields; no new Runtime contract.
+- DoD: revised formal red then green; actual provider-to-record integration on
+  completion/abort/disconnect; no private-content leakage or invented invocation;
+  same-version native progressing/silent inputs during an unfinished custom call,
+  later completed invocation and successor receipt; interruption leaves no inferred
+  completion. Explicitly report that live differentiation is still unsupported.
+- Gates: task context/naming/admission, provider suite, offline native observation,
+  mapped Inspector proof, App production types/scoped lint, bounded self-review.
+- Failure owner: observe. Stop rather than invent native capabilities or expand to
+  a new transport. No claim that the historical delay itself has been repaired.
+
+Iteration review: the original fake-stream regression reproduced missing metadata,
+but the real native test disproved the assumed stderr source. Those failures remain
+in tmp/native-output-red.log and native-output-offline*.log. The revised test must
+assert actual observability, not accept a simulated start as production evidence.
+There is no recurring scan or cache. Fixture-emitted byte counts are test witnesses,
+not production argument counts. This closes a bounded visibility characterization,
+not acquisition of an unavailable native stream.
+
+Validation and bounded self-review:
+- Revised contract admission: `tmp/native-output-revised-admission.json`, digest
+  `463b5740a317640ac55076e77dbb67b1face2aff812f4b4fad53091b4d2420fd`.
+- Revised provider regression failed before implementation on the missing visibility
+  declaration (`tmp/native-output-visibility-red.log`). Tests were corrected to
+  assert the existing Runtime array-summary envelope, not to change that owner.
+- Final provider suite: 206 passed, one existing skipped case. The three new cases
+  preserve normal completion, abort/disconnect codes, no invocation and no leakage.
+- Actual native observation integration: two tests passed, covering progressive
+  64,000-byte input, withheld input, later actual invocation/successor and an
+  interrupted unfinished call without invocation. Only user-message items were
+  public before tool completion. HTTP/SSE fixture results are not live WebSocket
+  timing measurements. Existing native delivery regression: 15 passed.
+- Final Inspector candidate `224e075f-68c0-443f-812d-2ae7ec2eabdc`: 55/55 passed;
+  source digest `0b030358c7b622b936573d56d2902d851a3310176d1a022c5aad315206269d51`. Static Inspector: two passed.
+  App/provider production types passed; naming: 15 passed; scoped lint: zero errors,
+  four existing console warnings. Task context and whitespace checks passed.
+- Self-review removed the unsupported stderr parser/debug configuration completely.
+  The adapter now adds one capability record using existing provider_notification
+  and allowlisted evidence fields. No new Runtime state/schema, execution decision,
+  output limit, refresh behavior, Knowledge edit, logging system or model call.
+- Limitation: this does not recover the historical unfinished tool's arguments or
+  distinguish live generation, network silence and internal provider delay. Native
+  diagnostic database observations remain a separate historical evidence boundary;
+  no production reader/poller was introduced. A supported pre-dispatch event source
+  is required before claiming that finer acquisition has been implemented.
+
+### Selective nested Knowledge delivery - 2026-10-21
+
+Status: complete within this selective delivery contract; no model/101 run.
+
+Step Execution Card - compose:
+- Objective/output: actual discovery exposes selectable nested children with IDs,
+  descriptions and revisions; a selected leaf returns only its required dependency
+  closure, preserving necessary limits without loading siblings.
+- Inputs: trusted catalog metadata/content, authorized context labels and selected
+  IDs through existing discover/read tools. Runtime owns metadata validation and
+  dependency resolution; App owns catalog, topic guidance and delivery.
+- Conditions: `children` is optional navigation, never a content dependency.
+  Discovery filters children against discoverable entries; absent/inapplicable/
+  unauthorized optional children are omitted. Visible navigation cycles reject.
+  Direct reads need no parent read. Mandatory missing/denied/cyclic dependencies
+  keep existing rejection. Duplicate query dependencies remain deduplicated.
+- Bypasses: known-value work and unavailable advice never require Knowledge.
+  Existing repeated read, rehydrate, paging, cancellation and disposal remain.
+- Allowed contributors/boundary: existing runtime knowledge types/resolver/tests;
+  App local-knowledge loader/descriptions, ai-domain-prompt, architectural Markdown
+  family and its direct provider/handoff tests; portable architecture Markdown
+  family; current spec, Knowledge architecture, package docs and proof mapping.
+  No new registry, search engine, cache, state, tool, scheduler or model call.
+- Naming: `children` is neutral advisory metadata in the existing registration
+  contract. Dotted child IDs remain flat filenames, not inferred hierarchy.
+  Parent IDs become thin navigation modules with newer revisions; no old full-body
+  alias or eager umbrella remains. Historical evidence is immutable.
+- Required cases/DoD: real catalog discovery -> child selection -> real read;
+  parent/deep leaf exclude unrelated bodies; selected child retains constraints;
+  multi-select shared dependencies once; metadata visibility/cycles; mandatory
+  dependency failures; unchanged refresh/revision/cancellation and paged content;
+  direct App examples still execute against canonical downstream owners.
+- Gates: structural admission before tests; formal red then green; runtime Knowledge,
+  App catalog/handoff/prompt/provider suites, mapped execution proof, production
+  runtime/App types, scoped lint/naming and direct-consumer self-review.
+- Failure owner: compose reports invalid metadata/query/delivery without writes.
+  Stop for conflicting ownership, required out-of-scope behavior or loss of a
+  necessary restriction. Do not infer AI adoption or speed from deterministic tests.
+
+Feasibility review: discovery already returns metadata and read accepts selected
+IDs. Existing recursive references/extends/overrides provide mandatory closure;
+using them for optional children would reproduce full delivery. Add navigation to
+that same metadata owner, not another index. Split existing advice by purpose,
+keep common limits in small dependencies, and replace relative cross-section
+pointers with explicit topic names. Tests that require material/review/examples
+must select those topics rather than silently reconstruct an umbrella.
+
+Validation and self-review:
+- Supported contract admission passed before regression/implementation; retained in
+  `tmp/knowledge-selection-admission.json`. Direct-consumer and selected-topic
+  proof admissions are retained beside it. No accepted baseline was mutated.
+- Formal regressions: `knowledge-selection-runtime-red-corrected.log` proves three
+  navigation failures with a valid task identity against pre-change semantics;
+  27 prior Runtime cases passed. Initial test fixtures required a task identity
+  correction. The App red case reports the absent selectable children.
+- Runtime Knowledge: 30 passed. App catalog, downstream Knowledge handoffs,
+  actual prompt and bounded delivery suites: 61 passed. Provider suite: 203 passed,
+  one existing skipped case; the actual provider directory-to-correction read and
+  recovery case passed again after the final content relocation.
+- Final isolated Inspector candidate `90a1e7ac-3a40-416e-bd29-55bb9ee2ed30`:
+  54 passed, source `9014d28428236727840f38204fd015982c4ec576c194c6e63d6e64f15c6dc3dc`,
+  mapping `472804ad502ee25e9e04dbf11a71bac3148b05c18f4b0d51df22e28298fe271f`.
+  Source HEAD remains `37577161005b34ceab2ee82fd12f4f6e36cd2e1b`; candidate
+  evidence captures the actual dirty source, not only that commit.
+- The earlier candidate failed on two old parent-file example reads and an
+  unavailable isolated-test helper. Cases now retrieve their selected module
+  through the real owner and use the existing isolated continuation consumer.
+  No production fallback or widened retrieval was introduced to pass them.
+- Shared content checks: four passed; static Inspector: two passed; naming: 15
+  passed. App production types and Runtime production-source typecheck passed.
+  Scoped lint has zero errors and two pre-existing console warnings.
+  The package-wide Runtime build remains blocked by pre-existing `.at` calls in
+  profiler test lines 1428/1441 under ES2020; those unrelated files are unchanged.
+- Bounded self-review preserved all eight original App fenced examples verbatim,
+  executing their published forms in direct-consumer/proof tests. Moved capability
+  table rows to their relevant topics instead of retaining all rows as common
+  prerequisites. Updated cross-topic pointers and removed the obsolete
+  previously-returned-state wording while preserving missing-context recovery.
+- Existing source capture includes the new Markdown files. The historical
+  architectural ablation helper is not active for a control run; no historical
+  evidence, model configuration or evaluation scenario was changed.
+- No new registry, retained cache, tool, scheduler or write path. Discovery reads
+  no advice bodies into model context; existing request catalog file loading is
+  unchanged. Selective delivery does not establish faster startup/file I/O,
+  successful AI topic choice, reduced model latency or improved artwork.
+
+### Executable retained information delivery - 2026-10-21
+
+Status: complete for the bounded executable-delivery contract; no model/101 run.
+
+Step Execution Card - compose, then existing observe verification:
+- Objective: publish and execute the same bounded information-forwarding example
+  in discovery descriptions and native provider instructions. Preserve every selected
+  contract restriction without reprinting the assembled full value.
+- Inputs: one actual text-only informational result and an explicit query-specific
+  Code Mode storage key; later calls may consume one retained original page.
+- Output: one bounded original page per exec; parsed complete value retained only
+  after contiguous revision/size coverage. A stored value is not a model receipt.
+- Owner/boundary: local-information-delivery.ts owns the example; existing
+  local-operation-tools.ts attaches it to discovery/provider instructions;
+  local-ai-provider.ts distinguishes required contract delivery from compact findings. Formal
+  local-information-delivery, information-delivery integration, discovery-delivery
+  integration and local-ai-provider tests exercise the delivered text. No new
+  registry, tools, App result store, scheduler or output-budget override.
+- Conditions/bypasses: ordinary text/image receipt forwarding stays independent.
+  Replay the saved page without a tool call; new query/refresh uses a fresh key.
+  Missing storage allows ordinary read/refresh recovery. Invalid/incomplete/mixed
+  fragments never yield a complete value; failed read receipts preserve prior state.
+- Allowed contributors: existing Code Mode store/load/text, canonical paginated
+  read owners, dispatcher, saved fixtures and offline native adapter/sink.
+  Forbidden: arbitrary summaries replacing schema constraints, automatic write
+  retries, hidden native instrumentation, Knowledge edits or model/101 calls.
+- Work lifetime: only query-scoped Code Mode storage, incremental incoming-page
+  validation and one final JSON assembly; replay performs no owner read or write.
+  Existing App continuation invalidation, permissions and cancellation remain.
+- Formal cases/DoD: tests extract and execute the actual advertised example; verify
+  native outgoing pages, Unicode/escaping, full/partial schema restriction closure,
+  small results, duplicate/replay, gaps, mixed revisions, invalid size, failed reads,
+  stored-data loss and legitimate refresh. Downstream invocation uses the delivered
+  contract and rejects invalid input; output recovery cannot increase write count.
+  Keep the negative full-print/combined-output characterization to detect loss.
+- Gates: structural admission before tests, failing formal test, focused owner and
+  provider suites, native suite, mapped compose/observe cases, production App types,
+  scoped lint/naming and bounded direct-consumer self-review.
+- Naming: example and guidance are App-owned source constants, not new wire fields.
+  Storage keys are example caller inputs, never persisted document identities.
+- Stop: unavailable native evidence, a needed new execution owner, or a requirement
+  to suppress refresh/increase limits blocks completion. No historical cause claim.
+
+Feasibility review: current descriptions and developerInstructions share the same App
+instruction owner; the native adapter already accepts scripted exec sequences and
+captures actual outgoing requests. A one-page example can preserve raw serialized
+bytes while retaining assembled data. It cannot intercept arbitrary agent text()
+usage, so deterministic success does not establish model adoption.
+Formal proof fixture correction: discovery is enabled by registered canonical basic
+capabilities, not an arbitrary fake action or native-only descriptor. The mapped
+case uses the existing basic catalog with explicit typed test semantics; no product
+availability condition is relaxed. Cancellation remains a rejected invocation,
+not a fabricated failed reply. Provider example delivery is developerInstructions,
+not baseInstructions. These fixture corrections do not alter the implementation
+boundary or the behavior under test.
+
+Knowledge decomposition is the next separate task: select only needed nested
+modules; do not keep an umbrella that eagerly references all content. No Knowledge
+source or retrieval semantics change in this slice.
+
+Validation and bounded self-review:
+- Admission before tests: b548aed64c7d05c41011e536a9b38ab3f903151f386e769c2cdfa4e4b93ae0aa.
+  Formal case mapping admission: 323e9f5287b9337f71509050d1d37bd6a4eab5fdf47072a986455e147737e2ae.
+- Red evidence: the actual advertised-example test failed because no executable
+  information example was delivered; three provider cases then detected the missing
+  explicit distinction between required contracts and compact findings. Logs:
+  tmp/information-example-red.log and tmp/information-example-provider-red.log.
+- Five focused owner/provider files: 408 passed, one existing skip. Actual delivered
+  source runs in native Code Mode: six canonical Unicode/escaped contract pages and
+  retained-page replays are exact in successor requests. Full/combined printing
+  remains a detecting negative control. Missing/mixed/invalid pages preserve prior
+  state, cancelled reads stay rejected, and refresh after storage loss remains legal.
+- Real dispatcher/owner integration rejects invalid input, performs one actual
+  composition mutation and preserves its result across saved-page redisplay and
+  refresh without a second write. Existing text/image forwarding remains passing.
+- Native characterization: 15 passed; static Inspector: 2 passed; production App
+  typecheck passed; naming passed; scoped lint has zero errors and five console
+  warnings (four existing sites and one native evidence-location output).
+- Source-bound Inspector candidate ced5f8c9-8559-4cb0-b46d-1206b4ace510 passed all
+  53 mapped cases, including compose.information-forwarding. Captured source:
+  d1e0ff1238627007f7570f656d1f9cc5c80a7b7cdd1f55cdffb25e4625d28fbc.
+  Candidate verification is not acceptance of a new baseline or whole-plan closure.
+- Evidence logs: tmp/information-example-owner-gates.log,
+  tmp/information-example-native.log, tmp/information-example-proof.log,
+  tmp/information-example-types.log, tmp/information-example-lint.log and
+  tmp/information-example-candidate.log. Native sink directories are named in the
+  test logs; owned native cleanup receipts contain no errors.
+- Review: selected source, direct instruction consumers, failure paths, registered
+  route, schema restriction preservation and no-replay counts were checked. The
+  informational body remains bounded at 23,000 bytes; the example permits the
+  existing 24,000-byte serialized reply bound including the canonical outcome
+  envelope. No provider output limit was changed. No App result store, runtime
+  cache, compatibility route or tool was added. Tests execute extracted published
+  source rather than a parallel implementation.
+- This fixes the offered executable handoff and conflicting compact-output guidance,
+  not arbitrary agent-authored output. Model adoption, historical Code Mode output
+  and live latency remain unverified. No Knowledge files or retrieval semantics
+  changed, and no model/101, push or automation was run.
+
+
+
+### Cross-execution native assembly evidence - 2026-10-21
+
+Status: complete for the bounded offline evidence contract; not a historical diagnosis.
+
+Step Execution Card - observe (offline assess-recorded-changes consumer):
+- Inputs: permanent digest-verified saved replies, explicit scripted Code Mode
+  executions, revision-bound UTF-8 fragments and installed pinned native binary.
+- Outputs: existing sink records for each scripted execution, native tool reply,
+  successor wire request and public notification; exact output comparisons and
+  explicit unobservable boundaries. Scripted instructions are not model decisions.
+- Conditions: local fixed Responses endpoint only; default native output limits,
+  existing isolated home and 45-second owned-process watchdog. No external model.
+- Bypass/failure: absent or unsupported output cannot pass as exact; missing or
+  mixed fragments reject assembly. Preserve failed evidence and cleanup receipts.
+- Allowed contributors: existing native-delivery adapter, Runtime evidence sink,
+  permanent fixtures and native public notifications. No production instrumentation,
+  private reasoning, credentials, inferred parent links or timing-based attribution.
+- Boundary: native-delivery.mjs and its formal test, evaluation README and existing
+  flow document; current plan, ai-execution-flow spec and observe Inspector contract.
+  Existing static mapping remains the owner-boundary gate, not the native oracle.
+- Cases: multiple exec calls retain and assemble complete fragments; a later exec
+  reads the retained complete value; missing or mixed-revision pages cannot produce
+  successful assembly; compact output survives; deliberately printing the full
+  retained large value characterizes downstream truncation without losing storage.
+- DoD: capture each actual successor request, verify reconstructed bytes/digest and
+  required source content, locate output transformations separately from retention,
+  retain public notifications without claiming hidden store internals are observable.
+  Run the full native suite, static admission/contract tests, naming and scoped lint.
+  Production types are not applicable without production TypeScript changes.
+- Naming: optional scripted execution sequence is test-adapter-owned, not a product
+  API, registry or persisted document identity. Preserve direct/code controls.
+- Stop: native version mismatch, unsupported public protocol, escaped output or
+  cleanup failure cannot be relabeled success. No refresh or Knowledge alteration.
+
+Design review: the existing loopback endpoint can return successive fixed exec
+calls and already saves real wire requests and public events. Extend that owner,
+not a second transport. A controlled store/load result proves that scripted path;
+it cannot reconstruct the missing 50.499-63.805 second historical execution.
+
+Validation and self-review:
+- Structural admission before tests: 4898da491eb05568e64507f83bf77144ddf20910a9c759c78df9729dfffc7a30.
+  Final explicit offline input/contributor admission:
+  7d03b9cb5b8504ef4140891f8a97d8639641ae1e1164eac1b573277d0072f2ae.
+- Initial formal cross-execution case failed because the old adapter produced two
+  requests instead of three. This was a test capability gap, not a product defect.
+- Native suite: 15 passed; static Inspector: 2 passed; analysis/assessment consumers:
+  17 passed; canonical information-owner integration: 4 passed; mapped observe
+  cases: 3 passed (49 unrelated cases excluded by explicit selection). Naming and
+  scoped ESLint pass. No production TypeScript changed.
+- Saved advice (66,434 bytes) and schema (84,960 bytes) remain exact after separate
+  store/load executions and assembly. Full printing omits 26,434 and 44,960 bytes
+  respectively in the actual successor request; subsequent bounded retained reads
+  reconstruct the original SHA-256 and parsed content. Missing and mixed-revision
+  pages reject assembly. Public completed items expose no functionCallOutput here.
+- Evidence: tmp/code-mode-native-final.log, tmp/code-mode-owner-integration.log,
+  tmp/code-mode-consumers.log, tmp/code-mode-observe-proof.log and the sink-owned
+  native-handoff directories named in those logs. All native cleanup receipts have
+  zero errors. A scoped ESLint missing-global finding was corrected and rechecked.
+- Review covered the adapter, its current owner consumer, fixture integrity,
+  request identities, output comparison, failure cleanup and existing direct/code
+  controls. The protocol fragments are scripted test inputs, not a replacement
+  implementation of canonical pagination. No second result store or public raw
+  event flag was added. Refresh, Knowledge, 101 and real inference were untouched.
+
+
+### Bounded information delivery - 2026-10-21
+
+Status: complete for bounded informational delivery and no-inference verification; actual model adoption remains untested.
+
+Step Execution Card - compose, followed by observe verification:
+- Objective: necessary advisory content and schema restrictions survive the actual
+  native successor request without increasing provider output limits.
+- Inputs: canonical discovery descriptors, composed Knowledge, existing selectors,
+  refresh/rehydrate and optional revision-bound contentPage continuation.
+- Outputs: unchanged complete small replies or explicit bounded JSON fragments with
+  byte ranges, total size, content digest and a same-tool continuation. A final
+  fragment does not assert that preceding fragments were consumed. Reassembled
+  bytes must equal the canonical complete result before its contract is used.
+- Owner: existing App discovery/Knowledge owners. Runtime Knowledge's existing
+  delivery bookkeeping may retain immutable content for the App's paged consumer;
+  ordinary sessions keep their existing reference-only duplicate behavior.
+  Discovery's existing returned-definition bookkeeping becomes request-local
+  content delivery retention; no second registry, result store or scheduler.
+- Replace optimistic discovery duplicate suppression: a previous App return is not
+  evidence that the model received a definition. Repeated read requests remain
+  legal and return the selected content, with the same bounded delivery rules.
+- Use a pure App projection shared by the two informational owners. Keep existing
+  category pagination, usage, field constraints, execution routes and examples.
+  Bound serialized output including metadata; never silently truncate or summarize
+  canonical content. Reject mismatched, expired or cross-query continuations.
+- Cancellation, permission and revision checks precede delivery even when content
+  is retained. Refresh/rehydrate still initiate recovery; continuation does not
+  repeat a context reset, re-read source files or dispatch a document write.
+- Retention extends existing request/session delivery ownership, with bounded
+  entries and context/revision/disposal invalidation. Prove source read counts and
+  immutable reuse together; this is continuation ownership, not a new cache tier.
+- Mutation scope: local-operation-tools, local-knowledge, local-information-delivery,
+  their formal tests; Runtime knowledge/knowledge-types and knowledge tests; current
+  App prompt/provider instruction handoff; native-delivery test adapter and cases;
+  existing plan/spec/Inspector/evaluation flow, Runtime package documentation and
+  formal proof mapping. No Knowledge prose, drawing owners or UI changes.
+- DoD: native Code Mode/default-budget successor requests retain every returned
+  fragment exactly; ordered assembly matches source SHA-256 and parses as the
+  original JSON, including full/partial schema closure, routes and advice. Formal
+  negatives cover stale/invalid/cross-query cursors, duplicates, cancellation and
+  recovery. Existing direct consumers and valid unpaged reads remain covered.
+- Script one informational reply per exec output. Guidance must explain that
+  concatenating all pages into a single exec output defeats bounded delivery;
+  retain assembled data in Code Mode and print only the requested page/decision.
+  Actual model adoption and arbitrary model-generated concatenation are unproven.
+- Gates: admission, failing owner/integration regressions before implementation,
+  focused Runtime/App tests, native handoff gate, production types, scoped lint,
+  naming, Inspector verification and bounded direct-consumer self-review.
+- Stop on an unsupported protocol, missing outbound capture or owner outside this
+  scope. No real model, 101, extra AI review, dependency, push or goal.
+
+Self-review: usage alone cannot replace a complete contract. Category item counts
+cannot bound one large schema. The current 66,434/84,960-byte counterexamples require
+byte-bounded delivery and an explicit completeness distinction. Existing selectors
+remain preferable when they answer the question; full content stays accessible.
+
+Implementation review:
+- Formal failures reproduced a 48,612-byte advice reply and a 71,462-byte schema
+  reply exceeding the delivery bound. The same-version native proof also exposed
+  the canonical callInternal bypass: its 71,718-byte result lost 31,718 bytes.
+  Both public and internal discovery entry points now use the same projection;
+  non-discovery internal execution retains its prior owner semantics.
+- Full content remains lossless, with UTF-8-safe contiguous ranges and a digest
+  bound to request, tool, query and source. Retained results are optional Runtime
+  session behavior; default independent Runtime consumers are unchanged.
+- Direct consumers now follow the published continuation before parsing a complete
+  contract. Existing assertions for dispatch, schema constraints, partial success,
+  review binding and no-replay recovery remain in place. Prior-return suppression
+  assertions were removed because they falsely imply successful delivery.
+- The native test preserves the old saved-response truncation counterexamples and
+  separately proves current owner pages survive default Code Mode successor input.
+  Actual model reading, comprehension and discretionary concatenation are not
+  established by the scripted peer. No model or 101 was run.
+
+Validation:
+- App owner/provider/direct-consumer regression gate: 499 passed, one existing
+  skipped case. Final declaration follow-up: 18 passed, including the real native
+  Code Mode page handoff. Runtime Knowledge: 27 passed. Preserved-response native
+  characterization: 9 passed. Offline analysis/assessment consumers: 17 passed.
+- App production type configurations passed. Runtime compilation passed with
+  ES2022,DOM libraries; its ordinary package build remains blocked by a pre-existing
+  profiler test using Array.at with the package's ES2020 library configuration.
+  No unrelated profiler or compiler configuration was changed.
+- Scoped lint: zero errors, two existing console warnings. Naming: 15 passed.
+  Inspector accepted revision 62 and verified captured source
+  19eab3283f845eba3b534c178760110d50bb78dcfaed49b01b2f2bfdd7677cc0
+  in run 2ca25f1b-e7f7-4c89-b611-677792749fa7.
+- Final bounded review covered canonical internal/public entry points, existing
+  usage/schema fragments, retained-result permissions and lifetime, recovery,
+  direct consumers and native output preservation. No design writes or new
+  persistence/registry/scheduler mechanism were introduced.
+
+### Offline native delivery handoff - 2026-10-21
+
+Status: completed offline characterization and bounded self-review. No production
+refresh behavior, output limit or historical evidence was changed.
+
+Step Execution Card - observe / assess-recorded-changes:
+- Objective: execute the installed Codex 0.160.0 against a loopback-only scripted
+  Responses endpoint and preserved tool replies; capture its subsequent real request.
+- Owner: existing App evaluation tests, Runtime payload sink and independent
+  live-test deadline worker. Native Codex owns all transformation under observation.
+- Inputs: permanent fixtures extracted from the retained initial discovery and
+  Knowledge payloads, their native declarations, SHA-256 provenance, fixed synthetic
+  response items and actual executable identity. Tests never read ignored tmp fixtures.
+- Output: source/binary identity, scripted input, exact captured request evidence
+  through the existing payload sink, matching native completion, comparison and
+  explicit unavailable boundaries. No actual model inference or external credentials.
+- Boundary: test-data/knowledge-evaluation/native-delivery.mjs,
+  __tests__/native-delivery.test.mjs, fixtures/native-delivery/*, App package script,
+  evaluation README and existing contracts. No product provider/refresh changes.
+- Use a fresh project-local native home and loopback custom provider, disable
+  auxiliary tools/telemetry, retain medium effort and Code Mode, preserve default
+  output limits. Track native process group and always stop through existing watchdog.
+- Compare direct native tool output with Code Mode output where the installed native
+  interface supports both. Script the native response, not a mocked completed echo.
+  Capture actual outbound requests before replying; only allow fixed fixture tools.
+- Formal cases: fixture integrity, same native version, actual call identity,
+  subsequent request content/omissions, UTF-8 boundaries, missing capture rejection,
+  local-only endpoint validation and bounded cleanup. Absence is not truncation.
+- Gates: admission, formal native test, focused Node assertions, naming, scoped lint,
+  Inspector evidence and bounded self-review. Existing unchanged production gates
+  remain historical validation, not newly executed checks.
+- Stop on unsupported native protocol or missing next request and retain evidence;
+  do not change provider behavior, raise budgets, enable raw internal events, add
+  dependencies or run 101. A deterministic scripted server is not a real model.
+
+DoD: identify the selected tool reply and its actual successor request; compare raw
+UTF-8 digest/size and content around any observed omission; distinguish Code Mode
+presentation, history transformation and request assembly only when evidence permits.
+Report active test configuration separately from unavailable historical effective
+configuration. A local outbound request establishes what native Codex sends, not
+remote service processing, model understanding or the cause of historical refresh.
+Self-review: public custom Responses provider configuration permits loopback request
+capture; native Code Mode shape must be learned from its actual declared tools.
+No second product recorder, dispatcher, scheduler or authoritative result state.
+
+Observed result and closure:
+- Codex 0.160.0 native binary SHA-256:
+  `112fae7a5a1223e673c8a1791d32338f37df8b527ff1159bb8adac6c4dbf1b4b`.
+- Permanent raw-text fixtures retain the original 66,434-byte Knowledge reply and
+  84,960-byte discovery reply, exact hashes, original input and declaration lineage.
+  Raw reply files are text evidence, not executable configuration; their bytes were
+  not normalized to satisfy code naming or formatting checks.
+- Both replies match native completed content exactly. The real next HTTP requests
+  omit their middle: direct control loses 18,434 / 36,960 bytes; Code Mode loses
+  26,434 / 44,960 bytes. Matched retained prefixes/suffixes and omitted-byte hashes
+  establish loss; marker text alone is insufficient. Code Mode advertises a default
+  10,000-token direct-result budget; no override was supplied.
+- This isolates transformation between native tool completion and outbound request.
+  It does not isolate an internal native function, reconstruct historical effective
+  settings or prove why a prior model requested refresh. Synthetic prompts, a fresh
+  local home and a fixed response server are explicit test differences.
+- Nine formal tests pass, including six native executions, short UTF-8 controls,
+  version refusal, missing-request refusal, exact persisted-request verification and
+  literal-marker false-positive protection. Twenty existing evaluation consumer
+  tests, fifteen naming tests and scoped lint pass. Static Inspector candidate and
+  verification passed at revision 61; the native gate is separately evidenced on
+  the existing evaluation node, not inferred from those static owner cases.
+- Test-first red was the missing adapter; an initial incorrect scripted call shape
+  was rejected and corrected against native advertised custom-tool syntax. Neither
+  failure is evidence of a product regression. The passing characterization gate
+  proves the observed loss, not a repair of that loss.
+- The existing watchdog intentionally stops each owned native group after capture;
+  its raw stop receipt remains failed/offline-test-cleanup with no cleanup errors.
+  It is not relabeled as a successful product turn or a deadline expiry.
+- Production types and browser/model gates are not applicable to this test-only
+  adapter change. No production source, refresh, limits, model or 101 was changed.
+
+
+### Native delivery evidence - 2026-10-21
+
+Status: evidence instrumentation validated; the original delivery cause remains
+unresolved until actual native observation. This slice supersedes prior no-model limits only for one authorized
+120-second 101 observation after the deterministic gates pass.
+
+Step Execution Card - observe:
+- Objective: preserve publicly exposed local-native results for initial discovery
+  and Knowledge delivery, distinguishing them from App output and final model input.
+- Owner/input/output: existing Design provider receive adapter selects matching
+  completed dynamic tool results; Runtime profiler writes selected sanitized output
+  through its existing payload sink and trace. Request, thread, turn and call
+  identities remain explicit. Native result presence is not model visibility.
+- Boundary: local-ai-provider.ts, profiler/recorder.ts, their formal tests and
+  execution-flow-proof.test.ts; existing spec, Inspector and flow-contracts.json.
+- Retain only public result content for describe_design_apis/read_knowledge. Decode
+  structured text before existing redaction. Preserve original text byte count and
+  digest separately from sanitized structured content. Missing, null, empty,
+  malformed and unsupported content remain distinct; none proves transport loss.
+- Public exec/wait output has no reliable child-call relation in the inspected
+  interface. Record its explicit uncorrelated/unavailable provenance, not arbitrary
+  output that could include other tools, prompts or credentials. Never infer links
+  from timing. Actual final model input remains unavailable unless directly exposed.
+- Keep refresh, Knowledge rehydrate, normal duplicate references, native settlement,
+  cancellation and mutation dispatch unchanged. Diagnostics never replay operations.
+- Formal cases: unchanged/changed Unicode and nested output, absent/malformed output,
+  interleaved calls, diagnostic sink loss and cancellation. Retain existing recovery
+  tests proving no mutations replay. Fake native output verifies recording only.
+- Gates: structural Inspector admission, red regression, provider/runtime integration,
+  mapped observe proof, focused lint, naming, production types and direct-consumer
+  review. No dependency changes, new result store, scheduler or compatibility path.
+
+Step Execution Card - capture-recorded-document:
+- Existing run-101 runner accepts an explicit shorter run deadline, validated before
+  launch and recorded in run.json. Default canonical scenario remains 600000 ms.
+- Reuse existing watchdog from Send, recording, source capture and I/O preservation.
+  One authorized run uses 120000 ms; no automatic retry. A forced stop may prevent
+  final video export; retain original bytes and report incomplete capture truthfully.
+- Boundary: run-101.mjs, existing architecture-protocol.mjs and its formal tests,
+  evaluation README and existing capture Inspector flow. No browser/product changes.
+
+DoD: retain the existing nine delivery investigation criteria described in
+ tmp/provider-gap-audit/delivery-refresh/analysis-and-dod.md as evidence context:
+localize each observable boundary, permanent fixtures, actual native consumer
+observation, complete usable contracts, valid refresh/context recovery, no replay,
+real downstream use, bounded gates, and no closure from fewer rereads alone.
+The formal contract above is self-contained and tests must not depend on tmp.
+Recording implementation can pass while native transformation diagnosis remains
+open. The live report must separate bytes/semantic comparisons, redactions,
+observable native results, missing model input and the exact deadline cutoff.
+
+Self-review before implementation: public generated installed protocol declares
+optional nullable contentItems on completed dynamicToolCall. Capturing that public
+field is feasible without a model. It does not expose the final model request.
+No native-context claim or causal explanation is admissible from an echo alone.
+
+
+Validation before the authorized observation:
+- Structural observe admission digest: 197da4c609e0c98187f6b2cb51132f78ccc51c67199897eab48437089a53a6e3.
+- Seven provider red regressions failed on absent native payloads, then passed;
+  the throwing sink regression failed before failed-receipt handling was added.
+- Full provider suite: 202 passed, one pre-existing skipped; the added interleaved
+  real-schema/Knowledge reply case also passed. Runtime/Knowledge: 68 passed.
+- Capture/browser: 19 passed; deadline/recording/protocol: 11 passed.
+- Production App types and Runtime build passed; scoped lint has zero errors and
+  five existing console warnings. Naming passed. No refresh implementation changed.
+- Inspector source-bound baseline passed at accepted revision 60, attempt
+  3743e03e-480a-489c-8f73-4d9b5bba8549. Source digest:
+  8a8f3b3ec128e2682852f56dbebfacc1bc25769b5fdf6f42e2d6318063e35eb2.
+- Direct-consumer review: native output is diagnostic only; no final batch parsing,
+  canonical tool receipt, transport retry, call execution or Knowledge invalidation
+  is replaced. Original image-retention and reload changes are preserved.
+
+Authorized 120-second observation completed once:
+- Run: tmp/knowledge-evaluation/knowledge-quality-knowledge-taipei-101-1792577336316.
+  Report: delivery-report.md; selected boundary data: delivery-boundary-analysis.json.
+- Initial Knowledge (66434 bytes) and discovery (84960 bytes) match native completed
+  output exactly by bytes, SHA-256 and JSON. Five selected completions were retained:
+  four exact matches and one sanitized-only match with existing schema redactions.
+- Twelve tool calls have I/O; 47 payload references verified with no missing files.
+  No refresh/rehydrate occurred. The first three acquired routes were subsequently
+  used. This observation cannot explain earlier rereads or prove final model input.
+- First content at 82.869 s; deadline fired at 120.001 s and owned process shutdown
+  completed at 120.120 s. The last lookup requested fill.updateFillsAtIndex; no later
+  fill call or final acceptance was observed. No second model run was made.
+- Raw video is readable (1920x1080, 124.44 s including setup, five successful seeks),
+  but normal export and terminal record-flush receipts are absent after force-stop.
+  Full-quality analysis correctly rejected incomplete capture; no completion fabricated.
+- Instrumentation slice is complete. The original model-visibility/reread DoD remains
+  open at the unexposed native-to-model boundary. Refresh behavior is unchanged.
+
+### Reload transport correction - 2026-10-21
+
+Status: implemented after reviewed contract admission and formal red regressions;
+source-bound Inspector and bounded self-review passed.
+
+The saved-document copy reproduced the same closed-page error without inference.
+Remote Playwright forwarded a 312,375,259-byte WebSocket frameReceived control
+message, exceeding its 256 MiB transport maximum. The transport log explicitly
+reports Max payload size exceeded, followed by connection cleanup. Native Chrome
+exited with code 0 only after requested cleanup. A small document completed the
+same remote recording/export/reload chain. This is a control-transport defect,
+not proof of broken canonical persistence or recording export ordering.
+Evidence: tmp/reload-chain-document/transport-debug.log, transport-events.json,
+events.json; tmp/reload-chain-Tggrel/events.json. Original evidence is unchanged.
+
+Step Execution Card - capture-recorded-document:
+- Owner: App evaluation browser adapter, existing recording/capture lifecycle and
+  independent deadline worker. Inputs: local browser options, public Chromium
+  process identity, saved document URL, viewport and durable receipt.
+- Output: original video plus read-only reload receipt/screenshot, bounded browser
+  lifecycle events in existing run/replay metadata and explicit cleanup outcomes.
+- Replace the local evaluator's remote Playwright control hop with direct local
+  launch. Do not forward complete document frames through a second WebSocket,
+  raise payload limits, split product documents or retry failed drawing operations.
+- Obtain the native browser PID through public SystemInfo.getProcessInfo; retain
+  its OS start identity using the existing watchdog identity helper. Existing
+  watchdog remains the only force-stop owner, including blocked RPC cleanup.
+- Record launch, disconnect, context/page close/crash and cleanup intent separately;
+  process presence is an observation, never a fabricated exit code or cause.
+- Self-review found one white screenshot despite a valid receipt. The formal
+  post-fit pixel test passed alone but failed in the complete evidence suite,
+  capturing white instead of the scheduled blue presentation. This supplies the
+  missing regression proof: await post-fit browser presentation frames before
+  screenshot, under the unchanged capture deadline. No fixed sleep or new state.
+- The stalled-close regression also found that a watchdog kill receipt can precede
+  native process reaping. Cleanup must await disappearance of the same PID/start
+  identity before reporting settlement; termination request alone is insufficient.
+- Preserve current root/order/generation/durable comparison, video export, bounded
+  capture and generation deadlines. Existing standalone remote-recording helper
+  remains valid for independent remote consumers.
+- Allowed files: capture-browser.mjs, capture-lifecycle.mjs, run-101.mjs,
+  run.mjs, replay-saved-document.mjs, capture browser/reliability tests and
+  live-test-deadline.mjs (export its existing identity helper only).
+- Spec: evaluation README browser lifecycle contract. Inspector: existing
+  design-knowledge-evaluation flow, capture-recorded-document step. Failure owner
+  remains this capture step, not canonical document or generation settlement.
+- Formal cases: recording export then fresh-context receive above the former
+  remote limit; bytes delivered to page intact; root/receipt match; browser remains
+  connected; blocked RPC force-stop; normal exit and original failure preservation.
+  Tests use generated generic bytes and a local server, not ignored 101 data.
+- Gates: admission, red regression on old transport, same green regression on local
+  transport, existing capture suites, saved-document copy replay, lint/naming,
+  applicable types and bounded direct-consumer review. No model or 101.
+- Stop if canonical document changes, another watchdog or dependency is needed.
+
+Self-review: direct local launch is already used by read-only saved-document replay.
+The current browser process must remain identity-bound for independent cleanup;
+removing BrowserServer cannot remove hard-stop coverage. The recording helper's
+context close/saveAs contract works for both public local and remote browsers.
+No new persistence, retry, scheduler or compatibility path is required.
+
+Final evidence and review:
+- Inspector capture-recorded-document is accepted/passed at flow revision 165,
+  source 8cd58cf1ed771abbaa6c7b60a8cb4abe51766be95bc9473664cda71711a1beae.
+  Admission used the existing public flow document update API before production
+  changes; no unrelated Runtime step was expanded to claim ownership.
+- Formal red: tmp/reload-large-frame-red.log reproduces remote control loss using
+  generic generated 257 MiB data after recording export. The identical scenario
+  passes through the production local launch adapter without document retries.
+- Formal red: tmp/reload-evidence-final.log captures white instead of the scheduled
+  blue presentation and catches kill-receipt-before-process-exit. Both corrected
+  owner boundaries pass in the final full evidence suite.
+- Final suite tmp/reload-evidence-final-reviewed.log: 46 capture/protocol/deadline,
+  28 frontend provider transport and 19 backend exchange tests passed. Scoped
+  lint, naming, App production/proof typecheck, syntax and diff checks passed.
+- Final read-only copy replay: tmp/reload-chain-document/final-replay/replay.json
+  matched root order, generation 0 and sequence/durableSequence 1213; zero model
+  requests, zero page errors, unchanged original evidence and settled browser PID.
+  reload.png was inspected and shows the saved drawing rather than a white frame.
+- Original run.json SHA-256 remains
+  6da5999c4c45e4c074ac048a44e89edd36155fe855d6af3f496981958b1a17d4.
+  Temporary services on 3307/4117/4217 were stopped after ownership checks.
+- Removed the now-unused ChildProcess-based stopUnsettledProcess helper and its
+  replaced test. Local process tests retain already-terminated/no-repeat behavior
+  and prove real forced termination; the independent remote video export helper
+  remains valid and unchanged. No old launch path remains in the evaluation callers.
+- Review covered all three callers, native identity lifetime, original recording
+  export, generation deadline wiring, bounded force cleanup, failure preservation,
+  post-fit presentation and source capture. No canonical document/render semantics
+  changed. Read-only receipt and screenshot checks do not compare every property.
+
+### Preserve submitted inspection pixels - 2026-10-21
+
+Status: implemented and verified after contract admission and formal failing regressions.
+
+Step Execution Card - observe / provider tool image delivery:
+
+- Objective: restore the exact image bytes and order submitted in native tool
+  replies, using the existing request-scoped Runtime asset sink.
+- Finding: localToolContent separates validated images from text; the provider
+  recorder retains only parsed text and imageCount. The sink already supports
+  immutable image assets but the App adapter only supplies reference inputs.
+- Inputs: validated native contentItems at successful local transport submission,
+  request/call identity and content index. No canvas recapture or reconstruction.
+- Outputs: existing asset_retained events correlated by callId and contentIndex,
+  submitted status, mediaType and immutable asset reference. The existing offline
+  analyzer resolves bytes/digests and rejects missing or corrupt image evidence.
+- Owner: Runtime observe step with App provider and offline reader adapters.
+  Storage/deduplication/lifetime remain createExecutionRecordSink-owned.
+- Conditions: archive the exact submitted data URL bytes, no resampling; duplicate
+  images reuse assets while retaining every call/order binding. No submitted
+  claim before writeProtocol accepts the reply; native/model perception is not
+  inferred from a local stream write. Cancelled/suppressed or failed delivery
+  cannot manufacture submission evidence. Recording loss is distinct from tool
+  outcome and cannot trigger mutation replay or a second capture.
+- Contributors: existing content validation, transport, profiler and asset sink.
+  Forbidden: new image registry/store, raw base64 in JSON/console, generic binary
+  redaction removal, model calls, reload fixes, historical evidence rewriting.
+- Boundary: local-ai-provider.ts; recorder allowlisted metadata; existing
+  execution-flow proof/provider tests; analyzer and its formal tests. Contracts:
+  ai-execution-flow.md Execution recording; observe Inspector and flow-contracts.
+- Gates: naming; admission; failing real-provider-adapter/real-sink deterministic
+  proof; exact bytes and decoded pixels/order, duplicate identities, invalid
+  images, cancellation/transport suppression, storage loss and offline corrupt
+  references; direct provider/content and Runtime recording tests; App production
+  types, scoped lint, source-bound Inspector baseline and focused self-review.
+- Stop: any required runtime/ownership change outside this boundary must be
+  reassessed in this plan; no model/101 or reload work in this task.
+
+Self-review: preserving input reference assets alone cannot establish inspection
+image delivery. The canonical point is the final native tool reply. A queued
+asset reference is not durable evidence: offline readers verify the flushed
+file and digest, and missing evidence cannot pass. Reuse the existing sink's
+per-request content digest map; do not introduce another cache or retention owner.
+The regression uses deterministic image bytes and a fake native process, never
+an actual model. Historical image-less records remain unchanged and cannot be
+upgraded to complete image evidence. Reports focus on this recording fix.
+
+Validation and bounded self-review:
+
+- Admission accepted review 52a113a94b116f9453e468fcaf8bba6dd92237846c25b88a124d8c32e833f235
+  before regression implementation. The red provider proof received three native
+  images but found zero retained deliveries; the offline CLI incorrectly accepted
+  a positive imageCount without pixels. Both now pass their corrected contracts.
+- Final Inspector verify a2f7b2b2-5750-4349-b440-893c6d5d324d passed all 52 cases
+  on source 596a243851dafec073f4a9d39aaacea53ee4e2f765af3ef1be5c6ca13ebb180c.
+  The added observe.tool-images case was registered through contract review;
+  mapping-only review is restricted to selector renames.
+- Provider proof compares bytes, SHA-256 and decoded pixels against the actual
+  fake-native reply, including two-image order and repeated-asset reuse. Invalid
+  image, cancellation and transport failure cannot manufacture retained delivery.
+  Storage failure leaves submitted tool results intact and does not repeat captures.
+- Direct provider/content tests: 385 passed, one existing skipped. Runtime
+  recording/collector tests: 44 passed. Offline analysis/assessment tests: 17 passed.
+  App production/proof typecheck, Runtime build, naming and scoped lint passed;
+  lint retains three existing console warnings. No model or 101 was run.
+- Reviewed the final delivery callback, metadata allowlist, existing sink and
+  content producer, offline containment/digest/completeness checks and failure
+  paths. Generic binary redaction remains intact; no second storage owner or
+  compatibility reconstruction path was introduced.
+- Exact local submission is observable; hidden provider perception is not.
+  Previously missing historical pixels cannot be recovered by this change.
+  Reload behavior remains outside this completed slice.
+
+### Evidence-bound attribution - 2026-10-21
+
+Status: implemented after matching Flow Inspector admission and seven failing
+formal CLI regressions. All seven now pass; evidence suite (42 Node, 28 provider,
+19 backend cases), existing analysis/representation tests, scoped lint, naming
+and App production types pass. Source-bound Inspector verification passed
+(76093748bbfc2bbb326cb4532158b7f207a2bfeb44f4f97932661d1de26a4368).
+
+Objective: extend the existing offline analysis/report boundary with per-change
+attribution and evidence-supported experience. Reuse captured runs, source
+manifests, provider records and analysis.json. No new registry, scheduler,
+Knowledge store, model reviewer or automatic Knowledge editing.
+
+Step Execution Card - `assess-recorded-changes`:
+
+- Owner: Asyra Design offline evaluation analyzer, not Runtime trace ownership.
+- Product contract: evaluation README, Evidence-bound attribution section.
+- Inspector: existing design-knowledge-evaluation.flow.json, same-named step;
+  inputs are captured run, parsed streams and optional analyst assessment.
+- Outputs: analysis.json attribution with verified evidence references,
+  component-specific descriptive conclusions, confounders and lesson decisions.
+- Conditions: bind assessment to exact run.json SHA-256; resolve every reference
+  inside its declared evidence root with realpath containment, digest and exact
+  JSON pointer or line range. Evidence is data and never executable instructions.
+- Bypass: no assessment means not-assessed / NO_ENTRY, not successful attribution.
+  Unsupported lesson means NO_ENTRY; malformed or stale evidence rejects the
+  assessment before writing a report. Existing incomplete-capture rejection stays.
+- Contributors: existing capture/parser/payload analysis, analyst interpretation
+  explicitly labelled self-review. No independent-review claim is manufactured.
+- Forbidden: model calls, runtime/tool changes, automatic Knowledge writes,
+  success inferred from transport status, causal improvement from one rollout,
+  silent acceptance of unrecognized input or preservation of superseded behavior.
+- Boundary: test-data/knowledge-evaluation analyzer, assessment helper and formal
+  tests; owning README, package test script and this existing flow/plan only.
+- Failure owner: assess-recorded-changes; original records remain untouched.
+- Cases: absent assessment; supported observation; mixed changes/single run;
+  missing support; counterevidence; missing limits; stale run/digest, invalid
+  locator, path/symlink escape, duplicate identity; CLI refuses bad assessment
+  without replacing a report; existing capture and Knowledge observations stay.
+- Gates: failing then passing formal Node integration tests; knowledge-evidence
+  suite; scoped ESLint/Prettier; naming; App production types; task-context and
+  exact flow admission/source-bound results. No whole-repository local CI.
+- Stop: out-of-scope runtime/Knowledge mutations, absent source evidence or
+  unsupported inference require narrowing the claim, not expanding implementation.
+
+Self-review: existing Fixed evaluation and reporting contract remains authority.
+The new machine checks prove evidence identity/locator integrity, not the truth of
+an analyst's interpretation. All model and historical effects are descriptive;
+helped/hurt requests are retained as proposedEffect but effective attribution is
+confounded. A no-change/no-entry result is legitimate. Lessons require a cue,
+observation, limits, supporting references and explicit analyst review; they are
+scoped report observations, not validated causal rules or new domain Knowledge.
+Counterevidence and unresolved questions remain adjacent to any retained lesson.
+This adopts harness2's component accounting, NO_ENTRY and unchanged-as-valid
+principles without importing its optimizer or accepting a directory as success.
+
+Post-implementation acceptance is exactly one authorized quality-knowledge 101,
+gpt-6-astra / medium, unchanged references/prompt and 600000 ms Send deadline,
+recording and complete I/O. Freeze descriptive comparator now as
+knowledge-quality-knowledge-taipei-101-1792524323266. The candidate changes only
+offline evaluation, not App instructions/tools/Knowledge; this run exercises
+capture/report integration and observes current behavior, not drawing improvement
+caused by reporting. No additional run or correction prompt is authorized.
+
+Post-implementation recorded result: run
+knowledge-quality-knowledge-taipei-101-1792526483163 completed generation in
+482765 ms. All 51 main tool I/O pairs and projected outcomes were audited; two
+failed/not-started preparations and one partial capture/binding result remained
+explicit. Six successful inspection IDs were reused in binding-only recovery.
+Original reload capture failed; a separate existing read-only replay passed with
+zero AI POST requests and unchanged original evidence. The ordinary analyzer
+refuses the incomplete original capture, including its proposed assessment;
+no candidate experience was admitted. Inspection image metadata is preserved,
+but individual pixel payloads were not found, so multimodal I/O completeness is
+not established. See that run's evaluation-report.md for evidence and limits.
+No runtime correction or extra model run followed these observations.
 
 ### Pre-push direct-consumer reconciliation - 2026-10-21
 
