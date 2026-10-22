@@ -6,7 +6,23 @@ const mocks = vi.hoisted(() => ({
   value: null as unknown,
   selection: new Set(['first']),
   update: vi.fn(),
-  style: vi.fn()
+  style: vi.fn(),
+  session: null as { elementId: string; inputSurface: string } | null,
+  finish: vi.fn(),
+  cancel: vi.fn()
+}))
+vi.mock('../../common-apis/text-canvas', () => ({
+  textCanvasApis: {
+    subscribe: () => () => undefined,
+    getDraftText: () => null,
+    getSnapshot: () => mocks.session,
+    beginEdit: (elementId: string, inputSurface: string) => {
+      mocks.session = { elementId, inputSurface }
+    },
+    updateDraft: vi.fn(),
+    finish: mocks.finish,
+    cancel: mocks.cancel
+  }
 }))
 vi.mock('../../hooks', () => ({
   useProperty: (key: string) =>
@@ -21,6 +37,9 @@ vi.mock('../../controllers/scene-tree', () => ({
 describe('manual text editing', () => {
   afterEach(cleanup)
   beforeEach(() => {
+    mocks.session = null
+    mocks.finish.mockClear()
+    mocks.cancel.mockClear()
     mocks.selection = new Set(['first'])
     mocks.value = { ...DEFAULT_TEXT_DATA, text: 'Heading' }
     mocks.update.mockClear()
@@ -31,8 +50,9 @@ describe('manual text editing', () => {
     const content = screen.getByRole('textbox', { name: 'Content' })
     fireEvent.change(content, { target: { value: 'New heading' } })
     expect(mocks.update).not.toHaveBeenCalled()
+    expect(mocks.finish).not.toHaveBeenCalled()
     fireEvent.blur(content)
-    expect(mocks.update).toHaveBeenCalledWith('text', 'New heading')
+    expect(mocks.finish).toHaveBeenCalledWith('New heading')
   })
   it('discards an edit with Escape and rejects invalid typography', () => {
     render(<TextProperties />)

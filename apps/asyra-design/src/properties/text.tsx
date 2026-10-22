@@ -1,3 +1,5 @@
+import { useEffect, useSyncExternalStore } from 'react'
+import { textCanvasApis } from '../common-apis/text-canvas'
 import { getFeature } from '@asyra/core'
 import { FeatureNames } from '../constants'
 import { TEXT_PROPERTY_TYPE, type TextData } from '@asyra/preset'
@@ -32,6 +34,46 @@ const fontStyles = [
     fontStyle: 'italic'
   }
 ] as const
+
+const TextContent = ({
+  elementId,
+  value
+}: {
+  elementId: string
+  value: string
+}) => {
+  const draft = useSyncExternalStore(textCanvasApis.subscribe, () =>
+    textCanvasApis.getDraftText(elementId)
+  )
+  useEffect(
+    () => () => {
+      const session = textCanvasApis.getSnapshot()
+      if (session?.elementId === elementId && session.inputSurface === 'panel')
+        textCanvasApis.cancel()
+    },
+    [elementId]
+  )
+  return (
+    <TextField
+      field="text"
+      label="Content"
+      value={draft ?? value}
+      onDraftChange={(text) => {
+        if (textCanvasApis.getSnapshot()?.elementId !== elementId)
+          textCanvasApis.beginEdit(elementId, 'panel')
+        textCanvasApis.updateDraft(text)
+      }}
+      onCommit={(text) => {
+        if (textCanvasApis.getSnapshot()?.elementId === elementId)
+          textCanvasApis.finish(String(text))
+      }}
+      onCancel={() => {
+        if (textCanvasApis.getSnapshot()?.elementId === elementId)
+          textCanvasApis.cancel()
+      }}
+    />
+  )
+}
 
 const TextProperties = () => {
   const selectedIds = useProperty<Set<string>>('elementSelection')
@@ -158,7 +200,13 @@ const TextProperties = () => {
       </section>
       <section aria-label="Content" className="border-t border-white/5 pb-4">
         <Header label="Content" />
-        <div className="pl-4 pr-2">{field('text', 'Content')}</div>
+        <div className="pl-4 pr-2">
+          <TextContent
+            key={selectedId}
+            elementId={selectedId}
+            value={typography.text}
+          />
+        </div>
       </section>
     </div>
   )

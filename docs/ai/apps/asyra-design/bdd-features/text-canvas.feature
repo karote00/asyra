@@ -192,3 +192,20 @@ Feature: Canvas plain-text authoring
     And applying the design should create the text with its declared dimensions
     And supported sizing values should pass the same semantic and canonical validation
     And unsupported sizing values should be rejected
+
+  Scenario Outline: Preview shared text drafts immediately
+    Given an existing Text object is selected
+    When I type in "<surface>" without finishing the edit
+    Then Canvas and Content should immediately show the same draft
+    And keyboard focus should remain in the surface I am editing
+    And canonical text and document Undo history should remain unchanged
+    When I cancel the draft
+    Then Canvas and Content should both show the original text
+    When I edit again and finish
+    Then both surfaces should show the committed text
+    And one Undo should restore the original text on both surfaces
+
+    Examples:
+      | surface       |
+      | Canvas editor |
+      | Content       |

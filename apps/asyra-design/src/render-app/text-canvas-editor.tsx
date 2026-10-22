@@ -17,10 +17,15 @@ const action = (name: 'finish' | 'cancel', value?: string) => {
 const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
   const input = useRef<HTMLTextAreaElement>(null)
   const composing = useRef(false)
+  const sharedDraft = useSyncExternalStore(
+    textCanvasApis.subscribe,
+    textCanvasApis.getDraftSnapshot
+  )
   const draft = useRef(session.typography.text)
+  draft.current = sharedDraft?.text ?? session.typography.text
   const [error, setError] = useState(session.error)
   const [transform, setTransform] = useState('')
-  const [bounds, setBounds] = useState(session.bounds)
+  const bounds = sharedDraft?.bounds ?? session.bounds
 
   useEffect(() => {
     const resumePresentation = session.elementId
@@ -47,8 +52,10 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
       setTransform((previous) => (previous === next ? previous : next))
     }
     update()
-    input.current?.focus()
-    if (session.elementId) input.current?.select()
+    if (session.inputSurface !== 'panel') {
+      input.current?.focus()
+      if (session.elementId) input.current?.select()
+    }
     const frame = core.subscribeToFrameComplete(update)
     const publication = core.subscribeToSharedPublication(() => {
       if (
@@ -62,6 +69,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
     })
     const outsidePointer = (event: PointerEvent) => {
       if (
+        session.inputSurface !== 'panel' &&
         !composing.current &&
         event.target instanceof Node &&
         !input.current?.contains(event.target)
@@ -71,8 +79,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
     }
     window.addEventListener('pointerdown', outsidePointer, true)
     const refreshLayout = () => {
-      const next = textCanvasApis.updateDraft(draft.current, true)
-      if (next) setBounds(next)
+      textCanvasApis.updateDraft(draft.current, true)
     }
     document.fonts?.addEventListener('loadingdone', refreshLayout)
     const load = subscribeToFileLoadComplete(() => textCanvasApis.cancel())
@@ -97,7 +104,9 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         aria-label="Canvas text editor"
         aria-description={error || session.error || undefined}
         aria-invalid={Boolean(error || session.error)}
-        defaultValue={session.typography.text}
+        value={draft.current}
+        readOnly={session.inputSurface === 'panel'}
+        tabIndex={session.inputSurface === 'panel' ? -1 : undefined}
         spellCheck={false}
         wrap={
           session.typography.textSizing === TextSizing.AUTO_WIDTH
@@ -108,6 +117,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         className="absolute left-0 top-0 m-0 resize-none border-0 bg-transparent p-0 text-text-primary outline-1 outline-accent origin-top-left"
         style={{
           transform,
+          pointerEvents: session.inputSurface === 'panel' ? 'none' : undefined,
           width: bounds.width,
           height: bounds.height,
           fontFamily: session.typography.fontFamily,
@@ -126,8 +136,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         }}
         onChange={(event) => {
           draft.current = event.target.value
-          const next = textCanvasApis.updateDraft(draft.current)
-          if (next) setBounds(next)
+          textCanvasApis.updateDraft(draft.current)
         }}
         onCompositionStart={() => {
           composing.current = true

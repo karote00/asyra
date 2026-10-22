@@ -7,13 +7,17 @@ export const TextField = ({
   label,
   showLabel = false,
   value,
-  onCommit
+  onCommit,
+  onDraftChange,
+  onCancel
 }: {
   field: keyof TextData
   label: string
   showLabel?: boolean
   value: string | number
   onCommit(value: string | number): void
+  onDraftChange?(value: string): void
+  onCancel?(): void
 }) => {
   const [draft, setDraft] = useState(String(value))
   const [invalid, setInvalid] = useState(false)
@@ -37,7 +41,7 @@ export const TextField = ({
       return false
     }
     setInvalid(false)
-    if (next !== value) onCommit(next)
+    if (next !== value || onDraftChange) onCommit(next)
     return true
   }
 
@@ -53,6 +57,13 @@ export const TextField = ({
       cancelled.current = false
       setDraft(event.target.value)
       setInvalid(false)
+      if (onDraftChange) {
+        const valid = TEXT_PROPERTY_SCHEMA.fields
+          .find((entry) => entry.key === field)
+          ?.validate?.(event.target.value)
+        if (valid) onDraftChange(event.target.value)
+        else setInvalid(true)
+      }
     },
     onBlur: () => {
       if (cancelled.current) {
@@ -68,6 +79,7 @@ export const TextField = ({
       if (event.nativeEvent.isComposing || event.keyCode === 229) return
       if (event.key === 'Escape') {
         cancelled.current = true
+        onCancel?.()
         setDraft(String(value))
         setInvalid(false)
         event.currentTarget.blur()

@@ -122,7 +122,13 @@ property IDs, and removes the old typography color from the migrated snapshot.
 It does not mutate the input or rewrite already-upgraded Fill records.
 The former typography `textColor` field is removed from the current schema; semantic design input uses
 `fill`, targeted edits use `fillColor`, and computed context reads `fills`.
-Content remains a multiline field alongside direct Canvas editing.
+Content remains a multiline field alongside direct Canvas editing. Both surfaces
+read the same transient text draft: each valid input immediately updates Content
+and the Canvas editing projection without writing canonical data. The initiating
+surface retains keyboard focus. Panel editing reuses the Canvas editing
+projection without focusing it; blur accepts one change and Escape cancels it.
+Selection changes dispose panel-owned drafts instead of leaking them to another
+object.
 Unsupported vertical alignment, advanced type controls, and Text
 Stroke lists are omitted. Multiple-selection typography is not exposed.
 
@@ -159,8 +165,8 @@ activate or close the broader text-authoring plan.
   The engine returns native measured width and line-height/content height;
   viewport transforms never enter measurement. No character-count heuristic or
   temporary canonical object is used.
-- One transient draft owns each input revision's measured box. The editor and
-  final transaction consume that same box; unchanged input and viewport frames
+- One transient draft owns each input revision's measured box. The editor, Content projection and
+  final transaction consume that same draft and measured box; unchanged input and viewport frames
   do not remeasure. Cancellation disposes it. The sizing mode and accepted box
   persist with the text and share its Undo/Redo entry.
 - Typography/content changes through the ordinary App property API remeasure

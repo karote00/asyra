@@ -466,3 +466,55 @@ test('Editing replaces the old glyph projection and cancellation restores it wit
   await expect.poll(countRed).toBeGreaterThan(0)
   expect(await getUndoHistoryDepth(page)).toBe(depth)
 })
+
+test('Canvas drafts update Content immediately without committing and cancel restores both', async ({
+  page
+}) => {
+  await startText(page)
+  await editor(page).fill('Original')
+  await editor(page).press('Control+Enter')
+  const history = await getUndoHistoryDepth(page)
+  const content = page.getByRole('textbox', { name: 'Content', exact: true })
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  for (const draft of ['Live', 'Live 台灣', '']) {
+    await editor(page).fill(draft)
+    await expect(content).toHaveValue(draft)
+    await expect(editor(page)).toBeFocused()
+    expect((await readTexts(page))[0].text).toBe('Original')
+    expect(await getUndoHistoryDepth(page)).toBe(history)
+  }
+  await editor(page).press('Escape')
+  await expect(content).toHaveValue('Original')
+})
+
+test('Content drafts update Canvas immediately and preserve focus cancellation and one Undo', async ({
+  page
+}, testInfo) => {
+  await startText(page)
+  await editor(page).fill('Original')
+  await editor(page).press('Control+Enter')
+  const history = await getUndoHistoryDepth(page)
+  const content = page.getByRole('textbox', { name: 'Content', exact: true })
+  await content.fill('Panel draft 台灣')
+  await expect(editor(page)).toHaveValue('Panel draft 台灣')
+  await expect(content).toBeFocused()
+  expect((await readTexts(page))[0].text).toBe('Original')
+  expect(await getUndoHistoryDepth(page)).toBe(history)
+  await page.screenshot({
+    path: testInfo.outputPath('content-live-preview.png')
+  })
+  await content.press('Escape')
+  await expect(editor(page)).toHaveCount(0)
+  await expect(content).toHaveValue('Original')
+  expect(await getUndoHistoryDepth(page)).toBe(history)
+  await content.fill('Accepted from panel')
+  await expect(editor(page)).toHaveValue('Accepted from panel')
+  await content.press('Tab')
+  await expect(editor(page)).toHaveCount(0)
+  expect((await readTexts(page))[0].text).toBe('Accepted from panel')
+  expect(await getUndoHistoryDepth(page)).toBe(history + 1)
+  await undo(page)
+  await expect(content).toHaveValue('Original')
+  await redo(page)
+  await expect(content).toHaveValue('Accepted from panel')
+})

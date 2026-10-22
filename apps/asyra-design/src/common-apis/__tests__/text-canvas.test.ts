@@ -176,3 +176,40 @@ it('keeps automatic sizing when typography changes and makes explicit dimensions
   })
   expect(mocks.measureText).not.toHaveBeenCalled()
 })
+
+it('publishes a shared draft without replacing the session or committing canonical text', () => {
+  textCanvasApis.beginEdit('text-1', 'panel')
+  const session = textCanvasApis.getSnapshot()
+  const listener = vi.fn()
+  const unsubscribe = textCanvasApis.subscribe(listener)
+  textCanvasApis.updateDraft('Live draft')
+  const draft = textCanvasApis.getDraftSnapshot()
+  expect(textCanvasApis.getSnapshot()).toBe(session)
+  expect(textCanvasApis.getDraftText('text-1')).toBe('Live draft')
+  expect(textCanvasApis.getDraftText('other')).toBeNull()
+  expect(listener).toHaveBeenCalledTimes(1)
+  textCanvasApis.updateDraft('Live draft')
+  expect(textCanvasApis.getDraftSnapshot()).toBe(draft)
+  expect(listener).toHaveBeenCalledTimes(1)
+  expect(mocks.updateElementProperties).not.toHaveBeenCalled()
+  expect(mocks.runTransaction).not.toHaveBeenCalled()
+  textCanvasApis.cancel()
+  expect(textCanvasApis.getDraftSnapshot()).toBeNull()
+  expect(textCanvasApis.getDraftText('text-1')).toBeNull()
+  expect(listener).toHaveBeenCalledTimes(2)
+  unsubscribe()
+})
+
+it('retains a shared draft when stale-target admission rejects its commit', () => {
+  textCanvasApis.beginEdit('text-1', 'panel')
+  textCanvasApis.updateDraft('Local draft')
+  const draft = textCanvasApis.getDraftSnapshot()
+  mocks.getElementComputedData.mockReturnValue({
+    ...DEFAULT_TEXT_DATA,
+    text: 'Remote'
+  })
+  textCanvasApis.finish('Local draft')
+  expect(textCanvasApis.getDraftSnapshot()).toBe(draft)
+  expect(textCanvasApis.getDraftText('text-1')).toBe('Local draft')
+  expect(mocks.updateElementProperties).not.toHaveBeenCalled()
+})
