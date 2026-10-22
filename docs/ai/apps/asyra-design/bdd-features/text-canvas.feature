@@ -106,7 +106,8 @@ Feature: Canvas plain-text authoring
     Given an existing Text object is being edited
     When the target is deleted, locked or changed outside the editor
     Then the stale draft must not overwrite the current document
-    And the editor should end with an explicit unavailable-target state
+    And the input should expose an accessible unavailable-target error
+    And the draft should remain available for copying or cancelling with Escape
 
   Scenario: Dispose transient editing state
     Given a Canvas text session is open
@@ -175,3 +176,11 @@ Feature: Canvas plain-text authoring
     And the canonical text and document Undo history should remain unchanged
     When I cancel editing
     Then the original text and Fill should be visible again
+
+  Scenario: Keep text editing free of a bottom hint
+    Given the Canvas text editor has focus
+    Then no bottom editing hint or close-editor button should appear
+    And Enter, the platform command modifier with Enter, and Escape should retain their editing behavior
+    When the editing target becomes stale
+    Then no bottom hint or close-editor button should appear
+    And the stale draft must not overwrite the document

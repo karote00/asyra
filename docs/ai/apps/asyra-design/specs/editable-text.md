@@ -200,7 +200,8 @@ activate or close the broader text-authoring plan.
   the session before it can write into a replacement document.
 - Commit revalidates workspace identity and the target's original computed data.
   Deleted, hidden, locked or changed targets cannot be overwritten. The editor
-  displays an unavailable-target message and retains the draft for copying until
+  exposes the unavailable-target error on the input through accessible attributes,
+  without a bottom hint or close button, and retains the draft for copying until
   closed. This is stale-write rejection, not a collaboration merge/recovery UI.
 
 Verification: `e2e/text-canvas.spec.ts`, the text Canvas common-API, feature and

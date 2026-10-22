@@ -95,7 +95,7 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
       <textarea
         ref={input}
         aria-label="Canvas text editor"
-        aria-describedby="canvas-text-help"
+        aria-description={error || session.error || undefined}
         aria-invalid={Boolean(error || session.error)}
         defaultValue={session.typography.text}
         spellCheck={false}
@@ -161,21 +161,6 @@ const ActiveTextEditor = ({ session }: { session: TextCanvasSession }) => {
         onKeyUp={(event) => event.stopPropagation()}
         onBlur={finish}
       />
-      <div
-        id="canvas-text-help"
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded bg-panel-surface px-3 py-2 text-xs text-text-primary shadow"
-      >
-        {error || session.error ? (
-          <span role="alert">{error || session.error}</span>
-        ) : (
-          'Enter: new line - Cmd/Ctrl+Enter: finish - Escape: cancel'
-        )}
-        {error && (
-          <button className="ml-2 underline" onClick={() => action('cancel')}>
-            Close editor
-          </button>
-        )}
-      </div>
     </>
   )
 }

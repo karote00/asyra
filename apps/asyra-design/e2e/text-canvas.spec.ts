@@ -46,6 +46,16 @@ test('Canvas text input keeps the underlying scene visible', async ({
 }, testInfo) => {
   await startText(page)
   await editor(page).fill('Transparent editor')
+  await expect(page.locator('#canvas-text-help')).toHaveCount(0)
+  await expect(
+    page.getByText(
+      'Enter: new line - Cmd/Ctrl+Enter: finish - Escape: cancel',
+      { exact: true }
+    )
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'Close editor', exact: true })
+  ).toHaveCount(0)
   await expect(editor(page)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   await expect(editor(page)).toHaveCSS('background-image', 'none')
   await page.screenshot({ path: testInfo.outputPath('transparent-editor.png') })
@@ -273,7 +283,8 @@ test('A stale text draft cannot overwrite an external content change', async ({
     const { elementApis } = await import('../src/common-apis/element')
     elementApis.updateElementProperties([id], { text: 'External change' })
   }, id)
-  await expect(page.getByRole('alert')).toContainText('changed')
+  await expect(editor(page)).toHaveAttribute('aria-description', /changed/)
+  await expect(editor(page)).toHaveAttribute('aria-invalid', 'true')
   await editor(page).press('Control+Enter')
   expect((await readTexts(page))[0].text).toBe('External change')
   await expect(editor(page)).toHaveValue('Local draft')

@@ -93,6 +93,14 @@ it('uses the full affine transform and does no canonical validation on unchanged
   view.unmount()
   expect(mocks.unsubscribe).toHaveBeenCalledTimes(3)
 })
+it('renders only the text input without an editing hint or close button', () => {
+  const view = render(<TextCanvasEditor />)
+  expect(view.container.children).toHaveLength(1)
+  expect(view.container.firstElementChild).toBe(screen.getByRole('textbox'))
+  expect(screen.getByRole('textbox').hasAttribute('aria-describedby')).toBe(
+    false
+  )
+})
 it('keeps composing Enter local and commits the complete native draft afterwards', () => {
   render(<TextCanvasEditor />)
   const input = screen.getByRole('textbox')
@@ -108,7 +116,11 @@ it('retains a stale draft for copying and prevents blur from committing it', () 
   render(<TextCanvasEditor />)
   mocks.isCurrent.mockReturnValueOnce(false)
   act(() => mocks.publication?.())
-  expect(screen.getByRole('alert').textContent).toContain('changed')
+  expect(
+    screen.getByRole('textbox').getAttribute('aria-description')
+  ).toContain('changed')
+  expect(screen.getByRole('textbox').getAttribute('aria-invalid')).toBe('true')
+  expect(screen.queryByRole('button')).toBeNull()
   fireEvent.blur(screen.getByRole('textbox'))
   expect(mocks.finish).not.toHaveBeenCalled()
 })
