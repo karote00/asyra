@@ -114,7 +114,7 @@ export type RenderEngineTextOperation = Readonly<{
   align: 'left' | 'center' | 'right'
   lineHeight: number
   letterSpacing: number
-  color: number | string
+  paint: RenderEnginePaint
 }>
 
 export type RenderEngineDrawOperation =

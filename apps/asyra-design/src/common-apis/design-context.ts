@@ -144,7 +144,6 @@ export const designContextFields = Object.freeze([
   'textAlign',
   'lineHeight',
   'letterSpacing',
-  'textColor',
   'fills',
   'strokes'
 ])

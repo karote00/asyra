@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import sharp from 'sharp'
 import { expect, test, type Page } from '@playwright/test'
@@ -6,7 +8,9 @@ import {
   waitForAppReady,
   undo,
   redo,
-  getUndoHistoryDepth
+  getUndoHistoryDepth,
+  getCoreDocumentDigest,
+  getPersistedDocumentDigest
 } from './test-utils'
 
 const elementId = 'typography-sample'
@@ -38,7 +42,8 @@ const createTextFixture = async (page: Page) => {
             props: {
               position: `${id}-position`,
               dimension: `${id}-dimension`,
-              typography: `${id}-typography`
+              typography: `${id}-typography`,
+              fills: `${id}-fills`
             },
             text: 'Design with words\nType',
             fontFamily: 'sans-serif',
@@ -48,7 +53,17 @@ const createTextFixture = async (page: Page) => {
             textAlign: 'left',
             lineHeight: 40,
             letterSpacing: 0,
-            textColor: '#ffffff'
+            fills: [
+              {
+                id: 'text-initial-fill',
+                color: '#ffffff',
+                opacity: 1,
+                visible: true,
+                kind: 'solid',
+                colorFormat: 'hex',
+                defaultColorFormat: 'hex'
+              }
+            ]
           }
         ],
         parent,
@@ -70,6 +85,18 @@ const readTypography = (page: Page) =>
       string,
       string | number
     >
+  }, elementId)
+
+const readTextFills = async (page: Page) =>
+  page.evaluate(async (id) => {
+    const { core } = await import('../src/testing/runtime-access')
+    return core.getElementComputedData(id, ['fills']).fills as {
+      color: string
+      opacity: number
+      visible: boolean
+      kind: string
+      gradient?: { gradientType: string }
+    }[]
   }, elementId)
 
 const captureText = async (page: Page) => {
@@ -148,8 +175,7 @@ const cases = [
   },
   { key: 'textAlign', label: 'Align right', value: 'right', control: 'button' },
   { key: 'lineHeight', label: 'Line height', value: 56, control: 'input' },
-  { key: 'letterSpacing', label: 'Letter spacing', value: 3, control: 'input' },
-  { key: 'textColor', label: 'Text color', value: '#43cba5', control: 'input' }
+  { key: 'letterSpacing', label: 'Letter spacing', value: 3, control: 'input' }
 ] as const
 
 for (const entry of cases) {
@@ -188,7 +214,7 @@ for (const entry of cases) {
       contentType: 'image/png'
     })
     expect(after.hash).not.toBe(before.hash)
-    if (entry.key !== 'textColor') expect(after.ink.width).toBeGreaterThan(0)
+    expect(after.ink.width).toBeGreaterThan(0)
     if (entry.key === 'fontSize' || entry.key === 'letterSpacing') {
       expect(after.ink.width).toBeGreaterThan(before.ink.width)
     }
@@ -283,6 +309,25 @@ test('Typography controls match the compact geometry rows', async ({
   expect(height).not.toBeNull()
   if (!geometry || !size || !spacing || !height)
     throw new Error('Missing property controls')
+  for (const label of ['Line height', 'Letter spacing']) {
+    const offset = await page
+      .getByLabel(label, { exact: true })
+      .evaluate((input) => {
+        const icon = input.parentElement?.querySelector('svg')
+        if (!icon) throw new Error('Missing spacing prefix icon')
+        const iconBounds = icon.getBoundingClientRect()
+        const inputBounds = input.getBoundingClientRect()
+        return Math.abs(
+          iconBounds.y +
+            iconBounds.height / 2 -
+            (inputBounds.y + inputBounds.height / 2)
+        )
+      })
+    expect(
+      offset,
+      `${label} icon must be vertically centered`
+    ).toBeLessThanOrEqual(0.5)
+  }
   expect(size.height).toBe(geometry.height)
   expect(Math.abs(spacing.y - height.y)).toBeLessThan(1)
   const style = await page
@@ -304,11 +349,8 @@ test('Typography controls match the compact geometry rows', async ({
   await expect(
     typography.getByLabel('Text color', { exact: true })
   ).toHaveCount(0)
-  await expect(
-    page
-      .getByRole('region', { name: 'Fill', exact: true })
-      .getByLabel('Text color', { exact: true })
-  ).toBeVisible()
+  await expect(page.getByTestId('prop-fills-section')).toBeVisible()
+  await expect(page.getByTestId('prop-fill-opacity-0')).toBeVisible()
   await expect(
     page
       .getByRole('region', { name: 'Content', exact: true })
@@ -326,17 +368,17 @@ test('Shared text color picker commits a color with one undo step', async ({
   await createTextFixture(page)
   const before = await captureText(page)
   const depth = await getUndoHistoryDepth(page)
-  await page.getByTestId('prop-text-color-picker-trigger').click()
-  await expect(page.getByTestId('prop-text-color-picker-alpha')).toHaveCount(0)
-  const hex = page.getByTestId('prop-text-color-picker-hex')
+  await page.getByTestId('prop-fill-color-picker-0-trigger').click()
+  await expect(page.getByTestId('prop-fill-color-picker-0-alpha')).toBeVisible()
+  const hex = page.getByTestId('prop-fill-color-picker-0-hex')
   await hex.fill('43CBA5')
   await hex.press('Tab')
   await expect
     .poll(async () =>
-      String((await readTypography(page)).textColor).toLowerCase()
+      String((await readTextFills(page))[0].color).toLowerCase()
     )
     .toBe('#43cba5')
-  await page.getByTestId('prop-text-color-picker-trigger').click()
+  await page.getByTestId('prop-fill-color-picker-0-trigger').click()
   expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
   expect((await captureText(page)).hash).not.toBe(before.hash)
   await undo(page)
@@ -436,4 +478,193 @@ test('Font menu, spacing icons, and themed size steps update real text', async (
     path: testInfo.outputPath('text-controls.png'),
     fullPage: true
   })
+})
+
+test('Text uses complete Fill controls with rendered opacity visibility layers and replay', async ({
+  page
+}, testInfo) => {
+  await createTextFixture(page)
+  const initial = await readTextFills(page)
+  const original = await captureText(page)
+  const depth = await getUndoHistoryDepth(page)
+  const opacity = page.getByTestId('prop-fill-opacity-0')
+  await opacity.fill('35')
+  await opacity.press('Enter')
+  await expect
+    .poll(() => readTextFills(page))
+    .toEqual([{ ...initial[0], opacity: 0.35 }])
+  const faded = await captureText(page)
+  expect(faded.hash).not.toBe(original.hash)
+  await page.getByTestId('prop-fill-visible-0').click()
+  await expect
+    .poll(() => readTextFills(page))
+    .toEqual([{ ...initial[0], opacity: 0.35, visible: false }])
+  const hidden = await captureText(page)
+  expect(hidden.hash).not.toBe(faded.hash)
+  await undo(page)
+  expect((await captureText(page)).hash).toBe(faded.hash)
+  await undo(page)
+  expect((await captureText(page)).hash).toBe(original.hash)
+  await redo(page)
+  expect((await captureText(page)).hash).toBe(faded.hash)
+  await redo(page)
+  expect((await captureText(page)).hash).toBe(hidden.hash)
+  await undo(page)
+  await undo(page)
+  const color = page.getByTestId('prop-fill-color-0')
+  await color.fill('43CBA5')
+  await color.press('Enter')
+  await expect
+    .poll(async () => (await readTextFills(page))[0].color.toLowerCase())
+    .toBe('#43cba5')
+  expect((await captureText(page)).hash).not.toBe(original.hash)
+  await undo(page)
+  expect((await captureText(page)).hash).toBe(original.hash)
+  await page.getByTestId('prop-fill-remove-0').click()
+  await expect.poll(() => readTextFills(page)).toEqual([])
+  expect((await captureText(page)).hash).toBe(hidden.hash)
+  await undo(page)
+  expect((await captureText(page)).hash).toBe(original.hash)
+  await page.getByTestId('prop-fill-add').click()
+  await expect.poll(async () => (await readTextFills(page)).length).toBe(2)
+  const secondColor = page.getByTestId('prop-fill-color-1')
+  await secondColor.fill('FF0000')
+  await secondColor.press('Enter')
+  const layered = await captureText(page)
+  expect(layered.hash).not.toBe(original.hash)
+  await page.getByTestId('prop-fill-visible-1').click()
+  expect((await captureText(page)).hash).toBe(original.hash)
+  await undo(page)
+  expect((await captureText(page)).hash).toBe(layered.hash)
+  expect(await getUndoHistoryDepth(page)).toBe(depth + 2)
+  await page.screenshot({ path: testInfo.outputPath('text-full-fill.png') })
+})
+
+for (const gradientType of ['linear', 'radial', 'angular', 'diamond']) {
+  test(`Text shared ${gradientType} gradient changes Canvas and restores with Undo`, async ({
+    page
+  }, testInfo) => {
+    await createTextFixture(page)
+    const before = await captureText(page)
+    await page.getByTestId('prop-fill-color-picker-0-trigger').click()
+    await page.getByTestId('prop-fill-mode-gradient-0').click()
+    await page
+      .getByTestId('prop-fill-gradient-type-0')
+      .selectOption(gradientType)
+    await expect
+      .poll(async () => (await readTextFills(page))[0].gradient?.gradientType)
+      .toBe(gradientType)
+    await page.getByTestId('prop-fill-color-picker-0-trigger').click()
+    const gradient = await captureText(page)
+    const baselinePixels = await sharp(before.pixels)
+      .removeAlpha()
+      .raw()
+      .toBuffer()
+    const gradientPixels = await sharp(gradient.pixels)
+      .removeAlpha()
+      .raw()
+      .toBuffer()
+    let outsideGlyphs = 0
+    for (let i = 0; i < baselinePixels.length; i += 3) {
+      if (
+        baselinePixels[i] < 30 &&
+        baselinePixels[i + 1] < 30 &&
+        baselinePixels[i + 2] < 30 &&
+        (gradientPixels[i] > baselinePixels[i] + 3 ||
+          gradientPixels[i + 1] > baselinePixels[i + 1] + 3 ||
+          gradientPixels[i + 2] > baselinePixels[i + 2] + 3)
+      )
+        outsideGlyphs++
+    }
+    expect(outsideGlyphs, 'Fill must remain inside native glyph coverage').toBe(
+      0
+    )
+    expect(gradient.hash).not.toBe(before.hash)
+    const opacity = page.getByTestId('prop-fill-opacity-0')
+    await opacity.fill('25')
+    await opacity.press('Enter')
+    expect((await captureText(page)).hash).not.toBe(gradient.hash)
+    await undo(page)
+    expect((await captureText(page)).hash).toBe(gradient.hash)
+    await page.screenshot({
+      path: testInfo.outputPath(`text-${gradientType}-fill.png`)
+    })
+  })
+}
+
+test('Old text color documents load into complete Fill data without losing their appearance', async ({
+  page
+}) => {
+  await createTextFixture(page)
+  const before = await captureText(page)
+  const legacy = await page.evaluate(async (id) => {
+    const { core } = await import('../src/testing/runtime-access')
+    const document = await core.save()
+    const element = document.sceneTree.elements[id]
+    const fillsId = element.props.fills
+    const typographyId = element.props.typography
+    const list = document.props[fillsId] as unknown as { fills: string[] }
+    for (const fillId of list.fills)
+      Reflect.deleteProperty(document.props, fillId)
+    Reflect.deleteProperty(document.props, fillsId)
+    delete element.props.fills
+    Object.assign(document.props[typographyId], { textColor: '#ffffff' })
+    return document
+  }, elementId)
+  const identity = createTestDocumentIdentity()
+  const directory = resolve(process.cwd(), 'test-results/document-backend')
+  await mkdir(directory, { recursive: true })
+  await writeFile(
+    resolve(
+      directory,
+      `${Buffer.from(identity.fileId).toString('base64url')}.json`
+    ),
+    JSON.stringify({
+      protocolVersion: 1,
+      documentId: identity.fileId,
+      record: {
+        document: legacy,
+        documentGeneration: 0,
+        durableSequence: 0,
+        publicationSequences: {},
+        batches: {}
+      }
+    })
+  )
+  await page.goto(identity.url)
+  await waitForAppReady(page)
+  const selectText = () =>
+    page.evaluate(async (id) => {
+      const { selectionApis } = await import('../src/common-apis/selection')
+      selectionApis.selectElements([id])
+      const { viewportApis } = await import('../src/common-apis/viewport')
+      viewportApis.zoomFit()
+    }, elementId)
+  await selectText()
+  await expect(page.getByTestId('prop-fill-opacity-0')).toHaveValue('100')
+  expect((await captureText(page)).hash).toBe(before.hash)
+  const saved = await page.evaluate(async (id) => {
+    const { core } = await import('../src/testing/runtime-access')
+    const document = await core.save()
+    return document.props[document.sceneTree.elements[id].props.typography]
+  }, elementId)
+  expect(saved).not.toHaveProperty('textColor')
+  await page.getByTestId('prop-fill-visible-0').click()
+  expect((await captureText(page)).hash).not.toBe(before.hash)
+  await undo(page)
+  expect((await captureText(page)).hash).toBe(before.hash)
+  const opacity = page.getByTestId('prop-fill-opacity-0')
+  await opacity.fill('35')
+  await opacity.press('Enter')
+  const faded = await captureText(page)
+  expect(faded.hash).not.toBe(before.hash)
+  const digest = await getCoreDocumentDigest(page)
+  await expect
+    .poll(() => getPersistedDocumentDigest(identity.fileId), { timeout: 15000 })
+    .toEqual(digest)
+  await page.reload()
+  await waitForAppReady(page)
+  await selectText()
+  await expect(opacity).toHaveValue('35')
+  expect((await captureText(page)).hash).toBe(faded.hash)
 })

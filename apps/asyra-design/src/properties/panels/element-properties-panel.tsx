@@ -12,14 +12,17 @@ const SectionDivider = () => <div className="h-[1px] bg-white/5 my-1" />
 
 const ElementAppearance = ({ elementId }: { elementId: string }) => {
   const element = useElementData(elementId)
-  if (element.type === TEXT_COMPONENT_TYPE) return null
 
   return (
     <>
       <SectionDivider />
       <Fills />
-      <SectionDivider />
-      <Strokes />
+      {element.type !== TEXT_COMPONENT_TYPE && (
+        <>
+          <SectionDivider />
+          <Strokes />
+        </>
+      )}
     </>
   )
 }

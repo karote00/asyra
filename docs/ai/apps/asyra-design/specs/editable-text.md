@@ -11,7 +11,8 @@ Plain text is never interpreted as HTML. Existing non-text documents are unchang
 
 The render facade accepts a plain string, position, nonnegative layout width and
 height, font family, positive font size, normal/bold weight, normal/italic style,
-left/center/right alignment, positive line height, letter spacing and solid color.
+left/center/right alignment, positive line height, and letter spacing. Its second
+argument is a standard solid or resource-backed fill paint.
 It snapshots this value into an engine-neutral text draw operation and uses the
 explicit layout box for local bounds. Clearing replaces all previous operations.
 The renderer does not decide content, layout, component semantics or font choice.
@@ -21,8 +22,8 @@ The operation is an additive runtime protocol, not a persisted document format.
 
 The Pixi adapter consumes the completed neutral operation, creates plain native
 Text with wrapping at the requested width, and positions it in the graphics
-container. It owns and destroys only text children it created on clear and object
-destruction. Unrelated scene children are retained. No HTML, DOM overlay, remote
+container. It owns and destroys its text, paint, and alpha-mask children on clear
+and object destruction. Unrelated scene children are retained. No HTML, DOM overlay, remote
 font fetch, application decision, or canonical-data mutation occurs here.
 
 Screen text resolution follows renderer pixel ratio and the largest scale of its
@@ -44,8 +45,8 @@ invalid loaded values use documented defaults. The additive `typography` propert
 uses text (empty by default, at most 100,000 characters), fontFamily (`sans-serif`,
 1–128 characters), fontSize (16, greater than 0 and at most 4096), fontWeight
 (normal or bold), fontStyle (normal or italic), textAlign (left/center/right),
-lineHeight (20, greater than 0 and at most 8192), letterSpacing (0, -100 to 100),
-and textColor (`#000000`, six hexadecimal digits). Canonical element input and computed output expose these fields flat, just as
+lineHeight (20, greater than 0 and at most 8192), letterSpacing (0, -100 to 100). Text paint belongs to the standard `fills`
+property, initially one opaque visible black solid fill. Canonical element input and computed output expose these fields flat, just as
 position and dimension fields; the `typography` name identifies the property
 owner, not a nested element payload. Position and dimensions reuse existing schemas. All numeric values must be finite. Existing preset default
 profiles are unchanged: the App explicitly installs these exported definitions. The App exposes editing of content
@@ -102,13 +103,27 @@ it preserves the document's current family. Font discovery is owned by the
 per-document catalog, reused across field updates and selection changes, and
 invalidated when the browser reports a completed font load. Permanent tests prove
 both the available choices and measurement counts across reuse/invalidation.
-Fill shares the existing Asyra appearance-section header and compact color controls. Text color is in a separate
-Fill section using ColorPicker and existing color-format definitions. Its alpha
-controls are hidden because this interface edits solid text color only. Content
-remains a multiline field in its own section because Canvas editing is deferred.
-Unsupported vertical alignment, resizing, and advanced type controls are omitted.
-Text does not expose unsupported Fill lists or Stroke lists. Non-text selections
-retain their existing appearance panels; multiple-selection typography is not exposed.
+Text uses the complete existing `Fills`, `FillList`, and `FillItem` components,
+including color formats, opacity, visibility, add/remove, and solid/gradient modes.
+The existing Fill API and transaction owner handle all edits, Undo/Redo, and persistence.
+The preset uses the same renderable-fill projection as other paintable elements;
+each visible fill becomes one native text paint layer. Empty or hidden fills do
+not draw glyphs, while the text layout box remains selectable. Text operations
+carry engine-neutral paint, including owned gradient resources. Pixi resource
+paints use native glyph masks over the ordinary graphics paint path, preserving
+stop alpha and the same gradient coordinates. Clearing or destroying text
+releases its glyph and paint children and the shared resource ownership.
+The shared App document migration runs before browser load and backend checkpoint
+reduction, so both sides use the same property identities. It upgrades original
+version-1 Text records without a
+Fill slot: it preserves text color in a canonical Fill, allocates collision-free
+property IDs, and removes the old typography color from the migrated snapshot.
+It does not mutate the input or rewrite already-upgraded Fill records.
+The former typography `textColor` field is removed from the current schema; semantic design input uses
+`fill`, targeted edits use `fillColor`, and computed context reads `fills`.
+Content remains a multiline field because Canvas editing is deferred.
+Unsupported vertical alignment, resizing, advanced type controls, and Text
+Stroke lists are omitted. Multiple-selection typography is not exposed.
 
 Text and number drafts commit on blur (Enter also commits single-line fields),
 while weight, style, and alignment choices commit immediately. Escape discards

@@ -145,9 +145,7 @@ const admitDraft = (input: unknown): DraftNode => {
       return fail('unsupported component')
     const allowed = [
       ...commonKeys.filter((key) =>
-        type === 'group'
-          ? !['width', 'height', 'fill'].includes(key)
-          : type !== 'text' || key !== 'fill'
+        type === 'group' ? !['width', 'height', 'fill'].includes(key) : true
       ),
       ...(type === 'frame' ? containerKeys : []),
       ...(type === 'group' ? ['children'] : []),
@@ -435,7 +433,7 @@ function* prepareDesignSteps(
     keyToId[node.key] = id
     const propertyNames =
       node.type === 'text'
-        ? ['position', 'dimension', 'typography']
+        ? ['position', 'dimension', 'typography', 'fills']
         : [
             'position',
             'dimension',
@@ -452,10 +450,18 @@ function* prepareDesignSteps(
       height: node.height,
       visible: true,
       lock: false,
-      props: Object.fromEntries(
-        propertyNames.map((name) => [name, `${id}-${name}`])
-      ),
+      props: {
+        ...Object.fromEntries(
+          propertyNames.map((name) => [name, `${id}-${name}`])
+        ),
+        position: `${id}-position`,
+        dimension: `${id}-dimension`
+      },
       ...(isDesignContainerType(node.type) ? { children: [] } : {}),
+      fills: compileFill(
+        node.fill ?? (node.type === 'text' ? '#000000' : undefined),
+        id
+      ),
       ...(node.type === 'text'
         ? Object.fromEntries(
             textKeys.map((key) => [
@@ -465,7 +471,6 @@ function* prepareDesignSteps(
             ])
           )
         : {
-            fills: compileFill(node.fill, id),
             ...(node.type === 'frame' ? {} : { strokes: [] })
           })
     } as PreparedDesignEntry['descriptor']

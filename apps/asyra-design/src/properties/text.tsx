@@ -7,7 +7,6 @@ import {
 import Header from './header'
 import { TextField } from './text-field'
 import { FontFamilySelect, TextSelect } from './text-select'
-import AppearanceSection from './appearance-section'
 
 const alignmentPaths = {
   left: 'M3 4h12M3 8h8M3 12h12M3 16h8',
@@ -144,13 +143,6 @@ const TextProperties = () => {
             </div>
           </div>
         </div>
-      </section>
-      <section aria-label="Fill" className="border-t border-white/5">
-        <AppearanceSection label="Fill">
-          <div className="flex items-center pl-4 pr-2 h-8 min-h-8">
-            {field('textColor', 'Text color')}
-          </div>
-        </AppearanceSection>
       </section>
       <section aria-label="Content" className="border-t border-white/5 pb-4">
         <Header label="Content" />

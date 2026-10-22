@@ -16,12 +16,12 @@ import ElementPropertiesPanel from '../panels/element-properties-panel'
 
 afterEach(cleanup)
 describe('Text appearance ownership', () => {
-  it('keeps geometry and typography but hides unsupported Text appearance lists', () => {
+  it('uses the complete shared Fill panel for Text and omits strokes', () => {
     mocks.type = 'text'
     render(<ElementPropertiesPanel title="Text" />)
     expect(screen.getByText('Position')).toBeTruthy()
     expect(screen.getByText('Typography')).toBeTruthy()
-    expect(screen.queryByText('Fills')).toBeNull()
+    expect(screen.getByText('Fills')).toBeTruthy()
     expect(screen.queryByText('Strokes')).toBeNull()
   })
 

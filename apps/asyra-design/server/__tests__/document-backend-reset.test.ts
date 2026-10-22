@@ -366,3 +366,68 @@ it('retains document changes and retry identity across failed writes, Undo, Redo
   await open().materialize(redo)
   expect(apply).not.toHaveBeenCalled()
 })
+
+it('migrates old text fills before applying and persisting new property updates', async () => {
+  const { applyCanonicalChangesToDocument } =
+    await import('../document-canonical-reducer')
+  const document = createFormalInitialDocument()
+  document.sceneTree.elements.text = {
+    id: 'text',
+    type: 'text',
+    name: 'Saved text',
+    parentId: 'workspace',
+    visible: true,
+    lock: false,
+    props: { typography: 'typography' }
+  }
+  document.props.typography = {
+    id: 'typography',
+    type: 'typography',
+    text: 'Saved content',
+    textColor: '#314F32'
+  }
+  const record = {
+    document,
+    documentGeneration: 3,
+    durableSequence: 7,
+    publicationSequences: {},
+    batches: {}
+  }
+  await mkdir(dataDirectory, { recursive: true })
+  await writeFile(
+    resolve(
+      dataDirectory,
+      `${Buffer.from('old-text').toString('base64url')}.json`
+    ),
+    JSON.stringify({ protocolVersion: 1, documentId: 'old-text', record })
+  )
+  const store = createFileDocumentMaterializationStore(dataDirectory)
+  const loaded = await store.readCheckpoint('old-text')
+  expect(loaded.document.props['text-fill']).toMatchObject({
+    color: '#314F32',
+    opacity: 1
+  })
+  await store.transact('old-text', async (current, commit) => {
+    commit({
+      ...current,
+      document: applyCanonicalChangesToDocument(current.document, [
+        {
+          kind: 'property-components',
+          records: [],
+          updates: [{ propertyId: 'text-fill', values: { opacity: 0.35 } }]
+        }
+      ])
+    })
+  })
+  const restored =
+    await createFileDocumentMaterializationStore(dataDirectory).readCheckpoint(
+      'old-text'
+    )
+  expect(restored.document.props['text-fill']).toMatchObject({
+    color: '#314F32',
+    opacity: 0.35
+  })
+  expect(restored.document.props.typography).not.toHaveProperty('textColor')
+  expect(restored.documentGeneration).toBe(3)
+  expect(restored.durableSequence).toBe(7)
+})

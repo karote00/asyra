@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { ColorPicker, Icon, Input, PropertyControl } from '@asyra/design-system'
+import { Icon, Input, PropertyControl } from '@asyra/design-system'
 import { TEXT_PROPERTY_SCHEMA, type TextData } from '@asyra/preset'
-import { COLOR_PICKER_FORMAT_DEFINITIONS } from './fills/color-picker-config'
 
 export const TextField = ({
   field,
@@ -19,7 +18,6 @@ export const TextField = ({
   const [draft, setDraft] = useState(String(value))
   const [invalid, setInvalid] = useState(false)
   const cancelled = useRef(false)
-  const pickingColor = useRef(false)
   const [inputRevision, setInputRevision] = useState(0)
 
   useEffect(() => {
@@ -105,8 +103,6 @@ export const TextField = ({
           ?.validate?.(next) === true
       }
       noOutline
-      size={field === 'textColor' ? 'small' : 'medium'}
-      inputClassName={field === 'textColor' ? '!pl-0' : undefined}
       containerClassName="w-full min-w-0"
       aria-label={label}
       aria-invalid={invalid}
@@ -148,33 +144,6 @@ export const TextField = ({
         {label}
       </span>
       <PropertyControl className={field === 'text' ? '!h-auto min-h-16' : ''}>
-        {field === 'textColor' && (
-          <ColorPicker
-            color={draft}
-            showAlpha={false}
-            formatDefinitions={COLOR_PICKER_FORMAT_DEFINITIONS}
-            onChangeStart={() => {
-              pickingColor.current = true
-            }}
-            onChange={({ color }) => {
-              setDraft(color)
-              if (!pickingColor.current) commit(color)
-            }}
-            onChangeEnd={({ color }) => {
-              pickingColor.current = false
-              commit(color)
-            }}
-            swatchStyle={{
-              position: 'static',
-              width: '14px',
-              height: '14px',
-              borderRadius: '2px'
-            }}
-            triggerClassName="group flex h-6 w-6 items-center justify-center flex-shrink-0 rounded-l-[3px] transition-all text-text-secondary hover:text-text-primary"
-            triggerStyle={{ borderRadius: '3px 0 0 3px', borderRight: 'none' }}
-            data-testid="prop-text-color-picker"
-          />
-        )}
         {control}
       </PropertyControl>
       {invalid && (

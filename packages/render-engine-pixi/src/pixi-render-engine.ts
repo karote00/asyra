@@ -26,6 +26,7 @@ import {
 } from '@asyra/render-engine'
 import {
   Application,
+  AlphaMask,
   Container,
   Graphics,
   Mesh,
@@ -86,7 +87,10 @@ const toUint32Array = (value: ArrayLike<number> | undefined) =>
 export class PixiRenderEngine implements RenderEngine {
   private readonly meshMaterials = new MeshMaterialResources()
   private readonly meshMaterialKeys = new WeakMap<Mesh, string>()
-  private readonly textChildren = new WeakMap<Graphics, Text[]>()
+  private readonly textChildren = new WeakMap<
+    Graphics,
+    { text: Text; paint?: Graphics; mask?: AlphaMask }[]
+  >()
   private readonly liveText = new Set<Text>()
   private textResolutionDirty = false
 
@@ -677,7 +681,9 @@ export class PixiRenderEngine implements RenderEngine {
             align: operation.align,
             lineHeight: operation.lineHeight,
             letterSpacing: operation.letterSpacing,
-            fill: operation.color,
+            fill: operation.paint.resource
+              ? '#ffffff'
+              : (this.resolvePaint(operation.paint) as never),
             wordWrap: true,
             wordWrapWidth: operation.width,
             breakWords: true
@@ -688,11 +694,29 @@ export class PixiRenderEngine implements RenderEngine {
         if (operation.align === 'right') text.x += remainingWidth
         if (operation.align === 'center') text.x += remainingWidth / 2
         text.y = operation.y
-        graphics.addChild(text)
+        let paint: Graphics | undefined
+        let mask: AlphaMask | undefined
+        if (operation.paint.resource) {
+          // Paint resources use the graphics path so gradient stop alpha and
+          // normalized handles retain the same semantics as ordinary fills.
+          paint = new Graphics()
+          paint.rect(
+            operation.x,
+            operation.y,
+            operation.width,
+            Math.max(operation.height, text.height)
+          )
+          paint.fill(this.resolvePaint(operation.paint) as never)
+          graphics.addChild(paint)
+          graphics.addChild(text)
+          mask = new AlphaMask({ mask: text })
+          mask.channel = 'alpha'
+          paint.addEffect(mask)
+        } else graphics.addChild(text)
         this.liveText.add(text)
         this.textResolutionDirty = true
         const children = this.textChildren.get(graphics) ?? []
-        children.push(text)
+        children.push({ text, paint, mask })
         this.textChildren.set(graphics, children)
         break
       }
@@ -877,7 +901,15 @@ export class PixiRenderEngine implements RenderEngine {
   }
 
   private clearTextChildren(graphics: Graphics): void {
-    for (const text of this.textChildren.get(graphics) ?? []) {
+    for (const { text, paint, mask } of this.textChildren.get(graphics) ?? []) {
+      if (paint) {
+        if (mask) {
+          paint.removeEffect(mask)
+          mask.destroy()
+        }
+        graphics.removeChild(paint)
+        paint.destroy()
+      }
       graphics.removeChild(text)
       this.liveText.delete(text)
       text.destroy()

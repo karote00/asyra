@@ -134,7 +134,9 @@ const Input: React.FC<InputProps> = ({
     >
       {prefix && (
         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
-          <span className="text-[10px] font-medium text-white">{prefix}</span>
+          <span className="flex items-center justify-center text-[10px] font-medium text-white">
+            {prefix}
+          </span>
         </div>
       )}
       <input

@@ -1214,8 +1214,17 @@ export class RenderGraphics extends RenderContainer {
     return this.markDrawDirty()
   }
 
-  text(value: Omit<RenderEngineTextOperation, 'type'>): this {
-    this.drawOperations.push({ ...value, type: 'text' })
+  text(
+    value: Omit<RenderEngineTextOperation, 'type' | 'paint'>,
+    fill: unknown
+  ): this {
+    const operationIndex = this.drawOperations.length
+    this.drawOperations.push({
+      ...value,
+      type: 'text',
+      paint: normalizePaint(fill)
+    })
+    this.paintStyles.set(operationIndex, fill)
     this.includeBounds(value.x, value.y, value.width, value.height)
     return this.markDrawDirty()
   }
@@ -1327,7 +1336,11 @@ export class RenderGraphics extends RenderContainer {
       const style = this.paintStyles.get(index)
       const paint =
         this.runtime?.createPaint(style, this) ?? normalizePaint(style)
-      if (operation.type === 'fill' || operation.type === 'stroke') {
+      if (
+        operation.type === 'fill' ||
+        operation.type === 'stroke' ||
+        operation.type === 'text'
+      ) {
         return { ...operation, paint }
       }
       return operation

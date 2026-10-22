@@ -253,60 +253,59 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       for (const f of TEXT_PROPERTY_SCHEMA.fields) check(f.validate?.(d[f.key]))
       textCount += String(d.text).length
       check(textCount <= limits.textCharacters)
-    } else {
-      props.push('fills')
-      fields.push('fills')
-      check(Array.isArray(d.fills) && d.fills.length <= 1)
-      if (d.type === 'group') check(d.fills.length === 0)
-      for (const f of d.fills) {
-        if (typeof f === 'string') {
-          // Only prior definitions in this artifact may be shared. This admits
-          // canonical child relationships, never duplicate descriptor IDs.
-          check(fillIds.has(f))
-          continue
-        }
-        check(
-          record(f) &&
-            keysOnly(f, [
-              'id',
-              'type',
-              'kind',
-              'color',
-              'opacity',
-              'visible',
-              'colorFormat',
-              'defaultColorFormat',
-              'gradient'
-            ])
-        )
-        check(
-          f.id === `${d.id}-fill` &&
-            f.type === 'fill' &&
-            (f.kind === 'solid' || f.kind === 'gradient') &&
-            f.opacity === 1 &&
-            f.visible === true
-        )
-        check(
-          typeof f.color === 'string' &&
-            /^#[0-9a-f]{6}$/i.test(f.color) &&
-            f.colorFormat === 'hex' &&
-            f.defaultColorFormat === 'hex' &&
-            (f.kind === 'solid'
-              ? f.gradient === null
-              : isDesignGradient(f.gradient))
-        )
-        claim(f.id)
-        fillIds.add(f.id)
+    }
+    props.push('fills')
+    fields.push('fills')
+    check(Array.isArray(d.fills) && d.fills.length <= 1)
+    if (d.type === 'group') check(d.fills.length === 0)
+    for (const f of d.fills) {
+      if (typeof f === 'string') {
+        // Only prior definitions in this artifact may be shared. This admits
+        // canonical child relationships, never duplicate descriptor IDs.
+        check(fillIds.has(f))
+        continue
       }
-      if (isDesignContainerType(d.type)) {
-        fields.push('children')
-        check(Array.isArray(d.children) && d.children.length === 0)
-      }
-      if (d.type !== 'frame') {
-        props.push('strokes')
-        fields.push('strokes')
-        check(Array.isArray(d.strokes) && d.strokes.length === 0)
-      }
+      check(
+        record(f) &&
+          keysOnly(f, [
+            'id',
+            'type',
+            'kind',
+            'color',
+            'opacity',
+            'visible',
+            'colorFormat',
+            'defaultColorFormat',
+            'gradient'
+          ])
+      )
+      check(
+        f.id === `${d.id}-fill` &&
+          f.type === 'fill' &&
+          (f.kind === 'solid' || f.kind === 'gradient') &&
+          f.opacity === 1 &&
+          f.visible === true
+      )
+      check(
+        typeof f.color === 'string' &&
+          /^#[0-9a-f]{6}$/i.test(f.color) &&
+          f.colorFormat === 'hex' &&
+          f.defaultColorFormat === 'hex' &&
+          (f.kind === 'solid'
+            ? f.gradient === null
+            : isDesignGradient(f.gradient))
+      )
+      claim(f.id)
+      fillIds.add(f.id)
+    }
+    if (isDesignContainerType(d.type)) {
+      fields.push('children')
+      check(Array.isArray(d.children) && d.children.length === 0)
+    }
+    if (d.type !== 'frame' && d.type !== 'text') {
+      props.push('strokes')
+      fields.push('strokes')
+      check(Array.isArray(d.strokes) && d.strokes.length === 0)
     }
     if (d.type === 'vector') {
       props.push(...vectorFields)

@@ -13,7 +13,6 @@ export interface TextData {
   textAlign: 'left' | 'center' | 'right'
   lineHeight: number
   letterSpacing: number
-  textColor: string
 }
 
 export const DEFAULT_TEXT_DATA: Readonly<TextData> = Object.freeze({
@@ -24,8 +23,7 @@ export const DEFAULT_TEXT_DATA: Readonly<TextData> = Object.freeze({
   fontStyle: 'normal',
   textAlign: 'left',
   lineHeight: 20,
-  letterSpacing: 0,
-  textColor: '#000000'
+  letterSpacing: 0
 })
 
 const finiteRange = (value: unknown, min: number, max: number) =>
@@ -88,13 +86,6 @@ export const TEXT_PROPERTY_SCHEMA: PropertySchema = {
       kind: 'number',
       defaultValue: DEFAULT_TEXT_DATA.letterSpacing,
       validate: (value) => finiteRange(value, -100, 100)
-    },
-    {
-      key: 'textColor',
-      kind: 'string',
-      defaultValue: DEFAULT_TEXT_DATA.textColor,
-      validate: (value) =>
-        typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)
     }
   ]
 }

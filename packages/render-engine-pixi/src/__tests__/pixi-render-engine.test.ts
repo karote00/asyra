@@ -157,6 +157,14 @@ vi.mock('pixi.js', async () => {
     batched = true
     destroyed = false
 
+    effects: unknown[] = []
+    addEffect(effect: unknown) {
+      this.effects.push(effect)
+    }
+    removeEffect(effect: unknown) {
+      this.effects = this.effects.filter((item) => item !== effect)
+    }
+
     addChild(child: MockContainer) {
       child.parent = this
       this.children.push(child)
@@ -691,7 +699,7 @@ describe('PixiRenderEngine', () => {
           align: 'left',
           lineHeight: 30,
           letterSpacing: 0,
-          color: '#000000'
+          paint: { color: '#000000', alpha: 0.4 }
         }
       ]
     })
@@ -785,7 +793,7 @@ describe('PixiRenderEngine', () => {
       align: 'left' as const,
       lineHeight: 30,
       letterSpacing: 1,
-      color: '#123456'
+      paint: { color: '#123456', alpha: 0.4 }
     }
     engine.execute({ type: 'draw', object, operations: [operation] })
     expect(pixiState.texts).toHaveLength(1)
@@ -801,7 +809,7 @@ describe('PixiRenderEngine', () => {
           wordWrapWidth: 240,
           lineHeight: 30,
           letterSpacing: 1,
-          fill: '#123456'
+          fill: { color: '#123456', alpha: 0.4 }
         }
       }
     })
@@ -814,6 +822,64 @@ describe('PixiRenderEngine', () => {
     engine.execute({ type: 'draw', object, operations: [operation] })
     engine.execute({ type: 'destroy-object', object })
     expect(pixiState.texts[1].destroyed).toBe(true)
+    engine.destroy()
+  })
+
+  it('uses native glyphs as a resource paint mask and releases both children on clear', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 800, height: 600 })
+    const { object } = engine.execute({
+      type: 'create-object',
+      requestId: 'painted-text',
+      objectType: 'graphics'
+    })
+    const paintValue = { color: '#ff0000', alpha: 0.25 }
+    const { resource } = engine.execute({
+      type: 'create-resource',
+      requestId: 'text-paint',
+      descriptor: { kind: 'paint', data: paintValue }
+    })
+    if (!object || !resource) throw new Error('Missing handles')
+    engine.execute({
+      type: 'draw',
+      object,
+      operations: [
+        {
+          type: 'text',
+          text: 'Painted',
+          x: 0,
+          y: 0,
+          width: 200,
+          height: 80,
+          fontFamily: 'sans-serif',
+          fontSize: 24,
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          align: 'left',
+          lineHeight: 30,
+          letterSpacing: 0,
+          paint: { resource }
+        }
+      ]
+    })
+    const text = pixiState.texts[0]
+    const paint = pixiState.graphics[1]
+    expect(paint).toHaveProperty('effects', [
+      expect.objectContaining({
+        mask: text,
+        channel: 'alpha',
+        renderMaskToTexture: true
+      })
+    ])
+    expect(paint.drawOperations).toContainEqual({
+      type: 'fill',
+      args: [paintValue]
+    })
+    expect(pixiState.graphics[0].children).toEqual([paint, text])
+    engine.execute({ type: 'draw', object, operations: [{ type: 'clear' }] })
+    expect(text.destroyed).toBe(true)
+    expect(paint.destroyed).toBe(true)
+    expect(pixiState.graphics[0].children).toEqual([])
     engine.destroy()
   })
 
@@ -845,7 +911,7 @@ describe('PixiRenderEngine', () => {
             align,
             lineHeight: 24,
             letterSpacing: 0,
-            color: '#000000'
+            paint: { color: '#000000', alpha: 0.4 }
           }
         ]
       })
@@ -900,7 +966,7 @@ describe('PixiRenderEngine', () => {
             align: 'left',
             lineHeight: 25,
             letterSpacing: 0,
-            color: '#000000'
+            paint: { color: '#000000', alpha: 0.4 }
           }
         ]
       })

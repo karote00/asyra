@@ -39,7 +39,8 @@ test('native text stays editable and survives undo, redo and save', async ({
             props: {
               position: 'native-text-position',
               dimension: 'native-text-dimension',
-              typography: 'native-text-typography'
+              typography: 'native-text-typography',
+              fills: 'native-text-fills'
             },
             text: 'Editable design\nHello 世界',
             fontFamily: 'sans-serif',
@@ -49,7 +50,17 @@ test('native text stays editable and survives undo, redo and save', async ({
             textAlign: 'left',
             lineHeight: 40,
             letterSpacing: 0,
-            textColor: '#ffffff'
+            fills: [
+              {
+                id: 'text-initial-fill',
+                color: '#ffffff',
+                opacity: 1,
+                visible: true,
+                kind: 'solid',
+                colorFormat: 'hex',
+                defaultColorFormat: 'hex'
+              }
+            ]
           }
         ],
         parent,
@@ -75,10 +86,12 @@ test('native text stays editable and survives undo, redo and save', async ({
   )
   expect(await measure()).toEqual(initialContent)
   const captures = await page.evaluate(async () => {
-    const { core, elementApis } = await import('../src/testing/runtime-access')
-    elementApis.updateElementProperties(
-      ['native-text-example'],
-      { textColor: '#183f35' },
+    const { core } = await import('../src/testing/runtime-access')
+    const { fillApis } = await import('../src/common-apis')
+    fillApis.updateFillFields(
+      'native-text-example',
+      'text-initial-fill',
+      { color: '#183f35' },
       { undoable: true }
     )
     const { viewportApis } = await import('../src/common-apis/viewport')

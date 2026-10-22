@@ -1,3 +1,4 @@
+import { admitPreparedDesign } from '../../src/ai/prepared-design-admission'
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import {
   DesignTextDefaults,
@@ -144,9 +145,25 @@ describe('semantic design preparation', () => {
     )
   })
 
+  it('compiles Text fill through the shared paint property', () => {
+    const artifact = prepareDesign(
+      { ...draft(), children: [{ ...draft().children[0], fill: '#ff0000' }] },
+      'text-fill'
+    )
+    expect(artifact.entries[1].descriptor.fills).toEqual([
+      expect.objectContaining({ color: '#ff0000', opacity: 1, visible: true })
+    ])
+    expect(artifact.entries[1].descriptor.props).toHaveProperty('fills')
+    expect(artifact.entries[1].descriptor).not.toHaveProperty('textColor')
+    expect(() => admitPreparedDesign(artifact)).not.toThrow()
+  })
+
   it.each([
     { ...draft(), width: Infinity },
-    { ...draft(), children: [{ ...draft().children[0], fill: '#ff0000' }] },
+    {
+      ...draft(),
+      children: [{ ...draft().children[0], fill: 'invalid-color' }]
+    },
     { ...draft(), unexpected: true },
     {
       ...draft(),

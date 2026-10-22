@@ -43,7 +43,6 @@ const record = (v: unknown): v is Record<string, unknown> =>
 const size = { type: 'number', exclusiveMinimum: 0, maximum: limits.dimension }
 const coordinate = { type: 'number', minimum: 0, maximum: limits.dimension }
 const position = { ...coordinate, minimum: -limits.dimension }
-const color = { type: 'string', pattern: '^#[0-9A-Fa-f]{6}$' }
 const point = {
   type: 'object',
   additionalProperties: false,
@@ -145,7 +144,6 @@ const nodeSchema = {
     textAlign: { enum: ['left', 'center', 'right'] },
     lineHeight: { type: 'number', exclusiveMinimum: 0, maximum: 8192 },
     letterSpacing: { type: 'number', minimum: -100, maximum: 100 },
-    textColor: color,
     rings: {
       type: 'array',
       minItems: 1,
@@ -169,7 +167,7 @@ const nodeSchema = {
     }
   },
   description:
-    'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Signed draft x/y offsets are allowed: Group normalization offsets its origin and makes child positions nonnegative without changing workspace geometry. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields with textColor, not fill. Rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
+    'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Signed draft x/y offsets are allowed: Group normalization offsets its origin and makes child positions nonnegative without changing workspace geometry. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields. Text/rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
 }
 const vectorPatternSchema = {
   type: 'object',

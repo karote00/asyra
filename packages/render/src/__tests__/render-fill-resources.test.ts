@@ -54,33 +54,54 @@ describe('render fill resources', () => {
     })
   })
 
-  it('releases a shared resource after its last graphics owner clears', () => {
-    const style = createRenderGradientFillStyle({
-      type: 'linear',
-      colorStops: [
-        { offset: 0, color: '#ffffff' },
-        { offset: 1, color: '#000000' }
-      ]
-    })
-    const engine = new RecordingRenderEngine({ name: 'shared-fill-resource' })
-    const initialized = engine.initialize({ host: {}, width: 2, height: 2 })
-    const runtime = new RenderObjectRuntime(engine, initialized.root)
-    const first = new RenderGraphics()
-    const second = new RenderGraphics()
-    first.rect(0, 0, 1, 1).fill(style)
-    second.rect(1, 1, 1, 1).fill(style)
-    runtime.attachRoot(first)
-    runtime.attachRoot(second)
-    runtime.flushDraws()
-    expect(engine.getOwnedResourceCount()).toBe(1)
+  it.each(['shape', 'text'])(
+    'releases a shared resource after its last %s owner clears',
+    (owner) => {
+      const style = createRenderGradientFillStyle({
+        type: 'linear',
+        colorStops: [
+          { offset: 0, color: '#ffffff' },
+          { offset: 1, color: '#000000' }
+        ]
+      })
+      const engine = new RecordingRenderEngine({ name: 'shared-fill-resource' })
+      const initialized = engine.initialize({ host: {}, width: 2, height: 2 })
+      const runtime = new RenderObjectRuntime(engine, initialized.root)
+      const first = new RenderGraphics()
+      const second = new RenderGraphics()
+      if (owner === 'text') {
+        first.text(
+          {
+            text: 'Paint',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 40,
+            fontFamily: 'sans-serif',
+            fontSize: 20,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            align: 'left',
+            lineHeight: 24,
+            letterSpacing: 0
+          },
+          style
+        )
+      } else first.rect(0, 0, 1, 1).fill(style)
+      second.rect(1, 1, 1, 1).fill(style)
+      runtime.attachRoot(first)
+      runtime.attachRoot(second)
+      runtime.flushDraws()
+      expect(engine.getOwnedResourceCount()).toBe(1)
 
-    first.clear()
-    expect(engine.getOwnedResourceCount()).toBe(1)
+      first.clear()
+      expect(engine.getOwnedResourceCount()).toBe(1)
 
-    second.clear()
-    expect(engine.getOwnedResourceCount()).toBe(0)
-    expect(engine.getOperations().slice(-1)[0]?.type).toBe('destroy-resource')
-  })
+      second.clear()
+      expect(engine.getOwnedResourceCount()).toBe(0)
+      expect(engine.getOperations().slice(-1)[0]?.type).toBe('destroy-resource')
+    }
+  )
 
   it('describes even-odd raster output without constructing a concrete engine resource', () => {
     vi.stubGlobal('OffscreenCanvas', TestOffscreenCanvas)
