@@ -2,6 +2,7 @@
 /// <reference types="vite/client" />
 import type {} from '../../src/types'
 import recordedDiscoveryDelivery from './fixtures/recorded-101/discovery-delivery-20261020.json'
+import inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20261022.json'
 import recordedPurpose from './fixtures/recorded-101/purpose-20261017.json'
 import sharp from 'sharp'
 import { runInNewContext } from 'node:vm'
@@ -6590,3 +6591,59 @@ it.each(['complete', 'abort', 'disconnect'] as const)(
     expect(records.filter((r) => r.stage === 'tool_started')).toHaveLength(0)
   }
 )
+
+it('delivers failed inspection lookup and successful narrow recovery through native protocol', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'describe_design_apis',
+    toolArguments: inspectionDiscovery.query,
+    followupTool: (reply) => {
+      expect(reply.toolOutcome).toMatchObject({
+        status: 'failed',
+        settlement: 'completed'
+      })
+      const tools = reply.tools as {
+        schemaResolution: {
+          narrowerQuery: { tool: string; arguments: unknown }
+        }
+      }[]
+      return {
+        name: tools[0].schemaResolution.narrowerQuery.tool,
+        args: tools[0].schemaResolution.narrowerQuery.arguments
+      }
+    }
+  })
+  spawn.mockReturnValue(server.child)
+  const executeBatch = vi.fn()
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        {
+          name: AiActionNames.INSPECT_DRAWING,
+          description: 'Inspect',
+          inputSchema: {}
+        }
+      ]
+    },
+    { environment, executeBatch }
+  )
+  const replies = [99, 100].map(
+    (id) =>
+      server.packets.find((p) => p.id === id) as unknown as {
+        result: { success: boolean; contentItems: { text: string }[] }
+      }
+  )
+  expect(replies.map((r) => r.result.success)).toEqual([false, true])
+  expect(
+    JSON.parse(replies[1].result.contentItems[0].text).tools[0]
+      .schemaFragments[0].path
+  ).toBe('/properties/inspections')
+  const thread = server.packets.find((p) => p.method === 'thread/start')?.params
+  expect(
+    nativeToolDefinitions(thread).find((t) => t.name === 'describe_design_apis')
+      ?.description
+  ).toContain('same schemaPaths list')
+  expect(executeBatch).not.toHaveBeenCalled()
+})

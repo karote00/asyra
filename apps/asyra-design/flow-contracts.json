@@ -608,6 +608,15 @@
             "apps/asyra-design/server/local-ai-provider.ts",
             "apps/asyra-design/server/ai-domain-prompt.ts"
           ]
+        },
+        {
+          "id": "compose.inspection-discovery-receipts",
+          "stepId": "compose",
+          "testName": "execution proof distinguishes inspection lookup coverage from completed reads",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-information-delivery.ts"
+          ]
         }
       ],
       "handoffs": [

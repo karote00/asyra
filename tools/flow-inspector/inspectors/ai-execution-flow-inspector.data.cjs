@@ -78,6 +78,7 @@
         ],
         outputs: ['artifact:tool-program'],
         conditions: [
+          'Exact lookup applies one schemaPaths list independently to each identity; different per-tool fields use separate same-round queries. Preserve whole requested scope per identity and successful siblings, publish explicit narrower valid-path recovery, and preserve scoped recovery and the existing full refresh route. Discovery owner aggregates all/some/no requested identity coverage as success/partial/failed through invocation and bounded pages; completed read settlement is not coverage. Missing/ambiguous identities are unavailable; empty lexical search, menus and valid pagination remain successful. Published forwarding assembles partial-result pages without promoting coverage or replaying writes.',
           'Owner-declared optional root input groups require explicit same-read selection; required fields cannot be omitted, omitted groups are forbidden in that scoped contract, and full unscoped lookup remains complete. Exact ready-part usage plus inputScope derives readable complete input constraints from the canonical selected schema and uses owner-authored operation effects, result interpretation and no-replay recovery. Publish only scope-valid owner examples through registered routes. Keep full output validators at the execution owner rather than in usage. One representative selected guide fits the unchanged delivery budget; preserve full/field lookup, paging and scope/view refresh. No duplicate registry, validator or execution state.',
           'Default provider instructions omit exhaustive tool names. Existing purpose/exact discovery is the normal route; explicit category pagination retains intentional complete inventory. Unrelated catalog growth does not inflate selected small-task delivery or calls; native deferred registration remains separate.',
           'Exact discovery projects owner-declared operation/node scopes from canonical schemas. Preserve full applicable cross-field constraints, successful/partial/recovery outputs, registered routes and lifecycle; reject unsupported or ambiguous scopes without fallback. Usage lists root fields, not exhaustive nested paths; exact field lookup/recovery remains available. Menu/usage exposes choices, known scope needs no extra lookup; full/field queries stay independent. Scope survives refresh and continuations. No new executor, registry, cache or mutation replay.',
@@ -168,6 +169,7 @@
         implementationBoundary: [
           'apps/asyra-design/e2e/fixtures/receipt-provider.mjs',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/ordered-preparation-20261019.json',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/inspection-discovery-20261022.json',
           'apps/asyra-design/server/local-vector-artifact.ts',
           'apps/asyra-design/server/__tests__/local-vector-artifact.test.ts',
           'packages/ai-agent-runtime/src/tool-contract.ts',
@@ -306,6 +308,7 @@
           'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts'
         ],
         specRefs: [
+          '#inspection-discovery-field-ownership-and-receipts',
           '#owner-results-and-workflow-outcomes',
           '#tool-first-correction-contract',
           '#shared-tool-contract',

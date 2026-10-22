@@ -7018,3 +7018,48 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   ).toBeUndefined()
   expect(execute).not.toHaveBeenCalled()
 })
+
+it('execution proof distinguishes inspection lookup coverage from completed reads', async () => {
+  const dispatch = vi.fn()
+  const owner = createOperationOwner(
+    [
+      {
+        name: AiActionNames.INSPECT_DRAWING,
+        description: 'Inspect',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    dispatch,
+    {
+      getNativeTools: () =>
+        owner.definitions.map((d) => ({ ...d, namespace: 'design' }))
+    }
+  )
+  const definition = owner.definitions.find(
+    (d) => d.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const read = (schemaPaths: string[]) =>
+    invokeLocalTool(
+      owner,
+      definition,
+      { names: ['review_drawing', 'define_design_criteria'], schemaPaths },
+      new AbortController().signal
+    )
+  const failed = await read(['/properties/inspections', '/properties/criteria'])
+  expect(failed.success).toBe(false)
+  expect(JSON.parse(failed.text).toolOutcome).toMatchObject({
+    status: 'failed',
+    settlement: 'completed'
+  })
+  const partial = await read(['/properties/inspections'])
+  expect(partial.success).toBe(false)
+  expect(JSON.parse(partial.text).toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  const complete = await read(['/properties/phase'])
+  expect(complete.success).toBe(true)
+  expect(dispatch).not.toHaveBeenCalled()
+})

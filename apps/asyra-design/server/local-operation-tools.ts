@@ -252,6 +252,34 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
   }
 }
 
+/** Exact lookup coverage belongs to discovery, not transport completion. */
+const discoveryReceipt = (value: Record<string, unknown>) => {
+  const entries = [value.apis, value.tools].flatMap((items) =>
+    Array.isArray(items) ? items.filter(isRecord) : []
+  )
+  const unresolved = [
+    'missingNames',
+    'missingOperations',
+    'ambiguousNames'
+  ].reduce(
+    (count, key) => count + (Array.isArray(value[key]) ? value[key].length : 0),
+    0
+  )
+  const unavailable = entries.filter(
+    (entry) =>
+      isRecord(entry.definition) &&
+      entry.definition.availableInResponse === false
+  ).length
+  if (!unresolved && !unavailable) return {}
+  const delivered = entries.length - unavailable
+  return {
+    status: delivered ? 'partial' : 'failed',
+    settlement: 'completed',
+    code: 'DEFINITION_UNAVAILABLE',
+    message: `${delivered} requested definitions delivered; ${unresolved + unavailable} unavailable. Inspect per-identity resolution and recover only missing contracts; never replay writes. ${typeof value.message === 'string' ? value.message : ''}`
+  }
+}
+
 const discoveryInputIssue = (args: unknown): string | undefined => {
   const selectors = ['names', 'query', 'operation', 'operations', 'category']
   if (
@@ -1001,7 +1029,11 @@ export const createLocalOperationTools = (
   const definitionPageSize = 16
   const returnedDefinitions = new Map<
     string,
-    { text: string; registryRevision: number }
+    {
+      text: string
+      registryRevision: number
+      receipt: ReturnType<typeof discoveryReceipt>
+    }
   >()
   const deliverDefinition = (
     identity: string,
@@ -1071,11 +1103,34 @@ export const createLocalOperationTools = (
             requestedCoverage: 'partial',
             availableInResponse: false,
             nextAction: 'correct-schema-paths',
+            recover: {
+              ...refresh,
+              arguments: {
+                ...refresh.arguments,
+                schemaPaths: args.schemaPaths,
+                refreshReason: 'delivery-failure'
+              }
+            },
             refresh
           },
           schemaResolution: {
             status: 'unavailable',
             issues,
+            ...(requestedPaths.some(
+              (path) => !issues.some((issue) => issue.path === path)
+            )
+              ? {
+                  narrowerQuery: {
+                    tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+                    arguments: {
+                      names: [identity],
+                      schemaPaths: requestedPaths.filter(
+                        (path) => !issues.some((issue) => issue.path === path)
+                      )
+                    }
+                  }
+                }
+              : {}),
             rootPaths: isRecord(inputSchema)
               ? Object.keys(inputSchema).map(
                   (key) => '/' + key.replace(/~/g, '~0').replace(/\//g, '~1')
@@ -2475,7 +2530,7 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. The same schemaPaths list applies to EVERY selected identity, not a union across tools. For different fields issue separate per-tool queries in parallel in one exec; copy paths only from that tool usage. Lookup success means all requested definitions were delivered; partial/failed means some/none were delivered, even when the read settlement is completed. A narrowerQuery recovers only valid requested paths, not the rejected scope. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -2526,7 +2581,7 @@ export const createLocalOperationTools = (
                     minItems: 1,
                     items: { type: 'string', pattern: '^/' },
                     description:
-                      'Exact names/operation only. JSON Pointers into inputSchema, e.g. /properties/items/items. Returns exact fragments and local reference dependencies, not a complete validation schema. Cannot combine with view; refresh preserves these exact paths.'
+                      'Exact names/operation only. The same paths apply independently to every identity; different per-tool fields require separate calls, which may run in parallel. JSON Pointers into inputSchema, e.g. /properties/items/items. Returns exact fragments and local reference dependencies, not a complete validation schema. Cannot combine with view; refresh preserves these exact paths.'
                   },
                   operation: {
                     type: 'string',
@@ -4152,6 +4207,9 @@ export const createLocalOperationTools = (
           },
           outputSchema: {
             anyOf: [definition.outputSchema, informationDeliverySchema]
+          },
+          partialOutputSchema: {
+            anyOf: [definition.partialOutputSchema, informationDeliverySchema]
           }
         }
       : definition
@@ -4201,15 +4259,23 @@ export const createLocalOperationTools = (
         retained.registryRevision !== revision ||
         (args.refresh === true && contentPage === undefined)
       ) {
-        const text = await execute(name, query, signal)
+        const value = JSON.parse(await execute(name, query, signal))
         signal.throwIfAborted()
-        retained = { text, registryRevision: revision }
+        const receipt = discoveryReceipt(value)
+        const text = JSON.stringify({ ...value, ...receipt })
+        retained = { text, registryRevision: revision, receipt }
         if (Buffer.byteLength(text) > informationDeliveryBytes) {
           if (returnedDefinitions.size >= 64) returnedDefinitions.clear()
           returnedDefinitions.set(key, retained)
         }
       }
-      return deliverInformation(retained.text, name, args, requestId)
+      return deliverInformation(
+        retained.text,
+        name,
+        args,
+        requestId,
+        retained.receipt
+      )
     }
   }
   const deliveredCall = deliveredOwner.call.bind(deliveredOwner)

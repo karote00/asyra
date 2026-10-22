@@ -413,6 +413,23 @@ it('returns qualified choices for an ambiguous native name instead of selecting 
   expect(result.ambiguousNames).toEqual([
     { name: 'build', candidates: ['first.build', 'second.build'] }
   ])
+  expect(result).toMatchObject({ status: 'failed', settlement: 'completed' })
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const definition = tools.definitions.find(
+    (d) => d.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const reply = await invokeLocalTool(
+    tools,
+    definition,
+    { names: ['build'] },
+    new AbortController().signal
+  )
+  expect(reply.success).toBe(false)
+  expect(JSON.parse(reply.text).toolOutcome).toMatchObject({
+    status: 'failed',
+    settlement: 'completed'
+  })
   const exact = JSON.parse(
     await tools.call(
       'describe_design_apis',
