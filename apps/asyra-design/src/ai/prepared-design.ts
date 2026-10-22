@@ -63,6 +63,7 @@ export interface PreparedDesign {
 // installation. Browser admission remains the canonical schema authority.
 export const DesignTextDefaults = Object.freeze({
   text: '',
+  textSizing: 'fixed',
   fontFamily: 'sans-serif',
   fontSize: 16,
   fontWeight: 'normal',
@@ -82,6 +83,8 @@ export const DesignTextValidators: Readonly<
   text: (value: unknown) =>
     typeof value === 'string' &&
     value.length <= DesignPreparationLimits.textCharacters,
+  textSizing: (value: unknown) =>
+    value === 'fixed' || value === 'auto-width' || value === 'auto-height',
   fontFamily: (value: unknown) =>
     typeof value === 'string' && value.trim().length > 0 && value.length <= 128,
   fontSize: (value: unknown) => finiteTextRange(value, Number.MIN_VALUE, 4096),

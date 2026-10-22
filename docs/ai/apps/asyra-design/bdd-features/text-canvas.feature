@@ -184,3 +184,11 @@ Feature: Canvas plain-text authoring
     When the editing target becomes stale
     Then no bottom hint or close-editor button should appear
     And the stale draft must not overwrite the document
+
+  Scenario: Preserve prepared AI text admission
+    Given an AI design draft contains text with explicit width and height
+    When the backend prepares it and the browser admits it
+    Then its typography should include the canonical fixed sizing default
+    And applying the design should create the text with its declared dimensions
+    And supported sizing values should pass the same semantic and canonical validation
+    And unsupported sizing values should be rejected

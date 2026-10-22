@@ -26,6 +26,18 @@ export const basicApiDispositions = [
   coreRenderLifecycleDisposition,
   {
     owner: 'core',
+    methods: ['suspendElementPresentation'],
+    reason:
+      'The Canvas editor owns the temporary presentation lease and its synchronous release callback. Model actions must not hide canonical glyphs or acquire host editing lifecycle handles.'
+  },
+  {
+    owner: 'core',
+    methods: ['measureText'],
+    reason:
+      'The Canvas editor and typography mutation owner measure provisional text with the installed renderer before committing layout. Model inspection uses measureElementContentBounds for canonical document elements.'
+  },
+  {
+    owner: 'core',
     methods: ['save', 'propsSaveData', 'sceneTreeSaveData'],
     reason:
       'Framework serialization remains available to the document export owner. Model requests use explicit export artifacts and download delivery; completion confirms the existing document session durability without returning serialized document bodies.'
