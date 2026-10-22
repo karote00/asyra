@@ -72,7 +72,7 @@ const sourcePathForTypesTarget = ({ directory, repositoryRoot, target }) => {
   )
 }
 
-const publicApiEntries = ({ packageReference, repositoryRoot }) => {
+export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
   const records = packageReference.packages.flatMap((packageRecord) => {
     const manifest = JSON.parse(
       readSource(repositoryRoot, packageRecord.manifestPath)
@@ -100,10 +100,21 @@ const publicApiEntries = ({ packageReference, repositoryRoot }) => {
     })
   })
   const rootNames = records.map(({ sourcePath }) => sourcePath).filter(Boolean)
+  // Resolve workspace imports through the same public source entries as roots.
+  // Installed declarations may be absent or stale before a workspace build.
+  const paths = Object.fromEntries(
+    records
+      .filter(({ sourcePath }) => sourcePath)
+      .map(({ entryPath, name, sourcePath }) => [
+        entryPath === '.' ? name : `${name}${entryPath.slice(1)}`,
+        [sourcePath]
+      ])
+  )
   const program = ts.createProgram(rootNames, {
     jsx: ts.JsxEmit.ReactJSX,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
+    paths,
     skipLibCheck: true,
     target: ts.ScriptTarget.ESNext
   })

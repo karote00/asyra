@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readdir } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -12,6 +12,7 @@ const repositoryRoot = path.resolve(
 const ignoredDirectoryNames = new Set([
   '.git',
   '.turbo',
+  '.worktrees',
   'coverage',
   'dist',
   'node_modules',
@@ -63,6 +64,28 @@ const collectMisplacedTestFiles = async (directory, relativeDirectory = '') => {
 
   return violations
 }
+
+test('placement checks exclude linked checkouts while retaining maintained source violations', async (context) => {
+  const temporaryRoot = path.join(repositoryRoot, 'tmp')
+  await mkdir(temporaryRoot, { recursive: true })
+  const fixtureRoot = await mkdtemp(path.join(temporaryRoot, 'test-placement-'))
+  context.after(() => rm(fixtureRoot, { recursive: true, force: true }))
+  for (const file of [
+    '.worktrees/feature/apps/example/src/foreign.test.ts',
+    'packages/example/src/misplaced.test.ts',
+    'packages/example/src/__tests__/valid.test.ts',
+    'apps/starter-app/e2e/valid.spec.ts',
+    'create-app/asyra-design/template/src/misplaced.test.ts'
+  ]) {
+    const destination = path.join(fixtureRoot, file)
+    await mkdir(path.dirname(destination), { recursive: true })
+    await writeFile(destination, '')
+  }
+  assert.deepEqual((await collectMisplacedTestFiles(fixtureRoot)).sort(), [
+    'create-app/asyra-design/template/src/misplaced.test.ts',
+    'packages/example/src/misplaced.test.ts'
+  ])
+})
 
 test('unit, integration, and contract tests live in __tests__ directories', async () => {
   const violations = (await collectMisplacedTestFiles(repositoryRoot)).sort()
