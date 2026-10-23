@@ -8040,3 +8040,93 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
   expect(execute).toHaveBeenCalledTimes(2)
   expect(applied[1].entries).toHaveLength(13)
 })
+
+it('execution proof follows union entry navigation and valid recovery without replay', async () => {
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const action: AiActionDescription = {
+    name: AiActionNames.READ_DESIGN_CONTEXT,
+    description: 'Read selected context.',
+    inputSchema: {
+      oneOf: [
+        {
+          type: 'object',
+          required: ['scope'],
+          additionalProperties: false,
+          properties: { scope: { const: 'selection' } }
+        },
+        {
+          type: 'object',
+          required: ['scope', 'snapshotId'],
+          additionalProperties: false,
+          properties: {
+            scope: { const: 'snapshot' },
+            snapshotId: { type: 'string' }
+          }
+        }
+      ]
+    },
+    ...toolSemantics({ type: 'object' }, 'read', [])
+  }
+  const dispatch = vi.fn()
+  const owner = createOperationOwner(
+    [action],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    dispatch,
+    {
+      getNativeTools: () => [
+        {
+          name: action.name,
+          namespace: 'context_tools',
+          description: action.description,
+          inputSchema: {
+            type: 'object',
+            required: ['arguments'],
+            additionalProperties: false,
+            properties: { arguments: action.inputSchema }
+          },
+          ...toolSemantics({ type: 'object' }, 'read', [])
+        }
+      ]
+    }
+  )
+  const read = async (args: unknown) => {
+    const definition = owner.definitions.find(
+      (tool) => tool.name === 'describe_design_apis'
+    )
+    if (!definition) throw new Error('Missing discovery definition')
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      args,
+      new AbortController().signal
+    )
+    return JSON.parse(reply.text)
+  }
+  const usage = await read({ names: [action.name], view: 'usage' })
+  expect(usage.toolOutcome.status, JSON.stringify(usage)).toBe('success')
+  for (const entry of [...usage.apis, ...usage.tools]) {
+    const path = entry.inputFields.find((value: string) =>
+      value.endsWith('/oneOf/0')
+    )
+    expect(path).toBeDefined()
+    const {
+      view: _view,
+      refresh: _refresh,
+      refreshReason: _reason,
+      ...selector
+    } = entry.definition.refresh.arguments
+    const scoped = await read({ ...selector, schemaPaths: [path] })
+    expect([...scoped.apis, ...(scoped.tools ?? [])]).toHaveLength(1)
+    expect(scoped.toolOutcome.status).toBe('success')
+    const invalid = await read({ ...selector, schemaPaths: ['/missing'] })
+    const rejected = [...invalid.apis, ...(invalid.tools ?? [])][0]
+    expect(rejected.definition.coverage).toBe('none')
+    const recovered = await read(rejected.definition.recover.arguments)
+    expect(recovered.toolOutcome.status).toBe('success')
+    expect([...recovered.apis, ...(recovered.tools ?? [])]).toHaveLength(1)
+    expect(
+      [...recovered.apis, ...(recovered.tools ?? [])][0].definition.coverage
+    ).toBe('usage')
+  }
+  expect(dispatch).not.toHaveBeenCalled()
+})
