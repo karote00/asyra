@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { access } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { publicPageHref } from '../../lib/content.mjs'
 
 const escapePattern = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -11,8 +13,29 @@ const repositoryRoot = path.resolve(
   '../../../..'
 )
 const githubBlobPrefix = '/karote00/asyra/blob/main/'
+const manifest = JSON.parse(
+  readFileSync(
+    path.join(repositoryRoot, 'docs/public/content-manifest.json'),
+    'utf8'
+  )
+) as { pages: { id: string }[] }
+const publicRoutes = [
+  '/',
+  '/atlas',
+  '/asyra-design',
+  '/releases',
+  '/roadmap',
+  ...manifest.pages.map(({ id }) => publicPageHref(id))
+]
+const allowedExternalOrigins = new Set([
+  'https://asyra-design.pages.dev',
+  'https://asyra-sim.pages.dev',
+  'https://asyra-fieldscope.pages.dev',
+  'https://github.com',
+  'https://www.npmjs.com'
+])
 
-test('every public page and server-rendered internal link resolves', async ({
+test('the sitemap includes every independently checked public page', async ({
   request
 }) => {
   const sitemapResponse = await request.get('/sitemap.xml')
@@ -23,23 +46,21 @@ test('every public page and server-rendered internal link resolves', async ({
   )
 
   expect(routes).toHaveLength(51)
+  expect([...routes].sort()).toEqual([...publicRoutes].sort())
+})
 
-  const routeResponses = await Promise.all(
-    routes.map(async (route) => {
-      const response = await request.get(route)
-      expect(response.status(), route).toBe(200)
-      return [route, await response.text(), response.url()] as const
-    })
-  )
-  const routeBodies = new Map(
-    routeResponses.map(([route, body]) => [route, body] as const)
-  )
-  const siteOrigin = new URL(routeResponses[0]?.[2] ?? sitemapResponse.url())
-    .origin
-  const externalOrigins = new Set<string>()
-  const externalUrls = new Set<string>()
+for (const source of publicRoutes) {
+  test(`public page ${source} and its server-rendered links resolve`, async ({
+    request
+  }) => {
+    const response = await request.get(source)
+    expect(response.status(), source).toBe(200)
+    const body = await response.text()
+    const routeBodies = new Map([[source, body]])
+    const siteOrigin = new URL(response.url()).origin
+    const externalOrigins = new Set<string>()
+    const externalUrls = new Set<string>()
 
-  for (const [source, body] of routeBodies) {
     const anchors = [...body.matchAll(/<a\b[^>]*>/g)].map(([anchor]) => anchor)
 
     for (const anchor of anchors) {
@@ -51,6 +72,10 @@ test('every public page and server-rendered internal link resolves', async ({
       if (destination.origin !== siteOrigin) {
         externalOrigins.add(destination.origin)
         externalUrls.add(destination.href)
+        expect(
+          allowedExternalOrigins.has(destination.origin),
+          `${source} -> ${destination.href}`
+        ).toBe(true)
         expect(anchor, `${source} -> ${destination.href}`).toMatch(
           /\btarget="_blank"/
         )
@@ -78,6 +103,9 @@ test('every public page and server-rendered internal link resolves', async ({
       }
 
       const destinationRoute = destination.pathname
+      // Each known route has its own HTTP assertion above. Fetch additional
+      // bodies only for fragment targets or routes outside the sitemap.
+      if (!destination.hash && publicRoutes.includes(destinationRoute)) continue
       let destinationBody = routeBodies.get(destinationRoute)
       if (!destinationBody) {
         const response = await request.get(
@@ -99,20 +127,23 @@ test('every public page and server-rendered internal link resolves', async ({
         `${source} -> ${destination.pathname}${destination.hash}`
       ).toMatch(new RegExp(`\\bid="${escapePattern(id)}"`))
     }
-  }
-
-  expect(externalOrigins).toEqual(
-    new Set([
-      'https://asyra-design.pages.dev',
-      'https://asyra-sim.pages.dev',
-      'https://asyra-fieldscope.pages.dev',
-      'https://github.com',
-      'https://www.npmjs.com'
-    ])
-  )
-  expect(externalUrls).toContain('https://asyra-design.pages.dev/?fileId=demo')
-  expect(externalUrls).toContain('https://asyra-sim.pages.dev/')
-  expect(externalUrls).toContain(
-    'https://www.npmjs.com/package/create-asyra-app'
-  )
-})
+    if (source === '/') {
+      for (const origin of [
+        'https://asyra-design.pages.dev',
+        'https://asyra-sim.pages.dev',
+        'https://asyra-fieldscope.pages.dev',
+        'https://github.com'
+      ])
+        expect(externalOrigins).toContain(origin)
+      expect(externalUrls).toContain(
+        'https://asyra-design.pages.dev/?fileId=demo'
+      )
+      expect(externalUrls).toContain('https://asyra-sim.pages.dev/')
+    }
+    if (source === '/docs') {
+      expect(externalUrls).toContain(
+        'https://www.npmjs.com/package/create-asyra-app'
+      )
+    }
+  })
+}
