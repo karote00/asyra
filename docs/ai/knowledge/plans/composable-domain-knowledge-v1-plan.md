@@ -18,7 +18,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 
 - Worktree: `.worktrees/design-knowledge-evaluation`.
 - Branch: `codex/design-knowledge-evaluation`.
-- Selected main: `77debb2224b7fdc4129f775340bdc95437834938` (integrated before the convergence push).
+- Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
 - Current scope: close and push the locally verified main-workflow image handoff and
   discovery oracle reconciliation. Preserve independent binding, multiscale evidence,
@@ -98,6 +98,24 @@ consumer copies; semantic tests must retain independent correctness oracles inst
 of deriving expected answers from the implementation under test. Propose prevention
 through existing test selection/validation and Inspector boundaries before altering
 that workflow. Do not introduce a duplicate registry or another governance ledger.
+
+Pre-push verification after target integration - 2026-10-24:
+- Rebased the task branch onto eaddcdba2c1705dca6646a730cd87818ae214d56 without
+  conflicts. The image-handoff and discovery changes are in 0608392e9; runtime owner
+  sources are unchanged by the rebase. Installed the target's declared lockfile with
+  immutable installation; no new package or toolchain choice was introduced.
+- Post-integration gates: 870 relevant tests passed with one existing skip, interrupted
+  App/runtime integration 8/8, production App/server/flow-proof types and production
+  App build passed. Scoped lint has zero errors and its existing console warning;
+  naming 15/15 and generated Inspector checks 25/25 passed. Existing build chunk-size
+  advisories remain informational. Logs: tmp/handoff-push-*.log.
+- Inspector candidate 5cdecddb-b6c7-4b21-b2ec-1d4fc72a3bca passed all 71 owner proofs
+  on captured source 1cd15e8d7cbc193ab13b69cf1c49cc2e2fd737931bf0a5ab8ad36c4a3d7cfecc.
+  Contract review 800f71a33fb7de353e699751d2b4176ff5e17e0d9ac90fea978249a6f4aa1126
+  has no changes or blockers; architecture revision 77 remains applicable.
+- Closeout relies on formal local evidence only. Live AI adoption of the image
+  handoff and corresponding timing gains remain unobserved. The next investigation
+  and drift-prevention proposal remain read-only; no automatic model retry.
 
 ### Discovery regression oracle reconciliation - 2026-10-24
 
