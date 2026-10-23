@@ -178,6 +178,7 @@
               "artifact:tool-program"
             ],
             "conditions": [
+              "Optional explicit main-workflow reviewChecks reuse review-owned capture selection and validate before writes. After successful automatic capture, compose delegates current-image binding to the existing review owner and delivers its context, exact next invocation and completion constraints. Absent selection preserves preview/defer and independent binding. No inferred scope, automatic judgment, new state, recapture or replay. Partial writes never bind later-part checks to earlier images; failed follow-ups retain receipts/images and review-only recovery. Preserve multiscale dependencies and local invalidation; reduce total selected delivery and model round trips.",
               "Compact workflow delivery projects only pure preparation work/reuse and drawing timing from known receipt locations after validation, canonical consumption and inner observations. Preserve operation results, findings, limits, image evidence, outcomes and recovery across single and parts; full bypasses projection. No arbitrary nested deletion, new state, extra calls or replay; raw diagnostics remain in existing trace records.",
               "Cancellation preserves causal owner receipts through existing invocation failures and request-root receipt ancestry. After tool drainage, bounded reporting consumes factual receipts without geometry, new tools, retries or model-inferred settlement. Empty evidence remains ordinary abort; siblings never inherit unrelated results.",
               "Selected draft/parts content derives optional repetition from the existing owner scope declaration and canonical member union. Include only selected member alternatives and the canonical members mode; explicit pattern retains full faces/members contracts. Preserve all nested restrictions and ordinary independent nodes, execute existing valid examples, and keep one bounded reply without another lookup or unselected schemas. Repair and unrelated content bypass this closure; malformed owner declarations fail at compose. No new registry, execution syntax, inference or mutation replay.",
@@ -439,6 +440,7 @@
               "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts"
             ],
             "specRefs": [
+              "#main-workflow-visual-judgment-handoff",
               "#compact-workflow-delivery",
               "#shared-normalized-motifs",
               "#layer-preserving-repetition-delivery",

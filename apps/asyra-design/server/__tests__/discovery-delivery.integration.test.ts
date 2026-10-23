@@ -1,4 +1,5 @@
 import { constructDesign } from '../design-construction'
+import { measureDesignBudget } from '../design-budget'
 import layeredPattern from './fixtures/recorded-101/layered-pattern-20261023.json'
 import { expectEquivalentPatternEntries } from './layered-pattern-assertions'
 import recoveryFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
@@ -1015,13 +1016,33 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
     settlement: 'completed'
   })
   expect(failed.value.toolOutcome.issues.length).toBeGreaterThan(0)
+  const expectedPaths: Record<string, string[]> = {
+    review_drawing: ['/properties/inspections'],
+    define_design_criteria: [
+      '/properties/criteria',
+      '/properties/detailRequired',
+      '/properties/method'
+    ]
+  }
   for (const tool of failed.value.tools) {
-    expect(tool.definition.recover.arguments.schemaPaths).toEqual(
+    const paths = expectedPaths[tool.name]
+    expect(paths).toBeDefined()
+    expect(tool.definition.recover.arguments.schemaPaths).toEqual(paths)
+    expect(
+      tool.schemaResolution.issues.map((issue: { path: string }) => issue.path)
+    ).toEqual(
       inspectionDiscovery.query.schemaPaths
+        .filter((path) => !paths.includes(path))
+        .sort()
     )
     const narrowed = tool.schemaResolution.narrowerQuery
+    expect(tool.definition.recover).toEqual(narrowed)
     expect(narrowed.arguments.names).toHaveLength(1)
-    const corrected = await call(narrowed.tool, narrowed.arguments)
+    // Follow the primary delivered correction, not a test-authored replacement.
+    const corrected = await call(
+      tool.definition.recover.tool,
+      tool.definition.recover.arguments
+    )
     expect(corrected.success).toBe(true)
     expect(corrected.value.tools[0].definition.coverage).toBe('partial')
     expect(
@@ -1029,7 +1050,23 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
         (f: { path: string }) => f.path
       )
     ).toEqual(narrowed.arguments.schemaPaths)
+    const canonical = owners
+      .flatMap((owner) => owner.definitions)
+      .find((entry) => entry.name === tool.name)
+    if (!canonical) throw new Error('Missing selected canonical owner')
+    for (const fragment of corrected.value.tools[0].schemaFragments) {
+      const field = fragment.path.split('/').at(-1)
+      expect(fragment.schema).toEqual(canonical.inputSchema.properties[field])
+    }
     expect(corrected.value.tools[0].schemaContext.length).toBeGreaterThan(0)
+    const recovery = corrected.value.tools[0].definition.recover
+    expect(recovery.arguments.schemaPaths).toEqual(paths)
+    const refreshed = await call(recovery.tool, recovery.arguments)
+    expect(refreshed.success).toBe(true)
+    expect(refreshed.value.tools[0].schemaFragments).toEqual(
+      corrected.value.tools[0].schemaFragments
+    )
+    expect(tool.definition.coverage).toBe('none')
   }
   const repeated = await call('describe_design_apis', inspectionDiscovery.query)
   expect(repeated.value.toolOutcome.status).toBe('failed')
@@ -1750,11 +1787,42 @@ it('delivers expansion accounting and parts selection before the recorded oversi
     }
   })
   const guide = result.value.tools[0].usageGuide
-  expect(guide.parameters).toContain('rows * columns * motifs.length')
+  expect(guide.parameters).toContain('rows*columns*resolved motifs')
+  expect(guide.parameters).toContain('surfaceMotifs')
+  expect(guide.parameters).toContain('motifTemplates')
   expect(guide.instructions).toContain('root and nested containers')
   expect(guide.instructions).toContain('not increase artifact capacity')
   expect(guide.recovery).toContain('parts')
   expect(run.execute).not.toHaveBeenCalled()
+  const invocation = result.value.tools[0].invocationExample.invocation
+  const source = structuredClone(invocation.arguments.draft)
+  const grid = source.children[2].members[0]
+  const motifs = source.motifTemplates[grid.motifs.template]
+  expect(motifs).toHaveLength(1)
+  motifs.push({ ...structuredClone(motifs[0]), key: 'accent', fill: '#654321' })
+  const inline = structuredClone(source)
+  inline.children[2].members[0].motifs = structuredClone(motifs)
+  delete inline.motifTemplates
+  // Root + two panels + cap + two instances of a 2x3 grid with two motifs.
+  for (const input of [source, inline]) {
+    const budget = measureDesignBudget(input)
+    expect(budget.observed.expandedNodes).toBe(28)
+    expect(budget.lowerBound).toBe(false)
+    expect(budget.allowed.expandedNodes).toBe(
+      DesignPreparationLimits.expandedNodes
+    )
+    expect(budget.exceeded).toEqual([])
+  }
+  const submitted = await run.call(invocation.tool, {
+    ...invocation.arguments,
+    draft: source,
+    inspection: 'defer'
+  })
+  expect(submitted.value.toolOutcome.settlement).toBe('completed')
+  const expected = prepareDesign(inline, submitted.value.artifactId)
+  expect(expected.entries).toHaveLength(28)
+  expect(prepareDesign(source, submitted.value.artifactId)).toEqual(expected)
+  expect(run.created).toEqual(expected.entries.map((entry) => entry.descriptor))
 })
 
 it('rejects the recorded expansion budget before compilation and explains existing parts recovery', async () => {
@@ -2016,7 +2084,12 @@ it.each([false, true])(
     expect(pattern.members[0].vertices).toEqual(grid.boundary)
     expect(source.linearFields[pattern.members[0].materialField]).toBeDefined()
     expect(source.fillTemplates[source.children[1].fill.template]).toBeDefined()
-    expect(source.fillTemplates[grid.motifs[0].fill.template]).toBeDefined()
+    const motifs = source.motifTemplates[grid.motifs.template]
+    expect(motifs).toHaveLength(1)
+    expect(source.fillTemplates[motifs[0].fill.template]).toBeDefined()
+    const inline = structuredClone(source)
+    inline.children[2].members[0].motifs = structuredClone(motifs)
+    delete inline.motifTemplates
     const full = (
       await run.call('describe_design_apis', { ...query, view: 'full' })
     ).value.tools[0]
@@ -2030,6 +2103,17 @@ it.each([false, true])(
     expect(result.value.toolOutcome.settlement).toBe('completed')
     expect(run.execute).toHaveBeenCalledOnce()
     expect(run.created).toHaveLength(16)
+    const expected = prepareDesign(inline, result.value.artifactId)
+    expect(prepareDesign(source, result.value.artifactId)).toEqual(expected)
+    expect(run.created).toEqual(
+      expected.entries.map((entry) => entry.descriptor)
+    )
+    expect([...run.parents]).toEqual(
+      expected.entries.map((entry) => [
+        entry.descriptor.id,
+        entry.parentId ?? 'workspace'
+      ])
+    )
     const retained = structuredClone(run.created)
     expect(
       run.created
@@ -2044,6 +2128,15 @@ it.each([false, true])(
     expect(restored.value.tools[0].invocationExample).toEqual(
       tool.invocationExample
     )
+    expect(run.created).toEqual(retained)
+    expect(run.execute).toHaveBeenCalledOnce()
+    const broken = structuredClone(source)
+    broken.children[2].members[0].motifs.template = 'missing'
+    const invalid = await run.call(invocation.tool, {
+      draft: broken,
+      inspection: 'defer'
+    })
+    expect(invalid.success).toBe(false)
     expect(run.created).toEqual(retained)
     expect(run.execute).toHaveBeenCalledOnce()
     const large = setup(10000)
@@ -2673,11 +2766,24 @@ it.each([false, true])(
     expect(
       source.linearFields[source.children[0].members[0].materialField]
     ).toBeDefined()
-    expect(
-      source.fillTemplates[
-        source.children[2].members[0].motifs[0].fill.template
-      ]
-    ).toBeDefined()
+    const grid = source.children[2].members[0]
+    const motifs = source.motifTemplates[grid.motifs.template]
+    expect(motifs).toHaveLength(1)
+    expect(source.fillTemplates[motifs[0].fill.template]).toBeDefined()
+    const inline = structuredClone(source)
+    inline.children[2].members[0].motifs = structuredClone(motifs)
+    delete inline.motifTemplates
+    const expected = prepareDesign(inline, outcome.value.artifactId)
+    expect(prepareDesign(source, outcome.value.artifactId)).toEqual(expected)
+    expect(run.created).toEqual(
+      expected.entries.map((entry) => entry.descriptor)
+    )
+    expect([...run.parents]).toEqual(
+      expected.entries.map((entry) => [
+        entry.descriptor.id,
+        entry.parentId ?? 'workspace'
+      ])
+    )
     const large = setup(10000)
     await large.call('describe_design_apis', query)
     expect(large.deliveries).toEqual(run.deliveries.slice(0, calls))

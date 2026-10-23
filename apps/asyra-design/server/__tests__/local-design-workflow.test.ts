@@ -1,3 +1,5 @@
+import { projectWorkflowInput } from '../design-workflow-discovery'
+import { informationDeliveryExample } from '../local-information-delivery'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
@@ -7,7 +9,8 @@ import compactFixture from './fixtures/recorded-101/compact-receipt-20261024.jso
 import { runInNewContext } from 'node:vm'
 import {
   localToolContent,
-  localToolResultExample
+  localToolResultExample,
+  type NativeToolDescriptor
 } from '../local-operation-tools'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
@@ -1261,6 +1264,9 @@ const inspectionBoundaryFixture = (
     browserFailure?: 'partial' | 'unknown'
     browserFailureAt?: number
     observeReceipts?: boolean
+    staleImage?: boolean
+    unavailableValidation?: boolean
+    cancelBinding?: AbortController
   } = {}
 ) => {
   const registered = [
@@ -1279,6 +1285,7 @@ const inspectionBoundaryFixture = (
     return requireBatchSuccess(...args)
   }
   let applied = 0
+  let advertised: NativeToolDescriptor[] = []
   const operations = createLocalOperationTools(
     registered,
     designs,
@@ -1349,18 +1356,32 @@ const inspectionBoundaryFixture = (
             measuredTextIds: []
           }
         } else if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE) {
+          const imageValidation = Object.hasOwn(
+            (action.arguments as { evidence: object }).evidence,
+            'receiptId'
+          )
+          if (imageValidation) options.cancelBinding?.abort()
           result = {
-            current: true,
+            current:
+              options.unavailableValidation && imageValidation
+                ? null
+                : !(options.staleImage && imageValidation),
             validatedAt: { sessionId: 'consumer-validation', revision: 1 },
             coverage: { complete: true }
           }
         } else {
           result = {
             available: !options.captureUnavailable,
+            elementId: target,
             imageScope: 'overview',
-            evidence: { sessionId: 'stage1', revision: applied },
+            evidence: {
+              sessionId: 'stage1',
+              revision: applied,
+              receiptId: 'capture-' + applied
+            },
             image: {
-              dataUrl: 'data:image/png;base64,AA==',
+              dataUrl:
+                'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGioAAAAASUVORK5CYII=',
               width: 1,
               height: 1
             }
@@ -1397,7 +1418,8 @@ const inspectionBoundaryFixture = (
         }
       }
       return publishReceipt(batch, receipt, 1)
-    }
+    },
+    { getNativeTools: () => advertised }
   )
   const workflow = createLocalDesignWorkflow(
     designs,
@@ -1405,6 +1427,16 @@ const inspectionBoundaryFixture = (
     undefined,
     options.observeReceipts ? () => ({ batches: observedBatches }) : undefined
   )
+  advertised = [
+    ...workflow.definitions.map((tool) => ({
+      ...tool,
+      namespace: 'design_workflow'
+    })),
+    ...operations.definitions.map((tool) => ({
+      ...tool,
+      namespace: 'design_operations'
+    }))
+  ]
   return { workflow, operations, events }
 }
 
@@ -2426,4 +2458,638 @@ it('persists original workflow diagnostics before recording compact native deliv
   }
   expect(verified).toBe(3)
   expect(execute).toHaveBeenCalledOnce()
+})
+
+it.each(['compact', 'full'] as const)(
+  'hands the automatic image directly to bound visual judgment with %s receipts',
+  async (response) => {
+    const { workflow, operations, events } = inspectionBoundaryFixture()
+    const reply = await invokeLocalTool(
+      workflow,
+      workflow.definitions[0],
+      {
+        draft,
+        plan: reviewPlanExample,
+        reviewChecks: [{ criterionId: 'appearance' }],
+        response
+      },
+      signal()
+    )
+    expect(reply.success, reply.text).toBe(true)
+    const value = JSON.parse(reply.text)
+    expect(value.visualReview).toMatchObject({
+      reviewOperation: 'bind',
+      recordedChecks: [],
+      accepted: false,
+      acceptanceContext: { checks: [{ criterionId: 'appearance' }] },
+      next: {
+        execution: { namespace: 'design_operations', tool: 'review_drawing' },
+        fillSchema: {
+          properties: {
+            status: { enum: ['pass', 'fail', 'unverified'] },
+            evidence: { maxLength: 1000 }
+          }
+        }
+      }
+    })
+    const next = value.visualReview.next
+    const definition = operations.definitions.find(
+      (tool) => tool.name === next.execution.tool
+    )
+    if (!definition) throw new Error('Unregistered review route')
+    const recorded = await invokeLocalTool(
+      operations,
+      definition,
+      {
+        ...next.arguments,
+        checks: next.arguments.checks.map((check: object) => ({
+          ...check,
+          status: 'fail',
+          evidence: 'The requested appearance is not visible.'
+        }))
+      },
+      signal()
+    )
+    expect(recorded.success, recorded.text).toBe(true)
+    expect(JSON.parse(recorded.text)).toMatchObject({
+      accepted: false,
+      recordedChecks: [{ criterionId: 'appearance', status: 'fail' }]
+    })
+    expect(
+      events.filter((event) => event.startsWith('apply_prepared_design:'))
+    ).toHaveLength(1)
+    expect(
+      events.filter((event) => event.startsWith('inspect_drawing:'))
+    ).toHaveLength(1)
+  }
+)
+
+it('executes the delivered review-selection example and next invocation with fewer calls and total bytes', async () => {
+  const run = async (selected: boolean) => {
+    const f = inspectionBoundaryFixture()
+    let bytes = 0
+    const calls: string[] = []
+    const invoke = async (namespace: string, tool: string, args: object) => {
+      const owner = namespace === 'design_workflow' ? f.workflow : f.operations
+      const definition = owner.definitions.find((entry) => entry.name === tool)
+      if (!definition) throw new Error('Unregistered example route')
+      calls.push(tool)
+      const reply = await invokeLocalTool(
+        owner,
+        definition,
+        JSON.parse(JSON.stringify(args)),
+        signal()
+      )
+      expect(reply.success, reply.text).toBe(true)
+      bytes +=
+        Buffer.byteLength(JSON.stringify(args)) + Buffer.byteLength(reply.text)
+      return JSON.parse(reply.text)
+    }
+    const discover = async (args: object) => {
+      const values = new Map<
+        string,
+        { complete: boolean; value: unknown; next: { arguments: object } }
+      >()
+      let query = args
+      for (;;) {
+        const value = await invoke(
+          'design_operations',
+          'describe_design_apis',
+          query
+        )
+        runInNewContext(informationDeliveryExample, {
+          result: JSON.stringify(value),
+          deliveryKey: 'query',
+          text: vi.fn(),
+          load: (key: string) => values.get(key),
+          store: (
+            key: string,
+            value: {
+              complete: boolean
+              value: unknown
+              next: { arguments: object }
+            }
+          ) => values.set(key, value)
+        })
+        const saved = values.get('query')
+        if (!saved)
+          throw new Error('Published delivery did not retain the result')
+        if (saved.complete) return JSON.parse(JSON.stringify(saved.value))
+        query = saved.next.arguments
+      }
+    }
+    const usage = await discover({
+      names: ['prepare_and_apply_design'],
+      view: 'usage',
+      inputScope: {
+        operation: 'draft',
+        nodeTypes: ['rect'],
+        optionalInputs: selected ? ['plan', 'reviewChecks'] : ['plan']
+      }
+    })
+    const invocation = usage.tools[0].invocationExample.invocation
+    expect(invocation).toBeDefined()
+    if (selected)
+      expect(invocation.arguments.reviewChecks).toEqual([
+        { criterionId: 'appearance' }
+      ])
+    // The control needs the same criteria but cannot bind in the drawing call.
+    if (!selected) invocation.arguments.plan = reviewPlanExample
+    const value = await invoke(
+      invocation.namespace,
+      invocation.tool,
+      invocation.arguments
+    )
+    const content = await localToolContent(JSON.stringify(value))
+    const text = vi.fn(),
+      image = vi.fn()
+    runInNewContext(localToolResultExample, {
+      result: content
+        .map((part) => (part.type === 'inputText' ? part.text : part.imageUrl))
+        .join('\n'),
+      text,
+      image
+    })
+    expect(image).toHaveBeenCalledOnce()
+    let handoff = text.mock.calls[0][0].visualReview
+    if (!selected) {
+      const review = await discover({
+        names: ['review_drawing'],
+        view: 'usage'
+      })
+      const route = review.tools[0].execution
+      const inspectionId = value.actionResults.find(
+        (entry: { actionName: string }) =>
+          entry.actionName === 'inspect_drawing'
+      ).result.inspectionId
+      handoff = await invoke(route.namespace, route.tool, {
+        phase: 'visual',
+        final: false,
+        bindChecks: [
+          { criterionId: 'appearance', inspectionIds: [inspectionId] }
+        ]
+      })
+    }
+    const next = handoff.next
+    await invoke(next.execution?.namespace ?? 'design_operations', next.tool, {
+      ...next.arguments,
+      checks: next.arguments.checks.map((check: object) => ({
+        ...check,
+        status: 'fail',
+        evidence: 'The requested appearance is absent.'
+      }))
+    })
+    return { bytes, calls, events: f.events }
+  }
+  const control = await run(false)
+  const selected = await run(true)
+  expect(
+    selected.calls.filter((name) => name === 'review_drawing')
+  ).toHaveLength(1)
+  expect(
+    control.calls.filter((name) => name === 'review_drawing')
+  ).toHaveLength(2)
+  expect(selected.calls.length).toBeLessThan(control.calls.length)
+  expect(selected.bytes).toBeLessThan(control.bytes)
+  expect(selected.events).toEqual(control.events)
+  // eslint-disable-next-line no-console -- Formal delivery-size comparison, not model latency.
+  console.info(
+    'Visual handoff delivery',
+    JSON.stringify({
+      controlBytes: control.bytes,
+      selectedBytes: selected.bytes,
+      controlCalls: control.calls,
+      selectedCalls: selected.calls
+    })
+  )
+})
+
+it.each([
+  { reviewChecks: [] },
+  { reviewChecks: [{ criterionId: 'missing' }] },
+  { reviewChecks: [{ criterionId: 'appearance', unitId: 'undeclared' }] },
+  { reviewChecks: [{ criterionId: 'appearance' }], inspection: 'defer' },
+  { reviewChecks: [{ criterionId: 'appearance', status: 'pass' }] }
+])(
+  'rejects invalid early review selection before writes: %j',
+  async (input) => {
+    const f = inspectionBoundaryFixture()
+    const reply = await invokeLocalTool(
+      f.workflow,
+      f.workflow.definitions[0],
+      { draft, plan: reviewPlanExample, ...input },
+      signal()
+    )
+    expect(reply.success).toBe(false)
+    expect(f.events).toEqual([])
+  }
+)
+
+it('binds only the completed parts boundary and retains independent binding without selection', async () => {
+  const f = inspectionBoundaryFixture()
+  const value = JSON.parse(
+    await f.workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'first', draft },
+          { key: 'last', draft }
+        ],
+        plan: reviewPlanExample,
+        reviewChecks: [{ criterionId: 'appearance' }]
+      },
+      signal()
+    )
+  )
+  expect(
+    value.visualReview.next.arguments.checks[0].binding.dependencies[0]
+      .elementId
+  ).toBe('part-2')
+  expect(
+    f.events.filter((event) => event.startsWith('inspect_drawing:'))
+  ).toEqual(['inspect_drawing:part-2'])
+  const standalone = inspectionBoundaryFixture()
+  const image = JSON.parse(
+    await standalone.workflow.call(
+      'prepare_and_apply_design',
+      { draft, plan: reviewPlanExample },
+      signal()
+    )
+  )
+  expect(image.visualReview).toBeUndefined()
+  const id = image.actionResults.find(
+    (entry: { actionName: string }) => entry.actionName === 'inspect_drawing'
+  ).result.inspectionId
+  const bound = JSON.parse(
+    await standalone.operations.call(
+      'review_drawing',
+      {
+        phase: 'visual',
+        final: false,
+        bindChecks: [{ criterionId: 'appearance', inspectionIds: [id] }]
+      },
+      signal()
+    )
+  )
+  expect(bound.next.arguments.checks[0].binding).toBeDefined()
+})
+
+it.each([{ stopApply: 2 }, { captureUnavailable: true }])(
+  'retains partial work without binding an unintended scope: %j',
+  async (options) => {
+    const f = inspectionBoundaryFixture(options)
+    const value = JSON.parse(
+      await f.workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'first', draft },
+            { key: 'last', draft }
+          ],
+          plan: reviewPlanExample,
+          reviewChecks: [{ criterionId: 'appearance' }]
+        },
+        signal()
+      )
+    )
+    expect(localToolOutcome(value).status).toBe('partial')
+    expect(value.visualReview?.next?.arguments?.checks).toBeUndefined()
+    expect(
+      f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+    ).toHaveLength(2)
+  }
+)
+
+it('recovers unavailable binding with the returned review-only invocation and no replay or recapture', async () => {
+  const options = { unavailableValidation: true }
+  const f = inspectionBoundaryFixture(options)
+  const reply = await invokeLocalTool(
+    f.workflow,
+    f.workflow.definitions[0],
+    {
+      draft,
+      plan: reviewPlanExample,
+      reviewChecks: [{ criterionId: 'appearance' }]
+    },
+    signal()
+  )
+  expect(reply.success).toBe(false)
+  const value = JSON.parse(reply.text)
+  expect(value.toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(value.visualReview.recordedChecks).toEqual([])
+  const recovery = value.visualReview.recoveryInvocation
+  expect(recovery.tool).toBe('review_drawing')
+  options.unavailableValidation = false
+  const next = JSON.parse(
+    await f.operations.call(recovery.tool, recovery.arguments, signal())
+  ).next
+  const recorded = JSON.parse(
+    await f.operations.call(
+      next.tool,
+      {
+        ...next.arguments,
+        checks: next.arguments.checks.map((check: object) => ({
+          ...check,
+          status: 'fail',
+          evidence: 'Visible discrepancy.'
+        }))
+      },
+      signal()
+    )
+  )
+  expect(recorded.recordedChecks[0].status).toBe('fail')
+  expect(
+    f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+  ).toHaveLength(1)
+  expect(
+    f.events.filter((event) => event.startsWith('inspect_drawing:'))
+  ).toHaveLength(1)
+})
+
+it('does not issue a judgment binding for stale automatic evidence', async () => {
+  const f = inspectionBoundaryFixture({ staleImage: true })
+  const reply = await invokeLocalTool(
+    f.workflow,
+    f.workflow.definitions[0],
+    {
+      draft,
+      plan: reviewPlanExample,
+      reviewChecks: [{ criterionId: 'appearance' }]
+    },
+    signal()
+  )
+  const value = JSON.parse(reply.text)
+  expect(value.toolOutcome.status).toBe('partial')
+  expect(
+    value.visualReview.evidenceValidation.invalidInspectionIds
+  ).toHaveLength(1)
+  expect(value.visualReview.next?.arguments?.checks).toBeUndefined()
+  expect(
+    f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+  ).toHaveLength(1)
+})
+
+it('preserves cancellation during binding without dispatching another write or capture', async () => {
+  const controller = new AbortController()
+  const f = inspectionBoundaryFixture({ cancelBinding: controller })
+  await expect(
+    f.workflow.call(
+      'prepare_and_apply_design',
+      {
+        draft,
+        plan: reviewPlanExample,
+        reviewChecks: [{ criterionId: 'appearance' }]
+      },
+      controller.signal
+    )
+  ).rejects.toThrow()
+  expect(controller.signal.aborted).toBe(true)
+  expect(
+    f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+  ).toHaveLength(1)
+  expect(
+    f.events.filter((event) => event.startsWith('inspect_drawing:'))
+  ).toHaveLength(1)
+})
+
+it('recovers a failed automatic capture through the returned review invocation without redrawing', async () => {
+  const options = { captureUnavailable: true }
+  const f = inspectionBoundaryFixture(options)
+  const value = JSON.parse(
+    await f.workflow.call(
+      'prepare_and_apply_design',
+      {
+        draft,
+        plan: reviewPlanExample,
+        reviewChecks: [{ criterionId: 'appearance' }]
+      },
+      signal()
+    )
+  )
+  expect(localToolOutcome(value)).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(value.visualReview.recoveryInvocation.tool).toBe('review_drawing')
+  options.captureUnavailable = false
+  const recovery = value.visualReview.recoveryInvocation
+  const recovered = JSON.parse(
+    await f.operations.call(recovery.tool, recovery.arguments, signal())
+  )
+  expect(recovered.next.arguments.checks[0].criterionId).toBe('appearance')
+  expect(
+    f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+  ).toHaveLength(1)
+  expect(
+    f.events.filter((event) => event.startsWith('inspect_drawing:'))
+  ).toHaveLength(2)
+})
+
+it('binds the saved material selection after real preparation without inferring other criteria', async () => {
+  const f = inspectionBoundaryFixture()
+  const value = JSON.parse(
+    await f.workflow.call(
+      'prepare_and_apply_design',
+      {
+        ...compactFixture.input,
+        reviewChecks: [{ criterionId: 'material' }]
+      },
+      signal()
+    )
+  )
+  expect(
+    value.visualReview.next.arguments.checks.map(
+      (check: { criterionId: string }) => check.criterionId
+    )
+  ).toEqual(['material'])
+  expect(value.visualReview.acceptanceContext.checks[0]).toMatchObject({
+    requirement: compactFixture.input.plan.criteria.material.requirement,
+    description: compactFixture.input.plan.criteria.material.description
+  })
+  expect(value.visualReview.coverage.passed).toBe(0)
+  expect(value.visualReview.recordedChecks).toEqual([])
+})
+
+it('reports parts completion truthfully when only the final binding is unavailable', async () => {
+  const f = inspectionBoundaryFixture({ unavailableValidation: true })
+  const value = JSON.parse(
+    await f.workflow.call(
+      'prepare_and_apply_design',
+      {
+        parts: [
+          { key: 'first', draft },
+          { key: 'last', draft }
+        ],
+        plan: reviewPlanExample,
+        reviewChecks: [{ criterionId: 'appearance' }]
+      },
+      signal()
+    )
+  )
+  expect(value).toMatchObject({
+    status: 'partial',
+    complete: false,
+    toolOutcome: { status: 'partial', settlement: 'completed' }
+  })
+  expect(value.parts).toHaveLength(2)
+  expect(value.visualReview.recoveryInvocation.tool).toBe('review_drawing')
+})
+
+it.each(['signature', 'evidence', 'status'] as const)(
+  'rejects invalid %s in the delivered judgment without changing writes',
+  async (field) => {
+    const f = inspectionBoundaryFixture()
+    const value = JSON.parse(
+      await f.workflow.call(
+        'prepare_and_apply_design',
+        {
+          draft,
+          plan: reviewPlanExample,
+          reviewChecks: [{ criterionId: 'appearance' }]
+        },
+        signal()
+      )
+    )
+    const next = value.visualReview.next
+    const check = {
+      ...next.arguments.checks[0],
+      status: 'pass',
+      evidence: 'Visible.'
+    }
+    if (field === 'signature') check.binding.signature = 'tampered'
+    if (field === 'evidence') check.evidence = 'x'.repeat(1001)
+    if (field === 'status') check.status = 'approved'
+    const definition = f.operations.definitions.find(
+      (tool) => tool.name === next.tool
+    )
+    if (!definition) throw new Error('Missing review')
+    const reply = await invokeLocalTool(
+      f.operations,
+      definition,
+      { ...next.arguments, checks: [check] },
+      signal()
+    )
+    expect(reply.success).toBe(false)
+    expect(
+      f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+    ).toHaveLength(1)
+    expect(
+      f.events.filter((event) => event.startsWith('inspect_drawing:'))
+    ).toHaveLength(1)
+  }
+)
+
+it('recaptures only explicitly invalid automatic evidence through the returned recovery', async () => {
+  const options = { staleImage: true }
+  const f = inspectionBoundaryFixture(options)
+  const value = JSON.parse(
+    await f.workflow.call(
+      'prepare_and_apply_design',
+      {
+        draft,
+        plan: reviewPlanExample,
+        reviewChecks: [{ criterionId: 'appearance' }]
+      },
+      signal()
+    )
+  )
+  const recovery = value.visualReview.recoveryInvocation
+  expect(recovery.arguments).toMatchObject({
+    inspections: [
+      { elementId: 'part-1', checks: [{ criterionId: 'appearance' }] }
+    ]
+  })
+  expect(recovery.arguments.bindChecks).toBeUndefined()
+  options.staleImage = false
+  const bound = JSON.parse(
+    await f.operations.call(recovery.tool, recovery.arguments, signal())
+  )
+  expect(bound.next.arguments.checks[0].binding).toBeDefined()
+  expect(
+    f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+  ).toHaveLength(1)
+  expect(
+    f.events.filter((event) => event.startsWith('inspect_drawing:'))
+  ).toHaveLength(2)
+})
+
+it('preserves acknowledged drawing receipts when the binding is cancelled', async () => {
+  const controller = new AbortController()
+  const f = inspectionBoundaryFixture({
+    cancelBinding: controller,
+    observeReceipts: true
+  })
+  await expect(
+    f.workflow.call(
+      'prepare_and_apply_design',
+      {
+        draft,
+        plan: reviewPlanExample,
+        reviewChecks: [{ criterionId: 'appearance' }]
+      },
+      controller.signal
+    )
+  ).rejects.toMatchObject({
+    receipt: {
+      result: {
+        batches: expect.arrayContaining([
+          expect.objectContaining({
+            actionResults: expect.arrayContaining([
+              expect.objectContaining({
+                actionName: 'apply_prepared_design',
+                result: expect.objectContaining({
+                  status: 'complete',
+                  compositionId: 'part-1'
+                })
+              })
+            ])
+          })
+        ])
+      }
+    }
+  })
+  expect(
+    f.events.filter((event) => event.startsWith('apply_prepared_design:'))
+  ).toHaveLength(1)
+})
+
+it('delivers an optional selection example for existing criteria without forcing a new plan or changing default examples', async () => {
+  const f = inspectionBoundaryFixture()
+  const schema = f.workflow.definitions[0].inputSchema
+  const plain = projectWorkflowInput(schema, {
+    operation: 'draft',
+    nodeTypes: ['rect']
+  })
+  expect(plain.not).toBeUndefined()
+  const selected = projectWorkflowInput(schema, {
+    operation: 'draft',
+    nodeTypes: ['rect'],
+    optionalInputs: ['reviewChecks']
+  })
+  expect(selected.not).toBeDefined()
+  const examples = selected.examples as Record<string, unknown>[]
+  expect(examples[0].reviewChecks).toEqual([{ criterionId: 'appearance' }])
+  expect(examples[0].plan).toBeUndefined()
+  const rejected = await invokeLocalTool(
+    f.workflow,
+    f.workflow.definitions[0],
+    { ...examples[0], inspection: 'defer' },
+    signal()
+  )
+  expect(rejected.success).toBe(false)
+  expect(rejected.text).toContain('requires immediate inspection')
+  expect(f.events).toEqual([])
+  await f.operations.call('define_design_criteria', reviewPlanExample, signal())
+  const value = JSON.parse(
+    await f.workflow.call('prepare_and_apply_design', examples[0], signal())
+  )
+  expect(value.visualReview.next.arguments.checks[0].criterionId).toBe(
+    'appearance'
+  )
+  expect(
+    (schema.examples[0] as Record<string, unknown>).reviewChecks
+  ).toBeUndefined()
 })

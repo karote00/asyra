@@ -736,6 +736,16 @@
             "apps/asyra-design/server/local-design-workflow.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
+        },
+        {
+          "id": "compose.visual-judgment-handoff",
+          "stepId": "compose",
+          "testName": "execution proof binds an explicitly selected workflow image through the existing review owner",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
         }
       ],
       "handoffs": [

@@ -379,6 +379,19 @@ const reviewFactsSchema = {
     factBindings: factBindingsSchema
   }
 }
+// Reuse the review owner's exact selection and editable judgment constraints.
+export const reviewCaptureChecksSchema =
+  designReviewProperties.inspections.items.properties.checks
+export const reviewJudgmentFieldsSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['status', 'evidence'],
+  properties: {
+    status: designReviewProperties.checks.items.properties.status,
+    evidence: designReviewProperties.checks.items.properties.evidence
+  }
+}
+
 export const reviewPlanSchema = {
   type: 'object',
   additionalProperties: false,
