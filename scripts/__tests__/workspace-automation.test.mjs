@@ -111,6 +111,18 @@ test('scope parser install executes with pinned Yarn and skips lifecycle builds'
   assert.equal(fs.readFileSync(path.join(fixture, 'build-ran'), 'utf8'), 'yes')
 })
 
+test('the committed lockfile retains canonical descriptor order after workspace renames', () => {
+  const descriptors = Object.keys(yaml.load(readText('yarn.lock'))).filter(
+    (descriptor) => descriptor !== '__metadata'
+  )
+  for (let index = 1; index < descriptors.length; index++) {
+    assert.ok(
+      descriptors[index - 1] < descriptors[index],
+      `Lockfile descriptors are out of order: ${descriptors[index - 1]} before ${descriptors[index]}. Regenerate with Yarn using a fresh install state before immutable validation.`
+    )
+  }
+})
+
 test('workspace test:ci contracts cannot turn test failures into successful skips', () => {
   for (const root of ['apps', 'packages', 'tools']) {
     for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {
