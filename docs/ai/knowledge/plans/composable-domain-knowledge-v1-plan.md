@@ -18,7 +18,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 
 - Worktree: `.worktrees/design-knowledge-evaluation`.
 - Branch: `codex/design-knowledge-evaluation`.
-- Selected main: `3d503aa714336946839374dc948e9c171cfb8182`.
+- Selected main: `77debb2224b7fdc4129f775340bdc95437834938` (integrated before the convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
 - Current scope: layer-preserving pattern examples and early executable usage delivery.
   Reuse existing construction, preparation, owner examples, scope selection and dispatcher.
@@ -114,6 +114,20 @@ checkpoint preserves 7,505 elements, submitted material choices and painter orde
 This is not full visual acceptance, proof of model-visible native content, or a
 controlled latency comparison. The version-bound deterministic and browser evidence
 below remains applicable; the 841 Inspector runtime source hashes were rechecked.
+
+Push validation integrated main `77debb222` and preserved both upstream text tests
+and the completed delivery tests. Rebuilt the App dependency graph (20 successful
+production build tasks) to replace stale pre-rebase declarations. The three text
+admission/default failures then passed; all 95 preparation/tool cases passed, as did
+145 browser-runtime unit cases, production types and scoped lint. The source-bound
+Inspector attempt `9ecfbe71-2e03-4a91-8bb7-93a7ea18c5d6` passed all 64 mapped cases.
+The deterministic layered fixture again passed actual application, Undo/Redo and
+fresh-context durable reload (25.5 seconds); no real model was called. The broader
+owner check passed its remaining 292 cases before the corrected dependency build;
+no assertions or production behavior were changed to resolve those stale artifacts.
+Naming and static Inspector checks passed (34 cases). The five preexisting console
+warnings in the wider scoped lint remain warnings, not errors. Evidence is retained
+in `tmp/repetition-integrated-*`; complete commit-dependent checks before pushing.
 
 Next authorized investigation: explain the interval from final preparatory read
 at 27.702 seconds to first submission at 62.528 seconds using saved payloads and
