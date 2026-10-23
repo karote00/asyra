@@ -1346,3 +1346,20 @@ test('Asyra FieldScope profile failures retain complete bounded supervision arti
   )
   assert.equal(upload.with['include-hidden-files'], true)
 })
+
+test('shared CI downloads the scope plan instead of putting large JSON in the environment', () => {
+  const job = yaml.load(readText('.github/workflows/main.yml')).jobs[
+    'shared-validation'
+  ]
+  const runIndex = job.steps.findIndex((step) => step.id === 'selected_checks')
+  const step = job.steps[runIndex]
+  assert.equal(step.env.CI_EXECUTION_PLAN, undefined)
+  assert.equal(step.env.CI_SCOPE_EVIDENCE_FILE, 'ci-scope-evidence.json')
+  const downloadIndex = job.steps.findIndex(
+    (entry) =>
+      entry.uses?.startsWith('actions/download-artifact@') &&
+      entry.with?.name === 'ci-scope-evidence'
+  )
+  assert.ok(downloadIndex >= 0 && downloadIndex < runIndex)
+  assert.notEqual(job.steps[downloadIndex]['continue-on-error'], true)
+})

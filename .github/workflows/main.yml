@@ -147,10 +147,16 @@ jobs:
           read -r -a tasks <<< "$FRAMEWORK_DECLARATION_TASKS"
           if [ ${#tasks[@]} -gt 0 ]; then yarn turbo run "${tasks[@]}" --concurrency=2; fi
 
+      - name: Download CI scope evidence for shared checks
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-scope-evidence
+          path: .
+
       - name: Execute selected lint and repository checks
         id: selected_checks
         env:
-          CI_EXECUTION_PLAN: ${{ needs.scope.outputs.execution_plan }}
+          CI_SCOPE_EVIDENCE_FILE: ci-scope-evidence.json
           CI_RELATIONSHIP_MAP_DIGEST: ${{ needs.scope.outputs.relationship_map_digest }}
           CI_SCOPE_REPOSITORY: ${{ github.repository }}
           CI_SCOPE_BASE: ${{ github.event.pull_request.base.sha || github.sha }}

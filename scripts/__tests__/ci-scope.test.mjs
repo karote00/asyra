@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { rootInputImpact } from '../ci-input-impact.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -1885,4 +1886,70 @@ test('data-only root knowledge participates in consumer invalidation without a f
       'Workspace has no canonical build task: @asyra/domain-knowledge'
     )
   )
+})
+
+test('shared-check CLI reads a plan larger than Linux environment limits and rejects stale evidence', (t) => {
+  const parent = path.join(repositoryRoot, 'tmp')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(path.join(parent, 'large-ci-plan-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const scope = classifyChanges(['docs/ai/framework/PLANS.md'], manifests)
+  const plan = scope.executionPlan
+  plan.changedPaths = Array.from(
+    { length: 5000 },
+    (_, index) => `docs/large-workspace-rename/reference-${index}.md`
+  )
+  assert.ok(Buffer.byteLength(JSON.stringify(plan)) > 131072)
+  const identity = {
+    repository: 'local',
+    base: 'a'.repeat(40),
+    head: 'b'.repeat(40),
+    integration: 'b'.repeat(40),
+    run: '1',
+    attempt: '1'
+  }
+  const evidence = {
+    version: 2,
+    identity,
+    relationshipMapDigest: scope.relationshipMapDigest,
+    executionPlan: plan
+  }
+  const evidenceFile = path.join(directory, 'scope.json')
+  const output = path.join(directory, 'result.json')
+  fs.writeFileSync(evidenceFile, JSON.stringify(evidence))
+  const env = {
+    ...process.env,
+    CI_SCOPE_EVIDENCE_FILE: evidenceFile,
+    CI_CHECK_RESULTS_FILE: output,
+    CI_RELATIONSHIP_MAP_DIGEST: scope.relationshipMapDigest
+  }
+  delete env.CI_EXECUTION_PLAN
+  for (const [key, value] of Object.entries(identity))
+    env[`CI_SCOPE_${key.toUpperCase()}`] = value
+  const run = () =>
+    spawnSync(process.execPath, ['scripts/run-ci-checks.mjs'], {
+      cwd: repositoryRoot,
+      env,
+      encoding: 'utf8',
+      timeout: 10000
+    })
+  const result = run()
+  assert.equal(result.status, 0, result.stderr || result.stdout)
+  const receipt = JSON.parse(fs.readFileSync(output, 'utf8'))
+  assert.equal(
+    receipt.executionPlanDigest,
+    createHash('sha256').update(JSON.stringify(plan)).digest('hex')
+  )
+  assert.deepEqual(receipt.identity, identity)
+  fs.rmSync(output)
+  for (const stale of [
+    { ...evidence, identity: { ...identity, head: 'c'.repeat(40) } },
+    { ...evidence, relationshipMapDigest: '0'.repeat(64) }
+  ]) {
+    fs.writeFileSync(evidenceFile, JSON.stringify(stale))
+    const rejected = run()
+    assert.notEqual(rejected.status, 0)
+    assert.match(rejected.stderr, /scope evidence does not match/)
+    assert.equal(fs.existsSync(output), false)
+  }
 })
