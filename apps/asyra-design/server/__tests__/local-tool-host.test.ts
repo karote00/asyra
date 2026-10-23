@@ -927,3 +927,77 @@ it('retains a material revision across native call cleanup and retires its sourc
     await host.dispose()
   }
 })
+
+it('preserves acknowledged cancellation evidence through the actual native host without replay', async () => {
+  const controller = new AbortController()
+  let calls = 0
+  const receipts = {
+    batches: [
+      {
+        actionResults: [
+          {
+            actionId: 'apply',
+            actionName: 'draw',
+            result: {
+              status: 'partial',
+              compositionId: 'root',
+              appliedElementCount: 33
+            }
+          }
+        ],
+        failure: { settlement: 'partial', code: 'AI_EXECUTION_FAILED' }
+      }
+    ]
+  }
+  const host = createLocalToolHost({
+    requestId: 'interrupted-owner',
+    signal: controller.signal,
+    store: memory(),
+    capacity: 32,
+    receiptCapacity: 8,
+    artifactCapacity: 64,
+    limits: {
+      steps: 16,
+      bindings: 240,
+      bindingDepth: 32,
+      bytes: 24000,
+      issues: 8
+    },
+    executionEvidence: () => receipts,
+    createGroups: () => [
+      {
+        name: 'drawing',
+        description: 'Drawing',
+        owner: {
+          definitions: [
+            {
+              name: 'draw',
+              description: 'Draw',
+              inputSchema: { type: 'object' },
+              ...toolSemantics({ type: 'object' }, 'mutation', ['document'])
+            }
+          ],
+          call: async () => {
+            calls++
+            controller.abort()
+            throw new Error('Interrupted')
+          }
+        }
+      }
+    ]
+  })
+  try {
+    await expect(
+      host.invoke({ name: 'drawing.draw', input: {} })
+    ).rejects.toMatchObject({
+      receipt: { settlement: 'partial', result: receipts }
+    })
+    expect(calls).toBe(1)
+    await expect(
+      host.invoke({ name: 'drawing.draw', input: {} })
+    ).rejects.toThrow()
+    expect(calls).toBe(1)
+  } finally {
+    await host.dispose()
+  }
+})

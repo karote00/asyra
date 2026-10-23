@@ -298,7 +298,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "a85605ff2a1993b1666701cb4a143f730ffd9f41ad76dcc9c6ff2827e935f7b7"
+          "sha256": "c8d460dbfb681c83e24725c932716048e870da35c519fba3feff5177edc32534"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "a85605ff2a1993b1666701cb4a143f730ffd9f41ad76dcc9c6ff2827e935f7b7"
+          "sha256": "c8d460dbfb681c83e24725c932716048e870da35c519fba3feff5177edc32534"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -564,7 +564,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "a85605ff2a1993b1666701cb4a143f730ffd9f41ad76dcc9c6ff2827e935f7b7"
+          "sha256": "c8d460dbfb681c83e24725c932716048e870da35c519fba3feff5177edc32534"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",

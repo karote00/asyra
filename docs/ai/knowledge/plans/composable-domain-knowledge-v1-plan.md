@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Context discovery handoff closed on formal local integration and Inspector revision 72; live AI adoption remains unobserved. Task 3 remains active. Shared motifs and prior repetition (round 3 of 3) remain closed. No further model run is authorized.**
+Status: **Interrupted owner-result handoff has strengthened local cancellation, recovery, reporting and disk-reload evidence. Live AI recovery from an interrupted owner remains unobserved. Task 3 remains active. Prior closed slices remain closed. No model run is authorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,13 +20,12 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `77debb2224b7fdc4129f775340bdc95437834938` (integrated before the convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: close and push the verified read_design_context discovery slice.
-  Then inspect saved run 1792765309915 read-only to propose one App/framework
-  handoff improvement with evidence, a minimal design and fixed DoD. No next-issue
-  implementation, model/101, new tool/state/registry, budget experiment, Knowledge
-  change, refresh suppression, unrelated cleanup or further repetition iteration.
-- Future implementation requires admission of its reconciled contract first.
-  Prior accepted snapshots do not admit a new change.
+- Current scope: preserve interrupted prepared-design owner results through Runtime,
+  native invocation and the existing report handoff. Keep cancellation, transaction
+  settlement, retained sources and no-replay semantics. The current closeout authorizes
+  validation, commit and push, followed by read-only analysis of run 1792770001609.
+  No model/101, next-issue implementation, budget, Knowledge, geometry, discovery
+  or unrelated status changes are authorized.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -84,6 +83,216 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Interrupted owner results - 2026-10-23
+
+Closeout - 2026-10-24: accepted on the formal local integration evidence below.
+The user authorized publishing this bounded slice. Live AI recovery remains
+unobserved; no further model run is needed to close the deterministic contract.
+Next-issue investigation is read-only and must not reopen this slice without new
+evidence of a product defect.
+Pre-push validation reran 68 App/Runtime cases and 370 native/host/workflow
+cases (one existing executable-dependent skip), production types, Runtime build,
+scoped lint (zero errors, four existing warnings), naming and Inspector revision
+73 verification (attempt 402e2bea-4681-452f-bed6-e0a670e90fd0). The public
+documentation check exposed a stale generated contract index; the existing
+generator synchronized its three outputs and the check then passed. Runtime
+release metadata is included. No next-issue production changes are included.
+
+Local coverage follow-up - 2026-10-24 (same fixed DoD): the live run
+1792770001609 completed its only drawing before cutoff, so it did not exercise
+an interrupted owner prefix or recovery. Existing real-Core tests cover deadline
+admission and member rollback, while native reporting uses synthetic receipts.
+Do not infer connected coverage from those separate results.
+
+Step Execution Card - apply verification:
+
+- Reuse the admitted apply/apply-to-compose/apply-to-settle contracts and
+  Interrupted owner results spec. Inputs remain prepared artifacts, real Core
+  mutations, cancellation and existing retained-source continuation.
+- Extend the existing interrupted-design integration with actual AbortSignal
+  cancellation, rejection of whole-artifact replay, and safe remaining-part
+  continuation through the existing preparation owner. Confirm canonical values,
+  History boundaries, publication reduction, remote application and reload.
+- The slice may edit this plan, the existing interrupted-design integration
+  test and its registration in the existing App test:ai gate. No production owner, persisted state, budget policy or new recovery
+  mechanism. Test-controlled scheduling and small fixture budgets are fault
+  injection, not product settings or another capacity experiment.
+- Keep partial-member recovery distinct from fully acknowledged-part continuation;
+  never manufacture a resume instruction for an uncertain member.
+- Run focused App/Runtime tests, naming, scoped lint and current-source Inspector
+  verification; stop if production behavior or the admitted owner boundary must
+  change. New test identifiers are internal only, with no wire/persistence change.
+
+Step Execution Card - compose verification (after apply review):
+
+- Reuse compose and apply-to-compose, the existing provider protocol fixture,
+  actual prepared owner/Runtime receipts and bounded report input.
+- Extend local-ai-provider.test.ts to consume real interrupted drawing results,
+  not a hand-authored count. The native process remains scripted: no model call.
+- Verify exact root/count/range, cancellation, drainage before reporting and no
+  restarted mutation. Preserve ordinary requests and bounded omission cases.
+- No new receipt store or provider protocol; production contracts and Inspector
+  architecture remain unchanged. Run the provider suite, production types and
+  bounded self-review. AI interpretation/adoption remains unobserved locally.
+
+Follow-up result - 2026-10-24:
+- Existing coverage was real for Core/Factory prefix state but disconnected from
+  reporting; its save/load oracle used only the canonical reducer in memory.
+  The integration was also absent from the existing App test:ai file list. These
+  coverage gaps are now closed without changing production owners or contracts.
+- The real owner/Runtime test now covers AbortSignal cancellation at 33 of 41
+  entries, deadline admission and member rollback. It rejects whole-artifact
+  replay without writes or another History entry. The original full-prefix
+  canonical assertions remain; cancellation is not relabeled as success.
+- Safe continuation is tested separately: after all entries of the first retained
+  part are acknowledged but its delivery is cancelled, the existing source repair
+  prepares only the next part. Actual creation calls contain only missing IDs;
+  duplicate continuation is rejected. Completed state equals uninterrupted
+  execution of the same artifacts, including properties, hierarchy and order.
+  One Undo removes the continuation, the next removes retained earlier work;
+  Redo restores each exact state. This does not invent within-part auto-resume.
+- Document evidence now follows the real publication filter and wire encoder,
+  materializer and file store. A new store instance reads the persisted checkpoint
+  before Core load and full-state comparison. Repeating the same persistence batch
+  is idempotent. Remote canonical application retains identical values, produces
+  no echo and creates no local History. No live socket/browser claim is made.
+- A scripted native peer now dispatches the main drawing tool through real
+  preparation, App drawing and Runtime. The actual 33/41 receipt reaches the native
+  report input with exact root/range/status, then the real report_outcome owner.
+  Only one drawing batch executes; report processing leaves canonical state intact.
+  This tests transport/report handling, not model interpretation of those facts.
+- Admission: existing revision 73 mapping is unchanged. The four production owner
+  files match the saved live-run source byte-for-byte. New tests initially exposed
+  fixture omissions (selection registration and document wire decoding), which were
+  corrected by using existing owners, not by weakening state comparisons.
+- Validation: 68 focused App/Runtime cases passed; after adding actual file-store
+  readback, all four owner integration cases passed again. Native/host/workflow
+  suites passed 370 cases with one pre-existing executable-dependent skip; the
+  strengthened real-receipt report case passed again after self-review. Production
+  types and a separate strict integration-test typecheck passed. Scoped lint has
+  zero errors and one unchanged console warning; naming passed 15 cases. Inspector
+  current-source verify passed all 69 mapped cases at revision 73 (attempt
+  1b105693-a564-4bd2-be51-d19f7f6582a2). The supplemental tests run through the
+  existing App gates; they are not additional Inspector mapped cases.
+- Self-review checked exact creation calls, actual abort versus delivery failure,
+  final transaction authority, new-request replay rejection, owner drainage before
+  reporting, History grouping, remote filtering, durable retry and cleanup. No
+  production behavior change was needed. Test scratch stores are created inside
+  the project and removed by the formal tests; no saved run evidence is modified.
+- Scope limit: safe remaining-part recovery is verified only while the original
+  retained source is valid and earlier parts are fully acknowledged. An uncertain
+  partial part does not gain an automatic resume invocation. The live 101 run had
+  already completed its sole drawing before cutoff, so actual AI recovery remains
+  unobserved. No model/101, push or next-issue work was performed in this follow-up.
+
+Status: implemented and locally verified. Base: 74e44c1f3bac2ac6cbe18901260be191c3fba6ad.
+Evidence: immutable run 1792765309915, provider 5c12d7a4-6a90-482f-972e-f9a83d9cfe17,
+inputs 38/42 and outputs 40/44/46. The second prepared artifact has 8,071 entries;
+checkpoint IDs contain exactly its first 3,169 entries. Runtime reports unknown
+settlement and native cancellation drops the structured result. This is not proof
+that every property is correct or that replay actually happened.
+
+Bounded design: the prepared-design owner captures confirmed mutation results using
+runAiMutation's existing synchronous settlement observer. Its existing failure type
+carries detached partial action evidence; Runtime retains it in existing actionResults
+and failure settlement, preserving cancellation and transaction authority. No new
+progress registry, scheduler, retry, persistence owner or geometry transformation.
+For evaluation reporting only, extend the existing causal receipt ancestry to the
+request root so the already
+bounded reporting handoff consumes settled receipts after tool drainage. Cancellation
+still rejects; evidence is not a successful invocation or permission for another write.
+
+Step Execution Card - apply:
+
+- Spec: Interrupted owner results; Inspector apply and apply-to-compose/apply-to-settle.
+- Inputs: admitted prepared artifact, current permissions, existing mutation executor,
+  synchronous settled results, real errors and cancellation/transaction outcomes.
+- Outputs: unchanged successful output or typed failure with confirmed prefix,
+  composition identity, counts/ranges and conservative settlement; original cancellation.
+- Conditions: no receipt before acknowledged work; a rolled-back or failed member
+  cannot join the confirmed prefix; final rollback overrides claims of retained writes.
+  Full and compact success remain legal; no implicit resume for an uncertain member.
+- Contributors: App drawing owner, Runtime failure/actionResults, existing grouped
+  transactions and canonical publication. Forbidden: guessed IDs, diagnostic counters
+  as receipts, replay, document rescans per slice or alternate History/persistence.
+- Boundary: design-actions.ts, Runtime runtime.ts and public types, direct owner and
+  runtime tests, current Framework package contract and App contract. Failure owner: apply.
+- Naming: extend the existing AiActionExecutionError and AiExecutionError with optional
+  owner receipts, preserving failure versus abort identity; existing result,
+  settlement, appliedElementCount/Ids and compositionId meanings remain authoritative.
+  No persisted document-format change. Capture each confirmed slice once, not a full
+  accumulated result on every slice; assemble the interruption receipt once.
+- Gates: fail-first cases before/within/after writes, later member rollback/failure,
+  real grouped Undo/Redo, document publication/remote apply and save/load equivalence;
+  real Runtime callbacks and terminal cancellation, no later action or replay.
+
+Step Execution Card - compose:
+
+- Spec: Interrupted owner results; Inspector compose and apply-to-compose.
+- Inputs: registered native calls, existing causal batch receipts and cancellation.
+- Outputs: failed/cancelled observation retaining owner evidence; bounded report input
+  separates receipt facts from model interpretation and does not admit more operations.
+- Conditions/bypasses: no acknowledged result preserves ordinary abort; cancelled
+  transport is never success. Ordinary non-evaluation requests do not start reporting.
+  Do not supply expired artifacts as executable recovery or synthesize remaining geometry.
+- Contributors: local-tool-invocation, local-ai-provider, existing call ancestry and
+  error carrier. Forbidden: duplicate receipt store, model calls, retry or new tool.
+- Boundary: those owners and direct tests; local host/workflow only if required to
+  preserve the same receipt. Failure owner: compose. No new lifecycle owner.
+- Gates: actual native host path with cancellation, sibling isolation, provider mock
+  protocol showing settled receipts in report input, bounded receipt representation,
+  no tool/mutation after cutoff, unchanged successful and empty-result behavior.
+
+Fixed DoD:
+
+1. Distinguish interruption before writes, after a confirmed prefix, and after all
+   writes before delivery; actual owner evidence determines the result.
+2. Preserve confirmed count, identities/range and root across real owner, Runtime,
+   native host and reporting. Unconfirmed work is neither successful nor replayable.
+3. No later mutation after cutoff/cancellation; reporting uses only settled evidence.
+4. Reuse existing recovery; offer remaining-only invocation only when proven safe.
+   No whole-geometry resend, silent resume or replay of acknowledged changes.
+5. Formal integration verifies canonical state, publication/remote application,
+   persistence/reload and affected Undo/Redo, including rollback and no echo/history
+   on remote apply. Successful writes retain their existing History boundary.
+
+Required closure: mapped proof, focused App/Runtime integrations, production types,
+scoped lint, naming, Inspector static/generation/candidate/accept/verify and bounded
+self-review of changed owners and direct consumers. No model or 101. Stop/replan if
+transaction semantics must change or an additional state owner becomes necessary.
+
+Closure evidence and review:
+
+- Structural admission passed before implementation. Fail-first formal cases proved
+  lost owner prefixes, cancellation results, native evidence and report facts before
+  their respective changes; permanent tests do not read ignored run artifacts.
+- App/Runtime: 224 tests passed across ten focused files. Real Core/Factory tests use
+  the actual mutation deadline and a later member rollback; the retained root and 32
+  panels match complete canonical values after one Undo/Redo, server publication
+  reduction, browser remote apply without echo/history, and save/load.
+- Native/provider/workflow: 369 tests passed; the one existing executable-dependent
+  native-protocol test remains skipped. The scripted provider drains an interrupted
+  owner, carries failure evidence, emits bounded facts for 1/40 actions, explicitly
+  marks omission, excludes geometry/free text, and performs no replay.
+- Runtime/App/server/proof production types passed. Scoped ESLint has no errors and
+  four unchanged console warnings. Naming passed 15 tests. Scoped Inspector catalog
+  and workspace checks passed 25 tests. The extra whole-catalog viewer check exposes
+  an unrelated pre-existing missing terminal route for artifact:property-intent-result
+  in canonical-projection-and-collaboration-contract-realignment; its source is not
+  modified by this task and it is not claimed as passed.
+- Candidate 769b8741-e555-4547-8db6-5905ae2ebd71 passed all 69 mapped cases;
+  review b1e17f5c94679f531d2de867003f9d6bd17d9adf8591ca5869d5475cccfee6a3
+  had no blockers or retirements and was accepted as revision 73. All 67 previous
+  obligations remain, with two interruption cases added. Final current-source verify
+  is recorded in tmp/interrupted-results-inspector-final.log.
+- Self-review preserved the existing abort class/code, safe failure explanation,
+  grouped transaction authority, member settlement callback, full/compact success,
+  partial status, completed-write settlement, sibling isolation and remaining-only
+  recovery. General requests do not gain an extra receipt retention lifetime.
+- This closes the fixed local DoD only. No model/101 was run, no actual AI recovery
+  or first-frame improvement is asserted, and no next issue was started. Historical
+  evidence is unchanged; no push is included in this authorization.
 
 ### Context discovery handoff - 2026-10-23
 

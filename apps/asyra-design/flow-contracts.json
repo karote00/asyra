@@ -709,6 +709,24 @@
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
+        },
+        {
+          "id": "apply.interrupted-results",
+          "stepId": "apply",
+          "testName": "execution proof preserves interrupted owner results without replay",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/design-actions.ts",
+            "packages/ai-agent-runtime/src/runtime.ts"
+          ]
+        },
+        {
+          "id": "compose.interrupted-results",
+          "stepId": "compose",
+          "testName": "execution proof preserves cancellation evidence through native invocation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-tool-invocation.ts",
+            "apps/asyra-design/server/local-ai-provider.ts"
+          ]
         }
       ],
       "handoffs": [

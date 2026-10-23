@@ -1,3 +1,4 @@
+import { detachAiJsonValue } from './json-value.js'
 import { AiToolContractError } from './tool-contract.js'
 import { isExecutionActivity } from './provider.js'
 import { createAiExecutionProfiler } from './profiler/recorder.js'
@@ -120,9 +121,14 @@ export class AiExecutionError extends Error {
   readonly code = 'AI_EXECUTION_ABORTED' as const
   readonly stage = 'execution' as const
 
-  constructor() {
+  constructor(readonly receipt?: AiActionExecutionError['receipt']) {
     super('AI action execution was aborted.')
     this.name = 'AiExecutionError'
+    if (receipt)
+      this.receipt = Object.freeze({
+        ...receipt,
+        result: detachAiJsonValue(receipt.result)
+      })
   }
 }
 
@@ -132,13 +138,24 @@ export class AiActionExecutionError extends Error {
   readonly code = 'AI_EXECUTION_FAILED' as const
   readonly stage = 'execution' as const
 
-  constructor(publicMessage: string) {
+  constructor(
+    publicMessage: string,
+    readonly receipt?: {
+      readonly result: AiJsonValue
+      readonly settlement: 'not-started' | 'partial' | 'completed' | 'unknown'
+    }
+  ) {
     super(
       publicMessage.trim() && publicMessage.length <= 1000
         ? publicMessage
         : 'AI action execution failed.'
     )
     this.name = 'AiActionExecutionError'
+    if (receipt)
+      this.receipt = Object.freeze({
+        ...receipt,
+        result: detachAiJsonValue(receipt.result)
+      })
   }
 }
 
@@ -246,6 +263,7 @@ export interface AiRuntimeExecutedResult {
 }
 
 export interface AiRuntimeCancelledResult {
+  readonly actionResults?: readonly AiActionExecutionResult[]
   readonly transaction?: {
     readonly status: 'committed' | 'rolled-back' | 'unknown'
   }
@@ -621,7 +639,11 @@ export const executeAiActions = async (
   for (const action of batch.actions) {
     assertExecutionNotAborted(signal)
     const result = await action.execute(action.arguments, context)
-    assertExecutionNotAborted(signal)
+    if (signal.aborted)
+      throw new AiExecutionError({
+        result: redactAiValue(result, redactionOptions),
+        settlement: 'completed'
+      })
     actionResults.push(
       Object.freeze({
         actionId: action.id,
@@ -1529,7 +1551,24 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
               result: completed.actionResults[0]?.result
             })
           } catch (error) {
+            const receipt =
+              error instanceof AiActionExecutionError ||
+              error instanceof AiExecutionError
+                ? error.receipt
+                : undefined
+            if (receipt) {
+              allResults.push(
+                Object.freeze({
+                  actionId: action.id,
+                  actionName: action.name,
+                  result: redactAiValue(receipt.result, this.redactionOptions)
+                })
+              )
+            }
             recording?.trace('action_failed', {
+              ...(receipt
+                ? { result: allResults[allResults.length - 1]?.result }
+                : {}),
               actionId: action.id,
               batchId: confirmed.batchId,
               callId: actionCallId,
@@ -1710,6 +1749,11 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
                             else if (error.status === 'committed')
                               settlement = 'completed'
                           }
+                          if (
+                            error instanceof AiActionExecutionError &&
+                            error.receipt
+                          )
+                            settlement = error.receipt.settlement
                           if (error instanceof AiToolContractError)
                             settlement =
                               error.inspection?.settlement ?? 'not-started'
@@ -1882,7 +1926,12 @@ class DefaultAiAgentRuntime implements AiAgentRuntime {
       return executed
     } catch (error) {
       if (signal.aborted || error === INVOCATION_ABORTED) {
-        return createCancelledResult('aborted', evidence, this.redactionOptions)
+        return Object.freeze({
+          ...createCancelledResult('aborted', evidence, this.redactionOptions),
+          ...(allResults.length && evidence.transactionStatus !== 'rolled-back'
+            ? { actionResults: Object.freeze([...allResults]) }
+            : {})
+        })
       }
 
       if (
