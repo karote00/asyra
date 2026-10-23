@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import {
+  PUBLIC_CONTENT_SCHEMA_PATH,
   readPublicContentContract,
   validatePublicContentManifest
 } from '../public-content-contract.mjs'
@@ -21,7 +23,15 @@ test('content manifest owns the exact stable documentation inventory', async () 
   const contract = await readPublicContentContract({ repositoryRoot })
 
   assert.equal(contract.schemaVersion, 1)
-  assert.equal(contract.pages.length, 41)
+  assert.equal(contract.pages.length, 46)
+  const schema = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, PUBLIC_CONTENT_SCHEMA_PATH),
+      'utf8'
+    )
+  )
+  assert.equal(schema.properties.pages.minItems, contract.pages.length)
+  assert.equal(schema.properties.pages.maxItems, contract.pages.length)
   assert.deepEqual(
     contract.pages.map(({ id }) => id),
     inspector.pageIds

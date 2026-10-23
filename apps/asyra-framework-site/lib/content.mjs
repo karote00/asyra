@@ -61,9 +61,9 @@ export async function loadVerifiedPublicContent() {
       readJson('docs/public/generated/package-reference.json')
     ])
 
-  if (manifest.pages.length !== 41 || contentIndex.pages.length !== 41) {
+  if (manifest.pages.length !== 46 || contentIndex.pages.length !== 46) {
     throw new Error(
-      'The public content inventory must contain exactly 41 pages'
+      'The public content inventory must contain exactly 46 pages'
     )
   }
   if (packageReference.packages.length !== 19) {

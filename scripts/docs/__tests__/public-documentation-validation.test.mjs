@@ -19,7 +19,7 @@ const repositoryRoot = path.resolve(
 test('complete public documentation passes structural, link, and API gates', async () => {
   const summary = await validatePublicDocumentation({ repositoryRoot })
 
-  assert.equal(summary.pageCount, 41)
+  assert.equal(summary.pageCount, 46)
   assert.equal(summary.packageGuideCount, 19)
   assert.equal(summary.conceptPageCount, 7)
   assert.equal(summary.implementationGuideCount, 11)

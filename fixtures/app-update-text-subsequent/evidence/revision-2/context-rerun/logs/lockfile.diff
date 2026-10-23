@@ -1,0 +1,27 @@
+--- baseline/yarn.lock
++++ rerun/yarn.lock
+@@ -107,7 +107,7 @@
+   linkType: hard
+ 
+-"@asyra/preset@file:./artifacts/asyra-preset-0.5.8.tgz::locator=text-subsequent-update-consumer%40workspace%3A.":
+-  version: 0.5.8
+-  resolution: "@asyra/preset@file:./artifacts/asyra-preset-0.5.8.tgz#./artifacts/asyra-preset-0.5.8.tgz::hash=a251c0&locator=text-subsequent-update-consumer%40workspace%3A."
++"@asyra/preset@file:./artifacts/asyra-preset-0.5.8-task4.0.tgz::locator=text-subsequent-update-consumer%40workspace%3A.":
++  version: 0.5.8-task4.0
++  resolution: "@asyra/preset@file:./artifacts/asyra-preset-0.5.8-task4.0.tgz#./artifacts/asyra-preset-0.5.8-task4.0.tgz::hash=6e9e78&locator=text-subsequent-update-consumer%40workspace%3A."
+   dependencies:
+     "@asyra/core": "npm:0.5.7"
+@@ -119,5 +119,5 @@
+     rxjs: "npm:^7.8.1"
+     three: "npm:0.185.1"
+-  checksum: 10c0/8191e344d8e9266707d720ea50115f48b69c4c2daee28ef6d7885c643e92f968099a75f639d6ffbe4b0921ad8b83aea6aee704759c9c1de43c177b9261c868c8
++  checksum: 10c0/a7ac1e7bfe0de18f2ff1271e020070fac053065424f16d3975f784fa639392044bd7e55c284c68108282d2cdca30029376c16dddfacb84bf2092a0796e5f00f2
+   languageName: node
+   linkType: hard
+@@ -3200,5 +3200,5 @@
+   dependencies:
+     "@asyra/core": "npm:0.5.7"
+-    "@asyra/preset": "npm:0.5.8"
++    "@asyra/preset": "npm:0.5.8-task4.0"
+     "@asyra/utils": "npm:0.5.1"
+     "@eslint/compat": "npm:^2.0.1"

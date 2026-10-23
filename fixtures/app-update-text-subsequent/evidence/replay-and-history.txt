@@ -1,0 +1,2 @@
+Reversed independent integration patch: all 31 delivered input file digests match.
+Task 3 preservation: all 59 snapshotted file digests unchanged.

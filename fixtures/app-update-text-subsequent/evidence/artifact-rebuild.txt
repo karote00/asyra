@@ -1,0 +1,1 @@
+{"name": "@asyra/preset", "version": "0.5.8-task4.0", "file": "asyra-preset-0.5.8-task4.0.tgz", "sha256": "60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7"}

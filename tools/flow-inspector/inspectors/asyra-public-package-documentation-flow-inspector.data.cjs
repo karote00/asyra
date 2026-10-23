@@ -47,6 +47,11 @@ const pageIds = Object.freeze([
   'build/collaboration',
   'build/ai-actions',
   'build/app-retrieval-action',
+  'updates/index',
+  'updates/text-official-fields-example-1-r2',
+  'updates/text-official-fields-example-1-r3',
+  'updates/text-spacing-example-2-r1',
+  'updates/text-spacing-example-2-r2',
   ...packageGuideIds,
   'reference/support-release',
   'cases/asyra-design'
@@ -116,7 +121,7 @@ module.exports = Object.freeze({
       ],
       outputs: ['artifact:public-content-contract'],
       conditions: [
-        'Exactly 41 stable page ids are declared once.',
+        'Exactly 46 stable page ids are declared once.',
         'Each page owns a Markdown path, section, title, sources, and relationships to packages.',
         'Public indexes exclude internal operations, secrets, obsolete contracts, and historical audits.'
       ],
@@ -435,7 +440,7 @@ module.exports = Object.freeze({
       id: 'complete-public-ia',
       stepIds: ['freeze-content-contract', 'verify-public-documentation'],
       assertions: [
-        'Exactly 41 stable pages and 19 package guides exist.',
+        'Exactly 46 stable pages and 19 package guides exist.',
         'Start, Learn, Build, Reference, and Cases remain readable Markdown.'
       ]
     }),

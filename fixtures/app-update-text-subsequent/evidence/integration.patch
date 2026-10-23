@@ -1,0 +1,272 @@
+diff --git a/README.md b/README.md
+index 1744b45..efd9157 100644
+--- a/README.md
++++ b/README.md
+@@ -126,3 +126,56 @@ plus the maintainer follow-up and the intervening changes above. The next
+ `text-spacing-example-2` change is pending. The document schema is still 2.
+ Run the current tests before selecting the supplied next artifact. Keep failed
+ or partial adoption pending and retain the previous artifact and saved inputs.
++
++
++## Subsequent independent Text adoption - 2026-10-24
++
++Adopted `text-spacing-example-2`, guide revision 1, from the actual first
++candidate plus shared-gray/approval follow-up and intervening rejected approval
++extensions. This section supersedes the pending status above. V1/V2/V3 adoption
++stages are separate from App document versions; the App format remains version 2.
++
++Selected the supplied private, test-only Preset `0.5.8-task4.0` archive in the
++existing dependency and resolution. Its SHA-256 is
++`60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7`;
++the retained previous Preset 0.5.8 archive is
++`465e4e330d272162dc627b9004b109e7b15529eef4699366451697ca86085291`.
++Both digests were recomputed. Archive comparison confirmed exactly the three
++entries listed in `updates/model-artifact.json`; every installed target archive
++file matches. Core remains 0.5.7 and resolved Utils remains 0.5.2 (the existing
++manifest request is 0.5.1 with its unchanged local resolution). The lockfile
++changes only Preset and its consumer dependency reference. Linked canonical
++GitHub sources were reachable; installed public declarations were inspected.
++
++New Text and chart typography now inherit spacing 0.5 from the official base.
++Explicit saved spacing, including 0 and 1.5, and saved colors remain unchanged.
++The existing composition required no runtime rewrite: twelve unique fields,
++metadata aliases, one official renderer, all three metadata paths, rejected
++approval, approve/reject transactions, shared gray from `createDefaultFill`,
++chart references and Text-only controls are retained. The App loader still
++converts version-1 multiplier units once and rejects incomplete/invalid data
++before apply. Original fixture files and previous candidate archives are intact.
++The official example UI panel remains deferred and uninstalled; rich text and
++IME remain outside adoption.
++
++Verification: the unmodified baseline passed 22 tests. Before installing the
++candidate, the updated/new default assertions failed twice with actual 0 versus
++expected 0.5; the other 27 tests passed. After installation, all 29 permanent
++tests pass, plus typecheck, lint and build. Added coverage verifies new Text and
++chart defaults through fresh load, explicit zero through two storage reloads,
++missing spacing and each metadata field without canonical mutation, and each
++metadata Feature write after reload with canonical/projection/storage checks.
++Retained coverage exercises all three document generations, line height 24,
++scene hierarchy and references, rejected approval, one-entry actions, Undo/Redo,
++validation, renderer registration and chart control isolation.
++
++Logs are retained in `test-results/subsequent-adoption/`: baseline, old-candidate
++regression, artifact verification, install, formatting, test, typecheck, lint
++and build. The first lint run rejected dynamic deletion in a new test; it was
++replaced with `Reflect.deleteProperty` and lint passed. Installation reported
++Yarn's optional TypeScript patch warning; typecheck/build passed without changing
++tools or unrelated dependencies. Existing jsdom render warnings and the build's
++large-chunk warning remain. Tests use packaged Core with canvas stubs: no browser
++pixel, published release, production storage, restored prior-session undo stack,
++or general release-range compatibility claim is made. No publication, push or
++Framework source modification was performed.
+diff --git a/package.json b/package.json
+index ca88bac..80f1128 100644
+--- a/package.json
++++ b/package.json
+@@ -21,7 +21,7 @@
+   },
+   "dependencies": {
+     "@asyra/core": "0.5.7",
+-    "@asyra/preset": "0.5.8",
++    "@asyra/preset": "0.5.8-task4.0",
+     "@asyra/utils": "0.5.1"
+   },
+   "devDependencies": {
+@@ -50,7 +50,7 @@
+     "@asyra/feature-system": "file:./artifacts/asyra-feature-system-0.5.4.tgz",
+     "@asyra/input-system": "file:./artifacts/asyra-input-system-0.5.5.tgz",
+     "@asyra/persistence": "file:./artifacts/asyra-persistence-0.5.3.tgz",
+-    "@asyra/preset": "file:./artifacts/asyra-preset-0.5.8.tgz",
++    "@asyra/preset": "file:./artifacts/asyra-preset-0.5.8-task4.0.tgz",
+     "@asyra/props-manager": "file:./artifacts/asyra-props-manager-0.5.4.tgz",
+     "@asyra/reactive-events": "file:./artifacts/asyra-reactive-events-0.5.4.tgz",
+     "@asyra/render": "file:./artifacts/asyra-render-0.5.7.tgz",
+diff --git a/src/__tests__/subsequent-preservation.test.ts b/src/__tests__/subsequent-preservation.test.ts
+index 8bbc4d1..5c052e4 100644
+--- a/src/__tests__/subsequent-preservation.test.ts
++++ b/src/__tests__/subsequent-preservation.test.ts
+@@ -1,9 +1,16 @@
++import { createDefaultFill } from '@asyra/utils'
+ import { afterEach, describe, expect, it } from 'vitest'
+ import original from '../../test-data/current.json'
+ import multiplier from '../../test-data/multiplier.json'
+ import extended from '../../test-data/locally-extended.json'
+ import { createDocumentRuntime, type DocumentRuntime } from '../runtime.js'
+-import { CHART_UI, METADATA_UI, STORAGE_SLOT } from '../definitions.js'
++import {
++  CHART_TYPE,
++  CHART_UI,
++  METADATA_UI,
++  TYPOGRAPHY_UI,
++  STORAGE_SLOT
++} from '../definitions.js'
+ 
+ let runtime: DocumentRuntime | undefined
+ const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
+@@ -130,3 +137,106 @@ describe('Intervening consumer changes', () => {
+     expect(finalSave.core.sceneTree).toEqual(extended.core.sceneTree)
+   })
+ })
++
++describe('Subsequent spacing adoption', () => {
++  it('uses the selected default for new Text and chart and preserves it on reload', async () => {
++    let app = await open(extended)
++    for (const type of ['text', CHART_TYPE]) {
++      const id = `new-${type}`
++      app.core.createElement({ id, type, name: 'New typography', x: 0, y: 0 })
++      expect(app.core.getElementComputedData(id)).toMatchObject({
++        letterSpacing: 0.5,
++        textColor: createDefaultFill().color
++      })
++    }
++    await app.save()
++    await app.dispose()
++    runtime = undefined
++    app = await open(readStored())
++    for (const type of ['text', CHART_TYPE]) {
++      expect(app.core.getElementComputedData(`new-${type}`)).toMatchObject({
++        letterSpacing: 0.5,
++        textColor: createDefaultFill().color
++      })
++    }
++    app.feature.select('chart-1')
++    await settle()
++    expect(app.core.getUIProperty(METADATA_UI)).toBeNull()
++    expect(app.core.getUIProperty(TYPOGRAPHY_UI)).toBeNull()
++  })
++
++  it('retains explicit zero on Text and chart through two storage reloads', async () => {
++    const input = structuredClone(extended)
++    for (const property of Object.values(input.core.props)) {
++      if ('letterSpacing' in property) property.letterSpacing = 0
++    }
++    const untouched = structuredClone(input)
++    let app = await open(input)
++    for (let pass = 0; pass < 2; pass++) {
++      for (const id of ['text-1', 'chart-1']) {
++        expect(app.core.getElementComputedData(id)?.letterSpacing).toBe(0)
++      }
++      const saved = await app.save()
++      expect(saved.core).toEqual(input.core)
++      await app.dispose()
++      runtime = undefined
++      app = await open(readStored())
++      expect((await app.save()).core).toEqual(input.core)
++    }
++    expect(input).toEqual(untouched)
++  })
++
++  it.each([
++    'letterSpacing',
++    'approvalStatus',
++    'sourceRecordId',
++    'labelCategory'
++  ])('rejects missing %s without defaulting or changing state', async (key) => {
++    const app = await open(extended)
++    const before = await app.save()
++    const input = structuredClone(extended)
++    Reflect.deleteProperty(input.core.props['text-typography'], key)
++    const untouched = structuredClone(input)
++    expect(() => app.load(input)).toThrow(`Invalid ${key}`)
++    expect(await app.save()).toEqual(before)
++    expect(input).toEqual(untouched)
++  })
++
++  it('edits each metadata field after reload and retains projections and storage', async () => {
++    let app = await open(extended)
++    await app.save()
++    await app.dispose()
++    runtime = undefined
++    app = await open(readStored())
++    const expected = {
++      approvalStatus: 'draft',
++      sourceRecordId: 'record-after-reload',
++      labelCategory: 'warning'
++    }
++    for (const [key, value] of Object.entries(expected)) {
++      const depth = app.core.getUndoHistoryDepth()
++      app.feature.editMetadata('text-1', { [key]: value })
++      expect(app.core.getUndoHistoryDepth()).toBe(depth + 1)
++      expect(app.core.getElementComputedData('text-1')).toMatchObject({
++        [key]: value
++      })
++      app.feature.select('text-1')
++      await settle()
++      expect(app.core.getUIProperty(METADATA_UI)).toMatchObject({
++        [key]: value
++      })
++      app.feature.select('chart-1')
++      await settle()
++      expect(app.core.getUIProperty(CHART_UI)).toMatchObject({
++        [key]: value,
++        sourceTextId: 'text-1'
++      })
++    }
++    const saved = await app.save()
++    await app.dispose()
++    runtime = undefined
++    app = await open(readStored())
++    expect(app.core.getElementComputedData('text-1')).toMatchObject(expected)
++    expect((await app.save()).core).toEqual(saved.core)
++  })
++})
+diff --git a/src/__tests__/text-preservation.test.ts b/src/__tests__/text-preservation.test.ts
+index c1068bb..a0c9588 100644
+--- a/src/__tests__/text-preservation.test.ts
++++ b/src/__tests__/text-preservation.test.ts
+@@ -94,7 +94,7 @@ describe('Text consumer preservation', () => {
+     expect(element).not.toBeNull()
+     expect(app.core.getElementComputedData('new-text')).toMatchObject({
+       lineHeight: 20,
+-      letterSpacing: 0,
++      letterSpacing: 0.5,
+       approvalStatus: 'draft',
+       sourceRecordId: '',
+       labelCategory: 'general'
+diff --git a/updates/index.md b/updates/index.md
+index 91cb28a..9101b22 100644
+--- a/updates/index.md
++++ b/updates/index.md
+@@ -1,5 +1,6 @@
+ # Subsequent Text update
+ 
+ Read [the next guide](text-spacing-example-2-r1.md), the current README adoption
+-record, and the attached artifact identities. The update is pending. The target
++record, and the attached artifact identities. The consumer adopted revision 1; see the dated subsequent adoption record in
++`README.md` for verification and limitations. The target
+ is a modeled test candidate, not a published release.
+diff --git a/yarn.lock b/yarn.lock
+index 9f74857..b69b5ce 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -106,9 +106,9 @@ __metadata:
+   languageName: node
+   linkType: hard
+ 
+-"@asyra/preset@file:./artifacts/asyra-preset-0.5.8.tgz::locator=text-subsequent-update-consumer%40workspace%3A.":
+-  version: 0.5.8
+-  resolution: "@asyra/preset@file:./artifacts/asyra-preset-0.5.8.tgz#./artifacts/asyra-preset-0.5.8.tgz::hash=a251c0&locator=text-subsequent-update-consumer%40workspace%3A."
++"@asyra/preset@file:./artifacts/asyra-preset-0.5.8-task4.0.tgz::locator=text-subsequent-update-consumer%40workspace%3A.":
++  version: 0.5.8-task4.0
++  resolution: "@asyra/preset@file:./artifacts/asyra-preset-0.5.8-task4.0.tgz#./artifacts/asyra-preset-0.5.8-task4.0.tgz::hash=6e9e78&locator=text-subsequent-update-consumer%40workspace%3A."
+   dependencies:
+     "@asyra/core": "npm:0.5.7"
+     "@asyra/reactive-events": "npm:0.5.4"
+@@ -118,7 +118,7 @@ __metadata:
+     "@asyra/utils": "npm:0.5.2"
+     rxjs: "npm:^7.8.1"
+     three: "npm:0.185.1"
+-  checksum: 10c0/8191e344d8e9266707d720ea50115f48b69c4c2daee28ef6d7885c643e92f968099a75f639d6ffbe4b0921ad8b83aea6aee704759c9c1de43c177b9261c868c8
++  checksum: 10c0/a7ac1e7bfe0de18f2ff1271e020070fac053065424f16d3975f784fa639392044bd7e55c284c68108282d2cdca30029376c16dddfacb84bf2092a0796e5f00f2
+   languageName: node
+   linkType: hard
+ 
+@@ -3199,7 +3199,7 @@ __metadata:
+   resolution: "text-subsequent-update-consumer@workspace:."
+   dependencies:
+     "@asyra/core": "npm:0.5.7"
+-    "@asyra/preset": "npm:0.5.8"
++    "@asyra/preset": "npm:0.5.8-task4.0"
+     "@asyra/utils": "npm:0.5.1"
+     "@eslint/compat": "npm:^2.0.1"
+     "@eslint/js": "npm:^10.0.1"

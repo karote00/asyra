@@ -49,6 +49,13 @@ editable design tool whose App-owned behavior you can replace. The
 [Asyra Design case study](cases/asyra-design.md) identifies the Framework,
 Preset, App, and backend owners of that product.
 
+### Update an existing App
+
+Use the [update guides](updates/index.md) to compare selected official changes
+and let your coding agent integrate them while retaining App-owned extensions
+and saved data. The Text guide is a worked example with explicit artifact and
+verification limits; it is not a new release announcement.
+
 ### Advanced composition
 
 Use [custom composition](start/custom-composition.md#build-one-complete-data-path)

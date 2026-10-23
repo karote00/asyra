@@ -1,0 +1,32 @@
+{
+  "changeId": "text-spacing-example-2",
+  "status": "modeled-test-artifact-not-an-official-release",
+  "sourceCommit": "7bf3655242e6adca9ac7d81ff57d17df9b310c9e",
+  "from": {
+    "name": "@asyra/preset",
+    "version": "0.5.8",
+    "file": "asyra-preset-0.5.8.tgz",
+    "sha256": "465e4e330d272162dc627b9004b109e7b15529eef4699366451697ca86085291"
+  },
+  "to": {
+    "name": "@asyra/preset",
+    "version": "0.5.8-task4.0",
+    "file": "asyra-preset-0.5.8-task4.0.tgz",
+    "sha256": "60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7"
+  },
+  "archiveChanges": [
+    {
+      "path": "package/dist/props/components/text-component.js",
+      "change": "default 0 to 0.5; remove obsolete source map link"
+    },
+    {
+      "path": "package/dist/props/components/text-component.js.map",
+      "change": "removed obsolete source map"
+    },
+    {
+      "path": "package/package.json",
+      "change": "test-only prerelease identity and private flag"
+    }
+  ],
+  "otherPackages": "Exactly the unchanged base-artifacts.json candidates; no registry upgrade."
+}

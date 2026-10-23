@@ -1,0 +1,38 @@
+✔ the public content adapter verifies the complete generated inventory (15.248209ms)
+✔ documentation routes are stable and overview owns the docs root (0.167458ms)
+✔ content paths cannot leave the approved public bundle (0.222958ms)
+✔ all accepted pages map to explicit static documentation route entries (15.083208ms)
+✔ documentation remains readable server-side with bounded enhancements (0.484958ms)
+✔ docs CSS owns three-region reading and a compact docs-native technical flow (0.506792ms)
+✔ public TypeScript examples name complex types before using them (14.7475ms)
+✔ content manifest owns the exact stable documentation inventory (72.671916ms)
+✔ every page mapping resolves approved sources and packages without example metadata (122.03675ms)
+✔ content validation fails closed on duplicate, private, or unknown inputs (138.737875ms)
+✔ complete public documentation passes structural, link, and API gates (1499.558291ms)
+✔ public guides do not retain malformed copy fragments (0.165875ms)
+✔ public overview routes the published Starter, Design, and advanced composition (0.365459ms)
+✔ link validation rejects missing and escaping targets (0.135667ms)
+✔ public import validation rejects private and unsupported subpaths (0.105125ms)
+✔ public API inventories use source exports regardless of dependency build state (1304.697417ms)
+✔ public indexes derive the exact page, source, and API inventories (1120.715708ms)
+✔ llms discovery gives the published Starter command and current/future boundary (995.31425ms)
+✔ checked public documentation artifacts are deterministic and current (1097.486084ms)
+✔ website llms links resolve to documentation routes while repository links resolve to files (952.491167ms)
+✔ update guides are discoverable and Text instructions resolve public package APIs (950.027375ms)
+✔ revision 2 summaries retain the passed independent result and its limits (963.463125ms)
+✔ subsequent update discovery reports the modeled artifact and independent acceptance separately (925.54025ms)
+✔ documentation authority and exact page inventory are frozen (0.727667ms)
+✔ package guide inventory matches the release owner exactly (1.369583ms)
+✔ input resolution uses public package and canonical documentation authorities (0.224458ms)
+✔ content contract owns schema, stable ids, mappings, and exclusions (0.366625ms)
+✔ authoring steps preserve current support, future roadmap, and domain ownership (0.234292ms)
+✔ generated handoff is deterministic, public-only, and site-neutral (0.149583ms)
+✔ routes, artifacts, failure owners, and cache boundaries resolve (0.130084ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8517.349791

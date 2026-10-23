@@ -1,7 +1,7 @@
 {
   "pages": [
     {
-      "contentSha256": "163cc0659ef45a29ea7cf6b13fbcd4062b8e1e47a4b54a63c93f3435d2277650",
+      "contentSha256": "bff730cbf00018b8fd54549e5f2a07464c76cfea16e5364654912d4a537af2ad",
       "description": "Build domain-owned information products whose visual, collaborative, persistent, and AI-facing capabilities remain composable.",
       "headings": [
         {
@@ -19,6 +19,10 @@
         {
           "depth": 3,
           "title": "Complete Design product"
+        },
+        {
+          "depth": 3,
+          "title": "Update an existing App"
         },
         {
           "depth": 3,
@@ -66,7 +70,7 @@
       "path": "index.md",
       "section": "Overview",
       "title": "Asyra Framework",
-      "wordCount": 851
+      "wordCount": 899
     },
     {
       "contentSha256": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
@@ -141,7 +145,7 @@
       "wordCount": 682
     },
     {
-      "contentSha256": "49a2da62553e2edf5c17ec6680ab2e34b9a2169a8bdda878be5435093d0f252e",
+      "contentSha256": "07a55a414cbd753c3d7eb36e7e1c32c2328629fbf2a700e83f994c2ee78d25a7",
       "description": "Map product problems to Asyra capabilities, assess adoption costs and limits, and verify bounded improvements.",
       "headings": [
         {
@@ -167,6 +171,10 @@
         {
           "depth": 3,
           "title": "Confirm what your agent loaded"
+        },
+        {
+          "depth": 2,
+          "title": "Integrate official App updates"
         },
         {
           "depth": 2,
@@ -266,7 +274,7 @@
       "path": "start/extend-with-ai.md",
       "section": "Extend",
       "title": "Extend Asyra with an AI coding agent",
-      "wordCount": 3121
+      "wordCount": 3200
     },
     {
       "contentSha256": "e582dd2cd484cf36947110632b64120d58051a657ce940acd5a052dab890631c",
@@ -1289,6 +1297,297 @@
       "section": "Extend",
       "title": "Build app-owned AI retrieval and action",
       "wordCount": 513
+    },
+    {
+      "contentSha256": "3102bae4bb2aec8be4087280e4b7147ed88eb2fb2c20e2781ac80cdb2cb57d65",
+      "description": "Select official update guides, retain App-owned extensions and give a coding agent enough context for first and subsequent integrations.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Update your App with an AI coding agent"
+        },
+        {
+          "depth": 2,
+          "title": "How to use"
+        },
+        {
+          "depth": 2,
+          "title": "Available guides"
+        },
+        {
+          "depth": 2,
+          "title": "Select the current-to-target range"
+        },
+        {
+          "depth": 2,
+          "title": "Give the guide to your AI"
+        },
+        {
+          "depth": 2,
+          "title": "Required guide information"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/index",
+      "markdownPath": "docs/public/updates/index.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/preset"
+      ],
+      "path": "updates/index.md",
+      "section": "Extend",
+      "title": "Update your App with an AI coding agent",
+      "wordCount": 945
+    },
+    {
+      "contentSha256": "317bf04a5f3db2289629904f2992d534867227e6031a6eb10ca8e52223117bf0",
+      "description": "Worked example, revision 2: adopt equivalent official Text fields while retaining custom metadata, actions, projections and saved data; independent local-candidate acceptance passed; published-package support and subsequent updates remain unverified.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt Official Text and Keep Your App Extensions"
+        },
+        {
+          "depth": 2,
+          "title": "Scope and exact comparison"
+        },
+        {
+          "depth": 2,
+          "title": "What changes"
+        },
+        {
+          "depth": 3,
+          "title": "Source contract - custom-text-example-1"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        },
+        {
+          "depth": 2,
+          "title": "Public APIs"
+        },
+        {
+          "depth": 2,
+          "title": "Integration instructions for the consumer's AI"
+        },
+        {
+          "depth": 3,
+          "title": "1. Inspect the consumer before changing it"
+        },
+        {
+          "depth": 3,
+          "title": "2. Compose the official base and retain the local definition delta"
+        },
+        {
+          "depth": 3,
+          "title": "3. Preserve aliases, projections and existing actions"
+        },
+        {
+          "depth": 3,
+          "title": "4. Decide actual behavior overlap"
+        },
+        {
+          "depth": 3,
+          "title": "5. Preserve saved data; migrate only when required"
+        },
+        {
+          "depth": 2,
+          "title": "Acceptance contract and concrete fixture values"
+        },
+        {
+          "depth": 2,
+          "title": "Minimal adoption note and the next update"
+        },
+        {
+          "depth": 2,
+          "title": "Handoff prompt and independent acceptance"
+        }
+      ],
+      "id": "updates/text-official-fields-example-1-r2",
+      "markdownPath": "docs/public/updates/text-official-fields-example-1-r2.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/preset"
+      ],
+      "path": "updates/text-official-fields-example-1-r2.md",
+      "section": "Extend",
+      "title": "Adopt Official Text and Keep Your App Extensions",
+      "wordCount": 2598
+    },
+    {
+      "contentSha256": "ad1b12c46d3caff510055f4d6a4cb3f84f92e3f5f145f05658c5b021bfc615c7",
+      "description": "Worked example, revision 3: clarify shared defaults, browser acceptance and history limits; retain the original revision 2 independent acceptance.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt Official Text and Keep Your App Extensions"
+        },
+        {
+          "depth": 2,
+          "title": "Scope and exact comparison"
+        },
+        {
+          "depth": 2,
+          "title": "What changes"
+        },
+        {
+          "depth": 3,
+          "title": "Source contract - custom-text-example-1"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        },
+        {
+          "depth": 2,
+          "title": "Public APIs"
+        },
+        {
+          "depth": 2,
+          "title": "Integration instructions for the consumer's AI"
+        },
+        {
+          "depth": 3,
+          "title": "1. Inspect the consumer before changing it"
+        },
+        {
+          "depth": 3,
+          "title": "2. Compose the official base and retain the local definition delta"
+        },
+        {
+          "depth": 3,
+          "title": "3. Preserve aliases, projections and existing actions"
+        },
+        {
+          "depth": 3,
+          "title": "4. Decide actual behavior overlap"
+        },
+        {
+          "depth": 3,
+          "title": "5. Preserve saved data; migrate only when required"
+        },
+        {
+          "depth": 2,
+          "title": "Acceptance contract and concrete fixture values"
+        },
+        {
+          "depth": 3,
+          "title": "Browser and history boundaries"
+        },
+        {
+          "depth": 2,
+          "title": "Minimal adoption note and the next update"
+        },
+        {
+          "depth": 2,
+          "title": "Handoff prompt and independent acceptance"
+        }
+      ],
+      "id": "updates/text-official-fields-example-1-r3",
+      "markdownPath": "docs/public/updates/text-official-fields-example-1-r3.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/preset",
+        "@asyra/utils"
+      ],
+      "path": "updates/text-official-fields-example-1-r3.md",
+      "section": "Extend",
+      "title": "Adopt Official Text and Keep Your App Extensions",
+      "wordCount": 2982
+    },
+    {
+      "contentSha256": "0b350b099257f57952f3c4852ddd5eca90d9aff5f32f71acc84b9f8b08adb443",
+      "description": "Modeled subsequent update: adopt a new spacing default using the existing adoption record while preserving intervening rejected approval, custom data and deferred UI; fresh-AI local-candidate acceptance passed with 29 tests; not a published release comparison.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Update Text Again and Preserve Intervening Extensions"
+        },
+        {
+          "depth": 2,
+          "title": "Scope and exact comparison"
+        },
+        {
+          "depth": 2,
+          "title": "What changes and what stays App-owned"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        },
+        {
+          "depth": 2,
+          "title": "Integrate using the current project and its adoption record"
+        },
+        {
+          "depth": 2,
+          "title": "Required verification"
+        }
+      ],
+      "id": "updates/text-spacing-example-2-r1",
+      "markdownPath": "docs/public/updates/text-spacing-example-2-r1.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/preset",
+        "@asyra/utils"
+      ],
+      "path": "updates/text-spacing-example-2-r1.md",
+      "section": "Extend",
+      "title": "Update Text Again and Preserve Intervening Extensions",
+      "wordCount": 1342
+    },
+    {
+      "contentSha256": "a3b3c45496ed6a47213fa681122da4305496e6a16e5c884a7629568e6638b25d",
+      "description": "Worked example: revision 1 independent acceptance: 29 tests; revision 2 existing-context rerun: 34 tests, not a new independent acceptance. Retained pre-update delivery includes candidate archives and public sources.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Update Text Again and Preserve Intervening Extensions"
+        },
+        {
+          "depth": 2,
+          "title": "Scope and exact comparison"
+        },
+        {
+          "depth": 2,
+          "title": "What changes and what stays App-owned"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        },
+        {
+          "depth": 2,
+          "title": "Integrate using the current project and its adoption record"
+        },
+        {
+          "depth": 2,
+          "title": "Required verification"
+        },
+        {
+          "depth": 2,
+          "title": "Revision 2 - installation warnings and standalone delivery"
+        },
+        {
+          "depth": 2,
+          "title": "Delivery and validation status"
+        }
+      ],
+      "id": "updates/text-spacing-example-2-r2",
+      "markdownPath": "docs/public/updates/text-spacing-example-2-r2.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/preset",
+        "@asyra/utils"
+      ],
+      "path": "updates/text-spacing-example-2-r2.md",
+      "section": "Extend",
+      "title": "Update Text Again and Preserve Intervening Extensions",
+      "wordCount": 1820
     },
     {
       "contentSha256": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
@@ -2616,7 +2915,12 @@
         "build/persistence-migration",
         "build/collaboration",
         "build/ai-actions",
-        "build/app-retrieval-action"
+        "build/app-retrieval-action",
+        "updates/index",
+        "updates/text-official-fields-example-1-r2",
+        "updates/text-official-fields-example-1-r3",
+        "updates/text-spacing-example-2-r1",
+        "updates/text-spacing-example-2-r2"
       ]
     },
     {

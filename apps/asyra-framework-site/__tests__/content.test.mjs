@@ -9,7 +9,7 @@ import {
 test('the public content adapter verifies the complete generated inventory', async () => {
   const content = await loadVerifiedPublicContent()
 
-  assert.equal(content.pages.length, 41)
+  assert.equal(content.pages.length, 46)
   assert.equal(content.packages.length, 19)
   assert.deepEqual(
     [...content.sections.keys()],
@@ -41,15 +41,20 @@ test('the public content adapter verifies the complete generated inventory', asy
       'build/persistence-migration',
       'build/collaboration',
       'build/ai-actions',
-      'build/app-retrieval-action'
+      'build/app-retrieval-action',
+      'updates/index',
+      'updates/text-official-fields-example-1-r2',
+      'updates/text-official-fields-example-1-r3',
+      'updates/text-spacing-example-2-r1',
+      'updates/text-spacing-example-2-r2'
     ]
   )
   assert.deepEqual(
     content.sections.get('Customize').map(({ id }) => id),
     ['start/custom-composition', 'build/render-boundary']
   )
-  assert.equal(new Set(content.pages.map(({ id }) => id)).size, 41)
-  assert.equal(new Set(content.pages.map(({ href }) => href)).size, 41)
+  assert.equal(new Set(content.pages.map(({ id }) => id)).size, 46)
+  assert.equal(new Set(content.pages.map(({ href }) => href)).size, 46)
   assert.equal(
     content.pages.every(({ markdown }) => markdown.length > 80),
     true

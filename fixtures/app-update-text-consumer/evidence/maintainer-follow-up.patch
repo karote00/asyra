@@ -1,0 +1,309 @@
+--- a/README.md
++++ b/README.md
+@@ -1,7 +1,7 @@
+ # Text update consumer
+ 
+-This is the permanent, pre-adoption `custom-text-example-1` consumer for the
+-Text update guide. It is a small App with local typography, approval metadata,
++This is the permanent `custom-text-example-1` consumer for the Text update guide,
++with the initial adoption and maintainer follow-up recorded below. It is a small App with local typography, approval metadata,
+ a chart that shares the typography property, and a versioned document loader.
+ Framework state remains canonical. UI projections read it; actions enter through
+ the App Feature and one transaction. Document conversion belongs to the loader.
+@@ -20,7 +20,10 @@
+ The maintainer's verification record is in `VERIFICATION.md`. It is not input
+ to the independent integration conversation.
+ 
+-## Text adoption - 2026-10-23
++## Initial independent Text adoption - 2026-10-23
++
++This section records the first acceptance turn. The later follow-up below changes
++one default and panel availability; it is not part of that independent result.
+ 
+ Adopted `text-official-fields-example-1`, guide revision 2, for the equivalent
+ layout-unit fields case. Target source:
+@@ -76,3 +79,34 @@
+ this selected case; a verified historical release delta and published package
+ availability remain unspecified. No dependency upgrades, commits or pushes were
+ performed.
++
++## Maintainer follow-up - 2026-10-23
++
++The same acceptance chat later received explicit user requests to fix new-Text
++color and approval availability. Its completed consumer fixes are now integrated
++here. This is assisted follow-up, not another independent guide acceptance.
++
++The one intentional official-field override is now `textColor.defaultValue`:
++startup `redefinePropertyType` uses public Utils `createDefaultFill().color`
++(currently `#cccccc`). All other official field contracts, including the color
++validator, are retained. This shared property definition also supplies defaults
++to charts using typography. Explicit persisted colors remain unchanged, including
++the original Text and chart's black. The validation-only composed schema retains
++the official schema; it does not create values or apply defaults.
++
++The approval button subscribes to the existing Text-only metadata projection. It
++is disabled for chart/empty selection, enabled for Text, and unsubscribes on panel
++disposal. Feature validation and transaction ownership are unchanged.
++
++All 18 retained tests pass, including fresh-runtime assertions for all five
++adoption fields, metadata/typography/chart projections, complete saved properties
++and scene structure, approval with one history entry, Undo/Redo, and subsequent
++custom edits/save. New regressions also cover shared gray through serialization,
++fresh load and history, unchanged original properties, invalid-target button
++clicks, and subscription cleanup. Typecheck, lint and build pass.
++
++The immutable initial guide, five-file patch and test outputs remain under
++`updates/` and `evidence/`. See `VERIFICATION.md` for the separate follow-up patch,
++results and baseline reconstruction. This fixture uses local candidate packages;
++these checks do not prove published package support, browser pixels, restoration
++of an old undo stack, or a subsequent official update. Task 4 remains unstarted.
+--- a/src/definitions.ts
++++ b/src/definitions.ts
+@@ -7,7 +7,7 @@
+   TEXT_PROPERTY_TYPE,
+   TEXT_RENDER_STRATEGY
+ } from '@asyra/preset'
+-import type { PropertySchema } from '@asyra/utils'
++import { createDefaultFill, type PropertySchema } from '@asyra/utils'
+ 
+ export const TEXT_TYPE = TEXT_COMPONENT_TYPE
+ export const TYPOGRAPHY_TYPE = TEXT_PROPERTY_TYPE
+@@ -58,7 +58,11 @@
+   core.redefinePropertyType(TEXT_PROPERTY_TYPE, (current) => ({
+     ...current,
+     fields: [
+-      ...current.fields,
++      ...current.fields.map((field) =>
++        field.key === 'textColor'
++          ? { ...field, defaultValue: createDefaultFill().color }
++          : field
++      ),
+       ...metadataFields.map((field) => ({
+         ...field,
+         persist: true,
+--- a/src/panel.ts
++++ b/src/panel.ts
+@@ -18,6 +18,14 @@
+   }
+   const approve = document.createElement('button')
+   approve.textContent = 'Approve selected Text'
++  approve.disabled = true
++  const metadata = runtime.core.getUIPropertySubject(METADATA_UI)
++  if (!metadata) throw new Error('Missing metadata projection')
++  subscriptions.push(
++    metadata.subscribe((value) => {
++      approve.disabled = value === null
++    })
++  )
+   const onApprove = () => {
+     const id = runtime.core.getSelectedElementIds()[0]
+     if (id) runtime.feature.approve(id)
+--- a/src/__tests__/text-preservation.test.ts
++++ b/src/__tests__/text-preservation.test.ts
+@@ -1,5 +1,5 @@
+ import initialCore from '@asyra/core'
+-import { getElementGeometryLocalBounds } from '@asyra/utils'
++import { createDefaultFill, getElementGeometryLocalBounds } from '@asyra/utils'
+ import { TEXT_PROPERTY_SCHEMA, TEXT_RENDER_STRATEGY } from '@asyra/preset'
+ import { afterEach, describe, expect, it, vi } from 'vitest'
+ import original from '../../test-data/current.json'
+@@ -74,7 +74,11 @@
+     for (const official of TEXT_PROPERTY_SCHEMA.fields) {
+       expect(
+         app.definition?.fields.find((field) => field.key === official.key)
+-      ).toMatchObject(official)
++      ).toMatchObject(
++        official.key === 'textColor'
++          ? { ...official, defaultValue: createDefaultFill().color }
++          : official
++      )
+     }
+   })
+ 
+@@ -95,6 +99,114 @@
+       sourceRecordId: '',
+       labelCategory: 'general'
+     })
++  })
++
++  it('uses the shared fill color only for new Text and preserves saved colors', async () => {
++    const app = await open()
++    app.core.createElement({
++      id: 'gray-text',
++      type: 'text',
++      name: 'New',
++      x: 0,
++      y: 0
++    })
++    expect(app.core.getElementComputedData('gray-text')?.textColor).toBe(
++      createDefaultFill().color
++    )
++    expect(app.core.getElementComputedData('text-1')?.textColor).toBe(
++      original.core.props['text-typography'].textColor
++    )
++    const saved = await app.save()
++    expect(saved.core.props['text-typography']).toEqual(
++      original.core.props['text-typography']
++    )
++    app.load(saved)
++    expect(app.core.getElementComputedData('gray-text')?.textColor).toBe(
++      createDefaultFill().color
++    )
++    expect(app.core.getElementComputedData('text-1')?.textColor).toBe(
++      original.core.props['text-typography'].textColor
++    )
++  })
++
++  it('disables approval for chart and empty selection and restores it for Text', async () => {
++    const app = await open()
++    const host = document.createElement('section')
++    const dispose = mountPanel(app, host)
++    const button = host.querySelector('button')
++    if (!button) throw new Error('Missing approval button')
++    expect(button.disabled).toBe(false)
++    app.feature.select('chart-1')
++    await settle()
++    expect(button.disabled).toBe(true)
++    const before = await app.save()
++    const depth = app.core.getUndoHistoryDepth()
++    button.click()
++    expect(await app.save()).toEqual(before)
++    expect(app.core.getUndoHistoryDepth()).toBe(depth)
++    app.core.selectElements([])
++    await settle()
++    expect(button.disabled).toBe(true)
++    app.feature.select('text-1')
++    await settle()
++    expect(button.disabled).toBe(false)
++    const beforeApproval = app.core.getUndoHistoryDepth()
++    button.click()
++    await settle()
++    expect(app.core.getUIProperty(METADATA_UI)).toMatchObject({
++      approvalStatus: 'approved'
++    })
++    expect(app.core.getUndoHistoryDepth()).toBe(beforeApproval + 1)
++    dispose()
++    app.feature.select('chart-1')
++    await settle()
++    expect(button.disabled).toBe(false)
++    expect(host.childElementCount).toBe(0)
++  })
++
++  it('retains shared gray and original properties through memory save, fresh load and Undo/Redo', async () => {
++    const app = await open()
++    app.core.createElement({
++      id: 'memory-text',
++      type: 'text',
++      name: 'Memory Text',
++      x: 0,
++      y: 120
++    })
++    app.feature.editTypography('memory-text', { text: 'Before edit' })
++    app.feature.editTypography('memory-text', { text: 'After edit' })
++    await app.undo()
++    expect(app.core.getElementComputedData('memory-text')).toMatchObject({
++      text: 'Before edit',
++      textColor: createDefaultFill().color
++    })
++    await app.redo()
++    const snapshot = JSON.stringify({
++      documentVersion: 2,
++      core: await app.core.save()
++    })
++    await app.dispose()
++    runtime = undefined
++    const reloaded = await open(JSON.parse(snapshot))
++    expect(reloaded.core.getElementComputedData('memory-text')).toMatchObject({
++      text: 'After edit',
++      textColor: createDefaultFill().color
++    })
++    reloaded.feature.editTypography('memory-text', { text: 'After reload' })
++    await reloaded.undo()
++    expect(reloaded.core.getElementComputedData('memory-text')).toMatchObject({
++      text: 'After edit',
++      textColor: createDefaultFill().color
++    })
++    await reloaded.redo()
++    expect(reloaded.core.getElementComputedData('memory-text')).toMatchObject({
++      text: 'After reload',
++      textColor: createDefaultFill().color
++    })
++    const saved = await reloaded.core.save()
++    for (const [key, property] of Object.entries(original.core.props)) {
++      expect(saved.props[key]).toEqual(property)
++    }
+   })
+ 
+   it('enforces official typography boundaries without changing rejected values', async () => {
+@@ -219,13 +331,70 @@
+     await app.dispose()
+     runtime = undefined
+     const reloaded = await open(saved)
++    expect(reloaded.core.getElementComputedData('text-1')).toMatchObject({
++      ...expected,
++      lineHeight: 24,
++      letterSpacing: 1.5
++    })
+     expect(reloaded.core.getUIProperty(METADATA_UI)).toMatchObject(expected)
++    expect(reloaded.core.getUIProperty(TYPOGRAPHY_UI)).toMatchObject({
++      lineHeight: 24,
++      letterSpacing: 1.5
++    })
++    const afterReload = await reloaded.save()
++    expect(afterReload.core.sceneTree).toEqual(saved.core.sceneTree)
++    expect(afterReload.core.props).toEqual(saved.core.props)
++    reloaded.feature.select('chart-1')
++    await settle()
++    expect(reloaded.core.getUIProperty(CHART_UI)).toMatchObject({
++      ...expected,
++      sourceTextId: 'text-1',
++      text: 'Revenue'
++    })
++    reloaded.feature.select('text-1')
++    reloaded.feature.editMetadata('text-1', { approvalStatus: 'draft' })
++    await settle()
++    const host = document.createElement('section')
++    const disposePanel = mountPanel(reloaded, host)
++    const button = host.querySelector('button')
++    if (!button) throw new Error('Missing approval button after reload')
++    expect(button.disabled).toBe(false)
++    const depth = reloaded.core.getUndoHistoryDepth()
++    button.click()
++    await settle()
++    expect(reloaded.core.getUndoHistoryDepth()).toBe(depth + 1)
++    expect(reloaded.core.getUIProperty(METADATA_UI)).toMatchObject(expected)
++    await reloaded.undo()
++    await settle()
++    expect(reloaded.core.getUIProperty(METADATA_UI)).toMatchObject({
++      ...expected,
++      approvalStatus: 'draft'
++    })
++    await reloaded.redo()
++    await settle()
++    expect(reloaded.core.getElementComputedData('text-1')).toMatchObject(
++      expected
++    )
++    expect(reloaded.core.getUIProperty(METADATA_UI)).toMatchObject(expected)
++    expect((await reloaded.save()).core).toEqual(afterReload.core)
++    disposePanel()
+     reloaded.feature.editMetadata('text-1', { labelCategory: 'warning' })
+     reloaded.feature.select('chart-1')
+     await settle()
+     expect(reloaded.core.getUIProperty(CHART_UI)).toMatchObject({
+-      sourceRecordId: 'record-18',
++      ...expected,
++      sourceTextId: 'text-1',
++      text: 'Revenue',
+       labelCategory: 'warning'
++    })
++    const edited = await reloaded.save()
++    expect(edited.core.sceneTree).toEqual(saved.core.sceneTree)
++    expect(edited.core.props).toEqual({
++      ...saved.core.props,
++      'text-typography': {
++        ...saved.core.props['text-typography'],
++        labelCategory: 'warning'
++      }
+     })
+   })
+ 

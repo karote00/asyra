@@ -14,8 +14,10 @@ export interface SearchRecord {
 }
 
 export function SearchDialog({
+  pageCount,
   records
 }: {
+  pageCount: number
   records: readonly SearchRecord[]
 }) {
   const [query, setQuery] = useState('')
@@ -42,7 +44,7 @@ export function SearchDialog({
         ref={triggerRef}
         type="button"
       >
-        Search 41 guides
+        Search {pageCount} guides
         <span aria-hidden="true">/</span>
       </button>
       <dialog

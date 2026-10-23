@@ -1,0 +1,11 @@
+➤ YN0000: · Yarn 4.3.1
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + @asyra/preset@file:./artifacts/asyra-preset-0.5.8-task4.0.tgz#./artifacts/asyra-preset-0.5.8-task4.0.tgz::hash=6e9e78&locator=text-subsequent-update-consumer%40workspace%3A.
+➤ YN0085: │ - @asyra/preset@file:./artifacts/asyra-preset-0.5.8.tgz#./artifacts/asyra-preset-0.5.8.tgz::hash=a251c0&locator=text-subsequent-update-consumer%40workspace%3A.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ A package was added to the project, and one was removed (- 2.62 KiB).
+➤ YN0000: └ Completed in 0s 208ms
+➤ YN0000: ┌ Link step
+➤ YN0000: └ Completed
+➤ YN0000: · Done in 0s 451ms

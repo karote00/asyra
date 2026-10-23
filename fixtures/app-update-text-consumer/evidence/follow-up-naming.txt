@@ -1,0 +1,23 @@
+✔ plugin distribution identities remain scoped to quoted owner data (0.962125ms)
+✔ previous plugin identity is retained only for CI diff input classification (0.172292ms)
+✔ Official display names remain distinct from branded code identifiers (0.259292ms)
+✔ retained Sim wire identities are allowed only as exact load-migration data (0.197083ms)
+✔ historical live evidence schema is retained only at its exact artifact path and field (0.762375ms)
+✔ Public-facing surfaces preserve the official project identities (1.790542ms)
+✔ Active docs do not replace the Asyra Design name with a generic label (399.675708ms)
+✔ Active entry docs position Asyra Design as one product use, not the Framework default (1.532ms)
+✔ Active product positioning does not claim generic VR support (0.631042ms)
+✔ Programmatic code and configuration use brand-neutral identifiers (2801.28725ms)
+✔ portable distribution identities remain limited to exact owners (0.198333ms)
+✔ display-name guard detects literal, JSX, template and encoded middle-dot separators (1.869125ms)
+✔ display-name guard rejects alternative separators in authored name/title/label literals (0.276708ms)
+✔ display-name guard allows hyphens, actual paths, runtime user text and standalone logo decoration (0.119083ms)
+✔ project-authored display surfaces do not introduce middle-dot separators (421.405041ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3361.700833

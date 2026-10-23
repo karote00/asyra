@@ -210,7 +210,9 @@ const apiReferences = (source) => {
 }
 
 const apiHeadingForPage = (pageId) => {
-  if (pageId.startsWith('build/')) return '## Public APIs'
+  if (pageId.startsWith('build/') || pageId.startsWith('updates/')) {
+    return '## Public APIs'
+  }
   if (pageId.startsWith('reference/packages/')) {
     return '## Public entrypoints and prerequisites'
   }

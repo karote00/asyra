@@ -11,8 +11,8 @@
     },
     "pages": {
       "type": "array",
-      "minItems": 41,
-      "maxItems": 41,
+      "minItems": 46,
+      "maxItems": 46,
       "items": {
         "$ref": "#/$defs/page"
       }
@@ -35,11 +35,11 @@
         "id": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^(overview|(start|learn|build|reference|cases)/[a-z0-9-]+(?:/[a-z0-9-]+)?)$"
+          "pattern": "^(overview|(start|learn|build|reference|cases|updates)/[a-z0-9-]+(?:/[a-z0-9-]+)?)$"
         },
         "path": {
           "type": "string",
-          "pattern": "^(index|(?:start|learn|build|reference|cases)/[a-z0-9-]+(?:/[a-z0-9-]+)?)\\.md$"
+          "pattern": "^(index|(?:start|learn|build|reference|cases|updates)/[a-z0-9-]+(?:/[a-z0-9-]+)?)\\.md$"
         },
         "section": {
           "enum": [

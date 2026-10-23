@@ -1,0 +1,15 @@
+...F
+======================================================================
+FAIL: test_retained_delivery_and_logs_are_not_git_ignored (__main__.HandoffContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-subsequent/tools/test-handoff.py", line 31, in test_retained_delivery_and_logs_are_not_git_ignored
+    self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+AssertionError: 0 != 1 : /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-subsequent/evidence/independent-test.log
+/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-subsequent/evidence/revision-2/context-rerun/logs/test.log
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.065s
+
+FAILED (failures=1)

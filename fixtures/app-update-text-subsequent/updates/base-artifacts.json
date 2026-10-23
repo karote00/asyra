@@ -1,0 +1,120 @@
+{
+  "sourceCommit": "7bf3655242e6adca9ac7d81ff57d17df9b310c9e",
+  "status": "local-candidate-not-published",
+  "packages": [
+    {
+      "name": "@asyra/ai-agent-runtime",
+      "version": "0.5.1",
+      "file": "asyra-ai-agent-runtime-0.5.1.tgz",
+      "sha256": "fb4640fdb1da8c91e038afadda2ae78d8c8581f7145e16ea642ce293587d886d"
+    },
+    {
+      "name": "@asyra/collaboration",
+      "version": "0.5.5",
+      "file": "asyra-collaboration-0.5.5.tgz",
+      "sha256": "62e1aa4cbea58257f0535db9ccb49063c4f5a84f3cf66377b6636da3d4e84409"
+    },
+    {
+      "name": "@asyra/core",
+      "version": "0.5.7",
+      "file": "asyra-core-0.5.7.tgz",
+      "sha256": "5f64de045ec059a367b0152cd9b67312405405f8a4f2bd39cdb6bb32517e4bc9"
+    },
+    {
+      "name": "@asyra/design-system",
+      "version": "0.5.5",
+      "file": "asyra-design-system-0.5.5.tgz",
+      "sha256": "0cb27d090d0616016841b07e1344828b37de3816443209ccd59f06e744158a3e"
+    },
+    {
+      "name": "@asyra/factory",
+      "version": "0.5.4",
+      "file": "asyra-factory-0.5.4.tgz",
+      "sha256": "51104782946f915d840daf396d4335ce57526e7bf243189cb2aefae6022bc4d2"
+    },
+    {
+      "name": "@asyra/feature-system",
+      "version": "0.5.4",
+      "file": "asyra-feature-system-0.5.4.tgz",
+      "sha256": "5f0f217c4b6cdd6789791f2f3a7113be722e3b03872ee5613642848b31c9fc02"
+    },
+    {
+      "name": "@asyra/input-system",
+      "version": "0.5.5",
+      "file": "asyra-input-system-0.5.5.tgz",
+      "sha256": "77fb7ee0e81efb08666540030ad782c2eb7c9848f44820462e4f3e2e80305304"
+    },
+    {
+      "name": "@asyra/persistence",
+      "version": "0.5.3",
+      "file": "asyra-persistence-0.5.3.tgz",
+      "sha256": "409fce6840adaf2ac1d8401b5ca22cd4fbe0cdf103ef57a1f2aa724646dcb5d3"
+    },
+    {
+      "name": "@asyra/preset",
+      "version": "0.5.8",
+      "file": "asyra-preset-0.5.8.tgz",
+      "sha256": "465e4e330d272162dc627b9004b109e7b15529eef4699366451697ca86085291"
+    },
+    {
+      "name": "@asyra/props-manager",
+      "version": "0.5.4",
+      "file": "asyra-props-manager-0.5.4.tgz",
+      "sha256": "4444bc870f946d97040c43a97c481106eb3a966fce423380388a8c5e89100049"
+    },
+    {
+      "name": "@asyra/reactive-events",
+      "version": "0.5.4",
+      "file": "asyra-reactive-events-0.5.4.tgz",
+      "sha256": "d84648f206bcc92f11f6006977617bd30d876e2b621a87e722eea9e1ea625e64"
+    },
+    {
+      "name": "@asyra/render",
+      "version": "0.5.7",
+      "file": "asyra-render-0.5.7.tgz",
+      "sha256": "faf75a2534f162352395ee5aa17fc8a100e57ee64b8d51cafce6ec48591bac9e"
+    },
+    {
+      "name": "@asyra/render-engine",
+      "version": "0.5.1",
+      "file": "asyra-render-engine-0.5.1.tgz",
+      "sha256": "ef0539653657f0c3e798e55e8903480c401ce24fdd5e5610a53f2654e5020117"
+    },
+    {
+      "name": "@asyra/render-engine-pixi",
+      "version": "0.5.2",
+      "file": "asyra-render-engine-pixi-0.5.2.tgz",
+      "sha256": "0be4736c843cdaf6b8337640a9eaa4c9fd060b70c26e2be4e0badcfed5d339c1"
+    },
+    {
+      "name": "@asyra/scene-tree",
+      "version": "0.5.4",
+      "file": "asyra-scene-tree-0.5.4.tgz",
+      "sha256": "1b831164cf1c43bd3dbe295590d8f6e140910f8e422033de661c733efcff5807"
+    },
+    {
+      "name": "@asyra/selection",
+      "version": "0.5.3",
+      "file": "asyra-selection-0.5.3.tgz",
+      "sha256": "90c903a105f77e0883fc6bd3ee18a74298fe9e0126599345fcbad9fe9a3ad79c"
+    },
+    {
+      "name": "@asyra/system-context",
+      "version": "0.5.3",
+      "file": "asyra-system-context-0.5.3.tgz",
+      "sha256": "e439e00691bdccb15fff0493d1227ec85465fe17a4471f4db740eeab53db15af"
+    },
+    {
+      "name": "@asyra/ui-context",
+      "version": "0.5.4",
+      "file": "asyra-ui-context-0.5.4.tgz",
+      "sha256": "93dd74d2fd87bc942ccd387256ff831234bc3db17fbcca6fa225c1696f609688"
+    },
+    {
+      "name": "@asyra/utils",
+      "version": "0.5.2",
+      "file": "asyra-utils-0.5.2.tgz",
+      "sha256": "bb59e3e8a4fe68cb6e63ec9e87f023862c1787ef9d149dac66d30b176cb3ba4a"
+    }
+  ]
+}

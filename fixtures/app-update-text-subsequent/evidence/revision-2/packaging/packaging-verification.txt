@@ -1,0 +1,8 @@
+Validated 61 archive members, 17 exact baseline files, 45 active local links, and 20 candidate digests.
+Baseline package selection is Preset 0.5.8. Current consumer protected files unchanged.
+No current adoption outputs, solution tests, Git history or machine paths included.
+Public pinned source copies included; third-party install still needs registry access.
+Clean archive extraction: immutable baseline install succeeded; installed Preset 0.5.8.
+Baseline: 22 tests, typecheck, lint and build passed. Existing optional TypeScript patch, render and chunk warnings remain.
+Validation outputs are outside the delivered archive and are not independent-adoption inputs.
+All delivered input checksums still match after validation; current consumer protected files unchanged.

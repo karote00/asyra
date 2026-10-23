@@ -48,7 +48,12 @@ const EXTEND_PAGE_IDS = new Set([
   'build/persistence-migration',
   'build/collaboration',
   'build/ai-actions',
-  'build/app-retrieval-action'
+  'build/app-retrieval-action',
+  'updates/index',
+  'updates/text-official-fields-example-1-r2',
+  'updates/text-official-fields-example-1-r3',
+  'updates/text-spacing-example-2-r1',
+  'updates/text-spacing-example-2-r2'
 ])
 
 const CUSTOMIZE_PAGE_IDS = new Set([

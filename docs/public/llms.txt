@@ -2,11 +2,11 @@
 
 > Public, source-mapped documentation for people and AI coding agents.
 
-This index contains 41 public Markdown pages.
+This index contains 46 public Markdown pages.
 Current: browser/Core composition, official 2D Preset, and engine-neutral CUSTOM composition.
 Future: Headless Core and Core Kernel for non-visible and machine-facing products; no current public API or delivery date.
 
-Create a Generic Starter project with `npx create-asyra-app@0.1.0 my-app --package-manager=npm` on Node.js 24; npm and Yarn are supported. See docs/public/index.md#generic-starter-source for source and onboarding links.
+Create a Generic Starter project with `npx create-asyra-app@0.1.0 my-app --package-manager=npm` on Node.js 24; npm and Yarn are supported. See [Starter source and onboarding](index.md#generic-starter-source).
 Use create-asyra-design-app for a ready-to-use design-tool product, or install @asyra/core for advanced composition. Use Extend for app-owned product behavior, and Customize when replacing Framework composition or providers.
 Treat app domain schemas, permissions, migration, retrieval, services, and product rules as app-owned.
 
@@ -32,6 +32,11 @@ Treat app domain schemas, permissions, migration, retrieval, services, and produ
 - [Build opt-in collaboration](build/collaboration.md): Connect deterministic collaboration actors while the app owns transport, authorization, presence, and backend policy.
 - [Build registered AI actions](build/ai-actions.md): Expose bounded action schemas and permissions so AI intent uses the same canonical transaction paths as people.
 - [Build app-owned AI retrieval and action](build/app-retrieval-action.md): Let the app retrieve domain context and register actions without presenting future Headless support as current behavior.
+- [Update your App with an AI coding agent](updates/index.md): Select official update guides, retain App-owned extensions and give a coding agent enough context for first and subsequent integrations.
+- [Adopt Official Text and Keep Your App Extensions](updates/text-official-fields-example-1-r2.md): Worked example, revision 2: adopt equivalent official Text fields while retaining custom metadata, actions, projections and saved data; independent local-candidate acceptance passed; published-package support and subsequent updates remain unverified.
+- [Adopt Official Text and Keep Your App Extensions](updates/text-official-fields-example-1-r3.md): Worked example, revision 3: clarify shared defaults, browser acceptance and history limits; retain the original revision 2 independent acceptance.
+- [Update Text Again and Preserve Intervening Extensions](updates/text-spacing-example-2-r1.md): Modeled subsequent update: adopt a new spacing default using the existing adoption record while preserving intervening rejected approval, custom data and deferred UI; fresh-AI local-candidate acceptance passed with 29 tests; not a published release comparison.
+- [Update Text Again and Preserve Intervening Extensions](updates/text-spacing-example-2-r2.md): Worked example: revision 1 independent acceptance: 29 tests; revision 2 existing-context rerun: 34 tests, not a new independent acceptance. Retained pre-update delivery includes candidate archives and public sources.
 - [@asyra/ai-agent-runtime](reference/packages/ai-agent-runtime.md): Optional registry, schema, permission, and execution boundary for app-approved AI actions.
 - [@asyra/collaboration](reference/packages/collaboration.md): Optional deterministic replication adapters with app-owned network and service policy.
 - [@asyra/core](reference/packages/core.md): The strict composition facade for Framework capabilities and lifecycle.

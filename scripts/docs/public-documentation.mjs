@@ -186,7 +186,10 @@ export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
 
 const serializeJson = (value) => `${JSON.stringify(value, null, 2)}\n`
 
-const serializeLlms = ({ contentIndex }) => {
+const serializeLlms = ({ contentIndex, website = false }) => {
+  const starterHref = website
+    ? '/docs#generic-starter-source'
+    : 'index.md#generic-starter-source'
   const lines = [
     '# Asyra Framework',
     '',
@@ -196,7 +199,7 @@ const serializeLlms = ({ contentIndex }) => {
     'Current: browser/Core composition, official 2D Preset, and engine-neutral CUSTOM composition.',
     'Future: Headless Core and Core Kernel for non-visible and machine-facing products; no current public API or delivery date.',
     '',
-    'Create a Generic Starter project with `npx create-asyra-app@0.1.0 my-app --package-manager=npm` on Node.js 24; npm and Yarn are supported. See docs/public/index.md#generic-starter-source for source and onboarding links.',
+    `Create a Generic Starter project with \`npx create-asyra-app@0.1.0 my-app --package-manager=npm\` on Node.js 24; npm and Yarn are supported. See [Starter source and onboarding](${starterHref}).`,
     'Use create-asyra-design-app for a ready-to-use design-tool product, or install @asyra/core for advanced composition. Use Extend for app-owned product behavior, and Customize when replacing Framework composition or providers.',
     'Treat app domain schemas, permissions, migration, retrieval, services, and product rules as app-owned.',
     '',
@@ -204,7 +207,9 @@ const serializeLlms = ({ contentIndex }) => {
     ''
   ]
   for (const page of contentIndex.pages) {
-    lines.push(`- [${page.title}](${page.path}): ${page.description}`)
+    let href = page.path
+    if (website) href = page.id === 'overview' ? '/docs' : `/docs/${page.id}`
+    lines.push(`- [${page.title}](${href}): ${page.description}`)
   }
   lines.push('')
   return lines.join('\n')
@@ -285,6 +290,7 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
     apiIndex,
     contentIndex,
     llms: serializeLlms({ contentIndex }),
+    websiteLlms: serializeLlms({ contentIndex, website: true }),
     sourceMap
   }
 }
@@ -294,7 +300,7 @@ const serializedBundle = (bundle) => ({
   contentIndex: serializeJson(bundle.contentIndex),
   llms: bundle.llms,
   sourceMap: serializeJson(bundle.sourceMap),
-  websiteLlms: bundle.llms
+  websiteLlms: bundle.websiteLlms
 })
 
 export const writePublicDocumentation = async ({ repositoryRoot }) => {
