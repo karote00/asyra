@@ -675,10 +675,10 @@ class Render {
       return null
     }
     let target = this.runtime.getObject(result.target)
-    while (target && !target.label && target.parent) {
+    while (target && !target.interactionIdentity && target.parent) {
       target = target.parent
     }
-    return target?.label || null
+    return target?.interactionIdentity || null
   }
 
   getElementById(elementId: string) {
@@ -829,10 +829,10 @@ class Render {
       kind: CanvasPipelineEvidenceKinds.ENGINE_HANDOFF,
       frameId: this.renderFrameId,
       command: snapshotCanvasPipelineCommand(command, {
-        elementId: node?.label || null,
+        elementId: node?.interactionIdentity || null,
         objectType: node?.objectType,
         renderRole: node === this.viewport.view ? 'viewport' : undefined,
-        relatedElementId: relatedNode?.label || null,
+        relatedElementId: relatedNode?.interactionIdentity || null,
         relatedObjectType: relatedNode?.objectType,
         projection: node
           ? {
@@ -1064,10 +1064,10 @@ class Render {
     handle: RenderEngineObjectHandle | null
   ): string | null {
     let target = this.runtime?.getObject(handle) ?? null
-    while (target && !target.label && target.parent) {
+    while (target && !target.interactionIdentity && target.parent) {
       target = target.parent
     }
-    return target?.label || null
+    return target?.interactionIdentity || null
   }
 
   private resolveEngine(): RenderEngine {

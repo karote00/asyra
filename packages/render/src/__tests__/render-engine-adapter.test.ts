@@ -426,3 +426,28 @@ describe('Render engine adapter', () => {
     )
   })
 })
+
+it('resolves registered projection identity independently of display labels', async () => {
+  const { RenderContainer, RenderMesh } =
+    await import('../types/render-object.js')
+  const engine = new RecordingRenderEngine({ name: 'projection-test' })
+  const render = new Render({ engine })
+  await render.init(640, 480, 0, {})
+  const layer = new RenderContainer()
+  const mesh = new RenderMesh()
+  mesh.projectionIdentity = { visualId: 'visual-a', elementId: 'entity-a' }
+  mesh.label = 'User display name'
+  layer.addChild(mesh)
+  render.registerLayer({ name: 'projection-test', layer, zIndex: 0 })
+  engine.query = vi.fn(() => ({ type: 'hit', target: mesh.getEngineHandle() }))
+  expect(render.getElementIdAtClientPos({ x: 1, y: 1 })).toBe('entity-a')
+  mesh.label = 'Changed display name'
+  expect(render.getElementIdAtClientPos({ x: 1, y: 1 })).toBe('entity-a')
+  mesh.projectionIdentity = { visualId: 'visual-b' }
+  expect(render.getElementIdAtClientPos({ x: 1, y: 1 })).toBe('visual-b')
+  expect(() => {
+    mesh.projectionIdentity = { visualId: '' }
+  }).toThrow()
+  expect(render.getElementIdAtClientPos({ x: 1, y: 1 })).toBe('visual-b')
+  render.dispose()
+})

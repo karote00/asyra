@@ -317,9 +317,17 @@ only during initialization. Retirement during loading rejects startup after
 settlement and disposes the late delegate without publishing a surface. Import,
 capability and initialization failures remain explicit; no fallback is installed.
 
-`@asyra/preset/spatial` no longer re-exports concrete engines or admission; it
-reserves the neutral composition boundary for subsequent projection/control
-slices. Root/2D and pure contract imports do not load the spatial SDK.
+`@asyra/preset/spatial` exports `SpatialLayer`, `SpatialBoundsOwner` and neutral
+projection types, without importing a concrete SDK. `SpatialLayer` atomically
+admits ordered visual records, coalesces model/camera submissions, retains mesh
+identity and skips unchanged descriptors. Explicit visual/entity identity is
+independent of display labels. Camera-only submissions never rewrite meshes.
+`SpatialBoundsOwner` retains local shape extrema only for admitted immutable
+shape receipts within its lifetime. It transforms eight local-bound corners per
+instance and mesh pose on every query; empty input returns `null`. These are
+conservative presentation AABBs, not collision geometry. Disposal clears retained
+state and rejects later use. Apps choose visible inputs, camera policies and
+canonical data; root/2D and pure contract imports do not load the spatial SDK.
 CUSTOM composition explicitly selects its provider; official 3D remains
 unavailable. Apps retain scene composition, stricter validation, lighting,
 camera choices and interaction policy. Generic lifecycle conformance belongs to

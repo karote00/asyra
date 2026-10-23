@@ -1,11 +1,11 @@
+import { type RenderLayerRegistration } from '@asyra/render'
 import {
-  RenderContainer,
-  RenderMesh,
-  type RenderLayerRegistration
-} from '@asyra/render'
+  SpatialLayer,
+  type SpatialFrame,
+  type SpatialCamera
+} from '@asyra/preset/spatial'
 import {
   readSpatialDescriptor,
-  SPATIAL_PROPERTY,
   type SpatialDescriptor,
   type SpatialShape
 } from '@asyra/preset/spatial-contract'
@@ -18,22 +18,9 @@ import {
 } from '../domain/layout'
 import type { ActivityStatus } from '@asyra/preset/agent-activity'
 type Mesh = Extract<SpatialDescriptor, { kind: 'mesh' }>
-class Camera extends RenderContainer {
-  update(position: Point3, target: Point3) {
-    this.updateEngineProperties({
-      [SPATIAL_PROPERTY]: readSpatialDescriptor({
-        kind: 'camera',
-        position,
-        target,
-        fov: 43,
-        near: 0.1,
-        far: 100
-      })
-    })
-  }
-}
+type Visual = SpatialFrame['meshes'][number]
 interface Part {
-  mesh: RenderMesh
+  mesh: Visual
   descriptor: Mesh
   offset: Point3
 }
@@ -55,9 +42,11 @@ const meshDescriptor = (
 /** Scene assets and motion are presentation only; no task/document reads in a frame. */
 export class OfficeScene {
   readonly registration: RenderLayerRegistration
-  private readonly root = new RenderContainer()
-  private readonly room = new RenderContainer()
-  private readonly camera = new Camera()
+  private readonly root: Visual[] = []
+  private readonly room: Visual[] = []
+  private readonly projection: SpatialLayer
+  private roomScope = 'room'
+  private roomPart = 0
   private readonly parts: Part[] = []
   private readonly motion = new WaypointMotion()
   private anchor: Point3 = [-1.5, 0, 0]
@@ -72,15 +61,8 @@ export class OfficeScene {
   private reduced = false
   private status: ActivityStatus = 'idle'
   constructor(private readonly invalidate: () => void) {
-    this.registration = {
-      name: 'office.scene',
-      layer: this.root,
-      zIndex: 0,
-      shouldUpdate: () => false,
-      update: () => false
-    }
-    this.root.addChild(this.camera)
-    this.root.addChild(this.room)
+    this.projection = new SpatialLayer(invalidate, { name: 'office.scene' })
+    this.registration = this.projection.registration
     this.box(this.root, [18, 0.25, 13], [1.5, -0.35, 0], 0xb0c8a3)
     this.box(this.root, [2.1, 0.05, 12], [5.5, -0.16, 0], 0xe6ddc8)
     this.box(this.root, [7, 0.06, 1.1], [0, -0.14, 3.8], 0xe6ddc8)
@@ -137,19 +119,14 @@ export class OfficeScene {
     this.updateAgent()
     this.updateCamera()
   }
-  private box(
-    parent: RenderContainer,
-    size: Point3,
-    position: Point3,
-    color: number
-  ) {
+  private box(parent: Visual[], size: Point3, position: Point3, color: number) {
     return this.add(
       parent,
       meshDescriptor({ kind: 'box', size }, position, color)
     )
   }
   private sphere(
-    parent: RenderContainer,
+    parent: Visual[],
     radius: number,
     position: Point3,
     color: number
@@ -159,9 +136,13 @@ export class OfficeScene {
       meshDescriptor({ kind: 'sphere', radius }, position, color)
     )
   }
-  private add(parent: RenderContainer, descriptor: Mesh) {
-    const mesh = new RenderMesh({ [SPATIAL_PROPERTY]: descriptor })
-    parent.addChild(mesh)
+  private add(parent: Visual[], descriptor: Mesh) {
+    const id =
+      parent === this.root
+        ? JSON.stringify(['scene', parent.length])
+        : JSON.stringify([this.roomScope, this.roomPart++])
+    const mesh: Visual = { id, descriptor, visible: true }
+    parent.push(mesh)
     return mesh
   }
   private part(shape: SpatialShape, offset: Point3, color: number) {
@@ -171,7 +152,9 @@ export class OfficeScene {
   }
   setLayout(layout: OfficeLayout) {
     if (this.closed) return
-    for (const child of [...this.room.children]) child.destroy()
+    this.room.length = 0
+    this.roomScope = 'room'
+    this.roomPart = 0
     this.box(
       this.room,
       [layout.width, 0.2, layout.depth],
@@ -210,6 +193,8 @@ export class OfficeScene {
     )
     this.box(this.room, [3, 0.025, 2], [-1.5, 0.035, 1.3], 0xb3beb0)
     for (const item of layout.furniture) {
+      this.roomScope = JSON.stringify(['furniture', item.id])
+      this.roomPart = 0
       const { x, z } = item
       if (item.kind === 'desk') {
         this.box(this.room, [1.7, 0.12, 0.9], [x, 0.9, z], 0xbb956c)
@@ -229,6 +214,7 @@ export class OfficeScene {
     }
     if (this.status === 'working' || this.status === 'idle')
       this.motion.setTarget(this.anchor)
+    this.submit()
     this.wake()
     this.invalidate()
   }
@@ -269,15 +255,30 @@ export class OfficeScene {
   private updateAgent() {
     const position = this.motion.getPosition()
     for (const part of this.parts)
-      part.mesh.update({
-        [SPATIAL_PROPERTY]: {
-          ...part.descriptor,
-          position: part.offset.map((value, i) => value + position[i])
-        }
-      })
+      part.mesh.descriptor = readSpatialDescriptor({
+        ...part.descriptor,
+        position: part.offset.map((value, i) => value + position[i])
+      }) as Mesh
+    this.submit()
+  }
+  private cameraDescriptor(): SpatialCamera {
+    return {
+      kind: 'camera',
+      position: this.cameraPosition,
+      target: this.cameraTarget,
+      fov: 43,
+      near: 0.1,
+      far: 100
+    }
+  }
+  private submit() {
+    this.projection.submit({
+      camera: this.cameraDescriptor(),
+      meshes: [...this.room, ...this.root]
+    })
   }
   private updateCamera() {
-    this.camera.update(this.cameraPosition, this.cameraTarget)
+    this.projection.submitCamera(this.cameraDescriptor())
   }
   private wake() {
     if (!this.closed && this.frame === null) {
@@ -321,6 +322,6 @@ export class OfficeScene {
   dispose() {
     this.closed = true
     if (this.frame !== null) cancelAnimationFrame(this.frame)
-    this.root.destroy()
+    this.projection.dispose()
   }
 }

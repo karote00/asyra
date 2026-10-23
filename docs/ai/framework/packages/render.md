@@ -409,3 +409,12 @@ Permanent proofs: `region-index.test.ts`, `scene-region-query.test.ts`, and Desi
 `indexed-design-query.spec.ts`. Diagnostic counters distinguish bounds reads,
 order visits, cell visits and candidate checks; CI assertions use work counts,
 not elapsed-time budgets.
+
+## Explicit projection identity
+
+RenderObject accepts an optional immutable `projectionIdentity` with a nonempty
+`visualId` and optional nonempty `elementId`. Hit/hover handoff resolves the
+entity ID when supplied, otherwise the visual ID, independently of display
+labels. Ordinary nodes without this metadata retain their existing label-based
+interaction behavior. Invalid identity assignment leaves prior metadata intact.
+Render owns the abstract handoff; Preset owns spatial record reconciliation.

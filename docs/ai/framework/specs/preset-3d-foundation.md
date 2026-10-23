@@ -334,3 +334,28 @@ initialization. Calling the concrete entry may evaluate the SDK; pure contract,
 spatial-mechanism and root/2D imports must not. Failed loading, failed delegate
 initialization and retirement during loading reject startup and never publish a
 late surface. Duplicate initialization and commands before readiness reject.
+
+## Task 3 delivery boundary
+
+Shared projection consumes complete ordered scene submissions and camera-only
+updates; Apps retain source generation and camera policy. Visual records have
+explicit visual/entity identities separate from display labels. Render resolves
+this identity for existing point picking and hover; instance identity and new
+spatial query APIs remain Task 5. Ordinary non-spatial Render labels retain their
+existing meaning. App layer registration names remain composition inputs.
+
+Bounds are conservative world AABBs of the eight transformed local-bound
+corners, with instance yaw/translation applied before mesh quaternion/translation.
+They are presentation bounds, never collision/analysis evidence. Empty input
+returns null. The caller selects records; layer bounds include visible records.
+Only exact admitted shape receipts key retained local extrema. A lifetime-owned
+bounds owner releases its weak retention on disposal and rejects further work.
+Current world transforms are recomputed, not retained. Existing FieldScope
+site framing consumes these bounds; its camera policy and Sim's current fit
+policy remain unchanged until Task 4.
+
+Office keeps its authored scene, motion clock and camera interpolation. It
+submits derived records to the same layer; layout, activity and camera work
+remain independent of canonical reads during presentation. No new model or
+domain cache is introduced. Task 3 projection criteria cover the current
+position/yaw contracts; later transform/instance extensions remain unaccepted.

@@ -192,6 +192,7 @@
       "frameworkDependencies": [
         "@asyra/core",
         "@asyra/reactive-events",
+        "@asyra/render",
         "@asyra/render-engine",
         "@asyra/render-engine-pixi",
         "@asyra/ui-context",
@@ -211,9 +212,9 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "afc0074f291e836947adb6ff30e93439fbf88b4760ddf9587b0b4d0866f2652a",
+        "contract": "03b493f6a1118b2829cd0e28063fa59f3e507ffdf9e29aac72823579ba17fd0a",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
-        "manifest": "b2b91d30810801ed75802c4ac6d4e03418f982d19b1c923ddcea0397e2ea83c6"
+        "manifest": "b634ac4129c43fdb770ba1e6f380abd5b8d320aa8f6a2903c9abbdb04133a24b"
       },
       "version": "0.5.8"
     },
@@ -282,7 +283,7 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "8abb01d6c6209183e49cf6808521215edcdc64a2474bb85c4309a6b8565064a5",
+        "contract": "7bfdccadb5ec0479808aebfa709520f03394dbcfc3b098d057a4de014ac40327",
         "guide": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
         "manifest": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
       },

@@ -1,2 +1,2 @@
-// Neutral spatial composition mechanisms are introduced by later owner slices.
-export {}
+export * from './spatial/spatial-layer.js'
+export * from './spatial/bounds.js'

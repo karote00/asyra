@@ -1,3 +1,4 @@
+import { SpatialBoundsOwner } from '@asyra/preset/spatial'
 import { RobotProjection } from '../render-app/robot-projection'
 import { WalkingRobotProjection } from '../render-app/walking-robot-projection'
 import { createRobotWorkspace } from './robot-workspace'
@@ -96,7 +97,7 @@ export async function bootstrap(
   const geometry = new SiteGeometry()
   let meshes = buildSiteMeshes(config, geometry)
   geometry.prepareScene(config, meshes)
-  let localBounds = new WeakMap<object, SceneBounds>()
+  const localBounds = new SpatialBoundsOwner()
   let sceneBounds = measureScene(meshes, localBounds)
   const configurationType = 'farm-configuration'
   core.definePropertyComponent({
@@ -569,7 +570,7 @@ export async function bootstrap(
     robotProjection.clear()
     walkingRobotProjection.clear()
     geometry.clear()
-    localBounds = new WeakMap()
+    localBounds.dispose()
     observer?.disconnect()
     subscription?.unsubscribe()
     configListeners.clear()

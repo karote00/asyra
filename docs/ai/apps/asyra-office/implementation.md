@@ -6,6 +6,12 @@ The unchanged [product plan](asyra-office-product-plan.md) remains the whole-pro
 
 Preset owns the optional shared Three.js adapter, spatial descriptors, geometry, resource disposal and instancing/LoD mechanisms. All spatial adapters share the neutral Render Engine spatial capability; Sim and Asyra FieldScope retain scene composition, lighting, narrower admission and product behavior. Pure admission uses `@asyra/preset/spatial-contract`; the concrete entry is `@asyra/preset/spatial-engine`, explicitly selected under CUSTOM; 2D composition must not load Three.js. No new SDK/version is introduced. Existing Sim and Asyra FieldScope engine/descriptor suites are preservation gates.
 
+OfficeScene submits stable derived records through `@asyra/preset/spatial`.
+Preset owns reconciliation and resource-facing updates; Office retains furniture
+construction, actor/companion offsets, motion scheduling, lighting and Camera
+angles. Camera-only frames submit no mesh changes. Furniture IDs retain visual
+identity across layout reorder; disposal closes both animation and projection.
+
 ## Integration and projections
 
 Preset owns a version-1 provider-neutral activity event contract, evidence labels and read-only per-agent projection. Each connection declares structured, local or cooperative fidelity; a cooperative event cannot be promoted to authoritative evidence. Source+sequence identifies ordering and replay. Source/agent/task/attempt identities are explicit. Late old attempts cannot replace a newer attempt. Invalid batches are rejected before any projection or history change. History is append-only at the adapter boundary; persistence acknowledgement is distinct from presentation. A changed agent notifies only that agent. A bounded presentation flush can coalesce intermediate values without dropping accepted log entries. Credentials, raw prompts and private reasoning are not part of the contract.

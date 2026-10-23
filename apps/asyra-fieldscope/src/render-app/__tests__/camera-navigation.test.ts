@@ -1,3 +1,5 @@
+import { SpatialBoundsOwner } from '@asyra/preset/spatial'
+import { readSpatialDescriptor } from '../../engine/spatial-contract'
 import { expect, it } from 'vitest'
 import { PerspectiveCamera, Vector3 } from 'three'
 import { cameraPreset, buildSiteMeshes, fitCamera } from '../site-projection'
@@ -182,7 +184,10 @@ it('reuses immutable model extrema across placement edits while invalidating cha
       selectable: false
     }
   }
-  const cache = new WeakMap()
+  const cache = new SpatialBoundsOwner()
+  const admitted = readSpatialDescriptor(mesh.descriptor)
+  if (admitted.kind !== 'mesh') throw new Error('Expected mesh')
+  mesh.descriptor = admitted as typeof mesh.descriptor
   measureScene([mesh], cache)
   expect(reads).toBe(9)
   const moved = {
@@ -207,4 +212,5 @@ it('reuses immutable model extrema across placement edits while invalidating cha
   expect(measureScene([resized], cache)).toEqual(measureScene([resized]))
   resized.descriptor.shape.positions[3] = 10
   expect(measureScene([resized], cache).max[0]).toBe(14)
+  cache.dispose()
 })

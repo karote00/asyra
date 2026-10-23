@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "preset-3d-foundation",
-  "revision": 13,
+  "revision": 30,
   "definition": {
     "title": "Preset 3D foundation and App migration",
     "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
@@ -318,6 +318,15 @@
               "producer": "custom",
               "identity": "preset-3d-foundation/project/runtime"
             }
+          },
+          {
+            "id": "projection",
+            "title": "Task 3 - incremental projection and bounds preservation",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/project/projection"
+            }
           }
         ],
         "specRefs": [
@@ -330,7 +339,14 @@
           "packages/preset/src/__tests__/spatial-layer.test.ts",
           "packages/preset/src/__tests__/spatial-bounds.test.ts",
           "apps/asyra-sim/src/render-app/spatial-layer.ts",
-          "apps/asyra-fieldscope/src/render-app/spatial-layer.ts"
+          "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+          "packages/preset/package.json",
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+          "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+          "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+          "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts",
+          "apps/asyra-sim/src/render-app/__tests__/spatial-layer.test.ts"
         ],
         "actions": [
           {
@@ -414,6 +430,15 @@
             "selector": {
               "producer": "custom",
               "identity": "preset-3d-foundation/render/runtime"
+            }
+          },
+          {
+            "id": "projection",
+            "title": "Task 3 - incremental projection and bounds preservation",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/render/projection"
             }
           }
         ],
@@ -1402,10 +1427,18 @@
             "packages/preset/src/__tests__/spatial-layer.test.ts",
             "packages/preset/src/__tests__/spatial-bounds.test.ts",
             "apps/asyra-sim/src/render-app/spatial-layer.ts",
-            "apps/asyra-fieldscope/src/render-app/spatial-layer.ts"
+            "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+            "packages/preset/package.json",
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+            "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+            "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+            "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts",
+            "apps/asyra-sim/src/render-app/__tests__/spatial-layer.test.ts"
           ],
           "specRefs": [
-            "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources"
+            "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources",
+            "docs/ai/framework/specs/preset-3d-foundation.md#task-3-delivery-boundary"
           ],
           "cacheEvidence": {
             "scope": "Preserve current FieldScope immutable bounds preparation during extraction; no new retention family.",
@@ -1495,7 +1528,8 @@
             "packages/render/src/__tests__/interaction-target-registry.test.ts"
           ],
           "specRefs": [
-            "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources"
+            "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources",
+            "docs/ai/framework/specs/preset-3d-foundation.md#task-3-delivery-boundary"
           ]
         },
         {
@@ -2699,53 +2733,83 @@
       {
         "nodeId": "design",
         "criterionId": "reviewed",
-        "binding": "dc89294167d6d77da26e3072619c6c6fd571e25b0a5c258a7d75243f70f6cfc7",
-        "at": "2026-10-23T19:02:14.354Z",
         "kind": "manual",
         "status": "accepted",
         "actor": "codex-coordinator-self-review",
-        "summary": "Task 2 bounded design and implementation handoff reviewed; single architecture, App-owned policies and later-task obligations preserved.",
+        "binding": "2703fbdff5f241b2dbdb3bba28025c41179d24413bc2821d2f64a83465ab748f",
+        "at": "2026-10-23T19:21:19.306Z",
+        "summary": "Bounded self-review: Task 3 projection/bounds and direct App preservation satisfy the reviewed owner boundaries.",
         "details": [
-          "Reviewed Task 2 delivery boundary and direct entry consumers against the existing complete architecture.",
-          "Only admission and initialization/resource foundation criteria can pass in this delivery. Complete owner runtime and whole-flow acceptance remain pending.",
-          "Self-review only; user inspection remains the requested checkpoint."
+          "Rechecked project/render inputs, outputs, conditions, bypasses, contributors, implementation boundaries and C04-C05 current-format obligations.",
+          "App Camera policies, domain builders, instance-format extensions and whole-flow runtime acceptance remain outside Task 3."
         ]
       },
       {
         "nodeId": "admit",
         "criterionId": "foundation",
-        "binding": "3250d0de0a6b8a9eca2abf9dca701fbd43481e16047492ab988b1072278e9619",
-        "at": "2026-10-23T19:02:14.445Z",
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task2-local-2026-10-23T19:02:14.442Z",
-        "caseId": "C03-existing-contract",
-        "summary": "Existing neutral admission consolidated; immutable receipt, caller isolation and strict App subset tests passed.",
+        "executionId": "task3-local-2026-10-24",
+        "caseId": "admit-bounded-preservation",
+        "binding": "7a9cc55511e2f0e5a52d49a96f36ef3c97e3b022ace055650d545ed837e7f055",
+        "at": "2026-10-23T19:21:19.314Z",
+        "summary": "Task 2 admission foundation reverified on Task 3 source.",
         "details": [
-          "Preset spatial-admission: 8 tests; Node environment and rejecting SDK/Core/Render mocks prove pure admission.",
-          "Sim admission: 4 tests, including neutral receipt identity and existing whitelist behavior; repeated accepted shape reuse preserved.",
-          "Render Engine type signatures and 10 tests; Preset build and three App typechecks/builds passed.",
-          "Stable instance IDs and scale remain later content obligations; full runtime criterion is not accepted."
+          "Preset admission 8, Sim admission 4 and FieldScope admission 6 tests passed.",
+          "Preset full suite 261 tests passed; pure entry separation and strict Sim whitelist preserved."
         ]
       },
       {
         "nodeId": "engine",
         "criterionId": "foundation",
-        "binding": "afd6ad94b292638aae3fe234e679d938ff17d281f8a947d935e64edf01ef4df3",
-        "at": "2026-10-23T19:02:14.457Z",
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task2-local-2026-10-23T19:02:14.454Z",
-        "caseId": "C02-C08-initialization-resources",
-        "summary": "Deferred initialization, failure/retirement, GPU resource lifetime, opaque handles and App preservation tests passed.",
+        "executionId": "task3-local-2026-10-24",
+        "caseId": "engine-bounded-preservation",
+        "binding": "89290e080f61cfa99131d43b1fc6cdf8e48bba8f7019382729f5ad0ec9b61c46",
+        "at": "2026-10-23T19:21:19.321Z",
+        "summary": "Task 2 resource and deferred initialization foundation reverified on Task 3 source.",
         "details": [
-          "Preset final spatial suite: 35 tests across admission, engine (20), entries (6), resources (1). Preset full suite: 250 passed before final test additions; final added cases passed in the focused suite.",
-          "Sim 43, FieldScope 52 and Office 14 App preservation tests passed; final Sim admission/engine recheck 19 passed.",
-          "Lifecycle conformance moved from App duplicates to Preset. Foreign/retired objects and resources, geometry retention, last-material texture release and failed startup cleanup verified.",
-          "Root/2D and pure entries do not evaluate the spatial SDK; real deferred adapter initializes via the SDK with an injected driver. All three production builds passed.",
-          "Synthetic-driver evidence only. Real-WebGL/visual acceptance and full owner runtime remain later tasks."
+          "Preset engine 20, entries 6 and resources 1 tests passed in full suite; Sim engine 15 passed.",
+          "Pose/material topology retention, disposal and deferred initialization verified with injected graphics drivers.",
+          "Three App production builds passed; real-WebGL visual approval remains pending."
+        ]
+      },
+      {
+        "nodeId": "project",
+        "criterionId": "projection",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task3-local-2026-10-24",
+        "caseId": "project-bounded-preservation",
+        "binding": "a138e2fb56b165821ce4d3eaa8fb565273fc526bbbb8ba7c895cbd5196d13f40",
+        "at": "2026-10-23T19:21:19.327Z",
+        "summary": "Shared incremental projection and presentation bounds preserve all three App consumers.",
+        "details": [
+          "Shared layer 6 and bounds 3 tests passed: atomic invalid/sparse IDs, ordering, unchanged mesh writes, removal, explicit identities, lifetime isolation and current transforms.",
+          "Admitted-shape vertices scanned once; repeated transforms use bounded corner work and match fresh-owner bounds.",
+          "Sim 44, FieldScope 32 and Office 15 preservation tests passed; App supervisors retained.",
+          "Render/Preset builds, three App typechecks/builds, naming, scoped lint, dependency, placement and generated-doc gates passed."
+        ]
+      },
+      {
+        "nodeId": "render",
+        "criterionId": "projection",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task3-local-2026-10-24",
+        "caseId": "render-bounded-preservation",
+        "binding": "de031f6b290d01528a37407521232515ba7361dacaedd77ab98f420188d88d27",
+        "at": "2026-10-23T19:21:19.333Z",
+        "summary": "Explicit visual/entity identity resolves current picking independently of display labels.",
+        "details": [
+          "Render full suite 271 tests passed, including regression-first identity handoff and atomic invalid assignment.",
+          "Sim workcell behavior preserved with existing labels; shared layer identity remains authoritative.",
+          "No concrete SDK import, domain policy or extra permanent render loop added."
         ]
       }
     ],
@@ -2754,26 +2818,44 @@
       {
         "nodeId": "admit",
         "status": "in-progress",
-        "reason": "Task 2 foundation verified; stopped for user inspection. Complete owner runtime acceptance belongs to later plan tasks."
+        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
       },
       {
         "nodeId": "engine",
         "status": "in-progress",
-        "reason": "Task 2 foundation verified; stopped for user inspection. Complete owner runtime acceptance belongs to later plan tasks."
+        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
+      },
+      {
+        "nodeId": "project",
+        "status": "in-progress",
+        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
+      },
+      {
+        "nodeId": "render",
+        "status": "in-progress",
+        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
       }
     ],
     "sources": [
       {
         "nodeId": "design",
-        "revision": "2d92dc69b01600eedfdedc0d5e83ba876542faaf/design-sha256:9172ca5be1196be94f5effbdfa9ab09084d47944a88c790ab4d1af23318f682d"
+        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/design-sha256:3b6c846355c74ec725d894363c8dbaaf1b84e3aca1fb662eadf62044f1aa539b"
       },
       {
         "nodeId": "admit",
-        "revision": "2d92dc69b01600eedfdedc0d5e83ba876542faaf/task2-sha256:d5f7ebd392b79b13f50631f9327ceb976c2018be731203c2002b5d550024bcce"
+        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
       },
       {
         "nodeId": "engine",
-        "revision": "2d92dc69b01600eedfdedc0d5e83ba876542faaf/task2-sha256:d5f7ebd392b79b13f50631f9327ceb976c2018be731203c2002b5d550024bcce"
+        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
+      },
+      {
+        "nodeId": "project",
+        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
+      },
+      {
+        "nodeId": "render",
+        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
       }
     ],
     "warnings": []

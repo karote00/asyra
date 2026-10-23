@@ -4,10 +4,11 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1 and 2 complete within their bounded contracts; stopped for user
-inspection before Task 3. Task 1 produced the reviewed specification and full
-architecture flow. Task 2 delivered pure admission and initialization/resource
-foundations with direct App preservation checks. Tasks 3-10 remain unexecuted;
+Status: Tasks 1-3 complete within their bounded contracts; stopped for user
+inspection before Task 4. Task 1 produced the reviewed specification and full
+architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
+shared incremental projection/bounds with direct App preservation checks.
+Tasks 4-10 remain unexecuted;
 official 3D activation and whole-flow runtime acceptance remain pending.
 
 Planning base: local `main` at
@@ -447,6 +448,52 @@ camera-only submissions do not resubmit meshes; pose/material changes retain
 topology resources; removals release exactly once. Instance bounds include
 current transforms without rescanning each instance's source vertices. An App
 with no tree panel uses exactly the same canonical/projection flow.
+
+Task 3 execution contract: base `698b080b5c2dc9b46f57d47d8e343aa4d2911f38`.
+Complete the bounded Render identity handoff, then Preset projection/bounds and
+its direct App consumers. Discovery is frozen to those owners, current entry
+consumers and preservation tests. Required gates are regression-first owner
+tests, Render/Preset tests, App projection/camera/runtime preservation tests,
+package and App type/build checks, naming, scoped lint/format, dependency and
+generated-doc checks, and source-bound Inspector evaluation. Exclude Task 4
+controls, Task 5 spatial queries/instance mapping, domain algorithms and profile
+activation. Stop for user inspection after Task 3 or on an unresolved boundary.
+
+### Task 3 result and inspection checkpoint
+
+Completed shared incremental `SpatialLayer` and lifetime-owned `SpatialBoundsOwner`.
+Sim and FieldScope now configure the shared layer; Office submits its existing
+scene assets and presentation motion through it. Explicit Render visual/entity
+identity drives picking independently of labels, while existing App labels remain
+unchanged. FieldScope uses the shared bounds owner; domain builders and Camera
+policies remain App-owned. No new SDK, dependency package or profile activation.
+
+Regression-first evidence reproduced label-derived picking, numeric visual IDs,
+sparse pending submissions and Office's missing shared projection. The existing
+Sim workcell test also detected a label preservation regression; retaining its
+presentation labels resolved it without coupling picking to labels again.
+
+Verification on the Task 3 source:
+
+- Preset: 33 files / 261 tests; final shared layer/bounds recheck: 9 tests.
+- Render: 23 files / 271 tests, including explicit identity handoff.
+- Sim: 7 selected files / 44 tests through its supervisor; 13 guard tests passed.
+- FieldScope: 7 selected files / 32 tests through its supervisor; 8 guard tests
+  passed. Camera fit, instance work counts, motion and history remain covered.
+- Office: full 4 files / 15 tests. Camera-only mesh writes are zero; motion writes
+  only 11 actor/companion parts; furniture reorder retains visual objects.
+- Render/Preset builds and all three App typechecks/production builds passed.
+- Naming (15), dependency validation (29 workspaces / 6 tests), test placement
+  (3), scoped formatting/lint and public-doc generation/check/validation passed.
+  Scoped lint retains one pre-existing Render console warning and no errors.
+
+Bounded self-review checked the `project` and `render` owner contracts, direct
+consumers, caller mutation isolation, transform order, lifetime disposal and
+preserved App policies. Source-bound `project/projection` and `render/projection`
+record only this Task 3 delivery; refreshed foundation evidence covers unchanged
+Task 2 admission/engine behavior on the same source. Whole-flow runtime criteria,
+new spatial queries/instance formats, real-WebGL visual approval and profile
+activation remain pending. Stop for user inspection; do not start Task 4.
 
 ## Task 4 - Share App-directed camera control mechanisms
 

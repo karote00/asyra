@@ -112,11 +112,12 @@ The framework guarantees:
 
 ## Optional shared spatial foundation
 
-Preset also owns intentionally shared App defaults/foundations through the
-side-effect-free `@asyra/preset/spatial` entry: the concrete Three.js adapter,
-spatial descriptor admission, graphics/resource lifecycle and common instancing
-mechanisms extracted from Sim and Asyra FieldScope. CUSTOM composition selects this
-provider explicitly; default 2D composition remains unchanged. Apps own scene
-contents, lighting choices, domain validation, movement and interaction policy.
-This shared warehouse boundary does not transfer canonical runtime ownership
-from Core or introduce Office domain semantics into Framework.
+Preset owns optional shared App foundations through explicit entries:
+`@asyra/preset/spatial-contract` provides pure descriptor admission,
+`@asyra/preset/spatial` provides neutral incremental projection and presentation
+bounds, and `@asyra/preset/spatial-engine` provides the concrete Three.js adapter
+and resource lifecycle. CUSTOM composition selects its provider explicitly;
+default 2D composition remains unchanged. Apps own scene contents, lighting,
+domain validation, camera choices, movement and interaction policy. This shared
+boundary does not transfer canonical runtime ownership from Core or introduce
+Office domain semantics into Framework.

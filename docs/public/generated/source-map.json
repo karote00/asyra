@@ -6,7 +6,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
-          "sha256": "516d07bc408d1bcf66f24c230cbc35122b60daa777d747125276c5f09b719bcf"
+          "sha256": "94e7a931a04ef001d48e66d122c31b2776b0922732d895c04e48be561fab863c"
         },
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "afc0074f291e836947adb6ff30e93439fbf88b4760ddf9587b0b4d0866f2652a"
+          "sha256": "03b493f6a1118b2829cd0e28063fa59f3e507ffdf9e29aac72823579ba17fd0a"
         }
       ]
     },
@@ -92,7 +92,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
-          "sha256": "516d07bc408d1bcf66f24c230cbc35122b60daa777d747125276c5f09b719bcf"
+          "sha256": "94e7a931a04ef001d48e66d122c31b2776b0922732d895c04e48be561fab863c"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
@@ -166,7 +166,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "8abb01d6c6209183e49cf6808521215edcdc64a2474bb85c4309a6b8565064a5"
+          "sha256": "7bfdccadb5ec0479808aebfa709520f03394dbcfc3b098d057a4de014ac40327"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -238,7 +238,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "8abb01d6c6209183e49cf6808521215edcdc64a2474bb85c4309a6b8565064a5"
+          "sha256": "7bfdccadb5ec0479808aebfa709520f03394dbcfc3b098d057a4de014ac40327"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -438,11 +438,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "afc0074f291e836947adb6ff30e93439fbf88b4760ddf9587b0b4d0866f2652a"
+          "sha256": "03b493f6a1118b2829cd0e28063fa59f3e507ffdf9e29aac72823579ba17fd0a"
         },
         {
           "path": "packages/preset/package.json",
-          "sha256": "b2b91d30810801ed75802c4ac6d4e03418f982d19b1c923ddcea0397e2ea83c6"
+          "sha256": "b634ac4129c43fdb770ba1e6f380abd5b8d320aa8f6a2903c9abbdb04133a24b"
         }
       ]
     },
@@ -480,7 +480,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "8abb01d6c6209183e49cf6808521215edcdc64a2474bb85c4309a6b8565064a5"
+          "sha256": "7bfdccadb5ec0479808aebfa709520f03394dbcfc3b098d057a4de014ac40327"
         },
         {
           "path": "packages/render/package.json",
