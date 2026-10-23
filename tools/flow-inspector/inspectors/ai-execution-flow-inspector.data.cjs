@@ -162,6 +162,7 @@
           'Distribute common union fields for native declarations without changing admission; exact native lookup returns canonical schemas and definitions through bounded content delivery with explicit refresh; never maintain a separate schema copy',
           'Apply the same isolation policy at child launch and thread creation: disable personal hooks, legacy notification commands and both multi-agent variants without modifying user configuration',
           'Read effective native configuration once per invocation and disable each inherited MCP server for the ephemeral thread without writing user config; invalid configuration stops before inference',
+          'Selected grid usage includes inline and root-local shared motifs with an executable owner example; preserve exact constraints and recovery without increasing first-read bytes, pages or lookups. Known direct calls remain legal.',
           'Resolve mixed exact action and native tool lookups from actual registered groups with distinct execution routes; same-name action and native wrapper each deliver their actual input contract in the first exact lookup with independent revision/recovery accounting; preserve known matches when another name is missing',
           'Preflight every binding shape, registered path and argument conflict for an operation before resolving retained sources. Report independent issues with operation/target/argument locations together; targets supply omitted slots, never overwrite explicit values. Cardinality is declared on the canonical element-identity argument schema: all, each or one. Bind only annotated slots; reserve all paths before lookup, permit at most one fan-out, require exact-one anchors, reject incompatible union paths and preserve input order without Cartesian expansion.',
           'Selected material-method and representative-review Knowledge decisions deliver their necessary closure in one complete bounded reply. Optional invocation examples and parameter walkthroughs remain discoverable children, never eager references; preserve representation limits, truthful receipts and no-replay recovery. Explicit detailed or multi-topic reads retain pagination and rehydrate.',
@@ -181,6 +182,8 @@
           'request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse'
         ],
         implementationBoundary: [
+          'apps/asyra-design/server/__tests__/shared-motifs.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/layered-pattern-20261023.json',
           'apps/asyra-design/server/__tests__/layered-pattern-assertions.ts',
           'apps/asyra-design/e2e/design-construction.spec.ts',
@@ -333,6 +336,7 @@
           'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts'
         ],
         specRefs: [
+          '#shared-normalized-motifs',
           '#layer-preserving-repetition-delivery',
           '#optional-repetition-in-selected-contents',
           '#composition-examples-within-selected-usage',
@@ -397,6 +401,7 @@
           'Expand request-local vector templates and placements without losing geometry, painter order or stable keys',
           'Executable App representation examples use the existing typed preparation entry points: multi-face patterns preserve declared instance/face painter order, native independent fills, current generated-key targeting and expanded budgets. Advice does not infer repeats or require Knowledge; irregular details remain explicit. Same pattern consumers support optional world material fields without granting visual approval.',
           'Compile explicit draft-local world linearFields on projected and translated pattern faces into ordinary independent native gradients. Resolve exact materialField keys, reject fill/palette conflicts, validate finite distinct endpoints and ordered stops, and pull back affine world phase through the admitted plane and normalized vector bounds. Preserve per-instance phase, constant color/opacity, reversal and non-square geometry; reject unsupported or unrepresentable input before writes. Reuse plane derivation only within preparation, preserve actual source-work budgets and artifact lifetime, and never infer visual approval, change rendering or persist a new live material relation.',
+          'Resolve draft-local motifTemplates once per construction invocation to validated normalized motifs and camera offsets; inline arrays remain independent. Budget admission counts definitions once and full output per reference. Grids retain independent boundaries, counts, palette indexing, keys and order; pattern members and retained source/parts reuse the same definitions. Invalid definitions or missing references reject before writes; no semantic preset, inference or cross-invocation cache.',
           'Expand declarative planar convex surface grids from normalized cell motifs using one projected boundary; preserve explicit cell-major or motif-major order, keys, caller-authored per-cell fills, motif world offsets and exact editable vector output; reject unsupported planes and degeneracy rather than approximate them'
         ],
         bypasses: ['Advice and direct edits require no prepared artifact'],
@@ -415,6 +420,9 @@
           'request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failed image acquisition remains retryable; page candidate inventory survives representative failure for explicit pagination and is superseded by a successful explicit candidate selection; original image delivery once per attachment with explicit refresh'
         ],
         implementationBoundary: [
+          'apps/asyra-design/server/__tests__/shared-motifs.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json',
+          'apps/asyra-design/e2e/design-construction.spec.ts',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/pattern-budget-recovery-20261023.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/translated-component-20261022.json',
           'apps/asyra-design/server/local-operation-tools.ts',
@@ -460,7 +468,7 @@
           'apps/asyra-design/server/__tests__/local-design-tools.test.ts',
           'apps/asyra-design/server/__tests__/design-preparation.test.ts'
         ],
-        specRefs: ['#preparation-source-reads-and-immutable-lifetime', '#source-referenced-expansion-recovery',
+        specRefs: ['#shared-normalized-motifs', '#preparation-source-reads-and-immutable-lifetime', '#source-referenced-expansion-recovery',
           '#translated-mixed-components',
           '#preparation-and-execution'
         ],

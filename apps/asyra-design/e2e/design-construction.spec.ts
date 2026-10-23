@@ -13,6 +13,15 @@ const recoveryFixture = JSON.parse(
     'utf8'
   )
 )
+const sharedMotifsFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
 const layeredFixture = JSON.parse(
   readFileSync(
     new URL(
@@ -549,6 +558,13 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
 })
 
 for (const scenario of [
+  {
+    title:
+      'shared motifs preserve independent surfaces through application, Undo and durable reload',
+    input: { draft: sharedMotifsFixture.compact.draft, inspection: 'defer' },
+    artifacts: 1,
+    members: 2668
+  },
   {
     title:
       'budget partitions preserve one root through canonical normalization, Undo and durable reload',

@@ -7799,3 +7799,248 @@ it('execution proof separates budget snapshot projection and retained lookup wor
     expect(() => session.resolve(receipt.artifactId)).toThrow()
   }
 })
+
+// Isolated Inspector cases are self-contained. The full saved-input equivalence and
+// provenance live in shared-motifs.test.ts and its permanent JSON fixture.
+const sharedMotifProof = () => {
+  const motifs = [
+    {
+      key: 'mark',
+      name: 'Triangle',
+      fill: '#123456',
+      vertices: [
+        { u: 0.1, v: 0.1 },
+        { u: 0.9, v: 0.1 },
+        { u: 0.5, v: 0.9 }
+      ]
+    }
+  ]
+  const grid = {
+    type: 'surface-grid',
+    key: 'a',
+    name: 'Markers',
+    boundary: [
+      { x: 0, y: 0, z: 0 },
+      { x: 12, y: 0, z: 0 },
+      { x: 10, y: 0, z: 20 },
+      { x: 2, y: 0, z: 20 }
+    ],
+    rows: 2,
+    columns: 3,
+    order: 'cell-major',
+    motifs: { template: 'markers' }
+  }
+  const draft = {
+    type: 'group',
+    name: 'Signs',
+    projection: {
+      azimuth: 30,
+      elevation: 25,
+      scale: 1,
+      originX: 0,
+      originY: 20
+    },
+    motifTemplates: { markers: motifs },
+    children: [
+      grid,
+      {
+        ...grid,
+        key: 'b',
+        rows: 3,
+        columns: 2,
+        boundary: [
+          { x: 0, y: 0, z: 0 },
+          { x: 0, y: 18, z: 0 },
+          { x: 0, y: 16, z: 9 },
+          { x: 0, y: 2, z: 9 }
+        ]
+      }
+    ]
+  }
+  const { motifTemplates: _definitions, ...plain } = draft
+  return {
+    compact: { draft },
+    input: {
+      draft: {
+        ...plain,
+        children: draft.children.map((child) => ({ ...child, motifs }))
+      }
+    },
+    query: {
+      names: ['prepare_and_apply_design'],
+      view: 'usage',
+      inputScope: {
+        operation: 'draft',
+        nodeTypes: ['projected-face', 'surface-grid'],
+        optionalInputs: ['plan']
+      }
+    },
+    baseline: { guideReplies: 2, guideWireBytes: 27021 }
+  }
+}
+
+it('execution proof delivers shared motifs through the main workflow without extra reading', async () => {
+  const fixture = sharedMotifProof()
+  const actions = [
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    },
+    {
+      name: AiActionNames.INSPECT_DRAWING,
+      description: 'Inspect',
+      inputSchema: {}
+    }
+  ]
+  const designs = createLocalDesignTools(actions)
+  const applied: PreparedDesign[] = []
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => {
+      const design = (action.arguments as { design: PreparedDesign }).design
+      applied.push(design)
+      return {
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          status: 'complete',
+          appliedElementCount: design.entries.length,
+          compositionId: design.entries[0].descriptor.id
+        }
+      }
+    })
+  }))
+  const operations = createOperationOwner(actions, designs, execute, {
+    getNativeTools: () =>
+      main.definitions.map((d) => ({ ...d, namespace: 'design' }))
+  })
+  const main = createLocalDesignWorkflow(designs, operations),
+    signal = new AbortController().signal
+  const replies: string[] = []
+  const body = await readCompleteInformation(async (args) => {
+    const raw = await operations.call('describe_design_apis', args, signal)
+    replies.push(raw)
+    return raw
+  }, fixture.query)
+  const tool = JSON.parse(body).tools[0]
+  expect(body).toContain('motifTemplates')
+  expect(body).toContain('without overrides')
+  expect(replies.length).toBeLessThanOrEqual(fixture.baseline.guideReplies)
+  const bytes = replies.reduce((n, text) => n + Buffer.byteLength(text), 0)
+  expect(bytes).toBeLessThanOrEqual(fixture.baseline.guideWireBytes)
+  expect(
+    bytes + Buffer.byteLength(JSON.stringify(fixture.compact))
+  ).toBeLessThan(
+    fixture.baseline.guideWireBytes +
+      Buffer.byteLength(JSON.stringify(fixture.input))
+  )
+  const { invocation } = tool.invocationExample
+  expect(invocation.arguments.draft.motifTemplates).toBeDefined()
+  const definition = main.definitions.find((d) => d.name === invocation.tool)
+  if (!definition) throw new Error('Missing workflow definition')
+  const reply = await invokeLocalTool(
+    main,
+    definition,
+    { ...invocation.arguments, inspection: 'defer' },
+    signal
+  )
+  expect(JSON.parse(reply.text).toolOutcome.settlement).toBe('completed')
+  expect(applied).toHaveLength(1)
+  expect(applied[0].entries).toHaveLength(16)
+  const input = { draft: fixture.compact.draft, inspection: 'defer' }
+  const recorded = JSON.parse(
+    (await invokeLocalTool(main, definition, input, signal)).text
+  )
+  expect(recorded.toolOutcome.settlement).toBe('completed')
+  expect(applied[1].entries).toEqual(
+    prepareDesign(fixture.input.draft, recorded.artifactId).entries
+  )
+})
+
+it('execution proof preserves shared motifs geometry budget lifetime and recovery', async () => {
+  const fixture = sharedMotifProof()
+  const { measureDesignBudget } = await import('../design-budget')
+  const source = structuredClone(fixture.compact.draft)
+  const session = createDesignPreparationSession()
+  const prepared = session.prepare(source)
+  expect(session.resolve(prepared.artifactId).entries).toEqual(
+    prepareDesign(fixture.input.draft, prepared.artifactId).entries
+  )
+  expect(measureDesignBudget(source).observed.expandedNodes).toBe(13)
+  source.motifTemplates.markers[0].vertices[0].u = 0.01
+  expect(session.recipe(prepared.artifactId).recipe).toEqual(
+    fixture.compact.draft
+  )
+  session.release([prepared.artifactId])
+  expect(() => session.resolve(prepared.artifactId)).toThrow()
+  const actions = [
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ]
+  const designs = createLocalDesignTools(actions)
+  const applied: PreparedDesign[] = []
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => {
+      const design = (action.arguments as { design: PreparedDesign }).design
+      applied.push(design)
+      return {
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          status: 'complete',
+          appliedElementCount: design.entries.length,
+          compositionId: design.entries[0].descriptor.id
+        }
+      }
+    })
+  }))
+  const main = createLocalDesignWorkflow(
+      designs,
+      createOperationOwner(actions, designs, execute)
+    ),
+    signal = new AbortController().signal
+  const invoke = async (input: unknown) =>
+    JSON.parse(
+      (await invokeLocalTool(main, main.definitions[0], input, signal)).text
+    )
+  const invalid = structuredClone(fixture.compact.draft)
+  const invalidGrid = invalid.children.find((c) => c.type === 'surface-grid')
+  if (!invalidGrid) throw new Error('Missing recorded grid')
+  invalidGrid.motifs = {
+    template: 'missing'
+  }
+  const result = await invoke({
+    parts: [
+      { key: 'first', draft: fixture.compact.draft },
+      { key: 'second', parentPart: 'first', draft: invalid }
+    ],
+    inspection: 'defer'
+  })
+  expect(result.toolOutcome.status).toBe('partial')
+  expect(execute).toHaveBeenCalledOnce()
+  const rejected = result.parts[1]
+  expect(rejected.message).toContain('missing')
+  expect(rejected.draftId).toEqual(expect.any(String))
+  const index = invalid.children.findIndex((c) => c.type === 'surface-grid')
+  const repaired = await invoke({
+    repair: {
+      draftId: rejected.draftId,
+      replacements: [
+        {
+          path: `/children/${index}/motifs/template`,
+          value: 'markers'
+        }
+      ]
+    },
+    parentId: applied[0].entries[0].descriptor.id,
+    inspection: 'defer'
+  })
+  expect(repaired.toolOutcome.settlement).toBe('completed')
+  expect(execute).toHaveBeenCalledTimes(2)
+  expect(applied[1].entries).toHaveLength(13)
+})

@@ -680,6 +680,27 @@
             "apps/asyra-design/server/design-budget.ts",
             "apps/asyra-design/server/design-preparation.ts"
           ]
+        },
+        {
+          "id": "compose.shared-motifs",
+          "stepId": "compose",
+          "testName": "execution proof delivers shared motifs through the main workflow without extra reading",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/design-workflow-discovery.ts"
+          ]
+        },
+        {
+          "id": "prepare.shared-motifs",
+          "stepId": "prepare",
+          "testName": "execution proof preserves shared motifs geometry budget lifetime and recovery",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
         }
       ],
       "handoffs": [

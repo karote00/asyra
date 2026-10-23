@@ -15,7 +15,50 @@ const nonnegative = { type: 'number', minimum: 0, maximum: limits.dimension }
 const key = { type: 'string', minLength: 1, maxLength: 160 }
 const note = { type: 'string', minLength: 1, maxLength: 500 }
 const property = { enum: ['x', 'y', 'width', 'height'] }
+export const surfaceMotifsSchema = {
+  type: 'array',
+  minItems: 1,
+  items: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['key', 'name', 'vertices'],
+    properties: {
+      key: { ...key, maxLength: 40 },
+      name: { ...key, maxLength: 60 },
+      fill: designFillSchema,
+      fills: { type: 'array', minItems: 1, items: designFillSchema },
+      offset: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['x', 'y', 'z'],
+        properties: { x: scalar, y: scalar, z: scalar }
+      },
+      vertices: {
+        type: 'array',
+        minItems: 3,
+        maxItems: limits.pathCommands,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['u', 'v'],
+          properties: {
+            u: { type: 'number', minimum: 0, maximum: 1 },
+            v: { type: 'number', minimum: 0, maximum: 1 }
+          }
+        }
+      }
+    }
+  }
+}
+
 export const designConstructionSchema = {
+  motifTemplates: {
+    type: 'object',
+    propertyNames: key,
+    additionalProperties: { $ref: '#/$defs/surfaceMotifs' },
+    description:
+      'Named motif arrays, shared across different grids via motifs:{template:key}, without overrides. Invalid definitions/references reject before writes.'
+  },
   linearFields: {
     type: 'object',
     propertyNames: key,
@@ -170,38 +213,19 @@ export const surfaceGridSchema = {
     columns: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
     order: { enum: ['cell-major', 'motif-major'] },
     motifs: {
-      type: 'array',
-      minItems: 1,
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['key', 'name', 'vertices'],
-        properties: {
-          key: { ...key, maxLength: 40 },
-          name: { ...key, maxLength: 60 },
-          fill: designFillSchema,
-          fills: { type: 'array', minItems: 1, items: designFillSchema },
-          offset: worldPoint,
-          vertices: {
-            type: 'array',
-            minItems: 3,
-            maxItems: limits.pathCommands,
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['u', 'v'],
-              properties: {
-                u: { type: 'number', minimum: 0, maximum: 1 },
-                v: { type: 'number', minimum: 0, maximum: 1 }
-              }
-            }
-          }
+      anyOf: [
+        { $ref: '#/$defs/surfaceMotifs' },
+        {
+          type: 'object',
+          additionalProperties: false,
+          required: ['template'],
+          properties: { template: key }
         }
-      }
+      ]
     }
   },
   description:
-    'Shared orthographic projection; root child or pattern member. Planar convex boundary corners: (0,0),(1,0),(1,1),(0,1). Uniform rows/columns; cell-local u/v motifs, optional world offset. fills cycles by row-major cell index, overriding fill; a full list preserves irregular materials. Compile boundary/motif offsets once; bilinear editable vectors. cell-major: row-major cells then motifs; motif-major: motifs then row-major cells. Keys: gridKey-cellIndex-motifKey. Objects = rows * columns * motifs.length; add all other nodes/containers. Shared path/depth limits apply; work windows do not split artifacts. Keep irregular geometry explicit; no approximation, clipping, lighting or hidden-face removal.'
+    'Absolute root child/pattern member; shared projection. Planar convex corners (0,0),(1,0),(1,1),(0,1); uniform rows/columns. Cell-local u/v, world offset; bilinear editable vectors, boundary/offset projected once. fills overrides fill cyclically per row-major cell (full list for irregular paint). cell-major=row-major cells then motifs; motif-major=motifs then row-major cells. Keys:gridKey-cellIndex-motifKey. Count rows*columns*resolved motifs plus other nodes. Budgets/windows apply; no approximation/clipping/lighting/hidden-face removal; keep irregular geometry explicit.'
 }
 
 export const designPatternSchema = {
@@ -269,7 +293,7 @@ export const designPatternSchema = {
         ]
       },
       description:
-        'Ordered flat component under shared root projection. Repeat faces and grids together; no nested patterns or containers. Member keys must be unique. Instance-major, member-major, then grid painter order. Grid palettes restart per instance; face world fields follow translated positions. Output keys: patternKey-instanceIndex-memberOutputKey. Generated keys and names must fit 160 characters. No new parent is created.'
+        'Flat face/grid component; shared root projection, unique member keys; no nested patterns/containers. Order: instance, member, grid. Palettes restart per instance; world fields follow translations. Keys:patternKey-instanceIndex-memberOutputKey. Generated keys/names <=160 characters; no new parent.'
     },
     faces: {
       type: 'array',
@@ -298,5 +322,5 @@ export const designPatternSchema = {
     }
   },
   description:
-    'Absolute root child with shared projection. Choose faces or members, never both; members forbids pattern fills. Translation only: origin + one/two axes, last axis fastest. Editable vector order: instance then member/face then grid order. faces-mode fills cycles by original instance index; otherwise member materials remain. No lighting, sorting or clipping. Selected count multiplies expanded component objects/points; include root in 10000 objects and 200000 points. Omitted ranges consume neither output budget nor projection. Each source primitive must fit its point limit; internal work windows handle larger valid templates, palettes and ranges without a separate 1000-item limit. Application slices output automatically. Keep irregular details explicit; no inferred geometry.'
+    'Absolute root child with shared projection. Choose faces or members, never both; members forbids pattern fills. Translation only: origin + one/two axes, last axis fastest. Editable vector order: instance then member/face then grid order. faces-mode fills cycles by original instance index; otherwise member materials remain. No lighting, sorting or clipping. Count selected instances * component objects/points, plus root, against shared budgets. Omitted ranges cost no output/projection. Primitive point limits apply; windows handle larger templates/palettes/ranges without a separate 1000-item cap; application slices automatically. Keep irregular details explicit; no inferred geometry.'
 }
