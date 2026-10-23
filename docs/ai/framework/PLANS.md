@@ -62,14 +62,16 @@ None.
 ## Preset 3D Foundation
 
 - [Preset 3D Foundation and App Migration](plans/preset-3d-foundation-plan.md)
-  - Scope approved on 2026-10-24; design review and implementation pending.
+  - Scope approved on 2026-10-24; Task 1 specification and complete flow design
+    reviewed. Production implementation and runtime verification remain pending.
   - One canonical 3D architecture for Sim, FieldScope and Office. Scene Tree
     presentation and camera angles/modes remain App-owned; shared controls and
     projection mechanisms are optional Preset foundations.
   - Includes incremental projection, neutral spatial queries, resource/control
     mechanisms, App migrations, generic editing/restricted assets and gated
-    official `3D` activation. Task 1 resolves composition/defaults and the
-    complete reviewed flow before production work. `HYBRID` remains deferred.
+    official `3D` activation. Task 1 preserves defaults resolution through
+    explicit spatial composition and pre-mutation combination admission.
+    `HYBRID` remains deferred.
 
 ## Transaction History Groups
 

@@ -6,8 +6,9 @@ Deferred and prerequisite-gated.
 
 The approved [Preset 3D Foundation and App Migration](preset-3d-foundation-plan.md)
 owns the active foundation/migration work and its Task 8 supplies the evidence
-for the 3D gate below. Its design review and implementation are pending; `3D`
-remains unavailable until those prerequisites pass. This document retains the
+for the 3D gate below. Its Task 1 design is reviewed; implementation and runtime
+verification remain pending. `3D` remains unavailable until those prerequisites
+pass. This document retains the
 activation criteria rather than duplicating that work plan. `HYBRID` remains
 deferred and outside the new plan.
 
@@ -31,6 +32,12 @@ Activating a profile must not implicitly add, remove, or filter defaults.
 
 Catalog metadata for unavailable profiles must not import, dynamically load,
 bundle, instantiate, or simulate an engine.
+
+The reviewed [3D composition contract](../specs/preset-3d-foundation.md#composition)
+keeps the existing default catalog and resolution unchanged. Spatial definitions
+are opt-in public exports composed through Core. The official 3D provider admits
+empty defaults or explicit `INPUT`; incompatible selections (including omitted
+defaults resolving to all eight) reject before mutation, never silently filter.
 
 ## 3D Activation Prerequisites
 
@@ -63,7 +70,7 @@ Hybrid is not implemented by concatenating 2D and 3D defaults or providers.
 For one profile at a time:
 
 1. Write the product contract and matching Inspector owner flow.
-2. Add the concrete provider package through the abstract boundary without
+2. Bind the supported concrete provider through the abstract boundary without
    changing preset defaults selection.
 3. Change only that profile catalog entry from `available: false` to
    `available: true` and set its preset-owned diagnostic engine id.

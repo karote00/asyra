@@ -4,10 +4,11 @@
 
 Created: 2026-10-24.
 
-Status: scope approved; planning recorded; design review and implementation
-pending. The user approved the proposed foundation and migration scope with
+Status: Task 1 specification and complete flow design reviewed; production
+implementation pending. The user approved the proposed foundation and migration scope with
 the two binding ownership corrections below. The current delivery creates this
-plan and its index/activation references; it does not execute production tasks.
+plan and its index/activation references. Task 1 was subsequently authorized and
+completed as a design-only slice; Tasks 2-10 have not been executed.
 
 Planning base: local `main` at
 `eaddcdba2c1705dca6646a730cd87818ae214d56`.
@@ -198,11 +199,11 @@ parallel extension registry to `applyPreset`.
 The current omitted-defaults contract selects every available default. Adding
 3D modules or binding a 3D provider must not silently change existing `2D`
 behavior, install incompatible 2D features, or filter defaults by profile.
-Task 1 must resolve the module/capability design against this exact contract.
-Prefer preserving it through genuinely neutral modules and explicit optional
-entrypoints. If that cannot satisfy the agreed behavior, record the precise
-contract conflict and obtain a product decision before changing public defaults
-semantics. No activation proceeds with this finding unresolved.
+Task 1 resolves this through explicit optional spatial entries, without adding
+catalog modules or changing defaults resolution. Official `3D` supports `[]`
+and explicit `INPUT`; other existing modules, including omitted defaults that
+resolve to all eight, reject with `INVALID_OPTIONS` before mutation. No module
+is silently filtered. See the [composition contract](../specs/preset-3d-foundation.md#composition).
 
 Pure spatial data/control imports must not initialize or load a concrete
 renderer. The ordinary 2D runtime import/bundle path must not acquire Three.js
@@ -234,8 +235,129 @@ implementation allowlists and gates for later tasks.
 
 Acceptance: reviewed flow and product contract agree; source-backed design
 findings are resolved; actual supported admission/evidence references are
-recorded. Readiness is pending until this work passes. A missing tool mapping
+recorded. Readiness was established for the bounded target design by the review
+below; it does not satisfy any runtime criterion. A missing tool mapping
 blocks the affected proof claim, not permission to invent another ledger.
+
+### Task 1 design review - 2026-10-24
+
+Selected base: `47302dcea86e525a23500f6344eb859631264952`, containing this plan.
+The repository task-context preflight passed on `codex/preset-3d-foundation-plan`.
+Reviewer: coordinating agent in this conversation (self-review, not independent
+or human approval). Scope: product specification, complete owner flow, concrete
+source/API feasibility and preservation gates only.
+
+- Product authority: [Preset 3D Foundation Contract](../specs/preset-3d-foundation.md).
+- Architecture and current evidence:
+  [preset-3d-foundation.flow.json](preset-3d-foundation/preset-3d-foundation.flow.json).
+  This is a public schema-v1 flow document containing schema-v2 architecture,
+  not an old Factory proof target or a copied accepted baseline.
+- The `design` node records this Task 1 review through the supported
+  revision/binding-checked flow API. All implementation and integration criteria
+  remain missing until actual source-bound evidence is published.
+
+Resolved findings from step, connection and whole-flow review:
+
+1. **Defaults collision:** `resolve.ts` selects every available default when
+   omitted; selection/viewport installers contain 2D-specific behavior. Keep the
+   eight-module catalog unchanged, compose spatial definitions explicitly, and
+   reject incompatible official-3D combinations before mutation. This preserves
+   the existing composition Inspector's resolution semantics; the new flow owns
+   the future 3D combination admission and activation. No old accepted evidence
+   is promoted to evidence for that new behavior.
+2. **SDK loading:** `RenderEngineProvider` is synchronous but engine `initialize`
+   may return a Promise, and Render awaits it. A pure lazy provider adapter can
+   load Three.js during initialization without changing the provider signature
+   or eagerly loading it for 2D. The flow distinguishes initialization request,
+   initialized surface and ready-runtime artifacts; no startup step requires its
+   own ready result. Late initialization must dispose after retirement.
+3. **Query mismatch:** current spatial `to-local`/`to-global` explicitly reject,
+   and bounds return a projected 2D rectangle. Add typed neutral spatial queries
+   with explicit spaces through Render/Core. Query request and mapped result are
+   separate handoffs; no request depends on a previous result or SDK escape hatch.
+4. **Identity and LoD:** GPU instance slots are unstable after detail compaction.
+   Stable submitted instance IDs and full-shape visual picking preserve selection
+   meaning across detail changes. Render owns reverse identity mapping; labels
+   are not the identity authority. This does not become collision evidence.
+5. **Transforms:** current nodes receive completed world poses. Keep that contract
+   and use render parenting only for ownership/visibility. Do not accidentally
+   multiply App kinematics twice. Positive scale is an explicit supported
+   transform; rigid App contracts retain their stricter rejection.
+6. **Update ownership:** preserve FieldScope's unchanged-submission and admitted
+   shape reuse, Sim's pending-camera ordering, and Office's separation of save
+   acknowledgement from layout geometry. Shared bounds feed camera controls as
+   a completed artifact. Existing retained bounds/detail dimensions are declared
+   in their owner steps; no new cache family is authorized.
+7. **Camera/product policy:** shared controls accept explicit App choices. No
+   renderer-selected angle, mode or tree-visibility branch remains in the target
+   contract. Runtime presentation routes make no canonical/history writes.
+8. **Evidence support:** current Flow Inspector admits full architecture, custom
+   automated selectors and manual review. Use that supported path; do not require
+   the legacy Factory-only proof service or claim it has admitted this target.
+   Future runtime selectors identify bounded C01-C12 obligations; external
+   actions name actual project gates, and missing future assertions are explicit.
+
+Whole-flow review covered composition/startup, edit/replay, source admission,
+incremental projection, App camera control, rendering, query/interaction,
+asset acceptance and failure/retirement. Each artifact has one producing owner,
+declared consumers and an explicit route. Runtime feedback routes are distinct
+from the acyclic implementation prerequisites. No unresolved design blocker was
+identified within this target; future implementation may reopen an assumption
+only with concrete in-scope evidence under the existing iteration rules.
+
+### Task 1 implementation handoff boundaries
+
+Each flow step's `implementationBoundary` is the allowlist; its `specRefs`,
+conditions, bypasses and failure owner are mandatory. Existing file globs permit
+only the named mechanism, not unrelated code in those directories. Planned new
+files are target locations, not claims they already exist. C01-C12 in the spec
+define the assertions and existing test owners; a worker adds the missing formal
+cases before implementing the affected behavior.
+
+| Plan task | Flow owner steps                                                      | Required cases and gate                                                                     |
+| --------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 2         | `admit`, `engine` initialization/resource slice                       | C02-C03, C08; Preset/engine contracts, both App admission/engine suites, entry/build checks |
+| 3         | `project`, `render` projection slice                                  | C04-C05; layer/bounds tests and affected Render integration                                 |
+| 4         | `camera`                                                              | C06; shared and existing App camera tests, no geometry/history work counts                  |
+| 5         | `queries`, `interaction`, `render` identity slice                     | C05, C07; engine/Render/Core facade and App input cases                                     |
+| 6         | `compose` optional definitions, `engine` content/detail slice         | C01, C08; registration/resource/detail tests and existing source profile guards             |
+| 7         | `canonical`, `domain` preservation; `fieldscope`, `sim`, `office`     | C11-C12 plus affected C03-C09; existing App supervisors, typecheck/build and real-WebGL E2E |
+| 8         | `compose` official request admission, `startup`, `retire`, `activate` | C01-C02, C12; profile/lifecycle/shared-channel/instance-isolation and consumer proof        |
+| 9         | `edit`, `assets`                                                      | C09-C10; Office transaction/revision cases and Sim restricted import/worker/browser cases   |
+| 10        | `closeout` and flow-level `integration`                               | All C01-C12 and final same-source bounded/visual review                                     |
+
+The task table sequences delivery slices; flow `dependsOn` describes completion
+prerequisites for full owner acceptance, not a prohibition on implementing an
+independent typed sub-slice. For example, the startup protocol can be tested
+under CUSTOM before official-profile activation, and an engine contract can be
+implemented before App migration. Each slice still has one owner and its step
+card; no production implementation is authorized by this design-only delivery.
+
+Validation entry points (run from repository root):
+
+```sh
+node tools/flow-inspector/flow-files/cli.cjs validate docs/ai/framework/plans/preset-3d-foundation
+node tools/flow-inspector/flow-files/cli.cjs context docs/ai/framework/plans/preset-3d-foundation preset-3d-foundation design
+node tools/flow-inspector/flow-files/cli.cjs serve docs/ai/framework/plans/preset-3d-foundation
+```
+
+The source CLI opens only this selected flow directory; no global config or
+dashboard selection is overwritten. Validation checks structure; the expected
+whole-flow verdict remains incomplete because production evidence is missing.
+
+Task 1 validation: repository task-context preflight passed; the real Flow
+Inspector `openProject().snapshot()` admission/evaluator accepted the document
+and its architecture; local document links/spec anchors and every declared
+artifact-consumer route were checked; `yarn lint:naming` passed all 15 cases;
+scoped Prettier and `git diff --check` passed. The design review is the sole
+accepted observation. Nineteen runtime owner criteria plus integrated runtime
+and final review obligations remain unfulfilled. No production, App build,
+browser or runtime acceptance result was produced by this documentation slice.
+
+Design evidence declares a SHA-256 over the final specification, plan and flow
+definition, in addition to the recorded code baseline. Future changes to those
+inputs require republishing the declared source and re-reviewing the affected
+design. Flow-file readers do not automatically fingerprint repository source.
 
 ## Task 2 - Consolidate spatial contracts and resource ownership
 
