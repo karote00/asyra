@@ -28,11 +28,14 @@ if (
   )
 
 const artifactDirectory = path.join(appRoot, '.artifacts', 'e2e-ci')
+// Chrome's Linux singleton socket must fit sun_path independently of report paths.
+const temporaryDirectory = path.resolve(appRoot, '../../tmp/browser')
 const outputRoot = path.join(appRoot, 'test-results', 'ci', `${Date.now()}`)
 const totalTimeoutMs = 900_000
 const startedAt = Date.now()
 fs.mkdirSync(path.dirname(reportPath), { recursive: true })
 fs.mkdirSync(artifactDirectory, { recursive: true })
+fs.mkdirSync(temporaryDirectory, { recursive: true })
 
 let activeChild
 let receivedSignal = null
@@ -94,9 +97,9 @@ for (const [index, group] of selectBrowserGroups(
   ]
   const result = await runPlaywright(command, {
     ...process.env,
-    TMPDIR: artifactDirectory,
-    TMP: artifactDirectory,
-    TEMP: artifactDirectory,
+    TMPDIR: temporaryDirectory,
+    TMP: temporaryDirectory,
+    TEMP: temporaryDirectory,
     PLAYWRIGHT_OUTPUT_DIR: outputDirectory,
     PLAYWRIGHT_JSON_OUTPUT_FILE: childReportPath
   })
