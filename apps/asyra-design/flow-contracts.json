@@ -701,6 +701,14 @@
             "apps/asyra-design/server/design-budget.ts",
             "apps/asyra-design/server/design-preparation.ts"
           ]
+        },
+        {
+          "id": "compose.context-discovery",
+          "stepId": "compose",
+          "testName": "execution proof follows union entry navigation and valid recovery without replay",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         }
       ],
       "handoffs": [

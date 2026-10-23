@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Shared normalized motifs handoff closed after deterministic verification and one explicitly authorized live observation. Task 3 remains active. Prior repetition slice remains closed at round 3 of 3. No further model run is authorized.**
+Status: **Context discovery handoff closed on formal local integration and Inspector revision 72; live AI adoption remains unobserved. Task 3 remains active. Shared motifs and prior repetition (round 3 of 3) remain closed. No further model run is authorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,13 +20,13 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `77debb2224b7fdc4129f775340bdc95437834938` (integrated before the convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: close and push the completed shared normalized motifs slice. The
-  next authorized activity is read-only investigation of read_design_context field
-  delivery across API and native-tool identities. No implementation of that finding,
-  model/101, new tool/state/registry, budget experiment, Knowledge change, refresh
-  change, unrelated cleanup or further repetition iteration is authorized.
-- Future implementation requires the exact affected contract to be reconciled and
-  admitted first. A previous accepted Inspector snapshot does not admit these changes.
+- Current scope: close and push the verified read_design_context discovery slice.
+  Then inspect saved run 1792765309915 read-only to propose one App/framework
+  handoff improvement with evidence, a minimal design and fixed DoD. No next-issue
+  implementation, model/101, new tool/state/registry, budget experiment, Knowledge
+  change, refresh suppression, unrelated cleanup or further repetition iteration.
+- Future implementation requires admission of its reconciled contract first.
+  Prior accepted snapshots do not admit a new change.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -84,6 +84,114 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Context discovery handoff - 2026-10-23
+
+Status: completed after contract admission, fail-first regression, bounded
+implementation and self-review. Inspector revision 72 verified all 67 cases.
+Entry source: 0739116c3e4a5f03061b7cfaed5a8b6f12181a0f (clean worktree).
+Shared motifs remains closed; no repetition round is reopened.
+
+Evidence: immutable run 1792759840879, provider
+6b02a8f4-aaae-4070-936d-fda4163552b5, payloads 38/39, 41/42 and 44/47.
+Usage exposes no action fields at the union root and only the native wrapper's
+outer fields. The same /oneOf/0 query delivers the action branch but rejects the
+native path. The published native recovery repeats that invalid path. Both actual
+execution routes remain valid. The live agent did not execute that recovery;
+its deterministic failure must not be reported as an observed model retry.
+
+Step Execution Card - compose:
+- Product source: ai-execution-flow.md, Inspection discovery field ownership and
+  receipts. Inspector: compose inputs, outputs, conditions, contributors, boundary
+  and failure owner. Registered schemas remain the validation authority.
+- Inputs: existing action/native registrations, exact selectors, usage/field/full
+  requests, explicit refresh and continuations. No new invocation state.
+- Outputs: compact union/wrapper navigation, identity-specific continuation selectors,
+  complete requested fragments/constraints/references, truthful coverage and recovery.
+- Conditions: action continuations use existing operations; native continuations use
+  qualified names. Usage shows immediate fields and union branch roots at wrapper
+  boundaries without enumerating all branch leaves. Missing paths remain unavailable;
+  recovery requests the valid subset or same-entry usage, never the invalid scope.
+- Bypasses: known contracts execute directly; full and dual-entry lookups remain legal.
+- Contributors: canonical schemas, existing descriptor projection, schemaFragments,
+  dispatcher and read owner. Forbidden: aliases, pointer inference, extra lookup
+  prerequisites, full-schema preload, new registry/cache, mutation replay.
+- Implementation: local-operation-tools.ts only; direct tests and a minimal saved
+  query fixture, execution-flow-proof.test.ts and existing flow mapping. Contract
+  edits: this plan, product spec, Inspector, generated bundle and task context.
+- Failure owner: compose; read settlement never certifies requested coverage.
+- Cases: saved same-name union/wrapper query, successful direct paths, invalid/mixed
+  paths, delivered recovery, both executions, full/refresh/paging/cancel/stale reads,
+  unrelated inventory, escaped keys/local references and ancestor restrictions.
+- Fixed DoD: tests select paths and selectors from delivered usage and execute the
+  published recovery; both routes reach the read owner with exactly one wrapper;
+  complete constraints survive; invalid requests do not dispatch; valid siblings
+  survive; recovery never repeats writes. Measure total lookup bytes and calls
+  against the saved flow; no extra preliminary round trip or schema preload.
+- Gates: naming before/after identifiers, fail-first formal regression, direct
+  discovery/dispatcher tests, mapped execution proof, production types, scoped lint,
+  Inspector static contract, generated bundle, candidate/accept/verify and diff review.
+- Stop: any need for new owners/state, changed execution semantics, unrelated fixes
+  or a model run. Review is bounded to this diff and its direct consumers.
+
+Minimal change: derive compact navigation from canonical schema structure; reuse
+existing operation/qualified-name selectors for each returned entry; replace invalid
+recovery with usable same-entry navigation or valid requested subset. Keep valid
+scoped refresh unchanged. Formal execution tests consume the delivered selectors,
+paths and recovery, not a separately authored correction. No context-owner or
+Framework API change is planned.
+
+Verification and closeout:
+- Structural admission preceded formal tests. The two delivered union-navigation
+  cases failed on missing paths; executing the saved published recovery independently
+  reproduced failed coverage. The mapped case also failed on missing navigation.
+  Evidence: tmp/context-discovery-red.log, context-discovery-recovery-red.log and
+  context-discovery-proof-red.log. The permanent fixture contains only saved queries,
+  invocation, baseline sizes and source hashes; formal tests do not depend on tmp.
+- Production change is confined to local-operation-tools.ts. Usage exposes compact
+  canonical branch/definition navigation; per-entry action/native selectors replace
+  ambiguous bare-name continuations. Invalid recovery now retrieves a valid subset
+  or same-entry usage. It never retries known invalid pointers, marks unavailable
+  requested scope successful, guesses aliases, preloads schemas or dispatches edits.
+- Both actual context invocation routes receive identical unwrapped action values
+  and reach createDocumentContextAction plus createRetainedDesignContext. Exact
+  fragments preserve the original union and native-wrapper restrictions. Malformed
+  input, extra fields, invalid scope, missing/double wrappers reject before dispatch.
+  Cancellation, stale snapshots, full retrieval, refresh and valid sibling outcomes
+  remain covered; informational recovery does not repeat an acknowledged call.
+- Whole saved lookup comparison (UTF-8 input plus output, two requests in each):
+  historical mixed flow 108 + 27,654 = 27,762 bytes; corrected action flow
+  113 + 19,138 = 19,251; corrected native flow 147 + 19,217 = 19,364.
+  This proves about 30% less lookup delivery with no extra prerequisite request,
+  not a measured reduction in model latency or proof of model adoption.
+- Final deterministic integration: 458 passed across operation tools, provider
+  adapter, context action and retained context; one existing installed-native
+  registration check skipped because LOCAL_AI_PROTOCOL_EXECUTABLE was unset.
+  No inference was invoked. Existing tests cover ordinary discovery, shared-path
+  multi-entry queries, paging/revision invalidation and unrelated catalog growth.
+- Production typecheck passed. Scoped ESLint: zero errors, one pre-existing warning
+  at execution-flow-proof.test.ts:1626. Naming: 15 passed before and after identifiers.
+  Inspector static contracts: 2 passed. Generated workspace and diff checks passed.
+- Candidate 1f3ed021-3273-4cb7-a83e-a10309f6a502 passed all 67 cases; review
+  9a8818a45b70012589cf05ed337903d1b6a51e2f7cf7cbd62e9de1a3779567ba
+  admitted one new case without retirement or blockers. Accepted revision 72 verify
+  a3fcfef3-c762-4f83-8ded-8c38fca98d68 passed all 67 on the same captured source
+  1cc92a5a83668bc4fdc3737d44d077a7705a060f5450bbe82eb923bb01801957.
+- Bounded self-review checked the changed projection/recovery branches, public
+  provider description forwarding, both selectors, exact schema/reference closure,
+  dispatcher envelope and read owner, and existing page/refresh consumers. Test
+  fixture/type/lint errors were corrected before final gates. No runtime owner,
+  mutation, persistence, Undo/Redo or collaboration semantics changed.
+- Subsequent authorized live run 1792765309915 preserved complete input/output,
+  report and screenshots without video: 120 seconds of work plus at most 60 seconds
+  for reporting. The updated discovery description reached local Codex, but the
+  agent made no read_design_context or schemaPaths request. It reused the first
+  drawing receipt's compositionId directly. This is not an observed pass or failure
+  of context navigation or recovery; AI adoption remains unobserved.
+- Close this slice on formal local integration evidence, as authorized by the user.
+  No claim about model adoption, reduced live lookup time, first-frame improvements
+  or Knowledge effects. The live run does not replace deterministic regression
+  coverage. No new compatibility path, state or registry; Task 3 remains active.
 
 ### Shared normalized motifs handoff - 2026-10-23
 

@@ -3218,7 +3218,21 @@ remain valid. Never infer ownership from a field name or silently rewrite a poin
 A tool with any invalid requested path keeps its whole requested scope unavailable;
 other identities retain their complete requested fragments, constraints and references.
 Its recovery includes a narrower same-tool query for valid requested paths when any
-exist, explicitly distinguished from full recovery. Scoped recovery retains original paths; the existing full refresh route remains.
+exist, explicitly distinguished from the unavailable original scope. Valid scoped
+recovery retains original paths; invalid scoped recovery must not repeat a known
+invalid path. With no valid requested paths, it requests same-entry usage navigation.
+The existing explicit full refresh route remains.
+
+Usage exposes immediate input properties and union branch roots, including those
+under an argument wrapper, without preloading validation schemas or enumerating all
+branch leaves. The returned refresh/recovery selector identifies that entry alone:
+action operations use operations, native tools use qualified names. To query fields,
+reuse only that selector, omit view/refresh/refreshReason and add paths from that entry's inputFields. Do not
+transfer paths between entries. Bare exact-name full/usage lookup still returns both
+legitimate routes. Native arguments remain wrapped exactly once; action arguments
+remain direct. Navigation is not an executable validation schema. Fragments retain
+ancestor restrictions and local reference closure; canonical execution validation
+remains unchanged. No extra preliminary request, alias or pointer inference.
 
 Exact lookup receipts report success only when every requested identity is delivered,
 partial when some are delivered, and failed when none are delivered. Missing and

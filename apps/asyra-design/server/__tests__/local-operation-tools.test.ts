@@ -4411,7 +4411,7 @@ it('delivers both same-name route schemas in one lookup and invokes each without
   const repeated = await read({ names: [action.name] })
   expect(repeated.apis[0].definition.state).toBe('included')
   expect(repeated.tools[0].definition.state).toBe('included')
-  expect(repeated.apis[0].definition.refresh.arguments.names).toEqual([
+  expect(repeated.apis[0].definition.refresh.arguments.operations).toEqual([
     action.name
   ])
   expect(repeated.tools[0].definition.refresh.arguments.names).toEqual([
@@ -4999,7 +4999,7 @@ it('recovers only missing definition fields with explicit provenance and a reusa
   ])
   expect(JSON.stringify(partial)).not.toContain('Unrelated data.')
   expect(partial.definition.recover.arguments).toMatchObject({
-    names: [action.name],
+    operations: [action.name],
     schemaPaths: paths,
     refresh: true,
     refreshReason: 'delivery-failure'
@@ -9253,6 +9253,401 @@ it('does not invent usage arguments when owner examples are absent or invalid', 
     ).apis[0]
     expect(usage.invocationExample).toMatchObject({ available: false })
     expect(usage.invocationExample.invocation).toBeUndefined()
-    expect(usage.definition.recover.arguments.names).toEqual([action.name])
+    expect(usage.definition.recover.arguments.operations).toEqual([action.name])
   }
+})
+
+describe('context entry navigation and recovery', () => {
+  const setup = async () => {
+    const { default: saved } =
+      await import('./fixtures/recorded-101/context-discovery-20261023.json')
+    const signal = new AbortController().signal
+    let invalidate: () => void = () => undefined
+    const source = {
+      getCurrentWorkspaceId: () => 'workspace',
+      getSelectedElementIds: () => [],
+      getElementChildren: () => ({
+        available: true,
+        elementIds: [],
+        total: 0,
+        nextOffset: null
+      }),
+      getElementIdsInBounds: () => [],
+      getElementMetadata: (id: string) => ({
+        name: id,
+        type: 'group',
+        parentId: 'workspace'
+      }),
+      getElementComputedData: () => ({ x: 6438, y: 27554 })
+    }
+    const store = createRetainedDesignContext(source, (listener) => {
+      invalidate = listener
+      return () => undefined
+    })
+    const action = createDocumentContextAction(store.read)
+    const execute = vi.fn(async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: await Promise.all(
+        batch.actions.map(async (item) => {
+          expect(item.name).toBe(action.name)
+          return {
+            actionId: item.id,
+            actionName: item.name,
+            result: await action.execute(item.arguments as never, { signal })
+          }
+        })
+      )
+    }))
+    const owner = createOwner(
+      [action],
+      { modelActions: (a) => a, resolveBatch: (b) => b },
+      execute,
+      {
+        getNativeTools: () =>
+          owner.definitions
+            .filter((tool) => tool.name === action.name)
+            .map((tool) => ({
+              ...tool,
+              namespace: 'design_operations',
+              registeredName: `design_operations.${tool.name}`
+            }))
+      }
+    )
+    const calls: { input: unknown; text: string }[] = []
+    const read = async (input: unknown) =>
+      JSON.parse(
+        await readCompleteInformation(async (args) => {
+          const { invokeLocalTool } = await import('../local-tool-invocation')
+          const definition = owner.definitions.find(
+            (tool) => tool.name === 'describe_design_apis'
+          )
+          if (!definition) throw new Error('Missing discovery definition')
+          const reply = await invokeLocalTool(owner, definition, args, signal)
+          const text = JSON.stringify(
+            owner.projectModelResult(
+              'describe_design_apis',
+              args,
+              JSON.parse(reply.text)
+            )
+          )
+          calls.push({ input: args, text })
+          return text
+        }, input)
+      )
+    return {
+      saved,
+      signal,
+      store,
+      action,
+      owner,
+      execute,
+      read,
+      calls,
+      invalidate: () => invalidate()
+    }
+  }
+
+  it.each(['action', 'native'] as const)(
+    'uses delivered %s union navigation through the real context owner without an extra read',
+    async (route) => {
+      const t = await setup()
+      try {
+        const usage = await t.read(t.saved.usageQuery)
+        const entry = route === 'action' ? usage.apis[0] : usage.tools[0]
+        expect(entry.inputSchema).toBeUndefined()
+        const branch = entry.inputFields.find((path: string) =>
+          path.endsWith('/oneOf/0')
+        )
+        expect(
+          branch,
+          'usage must expose the selected union boundary'
+        ).toBeDefined()
+        // Follow the tool description: reuse only this entry's selector,
+        // omit representation/recovery flags, and add its own delivered path. No corrected pointer is authored here.
+        const {
+          view: _view,
+          refresh: _refresh,
+          refreshReason: _reason,
+          ...selector
+        } = entry.definition.refresh.arguments
+        const queried = await t.read({ ...selector, schemaPaths: [branch] })
+        expect(queried.toolOutcome.status).toBe('success')
+        expect([...queried.apis, ...(queried.tools ?? [])]).toHaveLength(1)
+        const fragment = [...queried.apis, ...(queried.tools ?? [])][0]
+        expect(fragment.schemaFragments[0]).toEqual({
+          path: branch,
+          schema: t.action.inputSchema.oneOf[0]
+        })
+        const wrapper =
+          route === 'action'
+            ? ''
+            : branch.slice(0, branch.lastIndexOf('/oneOf'))
+        expect(fragment.schemaContext).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              path: wrapper,
+              schema: expect.objectContaining({
+                oneOf: t.action.inputSchema.oneOf
+              })
+            })
+          ])
+        )
+        if (route === 'native')
+          expect(fragment.schemaContext).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                path: '',
+                schema: expect.objectContaining({
+                  required: ['arguments'],
+                  additionalProperties: false
+                })
+              })
+            ])
+          )
+        expect(t.calls).toHaveLength(t.saved.baseline.lookupCalls)
+        const outputBytes = t.calls.reduce(
+          (n, call) => n + Buffer.byteLength(call.text),
+          0
+        )
+        const inputBytes = t.calls.reduce(
+          (n, call) => n + Buffer.byteLength(JSON.stringify(call.input)),
+          0
+        )
+        expect(inputBytes + outputBytes).toBeLessThan(
+          t.saved.baseline.inputBytes + t.saved.baseline.outputBytes
+        )
+        process.stdout.write(
+          'Context discovery measurement ' +
+            JSON.stringify({
+              route,
+              calls: t.calls.length,
+              inputBytes,
+              outputBytes
+            }) +
+            '\n'
+        )
+        expect(t.execute).not.toHaveBeenCalled()
+        const values = t.saved.invocation.arguments
+        const input =
+          route === 'native'
+            ? t.saved.invocation
+            : {
+                operations: [{ name: entry.name, arguments: values }]
+              }
+        const { invokeLocalTool } = await import('../local-tool-invocation')
+        const executionDefinition = t.owner.definitions.find(
+          (tool) => tool.name === entry.execution.tool
+        )
+        if (!executionDefinition)
+          throw new Error('Missing execution definition')
+        const reply = await invokeLocalTool(
+          t.owner,
+          executionDefinition,
+          input,
+          t.signal
+        )
+        expect(reply.success, reply.text).toBe(true)
+        const raw = JSON.parse(reply.text)
+        expect(t.execute).toHaveBeenCalledTimes(1)
+        expect(t.execute.mock.calls[0][0].actions[0].arguments).toEqual(values)
+        const result = raw.actionResults[0].result
+        expect(result.elements[0]).toMatchObject({
+          id: values.elementIds[0],
+          properties: { x: 6438, y: 27554 }
+        })
+        expect(result.coordinateSpace).toBe('parent-local')
+        // Recovery is informational, even after execution: it never repeats work.
+        const restored = await t.read(fragment.definition.recover.arguments)
+        expect(restored.toolOutcome.status).toBe('success')
+        expect(t.execute).toHaveBeenCalledTimes(1)
+        t.invalidate()
+        await expect(
+          t.action.execute(
+            { scope: 'snapshot', snapshotId: result.snapshotId },
+            { signal: t.signal }
+          )
+        ).rejects.toThrow()
+        expect(t.execute).toHaveBeenCalledTimes(1)
+      } finally {
+        t.store.dispose()
+      }
+    }
+  )
+
+  it('rejects invalid input through both published routes before the context owner reads', async () => {
+    const t = await setup()
+    try {
+      const usage = await t.read(t.saved.usageQuery)
+      const { invokeLocalTool } = await import('../local-tool-invocation')
+      const invalidValues = [
+        { scope: 'ids' },
+        { scope: 'ids', elementIds: ['a'], fields: ['unavailable-field'] },
+        { scope: 'children', elementIds: ['a'] },
+        { ...t.saved.invocation.arguments, unexpected: true }
+      ]
+      for (const entry of [usage.apis[0], usage.tools[0]]) {
+        const native = entry.execution.kind === 'native-tool'
+        const definition = t.owner.definitions.find(
+          (tool) => tool.name === entry.execution.tool
+        )
+        if (!definition) throw new Error('Missing execution definition')
+        for (const values of invalidValues) {
+          const input = native
+            ? { arguments: values }
+            : { operations: [{ name: entry.name, arguments: values }] }
+          const reply = await invokeLocalTool(
+            t.owner,
+            definition,
+            input,
+            t.signal
+          )
+          expect(reply.success).toBe(false)
+          expect(JSON.parse(reply.text).toolOutcome.settlement).toBe(
+            'not-started'
+          )
+        }
+        if (native)
+          for (const input of [
+            t.saved.invocation.arguments,
+            { arguments: t.saved.invocation }
+          ]) {
+            expect(
+              (await invokeLocalTool(t.owner, definition, input, t.signal))
+                .success
+            ).toBe(false)
+          }
+      }
+      expect(t.execute).not.toHaveBeenCalled()
+    } finally {
+      t.store.dispose()
+    }
+  })
+
+  it('executes published recovery after the saved mixed query instead of repeating the invalid path', async () => {
+    const t = await setup()
+    try {
+      const mixed = await t.read(t.saved.fragmentQuery)
+      expect(mixed.toolOutcome).toMatchObject({
+        status: 'partial',
+        settlement: 'completed'
+      })
+      expect(mixed.apis[0].definition.coverage).toBe('partial')
+      expect(mixed.tools[0].definition.coverage).toBe('none')
+      const restored = await t.read(mixed.tools[0].definition.recover.arguments)
+      expect(restored.toolOutcome.status).toBe('success')
+      expect(restored.apis).toHaveLength(0)
+      expect(restored.tools).toHaveLength(1)
+      const entry = restored.tools[0]
+      const path = entry.inputFields.find((value: string) =>
+        value.endsWith('/oneOf/0')
+      )
+      expect(path).toBeDefined()
+      const {
+        view: _view,
+        refresh: _refresh,
+        refreshReason: _reason,
+        ...selector
+      } = entry.definition.refresh.arguments
+      const corrected = await t.read({ ...selector, schemaPaths: [path] })
+      expect(corrected.tools[0].definition.coverage).toBe('partial')
+      const mixedPaths = await t.read({
+        ...selector,
+        schemaPaths: [path, '/missing']
+      })
+      expect(mixedPaths.toolOutcome.status).toBe('failed')
+      expect(mixedPaths.tools[0].definition.coverage).toBe('none')
+      const narrower = await t.read(
+        mixedPaths.tools[0].definition.recover.arguments
+      )
+      expect(narrower.toolOutcome.status).toBe('success')
+      expect(narrower.tools[0].schemaFragments).toEqual(
+        corrected.tools[0].schemaFragments
+      )
+      const full = await t.read({ names: t.saved.usageQuery.names })
+      expect(full.apis[0].inputSchema).toEqual(t.action.inputSchema)
+      expect(full.tools[0].inputSchema.properties.arguments).toEqual(
+        t.action.inputSchema
+      )
+      expect(t.execute).not.toHaveBeenCalled()
+      const controller = new AbortController()
+      controller.abort()
+      await expect(
+        t.owner.call(
+          'describe_design_apis',
+          mixed.tools[0].definition.recover.arguments,
+          controller.signal
+        )
+      ).rejects.toThrow()
+      expect(t.execute).not.toHaveBeenCalled()
+    } finally {
+      t.store.dispose()
+    }
+  })
+})
+
+it('keeps union navigation compact while fragments preserve escaped references and common restrictions', async () => {
+  const inputSchema = {
+    type: 'object',
+    required: ['token'],
+    properties: { token: { type: 'string' } },
+    additionalProperties: false,
+    oneOf: [{ $ref: '#/$defs/a~1b~0c' }],
+    $defs: {
+      'a/b~c': {
+        type: 'object',
+        properties: {
+          token: { type: 'string', enum: ['bounded-secret-detail'] }
+        },
+        required: ['token'],
+        additionalProperties: false
+      }
+    }
+  }
+  const action = { ...createDocumentContextAction(vi.fn()), inputSchema }
+  const dispatch = vi.fn()
+  const owner = createOwner(
+    [action],
+    { modelActions: (a) => a, resolveBatch: (b) => b },
+    dispatch
+  )
+  const read = async (args: unknown) =>
+    JSON.parse(
+      await owner.call(
+        'describe_design_apis',
+        args,
+        new AbortController().signal
+      )
+    )
+  const usage = (await read({ names: [action.name], view: 'usage' })).apis[0]
+  expect(usage.inputFields).toEqual([
+    '/oneOf/0',
+    '/properties/token',
+    '/$defs/a~1b~0c'
+  ])
+  expect(JSON.stringify(usage)).not.toContain('bounded-secret-detail')
+  const {
+    view: _view,
+    refresh: _refresh,
+    refreshReason: _reason,
+    ...selector
+  } = usage.definition.refresh.arguments
+  for (const path of usage.inputFields) {
+    const fragment = (await read({ ...selector, schemaPaths: [path] })).apis[0]
+    expect(fragment.definition.state).toBe('included')
+    expect(fragment.schemaContext).toContainEqual({
+      path: '',
+      schema: {
+        type: 'object',
+        required: ['token'],
+        additionalProperties: false,
+        oneOf: inputSchema.oneOf,
+        allowedProperties: ['token']
+      }
+    })
+    expect(fragment.schemaReferences['#/$defs/a~1b~0c']).toEqual(
+      inputSchema.$defs['a/b~c']
+    )
+    expect(fragment.unresolvedSchemaReferences).toBeUndefined()
+  }
+  expect(dispatch).not.toHaveBeenCalled()
 })
