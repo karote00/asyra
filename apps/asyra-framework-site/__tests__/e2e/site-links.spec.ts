@@ -22,7 +22,7 @@ test('every public page and server-rendered internal link resolves', async ({
     ([, location]) => new URL(location).pathname
   )
 
-  expect(routes).toHaveLength(46)
+  expect(routes).toHaveLength(51)
 
   const routeResponses = await Promise.all(
     routes.map(async (route) => {

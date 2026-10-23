@@ -80,6 +80,36 @@ test('standalone release consumer inputs select release readiness without unrela
   )
 })
 
+test('App update consumers select retained-artifact validation without unrelated runtime jobs', () => {
+  const inputs = spawnSync(
+    'git',
+    [
+      'ls-files',
+      'fixtures/app-update-text-consumer',
+      'fixtures/app-update-text-subsequent'
+    ],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+  assert.equal(inputs.status, 0)
+  const files = inputs.stdout.trim().split('\n')
+  assert.ok(files.length > 0)
+  const result = classifyChanges(files, manifests)
+  assert.deepEqual(result.unknownPaths, [])
+  assert.deepEqual(names(result), [])
+  assert.equal(result.frameworkReleaseRequired, false)
+  assert.equal(result.designE2ERequired, false)
+  assert.equal(result.relationshipMap.fieldscopeProfilesRequired, false)
+  assert.equal(result.executionPlan.checks.repositoryScripts.mode, 'files')
+  assert.deepEqual(result.executionPlan.checks.repositoryScripts.tests, [
+    'scripts/__tests__/app-update-fixtures.test.mjs'
+  ])
+  assert.deepEqual(
+    classifyChanges(['fixtures/unregistered-update/runtime.ts'], manifests)
+      .unknownPaths,
+    ['fixtures/unregistered-update/runtime.ts']
+  )
+})
+
 test('an app change selects its package scripts and dependent workspace consumers', () => {
   const result = classifyChanges(['apps/asyra-design/src/main.tsx'], manifests)
   assert.deepEqual(names(result), ['@asyra/asyra-design'])

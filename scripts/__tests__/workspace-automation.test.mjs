@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
@@ -208,12 +209,40 @@ test('root lint ignores App consumer artifacts without excluding maintained sour
   }
 })
 
-test('tracked files do not expose developer-specific absolute home paths', () => {
+const retainedEvidence = readJSON(
+  'scripts/__tests__/fixtures/retained-app-update-evidence.json'
+)
+const isRetainedEvidence = (file, bytes) =>
+  /^fixtures\/app-update-text-(consumer|subsequent)\/evidence\//.test(file) &&
+  retainedEvidence[file] === createHash('sha256').update(bytes).digest('hex')
+
+test('historical path exceptions require exact retained evidence bytes', () => {
+  for (const [file, digest] of Object.entries(retainedEvidence)) {
+    assert.match(digest, /^[a-f0-9]{64}$/)
+    const bytes = fs.readFileSync(path.join(repositoryRoot, file))
+    assert.equal(isRetainedEvidence(file, bytes), true, file)
+    assert.equal(
+      isRetainedEvidence(file, Buffer.concat([bytes, Buffer.from('changed')])),
+      false
+    )
+    assert.equal(isRetainedEvidence(`${file}.new`, bytes), false)
+    assert.equal(
+      isRetainedEvidence(
+        'fixtures/app-update-text-consumer/src/main.ts',
+        bytes
+      ),
+      false
+    )
+  }
+})
+
+test('tracked authored files reject absolute home paths while original evidence stays unchanged', () => {
   const result = spawnSync(
     'git',
     [
       'grep',
-      '-nI',
+      '-Il',
+      '-z',
       '-E',
       String.raw`/Users/[^/]+|/home/[^/]+|[A-Za-z]:\\Users\\[^\\]+`,
       '--',
@@ -223,7 +252,18 @@ test('tracked files do not expose developer-specific absolute home paths', () =>
     { cwd: repositoryRoot, encoding: 'utf8' }
   )
 
-  assert.equal(result.status, 1, result.stdout || result.stderr)
+  assert.ok([0, 1].includes(result.status), result.stderr)
+  const violations = result.stdout
+    .split('\0')
+    .filter(Boolean)
+    .filter(
+      (file) =>
+        !isRetainedEvidence(
+          file,
+          fs.readFileSync(path.join(repositoryRoot, file))
+        )
+    )
+  assert.deepEqual(violations, [])
 })
 
 test('GitHub Actions use least privilege and immutable action revisions', () => {

@@ -156,6 +156,15 @@
   ],
   "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector",
   "repositoryScriptGroups": {
+    "appUpdateFixtures": {
+      "ownsInputs": true,
+      "patterns": [
+        "fixtures/app-update-text-consumer/**",
+        "fixtures/app-update-text-subsequent/**"
+      ],
+      "tests": ["scripts/__tests__/app-update-fixtures.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
     "developerAgent": {
       "ownsInputs": true,
       "patterns": [
@@ -280,6 +289,7 @@
     },
     "workspaceAutomation": {
       "patterns": [
+        "scripts/__tests__/fixtures/retained-app-update-evidence.json",
         "package.json",
         "apps/*/package.json",
         "packages/*/package.json",
@@ -486,6 +496,7 @@
     ".github/workflows/production-artifacts.yml"
   ],
   "registeredScriptTests": [
+    "scripts/__tests__/app-update-fixtures.test.mjs",
     "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs",
     "apps/asyra-fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
     "scripts/__tests__/agent-hook-adapter.test.mjs",

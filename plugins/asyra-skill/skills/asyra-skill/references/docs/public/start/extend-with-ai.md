@@ -77,6 +77,15 @@ they do not certify model behavior. These commands do not install Framework
 packages or update your product's dependencies. Claude Desktop's cloud settings
 still use the <a href="https://github.com/karote00/asyra/blob/main/plugins/asyra-skill/README.md#claude-desktop-skill-upload" target="_blank" rel="noopener noreferrer">Skill ZIP-upload route</a>.
 
+## Integrate official App updates
+
+For an existing App, start with the <a href="https://github.com/karote00/asyra/blob/main/docs/public/updates/index.md" target="_blank" rel="noopener noreferrer">update guide index</a>.
+Give the selected guide to your coding agent in the App project. It explains
+which official definitions or behavior to adopt, which custom extensions to
+retain, and how to verify reads, writes, projections and saved data. Updating
+the Skill or generator does not update your App. Keep an adoption note so a
+later agent can integrate the next guide without this conversation history.
+
 ## Describe the product outcome
 
 Tell the agent what you want the product to do, which project to work in, and
