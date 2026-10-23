@@ -1,3 +1,28 @@
+import { createServer } from 'node:http'
+import { createBatchExchange } from '../server/batch-exchange'
+import { createLocalOperationTools } from '../server/local-operation-tools'
+import { createLocalDesignWorkflow } from '../server/local-design-workflow'
+import { invokeLocalTool } from '../server/local-tool-invocation'
+import { readFileSync } from 'node:fs'
+const recoveryFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/pattern-budget-recovery-20261023.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
+const layeredFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/layered-pattern-20261023.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
+import { getPersistedDocumentDigest } from './test-utils'
 import { expect, test } from '@playwright/test'
 import { createLocalDesignTools } from '../server/local-design-tools'
 import { AiActionNames } from '../src/constants/ai-actions'
@@ -522,3 +547,198 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
     path: testInfo.outputPath('artifact-targeted-batch.png')
   })
 })
+
+for (const scenario of [
+  {
+    title:
+      'budget partitions preserve one root through canonical normalization, Undo and durable reload',
+    input: recoveryFixture.input,
+    artifacts: 2,
+    members: 13094
+  },
+  {
+    title:
+      'layered patterns preserve references through application, Undo and durable reload',
+    input: { draft: layeredFixture.compact.draft, inspection: 'defer' },
+    artifacts: 1,
+    members: 1442
+  }
+])
+  test(scenario.title, async ({ page }) => {
+    test.setTimeout(180000)
+    const designs: PreparedDesign[] = []
+    const exchange = createBatchExchange()
+    const controller = new AbortController()
+    let workflowResult: ReturnType<typeof JSON.parse>
+    let serverError: unknown
+    const server = createServer(async (request, response) => {
+      response.setHeader(
+        'Access-Control-Allow-Origin',
+        request.headers.origin ?? '*'
+      )
+      response.setHeader(
+        'Access-Control-Allow-Headers',
+        'content-type,x-ai-batch-receipt'
+      )
+      if (request.method === 'OPTIONS') {
+        response.end()
+        return
+      }
+      try {
+        const chunks: Buffer[] = []
+        for await (const chunk of request) chunks.push(Buffer.from(chunk))
+        const input = JSON.parse(Buffer.concat(chunks).toString())
+        const token = request.headers['x-ai-batch-receipt']
+        if (typeof token === 'string') {
+          const accepted = exchange.accept(token, input)
+          response.setHeader('Content-Type', 'application/json')
+          response.end(JSON.stringify({ accepted }))
+          return
+        }
+        response.setHeader('Content-Type', 'application/x-ndjson')
+        const tools = createLocalDesignTools(input.actions)
+        const operations = createLocalOperationTools(
+          input.actions,
+          tools,
+          async (batch) => {
+            for (const action of batch.actions)
+              if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+                designs.push(
+                  (action.arguments as { design: PreparedDesign }).design
+                )
+            return exchange.execute(batch, controller.signal, (frame) =>
+              response.write(JSON.stringify(frame) + '\n')
+            )
+          }
+        )
+        const main = createLocalDesignWorkflow(tools, operations)
+        const result = await invokeLocalTool(
+          main,
+          main.definitions[0],
+          scenario.input,
+          controller.signal
+        )
+        workflowResult = JSON.parse(result.text)
+        response.end(
+          JSON.stringify({
+            type: 'result',
+            batch: {
+              batchId: 'construction-complete',
+              actions: [
+                {
+                  id: 'report',
+                  name: 'report_outcome',
+                  arguments: {
+                    outcome: 'completed',
+                    message: 'Construction applied.'
+                  },
+                  summary: 'Report completion'
+                }
+              ]
+            }
+          }) + '\n'
+        )
+      } catch (error) {
+        serverError = error
+        response.destroy(error instanceof Error ? error : undefined)
+      }
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address()
+    if (!address || typeof address === 'string')
+      throw new Error('Missing test endpoint')
+    try {
+      await page.route('**/api/ai/status', (route) =>
+        route.fulfill({ json: { state: 'ready' } })
+      )
+      await page.route('**/api/ai/action-batch', (route) =>
+        route.continue({ url: `http://127.0.0.1:${address.port}/action-batch` })
+      )
+      const document = createTestDocumentIdentity()
+      await page.goto(document.url)
+      await waitForAppReady(page)
+      const fileId = new URL(page.url()).searchParams.get('fileId')
+      if (!fileId) throw new Error('Missing document identity')
+      const before = await getCoreDocumentDigest(page)
+      const depth = await getUndoHistoryDepth(page)
+      await page.getByRole('button', { name: 'Open Agent' }).click()
+      await page
+        .getByLabel('Message Agent')
+        .fill('Apply the construction fixture')
+      await page.getByRole('button', { name: 'Send', exact: true }).click()
+      await expect(page.getByTestId('ai-agent-message').last()).toHaveAttribute(
+        'data-outcome',
+        'success',
+        { timeout: 90000 }
+      )
+      expect(serverError).toBeUndefined()
+      expect(workflowResult.toolOutcome).toMatchObject({
+        status: 'success',
+        settlement: 'completed'
+      })
+      if (scenario.artifacts > 1)
+        expect(workflowResult.parts).toHaveLength(scenario.artifacts)
+      else expect(workflowResult.parts).toBeUndefined()
+      expect(designs).toHaveLength(scenario.artifacts)
+      expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
+      const root = designs[0].entries[0].descriptor
+      const members = designs.flatMap((design) => design.entries.slice(1))
+      const actual = await page.evaluate(
+        async (ids) => {
+          const { core } = await import('../src/testing/runtime-access')
+          return ids.map((id) => ({
+            parentId: core.getElementMetadata(id)?.parentId,
+            world: core.elementLocalToWorkspace(id, { x: 0, y: 0 }),
+            values: core.getElementComputedData(id, ['width', 'height'])
+          }))
+        },
+        members.map((entry) => entry.descriptor.id)
+      )
+      expect(actual).toHaveLength(scenario.members)
+      // One assertion retains the complete oracle without recording 65,000 test steps.
+      const differences: string[] = []
+      for (const [i, entry] of members.entries()) {
+        if (actual[i].parentId !== root.id) differences.push(`parent:${i}`)
+        for (const [field, observed, expected] of [
+          ['x', actual[i].world.x, Number(root.x) + Number(entry.descriptor.x)],
+          ['y', actual[i].world.y, Number(root.y) + Number(entry.descriptor.y)],
+          ['width', actual[i].values?.width, entry.descriptor.width],
+          ['height', actual[i].values?.height, entry.descriptor.height]
+        ]) {
+          const delta = Math.abs(Number(observed) - Number(expected))
+          if (!Number.isFinite(delta) || delta >= 0.000005)
+            differences.push(`${i}:${field}:${delta}`)
+        }
+      }
+      expect(differences).toEqual([])
+      const order = await page.evaluate(async (id) => {
+        const { core } = await import('../src/testing/runtime-access')
+        return core.getElementData(id)?.children
+      }, root.id)
+      expect(order).toEqual(members.map((entry) => entry.descriptor.id))
+      const after = await getCoreDocumentDigest(page)
+      await page.getByRole('button', { name: 'Close Agent panel' }).click()
+      await page.evaluate(async () => {
+        const { historyApis } = await import('../src/common-apis/history')
+        await historyApis.undo()
+      })
+      expect(await getCoreDocumentDigest(page)).toEqual(before)
+      await page.evaluate(async () => {
+        const { historyApis } = await import('../src/common-apis/history')
+        await historyApis.redo()
+      })
+      expect(await getCoreDocumentDigest(page)).toEqual(after)
+      await expect
+        .poll(() => getPersistedDocumentDigest(fileId), { timeout: 30000 })
+        .toEqual(after)
+      await page.reload()
+      await waitForAppReady(page)
+      expect(await getCoreDocumentDigest(page)).toEqual(after)
+    } finally {
+      controller.abort()
+      server.closeAllConnections()
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve()))
+      )
+    }
+  })

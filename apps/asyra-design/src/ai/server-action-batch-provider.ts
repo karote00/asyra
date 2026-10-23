@@ -1,3 +1,4 @@
+import { readEvaluationWindow } from './evaluation-window'
 import { isExecutionActivity } from '@asyra/ai-agent-runtime'
 import {
   AiProviderError,
@@ -20,6 +21,13 @@ import type {
   BrowserBatchFailureEnvelope
 } from './action-batch-protocol'
 import { describeBatchFailure } from './action-failure'
+
+/** Local manual evaluation only; the evaluator supplies one immutable window before Send. */
+export const browserEvaluationWindow = () => {
+  if (!import.meta.env.DEV || typeof location === 'undefined') return undefined
+  const value = new URL(location.href).searchParams.get('aiEvaluationWindow')
+  return value === null ? undefined : readEvaluationWindow(JSON.parse(value))
+}
 
 export { ACTION_BATCH_ENDPOINT } from './action-batch-endpoint'
 
@@ -258,6 +266,15 @@ export const createServerActionBatchProvider = (
           code: 'AI_PROVIDER_DISPOSED',
           message: 'The provider is disposed.'
         })
+      const evaluationWindow = browserEvaluationWindow()
+      if (evaluationWindow)
+        input = {
+          ...input,
+          metadata: {
+            ...((input.metadata as Record<string, never>) ?? {}),
+            evaluationWindow: { ...evaluationWindow }
+          }
+        }
       const provider = createGenericHttpAiProvider({
         endpoint: ACTION_BATCH_ENDPOINT,
         timeoutMs: null,

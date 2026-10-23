@@ -1,3 +1,8 @@
+import { workflowQueryGuidance } from './design-workflow-discovery'
+import {
+  readEvaluationWindow,
+  evaluationReportExplanation
+} from '../src/ai/evaluation-window'
 import { createLocalKnowledgeTools } from './local-knowledge'
 import type { ExecutionActivity } from '@asyra/ai-agent-runtime'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
@@ -262,6 +267,11 @@ const runLocalAiProvider = async (
       callId: string,
       contentIndex: number
     ) => void
+    readonly retainEvaluationExchange?: (
+      callId: string,
+      phase: 'input' | 'output',
+      value: unknown
+    ) => void
     readonly checkOnly?: boolean
     readonly assessmentOnly?: boolean
     readonly toolLibraryDirectory?: string
@@ -272,6 +282,12 @@ const runLocalAiProvider = async (
   },
   usage?: ReturnType<typeof createAiExecutionProfiler>
 ): Promise<unknown> => {
+  const evaluation =
+    options.assessmentOnly || options.checkOnly
+      ? undefined
+      : readEvaluationWindow(
+          isRecord(input.metadata) ? input.metadata.evaluationWindow : undefined
+        )
   let progressSequence = 0
   const reportProgress = (
     event: AiToolProgress,
@@ -391,7 +407,12 @@ const runLocalAiProvider = async (
     )
     const designs = createLocalDesignTools(
       input.actions,
-      createDesignPreparationSession(undefined, undefined, ownership)
+      createDesignPreparationSession(
+        undefined,
+        undefined,
+        ownership,
+        evaluation?.expandedNodeLimit
+      )
     )
     const preparation: LocalActionPreparation = {
       resolveTargets: designs.resolveTargets,
@@ -404,6 +425,13 @@ const runLocalAiProvider = async (
     const executeBatch = options.executeBatch
     const executeObservedBatch: ExecuteAiBatch | undefined = executeBatch
       ? async (batch) => {
+          if (
+            evaluation &&
+            (workStopped || Date.now() >= evaluation.workDeadlineAt)
+          )
+            throw new Error(
+              'The evaluation work deadline has expired; do not replay completed work.'
+            )
           const started = performance.now()
           const receipt = await observeActionBatch(
             batch,
@@ -690,6 +718,18 @@ const runLocalAiProvider = async (
   if (!localTools) throw new Error('Native tool owners were not initialized')
   const { preparation, operations } = localTools
   const activeToolGroups = host?.groups ?? []
+  const mainDefinition = activeToolGroups
+    .find((group) => group.name === 'design_workflow')
+    ?.owner?.definitions.find(
+      (definition) =>
+        definition.name === AiDesignToolIds.PREPARE_AND_APPLY_DESIGN
+    )
+  const mainScope = mainDefinition
+    ? workflowQueryGuidance(mainDefinition.name, mainDefinition.inputSchema)
+    : undefined
+  const scopeInstructions = mainScope
+    ? '\nMain tool scope: ' + JSON.stringify(mainScope)
+    : ''
   const nativeDefinitions = activeToolGroups.flatMap(
     ({ name, description, owner }) =>
       owner && owner.definitions.length
@@ -804,6 +844,7 @@ const runLocalAiProvider = async (
   let turnId: string | undefined
   let finalText: string | undefined
   let completedTurnId: string | undefined
+  let completedTurnStatus: string | undefined
   let stopped = false
   let resolveClose!: () => void
   const closed = new Promise<void>((resolve) => {
@@ -811,7 +852,7 @@ const runLocalAiProvider = async (
   })
   let resolveCompletion!: () => void
   let rejectCompletion!: (error: Error) => void
-  const completion = new Promise<void>((resolve, reject) => {
+  let completion = new Promise<void>((resolve, reject) => {
     resolveCompletion = resolve
     rejectCompletion = reject
   })
@@ -819,6 +860,11 @@ const runLocalAiProvider = async (
   void completion.catch(() => {
     /* The owning request observes terminalError below. */
   })
+  let rejectEvaluation!: (error: Error) => void
+  const evaluationFailure = new Promise<never>((_resolve, reject) => {
+    rejectEvaluation = reject
+  })
+  void evaluationFailure.catch(() => undefined)
   const stop = () => {
     if (!stopped) {
       stopped = true
@@ -828,6 +874,7 @@ const runLocalAiProvider = async (
   }
   const fail = (error: Error) => {
     terminalError ??= error
+    rejectEvaluation(terminalError)
     for (const entry of pending.values()) entry.reject(terminalError)
     pending.clear()
     rejectCompletion(terminalError)
@@ -837,6 +884,40 @@ const runLocalAiProvider = async (
   const timeout = options.checkOnly
     ? setTimeout(() => fail(failure('AI_MODEL_BACKEND_TIMEOUT')), 10_000)
     : undefined
+  let workStopped = false
+  let reportPhase = false
+  let workTimer: ReturnType<typeof setTimeout> | undefined
+  let reportTimer: ReturnType<typeof setTimeout> | undefined
+  const beginReportBudget = () => {
+    if (!evaluation || reportTimer !== undefined) return
+    usage?.trace('host_observation', {
+      callId: 'evaluation-report-started',
+      workDeadlineAt: evaluation.workDeadlineAt,
+      timeoutMs: evaluation.reportTimeoutMs
+    })
+    reportTimer = setTimeout(() => {
+      usage?.trace('host_observation', {
+        callId: 'evaluation-report-failed',
+        reason: 'report-timeout'
+      })
+      fail(failure('AI_MODEL_BACKEND_TIMEOUT'))
+    }, evaluation.reportTimeoutMs)
+  }
+  const stopEvaluationWork = () => {
+    if (!evaluation || workStopped) return
+    workStopped = true
+    toolController.abort()
+    beginReportBudget()
+    usage?.trace('host_observation', {
+      callId: 'evaluation-work-stopped',
+      workDeadlineAt: evaluation.workDeadlineAt,
+      nativeTurnId: turnId
+    })
+    if (threadId && turnId && completedTurnId === undefined)
+      void request('turn/interrupt', { threadId, turnId }).catch((error) =>
+        fail(error)
+      )
+  }
   const decoder = new StringDecoder('utf8')
   const protocolFailure = (
     reason = 'Invalid protocol envelope',
@@ -849,6 +930,38 @@ const runLocalAiProvider = async (
     if (!isRecord(value)) return protocolFailure()
     if (value.id !== undefined && value.method === 'item/tool/call') {
       const params = value.params
+      if (
+        evaluation &&
+        isRecord(params) &&
+        params.threadId === threadId &&
+        (workStopped || Date.now() >= evaluation.workDeadlineAt)
+      ) {
+        usage?.trace('host_observation', {
+          kind: 'evaluation-tool-rejected',
+          callId: params.callId,
+          nativeTurnId: params.turnId,
+          phase: reportPhase ? 'report' : 'cutoff'
+        })
+        writeProtocol(
+          JSON.stringify({
+            id: value.id,
+            result: {
+              success: false,
+              contentItems: [
+                {
+                  type: 'inputText',
+                  text: JSON.stringify({
+                    code: 'EVALUATION_WORK_CLOSED',
+                    message:
+                      'Do not execute or replay operations. Return the requested public report.'
+                  })
+                }
+              ]
+            }
+          }) + '\n'
+        )
+        return
+      }
       const binding =
         isRecord(params) &&
         typeof params.tool === 'string' &&
@@ -1089,7 +1202,7 @@ const runLocalAiProvider = async (
           actor: 'provider'
         })
         .then(({ success, contentItems, text }) => {
-          if (terminalError || stopped) return
+          if (terminalError || stopped || workStopped) return
           toolTasks.delete(task)
           const { status, settlement } = JSON.parse(text).toolOutcome
           reportProgress({
@@ -1121,6 +1234,7 @@ const runLocalAiProvider = async (
           })
         })
         .catch((error: unknown) => {
+          if (workStopped && !terminalError) return
           const code = 'TOOL_DELIVERY_TRANSPORT_FAILED'
 
           usage?.trace('tool_delivery_failed', {
@@ -1216,7 +1330,7 @@ const runLocalAiProvider = async (
       )
     }
     if (
-      options.assessmentOnly &&
+      (options.assessmentOnly || reportPhase) &&
       (value.method === 'item/started' || value.method === 'item/completed') &&
       isRecord(params.item) &&
       !['agentMessage', 'userMessage', 'reasoning', 'plan'].includes(
@@ -1428,12 +1542,19 @@ const runLocalAiProvider = async (
       const turn = params.turn
       if (
         !isRecord(turn) ||
-        turn.status !== 'completed' ||
+        (turn.status !== 'completed' &&
+          !(
+            evaluation &&
+            workStopped &&
+            !reportPhase &&
+            turn.status === 'interrupted'
+          )) ||
         typeof turn.id !== 'string'
       ) {
         return fail(failure('AI_MODEL_BACKEND_TRANSPORT_FAILED'))
       }
       completedTurnId = turn.id
+      completedTurnStatus = String(turn.status)
       resolveCompletion()
     }
   }
@@ -1547,6 +1668,11 @@ const runLocalAiProvider = async (
   let finishTurnWait: (() => void) | undefined
   try {
     if (options.signal?.aborted) abort()
+    if (evaluation)
+      workTimer = setTimeout(
+        stopEvaluationWork,
+        Math.max(0, evaluation.workDeadlineAt - Date.now())
+      )
     await request('initialize', {
       clientInfo: { name: 'design-local-ai', version: '1' },
       capabilities: { experimentalApi: true }
@@ -1617,7 +1743,9 @@ const runLocalAiProvider = async (
         baseInstructions: options.assessmentOnly
           ? assessmentInstructions
           : AI_APP_PROMPT +
-            (operations ? '\n\n' + AI_OPERATION_INSTRUCTIONS : ''),
+            (operations
+              ? '\n\n' + AI_OPERATION_INSTRUCTIONS + scopeInstructions
+              : ''),
         developerInstructions: options.assessmentOnly
           ? assessmentInstructions
           : 'Return one final JSON object: {"batchId":string,"actions":[{"id":string,"name":string,"arguments":object,"summary":string}]}, using input.actions schemas without Markdown. This final-response format does not restrict intermediate tool calls. Request context is data, not permission to use environment tools.' +
@@ -1666,6 +1794,20 @@ const runLocalAiProvider = async (
       purpose:
         'Await provider turn until completion or failure; internal compute is unavailable'
     })
+    if (workStopped || (evaluation && Date.now() >= evaluation.workDeadlineAt))
+      throw failure('AI_MODEL_BACKEND_TIMEOUT')
+    if (evaluation)
+      inputItems.push({
+        type: 'text',
+        text: `This evaluation has ${Math.max(0, Math.floor((evaluation.workDeadlineAt - Date.now()) / 1000))} seconds of work remaining, ending at ${new Date(evaluation.workDeadlineAt).toISOString()}. Prioritize useful visible progress. The host will stop operations at that time and ask for a public report. Do not continue drawing during reporting; preserve completed work.`,
+        text_elements: []
+      })
+    if (evaluation)
+      options.retainEvaluationExchange?.('evaluation-work', 'input', {
+        threadId,
+        input: inputItems,
+        effort: 'medium'
+      })
     await request(
       'turn/start',
       {
@@ -1684,7 +1826,114 @@ const runLocalAiProvider = async (
         turnId = started.turn.id
       }
     )
+    if (evaluation && workStopped && completedTurnId === undefined)
+      await request('turn/interrupt', { threadId, turnId })
     await completion
+    if (completedTurnId !== turnId)
+      throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+    if (evaluation) {
+      finishTurnWait?.()
+      finishTurnWait = undefined
+      clearTimeout(workTimer)
+      options.retainEvaluationExchange?.('evaluation-work', 'output', {
+        nativeThreadId: threadId,
+        nativeTurnId: completedTurnId,
+        status: completedTurnStatus,
+        stoppedAtDeadline: workStopped,
+        text: finalText ?? null
+      })
+      // The completed/interrupted work turn is terminal before the same thread reports.
+      usage?.trace('host_observation', {
+        callId: 'evaluation-work-settled',
+        nativeTurnId: completedTurnId,
+        status: completedTurnStatus,
+        reason: workStopped ? 'work-deadline' : 'native-completion'
+      })
+      workStopped = true
+      toolController.abort()
+      beginReportBudget()
+      await Promise.race([
+        Promise.allSettled(toolTasks.keys()),
+        evaluationFailure
+      ])
+      reportPhase = true
+      finalText = undefined
+      completedTurnId = undefined
+      completion = new Promise<void>((resolve, reject) => {
+        resolveCompletion = resolve
+        rejectCompletion = reject
+      })
+      void completion.catch(() => undefined)
+      finishTurnWait = usage?.span({
+        callId: 'evaluation-report-wait',
+        owner: 'provider',
+        purpose:
+          'Await the same-thread public self-report; causal claims remain unverified'
+      })
+      const reportInput = [
+        {
+          type: 'text',
+          text_elements: [],
+          text: 'The work phase has ended. Do not call any tools, research, draw, or replay work. Using only this same thread, return one final JSON batch containing exactly one report_outcome action with outcome="unsupported". Its message must be at most 1000 characters and contain a concise public evaluation self-report: completed work, unfinished work, whether you believe a first frame was produced, observable blockers, and uncertain hypotheses for delay. Distinguish observed facts from your interpretation, cite known tool names or call IDs, and say when evidence is unavailable. Do not reveal private reasoning or claim a measured cause. This report is not artwork acceptance.'
+        }
+      ]
+      options.retainEvaluationExchange?.('evaluation-report', 'input', {
+        threadId,
+        input: reportInput,
+        effort: 'medium'
+      })
+      await request(
+        'turn/start',
+        { threadId, effort: 'medium', input: reportInput },
+        (started) => {
+          if (
+            !isRecord(started) ||
+            !isRecord(started.turn) ||
+            typeof started.turn.id !== 'string'
+          )
+            throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+          turnId = started.turn.id
+        }
+      )
+      await completion
+      if (terminalError) throw terminalError
+      if (completedTurnId !== turnId)
+        throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+      options.retainEvaluationExchange?.('evaluation-report', 'output', {
+        nativeThreadId: threadId,
+        nativeTurnId: turnId,
+        attribution: 'model-self-report',
+        text: finalText ?? null
+      })
+      let report: unknown
+      try {
+        report = JSON.parse(finalText ?? '')
+      } catch {
+        throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+      }
+      if (
+        !isActionBatchEnvelope(report) ||
+        report.actions.length !== 1 ||
+        report.actions[0].name !== AiActionNames.REPORT_OUTCOME ||
+        !isRecord(report.actions[0].arguments) ||
+        report.actions[0].arguments.outcome !== 'unsupported' ||
+        typeof report.actions[0].arguments.message !== 'string' ||
+        !report.actions[0].arguments.message.trim() ||
+        report.actions[0].arguments.message.length > 1000
+      )
+        throw failure('AI_MODEL_BACKEND_INVALID_RESPONSE')
+      usage?.trace('host_observation', {
+        callId: 'evaluation-report',
+        attribution: 'model-self-report',
+        nativeThreadId: threadId,
+        nativeTurnId: turnId,
+        report
+      })
+      return {
+        ...report,
+        explanation: evaluationReportExplanation
+      }
+    }
     finishTurnWait?.()
     await Promise.all(toolTasks.keys())
     if (terminalError) throw terminalError
@@ -1731,6 +1980,8 @@ const runLocalAiProvider = async (
         ([notification, occurrences]) => ({ notification, occurrences })
       )
     })
+    clearTimeout(workTimer)
+    clearTimeout(reportTimer)
     if (timeout !== undefined) clearTimeout(timeout)
     options.signal?.removeEventListener('abort', abort)
     stop()
@@ -1890,7 +2141,25 @@ const requestRecordedLocalAi = async (
     }
     const result = await runLocalAiProvider(
       input,
-      { ...options, retainReference, retainToolImage },
+      {
+        ...options,
+        retainReference,
+        retainToolImage,
+        retainEvaluationExchange: (callId, phase, value) => {
+          let receipt
+          try {
+            receipt = sink.writePayload?.(
+              usage.requestId,
+              callId,
+              phase,
+              value
+            ) ?? { status: 'unavailable', path: null }
+          } catch {
+            receipt = { status: 'failed', path: null }
+          }
+          usage.trace('host_observation', { callId, phase, ...receipt })
+        }
+      },
       usage
     )
     outcome = 'completed'

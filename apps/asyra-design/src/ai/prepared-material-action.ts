@@ -67,6 +67,63 @@ const describeDifference = (
   return `${path} differs`
 }
 
+/** Group normalization changes local translations, not canonical world geometry. */
+const sameNormalizedGeometry = (before: unknown, after: unknown): boolean => {
+  if (lodash.isEqual(before, after)) return true
+  const record = (value: unknown): value is Record<string, unknown> =>
+    !!value && typeof value === 'object' && !Array.isArray(value)
+  if (
+    !record(before) ||
+    !record(after) ||
+    !record(before.computed) ||
+    !record(after.computed) ||
+    !Array.isArray(before.placements) ||
+    !Array.isArray(after.placements) ||
+    !before.placements.length ||
+    before.placements.length !== after.placements.length
+  )
+    return false
+  const original = [before.computed, before.placements[0]]
+  const current = [after.computed, after.placements[0]]
+  if (
+    [...original, ...current].some(
+      (value) =>
+        !record(value) ||
+        !Number.isFinite(value.x) ||
+        !Number.isFinite(value.y) ||
+        ['rotation', 'skewX', 'skewY'].some(
+          (key) => value[key] !== undefined && value[key] !== 0
+        ) ||
+        ['scaleX', 'scaleY'].some(
+          (key) => value[key] !== undefined && value[key] !== 1
+        )
+    )
+  )
+    return false
+  for (const axis of ['x', 'y']) {
+    const a = original.reduce((sum, value) => sum + Number(value[axis]), 0)
+    const b = current.reduce((sum, value) => sum + Number(value[axis]), 0)
+    if (
+      Math.abs(a - b) >
+      64 * Number.EPSILON * Math.max(1, Math.abs(a), Math.abs(b))
+    )
+      return false
+  }
+  const normalized = original.map((value, i) => ({
+    ...value,
+    x: current[i].x,
+    y: current[i].y
+  }))
+  return lodash.isEqual(
+    {
+      ...before,
+      computed: normalized[0],
+      placements: [normalized[1], ...before.placements.slice(1)]
+    },
+    after
+  )
+}
+
 const readProvenance = (elementId: string): MaterialProvenance | null => {
   const element = core.getElementMetadata(elementId)
   const workspace = core.getCurrentWorkspaceId()
@@ -276,10 +333,32 @@ export const createPreparedMaterialApplication = (
   }
   return {
     action,
-    capture(rootId: string, ids: readonly string[], signal: AbortSignal) {
+    capture(
+      rootId: string,
+      ids: readonly string[],
+      signal: AbortSignal,
+      continuation = false
+    ) {
       signal.throwIfAborted()
-      if (!ids.length) return
+      if (!ids.length && (!continuation || !sources.has(rootId))) return
       const members = new Map<string, MaterialProvenance>()
+      const earlier = sources.get(rootId)
+      if (continuation && earlier) {
+        if (earlier.signal !== signal || earlier.signal.aborted)
+          throw new Error('Material continuation belongs to another request.')
+        for (const [id, expected] of earlier.members) {
+          const current = apis.read(id)
+          if (
+            !current ||
+            !lodash.isEqual(current.binding, expected.binding) ||
+            !sameNormalizedGeometry(expected.geometry, current.geometry)
+          )
+            throw new Error(
+              'Earlier material geometry or binding changed during continuation.'
+            )
+          members.set(id, structuredClone(current))
+        }
+      }
       for (const id of ids) {
         const value = apis.read(id)
         if (!value)

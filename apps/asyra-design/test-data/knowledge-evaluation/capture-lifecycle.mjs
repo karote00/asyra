@@ -83,11 +83,119 @@ export async function collectEvidenceStage(meta, name, task, save) {
   }
 }
 
-/** Settle the existing generation watchdog from the observed product outcome. */
-export function settleGeneration(deadline, outcome) {
-  return outcome === 'success' || outcome === 'no-change'
-    ? deadline.finish()
-    : deadline.stop(outcome ? `product-${outcome}` : 'execution-deadline')
+/** Read the bounded projection of the existing settled result, never the network body. */
+export async function readEvaluationReport(page, sourceRequestIds) {
+  const entries = await page
+    .getByTestId('ai-agent-message')
+    .evaluateAll((messages) =>
+      messages.flatMap((message, messageIndex) => {
+        const value = message.getAttribute('data-evaluation-report')
+        return value
+          ? [
+              {
+                value,
+                messageIndex,
+                turnId: message.getAttribute('data-turn-id'),
+                outcome: message.getAttribute('data-outcome'),
+                text: message.querySelector('[data-testid="ai-agent-result"]')
+                  ?.textContent
+              }
+            ]
+          : []
+      })
+    )
+  const matches = []
+  for (const entry of entries) {
+    const report = JSON.parse(entry.value)
+    if (
+      !report ||
+      report.attribution !== 'model-self-report' ||
+      typeof report.sourceRequestId !== 'string' ||
+      !report.sourceRequestId.trim() ||
+      typeof report.turnId !== 'string' ||
+      !report.turnId.trim() ||
+      typeof report.text !== 'string' ||
+      !report.text.trim() ||
+      report.text.length > 1000
+    )
+      throw new Error('Malformed evaluation self-report')
+    if (!sourceRequestIds.includes(report.sourceRequestId)) continue
+    if (
+      entry.turnId !== report.turnId ||
+      !['partial', 'success', 'no-change'].includes(entry.outcome) ||
+      !entry.text?.includes(report.text)
+    )
+      throw new Error('Evaluation report identity or rendered text mismatch')
+    matches.push({
+      ...report,
+      messageIndex: entry.messageIndex,
+      receivedAt: new Date().toISOString()
+    })
+  }
+  if (matches.length !== 1)
+    throw new Error('Expected exactly one matching settled evaluation report')
+  return matches[0]
+}
+
+/** Verify the same settled message before and after saving its entire rendered image. */
+export async function captureReportImage(page, report, path) {
+  const target = page.getByTestId('ai-agent-message').nth(report.messageIndex)
+  await target.waitFor({ state: 'visible', timeout: 5000 })
+  await target.scrollIntoViewIfNeeded()
+  const rendered = target.getByTestId('ai-agent-result')
+  const verify = async () => {
+    const current = JSON.parse(
+      (await target.getAttribute('data-evaluation-report')) ?? 'null'
+    )
+    if (
+      !current ||
+      current.sourceRequestId !== report.sourceRequestId ||
+      current.turnId !== report.turnId ||
+      current.text !== report.text ||
+      (await target.getAttribute('data-turn-id')) !== report.turnId
+    )
+      throw new Error('Evaluation report identity changed before capture')
+    if (!(await rendered.textContent())?.includes(report.text))
+      throw new Error(
+        'The rendered report does not match the retained model output'
+      )
+  }
+  await verify()
+  await rendered.screenshot({ path })
+  await verify()
+}
+
+/** Keep text even if its screenshot fails; missing evidence cannot become success. */
+export function captureEvaluationReport({
+  meta,
+  report,
+  writeText,
+  captureImage,
+  save,
+  timeoutMs = 30000
+}) {
+  return collectEvidenceStage(
+    meta,
+    'self-report',
+    () =>
+      boundedCapture(
+        'self-report',
+        async (signal) => {
+          if (!report)
+            throw new Error('No host-admitted evaluation self-report received')
+          meta.selfReport = { ...report, textSaved: false, imageSaved: false }
+          await writeText(report.text)
+          signal.throwIfAborted()
+          meta.selfReport.textSaved = true
+          await captureImage()
+          signal.throwIfAborted()
+          meta.selfReport.imageSaved = true
+          return meta.selfReport
+        },
+        timeoutMs
+      ),
+    save
+  )
 }
 
 /** Await the RPC result itself; a Promise is not a readiness predicate. */

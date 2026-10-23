@@ -1,3 +1,4 @@
+import type { PreparedElementDescriptor } from '../../src/common-apis'
 import { invokeLocalTool } from '../local-tool-invocation'
 import {
   describeBasicApiResult,
@@ -5296,6 +5297,45 @@ it('execution proof consumes repeated multi-face examples through exact native t
   session.release([artifactId])
   expect(() => tools.resolveTargets({ artifactId, targetSetId })).toThrow()
   expect(session.resolve(sibling.artifactId).entries).toHaveLength(14)
+  const mixedExample = designPreparationExamples.find(
+    (entry) => entry.draft.name === 'Translated components'
+  )
+  if (!mixedExample) throw new Error('Missing mixed component example')
+  const mixed = session.prepare(mixedExample.draft)
+  const mixedDesign = session.resolve(mixed.artifactId)
+  const componentKeys = Array.from({ length: 2 }, (_, index) => [
+    `component-${index}-panel`,
+    ...Array.from(
+      { length: 6 },
+      (_, cell) => `component-${index}-grid-${cell}-inset`
+    )
+  ]).flat()
+  expect(mixedDesign.entries.slice(1).map((entry) => entry.key)).toEqual(
+    componentKeys
+  )
+  expect(
+    mixedDesign.entries
+      .slice(1)
+      .every((entry) => entry.parentId === mixedDesign.rootId)
+  ).toBe(true)
+  const mixedTargets = JSON.parse(
+    await tools.call(
+      'retain_design_targets',
+      {
+        targets: [{ artifactId: mixed.artifactId, keyPrefix: 'component-1-' }]
+      },
+      new AbortController().signal
+    )
+  ).targets[0]
+  const mixedTargetReference = {
+    artifactId: mixedTargets.artifactId,
+    targetSetId: mixedTargets.targetSetId
+  }
+  expect(tools.resolveTargets(mixedTargetReference)).toEqual(
+    componentKeys.slice(7).map((key) => mixedDesign.keyToId[key])
+  )
+  session.release([mixed.artifactId])
+  expect(() => tools.resolveTargets(mixedTargetReference)).toThrow()
 })
 
 it('execution proof rejects mismatched query scopes before reads and preserves explicit refinement', async () => {
@@ -6941,6 +6981,7 @@ it('execution proof delivers selected Knowledge decisions completely without opt
 })
 
 it('execution proof delivers selected operation contracts without exhaustive discovery', async () => {
+  const { workflowQueryGuidance } = await import('../design-workflow-discovery')
   const { operationInputIssue } = await import('../operation-input-schema')
   const designs = createLocalDesignTools([
     {
@@ -6961,11 +7002,19 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     designs,
     execute,
     {
-      getNativeTools: () =>
-        workflow.definitions.map((definition) => ({
+      getNativeTools: () => [
+        ...workflow.definitions.map((definition) => ({
           ...definition,
           namespace: 'design'
-        }))
+        })),
+        {
+          ...workflow.definitions[0],
+          name: 'related_capability',
+          namespace: 'design',
+          description: 'Use prepare_and_apply_design for a ready part.',
+          inputSchema: { type: 'object' }
+        }
+      ]
     }
   )
   const workflow = createLocalDesignWorkflow(designs, operations)
@@ -6983,6 +7032,115 @@ it('execution proof delivers selected operation contracts without exhaustive dis
       }, input)
     )
   const names = ['prepare_and_apply_design']
+  const guidance = workflowQueryGuidance(
+    names[0],
+    workflow.definitions[0].inputSchema
+  )
+  if (!guidance) throw new Error('Missing main-tool scope guidance')
+  const ownerSchema = workflow.definitions[0].inputSchema as {
+    'x-design-input-scope': { selection: string }
+  }
+  expect(guidance.inputScopes).toHaveProperty(
+    'selection',
+    ownerSchema['x-design-input-scope'].selection
+  )
+
+  expect(guidance.inputScopes.selection).toContain('outer repetition')
+  expect(guidance.example.arguments.inputScope).toEqual({
+    operation: 'draft',
+    nodeTypes: ['pattern']
+  })
+  expect(guidance.operationUsage.draft).toContain('10000 expanded objects')
+  expect(guidance.operationUsage.parts).toContain('each part artifact fits')
+  const first = await read(guidance.example.arguments)
+  expect(first.tools[0].usageGuide).toBeDefined()
+  expect(counts).toHaveLength(1)
+  expect(first.tools[0].usageGuide.instructions).toContain(
+    'root and nested containers'
+  )
+  const excess = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        draft: {
+          type: 'group',
+          name: 'Expansion boundary',
+          children: [
+            {
+              type: 'vector-pattern',
+              name: 'Repeated contour',
+              key: 'repeat',
+              template: {
+                rings: [
+                  [
+                    { x: 0, y: 0 },
+                    { x: 1, y: 0 },
+                    { x: 1, y: 1 }
+                  ]
+                ]
+              },
+              placements: Array.from({ length: 10000 }, () => ({ x: 0, y: 0 }))
+            }
+          ]
+        }
+      },
+      new AbortController().signal
+    )
+  )
+  expect(excess.budget.observed.expandedNodes).toBe(10001)
+  expect(excess.completedSteps).toEqual([])
+  expect(excess.message).toContain('ordered parts')
+  expect(execute).not.toHaveBeenCalled()
+
+  const definition = operations.definitions.find(
+    (item) => item.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const rejected = await invokeLocalTool(
+    operations,
+    definition,
+    {
+      ...guidance.example.arguments,
+      inputScope: { operation: 'create', nodeTypes: ['vector'] }
+    },
+    new AbortController().signal
+  )
+  expect(rejected.success).toBe(false)
+  const rejection = JSON.parse(rejected.text)
+  expect(rejection.toolOutcome).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started'
+  })
+  const correction = JSON.parse(rejection.message.split('Scope guidance: ')[1])
+  expect(correction.inputScopes).toEqual({
+    operations: guidance.inputScopes.operations,
+    nodeTypes: guidance.inputScopes.nodeTypes,
+    optionalInputs: guidance.inputScopes.optionalInputs
+  })
+  expect(
+    (await read(correction.example.arguments)).tools[0].usageGuide
+  ).toEqual(first.tools[0].usageGuide)
+  counts.splice(0)
+  const menu = await read({ names, view: 'usage' })
+  expect(counts).toHaveLength(1)
+  expect(menu.tools[0].inputScopes.selection).toContain('next submitted part')
+  expect(menu.tools[0].inputScopes.selection).toContain('surface-grid')
+  expect(menu.tools[0].inputScopes.selection).toContain('root group/frame')
+  expect(menu.tools[0].inputScopes.selection).toContain(
+    'nodeTypes selects children'
+  )
+  expect(menu.tools[0].inputScopes.selection).toContain(
+    'does not require sending'
+  )
+  expect(menu.tools[0].outputFields).toBeUndefined()
+  counts.splice(0)
+  const queried = await read({ query: names[0], view: 'usage' })
+  expect(queried.tools.map((tool: { name: string }) => tool.name)).toEqual(
+    names
+  )
+  expect(counts).toHaveLength(1)
+  expect(counts[0]).toBeLessThan(5000)
+  counts.splice(0)
   const full = await read({ names })
   const fullCounts = counts.splice(0)
   const inputScope = { operation: 'draft', nodeTypes: ['vector'] }
@@ -7006,6 +7164,8 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(counts).toHaveLength(1)
   expect(counts[0]).toBeLessThan(23000)
   expect(guide.tools[0].definition.coverage).toBe('scoped-usage')
+  expect(guide.tools[0].usageGuide.instructions).toContain('root group/frame')
+  expect(guide.tools[0].usageGuide.selection).toContain('without rereading')
   expect(guide.tools[0].outputSchema).toBeUndefined()
   expect(guide.tools[0].usageGuide.recovery).toContain(
     'Never replay completed writes'
@@ -7016,6 +7176,37 @@ it('execution proof delivers selected operation contracts without exhaustive dis
       scoped.tools[0].inputSchema
     )
   ).toBeUndefined()
+  expect(execute).not.toHaveBeenCalled()
+  counts.splice(0)
+  const mixedScope = {
+    operation: 'draft',
+    nodeTypes: ['projected-face', 'surface-grid']
+  }
+  const combined = await read({ names, inputScope: mixedScope, view: 'usage' })
+  expect(counts).toHaveLength(1)
+  expect(counts[0]).toBeLessThanOrEqual(20148)
+  const invocation = combined.tools[0].invocationExample.invocation
+  const combinedFull = await read({ names, inputScope: mixedScope })
+  expect(
+    operationInputIssue(invocation.arguments, combinedFull.tools[0].inputSchema)
+  ).toBeUndefined()
+  const source = invocation.arguments.draft
+  expect(source.linearFields.glass).toBeDefined()
+  expect(source.fillTemplates.edge).toBeDefined()
+  expect(source.children.map((child: { type: string }) => child.type)).toEqual([
+    'pattern',
+    'projected-face',
+    'pattern'
+  ])
+  const prepared = JSON.parse(
+    await designs.call(
+      'prepare_design',
+      invocation.arguments,
+      new AbortController().signal
+    )
+  )
+  expect(prepared.available).toBe(true)
+  expect(prepared.elementCount).toBe(16)
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -7062,4 +7253,545 @@ it('execution proof distinguishes inspection lookup coverage from completed read
   const complete = await read(['/properties/phase'])
   expect(complete.success).toBe(true)
   expect(dispatch).not.toHaveBeenCalled()
+})
+
+it('execution proof separates bounded work from same-thread self-report without replay', async ({
+  onTestFinished
+}) => {
+  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  onTestFinished(() => log.mockRestore())
+  const parent = resolve('tmp/flow-evaluation-tests')
+  await mkdir(parent, { recursive: true })
+  const directory = await mkdtemp(resolve(parent, 'case-'))
+  onTestFinished(() => rm(directory, { recursive: true, force: true }))
+  const packets: {
+    id?: number
+    method?: string
+    params?: Record<string, unknown>
+  }[] = []
+  let turns = 0
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    stdin: new Writable(),
+    kill: () => {
+      queueMicrotask(() => child.emit('close', null, 'SIGKILL'))
+      return true
+    }
+  })
+  const send = (value: unknown) =>
+    child.stdout.write(JSON.stringify(value) + '\n')
+  child.stdin = new Writable({
+    write(chunk, _encoding, done) {
+      const packet = JSON.parse(String(chunk)) as (typeof packets)[number]
+      packets.push(packet)
+      queueMicrotask(() => {
+        if (packet.id === undefined) return
+        let result: unknown = {}
+        if (packet.method === 'config/read') result = { config: {} }
+        if (packet.method === 'account/read')
+          result = { account: { type: 'chatgpt' } }
+        if (packet.method === 'thread/start')
+          result = {
+            thread: { id: 'evaluation-thread' },
+            model: 'gpt-6-astra',
+            reasoningEffort: 'medium',
+            instructionSources: [],
+            runtimeWorkspaceRoots: []
+          }
+        if (packet.method === 'turn/start')
+          result = { turn: { id: `turn-${++turns}` } }
+        send({ id: packet.id, result })
+        if (packet.method === 'turn/interrupt')
+          send({
+            method: 'turn/completed',
+            params: {
+              threadId: 'evaluation-thread',
+              turn: { id: 'turn-1', status: 'interrupted' }
+            }
+          })
+        if (packet.method === 'turn/start' && turns === 2) {
+          send({
+            method: 'item/completed',
+            params: {
+              threadId: 'evaluation-thread',
+              turnId: 'turn-2',
+              item: {
+                type: 'agentMessage',
+                phase: 'final_answer',
+                text: JSON.stringify({
+                  batchId: 'report',
+                  actions: [
+                    {
+                      id: 'report',
+                      name: 'report_outcome',
+                      arguments: {
+                        outcome: 'unsupported',
+                        message: 'First frame unavailable; cause unconfirmed.'
+                      },
+                      summary: 'Report'
+                    }
+                  ]
+                })
+              }
+            }
+          })
+          send({
+            method: 'turn/completed',
+            params: {
+              threadId: 'evaluation-thread',
+              turnId: 'turn-2',
+              turn: { id: 'turn-2', status: 'completed' }
+            }
+          })
+        }
+      })
+      done()
+    }
+  })
+  spawn.mockReturnValueOnce(child)
+  const executeBatch = vi.fn()
+  const result = await requestLocalAiActionBatch(
+    {
+      intent: 'Draw a generic composition',
+      actions: [],
+      context: {},
+      attempt: 1,
+      metadata: {
+        evaluationWindow: {
+          workDeadlineAt: Date.now() + 100,
+          reportTimeoutMs: 1000
+        }
+      }
+    },
+    {
+      executable: 'scripted-protocol',
+      model: 'gpt-6-astra',
+      toolLibraryDirectory: directory,
+      executeBatch
+    }
+  )
+  expect(result).toMatchObject({
+    explanation: 'Evaluation self-report - not artwork acceptance',
+    actions: [{ name: 'report_outcome', arguments: { outcome: 'unsupported' } }]
+  })
+  expect(packets.filter((p) => p.method === 'thread/start')).toHaveLength(1)
+  expect(
+    packets
+      .filter((p) => p.method === 'turn/start')
+      .map((p) => p.params?.threadId)
+  ).toEqual(['evaluation-thread', 'evaluation-thread'])
+  expect(packets.some((p) => p.method === 'turn/interrupt')).toBe(true)
+  expect(executeBatch).not.toHaveBeenCalled()
+})
+
+const proveBudgetRecovery = async (limit: number) => {
+  const hadWindow = 'window' in globalThis
+  if (!hadWindow) vi.stubGlobal('window', {})
+  try {
+    const { createPreparedDesignAction } =
+      await import('../../src/ai/design-actions')
+    const entries = new Map<string, PreparedElementDescriptor>()
+    const parents = new Map<string, string>()
+    const apply = createPreparedDesignAction(
+      {
+        getWorkspaceId: () => 'workspace',
+        getElementType: (id) => entries.get(id)?.type,
+        getElementMetadata: (id) => {
+          const entry = entries.get(id)
+          return entry
+            ? { type: entry.type, parentId: parents.get(id) }
+            : undefined
+        },
+        getPlacement: (id) => entries.get(id),
+        isContainerType: (type) => type === 'group',
+        isLocked: () => false,
+        create: (values, parent) => {
+          for (const entry of values) {
+            entries.set(entry.id, entry)
+            parents.set(entry.id, parent)
+          }
+          return values.map((entry) => entry.id)
+        },
+        select: () => undefined
+      },
+      async () => undefined
+    )
+    const actions: AiActionDescription[] = JSON.parse(JSON.stringify([apply]))
+    const session = createDesignPreparationSession(
+      undefined,
+      undefined,
+      undefined,
+      limit
+    )
+    const tools = createLocalDesignTools(actions, session)
+    const execute = vi.fn(async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: await Promise.all(
+        batch.actions.map(async (action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result: JSON.parse(
+            JSON.stringify(
+              await apply.execute(
+                action.arguments as never,
+                { signal: new AbortController().signal } as never
+              )
+            )
+          )
+        }))
+      )
+    }))
+    const operations = createOperationOwner(actions, tools, execute)
+    const trace = vi.fn()
+    const main = createLocalDesignWorkflow(tools, operations, { trace })
+    const definition = main.definitions[0]
+    if (!definition) throw new Error('Missing workflow')
+    const signal = new AbortController().signal
+    const result = JSON.parse(
+      (
+        await invokeLocalTool(
+          main,
+          definition,
+          {
+            draft: {
+              type: 'group',
+              name: 'Repeated panels',
+              key: 'root',
+              projection: {
+                azimuth: 30,
+                elevation: 30,
+                scale: 1,
+                originX: 0,
+                originY: 0
+              },
+              children: [
+                {
+                  type: 'pattern',
+                  key: 'panels',
+                  name: 'Panels',
+                  origin: { x: 0, y: 0, z: 0 },
+                  axes: [{ count: limit, step: { x: 0, y: 0, z: 1 } }],
+                  faces: [
+                    {
+                      key: 'face',
+                      name: 'Face',
+                      fill: '#123456',
+                      vertices: [
+                        { x: 0, y: 0, z: 0 },
+                        { x: 10, y: 0, z: 0 },
+                        { x: 10, y: 0, z: 10 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            inspection: 'defer',
+            response: 'compact'
+          },
+          signal
+        )
+      ).text
+    )
+    const plan = trace.mock.calls.find(
+      ([stage, value]) =>
+        stage === 'action_completed' && value.result?.retainedDraft?.partitions
+    )?.[1].result
+    expect(plan.budget.observed.expandedNodes).toBe(limit + 1)
+    expect(plan.budget.allowed.expandedNodes).toBe(limit)
+    expect(plan.toolOutcome.status).toBe('success')
+    expect(
+      trace.mock.calls.filter(([stage]) => stage === 'action_failed')
+    ).toEqual([])
+    expect(JSON.stringify(main.definitions)).toContain(
+      `${limit} expanded objects`
+    )
+    expect(result.toolOutcome.settlement).toBe('completed')
+    expect(result.recoveryInvocation).toBeUndefined()
+    expect(
+      result.parts.map(
+        (part: { toolOutcome: { status: string } }) => part.toolOutcome.status
+      )
+    ).toEqual(['success', 'success'])
+    expect(entries.size).toBe(limit + 1)
+    expect(
+      [...parents.values()].filter((parent) => parent === 'workspace')
+    ).toHaveLength(1)
+    const size = entries.size
+    const duplicate = await invokeLocalTool(
+      main,
+      definition,
+      { repair: { draftId: plan.draftId, partition: 0 }, inspection: 'defer' },
+      signal
+    )
+    expect(duplicate.success).toBe(false)
+    expect(entries.size).toBe(size)
+  } finally {
+    if (!hadWindow) vi.unstubAllGlobals()
+  }
+}
+
+it('execution proof continues safe capacity through retained partitions in one invocation', () =>
+  proveBudgetRecovery(10000))
+it('execution proof isolates the evaluation budget through delivery and retained recovery', () =>
+  proveBudgetRecovery(2000))
+
+it('execution proof captures only the admitted settled report without rereading transport', async () => {
+  const { projectEvaluationReport, evaluationReportExplanation } =
+    await import('../../src/ai/evaluation-window')
+  const result = {
+    status: 'executed',
+    recordingId: 'source-request',
+    batchId: 'report',
+    transaction: { status: 'committed' },
+    preview: {
+      batchId: 'report',
+      explanation: evaluationReportExplanation,
+      actions: [{ id: 'final', name: 'report_outcome' }]
+    },
+    actionResults: [
+      {
+        actionId: 'written',
+        actionName: 'apply_prepared_design',
+        result: { status: 'complete' }
+      },
+      {
+        actionId: 'final',
+        actionName: 'report_outcome',
+        result: {
+          action: 'report_outcome',
+          status: 'no-change',
+          outcome: 'unsupported',
+          message: 'Completed work retained; no causal conclusion.'
+        }
+      }
+    ]
+  }
+  const turn = { turnId: 'conversation:turn:1', outcome: 'partial', result }
+  const before = structuredClone(result)
+  expect(projectEvaluationReport(turn)).toEqual({
+    attribution: 'model-self-report',
+    sourceRequestId: 'source-request',
+    turnId: turn.turnId,
+    text: result.actionResults[1].result.message
+  })
+  expect(result).toEqual(before)
+  expect(
+    projectEvaluationReport({
+      ...turn,
+      result: { ...result, status: 'failed' }
+    })
+  ).toBeUndefined()
+  expect(
+    projectEvaluationReport({
+      ...turn,
+      result: {
+        ...result,
+        preview: { ...result.preview, explanation: 'Ordinary' }
+      }
+    })
+  ).toBeUndefined()
+  expect(
+    projectEvaluationReport({
+      ...turn,
+      result: { ...result, actionResults: result.actionResults.slice(0, 1) }
+    })
+  ).toBeUndefined()
+})
+
+it('execution proof delivers layered repetition before parameters with canonical references', async () => {
+  const actions = [
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    },
+    {
+      name: AiActionNames.INSPECT_DRAWING,
+      description: 'Inspect',
+      inputSchema: {}
+    }
+  ]
+  const designs = createLocalDesignTools(actions)
+  const applied: PreparedDesign[] = []
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => {
+      const design = (action.arguments as { design: PreparedDesign }).design
+      applied.push(design)
+      return {
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          status: 'complete',
+          appliedElementCount: design.entries.length,
+          compositionId: design.entries[0].descriptor.id
+        }
+      }
+    })
+  }))
+  const operations = createOperationOwner(actions, designs, execute, {
+    getNativeTools: () =>
+      main.definitions.map((definition) => ({
+        ...definition,
+        namespace: 'design'
+      }))
+  })
+  const main = createLocalDesignWorkflow(designs, operations)
+  const signal = new AbortController().signal
+  const replies: string[] = []
+  const guide = JSON.parse(
+    await readCompleteInformation(
+      async (args) => {
+        const raw = await operations.call('describe_design_apis', args, signal)
+        replies.push(raw)
+        return raw
+      },
+      {
+        names: ['prepare_and_apply_design'],
+        view: 'usage',
+        inputScope: {
+          operation: 'draft',
+          nodeTypes: ['projected-face', 'surface-grid', 'pattern'],
+          optionalInputs: ['plan']
+        }
+      }
+    )
+  )
+  const tool = guide.tools[0]
+  const first = JSON.parse(replies[0]).contentDelivery?.text ?? replies[0]
+  expect(first).toContain(JSON.stringify(tool.invocationExample))
+  expect(first.indexOf('"invocationExample"')).toBeLessThan(
+    first.indexOf('"parameters"')
+  )
+  expect(replies.length).toBeLessThanOrEqual(2)
+  expect(
+    replies.reduce((sum, raw) => sum + Buffer.byteLength(raw), 0)
+  ).toBeLessThanOrEqual(27702)
+  const { invocation } = tool.invocationExample
+  const definition = main.definitions.find(
+    (item) => item.name === invocation.tool
+  )
+  if (!definition) throw new Error('Missing published execution route')
+  const reply = await invokeLocalTool(
+    main,
+    definition,
+    { ...invocation.arguments, inspection: 'defer' },
+    signal
+  )
+  const result = JSON.parse(reply.text)
+  expect(result.toolOutcome.settlement).toBe('completed')
+  expect(applied).toHaveLength(1)
+  expect(applied[0].entries).toHaveLength(16)
+  expect(applied[0].entries.slice(1, 4).map((entry) => entry.key)).toEqual([
+    'unit-0-panel',
+    'unit-1-panel',
+    'cap'
+  ])
+  const retained = JSON.parse(
+    await designs.call(
+      'retain_design_targets',
+      {
+        targets: [{ artifactId: result.artifactId, keyPrefix: 'windows-1-' }]
+      },
+      signal
+    )
+  ).targets[0]
+  expect(
+    designs.resolveTargets({
+      artifactId: retained.artifactId,
+      targetSetId: retained.targetSetId
+    })
+  ).toEqual(applied[0].entries.slice(10).map((entry) => entry.descriptor.id))
+  expect(execute).toHaveBeenCalledOnce()
+})
+
+it('execution proof separates budget snapshot projection and retained lookup work', async () => {
+  const { measureDesignBudget } = await import('../design-budget')
+  for (const mode of ['sync', 'async']) {
+    const points = [
+      { x: 0, y: 0, z: 0 },
+      { x: 4, y: 0, z: 0 },
+      { x: 4, y: 0, z: 4 },
+      { x: 0, y: 0, z: 4 }
+    ]
+    const reads: string[] = []
+    const input = {
+      type: 'group',
+      get name() {
+        reads.push('snapshot')
+        return 'Repeated'
+      },
+      projection: {
+        azimuth: 0,
+        elevation: 0,
+        scale: 1,
+        originX: 0,
+        originY: 20
+      },
+      children: [
+        {
+          type: 'pattern',
+          name: 'Panels',
+          key: 'panels',
+          origin: { x: 0, y: 0, z: 0 },
+          axes: [{ count: 100, step: { x: 5, y: 0, z: 0 } }],
+          faces: [
+            {
+              key: 'face',
+              name: 'Face',
+              fill: '#123456',
+              get vertices() {
+                reads.push('vertices')
+                return points
+              }
+            }
+          ]
+        }
+      ]
+    }
+    const original = structuredClone(input)
+    reads.length = 0
+    expect(measureDesignBudget(input).observed).toMatchObject({
+      expandedNodes: 101,
+      sourcePathCommands: 4,
+      sourcePrimitivePathCommands: 4,
+      expandedPathCommands: 400
+    })
+    expect(reads).toEqual(['vertices'])
+    reads.length = 0
+    const compile = vi.fn(prepareDesign)
+    const session = createDesignPreparationSession(
+      compile,
+      async (_signal, ...args) => compile(...args)
+    )
+    const receipt =
+      mode === 'sync'
+        ? session.prepare(input)
+        : await session.prepareAsync(input, new AbortController().signal)
+    expect(reads).toEqual(['vertices', 'snapshot', 'vertices'])
+    // Four template vertices plus one shared zero and 100 instance offsets.
+    expect(receipt.sourceWork?.projectionCalls).toBe(105)
+    expect(receipt.sourceWork).toMatchObject({ nodes: 2, pathCommands: 4 })
+    const artifact = session.resolve(receipt.artifactId)
+    expect(artifact).toEqual(prepareDesign(original, receipt.artifactId))
+    points[0].x = 1
+    expect(session.recipe(receipt.artifactId).recipe).toEqual(original)
+    expect(session.resolve(receipt.artifactId)).toBe(artifact)
+    expect(reads).toHaveLength(3)
+    expect(compile).toHaveBeenCalledOnce()
+    reads.length = 0
+    input.children[0].axes[0].count = 10000
+    if (mode === 'sync') expect(() => session.prepare(input)).toThrow()
+    else
+      await expect(
+        session.prepareAsync(input, new AbortController().signal)
+      ).rejects.toThrow()
+    expect(reads).toEqual(['vertices'])
+    expect(compile).toHaveBeenCalledOnce()
+    expect(session.resolve(receipt.artifactId)).toBe(artifact)
+    session.release([receipt.artifactId])
+    expect(() => session.resolve(receipt.artifactId)).toThrow()
+  }
 })

@@ -35,3 +35,16 @@ export function observationDeadline(specification, args) {
     throw new Error('Observation deadline cannot extend the scenario deadline')
   return limit
 }
+
+/** Explicit opt-in; ordinary observation commands retain the production budget. */
+export function evaluationArtifactBudget(args) {
+  const overrides = args.filter((value) =>
+    value.startsWith('--expanded-node-limit')
+  )
+  if (overrides.length === 0) return undefined
+  if (overrides.length !== 1 || overrides[0] !== '--expanded-node-limit=2000')
+    throw new Error(
+      'Only the explicit test expanded-node-limit=2000 override is supported'
+    )
+  return 2000
+}

@@ -19,7 +19,10 @@ import {
   createAiConfirmationBroker,
   type AiConfirmationBroker
 } from './confirmation'
-import { createServerActionBatchProvider } from './server-action-batch-provider'
+import {
+  createServerActionBatchProvider,
+  browserEvaluationWindow
+} from './server-action-batch-provider'
 import { createAiTransactionRunner } from './transaction'
 
 export interface AiStartup {
@@ -136,7 +139,10 @@ export const createAiStartup = (
           }
         ],
         requestConfirmation: confirmation.requestConfirmation,
-        transactionRunner: createAiTransactionRunner({ history })
+        transactionRunner: createAiTransactionRunner({
+          history,
+          getMutationDeadline: () => browserEvaluationWindow()?.workDeadlineAt
+        })
       })
     )
 

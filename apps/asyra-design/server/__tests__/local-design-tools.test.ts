@@ -1,3 +1,4 @@
+import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import {
   nativeToolInputSchema,
   operationInputIssue
@@ -81,9 +82,7 @@ describe('local semantic design tools', () => {
     expect(prepare).toMatchObject({
       composition: 'allowed',
       outputSchema: {
-        properties: {
-          artifactId: { 'x-runtime-value': 'request-artifact' }
-        }
+        properties: { artifactId: { 'x-runtime-value': 'request-artifact' } }
       }
     })
     expect(retain).toMatchObject({
@@ -924,12 +923,17 @@ it.each([false, true])(
       actions,
       createDesignPreparationSession(prepareDesign, compile)
     )
-    const child = designPreparationExamples[2].draft.children[0]
+    const example = designPreparationExamples.find((item) =>
+      item.draft.children.some((child) => child.type === 'vector-pattern')
+    )
+    if (!example || !('sharedFills' in example.draft))
+      throw new Error('Missing shared-fill vector pattern example')
+    const child = example.draft.children[0]
     const input = {
       draft: {
         type: 'group',
         name: 'Curve motif',
-        sharedFills: designPreparationExamples[2].draft.sharedFills,
+        sharedFills: example.draft.sharedFills,
         children: nested
           ? [
               {
@@ -1670,4 +1674,93 @@ it('hands a material revision to its material-only consumer and reuses the same 
       glass: { gradientStops: [{ color: '#336688' }, { color: '#336688' }] }
     }
   })
+})
+
+it.each([10000, 2000])(
+  'prepares safe capacity as an owned partition plan without compilation at %i',
+  async (limit) => {
+    const compile = vi.fn(prepareDesignAsync)
+    const session = createDesignPreparationSession(
+      prepareDesign,
+      compile,
+      undefined,
+      limit
+    )
+    const tools = createOwner(actions, session)
+    const definition = tools.definitions.find(
+      (tool) => tool.name === 'prepare_design'
+    )
+    if (!definition) throw new Error('Missing preparation definition')
+    const reply = await invokeLocalTool(
+      {
+        ...tools,
+        call: (name, args, signal) => tools.call(name, args, signal, true)
+      },
+      { ...definition, outputSchema: tools.capacityOutputSchema },
+      { draft: capacityFixture.input.draft },
+      signal()
+    )
+    const value = JSON.parse(reply.text)
+    expect(reply.success).toBe(true)
+    expect(value).toMatchObject({
+      available: true,
+      toolOutcome: { status: 'success', settlement: 'completed' }
+    })
+    expect(value.artifactId).toBeUndefined()
+    expect(value.applicable).toBeUndefined()
+    expect(value.code).toBeUndefined()
+    expect(value.budget.observed.expandedNodes).toBe(13095)
+    expect(value.budget.allowed.expandedNodes).toBe(limit)
+    expect(value.retainedDraft.partitions.length).toBeGreaterThan(1)
+    expect(session.describeRejectedDraft(value.draftId)).toEqual(
+      value.retainedDraft
+    )
+    expect(compile).not.toHaveBeenCalled()
+    const forged = createOwner(actions)
+    expect(forged.resultIssue('prepare_design', value)).toMatch(
+      /unavailable|owned/i
+    )
+  }
+)
+
+it('keeps exhausted source retention a genuine no-write failure', async () => {
+  const compile = vi.fn(prepareDesignAsync)
+  const session = createDesignPreparationSession(prepareDesign, compile)
+  const tools = createOwner(actions, session)
+  const definition = tools.definitions.find(
+    (tool) => tool.name === 'prepare_design'
+  )
+  if (!definition) throw new Error('Missing preparation definition')
+  for (let index = 0; index < 4; index++) {
+    const plan = await invokeLocalTool(
+      {
+        ...tools,
+        call: (name, args, signal) => tools.call(name, args, signal, true)
+      },
+      { ...definition, outputSchema: tools.capacityOutputSchema },
+      { draft: capacityFixture.input.draft },
+      signal()
+    )
+    expect(plan.success).toBe(true)
+  }
+  const rejected = JSON.parse(
+    (
+      await invokeLocalTool(
+        {
+          ...tools,
+          call: (name, args, signal) => tools.call(name, args, signal, true)
+        },
+        { ...definition, outputSchema: tools.capacityOutputSchema },
+        { draft: capacityFixture.input.draft },
+        signal()
+      )
+    ).text
+  )
+  expect(rejected).toMatchObject({
+    available: false,
+    retention: 'unavailable',
+    toolOutcome: { status: 'failed', settlement: 'not-started' }
+  })
+  expect(rejected.draftId).toBeUndefined()
+  expect(compile).not.toHaveBeenCalled()
 })

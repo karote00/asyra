@@ -1,3 +1,4 @@
+import { designBudgetGuidance } from './design-budget'
 import { designRepresentationGuidance } from './design-preparation-examples'
 import type { AiInvocationMiddleware } from '@asyra/ai-agent-runtime'
 import {
@@ -31,9 +32,17 @@ export const createLocalDesignWorkflow = (
   executionEvidence?: () => unknown,
   executionScope?: AiInvocationMiddleware<string>
 ) => {
-  const preparation = designs.definitions.find(
+  const artifactPreparation = designs.definitions.find(
     (tool) => tool.name === AiDesignToolIds.PREPARE_DESIGN
   )
+  const preparation = artifactPreparation
+    ? {
+        ...artifactPreparation,
+        outputSchema: designs.capacityOutputSchema,
+        description:
+          'Prepare one artifact or retain a safe capacity plan for the main workflow; no canvas writes.'
+      }
+    : undefined
   const apply = operations.definitions.find(
     (tool) => tool.name === AiActionNames.APPLY_PREPARED_DESIGN
   )
@@ -44,7 +53,7 @@ export const createLocalDesignWorkflow = (
   // Keep the preparation contract intact so call cleanup can transfer ownership.
   const partOutputSchema = {
     allOf: [
-      preparation?.outputSchema ?? false,
+      artifactPreparation?.outputSchema ?? false,
       toolResultObject(
         {
           applicable: { const: true },
@@ -121,7 +130,7 @@ export const createLocalDesignWorkflow = (
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
-                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
+                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
                 designRepresentationGuidance,
               inputSchema: {
                 ...preparation.inputSchema,
@@ -206,6 +215,14 @@ export const createLocalDesignWorkflow = (
           step.name,
           arguments_,
           async () => {
+            const invocationOwner: typeof owner =
+              owner === designs
+                ? {
+                    ...designs,
+                    call: (name: string, args: unknown, signal: AbortSignal) =>
+                      designs.call(name, args, signal, true)
+                  }
+                : owner
             const reply = await invokeLocalTool(
               owner === operations && inspectionTargets
                 ? {
@@ -220,7 +237,7 @@ export const createLocalDesignWorkflow = (
                     call: (name, args, signal) =>
                       operations.call(name, args, signal, inspectionTargets)
                   }
-                : owner,
+                : invocationOwner,
               step,
               arguments_,
               signal,
@@ -258,6 +275,8 @@ export const createLocalDesignWorkflow = (
         completedSteps,
         failedStep: step
       })
+      if (prepared.available && prepared.retainedDraft?.partitions)
+        return JSON.stringify(prepared)
       if (!prepared.available || !prepared.applicable)
         return JSON.stringify(stoppedAt(prepared, preparation.name))
       signal.throwIfAborted()
@@ -317,6 +336,12 @@ export const createLocalDesignWorkflow = (
       draft: { $ref: '#/$defs/readyDraft' },
       repair: { $ref: '#/$defs/draftRepair' },
       parentId: definition.inputSchema.properties.parentId,
+      continueFromPart: {
+        type: 'string',
+        minLength: 1,
+        description:
+          'For returned partition recovery only: key of the acknowledged first partition. Continue its original root; never create a nested group.'
+      },
       parentPart: {
         type: 'string',
         minLength: 1,
@@ -372,23 +397,25 @@ export const createLocalDesignWorkflow = (
   const inputSchema = {
     'x-design-input-scope': {
       operations: '/oneOf',
+      queryExample: { operation: 'draft', nodeTypes: ['pattern'] },
       nodes: '/$defs/node/anyOf',
+      repetition: { type: 'pattern', memberField: 'members' },
       optionalInputs: review ? ['plan'] : [],
+      selection: `Choose component contents and painter order, then outer repetition and operation/nodeTypes for the next submitted part. Component order: one pattern of face/grid members. Layer order: sibling patterns, with independent nodes at their painter positions. For either, define members once; axes count/step set translation. Selecting projected-face/surface-grid includes pattern with members; no extra query is needed. Examples are optional; select types for independent siblings. view=usage with inputScope gives complete parameters/results/recovery. draft creates an artifact within ${designs.expandedNodeLimit} expanded objects or continues a safely partitionable source through retained parts in this call; repair corrects retained preparation; parts submits independent artifacts exceeding that total together, each within limits, with partial receipts. Independent world-space planar faces in a shared orthographic projection: projected-face. Pattern-only queries include all face/grid members; content queries include only selected kinds. origin sets the start. For faces mode, explicitly select pattern. surface-grid repeats normalized motifs on a planar convex four-corner boundary using rows/columns and painter order. Select grid now if this part needs it; do not wait for later grid details before submitting ready geometry. Arbitrary or already-projected 2D outlines: vector; identical 2D curves: vector-pattern. Guides include root group/frame; nodeTypes selects children, including nested containers. Nest group for organization, frame for size; rect/oval/text for primitives. Changing only the root needs no new query. optionalInputs documents fields and does not require sending them; omit plan without rereading if criteria are not ready. Select used types only. Differently sized, rotated or irregular exceptions stay explicit. Templates reduce input, not output budgets; safe excess continues via retained parts. Use ordered parts for independent layers or bounded ranges of complete instances; never replay acknowledged parts. No Knowledge or planning call is required. Known scopes can read directly; full schema/field queries remain available.`,
       usage: {
         instructions:
-          'Prepare and apply ready editable content through the existing owners. This tool writes to the canvas. Send ready work before generating later details. The backend computes projection, template repetition and bounds; supply design choices and source geometry, not expanded vertices. Preserve existing unrelated objects; use registered edits for existing objects. parentId uses parent-local coordinates. inspection=defer postpones inspection, not writing. response=compact is sufficient for continuation; full adds identity maps. Optional plan defines criteria in this call; without it draw now and define criteria before primary-agent review. Established criteria cannot be rewritten after drawing. Group bounds follow children; Frame owns size. Layout is computed once, not live Auto Layout; clipping, frame borders and corner radii are unavailable. Preserve supplied 2D geometry; do not invent depth or hidden faces to use projection. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Visual judgment remains with the main agent.',
+          'Writes; backend projects/repeats/measures. pattern: members + axes count/step. Mix per component; layer order uses sibling patterns and independent nodes. Preserve others; edit by ID. parentId is parent-local. inspection=defer still writes; full adds maps. Set criteria via plan or before review; never rewrite after drawing. root group/frame; nodeTypes selects children. Root changes need no reread. Group derives bounds; Frame owns size. Layout once; no live Auto Layout/clipping/frame borders/corner radii. Preserve supplied 2D; invent no hidden faces/depth. Resolve overflow; render text-metrics-required. Agent owns visual judgment. ' +
+          designBudgetGuidance(designs.expandedNodeLimit),
         operations: {
-          draft:
-            'Supply draft only, not repair or parts. Adapt the matching example to the request. Unique node keys identify authored nodes, never canonical element IDs.',
+          draft: `Supply draft only. Per artifact: ${designs.expandedNodeLimit} expanded objects including containers; safe excess continues via retained parts in this call. Authored keys are not canonical IDs.`,
           repair:
             'Supply repair only, not draft or parts. Use an owned current source artifact and exact repair operations; keep unaffected geometry and valid artifacts. Repair preparation does not authorize replay of an earlier application.',
-          parts:
-            'Supply ordered parts envelopes, each with key and draft or repair. parentPart may refer only to an earlier successful part; parentId is mutually exclusive and belongs inside that part. No top-level parentId or materialSourceId. Each part is prepared and applied before the next. This is not one atomic batch. Earlier successful parts remain on later failure; successors stop. Intermediate inspections defer until the end.'
+          parts: `Independent sources: each part artifact fits ${designs.expandedNodeLimit} expanded objects; safe excess continues via retained partitions. Supply ordered key + draft/repair envelopes. parentPart links backward; parentId is exclusive. No top-level parentId/materialSourceId. Not atomic: keep successful parts and stop successors on failure; inspections defer.`
         },
         results:
-          'Read toolOutcome.status and settlement together with actual receipts, not transport success. success means this invocation completed, not visual acceptance or durable save. No-op changes nothing and is valid only when acknowledged by the owner; do not infer it from an empty response. partial preserves completed work even if a later operation, measurement or image delivery failed. failed or cancelled does not erase already acknowledged work. Unconfirmed settlement is not success. completedSteps and actionResults identify completed work; parts preserves ordered per-part receipts. actionResults[].result.compositionId is the actual new root for continuation; artifactId identifies retained preparation, not proof of canvas application. applicable/findings describe preparation; failedStep locates a stop. checks, measurementIssues and inspectionIssues describe outstanding follow-up. Full identity maps are optional; resolve retained artifact targets for local edits. Negative visual judgments remain failures even when recording them succeeds.',
+          'Read toolOutcome.status + settlement and actual receipts, not transport success. success is invocation completion, not visual acceptance or durable save. No-op requires owner acknowledgement; empty output proves nothing. partial preserves completed work despite later operation/measurement/image failure. failed/cancelled does not erase acknowledged work; unconfirmed settlement is not success. completedSteps/actionResults identify completed work; parts retains ordered receipts. actionResults[].result.compositionId is the actual continuation root; artifactId is preparation, not application proof. applicable/findings describe preparation; failedStep locates failure. checks/measurementIssues/inspectionIssues identify follow-up. Full maps are optional; resolve retained targets for edits. Recording a negative visual judgment does not make it pass.',
         recovery:
-          'Never replay completed writes to recover missing output, measurement, inspection or later parts. Reuse completed receipts and inspect current state when settlement is unconfirmed. Reacquire missing information with the same usage/scope or refresh; stale continuation restarts only that read. Invalid preparation applies nothing: correct its findings before a new submission. Expired or stale artifact credentials require fresh preparation/current binding, not bypass or blind application retry. On partial completion submit only confirmed remaining work after checking receipts; for failed follow-up repeat only the required check/capture. Cancellation retains acknowledged work and never authorizes automatic retry. Reuse instanceRanges only for confirmed missing complete instances, never an uncertain partial write.'
+          'Never replay completed writes for lost output, checks or later parts. Reuse receipts; inspect unconfirmed settlement. Reacquire the scope or refresh; stale continuation restarts only that read. Invalid preparation writes nothing; fix findings. Safe excess continues via retained parts, same root, no resend. Genuine interruption returns remaining-only recoveryInvocation; unsupported excess needs correction. Templates do not lower output. Expired/stale credentials require fresh preparation/binding; no bypass or blind retry. After partial completion send only confirmed remaining work or failed checks/captures. Cancellation retains acknowledgements; no automatic retry. instanceRanges selects confirmed missing whole instances, never uncertain partial writes.'
       }
     },
     ...definition.inputSchema,
@@ -423,16 +450,43 @@ export const createLocalDesignWorkflow = (
       }
     }
   }
+  const partitionParts = (
+    prepared: { draftId: string; retainedDraft: { partitions: unknown[] } },
+    key: string,
+    reserved: Set<string>,
+    parentId?: unknown
+  ) =>
+    prepared.retainedDraft.partitions.map(
+      (_partition: unknown, index: number) => {
+        let partKey = key
+        if (index) {
+          partKey = `${key}:partition-${index}`
+          while (reserved.has(partKey)) partKey += ':'
+          reserved.add(partKey)
+        }
+        return {
+          key: partKey,
+          repair: { draftId: prepared.draftId, partition: index },
+          ...(index ? { continueFromPart: key } : {}),
+          ...(parentId === undefined ? {} : { parentId })
+        }
+      }
+    )
   return {
     ...single,
     definitions: [
       {
         ...definition,
-        inputSchema,
+        inputSchema: {
+          ...inputSchema,
+          examples: [
+            ...(definition.inputSchema.examples ?? []),
+            orderedInputExample
+          ]
+        },
         description:
           definition.description +
-          ' Alternatively supply parts as envelopes, each requiring its own key and draft or repair; do not put bare drafts in parts. key is a local label, not an element ID. Put parentId on each part, never at the top level with parts; alternatively parentPart links an earlier part by its actual returned ID. Single-part draft/repair stays available. Parts are not one atomic batch: failures retain prior receipts and stop successors without retry. Intermediate inspections defer until the end of this block. Ordered input example: ' +
-          JSON.stringify(orderedInputExample)
+          ' Alternatively supply parts as envelopes, each requiring its own key and draft or repair; do not put bare drafts in parts. key is a local label, not an element ID. Put parentId on each part, never at the top level with parts; alternatively parentPart links an earlier part by its actual returned ID. Single-part draft/repair stays available. Parts are not one atomic batch: failures retain prior receipts and stop successors without retry. Intermediate inspections defer until the end of this block.'
       }
     ],
     resultIssue: (_name: string, value: unknown): string | undefined => {
@@ -510,14 +564,34 @@ export const createLocalDesignWorkflow = (
       args && typeof args === 'object' && 'parts' in args
         ? undefined
         : single.explainInputIssue(name, args),
-    call: async (
+    call: async function call(
       name: string,
       args: unknown,
       signal: AbortSignal
-    ): Promise<string> => {
+    ): Promise<string> {
       signal.throwIfAborted()
-      if (!args || typeof args !== 'object' || !('parts' in args))
-        return single.call(name, args, signal)
+      if (!args || typeof args !== 'object' || !('parts' in args)) {
+        const result = JSON.parse(await single.call(name, args, signal))
+        if (!result.available || !result.retainedDraft?.partitions)
+          return JSON.stringify(result)
+        const input = args as Record<string, unknown>
+        return call(
+          name,
+          {
+            parts: partitionParts(
+              result,
+              'partition-0',
+              new Set(['partition-0']),
+              input.parentId
+            ),
+            ...(input.plan === undefined ? {} : { plan: input.plan }),
+            ...(input.message === undefined ? {} : { message: input.message }),
+            inspection: input.inspection ?? 'immediate',
+            response: input.response ?? 'compact'
+          },
+          signal
+        )
+      }
       if (name !== AiDesignToolIds.PREPARE_AND_APPLY_DESIGN)
         throw new LocalOperationPreparationError(
           'Combined preparation/application is unavailable.'
@@ -525,13 +599,22 @@ export const createLocalDesignWorkflow = (
       const issue = operationInputIssue(args, inputSchema)
       if (issue) throw new LocalOperationPreparationError(issue)
       const input = args as Record<string, unknown>
-      const parts = input.parts as (Record<string, unknown> & { key: string })[]
+      const parts = [
+        ...(input.parts as (Record<string, unknown> & { key: string })[])
+      ]
       const keys = new Set<string>()
       for (const part of parts) {
         if (
           !part.key.trim() ||
           keys.has(part.key) ||
           (typeof part.parentId === 'string' && !part.parentId.trim()) ||
+          (part.continueFromPart !== undefined &&
+            (part.parentPart !== undefined ||
+              !keys.has(String(part.continueFromPart)) ||
+              !part.repair ||
+              typeof part.repair !== 'object' ||
+              !('partition' in part.repair) ||
+              'continueFromArtifact' in part.repair)) ||
           (part.parentPart !== undefined &&
             (part.parentId !== undefined || !keys.has(String(part.parentPart))))
         )
@@ -573,7 +656,71 @@ export const createLocalDesignWorkflow = (
         })
       }
       const parentIds = new Map<string, string>()
-      for (const [index, part] of parts.entries()) {
+      const artifactIds = new Map<string, string>()
+      const recoveryInvocation = (start: number) => {
+        // Only retained-source partitions have a deterministic remaining-work plan.
+        if (
+          parts
+            .slice(start)
+            .some(
+              (part) =>
+                !part.repair ||
+                typeof part.repair !== 'object' ||
+                !('partition' in part.repair)
+            )
+        )
+          return
+        const pendingKeys = new Set(parts.slice(start).map((part) => part.key))
+        const remaining = parts.slice(start).map((part) => {
+          const repair = part.repair
+          if (!repair || typeof repair !== 'object') return
+          if (part.continueFromPart === undefined) {
+            if ('continueFromArtifact' in repair) {
+              if (typeof repair.continueFromArtifact !== 'string') return
+              try {
+                designs.resolveRecipe(repair.continueFromArtifact)
+              } catch {
+                return
+              }
+            }
+            return part
+          }
+          const artifactId = artifactIds.get(String(part.continueFromPart))
+          if (!artifactId)
+            return pendingKeys.has(String(part.continueFromPart))
+              ? part
+              : undefined
+          try {
+            designs.resolveRecipe(artifactId)
+          } catch {
+            return
+          }
+          const { continueFromPart: _reference, ...rest } = part
+          return {
+            ...rest,
+            repair: { ...repair, continueFromArtifact: artifactId }
+          }
+        })
+        if (!remaining.length || remaining.some((part) => !part)) return
+        return {
+          name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
+          arguments: {
+            parts: remaining,
+            ...(start === 0 &&
+            input.plan !== undefined &&
+            !(
+              Array.isArray(completed[0]?.completedSteps) &&
+              completed[0].completedSteps.includes(review?.name)
+            )
+              ? { plan: input.plan }
+              : {}),
+            inspection: input.inspection ?? 'defer',
+            response: input.response ?? 'compact'
+          }
+        }
+      }
+      for (let index = 0; index < parts.length; index++) {
+        const part = parts[index]
         signal.throwIfAborted()
         const parentId =
           part.parentPart === undefined
@@ -594,7 +741,17 @@ export const createLocalDesignWorkflow = (
             name,
             {
               ...('repair' in part
-                ? { repair: part.repair }
+                ? {
+                    repair:
+                      part.continueFromPart === undefined
+                        ? part.repair
+                        : {
+                            ...(part.repair as Record<string, unknown>),
+                            continueFromArtifact: artifactIds.get(
+                              String(part.continueFromPart)
+                            )
+                          }
+                  }
                 : { draft: part.draft }),
               ...(part.materialSourceId === undefined
                 ? {}
@@ -619,8 +776,22 @@ export const createLocalDesignWorkflow = (
             inspectionTargets
           )
         )
+        if (receipt.available && receipt.retainedDraft?.partitions) {
+          parts.splice(
+            index,
+            1,
+            ...partitionParts(receipt, part.key, keys, parentId)
+          )
+          index--
+          continue
+        }
         completed.push({ key: part.key, ...receipt })
         const outcome = localToolOutcome(receipt)
+        if (
+          typeof receipt.artifactId === 'string' &&
+          receipt.completedSteps?.includes(apply?.name)
+        )
+          artifactIds.set(part.key, receipt.artifactId)
         if (outcome.status !== 'success') {
           let status =
             index || outcome.status === 'partial' ? 'partial' : 'failed'
@@ -632,7 +803,17 @@ export const createLocalDesignWorkflow = (
             settlement,
             parts: completed,
             failedPart: part.key,
-            remainingParts: parts.slice(index + 1).map((entry) => entry.key)
+            remainingParts: parts.slice(index + 1).map((entry) => entry.key),
+            ...((outcome.settlement === 'not-started' &&
+              receipt.failedStep === preparation?.name &&
+              receipt.retainedDraft) ||
+            outcome.settlement === 'completed'
+              ? {
+                  recoveryInvocation: recoveryInvocation(
+                    outcome.settlement === 'completed' ? index + 1 : index
+                  )
+                }
+              : {})
           })
         }
         const identity = receipt.actionResults?.find(

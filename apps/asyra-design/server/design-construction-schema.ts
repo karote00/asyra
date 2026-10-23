@@ -144,84 +144,10 @@ export const projectedFaceSchema = {
     }
   },
   description:
-    'An explicitly supplied planar 3D face; root child only with absolute root layout and shared projection. Emits a normal editable vector, preserves caller order. No width/height/x/y/rings: backend calculates those. World coordinates share one origin. Signed projected offsets are valid before Group normalization. Group children become nonnegative without moving workspace geometry; explicit Frame overflow is reported. Degenerate, nonplanar or out-of-budget faces fail.'
+    'Explicit planar world face under shared projection and absolute root; root child or pattern member. Editable vector in caller order. Backend computes x/y/width/height/rings; do not supply them. Signed projected offsets allowed; Group normalization preserves workspace geometry, Frame overflow is reported. Reject degenerate/nonplanar/excess geometry.'
 }
 
 const worldPoint = projectedFaceSchema.properties.vertices.items
-export const designPatternSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['key', 'name', 'type', 'origin', 'axes', 'faces'],
-  anyOf: [
-    { properties: { fills: false } },
-    {
-      properties: { faces: { items: { properties: { materialField: false } } } }
-    }
-  ],
-  properties: {
-    key: { ...key, maxLength: 80 },
-    name: { ...key, maxLength: 60 },
-    type: { const: 'pattern' },
-    origin: worldPoint,
-    axes: {
-      type: 'array',
-      minItems: 1,
-      maxItems: 2,
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['count', 'step'],
-        properties: {
-          count: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
-          step: worldPoint
-        }
-      }
-    },
-    instanceRanges: {
-      type: 'array',
-      minItems: 1,
-      description:
-        'Optional sorted nonoverlapping flat instance intervals [start,end), zero-based, last axis fastest. Only selected instances are computed. Keep original indices and palette phase when restoring deferred ranges in a later artifact. Omit a whole pattern rather than sending an empty selection.',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['start', 'end'],
-        properties: {
-          start: { type: 'integer', minimum: 0 },
-          end: { type: 'integer', minimum: 1 }
-        }
-      }
-    },
-    faces: {
-      type: 'array',
-      minItems: 1,
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['key', 'name', 'vertices'],
-        anyOf: [
-          { properties: { materialField: false } },
-          { properties: { fill: false } }
-        ],
-        properties: {
-          key: { ...key, maxLength: 40 },
-          name: { ...key, maxLength: 60 },
-          fill: projectedFaceSchema.properties.fill,
-          materialField: key,
-          vertices: projectedFaceSchema.properties.vertices
-        }
-      }
-    },
-    fills: {
-      type: 'array',
-      minItems: 1,
-      items: projectedFaceSchema.properties.fill
-    }
-  },
-  description:
-    'Root child under shared projection only. Describe a repeated planar motif once as faces, then one/two translation axes; backend expands count products into editable vectors. Last axis varies fastest, each instance preserves face painter order. origin translates all instances; optional fills cycles by instance, otherwise face fills remain. No automatic lighting, depth sorting or clipping. Source faces are prepared in internal work windows, without a separate 1000-item face, palette or range limit. The backend expands up to 10000 total objects including the root and 200000 total points per artifact; application automatically slices this ordered output. Do not manually split a valid stage at 1000 expanded objects. Selected instance counts times faces count expanded output; omitted ranges do not consume output budgets or get projected. Each individual face must fit the primitive point budget. Each face requires both key and name. Use separate patterns/explicit geometry for genuinely different details; never simplify irregular details to fit a pattern.'
-}
-
 export const surfaceGridSchema = {
   type: 'object',
   additionalProperties: false,
@@ -275,5 +201,102 @@ export const surfaceGridSchema = {
     }
   },
   description:
-    'Root child with shared orthographic projection. Four planar convex boundary corners in (0,0),(1,0),(1,1),(0,1) order; uniformly partition rows and columns. Each motif polygon uses cell-local u/v in [0,1]; optional world offset translates its plane. Optional fills cycles by row-major cell index and overrides fill; supply a full cell list for irregular materials. Offsets are projected once per motif. Backend projects the boundary once, bilinearly expands editable vectors in bounded windows. Explicit cell-major (row-major cells, then motifs) or motif-major painter order. Keys: gridKey-cellIndex-motifKey. Preserve irregular geometry with explicit faces; no automatic approximation, clipping, lighting or hidden-face removal. Expanded artifact budgets still apply.'
+    'Shared orthographic projection; root child or pattern member. Planar convex boundary corners: (0,0),(1,0),(1,1),(0,1). Uniform rows/columns; cell-local u/v motifs, optional world offset. fills cycles by row-major cell index, overriding fill; a full list preserves irregular materials. Compile boundary/motif offsets once; bilinear editable vectors. cell-major: row-major cells then motifs; motif-major: motifs then row-major cells. Keys: gridKey-cellIndex-motifKey. Objects = rows * columns * motifs.length; add all other nodes/containers. Shared path/depth limits apply; work windows do not split artifacts. Keep irregular geometry explicit; no approximation, clipping, lighting or hidden-face removal.'
+}
+
+export const designPatternSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['key', 'name', 'type', 'origin', 'axes'],
+  oneOf: [
+    { required: ['faces'], properties: { members: false } },
+    { required: ['members'], properties: { faces: false, fills: false } }
+  ],
+  anyOf: [
+    { properties: { fills: false } },
+    {
+      properties: { faces: { items: { properties: { materialField: false } } } }
+    }
+  ],
+  properties: {
+    key: { ...key, maxLength: 80 },
+    name: { ...key, maxLength: 60 },
+    type: { const: 'pattern' },
+    origin: worldPoint,
+    axes: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 2,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['count', 'step'],
+        properties: {
+          count: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
+          step: worldPoint
+        }
+      }
+    },
+    instanceRanges: {
+      type: 'array',
+      minItems: 1,
+      description:
+        'Optional sorted nonoverlapping flat instance intervals [start,end), zero-based, last axis fastest. Only selected instances are computed. Keep original indices and palette phase when restoring deferred ranges in a later artifact. Omit a whole pattern rather than sending an empty selection.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['start', 'end'],
+        properties: {
+          start: { type: 'integer', minimum: 0 },
+          end: { type: 'integer', minimum: 1 }
+        }
+      }
+    },
+    members: {
+      type: 'array',
+      minItems: 1,
+      items: {
+        anyOf: [
+          {
+            ...projectedFaceSchema,
+            properties: {
+              ...projectedFaceSchema.properties,
+              key: { ...key, maxLength: 80 },
+              name: { ...key, maxLength: 60 }
+            }
+          },
+          surfaceGridSchema
+        ]
+      },
+      description:
+        'Ordered flat component under shared root projection. Repeat faces and grids together; no nested patterns or containers. Member keys must be unique. Instance-major, member-major, then grid painter order. Grid palettes restart per instance; face world fields follow translated positions. Output keys: patternKey-instanceIndex-memberOutputKey. Generated keys and names must fit 160 characters. No new parent is created.'
+    },
+    faces: {
+      type: 'array',
+      minItems: 1,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['key', 'name', 'vertices'],
+        anyOf: [
+          { properties: { materialField: false } },
+          { properties: { fill: false } }
+        ],
+        properties: {
+          key: { ...key, maxLength: 40 },
+          name: { ...key, maxLength: 60 },
+          fill: projectedFaceSchema.properties.fill,
+          materialField: key,
+          vertices: projectedFaceSchema.properties.vertices
+        }
+      }
+    },
+    fills: {
+      type: 'array',
+      minItems: 1,
+      items: projectedFaceSchema.properties.fill
+    }
+  },
+  description:
+    'Absolute root child with shared projection. Choose faces or members, never both; members forbids pattern fills. Translation only: origin + one/two axes, last axis fastest. Editable vector order: instance then member/face then grid order. faces-mode fills cycles by original instance index; otherwise member materials remain. No lighting, sorting or clipping. Selected count multiplies expanded component objects/points; include root in 10000 objects and 200000 points. Omitted ranges consume neither output budget nor projection. Each source primitive must fit its point limit; internal work windows handle larger valid templates, palettes and ranges without a separate 1000-item limit. Application slices output automatically. Keep irregular details explicit; no inferred geometry.'
 }

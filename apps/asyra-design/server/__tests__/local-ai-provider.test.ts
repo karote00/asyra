@@ -1,10 +1,12 @@
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
+import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import type {} from '../../src/types'
 import recordedDiscoveryDelivery from './fixtures/recorded-101/discovery-delivery-20261020.json'
 import inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20261022.json'
 import recordedPurpose from './fixtures/recorded-101/purpose-20261017.json'
 import sharp from 'sharp'
+import { createHash } from 'node:crypto'
 import { runInNewContext } from 'node:vm'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 const reviewCriteria = (names: readonly string[]) =>
@@ -1459,6 +1461,68 @@ describe('local subscription AI backend', () => {
     }
     const instructions = thread?.developerInstructions as string
     const base = String(thread?.baseInstructions)
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'composition-startup',
+        bytes: Buffer.byteLength(base),
+        sha256: createHash('sha256').update(base).digest('hex')
+      }) + '\n'
+    )
+    expect(Buffer.byteLength(base)).toBeLessThanOrEqual(30327)
+    for (const example of designPreparationExamples)
+      expect(base).not.toContain(JSON.stringify(example))
+    const scopeLine = base
+      .split('\n')
+      .find((line) => line.startsWith('Main tool scope: '))
+    expect(scopeLine).toBeDefined()
+    if (!scopeLine) throw new Error('Missing startup scope guidance')
+    const scope = JSON.parse(scopeLine.slice('Main tool scope: '.length))
+    expect(scope.inputScopes.operations).toEqual(['draft', 'repair', 'parts'])
+    expect(scope.operationUsage.draft).toContain('10000 expanded objects')
+    expect(scope.operationUsage.parts).toContain('each part artifact fits')
+    expect(scope.example.arguments.inputScope.operation).toBe('draft')
+    expect(scope.example.arguments.inputScope.nodeTypes).toEqual(['pattern'])
+    const { createLocalDesignWorkflow } =
+      await import('../local-design-workflow')
+    const { createLocalOperationTools } =
+      await import('../local-operation-tools')
+    const designs = designTools.createLocalDesignTools(actions)
+    const operations = createLocalOperationTools(actions, designs, vi.fn(), {
+      getNativeTools: () =>
+        workflow.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design_workflow'
+        }))
+    })
+    const workflow = createLocalDesignWorkflow(designs, operations)
+    const canonical = workflow.definitions[0].inputSchema as {
+      'x-design-input-scope': { selection: string }
+    }
+    const selection = canonical['x-design-input-scope'].selection
+    expect(scope.inputScopes.selection).toBe(selection)
+    expect(selection).toContain('component contents')
+    expect(selection).toContain('Component order:')
+    expect(selection).toContain('Layer order: sibling patterns')
+    expect(Buffer.byteLength(selection)).toBeLessThanOrEqual(2363)
+    expect(selection).toContain('outer repetition')
+    expect(selection).toContain('pattern with members')
+    expect(selection).toContain('no extra query is needed')
+    expect(selection).toContain('define members once')
+    expect(selection).toContain('Independent world-space planar faces')
+    expect(selection).toContain('omit plan without rereading')
+    expect(base.split(selection)).toHaveLength(2)
+    expect(scope.inputScopes).not.toHaveProperty('properties')
+
+    const selected = JSON.parse(
+      await operations.call(
+        scope.example.tool,
+        scope.example.arguments,
+        new AbortController().signal
+      )
+    )
+    expect(selected.tools[0].usageGuide).toBeDefined()
+    expect(selected.tools[0].execution.tool).toBe('prepare_and_apply_design')
+
     for (const name of [
       'mechanicalSelection',
       'verify_design_checks',
@@ -6646,4 +6710,416 @@ it('delivers failed inspection lookup and successful narrow recovery through nat
       ?.description
   ).toContain('same schemaPaths list')
   expect(executeBatch).not.toHaveBeenCalled()
+})
+
+describe('bounded evaluation reporting', () => {
+  it.each(['saved', 'storage-failed'])(
+    'interrupts work and reports in the same thread with %s evidence',
+    async (mode) => {
+      if (mode === 'storage-failed')
+        vi.spyOn(retainedPayloads, 'push').mockImplementation((entry) => {
+          if (entry.callId === 'evaluation-report')
+            throw new Error('Storage unavailable')
+          return Array.prototype.push.call(retainedPayloads, entry)
+        })
+      const controller = new AbortController()
+      const executeBatch = vi.fn()
+      const report = {
+        batchId: 'evaluation-report',
+        actions: [
+          {
+            id: 'report',
+            name: 'report_outcome',
+            arguments: {
+              outcome: 'unsupported',
+              message:
+                'First frame not produced. Cause uncertain; tool acquisition consumed the work window.'
+            },
+            summary: 'Evaluation self-report'
+          }
+        ]
+      }
+      let turns = 0
+      const server = fakeServer({
+        hold: true,
+        holdMethod: 'turn/start',
+        manualToolReplies: true,
+        onRequest(packet) {
+          if (packet.method === 'turn/start') {
+            turns++
+            const turnId = turns === 1 ? 'turn-1' : 'report-turn'
+            server.send({ id: packet.id, result: { turn: { id: turnId } } })
+            if (turns === 2) {
+              server.send({
+                id: 700,
+                method: 'item/tool/call',
+                params: {
+                  threadId: 'thread-1',
+                  turnId,
+                  callId: 'late-tool',
+                  tool: 'describe_design_apis',
+                  arguments: { query: 'create rectangle' }
+                }
+              })
+              server.notify('item/completed', {
+                turnId,
+                item: {
+                  type: 'agentMessage',
+                  phase: 'final_answer',
+                  text: JSON.stringify(report)
+                }
+              })
+              server.notify('turn/completed', {
+                turnId,
+                turn: { id: turnId, status: 'completed' }
+              })
+            }
+          }
+          if (packet.method === 'turn/interrupt')
+            queueMicrotask(() =>
+              server.notify('turn/completed', {
+                turn: { id: 'turn-1', status: 'interrupted' }
+              })
+            )
+        }
+      })
+      const result = requestLocalAiActionBatch(
+        {
+          ...input,
+          metadata: {
+            evaluationWindow: {
+              workDeadlineAt: Date.now() + 150,
+              reportTimeoutMs: 500
+            }
+          }
+        },
+        {
+          model: 'selected-model',
+          executable: 'codex',
+          executeBatch,
+          signal: controller.signal
+        }
+      )
+      void result.catch(() => undefined)
+      try {
+        await vi.waitFor(() => expect(turns).toBe(2), { timeout: 1000 })
+        const value = await result
+        expect(value).toMatchObject({ actions: report.actions })
+        expect(executeBatch).not.toHaveBeenCalled()
+        expect(
+          server.packets.filter((p) => p.method === 'thread/start')
+        ).toHaveLength(1)
+        expect(
+          server.packets
+            .filter((p) => p.method === 'turn/start')
+            .map((p) => p.params.threadId)
+        ).toEqual(['thread-1', 'thread-1'])
+        expect(server.packets.find((p) => p.id === 700)?.result).toMatchObject({
+          success: false
+        })
+        expect(JSON.stringify(retainedRecords)).toContain('evaluation-report')
+        if (mode === 'storage-failed') {
+          expect(retainedRecords).toContainEqual(
+            expect.objectContaining({
+              stage: 'host_observation',
+              evidence: expect.objectContaining({
+                callId: 'evaluation-report',
+                status: 'failed'
+              })
+            })
+          )
+        } else {
+          expect(
+            retainedPayloads.filter((p) => p.callId === 'evaluation-report')
+          ).toHaveLength(2)
+          expect(
+            retainedPayloads.find(
+              (p) =>
+                p.callId === 'evaluation-report' &&
+                typeof (p.value as { text?: unknown }).text === 'string'
+            )?.value
+          ).toMatchObject({
+            attribution: 'model-self-report',
+            text: JSON.stringify(report)
+          })
+        }
+      } finally {
+        controller.abort()
+        await result.catch(() => undefined)
+      }
+    }
+  )
+})
+
+it.each([
+  'report-timeout',
+  'interrupt-timeout',
+  'invalid-report',
+  'early-completion',
+  'cancel-report',
+  'startup-timeout'
+] as const)(
+  'keeps bounded evaluation %s distinct from drawing completion',
+  async (mode) => {
+    const controller = new AbortController()
+    let turns = 0
+    const server = fakeServer({
+      hold: true,
+      holdMethod: mode === 'startup-timeout' ? 'initialize' : 'turn/start',
+      onRequest(packet) {
+        if (packet.method === 'turn/start') {
+          turns++
+          const turnId = turns === 1 ? 'turn-1' : 'report-turn'
+          server.send({ id: packet.id, result: { turn: { id: turnId } } })
+          if (turns === 1 && mode === 'early-completion') {
+            server.finish()
+          } else if (turns === 2 && mode === 'cancel-report') {
+            queueMicrotask(() => controller.abort())
+          } else if (
+            turns === 2 &&
+            (mode === 'invalid-report' || mode === 'early-completion')
+          ) {
+            const report =
+              mode === 'invalid-report'
+                ? batch
+                : {
+                    batchId: 'report',
+                    actions: [
+                      {
+                        id: 'report',
+                        name: 'report_outcome',
+                        arguments: {
+                          outcome: 'unsupported',
+                          message:
+                            'Public report; missing evidence remains uncertain.'
+                        },
+                        summary: 'Report'
+                      }
+                    ]
+                  }
+            server.notify('item/completed', {
+              turnId,
+              item: {
+                type: 'agentMessage',
+                phase: 'final_answer',
+                text: JSON.stringify(report)
+              }
+            })
+            server.notify('turn/completed', {
+              turnId,
+              turn: { id: turnId, status: 'completed' }
+            })
+          }
+        }
+        if (packet.method === 'turn/interrupt' && mode !== 'interrupt-timeout')
+          queueMicrotask(() =>
+            server.notify('turn/completed', {
+              turn: { id: 'turn-1', status: 'interrupted' }
+            })
+          )
+      }
+    })
+    const executeBatch = vi.fn()
+    const result = requestLocalAiActionBatch(
+      {
+        ...input,
+        metadata: {
+          evaluationWindow: {
+            workDeadlineAt: Date.now() + 100,
+            reportTimeoutMs: 100
+          }
+        }
+      },
+      {
+        model: 'selected-model',
+        executable: 'codex',
+        executeBatch,
+        signal: controller.signal
+      }
+    )
+    if (mode === 'early-completion') {
+      expect(await result).toMatchObject({
+        explanation: 'Evaluation self-report - not artwork acceptance'
+      })
+      expect(server.packets.some((p) => p.method === 'turn/interrupt')).toBe(
+        false
+      )
+    } else {
+      let code = 'AI_MODEL_BACKEND_TIMEOUT'
+      if (mode === 'invalid-report') code = 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+      if (mode === 'cancel-report') code = 'AI_MODEL_BACKEND_ABORTED'
+      await expect(result).rejects.toMatchObject({ code })
+    }
+    expect(executeBatch).not.toHaveBeenCalled()
+    expect(server.child.kill).toHaveBeenCalled()
+  }
+)
+
+it('does not begin inference for an expired evaluation window', async () => {
+  const server = fakeServer({ hold: true })
+  await expect(
+    requestLocalAiActionBatch(
+      {
+        ...input,
+        metadata: {
+          evaluationWindow: {
+            workDeadlineAt: Date.now() - 1,
+            reportTimeoutMs: 100
+          }
+        }
+      },
+      { model: 'selected-model', executable: 'codex' }
+    )
+  ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_TIMEOUT' })
+  expect(server.packets.some((p) => p.method === 'turn/start')).toBe(false)
+})
+
+it('delivers the request-local evaluation budget through actual native discovery replies', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true, manualToolReplies: true })
+  const controller = new AbortController()
+  const request = requestLocalAiActionBatch(
+    {
+      ...input,
+      actions: [
+        { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }
+      ],
+      metadata: {
+        evaluationWindow: {
+          workDeadlineAt: Date.now() + 120000,
+          reportTimeoutMs: 1000,
+          expandedNodeLimit: 2000
+        }
+      }
+    },
+    {
+      executable: 'scripted-protocol',
+      model: 'selected-model',
+      signal: controller.signal,
+      executeBatch: vi.fn()
+    }
+  )
+  const settled = request.catch((error) => error)
+  try {
+    await untilTurn(server.packets)
+    server.send({
+      id: 199,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        callId: 'budget-delivery',
+        tool: 'describe_design_apis',
+        arguments: {
+          names: ['prepare_and_apply_design'],
+          view: 'usage',
+          inputScope: { operation: 'draft', nodeTypes: ['rect'] }
+        }
+      }
+    })
+    await vi.waitFor(() =>
+      expect(server.packets.some((p) => p.id === 199)).toBe(true)
+    )
+    const text = JSON.stringify(
+      server.packets.find((p) => p.id === 199)?.result
+    )
+    expect(text).toContain('2000 expanded objects')
+    expect(text).not.toContain('10000 expanded objects')
+  } finally {
+    controller.abort()
+    await settled
+  }
+})
+
+it('continues capacity in one native call and preserves retained source ownership for later reads', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  let sourceId: unknown
+  let firstReply: unknown
+  const server = fakeServer({
+    toolCall: true,
+    toolName: 'prepare_and_apply_design',
+    toolArguments: capacityFixture.input,
+    followupTool: (reply) => {
+      firstReply = reply
+      sourceId = (
+        reply.parts as { preparationInput?: { draftId?: string } }[] | undefined
+      )?.[0]?.preparationInput?.draftId
+      return {
+        name: 'prepare_design',
+        args: { repair: { draftId: sourceId, partition: 0 } }
+      }
+    }
+  })
+  spawn.mockReturnValue(server.child)
+  const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map(
+      (action): AiBatchReceipt['actionResults'][number] => {
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
+          const { design } = action.arguments as {
+            design: { entries: { descriptor: { id: string } }[] }
+          }
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              status: 'complete' as const,
+              compositionId: design.entries[0].descriptor.id,
+              appliedElementIds: design.entries.map(
+                (entry) => entry.descriptor.id
+              )
+            }
+          }
+        }
+        return {
+          actionId: action.id,
+          actionName: action.name,
+          result: {
+            complete: true,
+            findings: [],
+            measuredTextIds: [],
+            evidence: { sessionId: 'capacity-native', revision: 1 }
+          }
+        }
+      }
+    )
+  }))
+  await requestConfiguredAiActionBatch(
+    {
+      ...input,
+      actions: [
+        {
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          description: 'Apply',
+          inputSchema: {}
+        },
+        {
+          name: AiActionNames.REVIEW_DESIGN,
+          description: 'Review',
+          inputSchema: {}
+        }
+      ]
+    },
+    { environment, executeBatch }
+  )
+  const packet = server.packets.find(
+    (packet) => packet.id === 100
+  ) as unknown as {
+    result: { success: boolean; contentItems: { text: string }[] }
+  }
+  expect(firstReply, JSON.stringify(firstReply)).toMatchObject({
+    status: 'complete',
+    toolOutcome: { status: 'success', settlement: 'completed' }
+  })
+  expect(sourceId).toEqual(expect.any(String))
+  expect(packet.result.success, JSON.stringify(packet.result)).toBe(true)
+  const prepared = JSON.parse(packet.result.contentItems[0].text)
+  expect(prepared.preparationInput.draftId).toBe(sourceId)
+  expect(prepared.elementCount).toBe(9418)
+  expect(prepared.applicable).toBe(true)
+  expect(
+    executeBatch.mock.calls
+      .flatMap(([batch]) => batch.actions)
+      .filter((action) => action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+  ).toHaveLength(2)
 })

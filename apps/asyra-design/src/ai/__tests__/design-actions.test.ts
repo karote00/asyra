@@ -1,3 +1,4 @@
+import recoveryFixture from '../../../server/__tests__/fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { describe, expect, it, vi } from 'vitest'
 import { emitBrowserDragPhase, emitDiagnosticCounter } from '@asyra/utils'
 import {
@@ -797,4 +798,113 @@ it('checks reviewed evidence inside the mutation callback after queue admission'
     )
   ).rejects.toThrow(/evidence/i)
   expect(api.create).not.toHaveBeenCalled()
+})
+
+it('continues budget partitions in one canonical root and refuses duplicate application', async () => {
+  const session = createDesignPreparationSession()
+  const draftId = session.retainRejectedDraft(recoveryFixture.input.draft)
+  if (!draftId) throw new Error('Missing retained source')
+  const signal = new AbortController().signal
+  const firstRepair = { draftId, partition: 0 }
+  const first = await session.prepareAsync(
+    session.repairDraft(firstRepair),
+    signal,
+    firstRepair
+  )
+  const repair = {
+    draftId,
+    partition: 1,
+    continueFromArtifact: first.artifactId
+  }
+  const later = await session.prepareAsync(
+    session.repairDraft(repair),
+    signal,
+    repair
+  )
+  const entries = new Map<string, { type: string; x: number; y: number }>()
+  const parents = new Map<string, string>()
+  const api: PreparedDesignApis = {
+    ...apis(),
+    getElementType: (id) => entries.get(id)?.type,
+    getElementMetadata: (id) =>
+      entries.has(id)
+        ? { type: entries.get(id)?.type, parentId: parents.get(id) }
+        : undefined,
+    getPlacement: (id) => entries.get(id),
+    isContainerType: (type) => type === 'group',
+    create: (ds, parent) => {
+      for (const d of ds) {
+        entries.set(d.id, {
+          ...structuredClone(d),
+          x: Number(d.x),
+          y: Number(d.y)
+        })
+        parents.set(d.id, parent)
+      }
+      return ds.map((d) => d.id)
+    }
+  }
+  const capture = vi.fn()
+  const action = createPreparedDesignAction(
+    api,
+    async () => undefined,
+    () => 0,
+    undefined,
+    { capture }
+  )
+  await action.execute({ design: session.resolve(first.artifactId) }, context())
+  const rootId = session.resolve(first.artifactId).rootId
+  // Model canonical Group bounds normalization, not a user translation.
+  const root = entries.get(rootId)
+  if (!root) throw new Error('Missing root')
+  root.x -= 200
+  root.y -= 100
+  for (const [id, parent] of parents)
+    if (parent === rootId) {
+      const member = entries.get(id)
+      if (!member) throw new Error('Missing member')
+      member.x += 200
+      member.y += 100
+    }
+  const expectedSize = entries.size
+  root.x += 1
+  await expect(
+    action.execute({ design: session.resolve(later.artifactId) }, context())
+  ).rejects.toThrow(/anchor moved/)
+  root.x -= 1
+  api.isLocked = (id) => id === rootId
+  await expect(
+    action.execute({ design: session.resolve(later.artifactId) }, context())
+  ).rejects.toThrow(/unavailable/)
+  api.isLocked = () => false
+  entries.delete(rootId)
+  await expect(
+    action.execute({ design: session.resolve(later.artifactId) }, context())
+  ).rejects.toThrow(/unavailable/)
+  entries.set(rootId, root)
+  expect(entries.size).toBe(expectedSize)
+  const result = await action.execute(
+    { design: session.resolve(later.artifactId) },
+    context()
+  )
+  expect(result.compositionId).toBe(rootId)
+  expect(capture).toHaveBeenCalledWith(
+    rootId,
+    [],
+    expect.any(AbortSignal),
+    true
+  )
+  expect(entries.size).toBe(13095)
+  expect([...parents.values()].filter((id) => id === 'workspace')).toHaveLength(
+    1
+  )
+  expect(
+    [...parents]
+      .filter(([id]) => id !== rootId)
+      .every(([, parent]) => parent === rootId)
+  ).toBe(true)
+  await expect(
+    action.execute({ design: session.resolve(later.artifactId) }, context())
+  ).rejects.toThrow(/already exists/)
+  expect(entries.size).toBe(13095)
 })

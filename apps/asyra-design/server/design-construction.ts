@@ -322,6 +322,7 @@ export function* constructDesignSteps(
         'name',
         'type',
         'faces',
+        'members',
         'axes',
         'origin',
         'fills',
@@ -332,9 +333,7 @@ export function* constructDesignSteps(
     if (!project || parent !== rootKey || rootLayout !== 'absolute')
       return fail('pattern requires shared projection and absolute root')
     if (
-      ['key', 'name', 'origin', 'axes', 'faces'].some(
-        (k) => value[k] === undefined
-      ) ||
+      ['key', 'name', 'origin', 'axes'].some((k) => value[k] === undefined) ||
       (Array.isArray(value.faces) &&
         value.faces.some(
           (f) =>
@@ -343,8 +342,19 @@ export function* constructDesignSteps(
         ))
     )
       return fail(
-        'pattern requires key, name, origin:{x,y,z}, axes:[{count,step:{x,y,z}}], faces:[{key,name,vertices:[{x,y,z},...],fill?}]. All names and keys are required, including each face. No canvas changes were made.'
+        'pattern requires key, name, origin:{x,y,z}, axes:[{count,step:{x,y,z}}], exactly one of faces:[{key,name,vertices:[{x,y,z},...],fill?}] or members:[projected-face|surface-grid]. All names and keys are required, including each face. No canvas changes were made.'
       )
+    const mixed = value.members !== undefined
+    if (
+      mixed === (value.faces !== undefined) ||
+      (mixed && value.fills !== undefined)
+    )
+      return fail(
+        'pattern requires either faces or members; members forbids pattern fills'
+      )
+    const members = mixed ? value.members : value.faces
+    if (!Array.isArray(members) || !members.length)
+      return fail('pattern requires nonempty faces or members')
     const key = label(value.key, 'pattern key', 80),
       name = label(value.name, 'pattern name', 60)
     const origin = point3(value.origin)
@@ -390,11 +400,7 @@ export function* constructDesignSteps(
       (n, range) => n + range.end - range.start,
       0
     )
-    if (
-      !Array.isArray(value.faces) ||
-      !value.faces.length ||
-      nodeCount + count * value.faces.length > limits.expandedNodes
-    )
+    if (nodeCount + count * members.length > limits.expandedNodes)
       return fail('pattern node limit')
     const fills = value.fills
     if (
@@ -403,13 +409,38 @@ export function* constructDesignSteps(
     )
       return fail('pattern fills')
     const seen = new Set<string>()
+    // Template compilation is bounded work, not a second charge to final output.
+    const templateWork = createDesignSourceWork()
     const templates: {
       compiled: Node
       bounds: { min: Point3; max: Point3 }
       faceKey: string
     }[] = []
-    for (const v of value.faces) {
-      if (!record(v)) return fail('pattern face')
+    for (const member of members) {
+      if (!record(member)) return fail('pattern member')
+      if (mixed && member.type === 'surface-grid') {
+        const memberKey = label(member.key, 'pattern grid key', 80)
+        if (seen.has(memberKey)) return fail('duplicate pattern member key')
+        seen.add(memberKey)
+        const beforeVertices = vertexCount
+        const bounds = {
+          min: { x: Infinity, y: Infinity, z: Infinity },
+          max: { x: -Infinity, y: -Infinity, z: -Infinity }
+        }
+        const compiled = yield* expandGrid(member, parent, bounds, templateWork)
+        vertexCount += (vertexCount - beforeVertices) * (count - 1)
+        if (vertexCount > limits.expandedPathCommands)
+          return fail('pattern vertex limit')
+        for (const node of compiled)
+          templates.push({ compiled: node, bounds, faceKey: String(node.key) })
+        continue
+      }
+      if (mixed && member.type !== 'projected-face')
+        return fail(
+          'pattern members support projected-face and surface-grid only'
+        )
+      const v = mixed ? { ...member } : member
+      if (mixed) delete v.type
       fields(
         v,
         ['key', 'name', 'fill', 'materialField', 'vertices'],
@@ -417,7 +448,7 @@ export function* constructDesignSteps(
       )
       if (v.materialField !== undefined && fills !== undefined)
         return fail('materialField conflicts with pattern fills')
-      const faceKey = label(v.key, 'pattern face key', 40)
+      const faceKey = label(v.key, 'pattern face key', mixed ? 80 : 40)
       if (seen.has(faceKey)) return fail('duplicate pattern face key')
       seen.add(faceKey)
       // Read and admit source vertices once; no per-instance source traversal.
@@ -457,6 +488,8 @@ export function* constructDesignSteps(
         return fail('pattern vertex limit')
       templates.push({ compiled, bounds, faceKey })
     }
+    if (nodeCount + count * templates.length > limits.expandedNodes)
+      return fail('pattern node limit')
     const zero = project({ x: 0, y: 0, z: 0 }),
       result: Node[] = []
     for (const range of selectedRanges) {
@@ -503,7 +536,9 @@ export function* constructDesignSteps(
   }
   function* expandGrid(
     value: Node,
-    parent: string
+    parent: string,
+    worldBounds?: { min: Point3; max: Point3 },
+    work = expansionWork
   ): Generator<void, Node[], void> {
     fields(
       value,
@@ -583,12 +618,26 @@ export function* constructDesignSteps(
       )
         return fail('surface grid motif fills')
       let offset = { x: 0, y: 0 }
+      let worldOffset = { x: 0, y: 0, z: 0 }
       if (item.offset !== undefined) {
         const shift = point3(item.offset)
+        worldOffset = shift
         const zero = project({ x: 0, y: 0, z: 0 })
         const moved = project(shift)
         offset = { x: moved.x - zero.x, y: moved.y - zero.y }
       }
+      if (worldBounds)
+        for (const point of boundary)
+          for (const axis of ['x', 'y', 'z'] as const) {
+            worldBounds.min[axis] = Math.min(
+              worldBounds.min[axis],
+              point[axis] + worldOffset[axis]
+            )
+            worldBounds.max[axis] = Math.max(
+              worldBounds.max[axis],
+              point[axis] + worldOffset[axis]
+            )
+          }
       if (!Array.isArray(item.vertices) || item.vertices.length < 3)
         return fail('surface grid motif vertices')
       if (sourceWork.admit(item.vertices.length)) yield
@@ -625,7 +674,7 @@ export function* constructDesignSteps(
             ? index % motifs.length
             : Math.floor(index / count)
         ]
-      if (expansionWork.admit(motif.vertices.length)) yield
+      if (work.admit(motif.vertices.length)) yield
       const points = motif.vertices.map((point) => {
         const u = ((cell % columns) + point.u) / columns
         const v = (Math.floor(cell / columns) + point.v) / rows
@@ -648,7 +697,8 @@ export function* constructDesignSteps(
               : motif.fill
           },
           `${key}-${cell}-${motif.key}`,
-          points
+          points,
+          worldBounds !== undefined
         )
       )
     }

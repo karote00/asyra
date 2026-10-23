@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import {
   architectureFiles,
   observationDeadline,
+  evaluationArtifactBudget,
   architectureScenario
 } from '../architecture-protocol.mjs'
 const spec = JSON.parse(
@@ -42,4 +43,23 @@ test('a run-scoped deadline can shorten but never extend the canonical scenario'
     ['--deadline-ms=120000', '--deadline-ms=60000']
   ])
     assert.throws(() => observationDeadline(spec, args))
+})
+
+test('only an explicit isolated 2000 evaluation budget is admitted', () => {
+  assert.equal(evaluationArtifactBudget([]), undefined)
+  assert.equal(
+    evaluationArtifactBudget([
+      '--deadline-ms=120000',
+      '--expanded-node-limit=2000'
+    ]),
+    2000
+  )
+  for (const args of [
+    ['--expanded-node-limit=10000'],
+    ['--expanded-node-limit=5000'],
+    ['--expanded-node-limit=2001'],
+    ['--expanded-node-limit'],
+    ['--expanded-node-limit=2000', '--expanded-node-limit=2000']
+  ])
+    assert.throws(() => evaluationArtifactBudget(args))
 })

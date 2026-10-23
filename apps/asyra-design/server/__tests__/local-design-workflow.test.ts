@@ -1,3 +1,4 @@
+import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { reviewPlanExample } from '../local-design-review'
 import { invokeLocalTool, localToolOutcome } from '../local-tool-invocation'
@@ -135,9 +136,11 @@ it('preserves unknown application settlement across an ordered part boundary wit
 it('executes the advertised ordered input example without hidden envelope fields', async () => {
   const { workflow, compile, execute } = setup()
   const definition = workflow.definitions[0]
-  const marker = 'Ordered input example: '
-  expect(definition.description).toContain(marker)
-  const example = JSON.parse(definition.description.split(marker)[1])
+  expect(definition.description).not.toContain('Ordered input example: ')
+  const example = definition.inputSchema.examples.find(
+    (entry) => 'parts' in entry
+  )
+  expect(example).toBeDefined()
   expect(operationInputIssue(example, definition.inputSchema)).toBeUndefined()
   expect(
     operationInputIssue(example, nativeToolInputSchema(definition.inputSchema))
@@ -2039,5 +2042,39 @@ it.each(['compact', 'full'] as const)(
         event.startsWith(AiActionNames.INSPECT_DRAWING + ':')
       )
     ).toHaveLength(2)
+  }
+)
+
+it.each([undefined, 'defer', 'immediate'] as const)(
+  'preserves inspection policy across automatic capacity parts: %s',
+  async (inspection) => {
+    const { workflow, events } = inspectionBoundaryFixture({
+      repeatedTarget: true
+    })
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          draft: capacityFixture.input.draft,
+          ...(inspection === undefined ? {} : { inspection })
+        },
+        signal()
+      )
+    )
+    expect(localToolOutcome(result)).toMatchObject({
+      status: 'success',
+      settlement: 'completed'
+    })
+    expect(result.parts).toHaveLength(2)
+    expect(
+      events.filter((name) =>
+        name.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+      )
+    ).toHaveLength(2)
+    expect(
+      events.filter((name) =>
+        name.startsWith(AiActionNames.INSPECT_DRAWING + ':')
+      )
+    ).toHaveLength(inspection === 'defer' ? 0 : 1)
   }
 )

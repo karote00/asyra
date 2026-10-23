@@ -147,7 +147,14 @@ function validateVector(d: Record<string, unknown>): number {
 export function admitPreparedDesign(input: unknown): PreparedDesign {
   check(
     record(input) &&
-      keysOnly(input, ['version', 'rootId', 'entries', 'keyToId', 'findings'])
+      keysOnly(input, [
+        'version',
+        'rootId',
+        'entries',
+        'keyToId',
+        'findings',
+        'continuation'
+      ])
   )
   check(
     input.version === PREPARED_DESIGN_VERSION &&
@@ -166,6 +173,33 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
     Array.isArray(input.findings) &&
       input.findings.length <= limits.expandedNodes * 2
   )
+  if (input.continuation !== undefined) {
+    const continuation = input.continuation
+    check(
+      record(continuation) &&
+        keysOnly(continuation, ['anchor']) &&
+        record(continuation.anchor)
+    )
+    const anchor = continuation.anchor
+    check(
+      keysOnly(anchor, ['id', 'x', 'y']) &&
+        typeof anchor.id === 'string' &&
+        anchor.id.length > 0 &&
+        anchor.id.length <= 256 &&
+        finite(anchor.x) &&
+        finite(anchor.y)
+    )
+    check(
+      input.entries.length > 1 && input.entries[0]?.descriptor?.type === 'group'
+    )
+    check(
+      input.entries
+        .slice(1)
+        .every(
+          (entry: unknown) => record(entry) && entry.parentId === input.rootId
+        )
+    )
+  }
   const parents = new Map<string, { type: string; depth: number }>(),
     semanticKeys = new Set<string>(),
     identities = new Set<string>(),
