@@ -1,6 +1,6 @@
 import currentCore, { type Core } from '@asyra/core'
 import { applyPreset, PresetProfiles } from '@asyra/preset'
-import { ThreeEngine } from '@asyra/preset/spatial'
+import { ThreeEngine } from '@asyra/preset/spatial-engine'
 import {
   ActivityProjection,
   type ActivityEvent,

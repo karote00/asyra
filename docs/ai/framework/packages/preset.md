@@ -303,14 +303,27 @@ it does not apply transactions, normalize hierarchy or register components.
 
 ## Optional shared spatial foundation
 
-Preset also owns intentionally shared App defaults/foundations through the
-side-effect-free `@asyra/preset/spatial` entry: the concrete Three.js adapter,
-spatial descriptor admission, graphics/resource lifecycle and common instancing
-mechanisms extracted from Sim and Asyra FieldScope. CUSTOM composition selects this
-provider explicitly; default 2D composition remains unchanged. Apps own scene
-contents, lighting choices, domain validation, movement and interaction policy.
-This shared warehouse boundary does not transfer canonical runtime ownership
-from Core or introduce Office domain semantics into Framework.
+Spatial data types and `RenderEngineCapabilities.SPATIAL` belong to
+`@asyra/render-engine`. `@asyra/preset/spatial-contract` exposes detached,
+immutable descriptor/shape/instance/surface admission and shape equality without
+loading Core, Render, DOM or Three.js. The `spatialV0` property identity is
+unchanged. Only owner-issued receipts bypass repeat numeric scans.
+
+`@asyra/preset/spatial-engine` exposes `ThreeEngine`, `createSpatialRenderEngine`,
+its explicit platform/options seam, graphics helpers and texture resource store.
+This concrete entry may load Three.js. The factory returns synchronously and
+initializes asynchronously; its pure internal adapter loads the concrete engine
+only during initialization. Retirement during loading rejects startup after
+settlement and disposes the late delegate without publishing a surface. Import,
+capability and initialization failures remain explicit; no fallback is installed.
+
+`@asyra/preset/spatial` no longer re-exports concrete engines or admission; it
+reserves the neutral composition boundary for subsequent projection/control
+slices. Root/2D and pure contract imports do not load the spatial SDK.
+CUSTOM composition explicitly selects its provider; official 3D remains
+unavailable. Apps retain scene composition, stricter validation, lighting,
+camera choices and interaction policy. Generic lifecycle conformance belongs to
+Preset; App tests retain their rendering and product preservation obligations.
 
 ## Shared agent activity contract
 

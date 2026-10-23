@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ThreeEngine, type GraphicsDriver } from '@asyra/preset/spatial'
+import { ThreeEngine, type GraphicsDriver } from '@asyra/preset/spatial-engine'
 import { createOfficeRuntime, type OfficeRuntime } from '../office-runtime'
 import type { OfficeStorage } from '../layout-controller'
 class MemoryStorage implements OfficeStorage {

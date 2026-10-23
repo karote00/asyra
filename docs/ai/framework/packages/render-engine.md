@@ -39,7 +39,14 @@ custom engine implementations.
   `RenderEngineDestroyResult`;
 - `RenderEngineInteractionEvent`, `RenderEngineInteractionListener`;
 - `RenderEngineCapabilities`, `assertRenderEngineCapabilities(...)`;
-- `UnsupportedRenderEngineCapabilityError`.
+- `UnsupportedRenderEngineCapabilityError`;
+- `SpatialVector`, `SpatialQuaternion`, `SpatialShape`, `SpatialInstance`,
+  `SpatialSurface`, `SpatialDescriptor` and `RenderEngineCapabilities.SPATIAL`.
+
+Spatial data types are SDK-independent. Preset owns structural admission and
+immutable receipts; App admission may retain a narrower product subset. The
+current instance representation retains position/yaw. Expanded instance and
+query contracts remain later Preset 3D plan slices.
 
 `initialize(...)` may be asynchronous. `execute(...)`, `query(...)`, and
 `destroy()` are synchronous so render orchestration observes deterministic

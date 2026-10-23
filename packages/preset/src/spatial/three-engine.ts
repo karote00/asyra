@@ -1,3 +1,4 @@
+import { SPATIAL_ENGINE_CAPABILITIES } from './lazy-engine.js'
 import { SurfaceTextureStore } from './surface-textures.js'
 import * as THREE from 'three'
 import {
@@ -25,7 +26,6 @@ import type {
 import {
   readSpatialDescriptor,
   sameSpatialShape,
-  SPATIAL_CAPABILITY,
   SPATIAL_PROPERTY,
   type SpatialDescriptor,
   type SpatialShape
@@ -82,10 +82,8 @@ export interface SpatialLighting {
   shadowFar: number
 }
 export interface SpatialEngineOptions {
-  capability?: string
   softwareShadowFallback?: boolean
   readDescriptor?: (value: unknown) => SpatialDescriptor
-  sameShape?: (a: SpatialShape, b: SpatialShape) => boolean
   lighting?: SpatialLighting
 }
 const DEFAULT_SPATIAL_LIGHTING: SpatialLighting = {
@@ -196,13 +194,7 @@ export class ThreeEngine implements RenderEngine {
   private readonly surfaceTextures = new SurfaceTextureStore()
 
   readonly name = 'Preset CUSTOM Three.js 0.185.1'
-  readonly capabilities = new Set([
-    RenderEngineCapabilities.OBJECTS,
-    RenderEngineCapabilities.GRAPHICS,
-    RenderEngineCapabilities.INTERACTION,
-    RenderEngineCapabilities.RESOURCES,
-    SPATIAL_CAPABILITY
-  ])
+  readonly capabilities = new Set<string>(SPATIAL_ENGINE_CAPABILITIES)
   private readonly objects = new Map<RenderEngineObjectHandle, ObjectRecord>()
   private readonly resources = new Map<
     RenderEngineResourceHandle,
@@ -234,10 +226,6 @@ export class ThreeEngine implements RenderEngine {
     private readonly platform: EnginePlatform = {},
     private readonly options: SpatialEngineOptions = {}
   ) {
-    if (options.capability) {
-      this.capabilities.delete(SPATIAL_CAPABILITY)
-      this.capabilities.add(options.capability)
-    }
     this.camera.position.set(3, 2, 3)
     this.camera.lookAt(0, 0, 0)
     this.screenCamera.position.z = 100
@@ -605,10 +593,7 @@ export class ThreeEngine implements RenderEngine {
       !(
         record.spatial?.kind === 'mesh' &&
         record.content instanceof THREE.Mesh &&
-        (this.options.sameShape ?? sameSpatialShape)(
-          record.spatial.shape,
-          spatial.shape
-        ) &&
+        sameSpatialShape(record.spatial.shape, spatial.shape) &&
         record.spatial.surface === spatial.surface &&
         Boolean(record.spatial.distant) === Boolean(spatial.distant) &&
         (!record.spatial.distant ||

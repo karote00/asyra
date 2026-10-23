@@ -312,3 +312,25 @@ retain superseded shared implementations. Official `3D` activates only after
 its prerequisites; HYBRID remains unavailable. Task 9 extensions and final
 integration remain required for whole-plan closeout. Unsupported features are
 documented; no full-glTF, physics, solver, multiview or orthographic claim is made.
+
+## Task 2 delivery boundary
+
+Task 2 extracts the existing shape, camera, surface and yaw-instance contract
+without changing its represented content. Stable instance IDs, quaternion
+placements, scale, shadow flags and detail corrections remain the later content
+slice. Task 2 evidence therefore accepts only the `foundation` criteria on
+`admit` and `engine`, not either complete owner runtime criterion.
+
+Sim keeps its current whitelist projection: unknown mesh and triangle
+attributes are omitted, not newly interpreted or rejected. Its adapter owns
+only this narrower product projection and recognition of its previously
+projected values; Preset alone admits, detaches and freezes numeric products.
+All engines advertise the same neutral spatial capability. App light and
+software-renderer policy remain explicit constructor inputs.
+
+The engine entry exposes concrete SDK seams for existing CUSTOM consumers and
+a separate lazy factory whose module imports only pure contracts until
+initialization. Calling the concrete entry may evaluate the SDK; pure contract,
+spatial-mechanism and root/2D imports must not. Failed loading, failed delegate
+initialization and retirement during loading reject startup and never publish a
+late surface. Duplicate initialization and commands before readiness reject.

@@ -4,11 +4,11 @@
 
 Created: 2026-10-24.
 
-Status: Task 1 specification and complete flow design reviewed; production
-implementation pending. The user approved the proposed foundation and migration scope with
-the two binding ownership corrections below. The current delivery creates this
-plan and its index/activation references. Task 1 was subsequently authorized and
-completed as a design-only slice; Tasks 2-10 have not been executed.
+Status: Tasks 1 and 2 complete within their bounded contracts; stopped for user
+inspection before Task 3. Task 1 produced the reviewed specification and full
+architecture flow. Task 2 delivered pure admission and initialization/resource
+foundations with direct App preservation checks. Tasks 3-10 remain unexecuted;
+official 3D activation and whole-flow runtime acceptance remain pending.
 
 Planning base: local `main` at
 `eaddcdba2c1705dca6646a730cd87818ae214d56`.
@@ -375,6 +375,61 @@ Acceptance: invalid updates are atomic; caller mutation/freezing cannot bypass
 admission; admitted unchanged geometry avoids repeated scans/copies; cleanup
 and foreign/retired-handle cases pass. Pure imports and unchanged 2D imports do
 not load the spatial SDK. Existing App rendering contracts remain supported.
+
+Task 2 execution contract (base `2d92dc69b01600eedfdedc0d5e83ba876542faaf`):
+work sequentially on `admit`, then the `engine` initialization/resource slice.
+Direct imports, exports, permanent conformance tests and current API docs are
+in scope. No projection, camera, query, instance-format or profile activation
+work is included. Discovery is limited to these owners, existing direct
+consumers and their tests. Required gates: naming, focused/shared owner tests,
+three App preservation suites, package builds, App typecheck/build, scoped lint
+and formatting, entry isolation and Flow Inspector admission. Stop on an
+unresolved owner mismatch or a necessary out-of-scope behavior change.
+The `foundation` criteria distinguish this delivery from later whole-owner
+acceptance. The direct-consumer allowlists and delivery boundary were reviewed
+before implementation; they do not authorize adjacent App refactors.
+
+### Task 2 result and inspection checkpoint
+
+Delivered neutral data/capability ownership in Render Engine; pure Preset
+admission and separate concrete engine entries; one shared numeric admission
+owner with Sim's existing whitelist projection; synchronous provider creation
+with deferred initialization/retirement; common engine conformance tests.
+All three Apps now import the appropriate entries. Lighting, software-shadow
+policy, shape/pose/material behavior, camera policy and saved identities remain
+unchanged. No new dependency, cache family, canonical model or compatibility
+alias was introduced.
+
+Verification on this implementation:
+
+- Preset full suite: 31 files, 250 tests passed; final expanded spatial suite:
+  4 files, 35 tests passed, including real deferred-adapter initialization.
+- Render Engine: type-signature gate and 10 tests passed.
+- Sim: 7 selected preservation files, 43 tests passed through its supervisor;
+  final admission/engine recheck after type derivation: 19 tests passed.
+- FieldScope: 8 selected preservation files, 52 tests passed through its
+  supervisor, including surfaces, detail/instance rendering, projection and
+  camera controls. Office: full 3-file suite, 14 tests passed.
+- Render Engine, Render dependency and Preset builds passed. All three App
+  TypeScript checks and production builds passed.
+- Scoped ESLint, naming (15 cases), test placement (3 cases), dependency
+  validation and generated public documentation checks passed.
+
+Initial new-entry tests failed because the entries did not exist, then passed
+after implementation. Existing App engine/admission baselines passed before
+changes. A stale Render declaration required rebuilding the existing dependency.
+Some local command shims reference an old App directory or omit Vite; equivalent
+commands used the repository's installed Node CLIs without changing dependencies
+or bypassing the Sim/FieldScope test supervisors. Build warnings about existing
+large chunks and mixed static/deferred concrete imports are retained; concrete
+CUSTOM consumers intentionally still import the engine eagerly.
+
+Bounded review found no remaining Task 2 owner or behavior mismatch. Inspector
+`admit/foundation` and `engine/foundation` record the actual source-bound subset.
+Their complete `runtime` criteria remain unfulfilled: instance IDs/scale,
+query/content changes and full integration are later tasks. No real-WebGL E2E,
+visual approval or whole-product performance acceptance is claimed by Task 2.
+The user inspection checkpoint is the stop condition; do not start Task 3.
 
 ## Task 3 - Share incremental spatial projection and bounds
 

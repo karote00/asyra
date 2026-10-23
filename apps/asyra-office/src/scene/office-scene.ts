@@ -8,7 +8,7 @@ import {
   SPATIAL_PROPERTY,
   type SpatialDescriptor,
   type SpatialShape
-} from '@asyra/preset/spatial'
+} from '@asyra/preset/spatial-contract'
 import {
   PLACES,
   WaypointMotion,

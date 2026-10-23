@@ -1,1 +1,1 @@
-export { disposeObject, drawGraphics } from '@asyra/preset/spatial'
+export { disposeObject, drawGraphics } from '@asyra/preset/spatial-engine'

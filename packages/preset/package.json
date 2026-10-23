@@ -38,6 +38,16 @@
       "types": "./dist/agent-activity.d.ts",
       "import": "./dist/agent-activity.js",
       "default": "./dist/agent-activity.js"
+    },
+    "./spatial-contract": {
+      "types": "./dist/spatial-contract.d.ts",
+      "import": "./dist/spatial-contract.js",
+      "default": "./dist/spatial-contract.js"
+    },
+    "./spatial-engine": {
+      "types": "./dist/spatial-engine.d.ts",
+      "import": "./dist/spatial-engine.js",
+      "default": "./dist/spatial-engine.js"
     }
   },
   "files": [

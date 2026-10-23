@@ -5,12 +5,11 @@ export {
   readSpatialInstances,
   isSpatialShape,
   sameSpatialShape
-} from '@asyra/preset/spatial'
+} from '@asyra/preset/spatial-contract'
 export type {
   SpatialVector,
   SpatialQuaternion,
   SpatialShape,
   SpatialDescriptor,
   SpatialInstance
-} from '@asyra/preset/spatial'
-export const SPATIAL_CAPABILITY = 'farm.spatial.v0'
+} from '@asyra/preset/spatial-contract'

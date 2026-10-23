@@ -206,12 +206,14 @@
         ".",
         "./agent-activity",
         "./group-bounds",
-        "./spatial"
+        "./spatial",
+        "./spatial-contract",
+        "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "866f3693cb51f85319a2d2552b5c6431422091eaaeb808d9b796cc3dd57de32c",
+        "contract": "afc0074f291e836947adb6ff30e93439fbf88b4760ddf9587b0b4d0866f2652a",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
-        "manifest": "d44d3f8ecec5b395e06e618157873fdc7688148b3b221d7ebd388f4cc01adbd3"
+        "manifest": "b2b91d30810801ed75802c4ac6d4e03418f982d19b1c923ddcea0397e2ea83c6"
       },
       "version": "0.5.8"
     },
@@ -300,7 +302,7 @@
         "./testing"
       ],
       "sourceDigests": {
-        "contract": "5311827ccfeac8bba3500fe8f9671169f1bd90c53ee930741e815e14289679ca",
+        "contract": "c17fa10d4b8bd033b551f4a283541dcdcc7ae7130776cae9bf4ae46dc020be30",
         "guide": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
         "manifest": "2ffcd587c6076b001aeddbf11d2afbc95e3f8531cef35590e2ff804d59bf31f8"
       },

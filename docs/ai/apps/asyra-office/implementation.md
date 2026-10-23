@@ -4,7 +4,7 @@ The unchanged [product plan](asyra-office-product-plan.md) remains the whole-pro
 
 ## Foundation
 
-Preset owns the optional shared Three.js adapter, spatial descriptors, geometry, resource disposal and instancing/LoD mechanisms. Sim and Asyra FieldScope retain their capability identities, scene composition, lighting and product behavior. The entry is `@asyra/preset/spatial`, explicitly selected under CUSTOM; 2D composition must not load Three.js. No new SDK/version is introduced. Existing Sim and Asyra FieldScope engine/descriptor suites are preservation gates.
+Preset owns the optional shared Three.js adapter, spatial descriptors, geometry, resource disposal and instancing/LoD mechanisms. All spatial adapters share the neutral Render Engine spatial capability; Sim and Asyra FieldScope retain scene composition, lighting, narrower admission and product behavior. Pure admission uses `@asyra/preset/spatial-contract`; the concrete entry is `@asyra/preset/spatial-engine`, explicitly selected under CUSTOM; 2D composition must not load Three.js. No new SDK/version is introduced. Existing Sim and Asyra FieldScope engine/descriptor suites are preservation gates.
 
 ## Integration and projections
 
@@ -26,6 +26,6 @@ Permanent cases cover renderer lifecycle/resource preservation; duplicate/invali
 
 ## Review and remaining obligations
 
-Design review against current public APIs: the existing CUSTOM render provider accepts a shared engine; the two existing adapters share object lifecycle and graphics operations while app lighting/capability identities differ. Core provides property schemas, Features, transactions, Undo/Redo and explicit serialization. Renderer-local transforms can therefore remain outside canonical storage. Provider sequence and attempt checks belong before entity projection, not in React or geometry. Proposal revision checks belong before transaction entry. No step requires a provider credential to prove these boundaries.
+Design review against current public APIs: the existing CUSTOM render provider accepts a shared engine; the two existing adapters share object lifecycle and graphics operations while App lighting and admission policies differ. Core provides property schemas, Features, transactions, Undo/Redo and explicit serialization. Renderer-local transforms can therefore remain outside canonical storage. Provider sequence and attempt checks belong before entity projection, not in React or geometry. Proposal revision checks belong before transaction entry. No step requires a provider credential to prove these boundaries.
 
 Flow Inspector owns the accompanying architecture representation. The static map has owner/handoff structural tests. Dynamic admission remains blocked because the current proof service requires Factory-specific negative scenarios; no Office target or accepted baseline has been admitted. Office tests provide runtime evidence and must not be represented as an accepted whole-target baseline. Live provider permission/fidelity comparisons, durable provider replay, general building/floor construction, full decorating, progression/rewards and target-device profiling remain original-plan obligations until separately implemented and verified.

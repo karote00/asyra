@@ -1,50 +1,19 @@
-import { readSpatialSurface, type SpatialSurface } from './surface-textures.js'
+import { readSpatialSurface } from './surface-contract.js'
+import type {
+  SpatialDescriptor,
+  SpatialShape,
+  SpatialInstance,
+  SpatialVector
+} from '@asyra/render-engine'
+export type {
+  SpatialDescriptor,
+  SpatialShape,
+  SpatialInstance,
+  SpatialVector,
+  SpatialQuaternion,
+  SpatialSurface
+} from '@asyra/render-engine'
 export const SPATIAL_PROPERTY = 'spatialV0'
-export const SPATIAL_CAPABILITY = 'spatial.v0'
-
-export type SpatialVector = readonly [number, number, number]
-export type SpatialQuaternion = readonly [number, number, number, number]
-export type SpatialShape =
-  | { kind: 'box'; size: SpatialVector }
-  | { kind: 'sphere'; radius: number }
-  | { kind: 'capsule'; radius: number; length: number }
-  | {
-      kind: 'triangles'
-      positions: readonly number[]
-      colors?: readonly number[]
-      uvs?: readonly number[]
-      indices: readonly number[]
-    }
-
-export interface SpatialInstance {
-  position: SpatialVector
-  yaw: number
-}
-
-export type SpatialDescriptor =
-  | {
-      kind: 'camera'
-      position: SpatialVector
-      target: SpatialVector
-      fov: number
-      near: number
-      far: number
-    }
-  | {
-      kind: 'mesh'
-      position: SpatialVector
-      rotation: SpatialQuaternion
-      shape: SpatialShape
-      instances?: readonly SpatialInstance[]
-      distant?: { shape: SpatialShape; maxError: number }
-      surface?: SpatialSurface
-      roughness?: number
-      metalness?: number
-      color: number
-      opacity: number
-      wireframe: boolean
-      selectable: boolean
-    }
 
 // Weak admission receipts, not caller-identity caches. Only detached, deeply
 // frozen products created below enter these sets; caller freezing proves nothing.
