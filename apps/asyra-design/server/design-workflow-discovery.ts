@@ -1,3 +1,4 @@
+import { AiDesignToolIds } from '../src/constants/ai-design'
 import { operationInputIssue } from './operation-input-schema'
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -52,11 +53,73 @@ export const workflowInputScopes = (schema: unknown) => {
   const source = structure(schema)
   return source
     ? {
-        operations: source.operations.map(operation),
+        operations: source.operations
+          .map(operation)
+          .filter((key): key is string => key !== undefined),
         nodeTypes: source.nodes.flatMap(nodeTypes),
-        optionalInputs: source.declaration.optionalInputs ?? []
+        optionalInputs: source.declaration.optionalInputs ?? [],
+        ...(typeof source.declaration.selection === 'string'
+          ? { selection: source.declaration.selection }
+          : {})
       }
     : undefined
+}
+
+// The owner identifies the repeating node; its canonical member union owns
+// compatibility. This is a read projection, never inference or input rewriting.
+const projectRepetition = (
+  source: NonNullable<ReturnType<typeof structure>>,
+  selectedTypes: string[]
+) => {
+  const declaration = source.declaration.repetition
+  if (declaration === undefined) return
+  if (
+    !record(declaration) ||
+    typeof declaration.type !== 'string' ||
+    typeof declaration.memberField !== 'string'
+  )
+    throw new Error('Invalid owner repetition declaration')
+  const repeatingType = declaration.type
+  const candidates = source.nodes.filter((node) =>
+    nodeTypes(node).includes(repeatingType)
+  )
+  const node = candidates[0]
+  const properties = record(node?.properties) ? node.properties : undefined
+  const members = properties?.[declaration.memberField]
+  const items = record(members) ? members.items : undefined
+  const alternatives = branches(node, '/oneOf')?.filter(
+    (branch) => operation(branch) === declaration.memberField
+  )
+  if (
+    candidates.length !== 1 ||
+    !properties ||
+    !record(members) ||
+    !record(items) ||
+    !Array.isArray(items.anyOf) ||
+    !items.anyOf.every(
+      (member) => record(member) && nodeTypes(member).length
+    ) ||
+    alternatives?.length !== 1
+  )
+    throw new Error('Invalid canonical repetition member contract')
+  // Explicit wrapper selection retains every canonical mode and member kind.
+  if (selectedTypes.includes(declaration.type)) return
+  const retained = items.anyOf.filter((member) =>
+    nodeTypes(member).some((type) => selectedTypes.includes(type))
+  )
+  if (!retained.length) return
+  return {
+    ...node,
+    oneOf: alternatives,
+    properties: {
+      ...properties,
+      ...(record(alternatives[0].properties) ? alternatives[0].properties : {}),
+      [declaration.memberField]: {
+        ...members,
+        items: { ...items, anyOf: retained }
+      }
+    }
+  }
 }
 
 export const projectWorkflowInput = (input: unknown, scope: unknown) => {
@@ -81,10 +144,30 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
             !choices.optionalInputs.includes(field)
         ) ||
         new Set(scope.optionalInputs).size !== scope.optionalInputs.length))
-  )
-    throw new Error(
-      'Unsupported inputScope. Use the exact tool usage/menu choices or the full contract.'
+  ) {
+    const invalid = ['operation', 'nodeTypes', 'optionalInputs'].filter(
+      (field) => {
+        if (!record(scope) || !choices) return true
+        if (field === 'operation')
+          return !choices.operations.includes(String(scope.operation))
+        const values = scope[field]
+        if (field === 'optionalInputs' && values === undefined) return false
+        const allowed =
+          field === 'nodeTypes' ? choices.nodeTypes : choices.optionalInputs
+        return (
+          !Array.isArray(values) ||
+          (field === 'nodeTypes' && values.length === 0) ||
+          new Set(values).size !== values.length ||
+          values.some(
+            (value) => !Array.isArray(allowed) || !allowed.includes(value)
+          )
+        )
+      }
     )
+    throw new Error(
+      `Unsupported inputScope: ${invalid.length ? invalid.join(', ') : 'extra fields'}. Select exact owner choices; do not infer aliases.`
+    )
+  }
   const selectedTypes = scope.nodeTypes
   const schema = structuredClone(input) as Record<string, unknown>
   const source = structure(schema)
@@ -126,9 +209,9 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
     record(selected[0].properties) ? selected[0].properties : {}
   ))
     if (constraint === false) schema.properties[key] = false
-  replace(
-    source.declaration.nodes,
-    source.nodes.flatMap((branch) => {
+  const repetition = projectRepetition(source, selectedTypes)
+  replace(source.declaration.nodes, [
+    ...source.nodes.flatMap((branch) => {
       const retained = nodeTypes(branch).filter((type) =>
         selectedTypes.includes(type)
       )
@@ -144,8 +227,9 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
           }
         }
       ]
-    })
-  )
+    }),
+    ...(repetition ? [repetition] : [])
+  ])
   delete schema['x-design-input-scope']
   if (Array.isArray(schema.examples))
     schema.examples = schema.examples.filter(
@@ -216,26 +300,26 @@ export const workflowUsageParameters = (input: unknown) => {
       pieces.push(
         '{' +
           Object.entries(value.properties)
-            .map(([name, schema]) => `${name}: ${render(schema, name)}`)
-            .join('; ') +
+            .map(([name, schema]) => `${name}:${render(schema, name)}`)
+            .join(';') +
           '}'
       )
     if (value.items !== undefined)
       pieces.push('items: ' + render(value.items, label + 'Item'))
     if (value.additionalProperties !== undefined)
       pieces.push(
-        'extra fields: ' + render(value.additionalProperties, label + 'Value')
+        'additional=' + render(value.additionalProperties, label + 'Value')
       )
     if (value.propertyNames !== undefined)
       pieces.push('field names: ' + render(value.propertyNames, 'fieldName'))
     for (const [keyword, meaning] of [
-      ['anyOf', 'at least one'],
-      ['oneOf', 'exactly one'],
-      ['allOf', 'all']
+      ['anyOf', 'anyOf'],
+      ['oneOf', 'oneOf'],
+      ['allOf', 'allOf']
     ] as const)
       if (Array.isArray(value[keyword]))
         pieces.push(
-          `${meaning} of (${value[keyword].map((entry) => render(entry, label + 'Case')).join(' | ')})`
+          `${meaning}(${value[keyword].map((entry) => render(entry, label + 'Case')).join(' | ')})`
         )
     if (typeof value.description === 'string') {
       let index = notes.indexOf(value.description)
@@ -261,9 +345,9 @@ export const workflowUsageParameters = (input: unknown) => {
     for (const [name, constraint] of Object.entries(value))
       if (!handled.has(name))
         pieces.push(`${name}=${JSON.stringify(constraint)}`)
-    const text = pieces.join('; ')
-    if (text.length < 100 || occurrences.get(key) === 1) return text
-    const name = `${label}${++sequence}`
+    const text = pieces.join(';')
+    if (text.length < 40 || occurrences.get(key) === 1) return text
+    const name = `T${++sequence}`
     reusable.set(key, { name, text })
     return name
   }
@@ -274,7 +358,7 @@ export const workflowUsageParameters = (input: unknown) => {
     ([name, schema]) => `${name} = ${render(schema, name)}`
   )
   return [
-    'Parameter reference: fields are optional unless listed in required. All restrictions on a value apply together. "forbidden" rejects the field/value; "extra fields: forbidden" rejects unlisted fields. Named types and notes below are included in this guide, not further queries. Numbers and lengths use the canonical limits.',
+    'Optional unless required; constraints combine. forbidden rejects; additional=forbidden rejects unlisted fields. anyOf >=1; oneOf exactly one; allOf every branch. Types/notes included.',
     `arguments = ${root}`,
     ...aliases,
     ...[...reusable.values()].map(({ name, text }) => `${name} = ${text}`),
@@ -306,9 +390,39 @@ export const workflowUsageGuide = (
     instructions: `${usage.instructions} ${usage.operations[scope.operation]}`,
     optionalInputs: source?.declaration.optionalInputs ?? [],
     selection:
-      'Only selected optionalInputs are included. To define criteria in this call include plan in inputScope.optionalInputs in the same query; otherwise omit plan and define criteria before review. No preliminary read is required.',
+      'inputScope.optionalInputs selects full contracts; selection does not require sending them. Omit plan without rereading.',
     parameters: workflowUsageParameters(selected),
     results: usage.results,
     recovery: usage.recovery
+  }
+}
+
+/** Project one selected owner's query contract; never enumerate the catalog. */
+export const workflowQueryGuidance = (name: string, input: unknown) => {
+  const choices = workflowInputScopes(input)
+  const source = structure(input)
+  if (!choices || !source) return
+  const example = source.declaration.queryExample
+  // Authored examples cannot bypass the same scope admission used by discovery.
+  projectWorkflowInput(input, example)
+  const usage = source.declaration.usage
+  const meanings =
+    record(usage) && record(usage.operations) ? usage.operations : {}
+  return {
+    inputScopes: {
+      operations: choices.operations,
+      nodeTypes: choices.nodeTypes,
+      optionalInputs: choices.optionalInputs,
+      ...(choices.selection !== undefined
+        ? { selection: choices.selection }
+        : {})
+    },
+    operationUsage: Object.fromEntries(
+      choices.operations.map((key) => [key, meanings[key]])
+    ),
+    example: {
+      tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      arguments: { names: [name], view: 'usage', inputScope: example }
+    }
   }
 }

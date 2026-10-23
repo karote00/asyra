@@ -216,6 +216,174 @@ binds current values; Runtime owns admitted recurring iteration.
 
 ## Preparation and execution
 
+### Component selection and bounded repetition
+
+Before the first scoped query, existing owner selection explains two independent
+choices: the contents of one component (faces/grids) and whether the complete
+ordered component repeats by translation. Pattern members retain their face/grid
+contracts; an explicit pattern-only query needs no separate child types. Selecting
+compatible content types also includes their optional member-repetition wrapper. The existing
+illustrative query example connects to the selected executable mixed example.
+Examples are optional choices, never mandatory representation or inferred geometry.
+Keep irregular, differently shaped or transformed exceptions explicit.
+
+Selected usage reiterates that component compression does not reduce expanded
+counts. Independent ready layers retain painter order; do not interleave previously
+layered geometry merely to form mixed components. Use existing ordered parts and
+explicit ranges for bounded known remaining instances. Never replay acknowledged
+parts. No eager schemas, additional selection call or implicit execution of recovery partitions.
+
+DoD: verify the actual first provider request, execute the published query and its
+returned example, and compare saved explicit face/grid blocks with compact output.
+Prove all numeric geometry/material fields and order, actual byte reduction,
+unchanged overflow/no-write, partial outcomes, cancellation and remaining-only
+recovery. Unrelated catalog growth and independent legal choices remain unaffected.
+
+### Optional repetition in selected contents
+
+A draft or parts query selecting world-space faces or grids delivers their optional
+translation wrapper in the same usage/full projection. The existing main-owner scope
+declaration identifies its canonical repeating node and member field; supported
+member kinds and restrictions derive from that node, not a second type registry.
+For implicit repetition retain only selected compatible members and the canonical
+members alternative. Do not load faces-mode palettes or unrelated member contracts.
+Explicit pattern queries retain the full faces/members contract. Repair and unrelated
+primitive scopes do not acquire repetition merely because it exists.
+
+Initial selection explains that one component plus count/step is a loop; the backend
+expands it. A selected guide carries a valid existing combined example when available.
+Do not force repetition, infer geometry, interleave painter layers or require another
+lookup. Keep all origin/axis/range/member limits and cross-field constraints. The
+ordinary canonical invocation validator remains authoritative. Scope refresh restores
+the same projection, never replays writes; full unscoped and field queries remain valid.
+
+DoD: the recorded face/grid query receives an executable root-material, independent-
+sibling and pattern example in one response. Validate and dispatch that returned input;
+prove explicit single nodes, pattern-only faces mode and optional-plan behavior remain
+legal. Single-kind queries exclude other member kinds. Invalid owner declarations or
+nested members reject rather than silently widening the scope. Startup reading does
+not grow; total content-plus-repetition acquisition is smaller than two separate
+queries, and unrelated catalog growth does not change bytes/calls. Preserve partial,
+invalid, cancelled, stale and remaining-only recovery through existing formal cases.
+This delivery guarantee does not certify model choice or time to first frame.
+
+### Composition examples within selected usage
+
+For the selected face/grid content scope (with optional explicit pattern), existing first-valid owner example
+filtering delivers a complete combination: root
+material definitions, separate sibling layer patterns and independent nodes between
+them. Mixed-component ordering remains available through its own valid example.
+Pattern-only selections retain a valid pattern-only example. Examples remain
+illustrative; independent geometry and face-only patterns remain legal.
+
+Use the existing query, schema admission and dispatcher. Do not preload this
+example into startup guidance, add a lookup or increase delivery limits. Replace
+redundant selected-only explanatory prose if necessary; preserve all parameter
+restrictions, optional-plan semantics, results and no-replay recovery. The same
+mixed selected scope must remain one reply with no greater reading volume.
+
+DoD: execute the actual returned example, compare recorded explicit and compact
+geometry/materials/order, preserve independent siblings and truthful partial
+outcomes, and recover only uncompleted work after overflow/cancellation/refresh.
+Initial reading and unrelated-catalog growth must not increase. Deterministic
+proof establishes contract execution, not model adoption or visual quality.
+
+### Translated mixed components
+
+The existing pattern supports either faces or ordered members, never both.
+Members are explicit projected-face or surface-grid values under the root's shared
+orthographic projection. They repeat through the existing origin, translation axes
+and instanceRanges. No nested patterns/containers, scale, rotation or inferred
+geometry. Pattern fills is exclusive to faces mode; member fills, grid palette/offset
+and face materialField retain their existing semantics. Grid palette restarts per
+component instance; world fields evaluate at translated world positions.
+
+Output is ordinary editable siblings in instance-major/member-major order, then the
+grid's declared cell/motif order. Keys prefix each member output with pattern key
+and original flat instance index; grid cell/motif suffixes remain. Parent relationships,
+root normalization and artifact identity remain preparation-owned. No container or
+relationship is silently inserted. Translate geometry exactly within the existing
+numeric tolerance, preserve fills and source input, and validate complete extent.
+
+The structural budget counts selected instances times all expanded member objects
+and paths, plus ordinary/root nodes; source templates are counted once. Reject
+unsupported or oversized input before writes. Compile member templates once within
+one preparation; reuse their output for translations without cross-request state.
+Existing faces, independent grids and no-replay partial recovery remain legal.
+Discovery delivers member constraints and an executable owner example in the same
+selected-contract route; no new preflight or tool. Formal equivalence compares full
+geometry, materials, painter order, identities/parents, limits and cancellation,
+including the saved repeated-component input and reduced submitted bytes.
+
+### Source-referenced expansion recovery
+
+The preparation budget owner supplies aggregate and component costs before geometry
+compilation. For the main workflow, an oversized eligible flat projected group produces a
+successful internal preparation plan with immutable retained source references,
+not a failed operation or a compiled artifact. Standalone prepare_design retains
+its single-artifact contract: success always supplies artifactId; excess remains a
+no-write refusal with retained diagnostics. Existing recipes may bind artifactId
+without a new branch. Preparation writes nothing. The main tool consumes this plan through the
+existing ordered parts executor in the same invocation, starting the first part and
+continuing subsequent parts without a model round trip. Repair selects an owner-computed partition, exclusive with field
+replacements; it never asks the model to recalculate counts or resend source geometry.
+Complete pattern instance ranges and independent siblings retain source order.
+Budget calculation measures each source component once and reuses additive costs;
+metadata is limited to 128 parts and charged to the existing retained-byte capacity.
+An unsupported or larger plan remains a no-write failure with ordinary explicit repair.
+
+Recovery supports independent fill templates and world linear fields. Unsupported
+layout, relations, nested containers, shared-fill bindings, overlapping source key
+families and indivisible excess remain explicit no-write failures. Automatic recovery
+requires disjoint generated prefixes; it never renames keys or makes a duplicate key
+valid by separating it into another artifact. No limit increase, mandatory preflight, automatic
+geometry simplification or additional tool registry is permitted.
+
+The first partition creates the original group; later partitions continue that same
+root through its retained preparation evidence. Application validates current root,
+anchor and ancestry, rebases against canonical Group normalization, and uses existing
+creation transactions. Preserve world geometry, native fills, generated keys, painter
+order and the original single-root parent graph. Never insert extra group wrappers.
+Expired/moved/deleted/locked or ambiguous bindings reject without replay.
+
+Parts returns ordered receipts and only offers a ready remaining invocation for
+confirmed unstarted work. Completed writes are never automatically retried, and a
+partial or unconfirmed application requires state inspection. Ordinary independent
+parts and field repairs retain their contracts. The selected usage explains automatic safe-capacity continuation and executing
+remaining-only recovery after a genuine interruption without another discovery
+round trip. Explicit parts retain parent links and ordering when a safe source is
+partitioned inside the sequence. Internal plan success certifies only retained source;
+workflow completion requires every actual application receipt. Child progress must
+not report a capacity failure for a successfully retained plan.
+
+DoD: execute fixed over-budget source in one public main-tool invocation, then
+actual remaining recovery after injected failure through dispatcher and canonical
+owners; prove counts/boundaries, source retention/expiry, same-parent geometry/fill/
+order equivalence, cancellation, no duplicate writes and truthful partial recovery.
+Verify affected canonical Group normalization, Undo/Redo and saved-state replay.
+The 10,000-object bound is per compiled artifact for resource containment, not a
+complete-document limit or an established performance threshold.
+
+### Expansion budget selection
+
+Existing main-tool startup and discovery guidance distinguishes one ready draft
+from ordered parts using the canonical per-artifact limits before submission.
+Selected repetition contracts state aggregate counts: a surface grid contributes
+rows * columns * motif count; a pattern contributes selected instances * faces;
+a vector pattern contributes placements. Add ordinary nodes and every root/nested
+container. Template compression reduces source input, not expanded output.
+Internal work windows do not increase artifact capacity. Limits come from the
+preparation owner, not duplicated discovery constants. Path/depth guards still apply.
+For independent ready artifacts that exceed one artifact together, select existing
+parts in the same lookup; each part must fit independently. Do not add a mandatory
+preflight exchange, preload every operation schema, or automatically split geometry,
+layout, painter order, keys or relationships. Valid direct draft calls remain legal.
+Safely partitionable excess uses retained-source continuation in the main tool.
+Genuine budget rejection keeps observed/allowed values, no-write settlement and
+retained draft recovery without replaying completed writes. Actual delivered examples must reach the dispatcher and preparation owner;
+formal cases cover the recorded excess, exact boundary, partial success and cancel.
+
+
 The combined preparation/application workflow also accepts ordered ready `parts`.
 Each part has a unique local key and an ordinary draft or repair. `parentPart`
 links to an earlier successful part's actual composition ID; it is never a
@@ -784,6 +952,55 @@ readable with unavailable fields; new diagnostic records use version 2. Log
 files and local environment values never enter Git. Runtime storage does not
 silently delete earlier evidence. Periodic evaluation consumes records as a
 separate projection, not as completion authority.
+
+### Bounded evaluation work and self-report
+
+An explicit evaluation window may set `expandedNodeLimit: 2000` for diagnostic
+reproduction. Omission retains the production 10,000-object ceiling; other override
+values reject. This request-local policy is consumed by existing budget inspection,
+preparation and retained-source partition planning and is disclosed in delivered
+usage. It cannot be changed by a model tool. Compiler and browser safety ceilings
+remain 10,000; no other budget increases. Recovery preserves whole instances,
+geometry, order and existing no-replay rules. The runner records both limits and
+never claims recovery coverage when a live submission does not exceed the limit.
+
+An explicitly configured local evaluation window separates the work deadline from
+an independent report timeout (60 seconds). Normal product requests have no such
+window. The browser and provider consume the same absolute work deadline. The
+browser checks it at the actual synchronous mutation boundary, including queued
+work. A finite mutation already entered may settle; no later mutation enters and
+committed changes are never replayed or undone by the deadline.
+
+At the work cutoff the native provider cancels App tool execution and interrupts
+the active turn. After its terminal acknowledgement it requests a concise public
+report in the same native thread. Reports explain completed work, remaining work,
+first-frame delays and uncertainty without requesting private reasoning. Report
+calls cannot execute App tools or final drawing actions. Early work completion also
+enters reporting. Missing interruption, transport failure, cancellation, malformed
+report and report timeout are explicit failures, never artwork completion.
+
+The existing evaluator preserves work outcome separately from model-authored report
+text and observed events. Capture consumes the existing settled conversation result,
+not a second copy of the complete network stream. A report is eligible only after
+executed runtime settlement with the host evaluation marker and matching final
+report_outcome/no-change receipt. Earlier batches may reuse action IDs; the final
+ordered receipt identifies the final report. The rendered projection carries bounded text and
+request/turn identity; the collector must match the observed request and recheck
+identity and the assistant result text before taking its screenshot. User text or
+work-history text cannot substitute for the displayed report. A raw provider report,
+ordinary outcome, prior turn or failed/cancelled result cannot substitute. Missing
+or ambiguous evidence stays failed; no drawing operation is repeated for capture. It saves report text and its screenshot without recording
+video, then closes the work context before fresh-context reload. On report/capture
+failure it records the missing evidence and attempts bounded cleanup; an external
+watchdog bounds hangs independently. A self-report is not measured
+provider reasoning time or a verified cause. Evidence collection has its own bounded
+cleanup after reporting and cannot grant extra drawing time.
+
+DoD: deterministic protocol tests prove same-thread transition and denial of late
+App calls; actual transaction tests prove deferred-write rejection, retained partial
+history and Undo/Redo; capture tests prove report/text/screenshot capture,
+report timeout and failure preservation. Ordinary requests remain unchanged. Live
+model compliance and screenshot appearance require a separately authorized run.
 
 ## Execution evaluation
 
@@ -2863,6 +3080,71 @@ contract can execute directly, including without Knowledge. Explicit recovery ke
 view/paths and never retries a previously completed product write.
 
 
+### Exact-name query selection
+
+Before lexical matching, query checks existing admitted exact identities (action,
+semantic operation, native name or namespace.name). Trim surrounding whitespace;
+otherwise use existing exact case and spelling. An exact hit uses the same identity
+resolution as names, including ambiguous-name rejection and independent action/native
+routes. Descriptions referencing that identity do not add matches. No exact hit keeps
+the existing lexical capability search; category exploration remains available.
+
+Representation is unchanged: query without view is a menu, usage is usage, full
+retains canonical restrictions. Exact queries need no additional lookup and no
+inventory offset; a nonzero offset rejects rather than falling back to lexical
+search. Existing content paging, registry revision checks, refresh and no-replay
+recovery remain. No new selector, registry, result store or limit is introduced.
+
+DoD: replay the saved main-workflow query in one reply; adding 10000 descriptive
+references does not grow delivery or calls. Verify purpose/category exploration,
+qualified names, ambiguous namespaces, action/native dual routes, complete full
+contracts and executable usage/recovery through existing owners.
+
+### Preparation source reads and immutable lifetime
+
+Structural budget admission precedes source snapshotting and geometry compilation.
+For pattern faces, admission derives aggregate and largest-primitive point counts
+from one read of each vertex collection, independently of instance count. Valid
+preparation then snapshots the source once and compiles immutable templates; repeat
+instances must not cause repeated template projection. These are distinct ownership
+boundaries, not a whole-session promise of one raw property access.
+
+Over-budget input must not be cloned or compiled. Preserve all existing capacity,
+invalid-input and cancellation guards. Artifact lookup reuses admitted output without
+rereading mutable input; source edits cannot alter a retained recipe or artifact,
+and release ends lookup lifetime. No new cache or skipped trust-boundary validation.
+
+DoD: separate budget, snapshot, projection and lookup observations; compare exact
+budget sum/maximum/expansion and complete canonical output for sync/async, different
+instance counts, invalid/empty faces, rejected budget, cancellation and source edits.
+
+### Layer-preserving repetition delivery
+
+Selected composition usage exposes its registered execution envelope and one valid
+owner example before the long parameter restrictions, within the existing response
+budget. Choose repetition by intended painter order: a mixed component repeats its
+ordered members per instance; separate painter layers use separate sibling patterns
+at their existing positions. Independent geometry may sit between those layers.
+Owner examples demonstrate root material references and this layered composition;
+valid mixed-component examples remain available through existing scoped/full retrieval.
+No inference of user intent, automatic geometry folding, extra selector, mandatory
+pattern or preliminary call is introduced. Explicit nonrepeating geometry stays legal.
+
+Generated source keys/names follow the existing pattern contract. Preserve explicit
+names/references when they are required; do not silently rewrite existing objects or
+reuse old source keys. Resolve canonical edit targets through returned artifact mappings.
+Pattern input compression does not reduce expanded budgets or weaken recovery.
+
+DoD: replay saved source with complete ordered canonical geometry/material/parent
+comparison, declared key/name correspondence and artifact target resolution; at least
+50% smaller full invocation without omitted output. Execute the actually delivered
+layered example and preserve the mixed case. A merged-layer negative control must fail
+the same order oracle. Measure complete first-use input/output, including optional plan,
+all pages and startup guidance; the example is in the first page without increased bytes
+or round trips. Preserve constraints, full/field queries, refresh, partial/cancelled/stale
+recovery and no replay. Verify actual application, Undo/Redo and reload for the compact
+fixture. Model adoption and first-frame latency require separate live evidence.
+
 ### Selected operation usage guide
 
 For the ready-part workflow, exact lookup with `view: usage` and `inputScope`
@@ -2925,3 +3207,81 @@ DoD: saved mixed-field query, all-failed/mixed/success outcomes through invocati
 executable narrower recovery and per-tool usage guidance, reference and cross-field
 constraint preservation, partial-page forwarding, repeat/refresh/stale/cancellation,
 empty search/menu and zero mutation replay through actual downstream owners.
+
+### Next-part operation selection
+
+The initial provider Main tool scope must include the canonical owner's selection
+conditions before the first scoped query, together with its existing legal choices
+and example. Forward the existing selection verbatim, once; deferred tool schema
+registration is not a substitute. This adds no discovery request and preloads no
+child schema. Bounded scope-error recovery retains legal choices and its executable
+correction example without repeating the complete selection prose. Preserve explicit independent geometry, translated mixed components,
+root/container distinctions and optional-input choices without forcing adoption.
+DoD: inspect the actual native thread/start request and compare selection with the
+owner declaration; execute direct selected examples, preserve bounded delivery
+under unrelated catalog growth, budget failures, partial receipts and no replay.
+
+The first selection reply and direct selected usage distinguish the draft root from
+its children. Every draft guide already includes group/frame root contracts;
+nodeTypes selects child types, including nested containers. Changing only the root
+container does not require another query. Select frame for nested frames, not to
+unlock a frame root. All frame dimensions and group restrictions still apply.
+Selecting optionalInputs includes their documentation, never makes them required:
+plan may be omitted after reading it without another query. A previously unread
+child type or optional input can still be queried through the existing mechanism.
+These explanations use existing selection/usage fields, without a prerequisite read.
+
+DoD: execute published examples through the registered dispatcher with both legal
+root types, omitted plan and unchanged read counts; separately validate nested-frame
+selection, frame dimensions, group restrictions and supplied-plan validation.
+Preserve criteria-before-review, partial outcomes and recovery without write replay.
+
+
+The existing workflow discovery menu and unscoped usage expose owner-authored
+selection conditions alongside inputScopes in the same reply. Choose the types
+needed by the next submitted part: independent world-space faces, translated
+multi-face repeats, or normalized motifs on a regular four-corner planar grid.
+A part needing grid detail can select it immediately; ready geometry need not
+wait for future detail. No Knowledge read or planning exchange is a prerequisite.
+Do not automatically add all types, choose geometry, or preload their schemas.
+
+For an owner publishing this selection guide, unscoped usage is a selection view:
+retain identity, execution route, root input paths and valid owner example, replace
+long execution prose with selection guidance, and omit nested output-path inventories.
+Exact selected usage still delivers all applicable constraints, result interpretation
+and recovery. Full/field lookup and tools without this owner opt-in are unchanged.
+Known scopes can retrieve their guide directly. Scope refresh and explicit broader
+composition preserve existing continuation and failure semantics.
+
+DoD: actual query/usage to selected guide to dispatcher/apply for a ready world-face
+part followed by grid detail and for grid in the first part. Each focused first-use
+path uses at most two bounded replies and less total delivery than the saved query
+plus selected guide; unrelated catalog growth does not inflate it. Execute published
+examples, preserve constraints and reject invalid inputs before writes. Subsequent
+lookup/refresh never replays partial or completed writes. Existing cancellation,
+stale continuation and full/field recovery gates remain required. These deterministic
+cases prove usable handoffs, not earlier live model decisions or first-frame latency.
+
+### First-query scope choices
+
+When startup guidance recommends a selected main-tool lookup, the same provider
+input includes its owner-derived legal operations, node types and optional inputs,
+operation meanings and a valid executable lookup example. This is a compact selected
+capability, not the whole tool catalog or full validation schemas. Unrelated tools
+must not increase this instruction or require a preliminary menu lookup.
+
+Query inputScope.operation selects an execution branch; it is not the outer
+semantic-operation selector or a user-intent verb. Execution still uses the returned
+branch fields. Owner scope-selection rejections remain failed/not-started and identify invalid fields
+with current owner choices and a valid query example in the existing error message.
+The caller selects the correction; no alias, guessed scope or automatic retry is
+allowed. Full/schema queries, refresh, partial success, cancellation and no-replay
+recovery retain their existing contracts.
+
+DoD: execute the example actually delivered in the provider packet through discovery
+and the returned execution route; reproduce the saved invalid-create lookup and
+correct it from that rejection alone. Prove owner-choice changes propagate, invalid
+node/optional groups stay rejected, all legal branches remain available, unrelated
+catalog growth does not inflate startup guidance, and completed writes are not
+replayed during informational recovery. No live-model latency claim follows from
+these deterministic tests.

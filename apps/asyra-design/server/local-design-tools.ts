@@ -90,6 +90,11 @@ const containerConditions = [
   },
   { properties: { type: { const: 'frame' } }, required: ['width', 'height'] }
 ]
+const describeArtifactBudget = (expandedNodeLimit: number) =>
+  ` Source work is automatically partitioned into windows of ${limits.nodes} nodes / ${limits.pathCommands} path commands without changing global hierarchy, layout, keys or relations. Per artifact: ${expandedNodeLimit} expanded objects, ${limits.expandedPathCommands} expanded path commands, depth ${limits.depth}. Each indivisible source primitive must fit one window. No detail is omitted.`
+const describeDraftContract = (expandedNodeLimit: number) =>
+  'Choose root type explicitly by intent: group organizes children with content-derived bounds; omit width, height, fill and layout fields for groups. Frame owns positive width/height and optional solid or gradient fill and one-time row/column/grid placement. Either container may nest either type. Optional key identifies this root in the prepared target map (if omitted, the generated element ID is used); all keys must be unique. It is not a canonical element ID.' +
+  describeArtifactBudget(expandedNodeLimit)
 const draftSchema = {
   anyOf: containerConditions,
   type: 'object',
@@ -104,9 +109,7 @@ const draftSchema = {
     key: { type: 'string', minLength: 1, maxLength: 160 },
     type: { enum: DesignContainerTypes }
   },
-  description:
-    'Choose root type explicitly by intent: group organizes children with content-derived bounds; omit width, height, fill and layout fields for groups. Frame owns positive width/height and optional solid or gradient fill and one-time row/column/grid placement. Either container may nest either type. Optional key identifies this root in the prepared target map (if omitted, the generated element ID is used); all keys must be unique. It is not a canonical element ID.' +
-    ` Source work is automatically partitioned into windows of ${limits.nodes} nodes / ${limits.pathCommands} path commands without changing global hierarchy, layout, keys or relations. Per artifact: ${limits.expandedNodes} expanded objects, ${limits.expandedPathCommands} expanded path commands, depth ${limits.depth}. Each indivisible source primitive must fit one window. No detail is omitted.`
+  description: describeDraftContract(limits.expandedNodes)
 }
 const nodeSchema = {
   anyOf: [
@@ -223,11 +226,24 @@ const preparationSchema = {
     repair: {
       type: 'object',
       additionalProperties: false,
-      required: ['draftId', 'replacements'],
+      required: ['draftId'],
+      oneOf: [
+        {
+          required: ['replacements'],
+          properties: { partition: false, continueFromArtifact: false }
+        },
+        { required: ['partition'], properties: { replacements: false } }
+      ],
       description:
-        'Repair a rejected draft retained in this request. Replace only existing fields using JSON Pointer paths relative to the draft; send no old values. Revalidation is mandatory. If the draft reference has expired, resend the complete source.',
+        'Repair a rejected draft retained in this request. Execute returned partition references without resending geometry; later partitions require the first artifact. Otherwise replace only existing fields using JSON Pointer paths relative to the draft; send no old values. Revalidation is mandatory. If the draft reference has expired, resend the complete source.',
       properties: {
         draftId: { ...toolRequestReference, maxLength: 160 },
+        partition: {
+          type: 'integer',
+          minimum: 0,
+          maximum: limits.recoveryParts - 1
+        },
+        continueFromArtifact: toolRequestReference,
         replacements: {
           type: 'array',
           minItems: 1,
@@ -290,6 +306,17 @@ export const createLocalDesignTools = (
   actions: AiProviderInput['actions'],
   session = createDesignPreparationSession()
 ) => {
+  const expandedNodeLimit = session.expandedNodeLimit
+  const effectivePreparationSchema = {
+    ...preparationSchema,
+    properties: {
+      ...preparationSchema.properties,
+      draft: {
+        ...draftSchema,
+        description: describeDraftContract(expandedNodeLimit)
+      }
+    }
+  }
   const preparedOutputSchema = toolResultObject({
     available: { const: true },
     artifactId: toolRequestReference,
@@ -297,6 +324,25 @@ export const createLocalDesignTools = (
     elementCount: { type: 'integer', minimum: 1 },
     findings: { type: 'array' }
   })
+  const capacityOutputSchema = {
+    anyOf: [
+      preparedOutputSchema,
+      toolResultObject({
+        available: { const: true },
+        draftId: toolRequestReference,
+        retainedDraft: toolResultObject({
+          draftId: toolRequestReference,
+          partitions: {
+            type: 'array',
+            minItems: 2,
+            maxItems: limits.recoveryParts,
+            items: { type: 'object' }
+          }
+        }),
+        budget: { type: 'object' }
+      })
+    ]
+  }
   const enabled = actions.some(
     (a) => a.name === AiActionNames.APPLY_PREPARED_DESIGN
   )
@@ -358,6 +404,8 @@ export const createLocalDesignTools = (
         }
   }
   return {
+    expandedNodeLimit,
+    capacityOutputSchema,
     checkResults: session.checkResults,
     resolveRecipe: session.recipe,
     rejectInput: (name: string, args: unknown) => {
@@ -368,7 +416,7 @@ export const createLocalDesignTools = (
         !('draft' in args)
       )
         return
-      const budget = inspectDesignBudget(args.draft)?.budget
+      const budget = inspectDesignBudget(args.draft, expandedNodeLimit)?.budget
       return {
         recovery: 'correct_input',
         ...retainDraft(args.draft),
@@ -418,6 +466,25 @@ export const createLocalDesignTools = (
         }
       }
       if (name === AiDesignToolIds.PREPARE_DESIGN) {
+        if (value.retainedDraft !== undefined) {
+          const retained =
+            typeof value.draftId === 'string'
+              ? session.describeRejectedDraft(value.draftId)
+              : undefined
+          if (
+            !retained?.partitions ||
+            retained.partitions.length < 2 ||
+            JSON.stringify(retained) !== JSON.stringify(value.retainedDraft)
+          )
+            return 'Partition plan is unavailable or not owned by this request.'
+          if (
+            value.available !== true ||
+            value.artifactId !== undefined ||
+            value.applicable !== undefined
+          )
+            return 'Partition plan is not a compiled or applied artifact.'
+          return
+        }
         if (
           value.available !== true ||
           typeof value.artifactId !== 'string' ||
@@ -443,7 +510,7 @@ export const createLocalDesignTools = (
     },
     explainInputIssue: (name: string, args: unknown) =>
       enabled && name === AiDesignToolIds.PREPARE_DESIGN && record(args)
-        ? inspectDesignBudget(args.draft)
+        ? inspectDesignBudget(args.draft, expandedNodeLimit)
         : undefined,
     definitions: enabled
       ? [
@@ -519,8 +586,8 @@ export const createLocalDesignTools = (
             description:
               designRepresentationGuidance +
               ' ' +
-              'Prepare native editable objects without changing the canvas; returns artifactId, applicable and findings. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable. Canonical input examples illustrate syntax; adapt them to the request and inspect each stage.',
-            inputSchema: preparationSchema
+              'Prepare native editable objects without changing the canvas; returns artifactId, applicable and findings. This single-artifact API rejects excess; the main tool handles safely partitionable excess in one invocation. Use prepare_and_apply_design when this part is ready to draw. Keep unaffected objects and valid artifacts. Include a brief with source notes, assumptions and measurable checks when needed. Resolve concrete overflow before applying; text-metrics-required needs actual rendering. Group derives child bounds; Frame owns size and optional fill. Layout is computed once, not live Auto Layout. Clipping, constraints, frame borders and corner radii are unavailable. Canonical input examples illustrate syntax; adapt them to the request and inspect each stage.',
+            inputSchema: effectivePreparationSchema
           },
           {
             type: 'function',
@@ -702,7 +769,8 @@ export const createLocalDesignTools = (
     call: async (
       name: string,
       args: unknown,
-      signal: AbortSignal
+      signal: AbortSignal,
+      capacityContinuation = false
     ): Promise<string> => {
       if (signal.aborted) throw new Error('Design preparation cancelled')
       if (enabled && name === AiDesignToolIds.RETAIN_DESIGN_TARGETS) {
@@ -788,14 +856,32 @@ export const createLocalDesignTools = (
         draft = 'repair' in args ? session.repairDraft(args.repair) : args.draft
         if (typeof args.materialSourceId === 'string')
           draft = session.withMaterialSource(draft, args.materialSourceId)
-        const budgetIssue = inspectDesignBudget(draft)
-        if (budgetIssue)
+        const budgetIssue = inspectDesignBudget(draft, expandedNodeLimit)
+        if (budgetIssue) {
+          const retained = retainDraft(draft)
+          if (
+            capacityContinuation &&
+            retained.retainedDraft?.partitions &&
+            !operationInputIssue({ draft }, effectivePreparationSchema)
+          ) {
+            return JSON.stringify({
+              available: true,
+              ...retained,
+              budget: budgetIssue.budget,
+              nextStep:
+                'The main tool executes these retained-source parts in order. Preparation has not compiled geometry or changed the canvas.'
+            })
+          }
           return JSON.stringify({
             ...budgetIssue,
             settlement: 'not-started',
-            ...retainDraft(draft)
+            ...retained
           })
-        const inputIssue = operationInputIssue({ draft }, preparationSchema)
+        }
+        const inputIssue = operationInputIssue(
+          { draft },
+          effectivePreparationSchema
+        )
         if (inputIssue)
           return JSON.stringify({
             available: false,
@@ -826,7 +912,21 @@ export const createLocalDesignTools = (
           })
         return JSON.stringify({
           available: true,
-          ...(await session.prepareAsync(draft, signal)),
+          ...(await session.prepareAsync(
+            draft,
+            signal,
+            record(args.repair) &&
+              typeof args.repair.draftId === 'string' &&
+              typeof args.repair.partition === 'number'
+              ? {
+                  draftId: args.repair.draftId,
+                  partition: args.repair.partition,
+                  ...(typeof args.repair.continueFromArtifact === 'string'
+                    ? { continueFromArtifact: args.repair.continueFromArtifact }
+                    : {})
+                }
+              : undefined
+          )),
           preparationInput:
             record(args.repair) && typeof args.repair.draftId === 'string'
               ? {

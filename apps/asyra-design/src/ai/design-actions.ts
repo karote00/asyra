@@ -38,6 +38,7 @@ export interface PreparedDesignApis {
   getElementMetadata(
     id: string
   ): { type: string; parentId?: string } | undefined
+  getPlacement?(id: string): Readonly<Record<string, unknown>> | undefined
   isContainerType(type: string): boolean
   isLocked(id: string): boolean
   create(
@@ -54,6 +55,16 @@ const defaultApis: PreparedDesignApis = {
   getWorkspaceId: hierarchyApis.getWorkspaceId,
   getElementType: (id) => core.getElementMetadata(id)?.type,
   getElementMetadata: (id) => core.getElementMetadata(id),
+  getPlacement: (id) =>
+    core.getElementComputedData(id, [
+      'x',
+      'y',
+      'rotation',
+      'scaleX',
+      'scaleY',
+      'skewX',
+      'skewY'
+    ]),
   isContainerType: elementApis.isContainerType,
   isLocked: (id) => core.getElementMetadata(id)?.lock === true,
   create: (ds, id) =>
@@ -192,8 +203,57 @@ export const createPreparedDesignAction = (
         id = element.parentId
       }
     }
+    const continuationOffset = () => {
+      if (!design.continuation) return { x: 0, y: 0 }
+      const root = apis.getElementMetadata(design.rootId)
+      const anchor = design.continuation.anchor
+      const member = apis.getElementMetadata(anchor.id)
+      const placement = apis.getPlacement?.(design.rootId)
+      const memberPlacement = apis.getPlacement?.(anchor.id)
+      if (
+        root?.type !== 'group' ||
+        root.parentId !== targetParentId ||
+        member?.parentId !== design.rootId ||
+        apis.isLocked(design.rootId) ||
+        apis.isLocked(anchor.id) ||
+        !placement ||
+        !memberPlacement
+      )
+        throw new Error(
+          'The partition continuation root or anchor is unavailable.'
+        )
+      for (const value of [placement, memberPlacement]) {
+        if (
+          !Number.isFinite(value.x) ||
+          !Number.isFinite(value.y) ||
+          ['rotation', 'skewX', 'skewY'].some(
+            (key) => value[key] !== undefined && value[key] !== 0
+          ) ||
+          ['scaleX', 'scaleY'].some(
+            (key) => value[key] !== undefined && value[key] !== 1
+          )
+        )
+          throw new Error('The partition continuation placement changed.')
+      }
+      for (const axis of ['x', 'y'] as const) {
+        const actual = Number(placement[axis]) + Number(memberPlacement[axis])
+        const tolerance =
+          64 *
+          Number.EPSILON *
+          Math.max(1, Math.abs(anchor[axis]), Math.abs(actual))
+        if (Math.abs(actual - anchor[axis]) > tolerance)
+          throw new Error(
+            'The partition continuation anchor moved; do not replay completed work.'
+          )
+      }
+      return {
+        x: Number(design.entries[0].descriptor.x) - Number(placement.x),
+        y: Number(design.entries[0].descriptor.y) - Number(placement.y)
+      }
+    }
     const checkCurrent = (parentId: string) => {
       checkAttachment()
+      continuationOffset()
       if (signal.aborted) throw new Error('Design application cancelled.')
       if (
         !workspaceId ||
@@ -206,13 +266,14 @@ export const createPreparedDesignAction = (
         )
     }
     checkCurrent(workspaceId ?? '')
-    for (const { descriptor: d } of design.entries) {
+    const firstEntry = design.continuation ? 1 : 0
+    for (const { descriptor: d } of design.entries.slice(firstEntry)) {
       if (apis.getElementType(d.id) !== undefined)
         throw new Error('A design object already exists.')
     }
     const appliedElementIds: string[] = []
     let appliedElementCount = 0
-    let offset = 0
+    let offset = firstEntry
     while (offset < design.entries.length) {
       const parentId = design.entries[offset].parentId ?? targetParentId
       checkCurrent(parentId)
@@ -274,7 +335,16 @@ export const createPreparedDesignAction = (
             (canonicalWork.counters[name] ?? 0) + value
         })
         try {
-          return apis.create(descriptors, parentId)
+          const shift = continuationOffset()
+          const values =
+            design.continuation && parentId === design.rootId
+              ? descriptors.map((d) => ({
+                  ...d,
+                  x: Number(d.x) + shift.x,
+                  y: Number(d.y) + shift.y
+                }))
+              : descriptors
+          return apis.create(values, parentId)
         } finally {
           stopPhases()
           stopCounters()
@@ -309,12 +379,17 @@ export const createPreparedDesignAction = (
       const selectStartedAt = now()
       validationMs += selectStartedAt - callbackStartedAt
       apis.select([design.rootId])
-      if (materialIds.length) {
+      if (materialIds.length || (design.continuation && material)) {
         try {
           if (!material)
             throw new Error('Material provenance consumer is unavailable.')
-          material.capture(design.rootId, materialIds, signal)
-          materialProvenance = { status: 'available' }
+          material.capture(
+            design.rootId,
+            materialIds,
+            signal,
+            !!design.continuation
+          )
+          if (materialIds.length) materialProvenance = { status: 'available' }
         } catch (error) {
           materialProvenance = {
             status: 'unavailable',

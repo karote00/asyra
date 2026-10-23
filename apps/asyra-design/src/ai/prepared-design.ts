@@ -26,6 +26,7 @@ export const DesignPreparationLimits = Object.freeze({
   checks: 64,
   retainedTargetBytes: 8 * 1024 * 1024,
   retainedDrafts: 4,
+  recoveryParts: 128,
   retainedDraftBytes: 8 * 1024 * 1024
 })
 export interface PreparedDesignEntry {
@@ -52,6 +53,9 @@ export type DesignFinding =
       tolerance: number
     }>
 export interface PreparedDesign {
+  readonly continuation?: Readonly<{
+    anchor: Readonly<{ id: string; x: number; y: number }>
+  }>
   readonly version: typeof PREPARED_DESIGN_VERSION
   readonly rootId: string
   readonly entries: readonly PreparedDesignEntry[]

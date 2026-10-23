@@ -1385,3 +1385,76 @@ it('keeps the final failure explanation after expanded activity, where the reade
   ).toBeTruthy()
   cleanup()
 })
+
+it('exposes only the admitted settled report with request and turn identity for capture', async () => {
+  const fixture =
+    await import('../../../server/__tests__/fixtures/recorded-101/report-capture-20261023.json')
+  const harness = createPanelHarness()
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify({ state: 'ready' })))
+  )
+  try {
+    render(
+      <AiConversationPanel
+        confirmation={harness.confirmation}
+        conversation={harness.conversation}
+        onClose={vi.fn()}
+      />
+    )
+    await act(async () => {
+      void harness.conversation.submit('Draw a composition')
+    })
+    expect(
+      screen
+        .getByTestId('ai-agent-message')
+        .getAttribute('data-evaluation-report')
+    ).toBeNull()
+    const action = fixture.batch.actions[0]
+    await act(async () => {
+      harness.pending.resolve({
+        status: 'executed',
+        batchId: fixture.batch.batchId,
+        recordingId: fixture.provenance.sourceRequestId,
+        transaction: { status: 'committed' },
+        preview: {
+          batchId: fixture.batch.batchId,
+          explanation: 'Evaluation self-report - not artwork acceptance',
+          actions: [{ id: action.id, name: action.name }]
+        },
+        actionResults: [
+          {
+            actionId: 'earlier-write',
+            actionName: 'apply_prepared_design',
+            result: { status: 'complete' }
+          },
+          {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              action: action.name,
+              status: 'no-change',
+              ...action.arguments
+            }
+          }
+        ]
+      })
+    })
+    const message = screen.getByTestId('ai-agent-message')
+    expect(message.getAttribute('data-outcome')).toBe('partial')
+    expect(
+      JSON.parse(message.getAttribute('data-evaluation-report') ?? 'null')
+    ).toEqual({
+      attribution: 'model-self-report',
+      sourceRequestId: fixture.provenance.sourceRequestId,
+      text: action.arguments.message,
+      turnId: 'panel-conversation:turn:1'
+    })
+    expect(message.textContent).toContain(action.arguments.message)
+    expect(harness.feature.execute).toHaveBeenCalledTimes(1)
+  } finally {
+    cleanup()
+    await harness.conversation.dispose()
+    vi.unstubAllGlobals()
+  }
+})

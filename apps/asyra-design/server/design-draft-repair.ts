@@ -1,12 +1,22 @@
+import {
+  partitionDesignBudget,
+  selectDesignSource,
+  type DesignBudgetPartition
+} from './design-budget'
 import { randomUUID } from 'node:crypto'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
 
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-/** Rejected input only. Immutable references never identify executable artifacts. */
-export const createDesignDraftRepairStore = () => {
-  const drafts = new Map<string, { source: string; bytes: number }>()
+/** Retained source for capacity continuation or repair; never an executable artifact. */
+export const createDesignDraftRepairStore = (
+  expandedNodeLimit: number = limits.expandedNodes
+) => {
+  const drafts = new Map<
+    string,
+    { source: string; bytes: number; partitions?: DesignBudgetPartition[] }
+  >()
   let retainedBytes = 0
   const remove = (id: string) => {
     const draft = drafts.get(id)
@@ -17,7 +27,10 @@ export const createDesignDraftRepairStore = () => {
     retain(input: unknown): string | undefined {
       const source = JSON.stringify(input)
       if (source === undefined) return
-      const bytes = Buffer.byteLength(source, 'utf8')
+      const partitions = partitionDesignBudget(input, expandedNodeLimit)
+      const bytes =
+        Buffer.byteLength(source, 'utf8') +
+        Buffer.byteLength(JSON.stringify(partitions ?? []), 'utf8')
       if (bytes > limits.retainedDraftBytes) return
       if (
         drafts.size >= limits.retainedDrafts ||
@@ -25,33 +38,66 @@ export const createDesignDraftRepairStore = () => {
       )
         return
       const id = randomUUID()
-      drafts.set(id, { source, bytes })
+      drafts.set(id, { source, bytes, partitions })
       retainedBytes += bytes
       return id
     },
     describe(draftId: string) {
       const draft = drafts.get(draftId)
       return draft
-        ? { draftId, revision: draftId, sourceBytes: draft.bytes }
+        ? {
+            draftId,
+            revision: draftId,
+            sourceBytes: Buffer.byteLength(draft.source),
+            ...(draft.partitions
+              ? { partitions: structuredClone(draft.partitions) }
+              : {})
+          }
         : undefined
     },
     repair(value: unknown): unknown {
       if (
         !record(value) ||
         Object.keys(value).some(
-          (key) => !['draftId', 'replacements'].includes(key)
+          (key) =>
+            ![
+              'draftId',
+              'replacements',
+              'partition',
+              'continueFromArtifact'
+            ].includes(key)
         ) ||
         typeof value.draftId !== 'string' ||
-        !Array.isArray(value.replacements) ||
-        !value.replacements.length
+        'partition' in value === 'replacements' in value
       )
-        throw new Error('Provide repair.draftId and nonempty replacements.')
+        throw new Error(
+          'Provide repair.draftId and exactly one partition or nonempty replacements.'
+        )
       const draft = drafts.get(value.draftId)
       if (!draft)
         throw new Error(
           'Rejected draft is unavailable in this request; resend the source draft.'
         )
       const result = JSON.parse(draft.source)
+      if ('partition' in value) {
+        if (
+          !Number.isSafeInteger(value.partition) ||
+          Number(value.partition) < 0 ||
+          (value.continueFromArtifact !== undefined &&
+            (typeof value.continueFromArtifact !== 'string' ||
+              !value.continueFromArtifact))
+        )
+          throw new Error('Invalid retained partition reference.')
+        const partition = draft.partitions?.[Number(value.partition)]
+        if (!partition) throw new Error('Retained partition is unavailable.')
+        return selectDesignSource(result, partition.selections)
+      }
+      if (
+        value.continueFromArtifact !== undefined ||
+        !Array.isArray(value.replacements) ||
+        !value.replacements.length
+      )
+        throw new Error('Provide nonempty replacements.')
       const paths = new Set<string>()
       for (const replacement of value.replacements) {
         if (

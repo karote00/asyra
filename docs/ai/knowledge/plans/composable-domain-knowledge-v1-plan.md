@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Inspection discovery handoff correction and deterministic review complete. One 120-second observation completed without reaching the corrected negative branch. Prior work is pushed at 15df01db9.**
+Status: **Repetition handoff slice converged after round 3 of at most 3 and the separately authorized live observation. Valid component repetition satisfies the current drawing; layer repetition is not mandatory. Task 3 remains active. Next: read-only analysis of the 34.826-second pre-submission interval; no new implementation or model run.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,11 +20,11 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `3d503aa714336946839374dc948e9c171cfb8182`.
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: inspection discovery field ownership and truthful lookup receipts under
-  Task 3 compose. Prior completed work was explicitly authorized and pushed first.
-  After deterministic validation, run exactly one recorded 120000 ms 101 observation;
-  stop immediately at the deadline and preserve observable input/output. No retry,
-  extra model, new goal, Knowledge change or inspection acceptance redesign.
+- Current scope: layer-preserving pattern examples and early executable usage delivery.
+  Reuse existing construction, preparation, owner examples, scope selection and dispatcher.
+  Preserve geometry, materials, painter order, references and recovery without increasing
+  first-use bytes or round trips. No geometry rewriting, new tool, automatic compaction,
+  raised budget, Knowledge, refresh-policy, model/101, push, goal or automation changes.
 - Future implementation requires the exact affected contract to be reconciled and
   admitted first. A previous accepted Inspector snapshot does not admit these changes.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
@@ -48,8 +48,9 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Preserve narrow evidence invalidation, unrelated passes, canonical local/source/
   reset/detach distinctions, Undo/Redo, collaboration, compensation and save recovery.
 - App model remains `gpt-6-astra` / `medium`. Future explicitly authorized 101 runs
-  retain the independent 600000 ms forced stop, recording and full I/O preservation.
-  This plan itself does not authorize one.
+  use the explicitly authorized work budget, independent bounded report phase and
+  full I/O preservation. Video is disabled by the current user instruction.
+  This plan itself does not authorize a run.
 - Saved-input replay proves tool contracts, not better model decisions. Neither lower
   call counts nor object counts nor one historical runtime difference proves efficacy.
 
@@ -83,6 +84,1570 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Repetition handoff convergence - 2026-10-23
+
+The user accepted closure of this bounded slice and authorized pushing the completed
+work. The three-round count remains closed; the fixed DoD is unchanged. The broader
+Task 3 plan remains active and must not be archived.
+
+Separately authorized live run `1792750592095` used the production 10,000-object
+limit, no video, at most 120 seconds of work and 60 seconds of reporting. Work ended
+normally at 106.751 seconds; reporting ended at 118.461 seconds. Complete recorded
+payloads/assets, report text, first/final/reload screenshots and source hashes remain
+under that immutable run directory. No further capacity experiment is requested;
+future evaluations use the production default without the explicit 2,000 override.
+
+The first frame appeared at 64.278 seconds. The later submission at 90.410 seconds
+used seven mixed-component instances; its adoption cannot explain the earlier first
+frame. Component order preserves the upper tier occluding the lower top surface.
+Forcing all surfaces, grids and lips into global layers would change relevant
+occlusion. The absence of layer-pattern adoption is therefore not a failed DoD item.
+The delivered first-page example supports layers where needed and preserves mixed
+components as required by the existing contract.
+
+Read-only same-content expansion measures the second invocation at 7,854 bytes
+versus 23,851 explicit bytes (67.07% smaller); including the first invocation gives
+15,661 versus 31,658 bytes (50.53% smaller). The permanent original fixture still
+measures 24,502 versus 9,588 bytes and retains all 1,443 canonical objects. The live
+checkpoint preserves 7,505 elements, submitted material choices and painter order.
+This is not full visual acceptance, proof of model-visible native content, or a
+controlled latency comparison. The version-bound deterministic and browser evidence
+below remains applicable; the 841 Inspector runtime source hashes were rechecked.
+
+Next authorized investigation: explain the interval from final preparatory read
+at 27.702 seconds to first submission at 62.528 seconds using saved payloads and
+current public owner capabilities. Identify one bounded App/framework handoff,
+its evidence, competing explanations, minimum proposal and DoD. No production edits,
+model run, new logger, or renewed investigation of unobservable native argument
+streaming is authorized by this investigation.
+
+### Layer-preserving pattern handoff - 2026-10-23
+
+Round **1 of at most 3**, including the preceding read-only diagnosis. Do not reset
+this count on a changed hypothesis or relax the fixed DoD. A failed complete candidate
+requires a bounded replan before the next round; three unsuccessful rounds stop work.
+Model adoption and latency remain unverified without a separately authorized live run.
+
+Evidence: saved run 1792742530370, drawing record 151121ee-201e-4563-9ae6-ec677678d331,
+input payload 19 and usage outputs 11/14. The 24,502-byte invocation can be represented
+in 9,588 bytes by two ordered patterns, preserving all 1,443 objects. Same-order
+canonical materials/parents agree; coordinate difference is at most 2.19e-11. Source
+keys/names change for 1,328 entries and must never be silently treated as unchanged
+references. The delivered example is valid but models per-component interleaving only;
+it begins after byte 23,241 on the second usage page. This is not proof of model causality.
+
+Round 2 bounded replan: the first complete candidate passed the 538 direct-owner
+regressions and real-browser lifecycle, but the full mapped proof retained the
+superseded two-child example assertion. Correct that direct consumer to the current
+three-child layered example, retain its executable validation and 16-object oracle,
+then rerun the mapped proof. No production redesign, scope expansion or DoD relaxation.
+The two unchanged template getter-count tests also fail on the entry source (5 reads
+versus 1); record them as unresolved rather than changing the expected count.
+
+Round 3 bounded replan - preparation read ownership (user-authorized follow-up):
+The live call-stack trace attributes four raw face.vertices reads to two budget
+reductions (array guard + length for maximum and sum), then one to structuredClone.
+This is repeated structural scanning, not five geometry projections. The previous
+whole-session one-getter-read assertion does not distinguish budget admission from
+the required source snapshot.
+Preserve admission before cloning; do not move cloning ahead of bounded rejection
+or skip validation to satisfy that obsolete aggregate assertion.
+
+Step Execution Card - prepare:
+- Inputs: ordinary draft and effective existing budget; output: unchanged budget
+  observation/rejection, then immutable recipe and canonical artifact.
+- Owner: design-budget structural admission, followed by existing preparation
+  snapshot/compilation. Conditions: read each pattern face vertex collection once
+  per budget scan to derive sum and maximum together. Successful preparation also
+  snapshots once. Rejected budgets never snapshot/compile; cancelled async work
+  never publishes. Artifact lookup reuses completed work without source reads.
+- Bypass: retained valid artifact lookup; direct construction does not acquire a
+  session snapshot. Forbidden: skipped validation, widened limits, changed geometry,
+  new cache/state, pre-admission cloning or compatibility paths.
+- Boundary: design-budget.ts (faces budget scan only), design-patterns.test.ts and
+  execution-flow-proof.test.ts; same plan, spec, Inspector, manifest and generated
+  workspace. No prepare/session/compiler production changes anticipated.
+- Spec: Preparation source reads and immutable lifetime. Inspector prepare step,
+  current source/target lifetime and failure owner; existing budgets/recovery routes.
+- Tests first: separate admission read count, snapshot ownership, projection counts
+  and cached artifact identity for sync/async and varied instance counts; exact sum,
+  maximum and expanded counts for uneven/empty/malformed faces; reject before
+  snapshot/compile and preserve cancellation, mutation isolation and release.
+- Fixed DoD remains unchanged. This explains its work boundary rather than changing
+  an expected count to five: one read in admission, one snapshot read, template-only
+  vertex projection plus one shared zero and one offset projection per instance,
+  no source reads during repeated lookup, unchanged canonical output.
+- Gates: complete pattern suite, preparation/repair/owner/discovery consumers, mapped
+  Inspector proof, types, naming, scoped lint, static Inspector tests and bounded
+  self-review. Prior browser evidence remains valid unless output/consumer semantics
+  change; no new model or 101. A failed complete round-three candidate stops work.
+
+Step Execution Card - compose / compose-to-prepare:
+- Spec: Layer-preserving repetition delivery; Composition examples within selected usage;
+  Selected operation usage guide. Inspector compose inputs/outputs/conditions/bypasses,
+  boundary and failure owner, plus the existing compose-to-prepare route.
+- Input: current owner definitions/examples, actual selected query and canonical source.
+  Output: one scope-valid executable composition example early in the same bounded guide,
+  complete constraints/recovery, and ordinary validated source consumed by preparation.
+- Conditions: choose repeat units by intended painter order. Independent layers stay
+  separate; mixed components remain legal. Known calls bypass discovery. Explicit
+  irregular or name/reference-constrained geometry remains legal; no mandatory pattern.
+- Contributors: existing owner examples, schema scope filtering, usage projection,
+  preparation and action consumers. No model, classifier, second registry, cache, state,
+  automatic source rewrite, inferred geometry, new query or altered primitive semantics.
+- Boundary: design-preparation-examples.ts, local-design-workflow.ts (guidance only),
+  local-operation-tools.ts (selected usage presentation only); existing discovery integration,
+  execution-flow proof, native-provider startup consumer and design-construction E2E files; new permanent recorded fixture
+  and test-side equivalence helper. Contract files and generated Inspector bundle included.
+- Failure owner: compose reports unavailable/invalid scoped content; downstream owners keep
+  current invalid-input, partial, stale, cancellation and no-replay behavior.
+- Design review: replacing the selected composition example, retaining the independently
+  valid mixed example, and moving the existing invocation before parameter prose require
+  no runtime feature. Compilation/references use current APIs. One source comparison
+  excludes declared names/keys only; materials/topology/order are fully checked. New
+  canonical persistence or collaboration behavior is outside scope.
+- Stop: boundary mismatch, weakened oracle, missing constraints, unbounded delivery, or
+  failures requiring a new mechanism. No compatibility path or subject-specific example.
+
+Fixed observations and DoD (all remain required):
+1. Preserve raw evidence/version hashes; extract necessary source/query into a permanent
+   fixture. Formal tests cannot read ignored tmp evidence.
+2. Startup owner selection distinguishes component versus layer repetition without eager
+   schemas, extra discovery or increased initial guidance. Verify source-derived delivery.
+3. Actual scoped usage, including optional plan, retains all pages/revision/constraints;
+   executable example is in the first page and total bytes/replies do not grow. Recorded
+   full guide body ceiling 25,604 bytes; wire replies 27,702 bytes / two pages. Preserve
+   existing smaller one-page no-plan budgets and unrelated-catalog growth invariance.
+4. Execute the published example through the dispatcher and canonical owners, not a
+   separately invented sample; successful receipts agree with actual created objects.
+5. Prove component-major and layer-major order, independent interposed nodes and a negative
+   control that combines layers incorrectly. Valid mixed examples remain available.
+6. Compare every coordinate/control/topology/fill/gradient/bounds at existing precision,
+   ordered children and parents; no output omission or helper-only/count-only oracle.
+7. Declare changed source names/keys, verify canonical target lookup from returned artifact
+   references, preserve unaffected identities and explicit naming/reference constraints.
+8. Saved full invocation shrinks at least 50%, without reducing expanded output. Count
+   source/projection work and total delivery, not only a final page or node count.
+9. Cover generic translations/counts, independent details/materials, and irregular/rotated
+   or explicitly named alternatives without forced adoption or 101-specific behavior.
+10. Keep existing budget, local success, cancellation, expired references and no-replay
+    recovery gates. Do not repeat the completed live capacity experiment.
+11. Verify actual browser application, editable ordering/parents, one Undo/Redo and durable
+    reload for the compact fixture through the existing streamed receipt harness. Use
+    canonical publication, not a separate model or test-only mutation path.
+12. Preserve the separate future model observations (eligible repetitions, actual inputs,
+    lookup bytes/calls, submission and first-content timing). Existing records suffice;
+    do not add a logger or claim model adoption/performance from deterministic tests.
+
+Gates: test-first failed delivery/order case; saved canonical equivalence and references;
+focused owner/discovery/representation suites and existing recovery consumers; production
+TypeScript, scoped ESLint, naming, Inspector static/workspace generation and source-bound
+mapped proof; the focused real-browser lifecycle above. Self-review is limited to this
+change, direct consumers and frozen gates. No broad local CI, model or 101.
+
+Round 2 verification and bounded self-review:
+
+| Observation | Result |
+| --- | --- |
+| Formal red before production edits | Two selected-usage cases failed: example after parameters / absent from the first optional-plan page. `tmp/layered-pattern-red.log`. |
+| Saved complete invocation | 24,502 to 9,588 bytes (60.87% smaller); 1,443 canonical entries retained. Both source forms remain permanent fixture data. |
+| Ordered canonical equivalence | All entry geometry/topology/parent references/materials compared at existing precision; 1,328 changed source keys/names explicitly counted. Returned target-set IDs resolve the intended final grid layer; release invalidates them. |
+| Work counts | Construction source nodes 103 to 33; projection calls 336 to 130. Expanded output is unchanged. `tmp/layered-pattern-work-counts.log`. |
+| Selected usage with plan | 25,604 to 25,437 body bytes; 27,702 to 27,565 wire bytes; still two pages, complete executable example now on page one. |
+| Selected usage without plan | Implicit pattern 19,719 to 19,654 bytes; explicit pattern 20,087 to 20,022; one page. The saved query with an explicit empty optionalInputs list is 20,082 bytes. |
+| Initial native instructions | Entry-source replay 30,395 bytes; candidate 30,169; owner selection forwarded once, no eager example/schema. |
+| Direct owner and discovery suites | 538 passed / 1 preexisting skipped across discovery, operations, workflow and native provider. `tmp/layered-pattern-regression-final.log`. |
+| Generic and negative cases | Different counts, signed translations, explicit naming alternatives, materials and independent details pass; merging painter layers fails the same canonical oracle despite equal object count. |
+| Browser lifecycle | Real streamed action receipts, 1,443 applied objects, every parent/world position/size and child order; one Undo/Redo, durable document digest and reload pass (25.4 s). `tmp/layered-pattern-browser/test.log`. Owned services stopped. |
+| Inspector | 63/63 mapped cases pass in source-bound attempt `5d488e4d-eb07-4274-924c-5ddd67cdc05d`; all 841 captured runtime source hashes still match. 27 static contract/workspace tests pass. |
+| Other gates | Production TypeScript and naming pass. Scoped ESLint has zero errors; two unchanged console warnings remain. No task-added whitespace errors; the two existing Inspector trailing spaces are unchanged from entry. |
+| Open entry-source failures | design-patterns.test.ts: both sync/async `reads template vertices once instead of once per instance and reuses admitted artifacts` expect one getter read but observe five. The entry-source replay reproduces both; no expectation was weakened and no unrelated preparation implementation changed. `tmp/layered-pattern-baseline-failures.json` and `.log`. |
+
+Self-review confirmed only compose guidance, the current owner example and selected
+usage property order changed in production. The valid mixed example, canonical input
+schemas, output budgets, independent actions, parts/repair, refresh and execution
+owners remain intact. Tests execute the published invocation, preserve partial and
+cancelled receipts, and retain no-replay behavior. No automatic source folding, new
+state, compatibility branch, model invocation or 101 was added.
+
+The obsolete native-provider text assertion was updated to the current owner wording
+(`each part artifact fits`); its byte ceiling and source-derived guidance checks remain.
+The mapped proof's old two-child example assertion now matches the three-child layered
+example while retaining input admission and 16-object validation.
+
+Round 2 checkpoint (resolved by round 3 below): full fixed-DoD closure was **not claimed** while the two existing representation-suite
+failures remain unresolved. Do not reset the round count, suppress those tests, loosen
+their oracle or expand this compose patch into preparation work without a bounded
+follow-up decision. Future model adoption, generated invocation bytes, repeated reads,
+submission timing and first-content timing remain unobserved for this candidate.
+
+Round 3 result - fixed deterministic DoD complete:
+
+- Confirmed cause: the faces budget branch traversed the same list twice and read
+  each vertex collection twice per traversal (array check and length). Snapshotting
+  read it once more. This was four structural reads plus one snapshot, not five
+  geometry compilations. The old whole-session count mixed distinct work owners.
+- Production change: one pass in design-budget.ts derives both total and maximum
+  from one local vertex-collection read. No other production owner changed in this
+  round; admission still precedes snapshot/compilation. No new cache or larger limit.
+- Permanent tests first: five strengthened phase/aggregate cases failed on the old
+  budget code (`tmp/layered-pattern-round3-red.log`). Assertions distinguish one
+  admission read, one snapshot read, and zero caller reads during retained lookup;
+  the whole-session expectation was not simply changed to the observed five.
+- Template work: with 1/100/1000 instances, four face vertices are compiled once;
+  total projections are four vertices plus one shared zero plus one offset per
+  instance. Source-work nodes/points remain 2/4. Complete artifacts equal fresh
+  preparation, including after a real source edit. Existing artifacts stay immutable.
+- Rejection and lifetime: over-budget sources never snapshot or compile; pre-cancelled
+  async calls read nothing; unrelated valid artifacts survive rejection. Release and
+  foreign-session lookup reject. Unequal, empty and malformed faces retain exact
+  sum, maximum and expanded accounting; malformed geometry remains rejected.
+- Validation: all 60 pattern cases pass; 425 preparation/repair/owner/discovery
+  consumer cases pass; 64/64 Inspector cases pass and are accepted under attempt
+  `678e0ecf-7917-449f-a19b-0746ed669c7a`. All 841 captured runtime source hashes match.
+  Inspector static checks pass 27/27. Production types, naming and scoped lint pass
+  (zero lint errors, one unchanged console warning). The final source-edit isolation
+  assertion was rerun in both sync and async modes and passed.
+- Evidence: `tmp/layered-pattern-round3-patterns-final.log`,
+  `tmp/layered-pattern-round3-consumers.log`, `tmp/layered-pattern-round3-proof.json`,
+  `tmp/layered-pattern-round3-accepted.json`, `tmp/layered-pattern-round3-static.log`,
+  `tmp/layered-pattern-round3-types-final.log`, `tmp/layered-pattern-round3-lint-final.log`.
+- Self-review: old reductions removed; input schemas, limits, geometry, material,
+  painter order, keys, parent relations, delivery bytes/pages and recovery behavior
+  unchanged. The earlier layer-equivalence/first-page cases pass again through the
+  actual dispatcher. The prior verified browser Undo/Redo/durable reload evidence is
+  retained because those owners and canonical outputs did not change; no model or
+  browser experiment was repeated just to replace unchanged evidence.
+- The two former representation-suite failures are resolved. No DoD criterion was
+  dropped and the round count remains 3/3. Model adoption, latency and first-frame
+  improvement remain outside these deterministic completion claims.
+
+### Safe capacity continuation - 2026-10-23
+
+Confirmed boundary: the retained-source partition plan is already executable, but
+compose exposes it as failed/not-started and requires a redundant model invocation.
+The latest 2,000 live run did not overflow; fixed saved 13,095-object input is the
+regression source. Historical evidence and completed stages remain unchanged.
+
+Step Execution Card - prepare:
+- Spec: Source-referenced expansion recovery; Inspector prepare inputs, outputs,
+  conditions, implementation boundary and failure handling.
+- Input: admitted source or explicit repair, optional owned material source, effective
+  artifact limit. Output: standalone prepare_design success guarantees a compiled artifact. The main
+  workflow opts into the same owner internal capacity-plan result; this is never a
+  canvas receipt or a new registered tool. Unsupported/invalid/expired/unretained input
+  remains an explicit failure. Small sources bypass partition planning.
+- Contributors: existing budget, source retention and preparation owners only; no
+  model, canonical write, additional store, geometry simplification or raised limit.
+- Files: local-design-tools.ts, design-preparation.ts, design-draft-repair.ts if terminology needs correction,
+  their formal tests and execution-flow-proof.test.ts, already in the allowlist.
+- DoD: fixed excess produces an owned plan without compilation/writes; enforce real
+  rejection, capacity/expiry and valid ordinary preparation. Prove failure first.
+
+Step Execution Card - compose (after prepare review):
+- Spec: Source-referenced expansion recovery and Expansion budget selection;
+  Inspector compose consumes prepare outputs and actual canonical action receipts.
+- Input: ordinary draft/repair or ordered parts, owned partition plan. Output: actual
+  ordered completed/partial receipts and confirmed remaining-only repair references.
+- Use the existing parts executor for first and later partitions without returning to
+  the model. Preserve explicit part parent links, order, plan/message, material source,
+  inspection policy, cancellation and no replay. No second scheduler/state owner.
+- Files: local-design-workflow.ts and direct delivered guidance, discovery-delivery,
+  local-design-workflow and execution-flow-proof tests. The existing deterministic browser
+  lifecycle test now connects the real main tool to streamed browser receipts (no
+  model), proving sequential application, normalization, Undo/Redo and durable reload.
+- Fixed discovery/review: current owner files, actual public invocation/observation,
+  direct consumers, permanent 13,095-object fixture; no unrelated repository audit.
+- DoD: one public call completes eligible excess at 10,000/2,000 with truthful child
+  progress; source-free remaining recovery on real later failure; no repeated writes
+  for duplicate handles, cancellation, lost acknowledgement or stale continuation.
+  Preserve geometry/material/order/one root and valid explicit parts; no early success.
+- Gates: fail-first formal cases, focused owner/integration tests, canonical browser
+  lifecycle, production types, scoped lint, naming, static Inspector and source-bound
+  mapped cases. Stop after self-review; no model/101. Boundary/spec contradiction or
+  repeated failed implementation requires bounded replan, not scope expansion.
+
+
+Prepare step review exposed an export-pin failure in the first public-plan-output
+iteration. The revised boundary below removes that public union and the temporary
+borrow helper entirely. Existing request-owned source lifetime and native repair
+input borrowing remain authoritative. A separate native cache-read regression proved
+that an already compiled partition needs the existing borrow operation before its
+current call exports it; preserve assertOwned and reuse without recompilation. No
+lease policy or store changes remain.
+
+Bounded self-review also reproduced and corrected two direct regressions: retaining
+only pending source partitions after an earlier independent success, and preserving
+the ordinary immediate-inspection default when automatic capacity continuation is
+selected. Explicit defer/immediate remain unchanged. Dedicated formal cases cover
+both; no write or failed follow-up is relabeled successful. The native case
+checks the main invocation and a later source read through actual host ownership.
+Final source-matched gates and the streamed browser lifecycle remain required.
+
+Bounded replan after full Inspector regression: a union in standalone prepare_design
+success broke existing statically admitted recipes that bind /artifactId. Preserve
+that valid single-artifact API and its genuine capacity refusal. Only the main tool
+opts into the existing preparation owner capacity-plan branch, with its exact internal
+result schema and normal progress; it consumes the plan before returning. No public
+compatibility alias, duplicate registry, relaxed recipe admission or new state.
+Keep the failing source-bound recipe case unchanged; it is the preservation oracle.
+Rerun native handoff, owner cases, types and source-bound Inspector after this correction.
+
+Verification checkpoint: 202 owner, discovery, recovery and existing recipe cases,
+four scripted native protocol cases, 62 source-bound Inspector cases, one real browser
+streamed lifecycle case, 15 naming and ten static Inspector/catalog cases passed.
+Production app/server/proof types passed. Scoped lint has zero errors and two existing
+console warnings. Fixed 13,095-object input completes via the main tool at both
+10,000 and 2,000 limits without a model round trip. Real later failure retains only
+pending source references; cancelled/uncertain work never becomes automatic replay.
+The browser oracle verifies every member world position/size, painter order and one
+root, then one Undo/Redo and durable reload. Source geometry/fills/ordering equivalence
+is also covered by the permanent partition tests. A development reload interrupted
+an earlier browser attempt; the subsequent frozen-runtime lifecycle passed. Later
+edits were type annotations only; no browser behavior changed.
+
+Inspector attempt `76b2415b-9074-4dad-96f2-364c9cf86e10` was accepted after bounded
+self-review; all 841 runtime source files matched. Evidence is under
+`tmp/capacity-progress-*`, including fail-first logs, native reuse failure, the first
+failed Inspector attempt and final accepted proof. All task-owned browser test
+services were stopped and their ports released. Existing unrelated dirty work and
+immutable run reports remain unchanged. No model/101, push, goal or automation ran.
+This closes this capacity-handoff stage only; no model behavior or latency improvement
+is claimed. Standalone preparation remains the valid single-artifact API; the main
+tool owns automatic retained-source continuation.
+
+### Evaluation-only 2,000 artifact budget - 2026-10-23
+
+Step Execution Card - prepare, with compose/observe direct consumers:
+- Spec: Bounded evaluation work and self-report. Replace the current evaluation-only
+  5,000 override with 2,000; production remains 10,000. Historical runs and reports
+  retain their original policy. No compatibility alias for the superseded override.
+- Inputs: existing evaluation-window metadata and explicit runner argument.
+  Outputs: identical effective limit in delivery, admission and source partitions.
+- Owner/boundary: existing preparation session, evaluation-window admission and
+  runner argument parser; tests use the actual discovery/dispatcher/recovery path.
+  No new state, scheduler, geometry, recovery schema, result-status or Knowledge changes.
+- Contributors: those existing owners, their formal tests and current contracts.
+  Failure owner: preparation for admission; observe for collection. Absence of the
+  test override retains production policy; invalid values reject before work.
+- DoD: prove 2,000/2,001 boundaries and old-override rejection, production isolation,
+  real delivered policy, geometry/material/order preservation across smaller parts,
+  partial recovery and no replay. Run focused tests, production types, scoped lint,
+  naming, Inspector admission and source-bound cases; review direct consumers.
+- Observe card: after verification run exactly one no-video 101, 120 seconds of
+  work plus at most 60 seconds of reporting, preserving full linked I/O, images,
+  report and source identity. Stop after that run, including inconclusive outcomes.
+- Review the user's proposed distinction between recoverable capacity and genuine
+  rejection using actual existing recovery replies. Do not silently change result
+  semantics during this budget experiment. Record the minimal follow-up, including
+  valid next-part signals, acknowledged progress and terminal failure protections.
+
+
+Verification checkpoint: the 2,000 override replaces 5,000 in the evaluation-window,
+preparation-session and runner admission only. Two fail-first cases reproduced the
+old rejection of 2,000. All 69 budget/repair/discovery cases, 45 transport/projection
+cases, one native-delivery case, 18 capture/protocol cases, 62 source-bound Inspector
+cases, 15 naming and ten static Inspector/catalog cases passed. Production types
+passed; scoped lint has zero errors and two existing console warnings. Inspector
+attempt `fb5b44a1-33de-4917-867e-43292cb93e89` was accepted and all 841 runtime
+source files matched. The single authorized live run follows this fixed source.
+
+Live checkpoint: run `1792698079485` completed once without video. One 70-object
+artifact, first content 73.930 s, cutoff 120.003 s, report 133.315 s, collection and
+cleanup complete 135.003 s. There was no live overflow or parts recovery; do not
+claim model recovery adoption. Report text exactly matched raw output and its
+screenshot was captured. Four streams and 46 payload/assets verified; two native
+tool images retained, one saved root and durable sequence 4 matched reload.
+No post-cutoff drawing; all owned services stopped. The model's image-forwarding
+error claim remains self-report, not independently proven by App tool receipts.
+[Detailed observation and capacity-continuation proposal](../evaluations/2026-10-23-101-evaluation-2000-and-parts.md).
+Current recoverable capacity still surfaces failed/not-started with recoveryInvocation;
+this experiment did not modify that status contract or authorize another model run.
+
+### Test-only artifact budget - 2026-10-23
+
+Step Execution Card - prepare, with compose/observe direct consumers:
+- Objective: reproduce budget recovery under an explicitly lower evaluation limit,
+  without changing the production ceiling or claiming that overflow is guaranteed.
+- Input: existing evaluation-window metadata, optional expandedNodeLimit=5000.
+  Absence preserves 10000; all other override values reject. No model tool can
+  alter the policy. Lifetime is the existing request/session, never global state.
+- Owner: canonical design budget, existing preparation session and rejected-source
+  store. Thread the effective limit through guidance, structural inspection and
+  contiguous complete-instance partition planning. Keep compiler/browser hard
+  safety ceilings, all other limits, geometry and order unchanged.
+- Contributors/allowlist: evaluation-window and its provider consumer; design-budget,
+  draft-repair, preparation, local-design-tools/workflow; existing runner/protocol;
+  their permanent tests, execution-flow proof/mapping and necessary contracts.
+- Failures: invalid evaluation settings reject; rejected preparation writes nothing.
+  Returned recoveryInvocation uses retained source only. Partial/failed/cancelled
+  recovery retains acknowledgements and resumes only confirmed remaining parts.
+- DoD: fail-first tests prove default/override isolation and exact 5000 boundary,
+  effective delivered guidance, each recovered part within budget, complete geometry,
+  and existing no-replay/expiry/cancellation protection. Verify real provider setup
+  receives the same window. Run focused tests, naming, lint, production types,
+  Inspector admission and source-bound proof before the single authorized run.
+- Observe: record explicit effective and production limits, work/report deadlines,
+  complete linked raw records and assets. Capture admitted report independently of
+  raw provider prose. Report no-overflow or missing recovery as unexercised, never
+  passed. Stop after one run; no automatic model retry or unrelated correction.
+
+
+Implementation checkpoint: explicit evaluation-window policy reaches the existing
+request-local preparation session, budget inspector, source partition store and
+usage/schema descriptions. Production and all non-object limits remain unchanged.
+The compiler/browser 10,000 safety ceilings remain intact. Fail-first tests detected
+all three missing policy boundaries before implementation. Verification includes
+exact 5,000/5,001 boundary, default isolation, native discovery delivery, complete
+13,095-object geometry/material/order equivalence, remaining-only retry and duplicate
+protection. Final owner 15, discovery integration 54, browser transport/projection 45,
+capture/protocol 18 and source-bound Inspector 62 cases passed. Existing workflow 63,
+local preparation tools 39 and compiler 52 cases also passed. Naming, scoped lint
+(zero errors; four existing console warnings), production types and ten static
+Inspector/catalog checks passed. Source-bound attempt
+`4901f069-a15f-4c1a-83c6-48ed17518bf0` was accepted. The native budget test uses a
+scripted transport; only the following explicitly authorized observation calls a
+real model. No inference of live recovery coverage before that run.
+
+Live checkpoint: run `1792696509071` completed with no video. First content 66.165 s;
+work stopped 120.002 s, report returned 135.522 s, capture/reload/cleanup ended
+140.745 s. Two artifacts contained 2,629 and 2,495 objects; neither exceeded 5,000,
+so live parts recovery remains unexercised. Exact report text and screenshot were
+captured successfully. The model report incorrectly compares their document total
+5,124 with the per-artifact ceiling; delivered guidance and admission both use
+per-artifact scope. Preserve this interpretation error in evidence. All 79 referenced
+payload/assets and five stream sequences verified; two exact tool images retained;
+durable roots and sequence matched fresh-context reload. No drawing after cutoff.
+All owned services stopped. Detailed evidence and limitations:
+[the bounded evaluation report](../evaluations/2026-10-23-101-evaluation-budget-and-report-capture.md).
+No automatic follow-up run is authorized by this completed checkpoint.
+
+### Settled report capture - 2026-10-23
+
+Evidence: run 1792693671659 retains the native report in payload 64-output and
+renders it in final.png, while run.json records Network.getResponseBody eviction
+and a failed self-report capture. The collector calls response.text() on the full
+stream, including large drawing batches. Browser context closure happens later;
+the error's navigation suggestion alone does not prove navigation caused this loss.
+The App has already consumed the stream and retains the actual runtime result in
+its existing settled conversation turn. Raw model output alone is not admission.
+
+Bounded design and Step Execution Card - observe:
+- Spec: Bounded evaluation work and self-report. Inspector: observe, execution-trace.
+- Input: the current settled conversation result, its recording/request and turn
+  identity, the exact host report marker, final report action receipt, and rendered
+  message. Output: attributed text plus independently confirmed screenshot.
+- Reuse the conversation's existing result. Project only a bounded valid report to
+  its rendered message; do not create a report store, fetch/parse a second stream,
+  trust raw provider output as a fallback, or infer success from visible prose.
+- Require executed runtime settlement, exact host marker, one final preview action,
+  its matching terminal report_outcome/no-change receipt and valid bounded report
+  text. Runtime receipts are ordered across batches; earlier batches may legally
+  reuse action IDs. Consume the final receipt, not a global uniqueness scan.
+  Earlier acknowledged drawing receipts remain valid and are not replayed.
+- The collector selects exactly one report belonging to an observed request and
+  the same rendered turn. Missing, conflicting, malformed, stale, failed or
+  cancelled results remain missing evidence. Verify identity and displayed text
+  again before screenshot. Only the assistant result text can match; user text or
+  history cannot substitute. Text saved before screenshot survives image failure.
+- Contributors: existing evaluation-window contract, conversation presentation,
+  capture-lifecycle and runner. Failure owner: observe. No cache or new lifecycle.
+- Allowlist: those owners, their panel/capture/real-browser tests, the existing
+  execution-flow proof/mapping and necessary spec/README. No framework mutation,
+  model settings, budgets, refresh, Knowledge, history or drawing algorithm edits.
+- DoD: permanent regression fails before implementation; real App with scripted
+  large response completes one report without DevTools body access or a second
+  execution; request/turn mismatch, report rejection, text/image failure and bounds
+  remain failures. Run focused capture, panel, provider/protocol and Inspector
+  proofs, naming, lint and production types. Review direct consumers and the diff.
+- Stop if the existing settled result cannot prove admission or preservation
+  requires a new result authority. No real model calls or 101 run.
+
+Budget reproduction remains independent: retain the actual 10,000 limit and use
+saved over-budget source for deterministic recovery tests. A future live experiment
+with a lower test budget needs an explicit isolated configuration and attribution;
+it is not a product-limit change or part of this capture correction.
+
+Status: implemented and verified. Contract admission passed before implementation;
+formal panel and real-browser regressions failed on the previous collector boundary.
+The browser reproduced diagnostic-body eviction while the App retained/rendered the
+report. The replacement uses the actual settled result and the existing collector.
+Self-review strengthened terminal-receipt selection for legal ID reuse and excluded
+user/history text from screenshot verification; both new failures were reproduced
+before correction.
+
+Validation: 109 focused projection/panel/conversation/provider tests, 14 capture
+cases, one real-browser scripted large-stream case, 61 source-bound Inspector cases,
+15 naming cases, two architecture checks and eight workspace catalog checks passed.
+App/server/proof production types passed. Scoped lint: zero errors; one unchanged
+console warning in the existing execution-flow proof. Inspector attempt
+`2b0f3ee8-7063-46ee-a3ba-d814f101bd75` passed and evolution review
+`47419b344f3ba16ca4ce3e1d20aa2b25c0e07a83bf52128e5b7c31c60db04aec` was accepted.
+All captured runtime source files matched the final implementation. Browser evidence:
+`tmp/report-capture-browser-evidence/`; regression logs use `tmp/report-capture-*`.
+The screenshot was inspected: the entire retained public report is visible.
+
+No historical evidence was rewritten. Native report generation, real-model behavior
+and a new 101 run remain untested in this stage. Artifact limits and work/report
+budgets are unchanged. No push, extra model, automation or goal was started.
+
+### Source-referenced expansion recovery - 2026-10-23
+
+Objective: make the actual budget rejection directly executable as ordered recovery,
+without model arithmetic or resending geometry. Run 1792686476663 payloads 30/33
+confirm 13,095 expanded objects against 10,000, before writes; the selected draft
+contract excludes parts and rejection only supplies prose. This does not establish
+why the model made no subsequent call. Existing tests hand-author remaining drafts.
+
+Design and admission review:
+- The 10,000-object / 200,000-command limits bound each compiled artifact and browser
+  wire admission. The preparation specification gives memory/wire containment as
+  rationale; no measured 10,000-object performance cliff has been established.
+  Keep the limits, the source work windows and browser admission independent.
+- Budget owner computes exact costs and contiguous partitions over existing root
+  children and complete pattern instances. Preserve original ranges and order.
+  Scope automatic recovery to flat projected group contents with independent
+  fillTemplates/world linearFields; reject relations, layout, nested containers,
+  shared bindings or indivisible excess rather than changing their semantics.
+  Require disjoint source key families for automatic recovery; duplicate keys or
+  overlapping generated prefixes stay explicit failures, never become valid merely
+  because they land in separate artifacts. Normal independent parts remain legal.
+- Retained rejected source owns an immutable bounded partition description in its
+  existing request lifetime. Extend repair with a partition index, mutually exclusive
+  with arbitrary replacements. Return ordinary parts envelopes referencing that
+  source, with backward continuation of the original root. No source geometry in
+  the recovery invocation and no new lookup prerequisite.
+- Preparation compiles one admitted partition at a time. Continuing partitions bind
+  to the first partition's retained artifact/root; canonical application skips the
+  already-created root and rebases child coordinates against its current normalized
+  placement. Validate an unchanged anchor and ancestry before each slice; moved,
+  removed, locked or stale dependencies reject. No extra group or relationship.
+- Parts retains prior receipts and stops on failure. Return a remaining-only
+  invocation only for confirmed not-started work; uncertain/partially written work
+  requires inspection and never automatic replay. Normal draft/repair/parts remain.
+
+Step execution cards (execute sequentially):
+1. prepare - execution spec Source-referenced expansion recovery; Inspector prepare.
+   Input: rejected compact source, immutable retained handle and explicit partition.
+   Output: structural costs, bounded recovery parts and prepared artifacts with exact
+   continuation binding. Contributors: budget, repair, preparation owners. No model,
+   browser mutation, inferred geometry or duplicate stores. Boundary: design-budget,
+   design-draft-repair, design-preparation, local-design-tools and their formal tests.
+2. apply - same spec; Inspector apply. Input: admitted partition artifact and retained
+   first-root evidence; output: canonical same-parent writes and truthful receipts.
+   Contributors: existing Core APIs/transactions. No second mutation path, silent
+   parent creation or replay. Boundary: design-actions, prepared-design contracts
+   and prepared-material-action plus affected formal application/lifecycle tests.
+   Bounded canonical lifecycle proof: existing e2e/design-construction.spec.ts.
+   Material provenance must retain prior members and accept only equivalent Group
+   coordinate normalization; changed geometry/binding or request ownership rejects.
+3. compose - same spec; Inspector compose. Input: actual failure/part receipts;
+   output: directly executable recovery/remaining invocations using ordinary parts.
+   Contributors: existing preparation/application/discovery. No model recomputation,
+   scheduler, status store or mandatory preflight. Boundary: local-design-workflow,
+   selected delivery and formal dispatcher integration/proof cases.
+
+DoD and bounded gates:
+- Formal red case consumes the actual rejection and cannot recover on old source.
+  Preserve the saved compact input as a formal fixture, independent of tmp.
+- Execute returned invocations through dispatcher/preparation/application; compare
+  complete geometry, materials, order and a single root/parent graph. Prove exact
+  budget boundaries, unsupported cases, source expiry, cancellation, duplicate
+  attempts, stale root, partial success and remaining-only recovery.
+- Reuse source/partition computations in the retained lifetime; each successful
+  partition is compiled/applied once. No increased artifact limits or first-read prerequisite. Recovery metadata is
+  bounded to 128 parts and charged to existing retained-byte capacity; unsupported
+  larger recovery plans remain explicit failures. Cancellation retains the existing
+  aborted-invocation protocol and browser acknowledgements; it does not fabricate
+  an outer success receipt or automatically replay the interrupted batch.
+- Validate actual Core normalization plus Undo/Redo/save/reload where changed;
+  source-space equivalence and owner receipt checks precede browser evidence.
+- Focused suites, production types, scoped lint, naming and mapped Inspector gates.
+  Self-review only the diff, direct consumers, failure paths and these gates.
+- Stop and replan within this task if continuation cannot preserve coordinate or
+  material identity. Do not silently broaden to native scene instancing.
+
+
+Bounded verification review:
+- Complete source equivalence and dispatcher recovery pass. Additive owner cost
+  calculation replaces repeated prefix scans; the formal work-count regression
+  failed at 64,250 vertex reads and now stays within 2,500 for 250 components.
+- The browser lifecycle oracle reached full geometry/order validation. Its keyboard
+  helper waits a fixed 500 ms and did not establish completed Undo. The next bounded
+  verification uses the existing awaited public history owner and the same document
+  digest; it does not change history behavior or claim the shortcut is fixed.
+- Collect all per-node differences before one assertion to avoid tens of thousands
+  of Playwright trace steps. Freeze source during the browser run to avoid dev HMR.
+  Keep the geometry tolerance, one-commit check and durable reload oracle unchanged.
+
+
+Verified checkpoint:
+- Admission reviews `ca1d309e55c8c3b3ca57287e7d983174fe0624d2e8864cd641ce223b0f6e550c`
+  and `bc94092bbe23affcbd4d7a78f3f946c495bd59e1773663b200edea0cb4b46554`
+  accepted the bounded contracts. Final captured-source run
+  `674aab04-efe9-4d9a-ab7f-e3f5ec033b99` passes all 60 mapped cases at revision 65;
+  source digest `20eda93a345ea28a9df47c74a19d333046036958e920b71f0c6c1ddf7a690a1f`.
+- 303 server and 52 application/material tests pass, including the permanent saved
+  input fixture, complete numeric/fill/order equivalence, work counts, metadata caps,
+  invalid references, key-family conflicts, cancellation and remaining-only recovery.
+  Duplicate/foreign/released or unconfirmed application cannot advertise a replay.
+- Deterministic browser lifecycle passes: 13,094 children plus one root, exact parent
+  and painter order, every position/size, one Undo commit, awaited public Undo/Redo
+  and durable reload digest equivalence. Log: `tmp/budget-recovery-e2e-owner.log`.
+  This tests public history completion, not keyboard shortcut timing.
+- App/server/proof production typechecks pass; scoped ESLint has zero errors and one
+  pre-existing console warning; naming 15/15 and Inspector static contracts 2/2 pass.
+  Selected composition delivery remains one reply (19,763 / 20,131 bytes for the
+  tested implicit/explicit scopes), without raising the delivery cap.
+- Self-review covered the actual recovery invocation, request ownership, same-root
+  normalization, material provenance/revision identities, existing independent parts
+  and field repair, failure settlement and source-key preservation. The supported
+  recovery scope stays flat, projected and independently keyed; unsupported geometry,
+  shared bindings, relations or indivisible output retain explicit failure/repair.
+- No live model/101, Knowledge changes, push, new goal, scheduler or artifact store.
+  Tool recoverability is verified; AI adoption and live latency remain unmeasured.
+
+
+### Repetition available with selected contents - 2026-10-23
+
+Objective: remove the extra representation-selection prerequisite for translating
+already selected world-space faces/grids. Raw run 1792683709943 queried only
+projected-face/surface-grid (payload 10, SHA-256
+2ca73b38f8690b36f1e4c4e2f12a5faa5c2e3a5b56e0f42a02beb80c631d7aa1).
+The current projection excludes pattern and the executable combined example;
+this is confirmed delivery behavior, not proof of the model's private reason.
+
+Step execution card - compose:
+- Authority: execution spec Component selection and bounded repetition and
+  Optional repetition in selected contents; Inspector compose and existing
+  compose.selected-operation-contract mapping.
+- Inputs: canonical main-owner schema, existing scope and examples. Outputs:
+  selected primitive contracts plus their optional canonical member-repetition
+  wrapper, valid executable examples, complete outcome/recovery guidance.
+- Owner declaration: add a neutral repetition descriptor inside the existing
+  x-design-input-scope declaration, identifying the canonical node type and member
+  field. Derive supported member types and all limits from that schema; no new
+  capability registry, execution syntax, persistent state or inference engine.
+- Conditions: draft/parts content scopes include only compatible selected member
+  alternatives in the optional wrapper; an explicit pattern selection retains its
+  full faces/members contract. Unrelated 2D scopes and repair remain independent.
+  Invalid owner declarations fail closed. Original single nodes remain legal.
+- Boundary: local-design-workflow.ts, design-workflow-discovery.ts and existing
+  discovery-delivery.integration, local-ai-provider and execution-flow-proof tests;
+  existing plan/spec/Inspector and generated workspace. Reuse existing examples
+  and recorded formal fixtures. No construction, transaction, persistence,
+  Knowledge, report-capture or live-model changes.
+- Failure owner: compose for query/delivery; unchanged prepare/apply owners for
+  mutation. Preserve canonical nested limits, material conflicts, painter order,
+  budget rejection, cancellation, partial receipts, refresh and no-replay.
+- DoD: one content query delivers an executable combined example, without asking
+  for pattern; single-content scopes do not pull unselected member definitions.
+  Execute the actual delivered example through dispatcher and App action, then
+  reuse existing material/order equivalence and partial recovery cases. Preserve
+  explicit pattern faces mode and independent siblings. Validate every admitted
+  example against both projected and canonical schemas. Reject malformed members,
+  nested patterns, conflicting fills and invalid axes before writes.
+- Delivery gate: startup bytes <=30327, no executable draft preloaded. The selected
+  face/grid closure fits one unchanged-budget response and is smaller than the
+  pre-edit face/grid plus pattern acquisition sequence. Explicit mixed scope
+  remains <=20148 bytes. Do not claim single-query primitive bytes decrease; adding
+  useful optional repetition can increase that reply while removing a later query.
+  Adding 10000 unrelated tools must change neither bytes nor calls.
+- Gates: admission, naming, formal red before production, focused discovery/native
+  provider/workflow/preparation suites, production types, lint, static Inspector
+  and mapped proof; review only this diff and direct consumers.
+- Stop: needed construction changes, incomplete canonical constraints, new state,
+  raised limits or failure to fit one reply require bounded replan. No model/101.
+
+Readiness review: the canonical pattern already exposes members, origin, axes and
+instanceRanges and expands to ordinary editable siblings. Its member union owns
+supported content types; a scoped projection can select its existing members mode
+without recreating validation. Existing first-valid example filtering then exposes
+the combined root-material example for the formerly non-pattern face/grid query.
+Independent choices remain valid; this fixes availability, not guaranteed adoption.
+The earlier composition task's unchanged-startup instruction is superseded only by
+an equally bounded selection explanation; its executed-source evidence stays historical.
+
+Admission: e5a4586abf6ce99df701ea62861b0ede89338369fd2b01eaaa3277062e20bd9c;
+static Inspector/catalog 10 passed, naming baseline 15 passed. Formal red:
+three failures for omitted repetition/combined example; explicit selection passed.
+Pre-edit dispatcher replies: content 16297 bytes and explicit combined 20146 bytes.
+These are complete same-test replies, not redacted provider diagnostics.
+
+Bounded self-review: retained canonical member keys/material conflicts and all
+wrapper restrictions; no construction owner changed. Reference closure removes
+unreachable repetition from repair without a new operation-name branch. Initial
+wording distinguishes explicit faces mode, and selected usage limits the loop hint
+to faces/grids so vector-pattern placement stays independent. Replaced one stale
+English substring assertion without weakening its behavioral cases. The first
+startup-size test caught a 20-byte increase; shortened redundant selection wording
+rather than changing its ceiling. Test lint assertions were corrected; no production
+fallback, new state or increased limit was introduced.
+
+Completed bounded verification: six relevant server suites total 613 passed and
+one opt-in native probe skipped, with directly affected tests rerun after review;
+final discovery suite 46 passed and final delivery/native subset 7 passed. No live
+model or 101 was invoked. Production types passed; lint zero errors with two
+pre-existing console warnings; naming 15 passed; static Inspector/catalog 10 passed.
+Final Inspector attempt 87ae22f6-5b2b-429a-ba4f-5fc9b5632c78 contains 59/59 passed,
+zero skipped; actual vitest artifact inspected. Captured source
+8b02481e8b16fec65d897c3ee527ed7df5969f6195efb1a9e6000564e8918c5c matches the final
+production files, proof test, spec and Inspector. Mapping revision 62 is unchanged.
+
+Final measured complete replies: implicit content-plus-repetition 19768 bytes in
+one reply, versus the pre-edit two-read acquisition total of 36443 bytes (45.8%
+less); the primitive-only old reply was 16297 bytes, so that one reply grows by
+3471 bytes when optional repetition is included. Explicit combined selection is
+20136 bytes (ceiling 20148). Actual native startup is 30302 bytes versus 30327;
+10000 unrelated tools do not change selected reply bytes or calls. Existing recorded
+full-component equivalence, material/order and remaining-only recovery passed;
+output budgets remain unchanged. These are deterministic delivery results, not
+measured model adoption, first-frame latency or visual acceptance.
+
+
+
+
+### Composition example handoff - 2026-10-22
+
+Objective: deliver a usable composition of root material definitions, independent
+siblings and translated mixed members through existing owner examples and valid
+scope filtering. Run 1792680047092 received the mixed contract but submitted eight
+explicit seven-node blocks. The current example omits root materials and independent
+siblings; this is a handoff gap, not proof of the model's internal cause.
+
+Step execution card - compose:
+- Authority: execution spec, Composition examples within selected usage; Inspector
+  compose and existing compose.selected-operation-contract proof mapping.
+- Inputs: canonical owner examples and selected schema, existing query/dispatch,
+  saved raw tool arguments and actual owner receipts.
+- Outputs: the selected mixed-sibling example is schema-valid and executable;
+  root materials, independent nodes and mixed pattern compose in painter order.
+- Conditions/bypasses: use existing first-valid example filtering. Pattern-only,
+  face-only and nonrepeating selections remain legal; never infer geometry or
+  require a pattern. No new selector, tool, registry, state or preflight.
+- Contributors/boundary: design-preparation-examples.ts; selected-only redundant
+  explanatory prose in design-workflow-discovery.ts if needed to offset example
+  size; discovery-delivery.integration, local-ai-provider, local-design-tools and
+  execution-flow-proof tests. Initial provider guidance, owner selection and queryExample stay unchanged.
+- Failure owner: compose for delivery; existing prepare/apply owners for execution
+  and truthful outcomes. No construction, persistence, transaction or refresh edits.
+- DoD: execute the returned example via real dispatcher and preparation/action
+  owners; preserve complete constraints/results/recovery. Mixed selected response
+  stays one reply and at most 20148 bytes (complete pre-edit dispatcher baseline); startup reading
+  does not grow. No unrelated catalog growth. Preserve standalone choices, partial
+  receipts, cancellation, refresh and remaining-only recovery without replay.
+- Gates: contract admission and naming; new formal red before production changes;
+  provider/discovery/pattern/workflow/operation suites, production types, focused
+  lint, Inspector static checks and mapped proof. Review only changed files and
+  direct consumers. No live model, 101 or report-capture changes.
+- Stop: construction changes, missing owner constraints or a repeated failed
+  implementation approach require a bounded replan. Do not raise delivery limits.
+
+Validation segment card - prepare (after compose review):
+- Authority: unchanged Translated mixed components contract and prepare step.
+- Inputs: hash-verified saved full draft and explicitly compacted representation;
+  outputs: equivalent ordered geometry/materials and unchanged budget decisions.
+- Boundary: design-patterns.test.ts and recorded composition-materials fixture;
+  integration consumes this fixture through existing dispatcher. No runtime edits.
+- Verify independent prefix/suffix, all numeric/material values, generated unique
+  keys, root parent/order, input-byte reduction, overflow before writes and legal
+  partitions. Generated names/keys may differ, but original painter order cannot.
+- DoD/gates: focused equivalence plus integration recovery; failures remain owned
+  by prepare/apply. No visual quality or model adoption claim from these tests.
+
+Readiness review: saved 18875-byte diagnostics redact usage instructions. The same
+query through the unmodified dispatcher yields 20148 bytes, so compare complete
+replies against that measured baseline rather than redacted evidence. Initial
+provider text is measured separately. No delivery limit changes are authorized.
+Contract admission digest: 90fd0ebbeb6053a1d33190b73a9ff1c00ce0623346bfec8d28ca7e4bbe892322.
+Static architecture/catalog checks: 10 passed after the referenced fixture exists;
+naming: 15 passed. Raw fixture input hash verified before extraction.
+
+Bounded iteration after the first full gates: the selected composition now fits
+one reply and executes, but an existing restriction test requires explicit
+"oneOf exactly one" wording. Retain that wording rather than weakening its oracle.
+The direct preparation test also hardcodes the vector example at array index 2;
+select the actual vector-pattern example by its semantics instead. This changes
+only the existing compose-allowlisted direct test, not preparation behavior.
+Rechecked compose conditions, selected usage spec and both failing assertions;
+no schema, owner, budget or recovery changes are needed. Add the direct
+local-design-tools suite to the frozen gates. Self-review found no additional
+contract gap; the default generic example and pattern-only fallback remain valid.
+
+Self-review correction: keep the illustrative panel and grid on the same four
+corners. A smaller triangular panel is executable but needlessly obscures the
+composition relationship. Strengthen the actual returned-example oracle first;
+recover those bytes from duplicate selected-guide prose, never from constraints,
+limits or incomplete geometry. Initial guidance and owner execution stay unchanged.
+
+Status: bounded composition-example handoff complete; Task 3 remains active.
+
+Validation and self-review:
+- Existing delivery test did not detect the missing combination. The new formal
+  test failed on missing linearFields before production edits (composition-example-red.log).
+  A second review regression caught the mismatched panel/grid boundary before its
+  correction (composition-example-review-red.log). Both now pass without weakening
+  limits or constraint assertions.
+- Actual native startup base instructions remain 30327 bytes with identical SHA-256
+  449ed337fe09167e94f9ce5f872d9aa858c77cc3c7245ceca6619897407ea07c.
+  Selected mixed delivery: 20148 -> 20146 bytes, one reply; adding 10000 unrelated
+  tools leaves that reply unchanged. This measures model-facing startup prose and
+  selected delivery, not unchanged deferred registration payload size.
+- The selected example resolves root fillTemplates and world linearFields, one
+  independent face and two mixed face/grid instances through actual dispatcher,
+  preparation and App action owners. It produces 16 entries with correct parent
+  relationships. Tests use the existing storage adapter, not a browser/render pass.
+  Pattern-only examples, independent selections and face-only patterns remain valid.
+- Hash-verified saved draft: 29540 -> 12160 submitted draft bytes (58.8% reduction).
+  Its 13117 expanded objects still reject before writes. Explicit 7034/6084-object
+  partitions preserve every ordered numeric/material value, independent prefix/
+  suffix and unique generated keys. Generated names/keys intentionally differ.
+- Integration retains successful first-part writes across failed second preparation,
+  cancellation, refreshed documentation and explicit remaining-range execution.
+  Successful part receipts remain distinct from aggregate partial/completed when
+  the optional mechanical follow-up is unavailable; no success inference or replay.
+- Six server suites passed 609 tests; one optional native probe skipped. After the
+  final review edit, affected discovery/preparation suites passed 81 tests and the
+  actual startup delivery test passed again. Production types passed; focused lint
+  has zero errors and two pre-existing console warnings. Naming: 15 passed;
+  static architecture/catalog: 10 passed. No live model or 101 was run.
+- Final contract admission: bfb75e606c84d6c94dfd5603723f5d7cbaab06e26a78ab64956aed19bf7a48f4.
+  Inspector attempt c0ea2ac6-61c7-46d1-b9cf-fef6a021c22f passed all 59 mapped cases,
+  zero skipped/failed. Captured source
+  0c50d07b4f389eea198af62c69a0560076654d1ef56438b2c75f5b3af8a09434;
+  both production files and the proof test match that saved source byte-for-byte.
+- Bounded review covered the changed example/selected prose, actual provider
+  delivery, first-valid filtering, direct preparation tests, dispatcher and failure
+  consumers. Removed redundant selected prose; retained all schema restrictions,
+  owner results/recovery and legitimate examples. No construction, owner selection,
+  refresh, transaction, persistence or report-capture behavior changed. Model
+  adoption, first-frame latency and visual quality remain unmeasured this round.
+
+
+
+### Component selection through bounded execution - 2026-10-22
+
+Objective: distinguish component contents from outer repetition before the first
+query, then connect the existing query example to an executable mixed-component
+example and explicit expanded-budget recovery. Saved run 1792673491884 has eight
+nine-face blocks and eight two-grid blocks translated by Z 3900. The repeated grid
+alone expands to 12800 nodes: compression is not capacity. These are evidence of
+applicable capability and constraints, not proof of the model's internal decision.
+
+Step execution card - compose:
+- Authority: execution spec, Component selection and bounded repetition;
+  Inspector compose and existing compose.selected-operation-contract mapping.
+- Inputs: existing owner selection/queryExample, canonical examples, selected
+  schemas, saved exact face/grid inputs and actual execution receipts.
+- Outputs: two-level selection advice and executable same-read query, complete
+  selected usage/example, budget-aware remaining-work recovery with stable order.
+- Conditions/bypasses: explicit representation choice; patterns are optional.
+  Independent geometry, differing shapes, existing face-only mode and direct
+  execution stay valid. No inferred geometry or automatic partition.
+- Contributors: local-design-workflow owner prose/queryExample, existing discovery
+  projection and provider delivery, design-preparation-examples if needed; direct
+  provider/discovery/pattern tests and existing mapped execution proof.
+- Implementation boundary: those existing compose allowlisted files only, plus
+  a project-owned recorded fixture for formal tests. Construction, apply,
+  transactions, persistence and Knowledge remain unchanged.
+- Failure owner: compose for advice/contract delivery; existing prepare/apply
+  owners remain responsible for budget rejection and actual write receipts.
+- Forbidden: new state, registry, selectors, preflight calls, eager schemas,
+  increased limits, forced patterns, altered painter order or report-capture work.
+- DoD: actual native first request includes owner conditions and usable query;
+  execute that query and its returned example through normal dispatch. Preserve
+  one reply and catalog-growth independence. Exact saved geometry/material/order
+  matches compact representations; source bytes fall. Repeated grids still reject
+  overflow before writes; ordered parts preserve completed work across failure,
+  refresh, cancellation and explicit recovery. Nonrepeating exceptions stay explicit.
+- Gates: contract admission, formal delivery red before production edit, provider,
+  discovery, construction and workflow tests; production types, naming, focused
+  lint, Inspector static and mapped proof. Bounded review covers direct consumers.
+- Stop: any required construction or execution semantic change requires revisiting
+  the contract. No live model/101 or claim that deterministic proof ensures adoption.
+
+Readiness review and validation segment - prepare:
+- Existing translated-component contract remains unchanged. Inputs are the exact
+  recorded drafts and explicitly authored compact counterparts; outputs are full
+  ordered constructed geometry and unchanged budget rejection.
+- Boundary: design-patterns.test.ts and recorded component-selection fixture only;
+  no construction, mutation, state, cache or persistence edits. Failure owner stays
+  prepare. Compare all numeric/material fields, preserve independent exceptions,
+  and test 12801-node overflow plus two exact 6401-node ranges.
+- Compose integration consumes those representations through real prepare and App
+  action owners, with the existing test storage adapter. It preserves acknowledged
+  writes when optional mechanical follow-up is unavailable (partial/completed),
+  cancellation occurs, or remaining ranges are explicitly retried.
+
+Bounded iteration: initial expanded usage prose exceeded the existing one-reply
+budget in two formal cases. Replaced redundant prose rather than raising limits
+or relaxing tests. Existing complete schema constraints/results/recovery stay intact.
+The first-query example is illustrative pattern selection, not an automatic selector;
+independent choices remain available. Review confirms no new execution semantics.
+
+Status: bounded component-selection handoff complete; Task 3 remains active.
+
+Validation and self-review:
+- Two formal delivery cases failed before the owner edit (component-selection-red.log).
+  Actual thread/start and actual initial-query execution now reach the canonical
+  mixed example. Existing independent choices and exact recovery remain covered.
+- Recorded fixture derives exact drafts from verified raw input hashes, omitting
+  only the brief. Tests do not depend on ignored tmp evidence. Explicit exceptions
+  remain intact; comparisons exclude generated keys/names while verifying all
+  numeric geometry, materials and ordered output, plus unique keys and root order.
+- Massing source 19156 -> 5915 bytes; repeated grid source 16636 -> 2421 bytes.
+  These are representation measurements, not model latency or adoption evidence.
+- The 12801-node grid artifact rejects without writing. Two 6401-node ranges
+  preserve the completed massing and first range across cancellation, refresh
+  and remaining-only execution. Missing mechanical follow-up remains truthful
+  partial/completed with successful child receipts; never promoted to success.
+- Five focused server suites: 567 passed, one optional native probe skipped.
+  Final discovery rerun: 40/40. Production types passed, naming 15/15, static
+  Inspector 10/10. Focused lint: zero errors, two existing console warnings.
+- Inspector e8f92b4e-c138-4578-a03d-55a5f9c13af6 passed all 59 cases on source
+  fc8e61b7269871f4e76c5d9fcf79ad0724f3194fd453e10dc470a60257d9bedb.
+  Admission digest a0fe1974cc6a2145ae31af06f70fff5a41e37f03096d809d124ffda11ea7df59.
+- Review: production change is owner selection/queryExample and concise usage;
+  existing example inventory, schema projection, dispatcher, construction and
+  mutation semantics are reused. One selected guide remains one reply; 10000
+  unrelated tools do not change delivery. No limits or recovery protections relaxed.
+- No Knowledge, report-capture, model, 101, Undo/Redo, collaboration or persistence
+  changes. App storage is adapted in integration tests; no claim of a new end-to-end
+  persistence/visual acceptance. Model adoption remains untested this round.
+
+
+### Initial owner selection delivery - 2026-10-22
+
+Objective: preserve the existing owner selection conditions in the first actual
+provider request, before operation scope is selected. Current query guidance drops
+selection while retaining enum choices. Deferred registration alone does not prove
+the model received these conditions before its first query.
+
+Step execution card - compose:
+- Authority: execution spec, Next-part operation selection; Inspector compose.
+- Inputs: canonical workflow input scopes and existing owner selection text.
+- Outputs: the same selection text in initial Main tool scope; selected queries
+  retain their complete constraints, executable examples and recovery.
+- Conditions/bypasses: owner opt-in only; known scopes remain directly usable;
+  independent faces/grids, face-only patterns and mixed members remain legal.
+- Contributors/boundary: existing design-workflow-discovery projection, native
+  provider consumer and local-operation-tools error projection; provider, discovery and mapped execution-proof tests.
+- Forbidden: new selector, registry, state, mandatory read, eager schemas, changed
+  limits, inferred geometry, mutation changes, Knowledge changes or live models.
+- Failure owner: compose. Missing selection is a delivery regression; do not infer
+  model adoption or generation latency from deterministic delivery tests.
+- Cases/DoD: actual thread/start contains exact canonical selection once; mixed
+  repeat versus independent geometry and root/optional choices remain explicit;
+  direct selected published examples execute; unrelated catalog growth adds no
+  first-query bytes or calls. Preserve budget rejection, partial success, refresh
+  and no-replay recovery with existing formal integration cases. Existing recorded
+  mixed-component equivalence cases cover geometry; no new construction owner work.
+- Gates: contract admission; failing actual-provider and mapped proof assertions
+  before production edit; focused provider/discovery/pattern/workflow suites,
+  production types, naming, focused lint and Inspector static/mapped gates.
+- Stop: unexpected execution-owner changes require revisiting this bounded scope.
+
+Direct-consumer review: forwarding full selection into bounded error text truncates
+its recovery JSON (five existing integration cases fail). Preserve the original
+error projection of legal enums and executable example; complete selection belongs
+to startup and ordinary discovery. No error limit change or recovery extra read.
+
+Status: this bounded delivery slice is complete; Task 3 remains active.
+
+Validation and self-review:
+- Actual native-request regression failed with missing selection before the fix
+  (tmp/initial-selection-red.log). Initial test setup was corrected to read the
+  canonical owner, since native declaration normalization strips owner metadata.
+- Existing recovery tests detected truncated correction JSON after the initial
+  change. Explicit bounded error projection preserves the previous executable
+  recovery; no limit was increased. The mapped proof now separately asserts
+  complete startup guidance and bounded error choices.
+- Final five focused suites: 565 passed, one optional native probe skipped
+  (tmp/initial-selection-final-tests.log). Covers actual provider delivery,
+  published mixed-component dispatch, recorded geometry equivalence, budget
+  rejection, partial receipts and recovery without completed-write replay.
+- Production types passed; naming 15/15, Inspector static 10/10. Focused ESLint
+  has zero errors and two existing console warnings outside this slice.
+- Inspector candidate e02f44af-f301-4a8b-b393-b60128b267a4 passed on source
+  919bd01914a58dfdd55f13605d45c2b1ae741b9c82d619f75ef625fa6a6620aa.
+  Admission digest: 9eb06bca42125a64a86e4c19b9baa07eff25835034793cd01a150bb4eea00f38.
+- First guidance adds only the canonical 1650-byte text (1665 JSON bytes), once.
+  Ten thousand unrelated tools leave guidance and direct-query delivery equal;
+  the published query still takes one reply. No eager child schemas or new calls.
+- Reviewed direct consumers: provider startup, scope-error projection, selected
+  discovery, dispatch and existing no-replay cases. Execution, storage, transaction,
+  material and Knowledge owners are unchanged. No model or 101 run; no claim of
+  adoption, latency improvement or a complete explanation of prior AI behavior.
+
+
+### Translated mixed components - 2026-10-22
+
+Objective: express a translated ordered face/grid component once through existing
+pattern construction, without extra discovery or a new mutation path. Run
+1792666831862 submitted 30 source nodes: its second 15 repeat the first with
+world Z +3900. Twelve grid motif declarations were identical. This proves a
+representation gap, not the cause or duration of unobservable provider work.
+
+Reviewed bounded contract: pattern retains its valid faces mode and adds mutually
+exclusive members (ordered projected-face/surface-grid only). No recursive pattern,
+container, scale, rotation, automatic grouping or geometry inference. Shared root
+projection, origin, axes and instanceRanges retain their owners. Members do not use
+pattern-level fills; each member retains native fills or face materialField. Keys
+are pattern-instance-member (grid includes cell/motif suffix), order is instance,
+member, then existing grid order; no new canonical hierarchy. Existing faces is a
+valid distinct operation, not a compatibility path. Expanded budgets multiply the
+whole component and include the root; source traversal counts templates once.
+
+Step execution card - prepare (first):
+- Inputs: explicit mixed members, existing world projection/axes/ranges/materials.
+- Outputs: ordinary editable vectors, deterministic keys, material membership,
+  unchanged artifact lifecycle and no-write failures. Existing construction owns
+  one compiled member template per invocation and translates that output, not source
+  re-expansion per instance. No cross-request cache.
+- Conditions: absolute root with shared projection; flat face/grid members only;
+  reject ambiguous forms, unsupported transforms, key collisions, overflow and
+  budget excess. Existing faces and independent grid remain legal.
+- Boundary/contributors: design-construction.ts/schema, design-budget.ts, direct
+  design-patterns tests and retained fixture. Failure owner: prepare; no renderer,
+  fallback geometry, new scheduler or persistence state.
+- Cases: full recorded geometry/fill/order/parent equivalence, mixed ordering,
+  axes/ranges, face world materials and grid offsets/palettes, exact budget/excess,
+  source/projection work counts, cancellation and immutable source.
+- Gates: updated contract admission, red formal tests before implementation,
+  focused preparation tests, naming, production types/lint, mapped proof.
+
+Step execution card - compose (after prepare passes):
+- Inputs: canonical pattern member contract and owner examples.
+- Outputs: same-read next-part selection and executable complete mixed example
+  through existing main tool, with no preflight or additional state.
+- Boundary: design-preparation-examples.ts, local-design-workflow.ts, existing
+  discovery projection if needed for selected closure, direct discovery/provider/
+  workflow/proof tests. Failure owner: compose. No inference, automatic splitting,
+  new tools, knowledge edits or expanded pagination budget.
+- DoD: actual delivered example -> dispatcher -> preparation -> apply, equivalent
+  recorded input with materially fewer bytes, preserved full/scoped contracts,
+  existing page/byte gates, partial success/cancel/recovery without replay.
+- Naming: members is an App pattern input, not a persisted canonical property;
+  generated IDs still belong to preparation. No migration or compatibility path.
+- Stop: complete these deterministic gates and bounded self-review only; no model,
+  101, push, automation or unrelated dirty-work changes. Shared owner files remain
+  in the declared preparation/composition segments; do not broaden discovery.
+
+Feasibility: existing pattern already compiles faces once and translates ordinary
+vectors. Existing expandGrid produces the same output shape; reuse its compiled
+output inside the same template loop, preserving materialField offset evaluation.
+Budget inspection must understand members before this reaches compilation. Schema
+and discovery must expose complete member constraints in the selected read; the
+existing tests retain their page limits. No global recipe capability is needed.
+
+Compose iteration review: adding the member closure exceeded existing single-reply
+gates. Keep those gates and all schema constraints; compact repeated schema prose
+inside the same construction/discovery owners. Do not omit member contracts or
+raise delivery limits. The partial-recovery case must use schema-valid budget
+excess: invalid rows correctly reject the entire invocation before any writes.
+Recheck selected-guide bytes, actual example dispatch and existing consumers before
+advancing; no additional scope or protocol is authorized.
+
+Completed deterministic slice:
+- Existing pattern/construction now compiles ordered face/grid templates once and
+  translates their outputs. Native vector parents, keys, materials and painter order
+  remain owned by preparation. No new tool, mutation owner or persisted state.
+- Recorded source draft: 11951 bytes; equivalent mixed draft: 6870 bytes (42.52%
+  smaller), both producing 1778 child vectors plus root. Tests compare every geometry
+  and material field, ordered correspondence, parent identities and source reuse.
+- Existing selected usage includes a directly executable mixed example and complete
+  member constraints. Compact parameter notation retains canonical restrictions and
+  explanatory notes; existing single-guide/two-total-reply and unrelated-catalog
+  growth gates pass without larger budgets or another required query.
+- Red regressions established unsupported mixed input and missing multiplied budgets
+  before implementation. Review added red cases for grid-template double charging
+  and rejecting pre-translation projected extent; both corrected in the same owner.
+  Template compilation reuses the existing bounded work helper separately from final
+  artifact accounting. Final extents still reject after translation.
+- Formal coverage includes two-axis ranges, both grid orders, palette phase/offsets,
+  world-material phase, collisions, unsupported nested members/transforms, exact
+  10000-object capacity, excess, cancellation, immutable input, actual published
+  example dispatch, partial parts and refresh/recovery without replay.
+- Verification: 633 server tests passed, one optional native probe skipped; 13
+  prepared-consumer/transaction tests passed in the repository's jsdom environment;
+  59 Inspector proof cases passed; 10 Inspector/catalog tests and 15 naming tests
+  passed. Production App/server/proof types passed. Scoped lint: zero errors, one
+  pre-existing console warning in execution-flow-proof.test.ts.
+- Initial admission: b69fefef3a565849e4f667919ba8e2da1f50fcb0bfdd700b2629e9881e5f73d1.
+  Final contract: d4c602ad1bc05b722fc5c02ab30f1473a10c98785d7c26cfbb848d3e6fb0a05d.
+  Final proof: 77de2bac-707f-498f-90dd-8a44ef20dd42; captured source
+  c32d549bfe2356f060437e04a35629f76633dc2facdc32be9dd53bf46d78e62d.
+- Self-review covered the bounded diff, schema/usage consumers, budget and async
+  construction boundaries, retained target lifecycle and existing application path.
+  This closes this component slice only. No live model or 101 was run; adoption and
+  first-frame latency remain unmeasured. Translation is deliberately limited to flat
+  face/grid members; unrelated transforms/hierarchies are not added.
+
+
+
+### Expansion budget and operation selection - 2026-10-22
+
+Objective: deliver aggregate expansion accounting and draft/parts selection in
+existing startup/discovery replies, before submission, without extra preflight.
+Evidence: run 1792664385631 rejected 10078 objects (10008 grid instances,
+69 independent faces and one root), before compilation or canvas dispatch.
+The delivered guide stated 10000 but omitted explicit grid accounting and root
+counting; internal work windows do not partition an oversized artifact.
+
+Step execution card - compose:
+- Authority: execution spec, Expansion budget selection; Inspector compose.
+- Inputs: canonical preparation limits and node schemas, selected operation,
+  existing discovery/provider routes and retained rejection receipts.
+- Outputs: same-read selection conditions, exact expansion rules and executable
+  existing parts example; rejection directs safe correction without replay.
+- Conditions/bypasses: direct known calls remain legal; no required preflight,
+  Knowledge read, new tool or automatic geometry partition. Full reads remain.
+- Contributors: existing workflow/discovery, preparation budget/schema owners and
+  formal provider/dispatcher/parts tests. Failure owner: compose for delivery;
+  preparation retains deterministic budget rejection ownership.
+- Boundary: local-design-workflow.ts, design-budget.ts, design-construction-schema.ts,
+  direct discovery/provider/workflow/proof tests and recorded fixture; current plan,
+  necessary spec, Inspector, mapping and generated catalog only.
+- Names: reuse canonical limits and operation identities; no persisted identities,
+  registry, scheduler, state or compatibility branch.
+- Cases/DoD: actual delivered selection and guide, recorded 10078 rejection with no
+  compilation/write, exact 10000 boundary, delivered parts example through real
+  dispatcher/preparation/application, later failure/cancellation and no replay.
+  Unrelated catalog growth must not change selected delivery; no mandatory exchange.
+- Gates: contract admission before tests/production, failing formal delivery tests,
+  focused integration/regression, mapped Inspector proof, static catalog, naming,
+  scoped lint and production types; bounded review of changed owners/consumers.
+- Exclusions: model/101, Knowledge, pagination budgets, geometry algorithms,
+  automatic splitting, limit increases, history/persistence changes, push.
+- Stop: close only this deterministic contract once gates pass; model adoption and
+  time savings require separately authorized observation. Preserve prior dirty work.
+
+Feasibility review: workflow query guidance already consumes owner operation prose;
+selected usage derives the canonical schema. Put limits/formulas at those owners,
+not a second counter. Existing ordered parts admits backward parent links and stops
+on failure, retaining earlier receipts. Keep independent artifacts explicit rather
+than infer safe split boundaries. Test actual returned examples, not parallel prose.
+
+
+Bounded iteration: the formal parts-example test exposed an existing prose-only
+orderedInputExample, unavailable to selected discovery. Move that same value into
+canonical examples and remove its duplicate prose; do not author a parallel example.
+The first wording attempt increased selected guide pages. Preserve the existing
+byte/page oracles, shorten redundant explanations and keep exact budget semantics.
+No mutation owner, geometry or pagination budget change is permitted. Re-admit this
+same compose boundary before correcting delivery and rerun the same failing cases.
+
+Bounded closeout:
+- Initial admission: 9dcece78e91db210790a0064decb06535a4885d0c8a2db2f801de8e38359bf8a.
+  Formal red tests proved missing startup capacity, missing parts recovery guidance,
+  and unavailable canonical parts example. The original recorded draft is retained
+  in a permanent fixture; tests do not depend on ignored evaluation evidence.
+- Canonical limits now feed same-read selection and aggregate-count guidance;
+  surface-grid usage states rows * columns * motifs.length plus other/container
+  nodes. Internal work windows and template compression cannot raise capacity.
+  Existing orderedInputExample moved from prose to schema.examples; no duplicate
+  example, new tool, state, counter, automatic split or raised limit was added.
+- Existing reply-count and size gates remain unchanged: representative menu +
+  selected guide takes two replies, including with 10000 unrelated tools. Grid
+  selection totals 24093 bytes; projected-face/pattern selection totals 26152.
+  These are deterministic delivery measurements, not model timing observations.
+- Recorded 10078 rejects before compilation/writes with retained source. Exact
+  10000 prepares successfully. The actual delivered parts example executes through
+  dispatcher/preparation/application. A later oversized part preserves earlier
+  receipts; submitting only the remaining part preserves the previous descriptors
+  and attaches to the acknowledged parent. Existing cancellation tests pass.
+- Five focused suites: 396 passing cases and one existing optional native probe
+  skipped, combining the preserved passing suites with the final owner/discovery
+  rerun (101 passed). The prior prose-extraction test now executes schema.examples.
+  Logs: tmp/budget-selection-regression.log and budget-selection-owner-final.log.
+- Inspector attempt 9362e56e-65f6-4582-9a5f-f7842fddb43a passed the mapped baseline
+  on source c15ce7b826274b4466f01b09d5355b26fbfa7daf0ad8dca446a44708e5141e0a.
+  An earlier attempt could not import the test-only JSON fixture from its isolated
+  source. That failure is retained; the mapped proof now constructs a generic
+  10001 expansion boundary, while integration retains the exact recorded input.
+  No snapshot mechanism or evidence policy changed.
+- Production App/server/proof types passed; static Inspector/catalog 10 passed;
+  naming 15 passed; scoped lint zero errors and two existing console warnings.
+- Self-review covered the owner wording, canonical examples, real provider packet,
+  selected/full discovery consumers, preserved recovery and unchanged execution.
+  No model, 101, visual claim, Knowledge change, push or automation. AI adoption
+  and avoided live roundtrips remain unmeasured. This closes only this handoff.
+
+### First-query scope choices - 2026-10-22
+
+Objective: deliver owner-defined query scope choices before the first scoped
+lookup, and make invalid scope recovery actionable without another menu lookup.
+Evidence: run 1792662315890, provider call exec-5e711e43-d542-4cd7-aec2-f71fa2fa706b
+submitted operation=create. The query schema accepted a string while projection
+rejected it; the failure omitted supported choices. The subsequent menu supplied
+draft/repair/parts. Native deferred registration does not prove model visibility.
+
+Step execution card - compose:
+- Authority: ai-execution-flow.md, First-query scope choices; Inspector compose,
+  existing registered definitions -> provider instructions/query -> tool contract.
+- Inputs: the selected main tool's canonical scope declaration and owner-authored
+  query example, caller scope, existing invocation/result and cancellation paths.
+- Outputs: compact startup choices and executable lookup example; rejected lookup
+  explains invalid fields and the same owner choices without guessing a replacement.
+- Conditions: only the already-guided main capability enters startup text; other
+  tools remain on demand. Missing owner declarations are not invented. Direct known
+  calls, full discovery, refresh and independent operations remain legal.
+- Allowed contributors: App provider, canonical workflow schema, existing discovery
+  projector and query failure channel. Failure owner: compose. No new registry,
+  cache, state, alias, scheduler, Knowledge prerequisite or automatic mutation retry.
+- Boundary: ai-domain-prompt.ts, local-ai-provider.ts, local-design-workflow.ts,
+  design-workflow-discovery.ts, local-operation-tools.ts and direct formal tests;
+  this plan, necessary spec/Inspector and existing proof mapping/generated catalog.
+- Naming: reuse inputScopes, operation/nodeTypes/optionalInputs and existing error
+  status. Any helper is internal App discovery data, not a persisted identity.
+- Product cases: recorded invalid create, invalid node/optional choices, valid
+  draft/repair/parts, actual delivered example -> dispatcher -> owner, refresh,
+  partial receipts/no replay, cancellation and 10,000 unrelated registrations.
+- Gates: naming baseline, contract admission before tests/implementation, red formal
+  regressions, provider/discovery/owner integration, mapped Inspector proof, scoped
+  lint, production types and bounded self-review.
+- Stop: close when these deterministic gates pass. Do not investigate hidden model
+  reasoning, change Knowledge/pagination/geometry, run inference/101 or claim a
+  measured first-frame latency improvement. Preserve all unrelated dirty changes.
+
+Feasibility review: workflowInputScopes already derives choices from the canonical
+schema. Reuse that derivation for a small provider instruction and rejection text;
+keep the existing failed/not-started channel. Validate an owner-authored lookup
+example against those choices rather than infer user intent. Scope errors must name
+the offending field, not silently map create to draft. The actual provider packet
+and delivered example are test inputs, not a separate test-only instruction.
+
+Bounded closeout:
+- Structural admission before tests/production: 8ef2cda31ffeefd6e2685188ecd64f74e8084fbe720c74cb3ea447bcee78a5d0.
+  Final contract admission: 1377e63dfcfc09cfa4d0221941f9e68d6e646e05e5a0b6356fab127243369842.
+- Red regressions proved missing startup choices and missing actionable rejection
+  content. Startup and rejection consume the same canonical choices; the owner
+  publishes one validated query example. No create alias, guessed replacement,
+  extra menu requirement, registry or mutation path was added.
+- Error delivery retains its existing 1,000-character bound. Recovery includes only
+  choices and the query example, not redundant operation prose. Structural schema
+  failures still identify their exact invalid field/index. Owners without scope
+  declarations explicitly direct callers to their independent full contract.
+- Five focused suites passed 521 tests, with one existing optional native probe
+  skipped. The final recovery-preservation case additionally passed in the complete
+  discovery suite. Last owner correction reran both discovery and operation suites
+  (224 passes before that additional case). Provider tests execute the actual
+  startup example through discovery; owner integration applies the returned example,
+  preserves partial/completed receipts and performs informational refresh without
+  repeating the write. The saved invalid query is a permanent project fixture.
+- One selected example uses one reply; adding 10,000 unrelated registrations leaves
+  guidance and reply sizes unchanged. Owner option changes update both entry and
+  rejection; invalid owner examples fail validation. Existing full constraints,
+  legal branches, pagination, cancellation and partial-recovery tests pass.
+- Inspector's 59 mapped cases passed on production source at attempt
+  30ca429a-3d37-4ded-b005-13bbf2cccfb3 (source
+  4522c3862ba31621e86394c1e5d512ec11090cb408ea3be9a300bd83b3a8eb03).
+  Final closure rerun is retained in tmp/scope-choices-inspector-closure.log.
+  Static Inspector/catalog: 10 passed; naming: 15 passed. Production App/server/proof
+  types passed. Scoped lint: zero errors, four existing console warnings.
+- Self-review covered actual provider packets, query/execution field separation,
+  unchanged valid selections, rejected scope recovery, direct consumers and retained
+  completed writes. No drawing, history, persistence or Knowledge owner changed.
+  No live model, 101, push or automation occurred. Model adoption and first-frame
+  latency improvement remain unmeasured; this bounded issue is closed independently
+  of the unobserved pre-first-frame parameter-generation interval.
+
+### Bounded work followed by reporting - 2026-10-22
+
+Objective: an explicitly configured local evaluation stops new drawing at its work
+cutoff, obtains a bounded public self-report, captures its text and screenshot
+without video, and keeps missing reports and capture failures explicit. The work budget is 120 seconds
+for the requested observation; the independent report budget is 60 seconds. Neither
+this plan nor deterministic tests authorize inference.
+
+Pre-change evidence: the runner sent its process-killing watchdog the work deadline
+and rejected absent/partial outcomes before recording export. Provider cancellation
+killed both native computation and tools, preventing a post-cutoff report. Native public protocol exposes turn/interrupt and subsequent
+turn/start on the same thread; this is feasibility evidence, not a live-model proof.
+
+Step execution cards:
+- apply: existing browser transaction owner receives an optional local evaluation
+  deadline. Check at the synchronous mutation entry after waiting for an idle boundary;
+  retain committed history members and ordinary cancellation/settlement. No rollback
+  of completed work and no deadline extension. Prove queued and delayed mutations,
+  partial settlement, Undo/Redo and ordinary operation in transaction tests.
+- compose: existing native provider receives the same explicit evaluation window.
+  Cancel tool work and interrupt the work turn at cutoff, then request a public
+  report in the same thread. No App operations in the report phase; no completion
+  validation or final mutation replay. Preserve request cancellation, transport failure,
+  model/effort and normal requests. Prove actual scripted protocol exchanges, late
+  calls, independent report timeout and failure handling without inference.
+- observe: existing runner supplies the window before Send and retains work/report
+  timestamps separately. Save report text and screenshot; video recording is disabled
+  by the user. Failures retain explicit evidence and bounded cleanup. Reuse the external
+  watchdog as an outer fail-safe, not the work transition. Self-report is attributed
+  model-authored explanation, not verified latency attribution or private reasoning.
+
+Allowed files: current plan/spec/Inspector/mapping; App evaluation-window boundary,
+transaction/startup/server provider adapters and their direct tests; existing evaluation
+runner, lifecycle helpers and tests. No Runtime-wide scheduler or second result store.
+Admission requires exact apply/compose/observe contracts. DoD: formal red regressions,
+scripted provider and owner integration, report capture/failure tests, mapped Inspector
+proof, affected production types, scoped lint, naming and bounded diff review. Missing
+native acknowledgements or capture evidence must remain failures. Stop implementation
+if an owner cannot preserve its cancellation and mutation-settlement contract.
+
+Bounded closeout:
+- Admission preceded production changes (initial digest
+  a2e2aa06344a415d806025b0241c871ef2a543879119d4e615e5c59a86351951).
+  The user's later no-video instruction replaced video startup/export with report
+  text, verified message screenshots and explicit work-context closure before reload.
+- Formal red tests reproduced late/queued mutation admission and absence of the
+  second native report turn. Further tests exposed initialization outside the report
+  timeout and profiler fields omitted by its existing allowlist. Corrections use the
+  existing cancellation, trace fields and payload sink; no new diagnostic registry.
+- Server/transport tests: 240 passed, one existing optional native probe skipped.
+  Browser/runtime/transaction tests: 91 passed. Report capture/protocol tests: 16
+  passed. Applicable production App/server/proof types passed. Scoped lint has zero
+  errors and five existing console warnings. Naming: 15 passed; static Inspector and
+  generated catalog contracts: 10 passed. Existing browser/watchdog fixtures also
+  passed; those fixtures use no model and do not authorize a live observation.
+- The 59 mapped Inspector cases passed on captured production source
+  41b3778fe314799f075a292bbfecc349ab48a26e16936c3f577c6c62424e0adc,
+  attempt dbc4cebc-e097-4445-8f98-55a458b98b3b. Final admission digest:
+  ae9e144980c36849206c480f1498d6b91528f7716ddb9e40a714f3829bb067fb.
+  Only closeout metadata was updated after that captured verification.
+- Self-review covered direct transport consumers, native interruption/turn identity,
+  late calls, early completion, malformed reports, cancellation, missing interruption,
+  report timeout, payload storage failure, expired windows, queued writes, partial
+  history and Undo/Redo. Screenshot failure preserves text; late screenshot completion
+  cannot upgrade failed evidence. Ordinary requests have no evaluation deadline.
+- Limits: native protocol tests use a scripted peer, not real inference. Actual model
+  willingness, report usefulness, first-frame latency and live screenshot appearance
+  remain untested. A synchronous mutation already entered may finish settlement;
+  the deadline rejects new mutation entries. Unresponsive cleanup is bounded by the
+  independent external watchdog. Self-report is never verified causal attribution.
+  No Knowledge changes, live 101, model call, push, goal or automation occurred.
+
+### Exact-name query delivery - 2026-10-22
+
+Status: complete within the bounded contract. Admission
+ d151a63dea4c659db865e7b128bea94e0d29e8b000a7876abf56d3d5abdf38e6
+preceded formal red regressions and production edits. Red tests reproduced broad
+exact-query results, semantic-alias expansion and missing query ambiguity handling.
+The selected-test red run also exposed the existing suite-wide exercised-tool guard;
+final validation ran the complete owning suites rather than weakening that guard.
+
+Validation: 528 regression tests passed; one existing optional native probe skipped.
+All 58 mapped Inspector cases passed at attempt
+7275b80f-3aad-4ea0-a0fd-56cc2e383b79, captured source
+ ef8f737f5a02839213adde907c1f4370219282f07e0da46a7258f36d2e764a8c.
+Production App/server/proof types, 15 naming cases, 10 static Inspector/catalog cases
+and diff checks passed. Scoped lint: zero errors, one existing console warning.
+Logs: tmp/exact-query-red.log, tmp/exact-query-regression.log,
+tmp/exact-query-inspector-final.log, tmp/exact-query-types-final.log,
+tmp/exact-query-lint.log and tmp/exact-query-static.log.
+
+Same integration fixture query: 16082 -> 3803 bytes. Query plus world-face guide:
+35511 -> 23232 bytes; grid: 36446 -> 24167; face/pattern: 38679 -> 26400.
+Each query is one reply and each query/guide pair remains two replies. Adding 10000
+related descriptions leaves exact delivery unchanged; lexical/category pagination
+still exposes the additional capabilities. The live five-result/two-page receipt is
+historical context, not a new model measurement or an identical fixture comparison.
+
+Bounded self-review verified the shared names branch, default-menu behavior,
+qualified/ambiguous identities, semantic aliases, independent action/native schemas,
+full contracts, offset/revision rejection, cancellation and refresh without replay.
+The published example still reaches preparation/application and preserves partial
+follow-up settlement. The mapped proof now includes a description-only distractor. Final typecheck caught
+missing native metadata in that added fixture; it now derives the complete registered
+definition, and production types plus the Inspector were rerun successfully.
+No canonical schema, execution owner, budget, Knowledge or timing/report workflow
+changed; existing unrelated work and historical evidence were preserved.
+
+Evidence: run 1792655965388 queried prepare_and_apply_design with view=usage.
+Lexical token matching expanded an exact identity to five tools; their combined
+23170-byte body required two replies totaling 25421 bytes. The batch tool alone
+contributed 4605 bytes of output field paths. This is an App selector/delivery
+issue, not evidence of a wrong model decision.
+
+Step Execution Card - compose:
+- Spec: Capability discovery and composition; Inspector compose, request-to-compose
+  and compose-to-prepare. Owner/failure owner: existing App discovery.
+- Inputs: admitted action/semantic-name indexes, native namespace/name index, one
+  existing query selector, view, revision and continuation controls.
+- Output: an exact registered identity uses existing exact delivery and ambiguity
+  semantics. Trim surrounding whitespace, otherwise preserve exact case/spelling.
+  Do not broaden exact hits through descriptive references or choose one namespace.
+  Preserve action/native independent routes and semantic aliases already supported
+  by names. query without view remains a menu; usage/full keep their representations.
+- No exact hit: unchanged lexical capability search and category exploration.
+  Known calls bypass discovery. Exact query has no inventory continuation; reject
+  nonzero inventory offset rather than silently broadening. Content paging remains.
+- Allowed contributors/files: existing local-operation-tools indexes and definition
+  delivery; discovery-delivery integration, local-operation-tools and mapped
+  execution-flow-proof tests; existing active plan/spec/Inspector and generated view.
+- Forbidden: new registry/search service/state/cache, forced selection, limit changes,
+  provider edits, Knowledge edits, work/report timers, model calls or historic edits.
+- Naming/lifetime: request-local names/query selection only; no wire identity change.
+- DoD: saved query returns only the main workflow in one usage reply; 10000 related
+  descriptions do not grow its bytes/calls. General search and category pagination
+  still discover those tools. Cover qualified names, ambiguity, dual routes, default
+  menus/full constraints, invalid offset/revision, repeated/refresh/cancelled reads,
+  and published invocation with partial/no-replay recovery. Actual root/child/plan
+  restrictions remain unchanged.
+- Gates: task context, naming, structural admission, failing formal regression,
+  direct discovery/workflow/provider/information tests, mapped Inspector candidate,
+  production types, scoped lint/static contracts and bounded self-review.
+- Stop if existing exact delivery cannot preserve these behaviors; revise the
+  bounded contract before expanding owner changes. No next issue is authorized.
+
+### Root-container and optional-input selection - 2026-10-22
+
+Status: complete within this bounded deterministic contract. Structural admission
+5ccfded07d9364b7d4e8aef9e80a96ffff8132fbdb35e489ec7bc21a4aa9b506 preceded
+formal failing delivery tests and production edits. Three delivery assertions failed;
+the existing execution constraints already passed and were not changed.
+
+Validation: 525 regression tests passed with one existing optional native probe
+skipped; 58 mapped Inspector cases passed in attempt
+99514b19-420e-43b7-9839-455ae242b29d at captured source
+dff3da03fd837476a9ce9df8db8fa5b0aac60783b0ddd1a28bf572452f8274d7.
+Production App/server/proof types, 15 naming cases and 10 Inspector/catalog static
+cases passed. Scoped lint has zero errors and one pre-existing console warning.
+Logs: tmp/container-scope-red.log, tmp/container-scope-regression.log,
+tmp/container-scope-inspector.log, tmp/container-scope-types.log,
+tmp/container-scope-lint.log and tmp/container-scope-static.log.
+
+Bounded self-review: changes are confined to existing selection/usage prose and
+formal consumers. Canonical schemas, execution and recovery owners are unchanged.
+Published examples execute with both root types and omitted plan; nested-frame
+selection and invalid dimensions/group/plan constraints remain enforced. A committed
+write followed by unavailable checking remains partial, and refresh does not replay
+it. Existing criteria timing, partial/cancellation and stale/repeated-read regressions
+pass. Representative query plus guide still takes two replies, including with 10000
+unrelated tools; added explanation costs 552 total bytes (307 menu, 245 guide), with
+no budget change. This does not establish reduced model latency or fewer live rereads.
+No model, 101, push, Knowledge edit or unrelated implementation was performed.
+
+Evidence: run 1792654309001 acquired a complete group/projected-face/surface-grid
+usage guide with optional plan by 55.98 s, then selected frame and omitted plan
+at 105.65 s. The first guide already allowed a frame root and omission of plan.
+The record does not establish whether nested frames were intended or why the
+model reread. This correction addresses App delivery ambiguity, not model intent.
+
+Step Execution Card - compose:
+- Spec: Next-part operation selection and Selected operation usage guide.
+  Inspector: compose, request-to-compose and compose-to-prepare; failure owner compose.
+- Inputs: existing canonical workflow schema, owner selection text and explicit
+  inputScope. Outputs: existing menu/usage explaining root versus descendant choices
+  and selected optional documentation versus required execution fields.
+- Root draft group/frame constraints remain in every draft guide. nodeTypes selects
+  children, including nested containers; changing only the root needs no new lookup.
+  Selecting plan documentation does not require sending plan; omission needs no
+  reread. Adding previously unread child types or optional inputs may need discovery.
+- Conditions/bypasses: known contracts execute directly; no inferred scope, forced
+  container choice, mandatory planning, new roundtrip, schema preload or limit change.
+- Allowed contributors/boundary: local-design-workflow owner text,
+  design-workflow-discovery selected usage, discovery-delivery integration tests,
+  execution-flow-proof test and existing plan/spec/Inspector generated snapshot.
+  Existing selected-operation proof mapping remains applicable.
+- Forbidden: Knowledge edits, provider changes, new registry/state/validator, runtime
+  schema changes, completed evidence rewrites, model calls and 101.
+- Names/lifetime: reuse existing nonpersisted selection/instructions fields and the
+  current registry/query lifecycle; no new public or persisted identity or cache.
+- DoD: initial menu and direct selected usage distinguish roots/children and optional
+  documentation; actual published examples execute with group or frame root and no
+  plan without another read. Nested frames require their selected child contract;
+  frame dimensions, group restrictions and plan validation remain effective.
+  Preserve partial receipts, criteria-before-review and no-replay recovery.
+- Gates: task context, naming, structural admission, failing delivery regression,
+  existing discovery/workflow/information tests, mapped Inspector candidate,
+  production types, scoped lint/catalog contracts and bounded self-review.
+- Stop: an execution/schema defect or new owner requirement invalidates this bounded
+  explanation-only implementation; revise the contract before expanding changes.
+
+### Next-part operation selection - 2026-10-22
+
+Status: complete within the bounded deterministic contract. Admission digest
+5a60356245a5e2a5f7f535cafdfbb816cfa25d2e5d2fbd7bcd8cdc74693b3d6d preceded
+formal red tests and production edits. The red cases exposed missing selection
+conditions and a missing executable surface-grid example, not missing grid support.
+
+Final evidence: 574 focused tests passed; one pre-existing optional native probe
+skipped. All 58 mapped Inspector cases passed at attempt
+8f95c98d-0b40-4004-ade8-3d7d4aaee4fb, captured source
+17f8be22855f967379e1dc932f3414c7054edd28c1a28c4eb6abc03d9b573a65.
+App/server/proof production types, 15 naming tests, eight catalog contracts and
+scoped lint passed (zero errors, one pre-existing console warning). Generated
+Inspector snapshot synchronized through its existing generator; diff check passed.
+
+Same-fixture measurements before/after: initial usage query 21,538 -> 15,775 bytes;
+query plus world-face guide 40,722 -> 34,959 bytes, two replies in both versions.
+Current query plus grid guide is 35,894 bytes; plus projected-face/pattern guide is
+38,127 bytes. All focused cases take two replies, unchanged with 10,000 unrelated
+tools. These are deterministic tool-delivery measurements, not model latency.
+The preserved live receipt comparison in the fixture is separately labeled and is
+not a controlled model experiment. Tests do not depend on ignored evidence files.
+
+Self-review verified source-derived restrictions for both world faces/repetition
+and grids, actual published examples through dispatch/preparation/application,
+first-part and later grid attachment, invalid-row rejection, partial follow-up
+failure and recovery without write replay. Native Code Mode forwards both selected
+guides byte-for-byte using the existing local non-model protocol harness. Existing
+full/field lookup, optional criteria, cancellation, stale pages and independent
+consumers passed. The integration fixture now retains actual parent attachment
+metadata so continuation is checked rather than bypassed. No geometry, document,
+Knowledge, provider model, refresh behavior, limit or canonical state owner changed.
+Logs: tmp/next-part-red.log, tmp/next-part-focused-final.log,
+tmp/next-part-inspector-final.log, tmp/next-part-types-final.log and
+ tmp/next-part-lint-final.log. No claim of earlier first-frame delivery; no model
+or 101 was run. Stop here; no next issue is authorized by this completion.
+
+Evidence: run 1792643796914 exposed surface-grid as a name at 19.263 s and as a
+regular-facade method in selected Knowledge at 32.794 s, after the 25.494 s scope
+selection. The next scope added it at 85.489 s; no write occurred before 120 s.
+This proves late scope expansion, not its internal model cause or a guaranteed
+latency saving. Existing ready-part guidance and optional criteria are valid.
+
+Step Execution Card - compose:
+- Spec: Next-part operation selection; Inspector compose and request-to-compose /
+  compose-to-prepare routes. Owner and failure owner: App compose.
+- Inputs: registered canonical workflow schema, owner selection guidance, existing
+  query/category/exact selectors and explicit inputScope. Output: concise choices
+  and registered route in the current read, then complete selected usage, valid
+  executable examples and existing result/recovery semantics.
+- Select for the next submitted part. Explain independent world faces, translated
+  multi-face repeats and regular four-corner planar grids before scope selection.
+  Select grid immediately when this part needs it; a ready massing part need not
+  wait for later grid details. Do not infer scope or require a planning call.
+- Reuse the canonical x-design-input-scope declaration for selection text and
+  existing inputScopes projection. Replace the opted-in workflow's unscoped usage
+  verbosity with concise selection guidance; nested output field inventories are
+  not selection inputs. Keep root input paths, existing example and route. Full
+  and field reads, non-opted tools and selected complete result guides remain valid.
+- Allowed: local-design-workflow, design-workflow-discovery, local-operation-tools,
+  design-preparation-examples and their formal integration/proof tests; active plan,
+  spec, Inspector and mapping. No new registry, tool, classifier, state or cache.
+  Selection metadata is App-owned nonpersisted documentation, not execution input.
+- Work lifetime: same existing registry/query and continuation lifetimes. No extra
+  schema enumeration or canvas exchange; preserve catalog-independent small reads.
+- Cases/DoD: real menu and usage expose selection conditions before body reads;
+  published examples execute for both first-part grid and world-face-first then
+  grid continuation. Query plus selected guide takes at most two replies for each
+  focused case, less total data than the saved query/scope path; no Knowledge call.
+  Adding 10000 unrelated tools does not grow selected bytes or calls. Preserve full
+  cross-field constraints, optional plan, invalid input rejection, partial writes,
+  cancellation, stale/repeated/refresh reads and no automatic write replay.
+- Gates: task context, naming, structural admission, red regression, complete focused
+  discovery/information/workflow/provider tests, mapped Inspector candidate,
+  production types, scoped lint/static contracts, bounded diff/direct-consumer review.
+- Exclusions: model behavior/latency claims, pagination limits, Knowledge, rendering,
+  canonical geometry algorithms, inspection and persistence changes. Stop/replan if
+  selected completeness needs a new executor or canonical mutation semantics change.
+
+Design review: existing canonical scope projection and parameter formatter already
+preserve constraints; change their selection handoff, not execution validation.
+Keep broad explicit compositions paginated. Do not promise one response for every
+possible operation combination or treat concise advice as a complete executable
+contract. Tests must consume returned examples and actual dispatch/apply owners.
+
 
 ### Inspection discovery field ownership and receipts - 2026-10-22
 

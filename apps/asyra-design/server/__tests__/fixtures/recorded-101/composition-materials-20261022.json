@@ -1,0 +1,4604 @@
+{
+  "source": {
+    "runId": "knowledge-quality-knowledge-taipei-101-1792680047092",
+    "callId": "exec-040a02ae-4508-4a20-8973-50054a8922f7",
+    "path": "0ef0bfc3-b2e5-4af5-b357-c20d046e1635.payloads/26-input.json",
+    "sha256": "73d44df88033b7ce735136c8181f5c47211f3ebbaccdf190fdf4a70f18b3a2ba",
+    "derivation": "Exact original draft. Root materials, authored names, all coordinates and order retained. Compact candidate replaces children 7..62 with eight translations of children 7..13 by Z 3600. Prefix and suffix are untouched; no cross-layer interleaving."
+  },
+  "draft": {
+    "type": "group",
+    "name": "Taipei 101 — bamboo tower and spire",
+    "projection": {
+      "azimuth": 35,
+      "elevation": 25,
+      "scale": 1,
+      "originX": 12000,
+      "originY": 47000
+    },
+    "fillTemplates": {
+      "metal": "#89a7a8",
+      "shadow": "#183d48",
+      "roof": "#839d9c",
+      "glass": "#356775",
+      "edge": "#b4c6c0",
+      "dark": "#16343f"
+    },
+    "linearFields": {
+      "front": {
+        "frame": "world",
+        "start": {
+          "x": -3000,
+          "y": 0,
+          "z": 0
+        },
+        "end": {
+          "x": 3000,
+          "y": 0,
+          "z": 50800
+        },
+        "gradientStops": [
+          {
+            "position": 0,
+            "color": "#254c56",
+            "opacity": 1
+          },
+          {
+            "position": 0.25,
+            "color": "#4e7c83",
+            "opacity": 1
+          },
+          {
+            "position": 0.5,
+            "color": "#234f5e",
+            "opacity": 1
+          },
+          {
+            "position": 0.75,
+            "color": "#709ba2",
+            "opacity": 1
+          },
+          {
+            "position": 1,
+            "color": "#477582",
+            "opacity": 1
+          }
+        ]
+      },
+      "side": {
+        "frame": "world",
+        "start": {
+          "x": 0,
+          "y": -3000,
+          "z": 0
+        },
+        "end": {
+          "x": 0,
+          "y": 3000,
+          "z": 50800
+        },
+        "gradientStops": [
+          {
+            "position": 0,
+            "color": "#17333f",
+            "opacity": 1
+          },
+          {
+            "position": 0.25,
+            "color": "#2a5262",
+            "opacity": 1
+          },
+          {
+            "position": 0.5,
+            "color": "#416c7a",
+            "opacity": 1
+          },
+          {
+            "position": 0.75,
+            "color": "#295260",
+            "opacity": 1
+          },
+          {
+            "position": 1,
+            "color": "#4c7584",
+            "opacity": 1
+          }
+        ]
+      }
+    },
+    "children": [
+      {
+        "type": "projected-face",
+        "key": "lowere",
+        "name": "lowere",
+        "vertices": [
+          {
+            "x": 2900,
+            "y": -2900,
+            "z": 3200
+          },
+          {
+            "x": 2900,
+            "y": 2900,
+            "z": 3200
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 11700
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "lowereg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2900,
+            "y": -2900,
+            "z": 3200
+          },
+          {
+            "x": 2900,
+            "y": 2900,
+            "z": 3200
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 11700
+          }
+        ],
+        "rows": 20,
+        "columns": 20,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "lowers",
+        "name": "lowers",
+        "vertices": [
+          {
+            "x": -2900,
+            "y": 2900,
+            "z": 3200
+          },
+          {
+            "x": 2900,
+            "y": 2900,
+            "z": 3200
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 11700
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "lowersg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2900,
+            "y": 2900,
+            "z": 3200
+          },
+          {
+            "x": 2900,
+            "y": 2900,
+            "z": 3200
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 11700
+          }
+        ],
+        "rows": 20,
+        "columns": 20,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "lowertop",
+        "name": "lowertop",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": -2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 11700
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "lowerlips",
+        "name": "lowerlips",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2310,
+            "z": 11635
+          },
+          {
+            "x": 2300,
+            "y": 2310,
+            "z": 11635
+          },
+          {
+            "x": 2300,
+            "y": 2310,
+            "z": 11700
+          },
+          {
+            "x": -2300,
+            "y": 2310,
+            "z": 11700
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "lowerlipe",
+        "name": "lowerlipe",
+        "vertices": [
+          {
+            "x": 2310,
+            "y": -2300,
+            "z": 11635
+          },
+          {
+            "x": 2310,
+            "y": 2300,
+            "z": 11635
+          },
+          {
+            "x": 2310,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2310,
+            "y": -2300,
+            "z": 11700
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0e",
+        "name": "bamboo0e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 15200
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo0eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 15200
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0s",
+        "name": "bamboo0s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 15200
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo0sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 15200
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0top",
+        "name": "bamboo0top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 15200
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0lips",
+        "name": "bamboo0lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 15135
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 15135
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 15200
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0lipe",
+        "name": "bamboo0lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 15135
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 15135
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 15200
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo1e",
+        "name": "bamboo1e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 15300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 15300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 18800
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 18800
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo1eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 15300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 15300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 18800
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 18800
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo1s",
+        "name": "bamboo1s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 15300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 15300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 18800
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 18800
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo1sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 15300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 15300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 18800
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 18800
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo1top",
+        "name": "bamboo1top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 18800
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 18800
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 18800
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 18800
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo1lips",
+        "name": "bamboo1lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 18735
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 18735
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 18800
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 18800
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo1lipe",
+        "name": "bamboo1lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 18735
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 18735
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 18800
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 18800
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo2e",
+        "name": "bamboo2e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 18900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 18900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 22400
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 22400
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo2eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 18900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 18900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 22400
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 22400
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo2s",
+        "name": "bamboo2s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 18900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 18900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 22400
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 22400
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo2sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 18900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 18900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 22400
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 22400
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo2top",
+        "name": "bamboo2top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 22400
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 22400
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 22400
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 22400
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo2lips",
+        "name": "bamboo2lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 22335
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 22335
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 22400
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 22400
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo2lipe",
+        "name": "bamboo2lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 22335
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 22335
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 22400
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 22400
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo3e",
+        "name": "bamboo3e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 22500
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 22500
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 26000
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 26000
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo3eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 22500
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 22500
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 26000
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 26000
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo3s",
+        "name": "bamboo3s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 22500
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 22500
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 26000
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 26000
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo3sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 22500
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 22500
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 26000
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 26000
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo3top",
+        "name": "bamboo3top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 26000
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 26000
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 26000
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 26000
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo3lips",
+        "name": "bamboo3lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 25935
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 25935
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 26000
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 26000
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo3lipe",
+        "name": "bamboo3lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 25935
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 25935
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 26000
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 26000
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo4e",
+        "name": "bamboo4e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 26100
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 26100
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 29600
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 29600
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo4eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 26100
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 26100
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 29600
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 29600
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo4s",
+        "name": "bamboo4s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 26100
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 26100
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 29600
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 29600
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo4sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 26100
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 26100
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 29600
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 29600
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo4top",
+        "name": "bamboo4top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 29600
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 29600
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 29600
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 29600
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo4lips",
+        "name": "bamboo4lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 29535
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 29535
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 29600
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 29600
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo4lipe",
+        "name": "bamboo4lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 29535
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 29535
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 29600
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 29600
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo5e",
+        "name": "bamboo5e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 29700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 29700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 33200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 33200
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo5eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 29700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 29700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 33200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 33200
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo5s",
+        "name": "bamboo5s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 29700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 29700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 33200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 33200
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo5sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 29700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 29700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 33200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 33200
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo5top",
+        "name": "bamboo5top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 33200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 33200
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 33200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 33200
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo5lips",
+        "name": "bamboo5lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 33135
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 33135
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 33200
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 33200
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo5lipe",
+        "name": "bamboo5lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 33135
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 33135
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 33200
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 33200
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo6e",
+        "name": "bamboo6e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 33300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 33300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 36800
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 36800
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo6eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 33300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 33300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 36800
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 36800
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo6s",
+        "name": "bamboo6s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 33300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 33300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 36800
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 36800
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo6sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 33300
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 33300
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 36800
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 36800
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo6top",
+        "name": "bamboo6top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 36800
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 36800
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 36800
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 36800
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo6lips",
+        "name": "bamboo6lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 36735
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 36735
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 36800
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 36800
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo6lipe",
+        "name": "bamboo6lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 36735
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 36735
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 36800
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 36800
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo7e",
+        "name": "bamboo7e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 36900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 36900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 40400
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 40400
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo7eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 36900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 36900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 40400
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 40400
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo7s",
+        "name": "bamboo7s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 36900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 36900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 40400
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 40400
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo7sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 36900
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 36900
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 40400
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 40400
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo7top",
+        "name": "bamboo7top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 40400
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 40400
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 40400
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 40400
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo7lips",
+        "name": "bamboo7lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 40335
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 40335
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 40400
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 40400
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo7lipe",
+        "name": "bamboo7lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 40335
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 40335
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 40400
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 40400
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "crowne",
+        "name": "crowne",
+        "vertices": [
+          {
+            "x": 1700,
+            "y": -1700,
+            "z": 40500
+          },
+          {
+            "x": 1700,
+            "y": 1700,
+            "z": 40500
+          },
+          {
+            "x": 1450,
+            "y": 1450,
+            "z": 44700
+          },
+          {
+            "x": 1450,
+            "y": -1450,
+            "z": 44700
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "crowneg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 1700,
+            "y": -1700,
+            "z": 40500
+          },
+          {
+            "x": 1700,
+            "y": 1700,
+            "z": 40500
+          },
+          {
+            "x": 1450,
+            "y": 1450,
+            "z": 44700
+          },
+          {
+            "x": 1450,
+            "y": -1450,
+            "z": 44700
+          }
+        ],
+        "rows": 12,
+        "columns": 14,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "crowns",
+        "name": "crowns",
+        "vertices": [
+          {
+            "x": -1700,
+            "y": 1700,
+            "z": 40500
+          },
+          {
+            "x": 1700,
+            "y": 1700,
+            "z": 40500
+          },
+          {
+            "x": 1450,
+            "y": 1450,
+            "z": 44700
+          },
+          {
+            "x": -1450,
+            "y": 1450,
+            "z": 44700
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "crownsg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -1700,
+            "y": 1700,
+            "z": 40500
+          },
+          {
+            "x": 1700,
+            "y": 1700,
+            "z": 40500
+          },
+          {
+            "x": 1450,
+            "y": 1450,
+            "z": 44700
+          },
+          {
+            "x": -1450,
+            "y": 1450,
+            "z": 44700
+          }
+        ],
+        "rows": 12,
+        "columns": 14,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "crowntop",
+        "name": "crowntop",
+        "vertices": [
+          {
+            "x": -1450,
+            "y": -1450,
+            "z": 44700
+          },
+          {
+            "x": 1450,
+            "y": -1450,
+            "z": 44700
+          },
+          {
+            "x": 1450,
+            "y": 1450,
+            "z": 44700
+          },
+          {
+            "x": -1450,
+            "y": 1450,
+            "z": 44700
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "crownlips",
+        "name": "crownlips",
+        "vertices": [
+          {
+            "x": -1450,
+            "y": 1460,
+            "z": 44635
+          },
+          {
+            "x": 1450,
+            "y": 1460,
+            "z": 44635
+          },
+          {
+            "x": 1450,
+            "y": 1460,
+            "z": 44700
+          },
+          {
+            "x": -1450,
+            "y": 1460,
+            "z": 44700
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "crownlipe",
+        "name": "crownlipe",
+        "vertices": [
+          {
+            "x": 1460,
+            "y": -1450,
+            "z": 44635
+          },
+          {
+            "x": 1460,
+            "y": 1450,
+            "z": 44635
+          },
+          {
+            "x": 1460,
+            "y": 1450,
+            "z": 44700
+          },
+          {
+            "x": 1460,
+            "y": -1450,
+            "z": 44700
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "lanterne",
+        "name": "lanterne",
+        "vertices": [
+          {
+            "x": 900,
+            "y": -900,
+            "z": 44700
+          },
+          {
+            "x": 900,
+            "y": 900,
+            "z": 44700
+          },
+          {
+            "x": 600,
+            "y": 600,
+            "z": 47400
+          },
+          {
+            "x": 600,
+            "y": -600,
+            "z": 47400
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "lanterneg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 900,
+            "y": -900,
+            "z": 44700
+          },
+          {
+            "x": 900,
+            "y": 900,
+            "z": 44700
+          },
+          {
+            "x": 600,
+            "y": 600,
+            "z": 47400
+          },
+          {
+            "x": 600,
+            "y": -600,
+            "z": 47400
+          }
+        ],
+        "rows": 9,
+        "columns": 8,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "lanterns",
+        "name": "lanterns",
+        "vertices": [
+          {
+            "x": -900,
+            "y": 900,
+            "z": 44700
+          },
+          {
+            "x": 900,
+            "y": 900,
+            "z": 44700
+          },
+          {
+            "x": 600,
+            "y": 600,
+            "z": 47400
+          },
+          {
+            "x": -600,
+            "y": 600,
+            "z": 47400
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "lanternsg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -900,
+            "y": 900,
+            "z": 44700
+          },
+          {
+            "x": 900,
+            "y": 900,
+            "z": 44700
+          },
+          {
+            "x": 600,
+            "y": 600,
+            "z": 47400
+          },
+          {
+            "x": -600,
+            "y": 600,
+            "z": 47400
+          }
+        ],
+        "rows": 9,
+        "columns": 8,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "lanterntop",
+        "name": "lanterntop",
+        "vertices": [
+          {
+            "x": -600,
+            "y": -600,
+            "z": 47400
+          },
+          {
+            "x": 600,
+            "y": -600,
+            "z": 47400
+          },
+          {
+            "x": 600,
+            "y": 600,
+            "z": 47400
+          },
+          {
+            "x": -600,
+            "y": 600,
+            "z": 47400
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "lanternlips",
+        "name": "lanternlips",
+        "vertices": [
+          {
+            "x": -600,
+            "y": 610,
+            "z": 47335
+          },
+          {
+            "x": 600,
+            "y": 610,
+            "z": 47335
+          },
+          {
+            "x": 600,
+            "y": 610,
+            "z": 47400
+          },
+          {
+            "x": -600,
+            "y": 610,
+            "z": 47400
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "lanternlipe",
+        "name": "lanternlipe",
+        "vertices": [
+          {
+            "x": 610,
+            "y": -600,
+            "z": 47335
+          },
+          {
+            "x": 610,
+            "y": 600,
+            "z": 47335
+          },
+          {
+            "x": 610,
+            "y": 600,
+            "z": 47400
+          },
+          {
+            "x": 610,
+            "y": -600,
+            "z": 47400
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "mast-base-east",
+        "name": "mast-base-east",
+        "vertices": [
+          {
+            "x": 370,
+            "y": -370,
+            "z": 47400
+          },
+          {
+            "x": 370,
+            "y": 370,
+            "z": 47400
+          },
+          {
+            "x": 370,
+            "y": 370,
+            "z": 48300
+          },
+          {
+            "x": 370,
+            "y": -370,
+            "z": 48300
+          }
+        ],
+        "fill": {
+          "template": "shadow"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "mast-base-south",
+        "name": "mast-base-south",
+        "vertices": [
+          {
+            "x": -370,
+            "y": 370,
+            "z": 47400
+          },
+          {
+            "x": 370,
+            "y": 370,
+            "z": 47400
+          },
+          {
+            "x": 370,
+            "y": 370,
+            "z": 48300
+          },
+          {
+            "x": -370,
+            "y": 370,
+            "z": 48300
+          }
+        ],
+        "fill": {
+          "template": "glass"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "mast-base-roof",
+        "name": "mast-base-roof",
+        "vertices": [
+          {
+            "x": -370,
+            "y": -370,
+            "z": 48300
+          },
+          {
+            "x": 370,
+            "y": -370,
+            "z": 48300
+          },
+          {
+            "x": 370,
+            "y": 370,
+            "z": 48300
+          },
+          {
+            "x": -370,
+            "y": 370,
+            "z": 48300
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "spire-front",
+        "name": "spire-front",
+        "vertices": [
+          {
+            "x": -130,
+            "y": 130,
+            "z": 48300
+          },
+          {
+            "x": 130,
+            "y": 130,
+            "z": 48300
+          },
+          {
+            "x": 18,
+            "y": 18,
+            "z": 50800
+          },
+          {
+            "x": -18,
+            "y": 18,
+            "z": 50800
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "spire-side",
+        "name": "spire-side",
+        "vertices": [
+          {
+            "x": 130,
+            "y": -130,
+            "z": 48300
+          },
+          {
+            "x": 130,
+            "y": 130,
+            "z": 48300
+          },
+          {
+            "x": 18,
+            "y": 18,
+            "z": 50800
+          },
+          {
+            "x": 18,
+            "y": -18,
+            "z": 50800
+          }
+        ],
+        "fill": {
+          "template": "metal"
+        }
+      }
+    ]
+  },
+  "pattern": {
+    "type": "pattern",
+    "key": "component",
+    "name": "Component",
+    "origin": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "axes": [
+      {
+        "count": 8,
+        "step": {
+          "x": 0,
+          "y": 0,
+          "z": 3600
+        }
+      }
+    ],
+    "members": [
+      {
+        "type": "projected-face",
+        "key": "bamboo0e",
+        "name": "bamboo0e",
+        "vertices": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 15200
+          }
+        ],
+        "materialField": "side"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo0eg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": 2300,
+            "y": -2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 15200
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0s",
+        "name": "bamboo0s",
+        "vertices": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 15200
+          }
+        ],
+        "materialField": "front"
+      },
+      {
+        "type": "surface-grid",
+        "key": "bamboo0sg",
+        "name": "Curtainwall frames",
+        "boundary": [
+          {
+            "x": -2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2300,
+            "y": 2300,
+            "z": 11700
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 15200
+          }
+        ],
+        "rows": 8,
+        "columns": 24,
+        "order": "motif-major",
+        "motifs": [
+          {
+            "key": "m",
+            "name": "Vertical mullion",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "h",
+            "name": "Floor transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 0.96
+              },
+              {
+                "u": 1,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "sp",
+            "name": "Dark spandrel",
+            "fill": {
+              "template": "shadow"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.12
+              },
+              {
+                "u": 0.045,
+                "v": 0.12
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0top",
+        "name": "bamboo0top",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": -2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": -2850,
+            "z": 15200
+          },
+          {
+            "x": 2850,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2850,
+            "z": 15200
+          }
+        ],
+        "fill": {
+          "template": "roof"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0lips",
+        "name": "bamboo0lips",
+        "vertices": [
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 15135
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 15135
+          },
+          {
+            "x": 2850,
+            "y": 2860,
+            "z": 15200
+          },
+          {
+            "x": -2850,
+            "y": 2860,
+            "z": 15200
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      },
+      {
+        "type": "projected-face",
+        "key": "bamboo0lipe",
+        "name": "bamboo0lipe",
+        "vertices": [
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 15135
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 15135
+          },
+          {
+            "x": 2860,
+            "y": 2850,
+            "z": 15200
+          },
+          {
+            "x": 2860,
+            "y": -2850,
+            "z": 15200
+          }
+        ],
+        "fill": {
+          "template": "edge"
+        }
+      }
+    ]
+  }
+}

@@ -18,6 +18,7 @@ export type AiHistoryGroupApis = Pick<
 >
 
 export interface CreateAiTransactionRunnerOptions {
+  readonly getMutationDeadline?: () => number | undefined
   readonly history?: Pick<
     AiHistoryProjection,
     'correlateCommittedAction' | 'getCurrentActionId'
@@ -72,6 +73,7 @@ export const createAiTransactionRunner = (
       execute: (runMutation?: AiMutationExecutor) => Promise<T>,
       request?: { readonly signal: AbortSignal }
     ): Promise<T> => {
+      const mutationDeadline = options.getMutationDeadline?.()
       let group: HistoryGroupHandle | undefined
       let accepting = true
       let settlementUnknown = false
@@ -82,6 +84,11 @@ export const createAiTransactionRunner = (
           apis,
           () => {
             if (!accepting) throw new Error('The AI mutation scope has closed.')
+            if (
+              mutationDeadline !== undefined &&
+              Date.now() >= mutationDeadline
+            )
+              throw new Error('The evaluation work deadline has expired.')
             group ??= apis.startHistoryGroup()
             let memberSettlement: 'committed' | 'rolled-back' | 'unknown' =
               'unknown'

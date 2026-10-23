@@ -648,3 +648,38 @@ describe('evaluation capture and actual provider protocol', () => {
     }
   )
 })
+
+it('delivers the exact local evaluation deadline with existing metadata and leaves ordinary requests unchanged', async () => {
+  const previous = location.href
+  const window = {
+    workDeadlineAt: Date.now() + 120000,
+    reportTimeoutMs: 60000,
+    expandedNodeLimit: 2000
+  }
+  const url = new URL(previous)
+  url.searchParams.set('aiEvaluationWindow', JSON.stringify(window))
+  history.replaceState(null, '', url)
+  const requests: unknown[] = []
+  const provider = createServerActionBatchProvider({
+    fetch: async (_url, init) => {
+      requests.push(JSON.parse(String(init.body)))
+      return { ok: true, status: 200, json: async () => batch }
+    }
+  })
+  try {
+    await provider.requestActionBatch(input, {
+      signal: new AbortController().signal
+    })
+    expect(requests[0]).toMatchObject({
+      metadata: { ...(input.metadata as object), evaluationWindow: window }
+    })
+    history.replaceState(null, '', previous)
+    await provider.requestActionBatch(input, {
+      signal: new AbortController().signal
+    })
+    expect(requests[1]).toEqual(input)
+  } finally {
+    history.replaceState(null, '', previous)
+    provider.dispose()
+  }
+})

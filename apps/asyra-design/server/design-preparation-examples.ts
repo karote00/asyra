@@ -166,6 +166,43 @@ const projectedFaceExample = {
   }
 }
 
+const surfaceGridExample = {
+  draft: {
+    type: 'group',
+    name: 'Regular planar detail',
+    projection: { azimuth: 0, elevation: 0, scale: 1, originX: 0, originY: 20 },
+    children: [
+      {
+        type: 'surface-grid',
+        key: 'grid',
+        name: 'Grid',
+        boundary: [
+          { x: 0, y: 0, z: 0 },
+          { x: 12, y: 0, z: 0 },
+          { x: 10, y: 0, z: 20 },
+          { x: 2, y: 0, z: 20 }
+        ],
+        rows: 2,
+        columns: 3,
+        order: 'cell-major',
+        motifs: [
+          {
+            key: 'inset',
+            name: 'Inset',
+            fill: '#123456',
+            vertices: [
+              { u: 0.1, v: 0.1 },
+              { u: 0.9, v: 0.1 },
+              { u: 0.9, v: 0.9 },
+              { u: 0.1, v: 0.9 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
 const flowLayoutExample = {
   draft: {
     type: 'frame',
@@ -242,15 +279,105 @@ const continuousWorldMaterialExample = {
   }
 }
 
+const mixedComponentExample = {
+  draft: {
+    type: 'group',
+    name: 'Translated components',
+    projection: surfaceGridExample.draft.projection,
+    children: [
+      {
+        type: 'pattern',
+        key: 'component',
+        name: 'Component',
+        origin: { x: 0, y: 0, z: 0 },
+        axes: [{ count: 2, step: { x: 20, y: 0, z: 0 } }],
+        members: [
+          {
+            type: 'projected-face',
+            key: 'panel',
+            name: 'Panel',
+            fill: '#abcdef',
+            vertices: surfaceGridExample.draft.children[0].boundary
+          },
+          surfaceGridExample.draft.children[0]
+        ]
+      }
+    ]
+  }
+}
+
+// Scope filtering selects this composition only when independent faces are legal.
+const composedMaterialExample = {
+  draft: {
+    type: 'group',
+    name: 'Assembly',
+    projection: surfaceGridExample.draft.projection,
+    fillTemplates: { edge: '#123456' },
+    linearFields: {
+      glass: continuousWorldMaterialExample.draft.linearFields.glass
+    },
+    children: [
+      {
+        type: 'pattern',
+        key: 'unit',
+        name: 'Unit',
+        origin: { x: 0, y: 0, z: 0 },
+        axes: [{ count: 2, step: { x: 20, y: 0, z: 0 } }],
+        members: [
+          {
+            type: 'projected-face',
+            key: 'panel',
+            name: 'Panel',
+            materialField: 'glass',
+            vertices: surfaceGridExample.draft.children[0].boundary
+          }
+        ]
+      },
+      {
+        type: 'projected-face',
+        key: 'cap',
+        name: 'Cap',
+        fill: { template: 'edge' },
+        vertices: [
+          { x: 0, y: 0, z: 22 },
+          { x: 32, y: 0, z: 22 },
+          { x: 16, y: 0, z: 24 }
+        ]
+      },
+      {
+        type: 'pattern',
+        key: 'windows',
+        name: 'Windows',
+        origin: { x: 0, y: 0, z: 0 },
+        axes: [{ count: 2, step: { x: 20, y: 0, z: 0 } }],
+        members: [
+          {
+            ...surfaceGridExample.draft.children[0],
+            motifs: [
+              {
+                ...surfaceGridExample.draft.children[0].motifs[0],
+                fill: { template: 'edge' }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
 export const designPreparationExamples = [
   visibleSurfaceExample,
-  repeatedWorldFacesExample,
+  composedMaterialExample,
+  mixedComponentExample,
   repeatedCurvesExample,
   projectedFaceExample,
   continuousWorldMaterialExample,
-  flowLayoutExample
+  flowLayoutExample,
+  surfaceGridExample,
+  repeatedWorldFacesExample
 ] as const
 
 /** Representation decisions belong to the model; the backend only executes the supplied data. */
 export const designRepresentationGuidance =
-  'Delegate a ready part to prepare_and_apply_design: it owns preparation, optional criteria, writing and inspection; inspect its compact receipt rather than relaying intermediate data. Define intentional shared fills once in draft.sharedFills and use fill:{shared:key}; equal independent inline fills remain independent. For vector rings omit both dimensions to let the owner measure exact bounds. Choose by the data you already have: existing object IDs -> registered batch edits with new values, not reconstruction; arbitrary or already-projected 2D outlines -> vector; repeated identical 2D curves -> vector-pattern template + placements; explicit world-space planar faces in an orthographic view -> projection + projected-face; translated repetitions of those faces -> pattern.faces + origin/axes; UI placement -> row/column/grid or relations. For a multi-face repeated component, declare each unique contour once in pattern.faces with its material role, then declare origin/axes. Output order is instance-major and then face painter order; the last axis varies fastest. Keep irregular exceptions as separate explicit nodes in their intended painter position. A chosen continuous field uses materialField; an intentional per-piece fill stays local. Let the backend expand suitable templates and calculate projection instead of emitting each derived vertex. Resolve returned artifact targets for local edits; never regenerate canonical IDs from pattern keys. Reuse instanceRanges only for known missing complete instances, never to replay an uncertain partial write. Preserve supplied 2D geometry; do not invent depth, force orthographic perspective, or build hidden faces merely to use projection. Irregular/nonrepeating geometry may remain explicit vectors. For a chosen continuous world material on projected or pattern faces, define draft.linearFields and select materialField on each intended face instead of repeating normalized gradient handles. Plain nodes and surface grids still use native fills. This converts explicit material intent, never automatic lighting or visual approval. These choices do not set style, detail level or camera angles.'
+  'Delegate a ready part to prepare_and_apply_design: it owns preparation, optional criteria, writing and inspection; inspect its compact receipt rather than relaying intermediate data. Define intentional shared fills once in draft.sharedFills and use fill:{shared:key}; equal independent inline fills remain independent. For vector rings omit both dimensions to let the owner measure exact bounds. Choose by the data you already have: existing object IDs -> registered batch edits with new values, not reconstruction; arbitrary or already-projected 2D outlines -> vector; repeated identical 2D curves -> vector-pattern template + placements; explicit world-space planar faces in an orthographic view -> projection + projected-face; translated repetitions of those faces -> pattern.faces + origin/axes; UI placement -> row/column/grid or relations. For a translated face/grid component, declare ordered pattern.members once (projected-face and surface-grid), then origin/axes; face-only components may use faces. Members retain their materials; no pattern fills, nested pattern or new container. Output order is instance-major, member-major, then grid painter order; the last axis varies fastest. Keep irregular exceptions as separate explicit nodes in their intended painter position. A chosen continuous field uses materialField; an intentional per-piece fill stays local. Let the backend expand suitable templates and calculate projection instead of emitting each derived vertex. Resolve returned artifact targets for local edits; never regenerate canonical IDs from pattern keys. Reuse instanceRanges only for known missing complete instances, never to replay an uncertain partial write. Preserve supplied 2D geometry; do not invent depth, force orthographic perspective, or build hidden faces merely to use projection. Irregular/nonrepeating geometry may remain explicit vectors. For a chosen continuous world material on projected or pattern faces, define draft.linearFields and select materialField on each intended face instead of repeating normalized gradient handles. Plain nodes and surface grids still use native fills. This converts explicit material intent, never automatic lighting or visual approval. These choices do not set style, detail level or camera angles.'

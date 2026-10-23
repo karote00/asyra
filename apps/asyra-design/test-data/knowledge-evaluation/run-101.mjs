@@ -1,5 +1,5 @@
 /* global window */
-/* global document, console */
+/* global document, console, URL, location, history */
 /** Manual real-provider evaluation. Never imported by ordinary test/CI runners. */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -16,7 +16,9 @@ import { captureCheckpoint } from './checkpoint.mjs'
 import {
   boundedCapture,
   collectEvidenceStage,
-  settleGeneration,
+  readEvaluationReport,
+  captureEvaluationReport,
+  captureReportImage,
   captureReload,
   captureSessionOnPage,
   waitForCaptureReady
@@ -28,9 +30,9 @@ import {
 } from './capture-source.mjs'
 import {
   architectureScenario,
-  observationDeadline
+  observationDeadline,
+  evaluationArtifactBudget
 } from './architecture-protocol.mjs'
-import { saveRemoteRecording } from '../ai-drawing/remote-recording.mjs'
 
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
@@ -47,7 +49,13 @@ const specification = JSON.parse(
   fs.readFileSync(path.join(here, 'architecture-101.json'))
 )
 const scenario = architectureScenario(specification)
-const limitMs = observationDeadline(specification, deadlineArguments)
+const expandedNodeLimit = evaluationArtifactBudget(deadlineArguments)
+const limitMs = observationDeadline(
+  specification,
+  deadlineArguments.filter(
+    (value) => !value.startsWith('--expanded-node-limit')
+  )
+)
 const environment = resolveEnvironment(loadEnvironment())
 const services = JSON.parse(
   fs.readFileSync(path.join(root, 'tmp/knowledge-services.json'))
@@ -70,6 +78,16 @@ const meta = {
   startedAt: new Date().toISOString(),
   viewport: { width: 1920, height: 1080 },
   deadlineMs: limitMs,
+  reportTimeoutMs: 60000,
+  artifactBudget: {
+    productionExpandedNodes: 10000,
+    effectiveExpandedNodes: expandedNodeLimit ?? 10000,
+    scope: expandedNodeLimit ? 'evaluation-request' : 'production-default'
+  },
+  video: {
+    status: 'disabled',
+    reason: 'User requested diagnostics without video'
+  },
   declaredToolLibraryDirectory: process.env.AI_TOOL_LIBRARY_DIR,
   configurationEvidence:
     'Expected configuration only; actual provider configuration requires execution-record verification',
@@ -119,7 +137,9 @@ let ownedBrowser,
   context,
   deadline,
   page,
-  generationSettled = false
+  generationSettled = false,
+  report
+
 try {
   ownedBrowser = await launchCaptureBrowser({
     chromium,
@@ -131,7 +151,6 @@ try {
   })
   context = await ownedBrowser.newContext({
     viewport: meta.viewport,
-    recordVideo: { dir: path.join(directory, 'video'), size: meta.viewport },
     deviceScaleFactor: 1
   })
   page = await context.newPage()
@@ -225,10 +244,22 @@ try {
   if (captureSources(root).digest !== meta.sourceManifest.digest)
     throw new Error('Source changed before Send')
   verifyEvaluationService(vite, app)
-  meta.sentAt = new Date().toISOString()
+  const sentAt = new Date().toISOString()
+  meta.evaluationWindow = {
+    workDeadlineAt: Date.parse(sentAt) + limitMs,
+    reportTimeoutMs: meta.reportTimeoutMs,
+    ...(expandedNodeLimit === undefined ? {} : { expandedNodeLimit })
+  }
+  await page.evaluate((evaluationWindow) => {
+    const url = new URL(location.href)
+    url.searchParams.set('aiEvaluationWindow', JSON.stringify(evaluationWindow))
+    history.replaceState(null, '', url)
+  }, meta.evaluationWindow)
+  meta.sentAt = sentAt
   save()
   deadline = createLiveTestDeadline({
-    deadlineAt: Date.parse(meta.sentAt) + limitMs,
+    deadlineAt:
+      meta.evaluationWindow.workDeadlineAt + meta.reportTimeoutMs + 30000,
     groups: [vite.pid],
     processes: [ownedBrowser.pid],
     evidencePath: path.join(directory, 'deadline.json')
@@ -238,14 +269,23 @@ try {
     boundedCapture(
       'generation operation',
       task,
-      Math.max(1, Date.parse(meta.sentAt) + limitMs - Date.now())
+      Math.max(
+        1,
+        meta.evaluationWindow.workDeadlineAt +
+          meta.reportTimeoutMs +
+          2000 -
+          Date.now()
+      )
     )
   await duringGeneration(() =>
     page.getByRole('button', { name: 'Send', exact: true }).click()
   )
   let previous,
     first = false
-  while (Date.now() - Date.parse(meta.sentAt) < limitMs) {
+  while (
+    Date.now() <
+    meta.evaluationWindow.workDeadlineAt + meta.reportTimeoutMs + 2000
+  ) {
     if (meta.requestIdentityFailure)
       throw new Error(meta.requestIdentityFailure)
     if (unexpectedNavigation)
@@ -296,17 +336,51 @@ try {
     save()
     await page.waitForTimeout(1000)
   }
-  const limit = await settleGeneration(deadline, meta.outcome)
-  meta.deadline = limit
-  if (limit.status !== 'finished' || !meta.outcome)
-    throw new Error(`Evaluation stopped: ${limit.reason ?? 'missing-outcome'}`)
-  generationSettled = true
+  // The work cutoff is enforced by provider cancellation and browser mutation admission.
+  // The external watchdog remains armed while collecting the independent report.
+  try {
+    report = await boundedCapture(
+      'settled report',
+      () => readEvaluationReport(page, meta.sourceRequestIds),
+      5000
+    )
+  } catch (error) {
+    meta.reportDeliveryFailure = error.message
+    save()
+  }
+  await captureEvaluationReport({
+    meta,
+    report,
+    writeText: (text) =>
+      fs.writeFileSync(path.join(directory, 'self-report.txt'), text),
+    captureImage: () =>
+      captureReportImage(page, report, path.join(directory, 'self-report.png')),
+    save
+  })
+  if (!meta.outcome)
+    throw new Error('Evaluation report did not settle before its deadline')
+  meta.deadline = await deadline.finish()
+  generationSettled = meta.deadline.status === 'finished'
+  if (!generationSettled) throw new Error('Evaluation outer watchdog expired')
   if (!meta.sourceRequestIds.length || meta.requestIdentityFailure)
     throw new Error(
       meta.requestIdentityFailure ?? 'Missing observed provider request'
     )
   meta.elapsedMs = Date.now() - Date.parse(meta.sentAt)
-  meta.generation = { status: meta.outcome, elapsedMs: meta.elapsedMs }
+  meta.generation = {
+    status: meta.outcome,
+    elapsedMs: meta.elapsedMs,
+    limitation:
+      'UI settlement includes reporting; use provider work-turn events for drawing outcome'
+  }
+  meta.work = {
+    deadlineAt: meta.evaluationWindow.workDeadlineAt,
+    budgetMs: limitMs
+  }
+  meta.reporting = {
+    timeoutMs: meta.reportTimeoutMs,
+    captured: Boolean(meta.selfReport?.imageSaved)
+  }
   save()
   const conversation = await stage('final-view', () =>
     boundedCapture('final view', async () => {
@@ -331,27 +405,21 @@ try {
       })
     )
   }
-  // Recording export is independent of persistence/capture success.
-  const video = await stage('recording', () =>
+  const workContextClosed = await stage('close-work-context', () =>
     boundedCapture(
-      'video export',
+      'close work context',
       async () => {
-        await page.waitForTimeout(10000)
-        return saveRemoteRecording(
-          context,
-          page,
-          path.join(directory, 'recording.webm')
-        )
+        await context.close()
+        return true
       },
-      45000
+      5000
     )
   )
-  if (video) {
-    meta.video = video
-    context = undefined
-  }
-  await stage(captured ? 'reload' : 'read-only-recovery', () =>
-    captureReload({
+  if (workContextClosed) context = undefined
+  await stage(captured ? 'reload' : 'read-only-recovery', () => {
+    if (!workContextClosed)
+      throw new Error('Work context closure was not confirmed before reload')
+    return captureReload({
       browser: ownedBrowser,
       viewport: meta.viewport,
       url: meta.url,
@@ -363,7 +431,7 @@ try {
       ),
       recordCleanup: (task) => stage('cleanup-reload-context', task)
     })
-  )
+  })
   await stage('source-verification', async () => {
     const actual = captureSources(root)
     if (actual.digest !== meta.sourceManifest.digest)
@@ -422,12 +490,6 @@ try {
         ? resource.close()
         : boundedCapture(name, () => resource.close(), 5000)
     )
-  }
-  // Preserve spool files when forced termination prevents a playable export.
-  meta.video ??= {
-    status: 'unexported',
-    videoDirectory: path.join(directory, 'video'),
-    limitation: 'Raw files may be truncated after forced termination'
   }
   if (
     Object.values(meta.evidence ?? {}).some(

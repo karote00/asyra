@@ -308,66 +308,6 @@ test('request attribution uses the canonical same-origin endpoint and rejects mi
   )
 })
 
-test('failed partial cancelled and missing outcomes stop generation instead of disarming its watchdog', async () => {
-  const { settleGeneration } = await import('../capture-lifecycle.mjs')
-  const events = []
-  const deadline = {
-    finish: async () => {
-      events.push('finish')
-      return { status: 'finished' }
-    },
-    stop: async (reason) => {
-      events.push(reason)
-      return { status: 'failed', reason }
-    }
-  }
-  for (const outcome of ['failed', 'partial', 'cancelled', undefined]) {
-    const receipt = await settleGeneration(deadline, outcome)
-    assert.equal(receipt.status, 'failed')
-    assert.equal(
-      receipt.reason,
-      outcome ? 'product-' + outcome : 'execution-deadline'
-    )
-  }
-  assert.equal(events.includes('finish'), false)
-  for (const outcome of ['success', 'no-change'])
-    assert.equal((await settleGeneration(deadline, outcome)).status, 'finished')
-  assert.equal(events.filter((event) => event === 'finish').length, 2)
-})
-
-test('partial UI outcome stops a real owned producer before the generation deadline', async () => {
-  const { spawn } = await import('node:child_process')
-  const { once } = await import('node:events')
-  const { default: process } = await import('node:process')
-  const { createLiveTestDeadline } =
-    await import('../../ai-drawing/live-test-deadline.mjs')
-  const { settleGeneration } = await import('../capture-lifecycle.mjs')
-  const folder = fs.mkdtempSync(path.join(root, 'tmp/knowledge-partial-stop-'))
-  const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
-    stdio: 'ignore'
-  })
-  let timer
-  try {
-    await once(child, 'spawn')
-    const exited = once(child, 'exit')
-    timer = createLiveTestDeadline({
-      deadlineAt: Date.now() + 3000,
-      processes: [child.pid],
-      evidencePath: path.join(folder, 'stop.json')
-    })
-    await timer.ready
-    const receipt = await settleGeneration(timer, 'partial')
-    await boundedCapture('owned producer exit', () => exited, 1000)
-    assert.equal(receipt.reason, 'product-partial')
-    assert.equal(child.signalCode, 'SIGKILL')
-    assert.ok(receipt.finishedAt < receipt.deadlineAt)
-  } finally {
-    if (timer) await timer.stop()
-    child.kill('SIGKILL')
-    fs.rmSync(folder, { recursive: true, force: true })
-  }
-})
-
 test('timed-out reload stops late navigation and closes a late-created context without publishing evidence', async () => {
   const { captureReload } = await import('../capture-lifecycle.mjs')
   for (const lateStep of ['context', 'navigation']) {
@@ -431,4 +371,199 @@ test('timed-out reload stops late navigation and closes a late-created context w
     assert.equal(pages, lateStep === 'context' ? 0 : 1)
     assert.equal(closed, 1)
   }
+})
+
+test('captures attributed report text before screenshot and never upgrades missing evidence', async () => {
+  const { captureEvaluationReport } = await import('../capture-lifecycle.mjs')
+  const report = {
+    attribution: 'model-self-report',
+    text: 'No first frame; cause uncertain.'
+  }
+  assert.equal(report.attribution, 'model-self-report')
+  const events = [],
+    meta = {}
+  const captured = await captureEvaluationReport({
+    meta,
+    report,
+    writeText: async (value) => {
+      events.push('text')
+      assert.equal(value, report.text)
+    },
+    captureImage: async () => {
+      events.push('image')
+      throw new Error('Screenshot unavailable')
+    },
+    save: () => events.push('save')
+  })
+  assert.equal(captured, undefined)
+  assert.deepEqual(events.slice(0, 2), ['text', 'image'])
+  assert.equal(meta.evidence['self-report'].status, 'failed')
+  assert.equal(meta.selfReport.text, report.text)
+  assert.equal(meta.selfReport.textSaved, true)
+  assert.equal(meta.selfReport.imageSaved, false)
+  const missing = {}
+  await captureEvaluationReport({
+    meta: missing,
+    report: undefined,
+    writeText: async () => assert.fail('No invented report'),
+    captureImage: async () => assert.fail('No invented report'),
+    save: () => undefined
+  })
+  assert.equal(missing.evidence['self-report'].status, 'failed')
+})
+
+test('report capture succeeds in order and rejects missing text without fabricating an image', async () => {
+  const { captureEvaluationReport } = await import('../capture-lifecycle.mjs')
+  const events = [],
+    meta = {}
+  await captureEvaluationReport({
+    meta,
+    report: { attribution: 'model-self-report', text: 'Unconfirmed cause.' },
+    writeText: async () => events.push('text'),
+    captureImage: async () => events.push('image'),
+    save: () => undefined
+  })
+  assert.deepEqual(events, ['text', 'image'])
+  assert.equal(meta.evidence['self-report'].status, 'complete')
+  assert.equal(meta.selfReport.imageSaved, true)
+  const failed = {}
+  await captureEvaluationReport({
+    meta: failed,
+    report: { text: 'Report' },
+    writeText: async () => {
+      throw new Error('Disk unavailable')
+    },
+    captureImage: async () => assert.fail('Text was not saved'),
+    save: () => undefined
+  })
+  assert.equal(failed.evidence['self-report'].status, 'failed')
+  assert.equal(failed.selfReport.textSaved, false)
+})
+
+test('late screenshot completion cannot upgrade timed-out report evidence', async () => {
+  const { captureEvaluationReport } = await import('../capture-lifecycle.mjs')
+  let release
+  const image = new Promise((resolve) => {
+    release = resolve
+  })
+  const meta = {}
+  const pending = captureEvaluationReport({
+    meta,
+    report: { text: 'Report' },
+    writeText: async () => undefined,
+    captureImage: () => image,
+    save: () => undefined,
+    timeoutMs: 10
+  })
+  const state = await Promise.race([
+    pending.then(() => 'settled'),
+    new Promise((resolve) => setTimeout(() => resolve('still-waiting'), 30))
+  ])
+  release()
+  await pending
+  assert.equal(state, 'settled')
+  assert.equal(meta.evidence['self-report'].status, 'failed')
+  assert.equal(meta.selfReport.imageSaved, false)
+})
+
+test('report image captures the rendered report and rejects a different terminal message', async () => {
+  const { captureReportImage } = await import('../capture-lifecycle.mjs')
+  const events = []
+  let visibleText = 'The model public report.'
+  const report = {
+    attribution: 'model-self-report',
+    text: visibleText,
+    sourceRequestId: 'source',
+    turnId: 'turn',
+    messageIndex: 0
+  }
+  const target = {
+    getByTestId: (id) => {
+      assert.equal(id, 'ai-agent-result')
+      return target
+    },
+    waitFor: async () => events.push('visible'),
+    scrollIntoViewIfNeeded: async () => events.push('scroll'),
+    textContent: async () => visibleText,
+    getAttribute: async (name) =>
+      name === 'data-turn-id'
+        ? 'turn'
+        : JSON.stringify({
+            attribution: report.attribution,
+            text: report.text,
+            sourceRequestId: report.sourceRequestId,
+            turnId: report.turnId
+          }),
+    screenshot: async ({ path }) => events.push(path)
+  }
+  const page = {
+    getByTestId: (id) => {
+      assert.equal(id, 'ai-agent-message')
+      return { nth: () => target }
+    }
+  }
+  await captureReportImage(page, report, 'report.png')
+  assert.deepEqual(events, ['visible', 'scroll', 'report.png'])
+  visibleText = 'Connection failed'
+  await assert.rejects(
+    captureReportImage(page, report, 'wrong.png'),
+    /rendered report/
+  )
+  assert.equal(events.includes('wrong.png'), false)
+})
+
+test('reads one matching settled report without network body access and rejects ambiguous or stale evidence', async () => {
+  const { readEvaluationReport } = await import('../capture-lifecycle.mjs')
+  const report = {
+    attribution: 'model-self-report',
+    sourceRequestId: 'request',
+    turnId: 'turn',
+    text: 'Observed partial work.'
+  }
+  let entries = [
+    {
+      value: JSON.stringify(report),
+      turnId: 'turn',
+      outcome: 'partial',
+      text: report.text,
+      messageIndex: 0
+    }
+  ]
+  const page = { getByTestId: () => ({ evaluateAll: async () => entries }) }
+  const captured = await readEvaluationReport(page, ['request'])
+  assert.equal(captured.text, report.text)
+  assert.equal(captured.sourceRequestId, 'request')
+  await assert.rejects(readEvaluationReport(page, ['foreign']), /matching/)
+  for (const alteration of [
+    { turnId: 'replacement' },
+    { outcome: 'failed' },
+    { outcome: 'cancelled' },
+    { text: 'Transport failed' },
+    { value: '{}' },
+    { value: '{' },
+    { value: JSON.stringify({ ...report, text: 'x'.repeat(1001) }) }
+  ]) {
+    entries = [
+      {
+        value: JSON.stringify(report),
+        turnId: 'turn',
+        outcome: 'partial',
+        text: report.text,
+        messageIndex: 0,
+        ...alteration
+      }
+    ]
+    await assert.rejects(readEvaluationReport(page, ['request']))
+  }
+  const valid = {
+    value: JSON.stringify(report),
+    turnId: 'turn',
+    outcome: 'partial',
+    text: report.text,
+    messageIndex: 0
+  }
+  entries = [valid, { ...valid, messageIndex: 1 }]
+  await assert.rejects(readEvaluationReport(page, ['request']), /matching/)
+  entries = []
+  await assert.rejects(readEvaluationReport(page, ['request']), /matching/)
 })

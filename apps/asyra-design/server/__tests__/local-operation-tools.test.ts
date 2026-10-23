@@ -380,6 +380,11 @@ it('resolves multiple semantic operations and semantic names from the admitted r
     result.apis.every((api: { inputSchema?: unknown }) => !api.inputSchema)
   ).toBe(true)
   const byName = await call({ names: selected.map((api) => api.operation) })
+  for (const api of selected) {
+    const byQuery = await call({ query: api.operation, view: 'full' })
+    expect(byQuery.apis).toHaveLength(1)
+    expect(byQuery.apis[0].inputSchema).toEqual(api.inputSchema)
+  }
   expect(byName.missingNames).toEqual([])
   expect(byName.apis.map((api: { name: string }) => api.name)).toEqual(
     selected.map((api) => api.name)
@@ -389,60 +394,65 @@ it('resolves multiple semantic operations and semantic names from the admitted r
   expect(execute).not.toHaveBeenCalled()
 })
 
-it('returns qualified choices for an ambiguous native name instead of selecting a route', async () => {
-  const native = ['first', 'second'].map((namespace) => ({
-    name: 'build',
-    namespace,
-    description: 'Build',
-    inputSchema: { type: 'object' }
-  }))
-  const tools = createLocalOperationTools(
-    basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
-    vi.fn(),
-    { getNativeTools: () => native }
-  )
-  const result = JSON.parse(
-    await tools.call(
-      'describe_design_apis',
-      { names: ['build'] },
+it.each(['names', 'query'])(
+  'returns qualified choices for an ambiguous native name through %s instead of selecting a route',
+  async (selector) => {
+    const native = ['first', 'second'].map((namespace) => ({
+      name: 'build',
+      namespace,
+      description: 'Build',
+      inputSchema: { type: 'object' }
+    }))
+    const tools = createLocalOperationTools(
+      basicApiContracts,
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      vi.fn(),
+      { getNativeTools: () => native }
+    )
+    const result = JSON.parse(
+      await tools.call(
+        'describe_design_apis',
+        selector === 'names' ? { names: ['build'] } : { query: 'build' },
+        new AbortController().signal
+      )
+    )
+    expect(result.tools).toEqual([])
+    expect(result.ambiguousNames).toEqual([
+      { name: 'build', candidates: ['first.build', 'second.build'] }
+    ])
+    expect(result).toMatchObject({ status: 'failed', settlement: 'completed' })
+    const { invokeLocalTool } = await import('../local-tool-invocation')
+    const definition = tools.definitions.find(
+      (d) => d.name === 'describe_design_apis'
+    )
+    if (!definition) throw new Error('Missing discovery definition')
+    const reply = await invokeLocalTool(
+      tools,
+      definition,
+      selector === 'names' ? { names: ['build'] } : { query: 'build' },
       new AbortController().signal
     )
-  )
-  expect(result.tools).toEqual([])
-  expect(result.ambiguousNames).toEqual([
-    { name: 'build', candidates: ['first.build', 'second.build'] }
-  ])
-  expect(result).toMatchObject({ status: 'failed', settlement: 'completed' })
-  const { invokeLocalTool } = await import('../local-tool-invocation')
-  const definition = tools.definitions.find(
-    (d) => d.name === 'describe_design_apis'
-  )
-  if (!definition) throw new Error('Missing discovery definition')
-  const reply = await invokeLocalTool(
-    tools,
-    definition,
-    { names: ['build'] },
-    new AbortController().signal
-  )
-  expect(reply.success).toBe(false)
-  expect(JSON.parse(reply.text).toolOutcome).toMatchObject({
-    status: 'failed',
-    settlement: 'completed'
-  })
-  const exact = JSON.parse(
-    await tools.call(
-      'describe_design_apis',
-      { names: ['first.build'] },
-      new AbortController().signal
+    expect(reply.success).toBe(false)
+    expect(JSON.parse(reply.text).toolOutcome).toMatchObject({
+      status: 'failed',
+      settlement: 'completed'
+    })
+    const exact = JSON.parse(
+      await tools.call(
+        'describe_design_apis',
+        selector === 'names'
+          ? { names: ['first.build'] }
+          : { query: 'first.build' },
+        new AbortController().signal
+      )
     )
-  )
-  expect(exact.tools[0].execution).toEqual({
-    kind: 'native-tool',
-    namespace: 'first',
-    tool: 'build'
-  })
-})
+    expect(exact.tools[0].execution).toEqual({
+      kind: 'native-tool',
+      namespace: 'first',
+      tool: 'build'
+    })
+  }
+)
 
 it('uses the advertised overview default for any inspection target and preserves explicit native detail', async () => {
   const execute = vi.fn(async (batch: AiActionBatch) => ({
@@ -4362,6 +4372,9 @@ it('delivers both same-name route schemas in one lookup and invokes each without
   const read = async (args: unknown) =>
     JSON.parse(await owner.call('describe_design_apis', args, signal))
   const lookup = await read({ names: [action.name] })
+  const queryLookup = await read({ query: action.name, view: 'full' })
+  expect(queryLookup.apis).toEqual(lookup.apis)
+  expect(queryLookup.tools).toEqual(lookup.tools)
   const native = lookup.tools[0]
   const batchAction = lookup.apis[0]
   const { operationInputIssue } = await import('../operation-input-schema')

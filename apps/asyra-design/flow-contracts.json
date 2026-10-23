@@ -462,7 +462,9 @@
           "implementationPaths": [
             "apps/asyra-design/server/design-preparation-examples.ts",
             "apps/asyra-design/server/design-construction.ts",
-            "apps/asyra-design/server/design-target-index.ts"
+            "apps/asyra-design/server/design-target-index.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/server/design-budget.ts"
           ]
         },
         {
@@ -606,7 +608,10 @@
             "apps/asyra-design/server/local-design-workflow.ts",
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-ai-provider.ts",
-            "apps/asyra-design/server/ai-domain-prompt.ts"
+            "apps/asyra-design/server/ai-domain-prompt.ts",
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-construction-schema.ts"
           ]
         },
         {
@@ -617,9 +622,75 @@
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-information-delivery.ts"
           ]
+        },
+        {
+          "id": "compose.evaluation-report",
+          "stepId": "compose",
+          "testName": "execution proof separates bounded work from same-thread self-report without replay",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-ai-provider.ts",
+            "apps/asyra-design/src/ai/evaluation-window.ts",
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+          ]
+        },
+        {
+          "id": "compose.budget-recovery",
+          "stepId": "compose",
+          "testName": "execution proof continues safe capacity through retained partitions in one invocation",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/design-budget.ts"
+          ]
+        },
+        {
+          "id": "observe.settled-report",
+          "stepId": "observe",
+          "testName": "execution proof captures only the admitted settled report without rereading transport",
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/evaluation-window.ts",
+            "apps/asyra-design/src/app/ai-conversation-panel.tsx"
+          ]
+        },
+        {
+          "id": "prepare.evaluation-budget",
+          "stepId": "prepare",
+          "testName": "execution proof isolates the evaluation budget through delivery and retained recovery",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-preparation.ts",
+            "apps/asyra-design/server/design-draft-repair.ts"
+          ]
+        },
+        {
+          "id": "compose.layered-repetition",
+          "stepId": "compose",
+          "testName": "execution proof delivers layered repetition before parameters with canonical references",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-preparation-examples.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-workflow.ts"
+          ]
+        },
+        {
+          "id": "prepare.source-read-ownership",
+          "stepId": "prepare",
+          "testName": "execution proof separates budget snapshot projection and retained lookup work",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-preparation.ts"
+          ]
         }
       ],
       "handoffs": [
+        {
+          "routeId": "capacity-plan-to-compose",
+          "decision": "required",
+          "caseIds": [
+            "compose.budget-recovery",
+            "prepare.evaluation-budget"
+          ]
+        },
         {
           "routeId": "request-to-compose",
           "decision": "required",
@@ -633,7 +704,8 @@
           "caseIds": [
             "prepare.lifetime",
             "compose.resource-export",
-            "prepare.repeated-representation"
+            "prepare.repeated-representation",
+            "compose.layered-repetition"
           ]
         },
         {

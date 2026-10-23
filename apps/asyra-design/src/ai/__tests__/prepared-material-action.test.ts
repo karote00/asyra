@@ -267,3 +267,55 @@ it('reports a real small document delta without loosening admission or writing',
   expect(update).not.toHaveBeenCalled()
   owner.dispose()
 })
+
+it('retains earlier material members across a normalized partition continuation', async () => {
+  const signal = new AbortController().signal
+  const geometry = (x: number, rootX: number) => ({
+    parents: ['root'],
+    computed: { x, y: 3, width: 10, height: 20 },
+    placements: [
+      { x: rootX, y: 4 },
+      { x: 12, y: -5, rotation: 30, scaleX: 2, scaleY: 3 }
+    ]
+  })
+  const values = new Map([
+    ['a', { geometry: geometry(10, 20), binding: 'a' }],
+    ['b', { geometry: geometry(40, 20), binding: 'b' }]
+  ])
+  const update = vi.fn()
+  const owner = createPreparedMaterialApplication({
+    read: (id) => values.get(id) ?? null,
+    update
+  })
+  owner.capture('root', ['a'], signal)
+  values.set('a', { geometry: geometry(30, 0), binding: 'a' })
+  values.set('b', { geometry: geometry(60, 0), binding: 'b' })
+  owner.capture('root', [], signal, true)
+  await expect(
+    owner.action.execute(
+      {
+        rootId: 'root',
+        updates: [{ elementId: 'a', gradient, color: '#102030' }]
+      },
+      { signal }
+    )
+  ).resolves.toMatchObject({ status: 'complete' })
+  update.mockClear()
+  owner.capture('root', ['b'], signal, true)
+  await owner.action.execute(
+    {
+      rootId: 'root',
+      updates: [
+        { elementId: 'a', gradient, color: '#102030' },
+        { elementId: 'b', gradient, color: '#102030' }
+      ]
+    },
+    { signal }
+  )
+  expect(update).toHaveBeenCalledOnce()
+  values.set('a', { geometry: geometry(31, 0), binding: 'a' })
+  expect(() => owner.capture('root', ['b'], signal, true)).toThrow(/changed/)
+  values.set('a', { geometry: geometry(30, 0), binding: 'different' })
+  expect(() => owner.capture('root', ['b'], signal, true)).toThrow(/changed/)
+  owner.dispose()
+})

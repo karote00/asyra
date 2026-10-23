@@ -1,3 +1,4 @@
+import { inspectDesignBudget } from './design-budget'
 import { createDesignCheckResults } from './design-check-results'
 import { createHash } from 'node:crypto'
 import type { LocalToolOwnership } from './local-tool-leases'
@@ -722,8 +723,15 @@ export const prepareDesignAsync = (
 export const createDesignPreparationSession = (
   compile: typeof prepareDesign = prepareDesign,
   compileAsync: typeof prepareDesignAsync = prepareDesignAsync,
-  ownership?: LocalToolOwnership
+  ownership?: LocalToolOwnership,
+  expandedNodeLimit: number = limits.expandedNodes
 ) => {
+  if (expandedNodeLimit !== limits.expandedNodes && expandedNodeLimit !== 2000)
+    throw new Error('Invalid evaluation artifact budget')
+  const assertBudget = (input: unknown) => {
+    const issue = inspectDesignBudget(input, expandedNodeLimit)
+    if (issue) throw new Error(issue.message)
+  }
   const checkResults = createDesignCheckResults()
   const artifacts = new Map<string, PreparedDesign>()
   const recipes = new Map<string, unknown>()
@@ -742,7 +750,7 @@ export const createDesignPreparationSession = (
     { artifactId: string; ids: readonly string[]; bytes: number }
   >()
   let targetBytes = 0
-  const rejectedDrafts = createDesignDraftRepairStore()
+  const rejectedDrafts = createDesignDraftRepairStore(expandedNodeLimit)
   const targetIndexes = new Map<
     string,
     ReturnType<typeof createDesignTargetIndex>
@@ -813,6 +821,7 @@ export const createDesignPreparationSession = (
     }
   }
   return {
+    expandedNodeLimit,
     checkResults,
     recipe(artifactId: string) {
       ownership?.assertOwned(artifactId)
@@ -1023,17 +1032,64 @@ export const createDesignPreparationSession = (
       return rejectedDrafts.repair(input)
     },
     describeRejectedDraft: rejectedDrafts.describe,
-    async prepareAsync(input: unknown, signal: AbortSignal) {
+    async prepareAsync(
+      input: unknown,
+      signal: AbortSignal,
+      recovery?: {
+        draftId: string
+        partition: number
+        continueFromArtifact?: string
+      }
+    ) {
       signal.throwIfAborted()
+      let continuation: PreparedDesign | undefined
+      let artifactId: string = randomUUID()
+      if (recovery) {
+        ownership?.assertOwned(recovery.draftId)
+        input = rejectedDrafts.repair(recovery)
+        artifactId = `${recovery.draftId}-part-${recovery.partition}`
+        if (
+          recovery.partition === 0 &&
+          recovery.continueFromArtifact !== undefined
+        )
+          throw new Error(
+            'The first partition cannot continue an existing root.'
+          )
+        if (recovery.partition > 0) {
+          const first = `${recovery.draftId}-part-0`
+          if (recovery.continueFromArtifact !== first)
+            throw new Error(
+              'Continue the acknowledged first partition artifact.'
+            )
+          ownership?.assertOwned(first)
+          continuation = artifacts.get(first)
+          if (!continuation || sourceIdentities.get(first) !== first)
+            throw new Error('The original partition artifact is unavailable.')
+        }
+        const retained = artifacts.get(artifactId)
+        if (retained) {
+          ownership?.assertOwned(artifactId)
+          // Reusing a request artifact still needs the current call's export pin.
+          ownership?.borrow(artifactId)
+          return {
+            artifactId,
+            elementCount: retained.entries.length,
+            findings: retained.findings,
+            applicable: retained.findings.every(
+              (f) => f.kind === 'text-metrics-required'
+            )
+          }
+        }
+      }
+      assertBudget(input)
       const recipe = freeze(structuredClone(input))
-      const artifactId = randomUUID()
       let sourceWork:
         ReturnType<typeof constructDesign>['sourceWork'] | undefined
       let reuse:
         | Parameters<NonNullable<Parameters<typeof prepareDesign>[3]>>[0]
         | undefined
       let compiledFields: Readonly<Record<string, string>> = {}
-      const result = await compileAsync(
+      let result = await compileAsync(
         signal,
         recipe,
         artifactId,
@@ -1048,11 +1104,54 @@ export const createDesignPreparationSession = (
         }
       )
       signal.throwIfAborted()
+      if (continuation) {
+        const root = continuation.entries[0]
+        const anchor = continuation.entries[1]
+        if (
+          root.descriptor.type !== 'group' ||
+          !anchor ||
+          anchor.parentId !== continuation.rootId
+        )
+          throw new Error(
+            'Partition continuation requires the original flat group and anchor.'
+          )
+        const currentRoot = result.entries[0]
+        const dx = Number(currentRoot.descriptor.x) - Number(root.descriptor.x)
+        const dy = Number(currentRoot.descriptor.y) - Number(root.descriptor.y)
+        const { [currentRoot.key]: _oldRoot, ...otherKeys } = result.keyToId
+        const keyToId = { ...otherKeys, [root.key]: continuation.rootId }
+        const rootId = continuation.rootId
+        result = {
+          ...result,
+          rootId,
+          keyToId,
+          continuation: {
+            anchor: {
+              id: anchor.descriptor.id,
+              x: Number(root.descriptor.x) + Number(anchor.descriptor.x),
+              y: Number(root.descriptor.y) + Number(anchor.descriptor.y)
+            }
+          },
+          entries: [
+            root,
+            ...result.entries.slice(1).map((entry) => ({
+              ...entry,
+              parentId: rootId,
+              descriptor: {
+                ...entry.descriptor,
+                x: Number(entry.descriptor.x) + dx,
+                y: Number(entry.descriptor.y) + dy
+              }
+            }))
+          ]
+        }
+      }
       materialFields.set(artifactId, compiledFields)
       recipes.set(artifactId, recipe)
       return publish(artifactId, result, sourceWork, reuse)
     },
     prepare(input: unknown) {
+      assertBudget(input)
       const recipe = freeze(structuredClone(input))
       const artifactId = randomUUID()
       let sourceWork:

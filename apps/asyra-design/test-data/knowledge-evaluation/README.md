@@ -5,7 +5,8 @@
 > authorize a run. Read the current checkpoint in
 > `docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md` and
 > `docs/ai/knowledge/evaluations/2026-10-18-101-knowledge-design.md`. Any later
-> authorized 101 run has a 600000 ms hard deadline from Send, not 15 minutes.
+> authorized run uses its explicit work budget (at most 600000 ms), followed by a
+> separate report timeout of 60000 ms. Video is disabled for the current diagnostic workflow.
 
 This runner uses a real local subscription and actual Design UI/tools. It is not
 an automated model-quality test and is never run by ordinary tests or CI. The
@@ -61,15 +62,26 @@ name `vite` and this worktree's exact `apps/asyra-design` cwd. The runner checks
 live process cwd/command before Send and arms a process-identity guarded watchdog.
 Do not use a shared user session. Do not include credentials in artifacts.
 
-`architecture-101.json` fixes 600000 ms from Send. This overrides the shared
-watchdog's default for other callers. The watchdog stops owned generation/browser
-processes independently of blocked driver/browser RPC. Early collector failure
-also stops generation. Successful terminal product completion disarms this cutoff;
-failed, partial, cancelled or missing outcomes force-stop remaining owned work
-and retain the actual stop reason. A terminal UI label alone does not prove that
-the producer has exited. Native exit and signal status determine process cleanup.
-post-generation capture and cleanup have separate deadlines. No automatic retry
-or repeated drawing occurs after capture failure.
+`architecture-101.json` bounds drawing work at 600000 ms from Send; the explicit
+short observation uses `--deadline-ms=120000`. An explicitly authorized reproduction
+may additionally pass `--expanded-node-limit=2000`. The existing evaluation window
+carries that request-local limit to preparation, delivered usage and retained-source
+partition planning. Omission preserves production 10,000; unsupported overrides
+reject. `run.json` records the effective and production ceilings. Lowering the test
+limit increases overflow likelihood but does not guarantee a live recovery case. Before Send the runner supplies the
+same absolute work deadline to browser mutation admission and the local provider.
+At cutoff, tools are cancelled and the native work turn is interrupted. Its terminal
+acknowledgement precedes a report-only turn in the same native thread. Early work
+completion also enters reporting. The 60000 ms report budget includes interruption
+and tool settlement; missing acknowledgement, model output or capture stays failed.
+The report cannot dispatch App operations or replay completed work.
+
+An independent process-identity watchdog bounds work plus report plus a 30000 ms
+capture/cleanup allowance, including blocked browser RPC. This allowance never
+extends drawing admission. The ordinary request cancellation path remains active.
+A terminal UI outcome includes reporting and is not drawing acceptance. Separate
+native work, report and cleanup events/payloads retain actual phase timing. Text and
+screenshot capture failure cannot become successful evidence. No automatic retry.
 
 ## Evidence and limits
 
@@ -201,8 +213,10 @@ hidden provider perception. Recording failures do not fail or replay the drawing
 
 Local evaluation and saved-document replay use direct local browser control.
 Document WebSocket payloads must not be duplicated into a size-limited remote
-Playwright control connection. Recording export closes its context; fresh-context
-reload retains the original root/order and durable-receipt comparison.
+Playwright control connection. The current 101 runner records no video. It captures
+report text and screenshots, then closes its work context before fresh-context reload,
+retaining the original root/order and durable-receipt comparison. Other explicit
+recording consumers retain their existing recording/export lifecycle.
 Public Chromium process identity feeds the existing independent deadline worker.
 Browser disconnect, page crash/close, context close and cleanup intent are retained
 in existing run/replay metadata. Native process presence and captured start identity
@@ -218,12 +232,13 @@ PID/start identity to disappear; a kill request alone is not settled cleanup.
 
 
 A single explicitly authorized short observation may pass `--deadline-ms=120000`
-to `run-101.mjs quality-knowledge`. The positive integer override can only shorten
-the canonical scenario deadline. The same independent watchdog starts at Send;
-run.json records the effective limit. This is an incomplete scenario observation,
-not full quality acceptance. Preserve partial video and I/O on forced termination;
-do not retry or turn unavailable native/model output into a successful delivery.
-
+to `run-101.mjs quality-knowledge`. The override shortens work, not reporting.
+`run.json` retains the window, separate evidence outcomes and source request identity;
+`self-report.txt` and `self-report.png` preserve the host-admitted report. Native
+work/report inputs and outputs use the existing provider payload sink. Distinguish
+model-authored explanations from measured App/transport events and inferred causes.
+This is an incomplete scenario observation, not full quality acceptance. Preserve
+available I/O on forced termination; do not retry or invent unavailable output.
 
 Offline native delivery verification uses `test:native-delivery` with the installed
 Codex 0.160.0 executable and permanent saved-reply fixtures. It starts only a local
@@ -290,3 +305,12 @@ generation-versus-stall attribution, are explicitly unavailable. Public item and
 App invocation events remain observable. Native diagnostic database events are
 not automatically App protocol events; no database polling, new logger or raw-code
 capture was added. Missing events and transport silence are not zero-byte output.
+
+Report capture reads the bounded, host-admitted projection on the existing settled
+conversation message. It matches the observed request ID and turn, then verifies
+rendered text before and after screenshot. It never rereads the full HTTP stream
+through DevTools or substitutes raw provider text for App admission. Capture errors
+remain explicit, and saved text survives screenshot failure. The permanent
+`local-ai-provider.spec.ts` body-eviction case uses a scripted response and actual
+App execution without a model; a constrained diagnostic cache reproduces eviction
+without changing product artifact or transport budgets.

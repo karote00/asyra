@@ -1,6 +1,7 @@
 import {
   workflowUsageGuide,
   workflowInputScopes,
+  workflowQueryGuidance,
   projectWorkflowInput
 } from './design-workflow-discovery'
 import {
@@ -1153,8 +1154,13 @@ export const createLocalOperationTools = (
         }
         coverage = 'scoped'
       } catch (error) {
+        const guidance = workflowQueryGuidance(identity, inputSchema)
+        if (!guidance)
+          throw new LocalOperationPreparationError(
+            'This owner does not publish inputScope choices. Omit inputScope and request its full contract.'
+          )
         throw new LocalOperationPreparationError(
-          error instanceof Error ? error.message : 'Invalid inputScope'
+          `${error instanceof Error ? error.message : 'Invalid inputScope'} Correct the query from these choices; the example is illustrative, not a replacement for valid selections. Scope guidance: ${JSON.stringify({ inputScopes: { operations: guidance.inputScopes.operations, nodeTypes: guidance.inputScopes.nodeTypes, optionalInputs: guidance.inputScopes.optionalInputs }, example: guidance.example })}`
         )
       }
     }
@@ -1173,16 +1179,23 @@ export const createLocalOperationTools = (
         ...usage,
         description:
           'Selected operation usage. Follow the included guide and registered execution route.',
-        usageGuide: guide,
         invocationExample: usageInvocation({
           ...descriptor,
           inputSchema: selected
-        })
+        }),
+        usageGuide: guide
       }
     } else if (args.view === 'usage') {
+      const inputScopes = workflowInputScopes(inputSchema)
       projection = {
         ...usage,
-        inputScopes: workflowInputScopes(inputSchema),
+        ...(inputScopes?.selection
+          ? {
+              description:
+                'Select the next ready part using inputScopes; exact selected usage supplies the complete execution guide.'
+            }
+          : {}),
+        inputScopes,
         inputFields:
           isRecord(inputSchema) && isRecord(inputSchema.properties)
             ? Object.keys(inputSchema.properties).map(
@@ -1190,7 +1203,9 @@ export const createLocalOperationTools = (
                   `/properties/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`
               )
             : [],
-        outputFields: inputFieldPaths(descriptor.outputSchema),
+        ...(inputScopes?.selection
+          ? {}
+          : { outputFields: inputFieldPaths(descriptor.outputSchema) }),
         elementBindings: schemaSlots(inputSchema).flatMap(({ path, schema }) =>
           ['all', 'each', 'one'].includes(
             String(schema['x-design-element-binding'])
@@ -1319,21 +1334,27 @@ export const createLocalOperationTools = (
   }
   const discoveryGuidance = {
     capabilities:
-      'Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Menus include execution routes; exact names retrieve input/output contracts. Known tools need no repeated lookup.',
+      'Find an operation by what it does: category menus, semantic operations or capability terms such as fill, hierarchy, bounds and inspection. Menus include execution routes; exact names retrieve input/output contracts. Query resolves exact registered identities before descriptive matching; use purpose terms or categories for related capabilities. Known tools need no repeated lookup.',
     references:
       'This catalog does not search subjects, photographs or design reference material. Use native web research for missing external facts/images, then import_reference_image for a selected source. A subject word may be absent from this capability catalog; do not infer a missing drawing capability or automatically repeat it as a tool query.'
   }
-  const nativeMenu = (tool: NativeToolDescriptor) => ({
-    name: tool.name,
-    namespace: tool.namespace,
-    registeredName: tool.registeredName,
-    revision: tool.revision,
-    description: tool.description,
-    effect: tool.effect,
-    composition: tool.composition,
-    execution: nativeExecution(tool),
-    inputScopes: workflowInputScopes(tool.inputSchema)
-  })
+  const nativeMenu = (tool: NativeToolDescriptor) => {
+    const inputScopes = workflowInputScopes(tool.inputSchema)
+    return {
+      name: tool.name,
+      namespace: tool.namespace,
+      registeredName: tool.registeredName,
+      revision: tool.revision,
+      description: inputScopes?.selection
+        ? 'Select the next ready part using inputScopes; exact selected usage supplies the complete execution guide.'
+        : tool.description,
+      effect: tool.effect,
+      composition: tool.composition,
+      execution: nativeExecution(tool),
+      inputScopes
+    }
+  }
+
   const nativeDefinition = (
     tool: NativeToolDescriptor,
     args: Record<string, unknown>
@@ -2530,7 +2551,7 @@ export const createLocalOperationTools = (
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
-                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query searches action, native and saved capability names/descriptions, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. The same schemaPaths list applies to EVERY selected identity, not a union across tools. For different fields issue separate per-tool queries in parallel in one exec; copy paths only from that tool usage. Lookup success means all requested definitions were delivered; partial/failed means some/none were delivered, even when the read settlement is completed. A narrowerQuery recovers only valid requested paths, not the rejected scope. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
+                'Discover missing contracts. Prefer operations=["owner.method", ...] for known semantic operations; operation accepts one. names accepts exact action names, unique semantic identities or native tools (namespace.name disambiguates). Use the returned action name and execution route. With no selector returns categories; category gives a paginated scoped menu (includeSchemas=true includes schemas), query first resolves an exact registered name (including namespace.name or semantic operation); otherwise it searches capability names/descriptions. Exact hits preserve ambiguity and independent routes, without related descriptive matches. Use purpose terms or categories to explore related capabilities, not subjects or external reference material. Use native web research for missing subject facts/images. A menu explains what is available; exact names retrieve the selected contract. Follow next.arguments while complete=false; exact selectors preserve selection but oversized content still uses bounded contentDelivery. Use only one selector. Selection and representation are independent: view=usage or full works with exact, query and category selectors; query/category default to menus, exact selectors default to full. schemaPaths requires exact identities. The same schemaPaths list applies to EVERY selected identity, not a union across tools. For different fields issue separate per-tool queries in parallel in one exec; copy paths only from that tool usage. Lookup success means all requested definitions were delivered; partial/failed means some/none were delivered, even when the read settlement is completed. A narrowerQuery recovers only valid requested paths, not the rejected scope. Each tool resolves its own paths; schemaResolution reports unavailable paths and actual root/field paths without discarding other tools or marking the failed scope delivered. Repeated reads return requested content; prior App output does not prove model receipt. Use refresh=true only to restore missing context or failed delivery, including native Code Mode abbreviated fields. For missing fields use schemaPaths and refreshReason=missing-fields; refresh preserves that partial scope. Retain the parsed result in Code Mode and forward only needed fields, instead of printing every definition and re-fetching it. Full inputSchema and constraints remain available. Execute known contracts directly; no discovery prerequisite for every edit. Mutations accept new values and stable IDs. Follow each execution route: batch-action uses execute_design_batch; native-tool uses its namespace/tool. An action with argumentField=arguments wraps its action input in that native argument field. Explicit review and capture are native calls, never batch items. Exact final-response actions use the final response actions array, never a callable tool or batch item. Missing or ambiguous entries preserve unique matches and never select a similar route.',
               inputSchema: {
                 type: 'object',
                 additionalProperties: false,
@@ -2628,7 +2649,7 @@ export const createLocalOperationTools = (
                     type: 'string',
                     minLength: 1,
                     description:
-                      'Capability name or operation-purpose terms such as fill, hierarchy or inspection, matched against current action/native/saved descriptors. Not subject names, photographs or reference-material search; use native web research for those. Mutually exclusive with names.'
+                      'Exact registered identity first (trimmed, case-sensitive, including namespace.name or semantic operation); otherwise operation-purpose terms such as fill, hierarchy or inspection search current action/native/saved descriptors. Exact hits do not expand through description references. Not subject names, photographs or reference-material search; use native web research for those. Mutually exclusive with names.'
                   }
                 }
               }
@@ -3174,8 +3195,22 @@ export const createLocalOperationTools = (
               .map((api) => details(api, includeSchema))
           }
         }
-        if (Array.isArray(args.names)) {
-          const names = [...new Set(args.names as string[])]
+        const queryName =
+          typeof args.query === 'string' ? args.query.trim() : undefined
+        const exactQuery =
+          queryName !== undefined &&
+          (admittedApisByName.has(queryName) ||
+            admittedApisByOperation.has(queryName) ||
+            nativeMatches(queryName).length > 0)
+        if (exactQuery && Number(args.offset ?? 0) !== 0)
+          throw new LocalOperationPreparationError(
+            'Exact query has no inventory continuation; restart at offset 0.'
+          )
+        if (Array.isArray(args.names) || exactQuery) {
+          const names = Array.isArray(args.names)
+            ? [...new Set(args.names as string[])]
+            : [queryName as string]
+          const includeDefinition = !exactQuery || args.view !== undefined
           const matches = names.map((name) => ({
             name,
             apis: [
@@ -3209,8 +3244,12 @@ export const createLocalOperationTools = (
             .filter((match) => !match.apis.length && !match.tools.length)
             .map((match) => match.name)
           return JSON.stringify({
-            apis: selected.map((api) => details(api)),
-            tools: tools.map((tool) => nativeDefinition(tool, args)),
+            apis: selected.map((api) => details(api, includeDefinition)),
+            tools: tools.map((tool) =>
+              includeDefinition
+                ? nativeDefinition(tool, args)
+                : nativeMenu(tool)
+            ),
             missingNames,
             ...(ambiguousNames.length ? { ambiguousNames } : {}),
             ...(missingNames.length
