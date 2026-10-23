@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Interrupted owner-result handoff has strengthened local cancellation, recovery, reporting and disk-reload evidence. Live AI recovery from an interrupted owner remains unobserved. Task 3 remains active. Prior closed slices remain closed. No model run is authorized.**
+Status: **Compact workflow delivery is closed on formal local evidence and authorized for push. Interrupted owner results remain closed on local evidence; live AI recovery remains unobserved. Task 3 remains active. No additional model run is authorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,12 +20,12 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `77debb2224b7fdc4129f775340bdc95437834938` (integrated before the convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: preserve interrupted prepared-design owner results through Runtime,
-  native invocation and the existing report handoff. Keep cancellation, transaction
-  settlement, retained sources and no-replay semantics. The current closeout authorizes
-  validation, commit and push, followed by read-only analysis of run 1792770001609.
-  No model/101, next-issue implementation, budget, Knowledge, geometry, discovery
-  or unrelated status changes are authorized.
+- Current scope: compact main-tool delivery only. Remove pure preparation/execution
+  diagnostics after canonical receipt consumption while retaining operation results,
+  restrictions, inspection evidence and recovery. Keep existing inner trace evidence.
+  Close this slice and push its validated source. Then inspect saved run 1792770001609
+  read-only to propose one next App/framework handoff issue. No model/101, Knowledge,
+  geometry, budget, new tool or next-issue implementation is authorized.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -83,6 +83,91 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Compact workflow receipts - 2026-10-24
+
+Closeout - 2026-10-24: accepted on the formal local evidence below. The user
+authorized push without another 101 run. Model latency and live adoption remain
+unmeasured; those claims are not needed to close the deterministic delivery contract.
+
+Baseline: d2d6ba8a5f45543206020694c9b6b53c61e34134. Saved run
+1792770001609 requested compact output but delivered 5,372 text bytes, including
+2,869 bytes of drawing timing. Removing only timing/reuse/sourceWork from a
+read-only projection gives 1,938 bytes (63.9% less); this is a size oracle, not
+measured model latency. Immutable evidence and previous closed slices stay unchanged.
+
+Step Execution Card - compose / apply-to-compose:
+- Spec: Compact workflow delivery and Owner results and workflow outcomes.
+  Inspector: compose consumes execution receipts and prepared artifacts through
+  existing native orchestration; failure owner remains compose. Existing apply
+  owners, receipt consumers and trace sinks run before delivery projection.
+- Allowed input: validated owner results and the existing compact/full choice.
+  Output: equivalent operation result without pure diagnostics on compact paths.
+  Explicit full bypasses projection. Invalid input, cancellation, partial results
+  and real failures retain authoritative outcomes and recovery; no inferred success.
+- Allowed contributors: existing workflow/operation owners, native adapter and
+  existing observations. Forbidden: diagnostic inference, recursive deletion from
+  arbitrary user/result data, new state, registries, tools, retry or changed budgets.
+- Boundary: local-design-workflow.ts and its formal tests, execution-flow-proof,
+  one permanent saved-receipt fixture, current plan/spec/Inspector/mapping/bundle.
+  Direct delivery/native tests may be strengthened if needed. No canonical writes,
+  history, collaboration or persistence implementation changes.
+- Work lifetime: project the completed receipt once at its existing delivery boundary;
+  no preparation, mutation, image capture or diagnosis is recomputed. Raw inner
+  observations remain available before projection. No cache is introduced.
+- Fixed DoD: (1) exact saved compact text is at most 1,938 bytes after the three
+  diagnostic fields are omitted, with every other field equal; (2) real main-tool
+  execution and the actual published forwarding example preserve results/images;
+  (3) existing trace retains original diagnostic values and call correlation;
+  (4) single/parts, success/no-op, partial/failure, cancellation and follow-up failure
+  keep truthful outcomes, limits, identities and recovery; (5) full stays complete;
+  (6) no extra calls or writes, and returned recovery does not replay completed work.
+- Gates: baseline naming and existing tests, admission, failing formal regression,
+  focused workflow/delivery/native and interrupted-result regressions, production
+  types, scoped lint/naming, generated Inspector checks, candidate/accept/verify.
+  Review is limited to this diff, direct consumers, frozen cases and gates.
+- Self-review found timing inside existing executionResult failure containers.
+  A stronger negative-path regression failed before the bounded correction; traverse
+  only executionResult/batches protocol containers, never arbitrary result data.
+- Stop if reducing diagnostics requires changing authoritative owner semantics.
+  Do not lower the DoD or claim AI latency/adoption improvements from local tests.
+
+
+Compact delivery result - 2026-10-24:
+- Admission used candidate abd58a5a-ae62-4209-8744-4afb12704288 and accepted
+  contract facc517d03a5d4480d55e0424d03fc5a9808a08c231a1c6c8a94a7bcf1ecb4eb
+  at revision 74 before test/production edits. Architecture changes correctly
+  required contract review rather than mapping-only admission.
+- Existing 66 workflow tests passed before correction. The new real-workflow
+  regression failed on retained timing and the mapped proof failed on reuse.
+  Self-review then reproduced retained timing inside a partial failure's
+  executionResult; the same bounded projection now handles protocol containers.
+- Saved exchanges are permanent fixtures with source hashes, not tmp dependencies.
+  Their replay validates exact field equality and 5,372 -> 1,938 text bytes
+  (3,434 fewer; 63.9%). The saved-boundary replay is not a new canonical creation
+  test. Separate real preparation/operation tests verify the public route, full
+  bypass, actual forwarding example, unchanged image bytes and execution counts.
+  Synthetic valid pixels test transport, not reconstruction of historical artwork.
+- The existing profiler and record sink persist original inner results and the
+  compact outer result with call correlation. Disk readback verifies the saved
+  diagnostics, not only callback presence. Full results and nested semantic data
+  retain their values; no new store, tool, cache or retry path exists.
+- Validation: workflow 77 passed; operation/invocation/host 278 passed; native
+  provider 222 passed with one existing executable-dependent skip. Real interrupted
+  owner/Runtime recovery, history and durable-state regression: 8 passed. Existing
+  mapped cases retain valid no-op and non-replay protection. Production types and
+  naming passed; lint has zero errors and one unchanged console warning. Inspector
+  catalog/workspace: 25 passed. Final revision 75 verify passed all 70 obligations
+  at attempt 7a276f5d-f776-4aca-86e3-bc7b6b3d00fc, source
+  faa9d485e8dcdbcb2ffaf4bfc26cace6d4a2fddec3ed663441ff3c9ad6e2513a.
+- Final bounded review covered normal/partial/stopped single and parts delivery,
+  executionResult/batches, full, direct owners, raw evidence and the published
+  forwarding example. Removed only the superseded diagnostic transport behavior;
+  authoritative state/receipt handling and independent owner APIs are unchanged.
+  No additional query, preparation, capture or write is introduced.
+- No model/101 or push was performed. Local evidence establishes byte reduction
+  and semantic preservation, not lower model latency, earlier first frame or AI
+  adoption. No unrelated issue is opened by this closeout.
 
 ### Interrupted owner results - 2026-10-23
 

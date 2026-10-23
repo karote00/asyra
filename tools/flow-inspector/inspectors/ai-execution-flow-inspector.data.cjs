@@ -80,6 +80,7 @@
         ],
         outputs: ['artifact:tool-program'],
         conditions: [
+          'Compact workflow delivery projects only pure preparation work/reuse and drawing timing from known receipt locations after validation, canonical consumption and inner observations. Preserve operation results, findings, limits, image evidence, outcomes and recovery across single and parts; full bypasses projection. No arbitrary nested deletion, new state, extra calls or replay; raw diagnostics remain in existing trace records.',
           'Cancellation preserves causal owner receipts through existing invocation failures and request-root receipt ancestry. After tool drainage, bounded reporting consumes factual receipts without geometry, new tools, retries or model-inferred settlement. Empty evidence remains ordinary abort; siblings never inherit unrelated results.',
           'Selected draft/parts content derives optional repetition from the existing owner scope declaration and canonical member union. Include only selected member alternatives and the canonical members mode; explicit pattern retains full faces/members contracts. Preserve all nested restrictions and ordinary independent nodes, execute existing valid examples, and keep one bounded reply without another lookup or unselected schemas. Repair and unrelated content bypass this closure; malformed owner declarations fail at compose. No new registry, execution syntax, inference or mutation replay.',
           'For selected face/grid/pattern usage, existing valid-example filtering delivers root materials, sibling layer patterns and interposed independent nodes. Deliver the registered invocation before long parameters, complete in the first page, without increasing total first-use bytes/pages. Preserve canonical geometry/materials/order and resolve generated keys through artifact references; never silently rewrite explicit names/references. Mixed component order remains independently valid. Preserve pattern-only and independent examples, complete restrictions and no-replay recovery. No startup reading growth, additional query or increased selected reply volume; no automatic representation choice.',
@@ -184,6 +185,7 @@
           'request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse'
         ],
         implementationBoundary: [
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/compact-receipt-20261024.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/context-discovery-20261023.json',
           'apps/asyra-design/server/__tests__/shared-motifs.test.ts',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json',
@@ -339,6 +341,7 @@
           'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts'
         ],
         specRefs: [
+          '#compact-workflow-delivery',
           '#shared-normalized-motifs',
           '#layer-preserving-repetition-delivery',
           '#optional-repetition-in-selected-contents',
