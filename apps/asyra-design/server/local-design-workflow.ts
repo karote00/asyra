@@ -130,7 +130,7 @@ export const createLocalDesignWorkflow = (
               name: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
               executionAccess: LocalToolAccess.EXCLUSIVE,
               description:
-                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context and ID maps; response=full retains IDs for programmatic filtering. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
+                'Optional plan records request-linked review criteria in this same call. Omit it to draw a ready part immediately; record initial criteria with define_design_criteria before primary-agent result review. Established criteria cannot be rewritten after drawing. Prepare and apply one ready retained part, through existing validation and canvas operations. Call before generating later details or researching another part; do not accumulate a complete design first. Optional parentId attaches this part to an existing container in parent-local coordinates. The compact compositionId identifies the new part and is sufficient to attach later parts; no full ID map is needed for continuation. Invalid preparation never applies. Safe capacity plans execute through ordered retained parts in this call; only actual receipts prove writes. Returns preparation findings, actual root identity and review evidence. Default compact response omits duplicated context, ID maps and pure work/timing diagnostics; full retains them. Operation results, limitations and recovery remain complete. Use inspection=defer when no immediate visual decision is needed, then inspect at the next visual decision boundary. Does not replace existing objects or retry failures. ' +
                 designRepresentationGuidance,
               inputSchema: {
                 ...preparation.inputSchema,
@@ -204,6 +204,41 @@ export const createLocalDesignWorkflow = (
         const issue = operationInputIssue(input.plan, reviewPlanSchema)
         if (issue) throw new LocalOperationPreparationError(issue)
       }
+      const projectExecutionReceipt = (
+        value: Record<string, unknown>
+      ): Record<string, unknown> => {
+        const delivered = { ...value }
+        if (Array.isArray(value.actionResults))
+          delivered.actionResults = value.actionResults.map((entry) => {
+            if (
+              entry?.actionName !== AiActionNames.APPLY_PREPARED_DESIGN ||
+              !entry.result ||
+              typeof entry.result !== 'object' ||
+              Array.isArray(entry.result)
+            )
+              return entry
+            const { timing: _timing, ...result } = entry.result
+            return { ...entry, result }
+          })
+        const record = (entry: unknown): entry is Record<string, unknown> =>
+          !!entry && typeof entry === 'object' && !Array.isArray(entry)
+        // Only existing execution-protocol containers, never user/recovery data.
+        if (record(value.executionResult))
+          delivered.executionResult = projectExecutionReceipt(
+            value.executionResult
+          )
+        if (Array.isArray(value.batches))
+          delivered.batches = value.batches.map((batch) =>
+            record(batch) ? projectExecutionReceipt(batch) : batch
+          )
+        return delivered
+      }
+      const deliver = (value: Record<string, unknown>) => {
+        if (input.response === 'full') return JSON.stringify(value)
+        // Inner owner observations already retained the original diagnostic values.
+        const { reuse: _reuse, sourceWork: _sourceWork, ...delivered } = value
+        return JSON.stringify(projectExecutionReceipt(delivered))
+      }
       const completedSteps: string[] = []
       const runStep = async (
         owner: typeof designs | typeof operations,
@@ -276,14 +311,14 @@ export const createLocalDesignWorkflow = (
         failedStep: step
       })
       if (prepared.available && prepared.retainedDraft?.partitions)
-        return JSON.stringify(prepared)
+        return deliver(prepared)
       if (!prepared.available || !prepared.applicable)
-        return JSON.stringify(stoppedAt(prepared, preparation.name))
+        return deliver(stoppedAt(prepared, preparation.name))
       signal.throwIfAborted()
       if (input.plan !== undefined && review) {
         const planned = await runStep(operations, review, input.plan)
         if (localToolOutcome(planned).status !== 'success')
-          return JSON.stringify(stoppedAt(planned, review.name))
+          return deliver(stoppedAt(planned, review.name))
       }
       const receipt = await runStep(operations, apply, {
         arguments: {
@@ -305,7 +340,7 @@ export const createLocalDesignWorkflow = (
         applicationOutcome.status !== 'success' &&
         !appliedWithIncompleteFollowup
       )
-        return JSON.stringify(stoppedAt(receipt, apply.name))
+        return deliver(stoppedAt(receipt, apply.name))
       if (appliedWithIncompleteFollowup) completedSteps.push(apply.name)
       if (input.response !== 'full') {
         delete receipt.context
@@ -320,7 +355,7 @@ export const createLocalDesignWorkflow = (
         }
         receipt.receiptScope = 'compact'
       }
-      return JSON.stringify({ ...prepared, ...receipt, completedSteps })
+      return deliver({ ...prepared, ...receipt, completedSteps })
     }
   }
   const definition = single.definitions[0]

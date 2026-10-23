@@ -8305,3 +8305,92 @@ it('execution proof preserves cancellation evidence through native invocation', 
     await host.dispose()
   }
 })
+
+it('execution proof projects compact diagnostics after owner evidence without replay', async () => {
+  const actions = [
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ]
+  const designs = createLocalDesignTools(actions)
+  const timing = { totalMs: 8, canonicalWork: { counters: { created: 2 } } }
+  const execute = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
+      const action = batch.actions[0]
+      const { design } = action.arguments as { design: PreparedDesign }
+      return {
+        context: {},
+        actionResults: [
+          {
+            actionId: action.id,
+            actionName: action.name,
+            result: {
+              compositionId: design.rootId,
+              status: 'complete',
+              appliedElementCount: design.entries.length,
+              timing,
+              recovery: {
+                timing: 'preserve semantic data',
+                instruction: 'Do not replay'
+              }
+            }
+          }
+        ]
+      }
+    }
+  )
+  const operations = createLocalOperationTools(actions, designs, execute)
+  const observations: { stage: string; tool?: unknown; result?: unknown }[] = []
+  const workflow = createLocalDesignWorkflow(designs, operations, {
+    trace: (stage, evidence) =>
+      observations.push({ stage, ...structuredClone(evidence) })
+  })
+  const reply = await invokeLocalTool(
+    workflow,
+    workflow.definitions[0],
+    {
+      draft: {
+        type: 'group',
+        name: 'Part',
+        children: [
+          {
+            type: 'rect',
+            key: 'face',
+            name: 'Face',
+            x: 0,
+            y: 0,
+            width: 10,
+            height: 10,
+            fill: '#123456'
+          }
+        ]
+      },
+      inspection: 'defer'
+    },
+    new AbortController().signal
+  )
+  const result = JSON.parse(reply.text)
+  // Missing mechanical follow-up remains partial; compacting cannot promote it.
+  expect(result.toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(result.measurementIssues[0].recovery).toContain('Do not replay')
+  expect(result).not.toHaveProperty('reuse')
+  expect(result).not.toHaveProperty('sourceWork')
+  expect(result.actionResults[0].result).not.toHaveProperty('timing')
+  expect(result.actionResults[0].result).toMatchObject({
+    appliedElementCount: 2,
+    recovery: { timing: 'preserve semantic data' }
+  })
+  expect(
+    observations.find(
+      (entry) =>
+        entry.stage === 'action_completed' &&
+        entry.tool === 'apply_prepared_design'
+    )?.result
+  ).toMatchObject({ actionResults: [{ result: { timing } }] })
+  expect(execute).toHaveBeenCalledOnce()
+})

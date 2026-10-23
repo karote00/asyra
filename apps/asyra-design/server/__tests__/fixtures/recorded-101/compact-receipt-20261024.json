@@ -1,0 +1,1644 @@
+{
+  "source": {
+    "run": "1792770001609",
+    "provider": "bae35b5a-a1a6-4a5b-a2d5-23a9e2df6334",
+    "note": "Exact saved owner exchanges; images retain metadata only. Original files are immutable.",
+    "sha256": {
+      "input": "47c4affc2d7ec8aebf48d2f7f0fc49d693832866e8cdb761258365d093933372",
+      "prepared": "b837cbf0cdaaeaff3d1b36f03ee6a99b525b366c3f7b59e55564d13d27e65ab1",
+      "criteria": "fdf92c4e621f0b6541afd8729c5ad00de88206ec35d41f5810856b14d36676fe",
+      "applied": "d2ce9f2ab523f695ca673d3600b1b556e42fca4c4e58dc92de828d83aea16cd1",
+      "delivered": "a0b9871ea8bebe255f9551b704985ce450fe2aaaf33441d190d7dba52c45155f"
+    }
+  },
+  "input": {
+    "draft": {
+      "type": "group",
+      "name": "台北101｜公分比例建築插畫",
+      "projection": {
+        "azimuth": 35,
+        "elevation": 27,
+        "scale": 1,
+        "originX": 10000,
+        "originY": 48000
+      },
+      "fillTemplates": {
+        "metal": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#44636a",
+              "opacity": 1
+            },
+            {
+              "position": 0.48,
+              "color": "#c1d6d3",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#44636a",
+              "opacity": 1
+            }
+          ]
+        },
+        "dark": "#193b43",
+        "roof": "#769596",
+        "stone": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#728686",
+              "opacity": 1
+            },
+            {
+              "position": 0.48,
+              "color": "#d4d9cf",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#728686",
+              "opacity": 1
+            }
+          ]
+        },
+        "frame": "#90b9b9"
+      },
+      "linearFields": {
+        "front": {
+          "frame": "world",
+          "start": {
+            "x": -3000,
+            "y": 0,
+            "z": 0
+          },
+          "end": {
+            "x": 3000,
+            "y": 0,
+            "z": 51000
+          },
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#183d46",
+              "opacity": 1
+            },
+            {
+              "position": 0.32,
+              "color": "#367780",
+              "opacity": 1
+            },
+            {
+              "position": 0.64,
+              "color": "#6196a0",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#abc7cc",
+              "opacity": 1
+            }
+          ]
+        },
+        "side": {
+          "frame": "world",
+          "start": {
+            "x": 0,
+            "y": -3000,
+            "z": 0
+          },
+          "end": {
+            "x": 0,
+            "y": 3000,
+            "z": 51000
+          },
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#102e3c",
+              "opacity": 1
+            },
+            {
+              "position": 0.5,
+              "color": "#255563",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#65959f",
+              "opacity": 1
+            }
+          ]
+        }
+      },
+      "motifTemplates": {
+        "window": [
+          {
+            "key": "vertical",
+            "name": "金屬直框",
+            "fill": {
+              "template": "frame"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 0
+              },
+              {
+                "u": 0.045,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "horizontal",
+            "name": "樓層橫框",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.055
+              },
+              {
+                "u": 0,
+                "v": 0.055
+              }
+            ]
+          },
+          {
+            "key": "spandrel",
+            "name": "深色樓板帶",
+            "fill": {
+              "template": "dark"
+            },
+            "vertices": [
+              {
+                "u": 0.045,
+                "v": 0.06
+              },
+              {
+                "u": 1,
+                "v": 0.06
+              },
+              {
+                "u": 1,
+                "v": 0.18
+              },
+              {
+                "u": 0.045,
+                "v": 0.18
+              }
+            ]
+          }
+        ]
+      },
+      "brief": {
+        "intent": "完整台北101，原生可編輯向量，1公分=1像素再投影",
+        "viewpoint": "固定方位35度、俯角27度正投影三分之四視角",
+        "sources": [
+          "使用者空拍附件僅作量體參考",
+          "使用者如意裝飾特寫僅作形材參考"
+        ],
+        "assumptions": [
+          "總高50800公分；非精測樓層與基座尺寸為比例估計，附件不支持隱藏幾何",
+          "正面玻璃較明亮、側面背光；世界座標連續色域，不按樓層重設；金屬窄框獨立"
+        ],
+        "checks": []
+      },
+      "children": [
+        {
+          "type": "projected-face",
+          "key": "podium-Y",
+          "name": "podium-Y",
+          "vertices": [
+            {
+              "x": -6500,
+              "y": 5600,
+              "z": 0
+            },
+            {
+              "x": 6500,
+              "y": 5600,
+              "z": 0
+            },
+            {
+              "x": 6500,
+              "y": 5600,
+              "z": 2300
+            },
+            {
+              "x": -6500,
+              "y": 5600,
+              "z": 2300
+            }
+          ],
+          "fill": {
+            "template": "stone"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podium-X",
+          "name": "podium-X",
+          "vertices": [
+            {
+              "x": 6500,
+              "y": 5600,
+              "z": 0
+            },
+            {
+              "x": 6500,
+              "y": -5600,
+              "z": 0
+            },
+            {
+              "x": 6500,
+              "y": -5600,
+              "z": 2300
+            },
+            {
+              "x": 6500,
+              "y": 5600,
+              "z": 2300
+            }
+          ],
+          "fill": {
+            "template": "stone"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podium-top",
+          "name": "podium-top",
+          "vertices": [
+            {
+              "x": -6500,
+              "y": -5600,
+              "z": 2300
+            },
+            {
+              "x": 6500,
+              "y": -5600,
+              "z": 2300
+            },
+            {
+              "x": 6500,
+              "y": 5600,
+              "z": 2300
+            },
+            {
+              "x": -6500,
+              "y": 5600,
+              "z": 2300
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerglassY",
+          "name": "青綠玻璃立面",
+          "vertices": [
+            {
+              "x": -3200,
+              "y": 3200,
+              "z": 2300
+            },
+            {
+              "x": 3200,
+              "y": 3200,
+              "z": 2300
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 9000
+            }
+          ],
+          "materialField": "front"
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerglassX",
+          "name": "背光玻璃立面",
+          "vertices": [
+            {
+              "x": 3200,
+              "y": 3200,
+              "z": 2300
+            },
+            {
+              "x": 3200,
+              "y": -3200,
+              "z": 2300
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            }
+          ],
+          "materialField": "side"
+        },
+        {
+          "type": "surface-grid",
+          "key": "lowerY",
+          "name": "窗框與樓層結構",
+          "boundary": [
+            {
+              "x": -3200,
+              "y": 3200,
+              "z": 2300
+            },
+            {
+              "x": 3200,
+              "y": 3200,
+              "z": 2300
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 9000
+            }
+          ],
+          "rows": 15,
+          "columns": 22,
+          "order": "motif-major",
+          "motifs": {
+            "template": "window"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "lowerX",
+          "name": "窗框與樓層結構",
+          "boundary": [
+            {
+              "x": 3200,
+              "y": 3200,
+              "z": 2300
+            },
+            {
+              "x": 3200,
+              "y": -3200,
+              "z": 2300
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            }
+          ],
+          "rows": 15,
+          "columns": 22,
+          "order": "motif-major",
+          "motifs": {
+            "template": "window"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerroof",
+          "name": "lowerroof",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": -2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 9000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerlip-Y",
+          "name": "lowerlip-Y",
+          "vertices": [
+            {
+              "x": -2395,
+              "y": 2395,
+              "z": 8935
+            },
+            {
+              "x": 2395,
+              "y": 2395,
+              "z": 8935
+            },
+            {
+              "x": 2395,
+              "y": 2395,
+              "z": 9000
+            },
+            {
+              "x": -2395,
+              "y": 2395,
+              "z": 9000
+            }
+          ],
+          "fill": {
+            "template": "metal"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerlip-X",
+          "name": "lowerlip-X",
+          "vertices": [
+            {
+              "x": 2395,
+              "y": 2395,
+              "z": 8935
+            },
+            {
+              "x": 2395,
+              "y": -2395,
+              "z": 8935
+            },
+            {
+              "x": 2395,
+              "y": -2395,
+              "z": 9000
+            },
+            {
+              "x": 2395,
+              "y": 2395,
+              "z": 9000
+            }
+          ],
+          "fill": {
+            "template": "metal"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "lowerlip-top",
+          "name": "lowerlip-top",
+          "vertices": [
+            {
+              "x": -2395,
+              "y": -2395,
+              "z": 9000
+            },
+            {
+              "x": 2395,
+              "y": -2395,
+              "z": 9000
+            },
+            {
+              "x": 2395,
+              "y": 2395,
+              "z": 9000
+            },
+            {
+              "x": -2395,
+              "y": 2395,
+              "z": 9000
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0glassY",
+          "name": "青綠玻璃立面",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 12800
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 12800
+            }
+          ],
+          "materialField": "front"
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0glassX",
+          "name": "背光玻璃立面",
+          "vertices": [
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 9000
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 12800
+            }
+          ],
+          "materialField": "side"
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier0Y",
+          "name": "窗框與樓層結構",
+          "boundary": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 12800
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 12800
+            }
+          ],
+          "rows": 8,
+          "columns": 22,
+          "order": "motif-major",
+          "motifs": {
+            "template": "window"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier0X",
+          "name": "窗框與樓層結構",
+          "boundary": [
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 9000
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 9000
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 12800
+            }
+          ],
+          "rows": 8,
+          "columns": 22,
+          "order": "motif-major",
+          "motifs": {
+            "template": "window"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0roof",
+          "name": "tier0roof",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 12800
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 12800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0lip-Y",
+          "name": "tier0lip-Y",
+          "vertices": [
+            {
+              "x": -2895,
+              "y": 2895,
+              "z": 12735
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 12735
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 12800
+            },
+            {
+              "x": -2895,
+              "y": 2895,
+              "z": 12800
+            }
+          ],
+          "fill": {
+            "template": "metal"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0lip-X",
+          "name": "tier0lip-X",
+          "vertices": [
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 12735
+            },
+            {
+              "x": 2895,
+              "y": -2895,
+              "z": 12735
+            },
+            {
+              "x": 2895,
+              "y": -2895,
+              "z": 12800
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 12800
+            }
+          ],
+          "fill": {
+            "template": "metal"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier0lip-top",
+          "name": "tier0lip-top",
+          "vertices": [
+            {
+              "x": -2895,
+              "y": -2895,
+              "z": 12800
+            },
+            {
+              "x": 2895,
+              "y": -2895,
+              "z": 12800
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 12800
+            },
+            {
+              "x": -2895,
+              "y": 2895,
+              "z": 12800
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1glassY",
+          "name": "青綠玻璃立面",
+          "vertices": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 12800
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 16600
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 16600
+            }
+          ],
+          "materialField": "front"
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1glassX",
+          "name": "背光玻璃立面",
+          "vertices": [
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 12800
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 16600
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 16600
+            }
+          ],
+          "materialField": "side"
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier1Y",
+          "name": "窗框與樓層結構",
+          "boundary": [
+            {
+              "x": -2350,
+              "y": 2350,
+              "z": 12800
+            },
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 16600
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 16600
+            }
+          ],
+          "rows": 8,
+          "columns": 22,
+          "order": "motif-major",
+          "motifs": {
+            "template": "window"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "tier1X",
+          "name": "窗框與樓層結構",
+          "boundary": [
+            {
+              "x": 2350,
+              "y": 2350,
+              "z": 12800
+            },
+            {
+              "x": 2350,
+              "y": -2350,
+              "z": 12800
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 16600
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 16600
+            }
+          ],
+          "rows": 8,
+          "columns": 22,
+          "order": "motif-major",
+          "motifs": {
+            "template": "window"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1roof",
+          "name": "tier1roof",
+          "vertices": [
+            {
+              "x": -2850,
+              "y": -2850,
+              "z": 16600
+            },
+            {
+              "x": 2850,
+              "y": -2850,
+              "z": 16600
+            },
+            {
+              "x": 2850,
+              "y": 2850,
+              "z": 16600
+            },
+            {
+              "x": -2850,
+              "y": 2850,
+              "z": 16600
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1lip-Y",
+          "name": "tier1lip-Y",
+          "vertices": [
+            {
+              "x": -2895,
+              "y": 2895,
+              "z": 16535
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 16535
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 16600
+            },
+            {
+              "x": -2895,
+              "y": 2895,
+              "z": 16600
+            }
+          ],
+          "fill": {
+            "template": "metal"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1lip-X",
+          "name": "tier1lip-X",
+          "vertices": [
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 16535
+            },
+            {
+              "x": 2895,
+              "y": -2895,
+              "z": 16535
+            },
+            {
+              "x": 2895,
+              "y": -2895,
+              "z": 16600
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 16600
+            }
+          ],
+          "fill": {
+            "template": "metal"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "tier1lip-top",
+          "name": "tier1lip-top",
+          "vertices": [
+            {
+              "x": -2895,
+              "y": -2895,
+              "z": 16600
+            },
+            {
+              "x": 2895,
+              "y": -2895,
+              "z": 16600
+            },
+            {
+              "x": 2895,
+              "y": 2895,
+              "z": 16600
+            },
+            {
+              "x": -2895,
+              "y": 2895,
+              "z": 16600
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        }
+      ]
+    },
+    "plan": {
+      "phase": "plan",
+      "method": "世界公分座標，固定正投影；先檢查相鄰玻璃立面，再擴展八節竹節。未知尺寸為估計，不宣稱精確測繪。",
+      "references": [
+        "使用者提供之空拍與如意裝飾"
+      ],
+      "criteria": {
+        "overall": {
+          "requirement": "完整台北101，固定俯視三分之四視角",
+          "description": "基座至尖頂輪廓、八節外擴竹節、可見頂面一致",
+          "verification": "visual",
+          "requiredUnits": []
+        },
+        "material": {
+          "requirement": "寫實材質光影與詳細窗框",
+          "description": "玻璃反射與金屬窗框、陰影連續可信",
+          "verification": "visual",
+          "requiredUnits": []
+        },
+        "ornament": {
+          "requirement": "保留可見裝飾與基座結構",
+          "description": "如意與錢幣裝飾及基座細節",
+          "verification": "visual",
+          "requiredUnits": []
+        }
+      },
+      "detailRequired": true
+    },
+    "inspection": "immediate",
+    "response": "compact",
+    "message": "建立基座與兩節塔身以檢查材質"
+  },
+  "prepared": {
+    "available": true,
+    "artifactId": "8eca5515-3d2a-488d-bfbf-4f53726a30c7",
+    "reuse": {
+      "fillOccurrences": 4113,
+      "compiledFillDefinitions": 11,
+      "fillTemplateUses": 4107,
+      "constructionMs": 17.25274999999965,
+      "admissionMs": 13.032250000003842,
+      "compilationMs": 59.18100000001141
+    },
+    "sourceWork": {
+      "batches": 1,
+      "nodes": 31,
+      "pathCommands": 120,
+      "largestBatchNodes": 31,
+      "largestBatchPathCommands": 120,
+      "projectionCalls": 108,
+      "expansionWork": {
+        "batches": 5,
+        "nodes": 4114,
+        "pathCommands": 16452,
+        "largestBatchNodes": 1000,
+        "largestBatchPathCommands": 4000
+      },
+      "identityWork": {
+        "batches": 5,
+        "nodes": 4114,
+        "pathCommands": 0,
+        "largestBatchNodes": 1000,
+        "largestBatchPathCommands": 0
+      }
+    },
+    "elementCount": 4114,
+    "findings": [],
+    "applicable": true,
+    "review": {
+      "intent": "完整台北101，原生可編輯向量，1公分=1像素再投影",
+      "viewpoint": "固定方位35度、俯角27度正投影三分之四視角",
+      "sources": [
+        "使用者空拍附件僅作量體參考",
+        "使用者如意裝飾特寫僅作形材參考"
+      ],
+      "assumptions": [
+        "總高50800公分；非精測樓層與基座尺寸為比例估計，附件不支持隱藏幾何",
+        "正面玻璃較明亮、側面背光；世界座標連續色域，不按樓層重設；金屬窄框獨立"
+      ],
+      "checks": []
+    },
+    "preparationInput": {
+      "kind": "source"
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  },
+  "criteria": {
+    "phase": "plan",
+    "recorded": true,
+    "requirementRevision": 1,
+    "criterionIds": [
+      "overall",
+      "material",
+      "ornament"
+    ],
+    "facts": [],
+    "deferredDetailIds": [],
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  },
+  "applied": {
+    "actionResults": [
+      {
+        "actionId": "99909d45-f83e-464d-9361-5a04d7fdd8e5",
+        "actionName": "apply_prepared_design",
+        "result": {
+          "status": "complete",
+          "materialProvenance": {
+            "status": "available"
+          },
+          "timing": {
+            "canonicalWork": {
+              "scope": "synchronous-core-creation",
+              "timing": "inclusive-owner-phases",
+              "phases": {
+                "props-manager:ordinary-creation-preflight": {
+                  "count": 130,
+                  "totalMs": 127.3000020980835
+                },
+                "scene-tree:element-batch:materialize": {
+                  "count": 130,
+                  "totalMs": 235.60000228881836
+                },
+                "props-manager:creation-operation": {
+                  "count": 130,
+                  "totalMs": 235.80000114440918
+                },
+                "props-manager:creation-finalize": {
+                  "count": 130,
+                  "totalMs": 40.79999923706055
+                },
+                "props-manager:creation-evidence-save": {
+                  "count": 130,
+                  "totalMs": 18.500003814697266
+                },
+                "props-manager:creation-evidence": {
+                  "count": 130,
+                  "totalMs": 18.900005340576172
+                },
+                "scene-tree:element-batch:parent-membership": {
+                  "count": 130,
+                  "totalMs": 62.29999923706055
+                },
+                "scene-tree:element-batch:record-evidence": {
+                  "count": 130,
+                  "totalMs": 2.199997901916504
+                },
+                "scene-tree:element-batch:commit-props": {
+                  "count": 130,
+                  "totalMs": 1.2000017166137695
+                },
+                "factory:owner-batch-clone": {
+                  "count": 130,
+                  "totalMs": 0.20000076293945312
+                },
+                "factory:shared-payload-normalize": {
+                  "count": 4244,
+                  "totalMs": 10.99999713897705
+                },
+                "factory:prepare-shared-record-inverses": {
+                  "count": 4244,
+                  "totalMs": 14.40001106262207
+                },
+                "factory:shared-channel-clone": {
+                  "count": 260,
+                  "totalMs": 0.2999992370605469
+                },
+                "factory:shared-channel-observer": {
+                  "count": 130,
+                  "totalMs": 284.6999979019165
+                },
+                "factory:shared-channel-append": {
+                  "count": 260,
+                  "totalMs": 284.99999809265137
+                },
+                "render-layer:strategy:group": {
+                  "count": 1,
+                  "totalMs": 0
+                },
+                "render-layer:add-or-update-element": {
+                  "count": 4114,
+                  "totalMs": 135.80000400543213
+                },
+                "ui-context:project-scene-tree-batch": {
+                  "count": 130,
+                  "totalMs": 66.60000038146973
+                },
+                "ui-context:flush": {
+                  "count": 130,
+                  "totalMs": 66.89999961853027
+                },
+                "scene-tree:element-batch:commit-scene": {
+                  "count": 130,
+                  "totalMs": 629.6999988555908
+                },
+                "render-layer:strategy:vector": {
+                  "count": 4113,
+                  "totalMs": 101.79999256134033
+                }
+              },
+              "counters": {
+                "scene-tree:membership:snapshot-items": 0,
+                "scene-tree:membership:inserted-items": 4114,
+                "scene-tree:membership:moved-items": 0,
+                "computed-mirror-seed": 4114,
+                "computed-mirror-seed-add": 4114,
+                "render-projection-outcome-applied": 4114,
+                "ui-context-transaction-flush": 130,
+                "ui-context-membership-prepare": 1,
+                "ui-context-membership-add-batch": 130,
+                "ui-context-membership-add-batch-entry": 4114,
+                "ui-context-sync-flattened-ids": 130,
+                "ui-context-flattened-identity-output": 268435,
+                "ui-context-membership-row-read": 4373,
+                "ui-context-sync-element-data-map-entry": 4243,
+                "vector-render-normalize-fast-path-hit": 4113,
+                "computed-mirror-hit": 129,
+                "computed-mirror-child-id-cache-miss": 1,
+                "computed-mirror-child-add-batch-append": 129,
+                "computed-mirror-staged-change-count": 129,
+                "computed-mirror-child-add-batch-apply": 129,
+                "computed-mirror-child-id-cache-hit": 128
+              }
+            },
+            "admissionMs": 101.10000038146973,
+            "createMs": 1149.5999994277954,
+            "transactionMs": 848.4000034332275,
+            "selectionMs": 7.199999809265137,
+            "validationMs": 1.6999998092651367,
+            "orchestrationMs": 7.100000381469727,
+            "cooperativeYieldMs": 89.19999694824219,
+            "totalMs": 2204.300000190735,
+            "sliceCount": 130,
+            "elementCount": 4114
+          },
+          "compositionId": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+          "appliedElementCount": 4114,
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          }
+        }
+      },
+      {
+        "actionId": "ab5ac4fe-1979-40e5-9e1c-782567714292",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "elementId": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+          "image": {
+            "type": "snapshot",
+            "dataUrl": "[redacted]",
+            "width": 857,
+            "height": 1024,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 17074,
+              "height": 20397
+            }
+          },
+          "partial": false,
+          "imageScope": "overview",
+          "background": "#ffffff",
+          "evidence": {
+            "sessionId": "2dbab1e2-a592-4d4d-ad80-9e16580ac553",
+            "receiptId": "bb584436-6f09-4091-859b-fe0b892bef38",
+            "revision": 0
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "7defa29a-7f6d-4746-8321-a37d452c18f5",
+          "revision": 1
+        }
+      }
+    ],
+    "context": {
+      "workspaceId": "workspace",
+      "primaryTool": "select",
+      "systemMode": "design",
+      "elementCount": 4114,
+      "selectedElementCount": 1,
+      "selectedElements": [
+        {
+          "id": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+          "type": "group",
+          "visible": true,
+          "locked": false,
+          "bounds": {
+            "x": 1463.4836685556947,
+            "y": 31378.825179078645,
+            "width": 17073.03266288861,
+            "height": 20396.332042594127
+          }
+        }
+      ]
+    },
+    "inspectionDeferred": false,
+    "measurementDeferred": false,
+    "checks": {
+      "countsScope": "selected-checks",
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "unverified": 0,
+        "stale": 0
+      },
+      "visitedResults": 1
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  },
+  "delivered": {
+    "available": true,
+    "artifactId": "8eca5515-3d2a-488d-bfbf-4f53726a30c7",
+    "reuse": {
+      "fillOccurrences": 4113,
+      "compiledFillDefinitions": 11,
+      "fillTemplateUses": 4107,
+      "constructionMs": 17.25274999999965,
+      "admissionMs": 13.032250000003842,
+      "compilationMs": 59.18100000001141
+    },
+    "sourceWork": {
+      "batches": 1,
+      "nodes": 31,
+      "pathCommands": 120,
+      "largestBatchNodes": 31,
+      "largestBatchPathCommands": 120,
+      "projectionCalls": 108,
+      "expansionWork": {
+        "batches": 5,
+        "nodes": 4114,
+        "pathCommands": 16452,
+        "largestBatchNodes": 1000,
+        "largestBatchPathCommands": 4000
+      },
+      "identityWork": {
+        "batches": 5,
+        "nodes": 4114,
+        "pathCommands": 0,
+        "largestBatchNodes": 1000,
+        "largestBatchPathCommands": 0
+      }
+    },
+    "elementCount": 4114,
+    "findings": [],
+    "applicable": true,
+    "review": {
+      "intent": "完整台北101，原生可編輯向量，1公分=1像素再投影",
+      "viewpoint": "固定方位35度、俯角27度正投影三分之四視角",
+      "sources": [
+        "使用者空拍附件僅作量體參考",
+        "使用者如意裝飾特寫僅作形材參考"
+      ],
+      "assumptions": [
+        "總高50800公分；非精測樓層與基座尺寸為比例估計，附件不支持隱藏幾何",
+        "正面玻璃較明亮、側面背光；世界座標連續色域，不按樓層重設；金屬窄框獨立"
+      ],
+      "checks": []
+    },
+    "preparationInput": {
+      "kind": "source"
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    },
+    "actionResults": [
+      {
+        "actionId": "99909d45-f83e-464d-9361-5a04d7fdd8e5",
+        "actionName": "apply_prepared_design",
+        "result": {
+          "status": "complete",
+          "materialProvenance": {
+            "status": "available"
+          },
+          "timing": {
+            "canonicalWork": {
+              "scope": "synchronous-core-creation",
+              "timing": "inclusive-owner-phases",
+              "phases": {
+                "props-manager:ordinary-creation-preflight": {
+                  "count": 130,
+                  "totalMs": 127.3000020980835
+                },
+                "scene-tree:element-batch:materialize": {
+                  "count": 130,
+                  "totalMs": 235.60000228881836
+                },
+                "props-manager:creation-operation": {
+                  "count": 130,
+                  "totalMs": 235.80000114440918
+                },
+                "props-manager:creation-finalize": {
+                  "count": 130,
+                  "totalMs": 40.79999923706055
+                },
+                "props-manager:creation-evidence-save": {
+                  "count": 130,
+                  "totalMs": 18.500003814697266
+                },
+                "props-manager:creation-evidence": {
+                  "count": 130,
+                  "totalMs": 18.900005340576172
+                },
+                "scene-tree:element-batch:parent-membership": {
+                  "count": 130,
+                  "totalMs": 62.29999923706055
+                },
+                "scene-tree:element-batch:record-evidence": {
+                  "count": 130,
+                  "totalMs": 2.199997901916504
+                },
+                "scene-tree:element-batch:commit-props": {
+                  "count": 130,
+                  "totalMs": 1.2000017166137695
+                },
+                "factory:owner-batch-clone": {
+                  "count": 130,
+                  "totalMs": 0.20000076293945312
+                },
+                "factory:shared-payload-normalize": {
+                  "count": 4244,
+                  "totalMs": 10.99999713897705
+                },
+                "factory:prepare-shared-record-inverses": {
+                  "count": 4244,
+                  "totalMs": 14.40001106262207
+                },
+                "factory:shared-channel-clone": {
+                  "count": 260,
+                  "totalMs": 0.2999992370605469
+                },
+                "factory:shared-channel-observer": {
+                  "count": 130,
+                  "totalMs": 284.6999979019165
+                },
+                "factory:shared-channel-append": {
+                  "count": 260,
+                  "totalMs": 284.99999809265137
+                },
+                "render-layer:strategy:group": {
+                  "count": 1,
+                  "totalMs": 0
+                },
+                "render-layer:add-or-update-element": {
+                  "count": 4114,
+                  "totalMs": 135.80000400543213
+                },
+                "ui-context:project-scene-tree-batch": {
+                  "count": 130,
+                  "totalMs": 66.60000038146973
+                },
+                "ui-context:flush": {
+                  "count": 130,
+                  "totalMs": 66.89999961853027
+                },
+                "scene-tree:element-batch:commit-scene": {
+                  "count": 130,
+                  "totalMs": 629.6999988555908
+                },
+                "render-layer:strategy:vector": {
+                  "count": 4113,
+                  "totalMs": 101.79999256134033
+                }
+              },
+              "counters": {
+                "scene-tree:membership:snapshot-items": 0,
+                "scene-tree:membership:inserted-items": 4114,
+                "scene-tree:membership:moved-items": 0,
+                "computed-mirror-seed": 4114,
+                "computed-mirror-seed-add": 4114,
+                "render-projection-outcome-applied": 4114,
+                "ui-context-transaction-flush": 130,
+                "ui-context-membership-prepare": 1,
+                "ui-context-membership-add-batch": 130,
+                "ui-context-membership-add-batch-entry": 4114,
+                "ui-context-sync-flattened-ids": 130,
+                "ui-context-flattened-identity-output": 268435,
+                "ui-context-membership-row-read": 4373,
+                "ui-context-sync-element-data-map-entry": 4243,
+                "vector-render-normalize-fast-path-hit": 4113,
+                "computed-mirror-hit": 129,
+                "computed-mirror-child-id-cache-miss": 1,
+                "computed-mirror-child-add-batch-append": 129,
+                "computed-mirror-staged-change-count": 129,
+                "computed-mirror-child-add-batch-apply": 129,
+                "computed-mirror-child-id-cache-hit": 128
+              }
+            },
+            "admissionMs": 101.10000038146973,
+            "createMs": 1149.5999994277954,
+            "transactionMs": 848.4000034332275,
+            "selectionMs": 7.199999809265137,
+            "validationMs": 1.6999998092651367,
+            "orchestrationMs": 7.100000381469727,
+            "cooperativeYieldMs": 89.19999694824219,
+            "totalMs": 2204.300000190735,
+            "sliceCount": 130,
+            "elementCount": 4114
+          },
+          "compositionId": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+          "appliedElementCount": 4114,
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          }
+        }
+      },
+      {
+        "actionId": "ab5ac4fe-1979-40e5-9e1c-782567714292",
+        "actionName": "inspect_drawing",
+        "result": {
+          "available": true,
+          "elementId": "design-8eca5515-3d2a-488d-bfbf-4f53726a30c7-0",
+          "image": {
+            "type": "snapshot",
+            "width": 857,
+            "height": 1024,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 17074,
+              "height": 20397
+            }
+          },
+          "partial": false,
+          "imageScope": "overview",
+          "background": "#ffffff",
+          "evidence": {
+            "sessionId": "2dbab1e2-a592-4d4d-ad80-9e16580ac553",
+            "receiptId": "bb584436-6f09-4091-859b-fe0b892bef38",
+            "revision": 0
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          },
+          "inspectionId": "7defa29a-7f6d-4746-8321-a37d452c18f5",
+          "revision": 1
+        }
+      }
+    ],
+    "inspectionDeferred": false,
+    "measurementDeferred": false,
+    "checks": {
+      "countsScope": "selected-checks",
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "unverified": 0,
+        "stale": 0
+      },
+      "visitedResults": 1
+    },
+    "receiptScope": "compact",
+    "completedSteps": [
+      "prepare_design",
+      "define_design_criteria",
+      "apply_prepared_design"
+    ]
+  }
+}

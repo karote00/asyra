@@ -727,6 +727,15 @@
             "apps/asyra-design/server/local-tool-invocation.ts",
             "apps/asyra-design/server/local-ai-provider.ts"
           ]
+        },
+        {
+          "id": "compose.compact-diagnostics",
+          "stepId": "compose",
+          "testName": "execution proof projects compact diagnostics after owner evidence without replay",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
+          ]
         }
       ],
       "handoffs": [

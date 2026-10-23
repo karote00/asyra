@@ -613,6 +613,31 @@ override reset and detachment are distinct intents. Delivered App advice must us
 these canonical operations and never require detachment for a local correction.
 Portable Knowledge remains advisory and contains no App operation identifiers.
 
+## Compact workflow delivery
+
+The main drawing workflow's default and explicit compact responses omit pure
+preparation work/reuse statistics and drawing timing diagnostics. This projection
+runs after existing owner validation, receipt consumption and inner execution
+observations; diagnostics remain in those original records. Explicit full responses
+retain them. Direct owner APIs retain their independent contracts.
+
+Keep all operation results, identities, counts/ranges, findings and limitations,
+material provenance, inspection images/evidence, acceptance status, partial/failure
+settlement and recovery instructions. Omission must never infer success or change
+an action outcome. Apply projection only to known workflow/preparation and drawing
+receipt locations (including executionResult/batches failure containers), not
+similarly named fields inside user data, checks or recovery.
+Single and ordered-part paths share this contract. Cancellation remains cancellation;
+no additional tools, captures, queries, writes or automatic replay are introduced.
+
+DoD: execute the main workflow and the published forwarding example; compare full
+and compact semantic results and image bytes, verify original diagnostics and call
+correlation in the existing trace, and prove fewer delivered bytes without extra
+calls. Cover no-op, invalid input, partial/failure, cancellation, follow-up failure
+and remaining-only recovery. Saved representative compact text must shrink from
+5,372 to at most 1,938 bytes without deleting any other field. Local evidence proves
+delivery correctness, not model adoption or latency.
+
 ## Document export and persistence delivery
 
 `Core.save()` produces a portable snapshot; it is not durable confirmation.

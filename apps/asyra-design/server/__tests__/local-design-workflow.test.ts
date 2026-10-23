@@ -1,3 +1,14 @@
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
+import { createExecutionRecordSink } from '@asyra/ai-agent-runtime/node'
+import sharp from 'sharp'
+import compactFixture from './fixtures/recorded-101/compact-receipt-20261024.json'
+import { runInNewContext } from 'node:vm'
+import {
+  localToolContent,
+  localToolResultExample
+} from '../local-operation-tools'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { reviewPlanExample } from '../local-design-review'
@@ -27,6 +38,7 @@ import {
 import { AiActionNames } from '../../src/constants/ai-actions'
 import type {
   AiBatchReceipt,
+  AiActionDescription,
   AiActionBatch
 } from '../../src/ai/action-batch-protocol'
 
@@ -53,10 +65,10 @@ const draft = {
     }
   ]
 }
-const setup = () => {
+const setup = (registered: AiActionDescription[] = actions) => {
   const compile = vi.fn(prepareDesignAsync)
   const designs = createLocalDesignTools(
-    actions,
+    registered,
     createDesignPreparationSession(prepareDesign, compile)
   )
   const execute = vi.fn(
@@ -77,8 +89,10 @@ const setup = () => {
       ]
     })
   )
-  const operations = createLocalOperationTools(actions, designs, execute)
+  const operations = createLocalOperationTools(registered, designs, execute)
   return {
+    designs,
+    operations,
     workflow: createLocalDesignWorkflow(designs, operations),
     compile,
     execute
@@ -1352,6 +1366,13 @@ const inspectionBoundaryFixture = (
             }
           }
         }
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+          Object.assign(result as object, {
+            timing: {
+              totalMs: 8,
+              canonicalWork: { counters: { created: applied } }
+            }
+          })
         receipt.actionResults.push({
           actionId: action.id,
           actionName: action.name,
@@ -2078,3 +2099,331 @@ it.each([undefined, 'defer', 'immediate'] as const)(
     ).toHaveLength(inspection === 'defer' ? 0 : 1)
   }
 )
+
+it('delivers the saved compact receipt without diagnostics or loss of any operation field', async () => {
+  // Replay captured owner exchanges through the real workflow and invocation.
+  // Artifact identity is provided by this saved boundary, not a live preparation session.
+  const { designs, operations } = setup([
+    ...actions,
+    {
+      name: AiActionNames.INSPECT_DRAWING,
+      description: 'Inspect',
+      inputSchema: {}
+    }
+  ])
+  designs.call = vi.fn(async () => JSON.stringify(compactFixture.prepared))
+  designs.resultIssue = () => undefined
+  const appliedReceipt = structuredClone(compactFixture.applied)
+  const imageResult = appliedReceipt.actionResults.find(
+    (entry) => entry.actionName === AiActionNames.INSPECT_DRAWING
+  )?.result.image
+  if (!imageResult) throw new Error('Saved inspection metadata missing')
+  const pixels = await sharp({
+    create: {
+      width: imageResult.width,
+      height: imageResult.height,
+      channels: 4,
+      background: '#123456'
+    }
+  })
+    .png()
+    .toBuffer()
+  imageResult.dataUrl = 'data:image/png;base64,' + pixels.toString('base64')
+  operations.callInternal = vi.fn(async (name) =>
+    JSON.stringify(
+      name === 'define_design_criteria'
+        ? compactFixture.criteria
+        : appliedReceipt
+    )
+  )
+  const observations: { stage: string; [key: string]: unknown }[] = []
+  const workflow = createLocalDesignWorkflow(designs, operations, {
+    trace: (stage, evidence) =>
+      observations.push({ stage, ...structuredClone(evidence) })
+  })
+  const reply = await invokeLocalTool(
+    workflow,
+    workflow.definitions[0],
+    compactFixture.input,
+    signal()
+  )
+  expect(reply.success, reply.text).toBe(true)
+  const expected = JSON.parse(JSON.stringify(compactFixture.delivered))
+  delete expected.reuse
+  delete expected.sourceWork
+  delete expected.actionResults[0].result.timing
+  const content = await localToolContent(reply.text)
+  const delivered = content.find((item) => item.type === 'inputText')
+  expect(delivered?.type).toBe('inputText')
+  if (delivered?.type !== 'inputText') throw new Error('Missing receipt')
+  expect(JSON.parse(delivered.text)).toEqual(expected)
+  expect(content).toContainEqual({
+    type: 'inputImage',
+    imageUrl: imageResult.dataUrl
+  })
+  const text = vi.fn()
+  const image = vi.fn()
+  runInNewContext(localToolResultExample, {
+    result: content
+      .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
+      .join('\n'),
+    text,
+    image
+  })
+  expect(text.mock.calls).toEqual([[expected]])
+  expect(image.mock.calls).toEqual([[imageResult.dataUrl]])
+  expect(Buffer.byteLength(JSON.stringify(compactFixture.delivered))).toBe(5372)
+  expect(Buffer.byteLength(delivered.text)).toBeLessThanOrEqual(1938)
+  expect(designs.call).toHaveBeenCalledOnce()
+  expect(operations.callInternal).toHaveBeenCalledTimes(2)
+  const prepared = observations.find(
+    (entry) =>
+      entry.stage === 'action_completed' && entry.tool === 'prepare_design'
+  )
+  const applied = observations.find(
+    (entry) =>
+      entry.stage === 'action_completed' &&
+      entry.tool === 'apply_prepared_design'
+  )
+  if (!prepared || !applied) throw new Error('Missing owner observation')
+  expect(prepared.result).toEqual(compactFixture.prepared)
+  expect(applied.result).toEqual(appliedReceipt)
+  expect(prepared.callId).toEqual(expect.any(String))
+  expect(applied.callId).toEqual(expect.any(String))
+  expect(prepared.callId).not.toBe(applied.callId)
+})
+
+it.each(['compact', 'full'] as const)(
+  'forwards real %s workflow receipts through the published example with raw diagnostics retained',
+  async (response) => {
+    const { designs, operations, compile, execute } = setup()
+    const timing = { totalMs: 12, canonicalWork: { counters: { created: 2 } } }
+    const semantic = {
+      timing: 'user detail',
+      sourceWork: 'limit',
+      reuse: 'recovery condition'
+    }
+    const prior = execute.getMockImplementation()
+    if (!prior) throw new Error('Missing execution fixture')
+    execute.mockImplementation(async (...args) => {
+      const receipt = await prior(...args)
+      Object.assign(receipt.actionResults[0].result as object, {
+        timing,
+        recovery: semantic
+      })
+      return receipt
+    })
+    const observations: { stage: string; [key: string]: unknown }[] = []
+    const workflow = createLocalDesignWorkflow(designs, operations, {
+      trace: (stage, evidence) =>
+        observations.push({ stage, ...structuredClone(evidence) })
+    })
+    const reply = await invokeLocalTool(
+      workflow,
+      workflow.definitions[0],
+      { draft, response, inspection: 'defer' },
+      signal()
+    )
+    expect(JSON.parse(reply.text).toolOutcome).toMatchObject({
+      status: 'partial',
+      settlement: 'completed'
+    })
+    const value = JSON.parse(reply.text)
+    const action = value.actionResults[0]
+    expect(action.result.recovery).toEqual(semantic)
+    expect(action.result.compositionId).toBe('root')
+    expect(action.result.status).toBe('complete')
+    const preparedObservation = observations.find(
+      (entry) =>
+        entry.stage === 'action_completed' && entry.tool === 'prepare_design'
+    )
+    const appliedObservation = observations.find(
+      (entry) =>
+        entry.stage === 'action_completed' &&
+        entry.tool === 'apply_prepared_design'
+    )
+    if (!preparedObservation || !appliedObservation)
+      throw new Error('Missing owner observation')
+    const prepared = JSON.parse(JSON.stringify(preparedObservation))
+    const applied = JSON.parse(JSON.stringify(appliedObservation))
+    expect(applied.result.actionResults[0].result.timing).toEqual(timing)
+    expect(prepared.result.sourceWork).toBeDefined()
+    expect(prepared.result.reuse).toBeDefined()
+    if (response === 'compact') {
+      expect(action.result).not.toHaveProperty('timing')
+      expect(value).not.toHaveProperty('sourceWork')
+      expect(value).not.toHaveProperty('reuse')
+    } else {
+      expect(action.result.timing).toEqual(timing)
+      expect(value.sourceWork).toEqual(prepared.result.sourceWork)
+      expect(value.reuse).toEqual(prepared.result.reuse)
+      expect(action.result.appliedElementIds).toEqual(['root', 'face'])
+    }
+    const png =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGioAAAAASUVORK5CYII='
+    const captured = {
+      actionId: 'capture',
+      actionName: AiActionNames.INSPECT_DRAWING,
+      result: {
+        available: true,
+        inspectionId: 'evidence',
+        image: { dataUrl: png, width: 1, height: 1 }
+      }
+    }
+    const content = await localToolContent(
+      JSON.stringify({
+        ...value,
+        actionResults: [...value.actionResults, captured]
+      })
+    )
+    const text = vi.fn()
+    const image = vi.fn()
+    runInNewContext(localToolResultExample, {
+      result: content
+        .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
+        .join('\n'),
+      text,
+      image
+    })
+    expect(text).toHaveBeenCalledOnce()
+    expect(text.mock.calls[0][0].actionResults[0]).toEqual(action)
+    expect(image.mock.calls).toEqual([[png]])
+    expect(JSON.stringify(text.mock.calls)).not.toContain('base64')
+    expect(compile).toHaveBeenCalledOnce()
+    expect(execute).toHaveBeenCalledOnce()
+  }
+)
+
+it.each([
+  {},
+  { failCheck: 'part-1' },
+  { captureUnavailable: true },
+  { stopApply: 2 },
+  { browserFailure: 'partial' as const },
+  { lostApply: 2 },
+  { lostApply: 2, observeReceipts: true }
+])(
+  'preserves ordered compact results and follow-up failures while omitting only diagnostics: %j',
+  async (options) => {
+    const { workflow, events } = inspectionBoundaryFixture(options)
+    const value = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          parts: [
+            { key: 'first', draft },
+            { key: 'second', draft }
+          ],
+          inspection: 'immediate'
+        },
+        signal()
+      )
+    )
+    expect(JSON.stringify(value)).not.toContain('"canonicalWork"')
+    for (const part of value.parts) {
+      expect(part).not.toHaveProperty('reuse')
+      expect(part).not.toHaveProperty('sourceWork')
+      for (const action of part.actionResults ?? []) {
+        if (action.actionName === AiActionNames.APPLY_PREPARED_DESIGN) {
+          expect(action.result).not.toHaveProperty('timing')
+          expect(action.result.compositionId).toEqual(expect.any(String))
+        }
+      }
+    }
+    expect(
+      events.filter((entry) =>
+        entry.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+      )
+    ).toHaveLength(2)
+    const outcome = localToolOutcome(value)
+    expect(outcome.status).toBe(
+      Object.keys(options).length ? 'partial' : 'success'
+    )
+    if (options.lostApply) expect(outcome.settlement).toBe('unknown')
+    if (options.failCheck || options.captureUnavailable)
+      expect(outcome.settlement).toBe('completed')
+  }
+)
+
+it('persists original workflow diagnostics before recording compact native delivery', async ({
+  onTestFinished
+}) => {
+  const directory = await mkdtemp(resolve('tmp', 'compact-records-'))
+  const recordingError = vi.fn()
+  const sink = createExecutionRecordSink(directory, recordingError)
+  onTestFinished(async () => {
+    await sink.flush()
+    await rm(directory, { recursive: true, force: true })
+  })
+  const usage = createAiExecutionProfiler(
+    { intent: 'Draw one part', context: {}, actions, attempt: 0 },
+    'gpt-6-astra',
+    { sink }
+  )
+  const { designs, operations, execute } = setup()
+  const executeOwner = execute.getMockImplementation()
+  if (!executeOwner) throw new Error('Missing owner fixture')
+  const timing = { totalMs: 12, canonicalWork: { counters: { created: 2 } } }
+  execute.mockImplementation(async (...args) => {
+    const receipt = await executeOwner(...args)
+    Object.assign(receipt.actionResults[0].result as object, { timing })
+    return receipt
+  })
+  const originals = new Map<string, unknown>()
+  const workflow = createLocalDesignWorkflow(designs, operations, {
+    trace: (stage, evidence) => {
+      if (stage === 'action_completed')
+        originals.set(String(evidence.callId), structuredClone(evidence.result))
+      usage.trace(stage, evidence)
+    }
+  })
+  const value = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      { draft, inspection: 'defer' },
+      signal()
+    )
+  )
+  usage.trace('tool_completed', {
+    tool: 'prepare_and_apply_design',
+    callId: 'outer',
+    result: value
+  })
+  usage.finish('completed')
+  const stored = await sink.flush()
+  expect(stored.status).toBe('saved')
+  expect(recordingError).not.toHaveBeenCalled()
+  if (!stored.path) throw new Error('Missing recording')
+  const records = (await readFile(stored.path, 'utf8'))
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line))
+  let verified = 0
+  for (const record of records) {
+    if (
+      record.stage !== 'action_completed' &&
+      record.stage !== 'tool_completed'
+    )
+      continue
+    const payload = record.diagnostic.output.payload
+    expect(payload.path).toEqual(expect.any(String))
+    const saved = JSON.parse(
+      await readFile(resolve(directory, payload.path), 'utf8')
+    )
+    if (record.callId === 'outer') {
+      expect(saved).toEqual(value)
+      expect(saved).not.toHaveProperty('reuse')
+      expect(saved.actionResults[0].result).not.toHaveProperty('timing')
+    } else {
+      expect(originals.has(record.callId)).toBe(true)
+      expect(saved).toEqual(originals.get(record.callId))
+      if (record.tool === 'apply_prepared_design')
+        expect(saved.actionResults[0].result.timing).toEqual(timing)
+      if (record.tool === 'prepare_design')
+        expect(saved.sourceWork.nodes).toBe(2)
+    }
+    verified++
+  }
+  expect(verified).toBe(3)
+  expect(execute).toHaveBeenCalledOnce()
+})
