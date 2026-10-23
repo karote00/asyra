@@ -338,7 +338,7 @@ yarn test:workspaces:ci                 # Scripts and all workspace CI tests
 
 ```bash
 yarn lint:workspaces:ci  # Lint the repository
-yarn lint:fieldscope     # Lint one app
+yarn lint:asyra-fieldscope     # Lint one app
 yarn eslint . --fix      # Auto-fix repository lint findings
 ```
 

@@ -60,13 +60,22 @@ test('render and verification boundaries protect continuity, static reading and 
       'apps/asyra-framework-site/components/product-evidence-slider.tsx'
     )
   )
-  assert.match(render, /FieldScope product evidence uses one fixed responsive slider area/)
+  assert.match(
+    render,
+    /Asyra FieldScope product evidence uses one fixed responsive slider area/
+  )
   assert.match(render, /shared stack position and 0\.9 scale/u)
   assert.match(render, /image shadows follow the rendered image bounds/u)
   assert.match(render, /Inline mode shows at most three images/u)
-  assert.match(render, /horizontal movement and scale only; the bottom button and dot row is absent/)
+  assert.match(
+    render,
+    /horizontal movement and scale only; the bottom button and dot row is absent/
+  )
   assert.match(render, /Asyra Sim uses the same slider with its single image/)
-  assert.match(render, /Side-by-side FieldScope and Asyra Sim cards align their summary areas and slider frames/)
+  assert.match(
+    render,
+    /Side-by-side Asyra FieldScope and Asyra Sim cards align their summary areas and slider frames/
+  )
   for (const pattern of [
     /one shared desktop scene/i,
     /stays idle/i,

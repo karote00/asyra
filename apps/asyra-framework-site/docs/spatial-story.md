@@ -5,17 +5,17 @@
 The accepted six-chapter green story is the only homepage at `/`. Remove the
 `/story` route entirely; it returns 404. Keep the story choreography and building
 example intact. Follow it with real product evidence for Asyra Design,
-FieldScope, and Asyra Sim, three practical documentation/Atlas entry points,
+Asyra FieldScope, and Asyra Sim, three practical documentation/Atlas entry points,
 the closing invitation, and the shared navigation footer. The primary menu is
 native HTML and remains usable without JavaScript. Do not repeat the retired
 film, five-chapter narrative, PoC comic or separate architecture explainer on
 the homepage.
 
 The product cases must describe current App-owned work only. Asyra Design keeps
-its editable 2D product proof. FieldScope may show its cucumber and tomato
+its editable 2D product proof. Asyra FieldScope may show its cucumber and tomato
 greenhouse models and conservative robot lane/energy assessments; it does not
 simulate robot patrol or harvesting, physical dynamics, or live equipment.
-FieldScope's homepage presents three actual App screenshots of the same
+Asyra FieldScope's homepage presents three actual App screenshots of the same
 four-bay greenhouse in one image slider: an oblique overview, an end elevation,
 and an aisle view with tomato fruit and support structure. The active image is
 centered. Its two neighbors use the same horizontal stack positions and scale
@@ -44,11 +44,11 @@ selected part. It was captured on 2026-09-29 from the running local service at
 1440 x 960 capture uses an isolated browser context and does not open or modify
 an existing App tab or workcell. The image is kept at its original proportions
 and dimensions as `asyra-sim-workcell.webp`. Its presentation area matches the
-FieldScope slider. It uses the same one-image slider component; with only one
+Asyra FieldScope slider. It uses the same one-image slider component; with only one
 image there are no side previews or slide controls.
 
 Product images have a 12px inset above and below on desktop and an 8px inset at
-tablet widths and below. FieldScope and Asyra Sim use the same responsive stage
+tablet widths and below. Asyra FieldScope and Asyra Sim use the same responsive stage
 and image-frame dimensions. Screenshots keep their original aspect ratio inside
 the shared frames and may leave blank space; image shadows follow the actual
 image bounds, not the shared frame. Inline slides and full-screen preview use
@@ -69,7 +69,7 @@ These screens show current modeled scenes, not connected or calibrated
 equipment. Each case also links to direct source/test evidence. Preserve
 product maturity limits, open external links in a new tab, and keep the three
 existing Starter, Design, and advanced composition destinations unchanged.
-When FieldScope and Asyra Sim appear side by side, their summary areas and
+When Asyra FieldScope and Asyra Sim appear side by side, their summary areas and
 slider frames align, and both cards fill the same row height. Summary copy uses
 the full card width and wraps only when the available width requires it.
 

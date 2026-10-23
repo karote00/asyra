@@ -453,7 +453,7 @@ test('Framework changes require the package release gate and actual consumers', 
   const frameworkScope = makeScope({
     workspaceMatrix: [
       workspaceEntry('@asyra/core', 'packages/core'),
-      workspaceEntry('@asyra/fieldscope', 'apps/fieldscope')
+      workspaceEntry('@asyra/asyra-fieldscope', 'apps/asyra-fieldscope')
     ],
     frameworkReleaseRequired: true
   })
@@ -650,7 +650,7 @@ test('formal path owners reach their selected gates through the final aggregate'
     'create-app/asyra-design/package.json',
     'scripts/release-package-artifacts.js',
     'turbo.base.json',
-    'docs/ai/apps/fieldscope/PLANS.md',
+    'docs/ai/apps/asyra-fieldscope/PLANS.md',
     'docs/public/index.md'
   ]) {
     const scope = {
@@ -2032,8 +2032,8 @@ test('workflow validates candidate behavior without claiming accepted-base deliv
 
 test('exact supervised file selections require the same executed files at aggregation', () => {
   const entry = workspaceEntry(
-    '@asyra/fieldscope',
-    'apps/fieldscope',
+    '@asyra/asyra-fieldscope',
+    'apps/asyra-fieldscope',
     'react:build'
   )
   entry.testSelection = {

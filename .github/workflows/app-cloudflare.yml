@@ -39,14 +39,14 @@ jobs:
       - name: Build frontend Apps with shared workspace dependencies
         run: |
           yarn gen:turbo:check
-          yarn turbo run @asyra/asyra-design#react:build @asyra/fieldscope#react:build @asyra/asyra-sim#react:build --concurrency=2
+          yarn turbo run @asyra/asyra-design#react:build @asyra/asyra-fieldscope#react:build @asyra/asyra-sim#react:build --concurrency=2
           yarn workspace @asyra/asyra-design typecheck
       - name: Prepare isolated static artifacts
         run: node scripts/app-cloudflare.mjs prepare
       - name: Verify production artifacts without backend services
         env:
           APP_ARTIFACT_ROOT: tmp/cloudflare-apps
-        run: node --test --test-concurrency=1 '--test-name-pattern=^(Design|Sim|FieldScope) production ' scripts/__tests__/production-artifacts.browser.test.mjs
+        run: node --test --test-concurrency=1 '--test-name-pattern=^(Design|Sim|Asyra FieldScope) production ' scripts/__tests__/production-artifacts.browser.test.mjs
       - name: Retain verified artifacts from this exact run
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -65,7 +65,7 @@ jobs:
         include:
           - app: asyra-design
             project: asyra-design
-          - app: fieldscope
+          - app: asyra-fieldscope
             project: asyra-fieldscope
           - app: asyra-sim
             project: asyra-sim

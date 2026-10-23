@@ -111,6 +111,18 @@ test('scope parser install executes with pinned Yarn and skips lifecycle builds'
   assert.equal(fs.readFileSync(path.join(fixture, 'build-ran'), 'utf8'), 'yes')
 })
 
+test('the committed lockfile retains canonical descriptor order after workspace renames', () => {
+  const descriptors = Object.keys(yaml.load(readText('yarn.lock'))).filter(
+    (descriptor) => descriptor !== '__metadata'
+  )
+  for (let index = 1; index < descriptors.length; index++) {
+    assert.ok(
+      descriptors[index - 1] < descriptors[index],
+      `Lockfile descriptors are out of order: ${descriptors[index - 1]} before ${descriptors[index]}. Regenerate with Yarn using a fresh install state before immutable validation.`
+    )
+  }
+})
+
 test('workspace test:ci contracts cannot turn test failures into successful skips', () => {
   for (const root of ['apps', 'packages', 'tools']) {
     for (const entry of fs.readdirSync(path.join(repositoryRoot, root), {
@@ -136,9 +148,9 @@ test('workspace test:ci contracts cannot turn test failures into successful skip
   }
 })
 
-test('Fieldscope E2E CI command supplies its portable local app URL', () => {
-  const manifest = readJSON('apps/fieldscope/package.json')
-  const example = readText('apps/fieldscope/.env.example')
+test('Asyra FieldScope E2E CI command supplies its portable local app URL', () => {
+  const manifest = readJSON('apps/asyra-fieldscope/package.json')
+  const example = readText('apps/asyra-fieldscope/.env.example')
   assert.match(
     manifest.scripts['test:e2e:ci'],
     /^APP_URL=http:\/\/127\.0\.0\.1:5178 node scripts\/run-e2e-ci\.mjs$/u
@@ -152,7 +164,7 @@ test('root E2E commands name the app and separate local from CI runners', () => 
     'asyra-design',
     'asyra-framework-site',
     'asyra-sim',
-    'fieldscope',
+    'asyra-fieldscope',
     'starter-app'
   ]) {
     const manifest = readJSON(`apps/${app}/package.json`)
@@ -377,7 +389,7 @@ test('standard manifest E2E owners use the runner Chrome in CI and locally', () 
   const workspaces = [
     ['apps/asyra-framework-site', 'test:e2e:ci'],
     ['apps/asyra-sim', 'test:e2e:ci'],
-    ['apps/fieldscope', 'test:e2e:ci'],
+    ['apps/asyra-fieldscope', 'test:e2e:ci'],
     ['apps/starter-app', 'test:e2e:ci']
   ]
   for (const [directory, task] of workspaces) {
@@ -1023,7 +1035,12 @@ test('root app commands are scoped by app and purpose', () => {
       'test:ci'
     ],
     'asyra-sim': ['@asyra/asyra-sim', 'dev', 'test:local', 'test:ci'],
-    fieldscope: ['@asyra/fieldscope', 'dev', 'test:local', 'test:ci'],
+    'asyra-fieldscope': [
+      '@asyra/asyra-fieldscope',
+      'dev',
+      'test:local',
+      'test:ci'
+    ],
     'starter-app': ['@asyra/starter-app', 'dev', 'test:local', 'test:ci']
   }
   for (const [
@@ -1262,7 +1279,7 @@ test('a timed-out build command terminates its descendant process', async () => 
   assert.ok(status === '' || status.startsWith('Z'), status)
 })
 
-test('FieldScope selected profile groups are independent and each blocks validation', () => {
+test('Asyra FieldScope selected profile groups are independent and each blocks validation', () => {
   const workflow = yaml.load(readText('.github/workflows/main.yml'))
   for (const group of ['heavy', 'source', 'remaining']) {
     const job = workflow.jobs[`fieldscope-profile-${group}`]
@@ -1274,7 +1291,8 @@ test('FieldScope selected profile groups are independent and each blocks validat
       workflow.jobs.validate.needs.includes(`fieldscope-profile-${group}`)
     )
     const gate = workflow.jobs.validate.steps.find(
-      (step) => step.name === `Require complete FieldScope ${group} profiles`
+      (step) =>
+        step.name === `Require complete Asyra FieldScope ${group} profiles`
     )
     for (const files of ['[]', '["src/example.profile.test.ts"]'])
       for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
@@ -1302,7 +1320,7 @@ test('FieldScope selected profile groups are independent and each blocks validat
     profile.jobs.profile.steps.some(
       (step) =>
         step.run ===
-        'yarn turbo run react:build --filter=@asyra/fieldscope --concurrency=2'
+        'yarn turbo run react:build --filter=@asyra/asyra-fieldscope --concurrency=2'
     )
   )
   const run = profile.jobs.profile.steps.find(
@@ -1312,7 +1330,7 @@ test('FieldScope selected profile groups are independent and each blocks validat
   assert.equal(run.env.PROFILE_GROUP, '${{ inputs.group }}')
 })
 
-test('FieldScope profile failures retain complete bounded supervision artifacts', () => {
+test('Asyra FieldScope profile failures retain complete bounded supervision artifacts', () => {
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')
   )
@@ -1322,6 +1340,46 @@ test('FieldScope profile failures retain complete bounded supervision artifacts'
   assert.ok(upload, 'profile diagnostics must survive the ephemeral runner')
   assert.equal(upload.if, 'always()')
   assert.equal(upload.with.name, 'fieldscope-profile-${{ inputs.group }}')
-  assert.equal(upload.with.path, 'apps/fieldscope/.artifacts/test-supervision/')
+  assert.equal(
+    upload.with.path,
+    'apps/asyra-fieldscope/.artifacts/test-supervision/'
+  )
   assert.equal(upload.with['include-hidden-files'], true)
+})
+
+test('shared CI downloads the scope plan instead of putting large JSON in the environment', () => {
+  const job = yaml.load(readText('.github/workflows/main.yml')).jobs[
+    'shared-validation'
+  ]
+  const runIndex = job.steps.findIndex((step) => step.id === 'selected_checks')
+  const step = job.steps[runIndex]
+  assert.equal(step.env.CI_EXECUTION_PLAN, undefined)
+  assert.equal(
+    step.env.CI_SCOPE_EVIDENCE_FILE,
+    'tmp/ci-scope/ci-scope-evidence.json'
+  )
+  const downloadIndex = job.steps.findIndex(
+    (entry) =>
+      entry.uses?.startsWith('actions/download-artifact@') &&
+      entry.with?.name === 'ci-scope-evidence'
+  )
+  assert.ok(downloadIndex >= 0 && downloadIndex < runIndex)
+  assert.notEqual(job.steps[downloadIndex]['continue-on-error'], true)
+  assert.equal(
+    path.posix.join(
+      job.steps[downloadIndex].with.path,
+      'ci-scope-evidence.json'
+    ),
+    step.env.CI_SCOPE_EVIDENCE_FILE
+  )
+  const ignored = spawnSync(
+    'git',
+    ['check-ignore', '--no-index', step.env.CI_SCOPE_EVIDENCE_FILE],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+  assert.equal(
+    ignored.status,
+    0,
+    'Generated CI evidence must not be scanned as authored source'
+  )
 })

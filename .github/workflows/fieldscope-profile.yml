@@ -1,4 +1,4 @@
-name: FieldScope profile group
+name: Asyra FieldScope profile group
 
 on:
   workflow_call:
@@ -32,10 +32,10 @@ jobs:
           cache: yarn
       - run: yarn install --immutable
       - run: yarn gen:turbo:check
-      - name: Build FieldScope dependencies and app
-        run: yarn turbo run react:build --filter=@asyra/fieldscope --concurrency=2
+      - name: Build Asyra FieldScope dependencies and app
+        run: yarn turbo run react:build --filter=@asyra/asyra-fieldscope --concurrency=2
       - name: Verify profile supervision contracts
-        run: node --test apps/fieldscope/scripts/__tests__/supervise-tests.test.mjs apps/fieldscope/scripts/__tests__/run-profile-groups.test.mjs
+        run: node --test apps/asyra-fieldscope/scripts/__tests__/supervise-tests.test.mjs apps/asyra-fieldscope/scripts/__tests__/run-profile-groups.test.mjs
       - name: Run selected profile group
         env:
           PROFILE_FILES: ${{ inputs.files }}
@@ -46,13 +46,13 @@ jobs:
           files = json.loads(os.environ['PROFILE_FILES'])
           if not isinstance(files, list) or not files or any(not isinstance(f, str) for f in files):
               raise SystemExit('Invalid selected profile files')
-          subprocess.run(['python3', 'apps/fieldscope/scripts/run-profile-groups.py', '--group', os.environ['PROFILE_GROUP'], *[arg for f in files for arg in ('--file', f)]], check=True)
+          subprocess.run(['python3', 'apps/asyra-fieldscope/scripts/run-profile-groups.py', '--group', os.environ['PROFILE_GROUP'], *[arg for f in files for arg in ('--file', f)]], check=True)
           PYTHON
       - name: Upload profile supervision artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: fieldscope-profile-${{ inputs.group }}
-          path: apps/fieldscope/.artifacts/test-supervision/
+          path: apps/asyra-fieldscope/.artifacts/test-supervision/
           include-hidden-files: true
           if-no-files-found: ignore

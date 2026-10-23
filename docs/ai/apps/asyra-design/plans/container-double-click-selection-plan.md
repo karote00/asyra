@@ -279,7 +279,7 @@ report that boundary. Final review stays within these owners and direct runners.
   omission; these files now stay in the ordinary supervised invocation.
 - Render-only routing selects 29 of 176 Sim unit files and 36 of 44 browser
   specs. The omitted eight are isolated computation proofs, including the three
-  expensive representative candidates. FieldScope retains 9 unit files, 4
+  expensive representative candidates. Asyra FieldScope retains 9 unit files, 4
   runtime profiles and its full browser integration; these actually consume the
   shared runtime. All affected lint/build checks remain selected.
 - The actual Sim CI runner executed one selected navigation spec: 5 passed,

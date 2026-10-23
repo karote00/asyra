@@ -64,8 +64,8 @@ for (const status of ['A', 'M', 'D']) {
   test(`accepts documentation-only ${status} changes without a changeset`, () => {
     assert.deepEqual(
       evaluateChangesetPrDiff([
-        { status, path: 'docs/ai/apps/fieldscope/PLANS.md' },
-        { status, path: 'apps/fieldscope/README.md' }
+        { status, path: 'docs/ai/apps/asyra-fieldscope/PLANS.md' },
+        { status, path: 'apps/asyra-fieldscope/README.md' }
       ]),
       { valid: true, mode: 'documentation-only', packages: [] }
     )

@@ -1010,7 +1010,7 @@ and organization. Inspected final 360px panel, activity and actual text capture.
 
 ### Execution card - native measurement / direct engine consumer compatibility
 
-Root production build exposed one direct union consumer: Fieldscope's custom
+Root production build exposed one direct union consumer: Asyra FieldScope's custom
 Three engine treated the new local-content-bounds query as a point conversion.
 It does not advertise this optional capability. Add a formal unsupported-query
 regression, then reject before projection just like its existing snapshot guard.
@@ -1031,7 +1031,7 @@ state-contracts wording assertion is classified separately against unchanged
 HEAD content; do not restore legacy wording or alter canonical behavior to pass it.
 
 The same union consumer exists in Asyra Sim's separate Three adapter. The next
-root build exposed it after Fieldscope passed. Apply the identical unsupported
+root build exposed it after Asyra FieldScope passed. Apply the identical unsupported
 capability contract in that direct adapter/test, with formal red before correction.
 A bounded query-implementation search confirms these are the only custom adapters.
 The retained canonical Inspector test still has one pre-existing assertion about

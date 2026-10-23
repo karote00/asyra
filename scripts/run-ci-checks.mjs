@@ -170,7 +170,6 @@ async function executeSelectedChecks(plan, runners) {
 
 async function main() {
   const repositoryRoot = process.cwd()
-  const plan = JSON.parse(process.env.CI_EXECUTION_PLAN ?? '')
   const identity = {
     repository: process.env.CI_SCOPE_REPOSITORY ?? '',
     base: process.env.CI_SCOPE_BASE ?? '',
@@ -185,6 +184,21 @@ async function main() {
     !/^[a-f0-9]{64}$/.test(relationshipMapDigest)
   )
     throw new Error('CI check execution identity is incomplete')
+
+  const evidence = JSON.parse(
+    fs.readFileSync(process.env.CI_SCOPE_EVIDENCE_FILE, 'utf8')
+  )
+  if (
+    evidence.version !== 2 ||
+    evidence.relationshipMapDigest !== relationshipMapDigest ||
+    Object.entries(identity).some(
+      ([key, value]) => evidence.identity?.[key] !== value
+    )
+  )
+    throw new Error(
+      'CI scope evidence does not match the expected execution identity'
+    )
+  const plan = evidence.executionPlan
 
   const result = await executeSelectedChecks(plan, {
     identity,

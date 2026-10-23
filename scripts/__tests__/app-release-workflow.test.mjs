@@ -101,7 +101,7 @@ test('all App configs prevent Git auto-deployment before any build is created', 
     .trim()
     .split('\n')
   assert.ok(files.includes('vercel.json'))
-  assert.ok(files.includes('apps/fieldscope/vercel.json'))
+  assert.ok(files.includes('apps/asyra-fieldscope/vercel.json'))
   for (const file of files) {
     const config = JSON.parse(read(file))
     assert.equal(config.git.deploymentEnabled, false, file)

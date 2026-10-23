@@ -49,7 +49,7 @@ for (const width of [320, 390, 1024, 1440]) {
     const section = page.locator('#built-with-asyra')
     await section.scrollIntoViewIfNeeded()
     await expect(
-      section.getByRole('heading', { name: 'FieldScope', level: 3 })
+      section.getByRole('heading', { name: 'Asyra FieldScope', level: 3 })
     ).toBeVisible()
     await expect(
       section.getByRole('heading', { name: 'Asyra Sim', level: 3 })
@@ -62,7 +62,7 @@ for (const width of [320, 390, 1024, 1440]) {
     await expect(section).toContainText('not independently certified')
 
     const carousel = section.getByRole('region', {
-      name: 'FieldScope image slider'
+      name: 'Asyra FieldScope image slider'
     })
     await expect(carousel).toBeVisible()
     expect(
@@ -222,7 +222,7 @@ for (const width of [320, 390, 1024, 1440]) {
     ).toBeLessThanOrEqual(1)
     if (width >= 768) {
       const fieldScopeCard = section
-        .getByRole('heading', { name: 'FieldScope', level: 3 })
+        .getByRole('heading', { name: 'Asyra FieldScope', level: 3 })
         .locator('xpath=..')
       const simCard = section
         .getByRole('heading', { name: 'Asyra Sim', level: 3 })
@@ -401,13 +401,13 @@ for (const width of [320, 390, 1024, 1440]) {
 
     const imageGroups: [string, { src: string; alt: string }[]][] = [
       [
-        'FieldScope',
+        'Asyra FieldScope',
         fieldScopeSources.map((src, index) => ({
           src,
           alt: [
-            'FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame',
-            'FieldScope end elevation of the four connected greenhouse bays and planted rows',
-            'FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure'
+            'Asyra FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame',
+            'Asyra FieldScope end elevation of the four connected greenhouse bays and planted rows',
+            'Asyra FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure'
           ][index]
         }))
       ],
@@ -463,14 +463,14 @@ for (const width of [320, 390, 1024, 1440]) {
     }
 
     for (const [name, href] of [
-      ['Open FieldScope ↗', 'https://asyra-fieldscope.pages.dev'],
+      ['Open Asyra FieldScope ↗', 'https://asyra-fieldscope.pages.dev'],
       [
         'Crop model source ↗',
-        'https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/crop-layout.ts'
+        'https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/crop-layout.ts'
       ],
       [
         'Crop layout tests ↗',
-        'https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/__tests__/crop-layout.test.ts'
+        'https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts'
       ],
       ['Open the workbench ↗', 'https://asyra-sim.pages.dev'],
       [
@@ -485,7 +485,7 @@ for (const width of [320, 390, 1024, 1440]) {
     }
 
     const [fieldScopeBox, simBox] = await Promise.all(
-      ['FieldScope', 'Asyra Sim'].map(async (name) => {
+      ['Asyra FieldScope', 'Asyra Sim'].map(async (name) => {
         const card = section
           .getByRole('heading', { name, level: 3 })
           .locator('xpath=..')
@@ -516,7 +516,7 @@ for (const width of [320, 390, 1024, 1440]) {
       )
     ).toBe(true)
     for (const [name, file] of [
-      ['FieldScope', 'fieldscope'],
+      ['Asyra FieldScope', 'fieldscope'],
       ['Asyra Sim', 'asyra-sim']
     ]) {
       const heading = section.getByRole('heading', { name, level: 3 })
@@ -532,7 +532,7 @@ for (const width of [320, 390, 1024, 1440]) {
       const images = card.getByRole('img')
       const image = images.first()
       const description =
-        name === 'FieldScope'
+        name === 'Asyra FieldScope'
           ? card.getByText(
               'Model cucumber and tomato crops in a greenhouse, with a parked robot concept and conservative lane and energy assessments.',
               { exact: true }
@@ -597,13 +597,17 @@ test('desktop center image opens a layered, selectable preview and locks page sc
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 })
   await page.goto('/')
-  const carousel = page.getByRole('region', { name: 'FieldScope image slider' })
+  const carousel = page.getByRole('region', {
+    name: 'Asyra FieldScope image slider'
+  })
   await carousel.scrollIntoViewIfNeeded()
   await carousel
-    .getByRole('button', { name: /Open FieldScope image preview/u })
+    .getByRole('button', { name: /Open Asyra FieldScope image preview/u })
     .click()
 
-  const dialog = page.getByRole('dialog', { name: /FieldScope image preview/u })
+  const dialog = page.getByRole('dialog', {
+    name: /Asyra FieldScope image preview/u
+  })
   await expect(dialog).toBeVisible()
   await expect(dialog.locator('[data-testid="preview-slide"]')).toHaveCount(3)
   await expect(dialog.locator('[data-testid="preview-thumbnail"]')).toHaveCount(
@@ -686,7 +690,7 @@ test('desktop center image opens a layered, selectable preview and locks page sc
   })
 
   const movingSlide = dialog.getByRole('button', {
-    name: /Show FieldScope image: Four-bay end elevation/u
+    name: /Show Asyra FieldScope image: Four-bay end elevation/u
   })
   await movingSlide.evaluate((element) => element.getBoundingClientRect().x)
   await dialog.locator('[data-testid="preview-thumbnail"]').nth(2).click()
@@ -724,12 +728,16 @@ test('preview animates the selected image for every adjacent and non-adjacent ju
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 })
   await page.goto('/')
-  const carousel = page.getByRole('region', { name: 'FieldScope image slider' })
+  const carousel = page.getByRole('region', {
+    name: 'Asyra FieldScope image slider'
+  })
   await carousel.scrollIntoViewIfNeeded()
   await carousel
-    .getByRole('button', { name: /Open FieldScope image preview/u })
+    .getByRole('button', { name: /Open Asyra FieldScope image preview/u })
     .click()
-  const dialog = page.getByRole('dialog', { name: /FieldScope image preview/u })
+  const dialog = page.getByRole('dialog', {
+    name: /Asyra FieldScope image preview/u
+  })
   await expect(dialog).toBeVisible()
 
   // Cover all directed pairs, including first-to-last and last-to-first.
@@ -858,7 +866,9 @@ test('tablet center image keeps the inline slider without opening a preview', as
 }) => {
   await page.setViewportSize({ width: 1024, height: 960 })
   await page.goto('/')
-  const carousel = page.getByRole('region', { name: 'FieldScope image slider' })
+  const carousel = page.getByRole('region', {
+    name: 'Asyra FieldScope image slider'
+  })
   await carousel.scrollIntoViewIfNeeded()
   await expect(carousel.getByRole('button')).toHaveCount(2)
   await expect(page.getByRole('dialog')).toHaveCount(0)
@@ -869,19 +879,23 @@ test('resizing an open preview to tablet closes it and restores page scrolling',
 }) => {
   await page.setViewportSize({ width: 1440, height: 960 })
   await page.goto('/')
-  const carousel = page.getByRole('region', { name: 'FieldScope image slider' })
+  const carousel = page.getByRole('region', {
+    name: 'Asyra FieldScope image slider'
+  })
   await carousel.scrollIntoViewIfNeeded()
   await carousel
-    .getByRole('button', { name: /Open FieldScope image preview/u })
+    .getByRole('button', { name: /Open Asyra FieldScope image preview/u })
     .click()
-  const dialog = page.getByRole('dialog', { name: /FieldScope image preview/u })
+  const dialog = page.getByRole('dialog', {
+    name: /Asyra FieldScope image preview/u
+  })
   await expect(dialog).toBeVisible()
   await page.setViewportSize({ width: 1024, height: 960 })
   await expect(dialog).toHaveCount(0)
   await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden')
 })
 
-test('FieldScope keeps its first view readable without JavaScript', async ({
+test('Asyra FieldScope keeps its first view readable without JavaScript', async ({
   browser
 }) => {
   const context = await browser.newContext({
@@ -894,7 +908,7 @@ test('FieldScope keeps its first view readable without JavaScript', async ({
     await page.goto('/')
     const section = page.locator('#built-with-asyra')
     const carousel = section.getByRole('region', {
-      name: 'FieldScope image slider'
+      name: 'Asyra FieldScope image slider'
     })
     await expect(carousel.locator('[data-active="true"] img')).toHaveAttribute(
       'src',

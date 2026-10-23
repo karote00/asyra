@@ -23,10 +23,10 @@ export const DEPLOYMENT_APPS = Object.freeze([
     output: 'apps/asyra-design/dist/frontend'
   },
   {
-    id: 'fieldscope',
+    id: 'asyra-fieldscope',
     project: 'asyra-fieldscope',
-    root: 'apps/fieldscope',
-    output: 'apps/fieldscope/dist/frontend'
+    root: 'apps/asyra-fieldscope',
+    output: 'apps/asyra-fieldscope/dist/frontend'
   },
   {
     id: 'asyra-sim',

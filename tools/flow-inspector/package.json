@@ -29,7 +29,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^27.4.0",
     "typescript": "^5.7.2",
-    "vite": "^6.4.3",
+    "vite": "^6.4.4",
     "vitest": "^3.2.6"
   },
   "description": "Flow-file-driven project contract dashboard, current evidence API and headless CI",

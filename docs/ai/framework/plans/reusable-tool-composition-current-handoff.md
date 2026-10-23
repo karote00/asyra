@@ -332,7 +332,7 @@ false prevents InputSystem dispatch into the Feature queue. Accepted idle inputs
 retain their original direction. Factory/history/persistence production is unchanged.
 
 Evidence under tmp/history-admission/: Core 269; InputSystem 36; App 13;
-FieldScope 1; four real browser busy/success/failure cases; full history regression
+Asyra FieldScope 1; four real browser busy/success/failure cases; full history regression
 18 (includes those four); full collaboration 19. Types/builds/lint/naming and eight
 catalog tests pass. Inspector recovery a8830b4c-66fb-4b96-a44a-74d3d8148d6b passes
 37 obligations; both policy and dispatch exact negatives fail only history-intent.

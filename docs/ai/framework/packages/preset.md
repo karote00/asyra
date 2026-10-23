@@ -306,7 +306,7 @@ it does not apply transactions, normalize hierarchy or register components.
 Preset also owns intentionally shared App defaults/foundations through the
 side-effect-free `@asyra/preset/spatial` entry: the concrete Three.js adapter,
 spatial descriptor admission, graphics/resource lifecycle and common instancing
-mechanisms extracted from Sim and FieldScope. CUSTOM composition selects this
+mechanisms extracted from Sim and Asyra FieldScope. CUSTOM composition selects this
 provider explicitly; default 2D composition remains unchanged. Apps own scene
 contents, lighting choices, domain validation, movement and interaction policy.
 This shared warehouse boundary does not transfer canonical runtime ownership

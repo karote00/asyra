@@ -4,21 +4,21 @@ import { DeveloperEntry } from '@/components/developer-entry'
 const fieldScopeSlides = [
   {
     src: '/product-evidence/fieldscope-greenhouse-overview.webp',
-    alt: 'FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame',
+    alt: 'Asyra FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame',
     label: 'Greenhouse overview',
     width: 1440,
     height: 1174
   },
   {
     src: '/product-evidence/fieldscope-greenhouse-end-elevation.webp',
-    alt: 'FieldScope end elevation of the four connected greenhouse bays and planted rows',
+    alt: 'Asyra FieldScope end elevation of the four connected greenhouse bays and planted rows',
     label: 'Four-bay end elevation',
     width: 1440,
     height: 1174
   },
   {
     src: '/product-evidence/fieldscope-greenhouse-internal-detail.webp',
-    alt: 'FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure',
+    alt: 'Asyra FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure',
     label: 'Inside the tomato crop rows',
     width: 1440,
     height: 1174
@@ -101,7 +101,7 @@ export function HomeResources() {
                 Greenhouse modeling
               </p>
               <h3 className="m-0 pt-3 font-serif text-[26px] leading-tight">
-                FieldScope
+                Asyra FieldScope
               </h3>
               <p
                 className="w-full pt-3 text-sm leading-relaxed opacity-70 md:min-h-[5.5rem] xl:min-h-16"
@@ -112,7 +112,7 @@ export function HomeResources() {
               </p>
               <div className="mt-4 w-full">
                 <ProductEvidenceSlider
-                  label="FieldScope"
+                  label="Asyra FieldScope"
                   slides={fieldScopeSlides}
                   testId="fieldscope-carousel"
                 />
@@ -132,10 +132,10 @@ export function HomeResources() {
                   rel="noopener noreferrer"
                   className="inline-flex min-h-11 items-center border-b border-current pb-1"
                 >
-                  Open FieldScope ↗
+                  Open Asyra FieldScope ↗
                 </a>
                 <a
-                  href="https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/crop-layout.ts"
+                  href="https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/crop-layout.ts"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex min-h-11 items-center border-b border-current pb-1"
@@ -143,7 +143,7 @@ export function HomeResources() {
                   Crop model source ↗
                 </a>
                 <a
-                  href="https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/__tests__/crop-layout.test.ts"
+                  href="https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex min-h-11 items-center border-b border-current pb-1"

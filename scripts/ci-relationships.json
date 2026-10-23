@@ -138,7 +138,7 @@
     },
     {
       "pattern": ".github/workflows/fieldscope-profile.yml",
-      "workspaceDirectory": "apps/fieldscope"
+      "workspaceDirectory": "apps/asyra-fieldscope"
     }
   ],
   "frameworkReleaseReadinessPaths": [
@@ -430,11 +430,11 @@
     },
     "appE2EGroups": {
       "patterns": [
-        "apps/fieldscope/scripts/e2e-ci-*",
+        "apps/asyra-fieldscope/scripts/e2e-ci-*",
         "apps/asyra-sim/scripts/e2e-ci-*"
       ],
       "tests": [
-        "apps/fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
+        "apps/asyra-fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
         "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
@@ -473,7 +473,7 @@
   ],
   "registeredScriptTests": [
     "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs",
-    "apps/fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
+    "apps/asyra-fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
     "scripts/__tests__/agent-hook-adapter.test.mjs",
     "scripts/__tests__/agent-safety-hook.test.mjs",
     "scripts/__tests__/app-release-entry.test.mjs",
@@ -530,7 +530,7 @@
     "tools/flow-inspector/control-plane/__tests__/workflow-results.test.cjs",
     "docs/ai/tools/flow-inspector/CORE_PROOF.md"
   ],
-  "fieldscopeProfilesWorkspaceDirectory": "apps/fieldscope",
+  "fieldscopeProfilesWorkspaceDirectory": "apps/asyra-fieldscope",
   "internalDocumentationAssetPatterns": [
     "assets/{slug}/models/**.md",
     "assets/{slug}/models/**.png",
@@ -545,11 +545,11 @@
     "docs/ai/**/references/**.pdf"
   ],
   "supervisedTestOwners": {
-    "apps/fieldscope": {
+    "apps/asyra-fieldscope": {
       "task": "test:affected",
       "profileCommand": [
         "python3",
-        "apps/fieldscope/scripts/run-profile-groups.py"
+        "apps/asyra-fieldscope/scripts/run-profile-groups.py"
       ]
     },
     "apps/asyra-sim": {

@@ -197,16 +197,16 @@ test('root README follows the product-to-proof reader journey', () => {
   assert.doesNotMatch(readme, /flowchart (TD|LR)/u)
   assert.match(readme, /### Built and demonstrated today/u)
   assert.match(readme, /editable 2D and\s+3D tools/u)
-  assert.match(readme, /FieldScope[\s\S]*?cucumber and tomato crops/u)
+  assert.match(readme, /Asyra FieldScope[\s\S]*?cucumber and tomato crops/u)
   assert.match(readme, /Asyra Sim[\s\S]*?development checkpoint/u)
-  assert.match(readme, /apps\/fieldscope\/src\/domain\/crop-layout\.ts/u)
+  assert.match(readme, /apps\/asyra-fieldscope\/src\/domain\/crop-layout\.ts/u)
   assert.match(readme, /apps\/asyra-sim\/README\.md/u)
-  assert.doesNotMatch(readme, /FieldScope[^\n]*no plants/u)
+  assert.doesNotMatch(readme, /Asyra FieldScope[^\n]*no plants/u)
   assert.match(
     fs.readFileSync(
       path.join(
         repositoryRoot,
-        'apps/fieldscope/src/domain/__tests__/crop-layout.test.ts'
+        'apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts'
       ),
       'utf8'
     ),

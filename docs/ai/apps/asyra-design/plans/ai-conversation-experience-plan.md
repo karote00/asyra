@@ -782,7 +782,7 @@ limitation; this scope does not install or substitute another conversion tool.
 
 #### CI direct-consumer compatibility correction
 
-The new optional query exposed two direct consumers: FieldScope and Asyra Sim
+The new optional query exposed two direct consumers: Asyra FieldScope and Asyra Sim
 ThreeEngine assumed every remaining query had point coordinates and advertised
 all enum capabilities automatically. CI correctly rejects the widened union.
 Bounded correction is their engine files, existing engine tests and capability

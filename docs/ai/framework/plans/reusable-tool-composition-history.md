@@ -949,7 +949,7 @@ PR 1 CI consumer-input correction - 2026-10-12:
   handling of unrelated unknown paths. No runtime, Inspector semantics, new
   scheduler or repository-wide CI redesign is included.
 - Test first: fixture test/source/manifest changes select release readiness with
-  no unrelated workspace, Design E2E or FieldScope profile selection. Then run
+  no unrelated workspace, Design E2E or Asyra FieldScope profile selection. Then run
   classification/local-selector regressions, actual-head classification, naming,
   scoped shared checks, and retain the already-passed packed consumer evidence
   only if its complete source inputs remain unchanged.
@@ -960,7 +960,7 @@ PR 1 CI consumer-input correction - 2026-10-12:
   checks and passed with source verification (evidence
   `tmp/local-validation/c9cbabf6-eaad-4474-9ccf-3a8a30437c39/result.json`).
   Actual PR inputs now select Runtime, Design, the website and Inspector, with
-  no unknown paths or FieldScope heavy profiles. Runtime and consumer source
+  no unknown paths or Asyra FieldScope heavy profiles. Runtime and consumer source
   remain identical to the prior validated commit. Main integration and new-head
   CI remain required before merge.
 
@@ -2671,7 +2671,7 @@ accepted. Evidence tmp/pr3-purpose-*; browser-owned temporary services exited.
 
 Latest main c696dba31 (Skill packaging only) fast-forwarded without conflicts or
 loss of working changes. Selected final delivery validation includes Runtime,
-Preset, Design, Inspector and affected App consumers; FieldScope selection is
+Preset, Design, Inspector and affected App consumers; Asyra FieldScope selection is
 limited to three related tests and two bootstrap/scene-demand profiles, not robot
 geometry workloads. The declared delivery checkpoint is now active.
 
@@ -2690,7 +2690,7 @@ and lint precede resuming affected delivery validation.
 
 ### Delivery correction - generated Inspector catalog
 
-The continuation passed shared, Design, Framework Site, Office, Sim and FieldScope,
+The continuation passed shared, Design, Framework Site, Office, Sim and Asyra FieldScope,
 then the existing Inspector catalog equality test failed: the committed browser
 snapshot did not contain the current source contract's apply consumer. The
 generate-browser-snapshot owner consumes classified current source objects and
