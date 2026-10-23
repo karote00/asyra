@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Compact workflow delivery is closed on formal local evidence and authorized for push. Interrupted owner results remain closed on local evidence; live AI recovery remains unobserved. Task 3 remains active. No additional model run is authorized.**
+Status: **The six discovery failures are resolved as obsolete test oracles; all 62 discovery cases now pass. Prior image-to-judgment work remains preserved and locally verified. Task 3 remains active. Push is authorized for the two locally verified slices; model/101 remains unauthorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,12 +20,11 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `77debb2224b7fdc4129f775340bdc95437834938` (integrated before the convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: compact main-tool delivery only. Remove pure preparation/execution
-  diagnostics after canonical receipt consumption while retaining operation results,
-  restrictions, inspection evidence and recovery. Keep existing inner trace evidence.
-  Close this slice and push its validated source. Then inspect saved run 1792770001609
-  read-only to propose one next App/framework handoff issue. No model/101, Knowledge,
-  geometry, budget, new tool or next-issue implementation is authorized.
+- Current scope: close and push the locally verified main-workflow image handoff and
+  discovery oracle reconciliation. Preserve independent binding, multiscale evidence,
+  local invalidation and no replay. Then inspect the latest saved run for one next
+  App/framework handoff and assess existing drift-prevention gates, read-only.
+  No model/101, Knowledge, geometry, budget or unrelated owner change.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -83,6 +82,219 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Local convergence and authorized push - 2026-10-24
+
+The user accepts the main-workflow image handoff and six discovery corrections on
+formal local evidence. Close these slices with their verified behavior and unchanged
+limitations: live AI adoption of the new image handoff and latency remain unobserved.
+Preserve all prior saved evidence. This authorization covers the task branch push and
+required target integration/checks, not a new model run or the next proposed fix.
+
+Next analysis is bounded to the latest retained 101 inputs/outputs and direct owners.
+Also assess why consumer checks did not accompany prior contract/example changes.
+Operational choices and limits must come from their authoritative owners rather than
+consumer copies; semantic tests must retain independent correctness oracles instead
+of deriving expected answers from the implementation under test. Propose prevention
+through existing test selection/validation and Inspector boundaries before altering
+that workflow. Do not introduce a duplicate registry or another governance ledger.
+
+### Discovery regression oracle reconciliation - 2026-10-24
+
+Step Execution Card - compose:
+- Objective: resolve the six reproduced discovery failures by checking delivered
+  guidance, canonical ownership and actual execution, not by relaxing expectations.
+  Preserve the uncommitted image-to-judgment slice and all immutable saved evidence.
+- Discovery boundary: the six failing cases in discovery-delivery.integration.test.ts,
+  their recorded fixtures, schema-path recovery, grid budget/schema, composed-material
+  examples and their direct preparation/application consumers. No repository-wide audit.
+- Contract: Inspection discovery field ownership and receipts; Expansion budget
+  selection; Shared normalized motifs; selected composition/layer order. Inspector
+  compose already requires valid-path recovery, resolved shared motifs, executable
+  examples, unchanged limits/pages and no replay. No contract change is currently
+  needed; verify accepted revision 77 before changing the formal oracles.
+- Inputs/outputs: unchanged published selectors, example invocations and canonical
+  schema fragments; ordinary budget, prepared entries and application receipts.
+  Discovery owns guidance/recovery; preparation owns counts/reference resolution;
+  application owns actual writes. Tests must compare those handoffs independently.
+- Findings to verify: one obsolete assertion demands invalid recovery paths; one
+  fixes prose to inline-only motifs.length; four index a legal template reference
+  as an inline array. These are hypotheses until corrected behavioral checks execute.
+- Authorized edits: this active plan, task context and formal discovery tests. Direct
+  owner fixes and matching spec/Inspector changes are allowed only if these bounded
+  checks expose a real contract mismatch; reproduce it before production changes.
+  Do not modify saved fixtures, archived plans, live budgets or previous raw reports.
+- Fixed DoD: execute the returned per-entry correction, verify exact valid fragments,
+  rejected paths/outcome and zero writes; compare inline/reference budget counts and
+  canonical output on an actual delivered example; prove resolved root materials,
+  geometry, painter order, names, keys and parents through preparation and application;
+  preserve inline use, malformed-reference rejection, refresh/no-replay, catalog-growth
+  isolation and existing byte/page ceilings. Do not replace assertions with existence
+  checks, self-derived expectations or looser numbers. No model-adoption claim.
+- Verification: original six failures first; focused six cases after correction;
+  complete discovery, shared-motif/budget/schema suites, prior workflow/provider
+  direct-consumer coverage; production types, scoped lint, naming, diff review and
+  source-bound Inspector verification. Existing test-oracle correction is the explicit
+  exception in bugfix-test-first; no production fix is justified solely by a stale test.
+- Stop/replan if following the actual correction still repeats invalid scope, if an
+  inline/reference execution differs, or if first-use limits regress. Keep failures
+  visible and correct the first mismatching owner within this boundary.
+
+Verification outcome and bounded self-review - 2026-10-24:
+- Reproduced all six original failures before test edits (discovery-six-baseline.log).
+  Adjudication against the current product contract and owner execution:
+  1. Foreign-field recovery: obsolete oracle. It required the original invalid paths
+     in definition.recover, contradicting Inspection discovery field ownership and
+     receipts and Inspector compose. The owner correctly delivers the valid subset
+     for each exact identity; the original scope remains unavailable.
+  2. Expansion guidance: obsolete inline-only wording assertion. The owner counts
+     rows * columns * resolved motifs, including root-local references, consistent
+     with Expansion budget selection and Shared normalized motifs.
+  3-4. Composition examples (explicit false/true): obsolete array indexing after the
+     owner example adopted a valid root-local motif reference. Material references
+     must be checked through that definition, not a nonexistent array position.
+  5-6. Layered examples (plan false/true): the same obsolete indexing assumption.
+     Their existing painter-order, generated-key and byte/page obligations still hold.
+- Corrected the owning formal oracles rather than changing valid product behavior.
+  Per-entry recovery now executes definition.recover directly, checks precise failed
+  paths, canonical fragments, scoped refresh and absence of writes. Composition and
+  layered cases expand the delivered reference into an independent inline input and
+  compare complete prepared output using the same artifact identity, then compare
+  actual application descriptors and parent relationships. Missing references reject
+  without changing prior writes. A two-motif variant proves the independently counted
+  28 expanded objects for both forms and matches actual compiled/applied results.
+- Existing fixture inputs, byte/page ceilings, geometry tolerances, accepted inline
+  use and no-replay checks were not loosened. No production owner, schema, example,
+  spec, Inspector architecture or formal mapping change was needed. The missing
+  synchronization was in the older integration assertions after prior owner changes.
+- Validation: discovery 62/62; preparation 53/53; shared motifs 15/15; input schema
+  26/26 (156 total). Six focused workflow/provider delivery consumers passed; the
+  remaining cases in those two files were intentionally filtered, not claimed run.
+  Production App/server/flow-proof typecheck, scoped ESLint (zero warnings/errors),
+  formatting, naming 15/15 and diff checks passed. Review covered only this test diff,
+  its delivered contracts and direct consumers; no unresolved in-scope mismatch.
+- Inspector admission reused accepted revision 77 after verify
+  3064e327-7e12-4b39-ba63-13f4beb59d28 passed. Final candidate
+  79bd1f12-e4bc-4b42-ae0a-7b59af0e9e87 passed all 71 owner proofs; contract review
+  b5ff2de5b45b5c466d70b67ba379c7c18595f9fa562679b4dc6ae620a4388e1d reports no
+  changes/blockers. Captured owner/proof source remains
+  90c7f9f5d720df44ec52e26f603e4df6ced7fa00bcdbb70c94320310f9d8e748;
+  this test-only edit does not change that Inspector source set. The complete changed
+  discovery suite was run separately and recorded in discovery-six-regressions.log.
+- Evidence is retained under tmp/discovery-six-*.log and the formal updated test
+  remains in server/__tests__/discovery-delivery.integration.test.ts. The six failures
+  noted in the preceding slice are now resolved; its historical verification record
+  remains intact. No model/101, push, live latency or adoption claim.
+
+### Main-workflow image-to-judgment handoff - 2026-10-24
+
+Baseline: ffa575a2b4d5fcae541666a1a9c101430ee7b4d1. Saved run 1792770001609
+returned an image at 76.191s, then used review usage (11,588 bytes), a bind call
+(1,855 bytes), and a verdict call. These are valid existing operations; the gap
+is optional explicit selection through the main workflow. The 15.518s interval
+is not a measured saving or a cause of first-frame latency.
+
+Step Execution Card - compose / apply-to-compose:
+- Spec: Main-workflow visual judgment handoff; Explicit visual judgment bindings.
+  Inspector: compose consumes settled execution and inspection evidence and delegates
+  binding/validation to the existing review owner. Review owns acceptance and failure
+  semantics; compose owns partial delivery. No new state or cache.
+- Input: optional reviewChecks using the review owner's capture-check selection schema.
+  Checks select only the existing automatic capture of this invocation, not all criteria
+  or all created objects. Absent selection keeps ordinary immediate/defer behavior.
+  reviewChecks with defer is contradictory and rejected before writes; selection is
+  validated against the established or same-call plan before the first write.
+- Output: original receipts/images plus visualReview containing owner-issued context,
+  current bindings and exact registered next invocation with owner-derived status/evidence
+  constraints. Binding records no judgment. AI still decides scope and visible findings.
+- Reuse: existing capture, evidence validation, bindChecks, check store and invocation
+  observations. Do not capture again, infer criteria from prose, extend image coverage,
+  copy binding state, preload review schemas or introduce a tool/registry/retry owner.
+- Boundary: local-design-workflow.ts, local-operation-tools.ts, local-design-review.ts
+  and their direct selected-discovery projection in design-workflow-discovery.ts;
+  their formal tests and execution-flow-proof, saved fixture, active plan/spec/Inspector
+  and proof mapping/bundle. Existing invocation/native/recovery tests are direct gates.
+- Failure: preserve settled writes, captures and independent passes. Only complete/current
+  images may be bound. A failed binding returns partial follow-up and explicit review-only
+  recovery; it never requests another main draw. Partial drawing keeps its actual scope
+  and existing remaining-only recovery; never bind a failed part's checks to an earlier
+  part's capture. Cancellation stays cancellation and retains acknowledged receipts.
+- Fixed DoD: (1) actual delivered selected usage/example -> main workflow -> returned
+  judgment arguments -> registered dispatcher/review owner; only fill status/evidence;
+  (2) eliminate the independent binding call and mandatory full review-usage lookup,
+  count added selection guidance and all responses, and reduce total bytes against the
+  same local control; (3) no automatic visual pass or final acceptance; (4) preserve
+  stale/tampered/foreign/missing-image, multi-image and independent-unit invalidation;
+  (5) failure/cancellation/partial recovery never repeats settled writes/captures;
+  (6) unselected/defer, independent bind, single/parts, compact/full remain valid.
+- Gates: naming, admission before regression edits; failing formal main-workflow case;
+  workflow/operation/discovery/invocation/native and interrupted-result integration;
+  production types, scoped lint/naming, generated Inspector checks, candidate/accept/verify.
+  Review only this diff, direct consumers and frozen negative cases. No model tests.
+- Feasibility: automatic capture already produces retained IDs; review_drawing bindChecks
+  already validates current evidence and produces next.arguments without judging. Compose
+  can call that owner inside the same invocation and expose its result. Optional selection
+  must remain explicit: a first preview or an incomplete/multiscale decision still uses
+  independent capture/binding. No first-frame or live adoption improvement is promised.
+- Stop if the route needs inferred evidence coverage, altered write settlement or a
+  duplicate binding mechanism. Keep previous source evidence immutable.
+
+Bounded delivery revision after integration evidence - 2026-10-24:
+- The first regression pass exposed unselected/default example drift and extra bytes
+  in established discovery budgets. Do not raise those budgets or change legal callers.
+- Retain default example ordering. Within existing selected projection, prefer valid
+  owner examples containing explicitly selected optional fields. Remove only a root
+  not-clause proven unreachable by an explicitly excluded required field; selected
+  and unrelated restrictions remain intact. This is the same compose/discovery owner.
+- Recheck native unscoped/defer callers, selected example execution and every existing
+  discovery byte/page oracle before final verification. Fixed DoD is unchanged.
+
+Local verification and bounded self-review - 2026-10-24:
+- Admission preceded regression edits: candidate dfe8fc0e-c457-418f-963c-c975f30aa3f8,
+  accepted revision 76. Formal compact/full handoff tests failed before implementation;
+  later tests reproduced missing capture recovery, stale-image recovery and misleading
+  parts completion before their corrections. Failed attempts remain in project evidence.
+- Main workflow now composes explicit selection, the existing automatic image and review
+  binding. Delivered examples preserve ordinary defaults; explicit optional selection
+  chooses a valid example for existing criteria or a same-call plan. No new registry,
+  review state, geometry owner, mandatory selection or compatibility route was added.
+- Actual published information assembly and image-forwarding examples execute in formal
+  tests. The returned bound invocation executes through the real registered review
+  dispatcher with owner-derived editable-field limits. Binding alone records no pass.
+- Same local scenario, including input/output and selected guidance: 40,431 -> 32,180
+  bytes (20.4% less), 5 -> 4 model-facing tool calls. Drawing and capture each remain
+  exactly once; underlying owner event sequences match. The selected same-call-plan
+  contract takes two pages versus one drawing-contract page in the control, but removes
+  the later full review-usage read and independent bind call. This is total-delivery
+  improvement, not a claim that every selected contract fits one page or that first
+  frame/model latency improved. Existing page limits and byte oracles were not raised.
+- Failure recovery distinguishes temporarily unavailable validation (reuse the image and
+  rebind), explicitly stale evidence (recapture the affected target through review only),
+  failed capture and partial drawing. Cancellation preserves acknowledged receipts;
+  parts binding failure reports partial/completed settlement instead of complete.
+- Final local checks: workflow 100; provider 222 passed/1 existing skip; operation 196;
+  review 114; invocation 66; host 16; interrupted App/runtime integration 8. Existing
+  interrupted integration includes actual Core writes, Undo/Redo, persistence/reload
+  and remaining-only recovery. Existing review cases cover multiscale, independent
+  passes, foreign/tampered evidence and local invalidation. The new composer does not
+  alter those owners. Production App/server/flow-proof types passed, scoped lint had
+  zero errors and one unchanged console warning, naming 15 and generated Inspector 25
+  passed. Diff/format and direct-consumer self-review found no remaining in-scope issue.
+- Discovery: 56 passed, 6 failed both at baseline ffa575a2b4d5fcae541666a1a9c101430ee7b4d1
+  and on the final implementation. One expects four foreign-field recovery paths where
+  the owner supplies inspections; one expects superseded motif-count wording; four
+  assume inline motif arrays in composition/layered examples now using shared templates.
+  Preserve these tests and report them separately; do not weaken their assertions or
+  claim the whole suite passed. Baseline comparison restored all current file bytes.
+- Final Inspector candidate ed0c04e3-20dc-4f86-8b41-34012c62607a passed all 71 cases;
+  review ba57dc5725d7a0cebf96b3adef57a6e0ece4f2420368aae8a6043627ae6b2893 had no
+  blockers and was accepted as revision 77. Verify 040255d9-881b-4a16-b6f9-0f488fd2e9f7
+  passed on the same captured source
+  90c7f9f5d720df44ec52e26f603e4df6ced7fa00bcdbb70c94320310f9d8e748.
+- Evidence: tmp/visual-handoff-{red,main-final,owners-final,discovery-baseline,
+  interrupted,production-types,lint-final,naming-final,generated-final,final-verify}.log.
+  Formal cases and their existing recorded fixture live in the repository, not tmp.
+  No model/101 run, new screenshot evidence, remote push or live-adoption claim.
 
 ### Compact workflow receipts - 2026-10-24
 

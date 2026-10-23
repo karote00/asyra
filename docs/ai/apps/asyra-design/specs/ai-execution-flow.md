@@ -613,6 +613,37 @@ override reset and detachment are distinct intents. Delivered App advice must us
 these canonical operations and never require detachment for a local correction.
 Portable Knowledge remains advisory and contains no App operation identifiers.
 
+## Main-workflow visual judgment handoff
+
+The main drawing workflow accepts optional explicit `reviewChecks` using the existing
+review owner's capture-check identities. Selection applies only to the invocation's
+ordinary automatic image target; it does not assert whole-request coverage. Validate
+selection against current or same-call criteria before writes. Reject selection with
+`inspection=defer`. With no selection, preserve ordinary preview/defer and later binding.
+Do not infer selection from plan prose, force early review or preload all review schemas.
+
+After successful drawing and capture, reuse the existing review owner to validate and
+bind those exact image IDs. Deliver `visualReview` with acceptance context and bound
+`next.arguments`, the registered execution route and owner-derived status/evidence
+constraints. The primary agent views the image and fills those fields, then submits
+through the ordinary dispatcher. Capture and binding record no judgment and cannot
+claim acceptance. Do not recapture or create another review state/registry.
+
+Preserve image and requirement/result revision dependencies, signatures, independent
+passes, multiscale evidence and explicit scope supersession. A failed follow-up retains
+actual writes and successful images, reports partial, and provides review-only recovery.
+Incomplete drawing never silently binds the requested checks to an earlier part's image.
+Retain existing remaining-only recovery and true cancellation. Single/parts and full/
+compact use the same boundary. Independent review capture/binding remain legal.
+
+DoD: execute the actually delivered usage/example and returned next invocation through
+real owners; remove independent model binding and mandatory full review-usage lookup,
+measure total input/output and selected guidance bytes against the same local control,
+retain all restrictions, and prove no repeated writes/captures on failure. Include
+invalid selection, deferred/unselected work, partial drawing, cancellation, stale,
+foreign/tampered/missing evidence, multiscale and independent invalidation. Local
+correctness and byte reduction do not establish live model adoption or latency.
+
 ## Compact workflow delivery
 
 The main drawing workflow's default and explicit compact responses omit pure

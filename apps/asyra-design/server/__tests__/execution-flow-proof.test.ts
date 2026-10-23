@@ -8398,3 +8398,123 @@ it('execution proof projects compact diagnostics after owner evidence without re
   ).toMatchObject({ actionResults: [{ result: { timing } }] })
   expect(execute).toHaveBeenCalledOnce()
 })
+
+it('execution proof binds an explicitly selected workflow image through the existing review owner', async () => {
+  const actions = [
+    AiActionNames.APPLY_PREPARED_DESIGN,
+    AiActionNames.REVIEW_DESIGN,
+    AiActionNames.INSPECT_DRAWING,
+    AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+  ].map((name) => ({ name, description: name, inputSchema: {} }))
+  const designs = createLocalDesignTools(actions)
+  const execute = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: batch.actions.map((action) => {
+        let result: AiBatchReceipt['actionResults'][number]['result'] = {
+          current: true,
+          validatedAt: { sessionId: 'document', revision: 1 },
+          coverage: { complete: true }
+        }
+        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+          result = {
+            status: 'complete',
+            compositionId: 'drawing',
+            appliedElementIds: ['drawing']
+          }
+        if (action.name === AiActionNames.REVIEW_DESIGN)
+          result = {
+            complete: true,
+            findings: [],
+            measuredTextIds: [],
+            evidence: { sessionId: 'document', revision: 1 }
+          }
+        if (action.name === AiActionNames.INSPECT_DRAWING)
+          result = {
+            available: true,
+            imageScope: 'overview',
+            image: { dataUrl: 'data:image/png;base64,AA==' },
+            evidence: { sessionId: 'document', revision: 1 }
+          }
+        return { actionId: action.id, actionName: action.name, result }
+      })
+    })
+  )
+  const operations = createLocalOperationTools(actions, designs, execute)
+  const workflow = createLocalDesignWorkflow(designs, operations)
+  const reply = await invokeLocalTool(
+    workflow,
+    workflow.definitions[0],
+    {
+      draft: {
+        type: 'group',
+        name: 'Part',
+        children: [
+          {
+            type: 'rect',
+            name: 'Face',
+            key: 'face',
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 20,
+            fill: '#123456'
+          }
+        ]
+      },
+      plan: {
+        phase: 'plan',
+        method: 'Inspect the requested appearance',
+        references: [],
+        criteria: {
+          appearance: {
+            requirement: 'Requested appearance',
+            description: 'Visible detail',
+            verification: 'visual',
+            requiredUnits: []
+          }
+        },
+        detailRequired: false
+      },
+      reviewChecks: [{ criterionId: 'appearance' }]
+    },
+    new AbortController().signal
+  )
+  expect(reply.success, reply.text).toBe(true)
+  const value = JSON.parse(reply.text)
+  expect(value.visualReview.recordedChecks).toEqual([])
+  expect(value.visualReview.accepted).toBe(false)
+  const next = value.visualReview.next
+  const definition = operations.definitions.find(
+    (tool) => tool.name === next.execution.tool
+  )
+  if (!definition) throw new Error('Missing delivered review route')
+  const recorded = await invokeLocalTool(
+    operations,
+    definition,
+    {
+      ...next.arguments,
+      checks: next.arguments.checks.map((check: object) => ({
+        ...check,
+        status: 'fail',
+        evidence: 'Requested detail is not visible.'
+      }))
+    },
+    new AbortController().signal
+  )
+  expect(recorded.success, recorded.text).toBe(true)
+  expect(JSON.parse(recorded.text)).toMatchObject({
+    accepted: false,
+    recordedChecks: [{ criterionId: 'appearance', status: 'fail' }]
+  })
+  expect(
+    execute.mock.calls
+      .flatMap(([batch]) => batch.actions)
+      .filter((action) => action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+  ).toHaveLength(1)
+  expect(
+    execute.mock.calls
+      .flatMap(([batch]) => batch.actions)
+      .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
+  ).toHaveLength(1)
+})

@@ -13,7 +13,12 @@ import {
   type LocalToolObservation
 } from './local-tool-invocation'
 import { designCheckSummarySchema } from './design-check-results'
-import { reviewPlanSchema } from './local-design-review'
+import {
+  reviewPlanSchema,
+  reviewPlanExample,
+  reviewCaptureChecksSchema,
+  reviewJudgmentFieldsSchema
+} from './local-design-review'
 import { operationInputIssue } from './operation-input-schema'
 import { AiActionNames } from '../src/constants/ai-actions'
 import { LocalToolAccess } from './local-tool-scheduler'
@@ -21,6 +26,7 @@ import { AiDesignToolIds } from '../src/constants/ai-design'
 import type { createLocalDesignTools } from './local-design-tools'
 import {
   LocalOperationPreparationError,
+  localOperationNamespace,
   type createLocalOperationTools
 } from './local-operation-tools'
 
@@ -49,6 +55,158 @@ export const createLocalDesignWorkflow = (
   const review = operations.definitions.find(
     (tool) => tool.name === AiDesignToolIds.DEFINE_DESIGN_CRITERIA
   )
+  const judgment = operations.definitions.find(
+    (tool) => tool.name === AiDesignToolIds.REVIEW_DRAWING
+  )
+  const finishReview = async (
+    value: Record<string, unknown>,
+    selection: unknown,
+    signal: AbortSignal
+  ): Promise<Record<string, unknown>> => {
+    if (selection === undefined || !judgment) return value
+    // A partial block's last image may belong to an earlier part, not the intended target.
+    const outcome = localToolOutcome(value)
+    if (outcome.status !== 'success') {
+      const targets = Array.isArray(value.inspectionIssues)
+        ? [
+            ...new Set(
+              value.inspectionIssues.flatMap((issue) =>
+                typeof issue.elementId === 'string' ? [issue.elementId] : []
+              )
+            )
+          ]
+        : []
+      if (outcome.settlement !== 'completed' || targets.length !== 1)
+        return value
+      return {
+        ...value,
+        visualReview: {
+          recordedChecks: [],
+          recovery:
+            'Retry only the failed capture and binding. Do not replay acknowledged writes.',
+          recoveryInvocation: {
+            namespace: localOperationNamespace,
+            tool: judgment.name,
+            arguments: {
+              phase: 'visual',
+              final: false,
+              inspections: [{ elementId: targets[0], checks: selection }]
+            }
+          }
+        }
+      }
+    }
+    const entries = Array.isArray(value.actionResults)
+      ? value.actionResults
+      : []
+    const inspectionIds = entries.flatMap((entry) =>
+      entry.actionName === AiActionNames.INSPECT_DRAWING &&
+      entry.result?.available === true &&
+      typeof entry.result.inspectionId === 'string'
+        ? [entry.result.inspectionId]
+        : []
+    )
+    if (!inspectionIds.length) {
+      const result = {
+        ...value,
+        inspectionIssues: [
+          {
+            message:
+              'No usable automatic image was returned. Capture and bind the selected checks with review_drawing; do not replay writes.'
+          }
+        ]
+      }
+      return { ...result, toolOutcome: localToolOutcome(result) }
+    }
+    const arguments_ = {
+      phase: 'visual',
+      final: false,
+      bindChecks: (selection as Record<string, unknown>[]).map((check) => ({
+        ...check,
+        inspectionIds
+      }))
+    }
+    const raw = await observeLocalToolExecution(
+      judgment.name,
+      arguments_,
+      async () =>
+        (
+          await invokeLocalTool(
+            operations,
+            judgment,
+            arguments_,
+            signal,
+            executionEvidence
+          )
+        ).text,
+      observation,
+      judgment.description,
+      executionScope ? [executionScope] : []
+    )
+    const visualReview = JSON.parse(raw)
+    const execution = {
+      kind: 'native-tool',
+      namespace: localOperationNamespace,
+      tool: judgment.name
+    }
+    if (visualReview.next?.arguments?.checks) {
+      visualReview.next.execution = execution
+      visualReview.next.fillSchema = reviewJudgmentFieldsSchema
+    }
+    const complete =
+      localToolOutcome(visualReview).status === 'success' &&
+      Array.isArray(visualReview.next?.arguments?.checks)
+    if (!complete) {
+      const invalidIds = visualReview.evidenceValidation?.invalidInspectionIds
+      const invalidImages = entries.filter(
+        (entry) =>
+          Array.isArray(invalidIds) &&
+          invalidIds.includes(entry.result?.inspectionId) &&
+          typeof entry.result?.elementId === 'string'
+      )
+      visualReview.recoveryInvocation = {
+        ...execution,
+        arguments: invalidImages.length
+          ? {
+              phase: 'visual',
+              final: false,
+              inspections: invalidImages.map((entry) => ({
+                elementId: entry.result.elementId,
+                checks: selection
+              }))
+            }
+          : arguments_
+      }
+      visualReview.recovery =
+        'Recover only this review binding. Follow evidenceValidation for invalid images; retain successful images and all acknowledged writes. Never rerun the drawing workflow to recover review.'
+    }
+    const result = {
+      ...value,
+      visualReview,
+      ...(!complete
+        ? {
+            inspectionIssues: [
+              {
+                message:
+                  'Visual review binding is incomplete; follow visualReview recovery without replaying writes.'
+              }
+            ]
+          }
+        : {})
+    }
+    const toolOutcome = localToolOutcome(result)
+    return {
+      ...result,
+      ...(value.status === 'complete' && toolOutcome.status !== 'success'
+        ? {
+            status: toolOutcome.status,
+            complete: false,
+            settlement: toolOutcome.settlement
+          }
+        : {}),
+      toolOutcome
+    }
+  }
   // The wrapper exports child resources as well as their execution receipts.
   // Keep the preparation contract intact so call cleanup can transfer ownership.
   const partOutputSchema = {
@@ -122,7 +280,7 @@ export const createLocalDesignWorkflow = (
             {
               ...preparation,
               ...semantics,
-              revision: 3,
+              revision: 4,
               partialOutputSchema: {
                 anyOf: [semantics.partialOutputSchema, stoppedOutputSchema]
               },
@@ -137,6 +295,15 @@ export const createLocalDesignWorkflow = (
                 properties: {
                   ...preparation.inputSchema.properties,
                   ...(review ? { plan: reviewPlanSchema } : {}),
+                  ...(judgment
+                    ? {
+                        reviewChecks: {
+                          ...reviewCaptureChecksSchema,
+                          description:
+                            'Optional explicit checks for this call’s automatic image. Requires current or same-call criteria and immediate inspection. Omit to decide after viewing; no automatic judgment. Read visualReview.next, fill each check using fillSchema, then call next.execution with next.arguments.'
+                        }
+                      }
+                    : {}),
                   parentId: {
                     type: 'string',
                     minLength: 1,
@@ -180,6 +347,7 @@ export const createLocalDesignWorkflow = (
               'repair',
               'materialSourceId',
               ...(review ? ['plan'] : []),
+              ...(judgment ? ['reviewChecks'] : []),
               'message',
               'inspection',
               'response',
@@ -198,8 +366,19 @@ export const createLocalDesignWorkflow = (
             input.message.length > 1000))
       )
         throw new LocalOperationPreparationError(
-          'Provide draft or repair, and optional registered plan, parentId, message, inspection, response only.'
+          'Provide draft or repair, and optional registered plan, reviewChecks, parentId, message, inspection, response only.'
         )
+      if (input.reviewChecks !== undefined) {
+        const issue = operationInputIssue(
+          input.reviewChecks,
+          reviewCaptureChecksSchema
+        )
+        if (issue) throw new LocalOperationPreparationError(issue)
+        if (input.inspection === 'defer')
+          throw new LocalOperationPreparationError(
+            'reviewChecks requires immediate inspection; omit it to defer selection.'
+          )
+      }
       if (input.plan !== undefined) {
         const issue = operationInputIssue(input.plan, reviewPlanSchema)
         if (issue) throw new LocalOperationPreparationError(issue)
@@ -320,6 +499,8 @@ export const createLocalDesignWorkflow = (
         if (localToolOutcome(planned).status !== 'success')
           return deliver(stoppedAt(planned, review.name))
       }
+      if (input.reviewChecks !== undefined)
+        operations.validateReviewChecks(input.reviewChecks)
       const receipt = await runStep(operations, apply, {
         arguments: {
           artifactId: prepared.artifactId,
@@ -435,11 +616,14 @@ export const createLocalDesignWorkflow = (
       queryExample: { operation: 'draft', nodeTypes: ['pattern'] },
       nodes: '/$defs/node/anyOf',
       repetition: { type: 'pattern', memberField: 'members' },
-      optionalInputs: review ? ['plan'] : [],
-      selection: `Choose component contents and painter order, then outer repetition and operation/nodeTypes for the next submitted part. Component order: one pattern of face/grid members. Layer order: sibling patterns, with independent nodes at their painter positions. For either, define members once; axes count/step set translation. Selecting projected-face/surface-grid includes pattern with members; no extra query is needed. Examples are optional; select types for independent siblings. view=usage with inputScope gives complete parameters/results/recovery. draft creates an artifact within ${designs.expandedNodeLimit} expanded objects or continues a safely partitionable source through retained parts in this call; repair corrects retained preparation; parts submits independent artifacts exceeding that total together, each within limits, with partial receipts. Independent world-space planar faces in a shared orthographic projection: projected-face. Pattern-only queries include all face/grid members; content queries include only selected kinds. origin sets the start. For faces mode, explicitly select pattern. surface-grid repeats normalized motifs on a planar convex four-corner boundary using rows/columns and painter order. Select grid now if this part needs it; do not wait for later grid details before submitting ready geometry. Arbitrary or already-projected 2D outlines: vector; identical 2D curves: vector-pattern. Guides include root group/frame; nodeTypes selects children, including nested containers. Nest group for organization, frame for size; rect/oval/text for primitives. Changing only the root needs no new query. optionalInputs documents fields and does not require sending them; omit plan without rereading if criteria are not ready. Select used types only. Differently sized, rotated or irregular exceptions stay explicit. Templates reduce input, not output budgets; safe excess continues via retained parts. Use ordered parts for independent layers or bounded ranges of complete instances; never replay acknowledged parts. No Knowledge or planning call is required. Known scopes can read directly; full schema/field queries remain available.`,
+      optionalInputs: [
+        ...(review ? ['plan'] : []),
+        ...(judgment ? ['reviewChecks'] : [])
+      ],
+      selection: `Choose component contents and painter order, then outer repetition and operation/nodeTypes for the next submitted part. Component order: one pattern of face/grid members. Layer order: sibling patterns, with independent nodes at their painter positions. For either, define members once; axes count/step set translation. Selecting projected-face/surface-grid includes pattern with members; no extra query is needed. Examples are optional; select types for independent siblings. inputScope usage gives complete parameters/results/recovery. draft creates an artifact within ${designs.expandedNodeLimit} expanded objects or continues a safely partitionable source through retained parts in this call; repair corrects retained preparation; parts submits independent artifacts exceeding that total together, each within limits, with partial receipts. Independent world-space planar faces in a shared orthographic projection: projected-face. Pattern-only queries include all face/grid members; content queries include only selected kinds. origin sets the start. For faces mode, explicitly select pattern. surface-grid repeats normalized motifs on a planar convex four-corner boundary using rows/columns and painter order. Select grid now if this part needs it; submit ready geometry before later grid details. Arbitrary or already-projected 2D outlines: vector; identical 2D curves: vector-pattern. Guides include root group/frame; nodeTypes selects children, including nested containers. Nest group for organization, frame for size; rect/oval/text for primitives. Root changes need no query. optionalInputs: plan for criteria, reviewChecks for image checks. Selection does not require sending either; omit plan without rereading. Select used types only. Size/rotation/irregular exceptions stay explicit. Templates reduce input, not output budgets; safe excess continues via retained parts. Use parts for independent layers or bounded complete-instance ranges; never replay acknowledged parts. No Knowledge or planning call is required. Known scopes can read directly; full schema/field queries remain available.`,
       usage: {
         instructions:
-          'Writes; backend projects/repeats/measures. pattern: members + axes count/step. Mix per component; layer order uses sibling patterns and independent nodes. Preserve others; edit by ID. parentId is parent-local. inspection=defer still writes; full adds maps. Set criteria via plan or before review; never rewrite after drawing. root group/frame; nodeTypes selects children. Root changes need no reread. Group derives bounds; Frame owns size. Layout once; no live Auto Layout/clipping/frame borders/corner radii. Preserve supplied 2D; invent no hidden faces/depth. Resolve overflow; render text-metrics-required. Agent owns visual judgment. ' +
+          'Writes; projects/repeats/measures. pattern: members + axes count/step. Mix per component; layer order: sibling patterns and independent nodes. Edit by ID; preserve others. parentId: parent-local. inspection=defer still writes; full adds maps. Criteria via plan or before review; immutable after drawing. root group/frame; nodeTypes selects children. Root changes need no reread. Group derives bounds; Frame owns size. Layout once; no live Auto Layout/clipping/frame borders/corner radii. Preserve supplied 2D; invent no hidden faces/depth. Resolve overflow; render text-metrics-required. AI judges visuals. ' +
           designBudgetGuidance(designs.expandedNodeLimit),
         operations: {
           draft: `Supply draft only. Per artifact: ${designs.expandedNodeLimit} expanded objects including containers; safe excess continues via retained parts in this call. Authored keys are not canonical IDs.`,
@@ -472,6 +656,10 @@ export const createLocalDesignWorkflow = (
         }
       }
     ],
+    not: {
+      required: ['reviewChecks', 'inspection'],
+      properties: { inspection: { const: 'defer' } }
+    },
     properties: {
       ...definition.inputSchema.properties,
       draft: { $ref: '#/$defs/readyDraft' },
@@ -516,6 +704,19 @@ export const createLocalDesignWorkflow = (
           ...inputSchema,
           examples: [
             ...(definition.inputSchema.examples ?? []),
+            ...(review && judgment
+              ? (definition.inputSchema.examples ?? []).flatMap((example) => {
+                  const selected = {
+                    ...example,
+                    reviewChecks: [
+                      {
+                        criterionId: Object.keys(reviewPlanExample.criteria)[0]
+                      }
+                    ]
+                  }
+                  return [selected, { ...selected, plan: reviewPlanExample }]
+                })
+              : []),
             orderedInputExample
           ]
         },
@@ -608,7 +809,13 @@ export const createLocalDesignWorkflow = (
       if (!args || typeof args !== 'object' || !('parts' in args)) {
         const result = JSON.parse(await single.call(name, args, signal))
         if (!result.available || !result.retainedDraft?.partitions)
-          return JSON.stringify(result)
+          return JSON.stringify(
+            await finishReview(
+              result,
+              (args as Record<string, unknown>)?.reviewChecks,
+              signal
+            )
+          )
         const input = args as Record<string, unknown>
         return call(
           name,
@@ -620,6 +827,9 @@ export const createLocalDesignWorkflow = (
               input.parentId
             ),
             ...(input.plan === undefined ? {} : { plan: input.plan }),
+            ...(input.reviewChecks === undefined
+              ? {}
+              : { reviewChecks: input.reviewChecks }),
             ...(input.message === undefined ? {} : { message: input.message }),
             inspection: input.inspection ?? 'immediate',
             response: input.response ?? 'compact'
@@ -679,16 +889,22 @@ export const createLocalDesignWorkflow = (
           }))
         }
         const outcome = localToolOutcome(delivered)
-        return JSON.stringify({
-          ...delivered,
-          ...(result.status === 'complete' && outcome.status !== 'success'
-            ? {
-                status: outcome.status,
-                complete: false,
-                settlement: outcome.settlement
-              }
-            : {})
-        })
+        return JSON.stringify(
+          await finishReview(
+            {
+              ...delivered,
+              ...(result.status === 'complete' && outcome.status !== 'success'
+                ? {
+                    status: outcome.status,
+                    complete: false,
+                    settlement: outcome.settlement
+                  }
+                : {})
+            },
+            input.reviewChecks,
+            signal
+          )
+        )
       }
       const parentIds = new Map<string, string>()
       const artifactIds = new Map<string, string>()
@@ -792,6 +1008,9 @@ export const createLocalDesignWorkflow = (
                 ? {}
                 : { materialSourceId: part.materialSourceId }),
               ...(parentId === undefined ? {} : { parentId }),
+              ...(index === 0 && input.reviewChecks !== undefined
+                ? { reviewChecks: input.reviewChecks }
+                : {}),
               ...(index === 0 && input.plan !== undefined
                 ? { plan: input.plan }
                 : {}),
@@ -802,7 +1021,8 @@ export const createLocalDesignWorkflow = (
                 ? {}
                 : { response: input.response }),
               inspection:
-                index === parts.length - 1
+                index === parts.length - 1 ||
+                (index === 0 && input.reviewChecks !== undefined)
                   ? (input.inspection ?? 'immediate')
                   : 'defer'
             },

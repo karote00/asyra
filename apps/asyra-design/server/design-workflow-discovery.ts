@@ -205,6 +205,17 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
     )
       schema.properties[field] = false
   }
+  const projectedProperties = schema.properties
+  // Excluding a required member makes this negative alternative unreachable.
+  // Keep selected and unrelated cross-field restrictions exactly as authored.
+  if (
+    record(schema.not) &&
+    Array.isArray(schema.not.required) &&
+    schema.not.required.some(
+      (key) => typeof key === 'string' && projectedProperties[key] === false
+    )
+  )
+    delete schema.not
   for (const [key, constraint] of Object.entries(
     record(selected[0].properties) ? selected[0].properties : {}
   ))
@@ -232,9 +243,21 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
   ])
   delete schema['x-design-input-scope']
   if (Array.isArray(schema.examples))
-    schema.examples = schema.examples.filter(
-      (example) => !operationInputIssue(example, schema)
-    )
+    schema.examples = schema.examples
+      .filter((example) => !operationInputIssue(example, schema))
+      .sort((left, right) => {
+        const selected = Array.isArray(scope.optionalInputs)
+          ? scope.optionalInputs
+          : []
+        const present = (example: unknown) =>
+          selected.filter(
+            (key) =>
+              typeof key === 'string' &&
+              record(example) &&
+              Object.hasOwn(example, key)
+          ).length
+        return present(right) - present(left)
+      })
 
   // Retain exact recursive reference closure. This changes only the read projection;
   // execution continues to validate the complete canonical schema.

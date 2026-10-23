@@ -85,6 +85,7 @@ import {
   designEvidenceDefinitions,
   designEvidenceInput,
   reviewVisualSchema,
+  reviewCaptureChecksSchema,
   reviewInspectionIds
 } from './local-design-review'
 import { AiDesignToolIds } from '../src/constants/ai-design'
@@ -2452,6 +2453,17 @@ export const createLocalOperationTools = (
       return execute(name, args, signal, inspectionTargets, true)
     },
     finishInspection,
+    validateReviewChecks(value: unknown) {
+      const issue = operationInputIssue(value, reviewCaptureChecksSchema)
+      if (issue) throw new LocalOperationPreparationError(issue)
+      designReview.validateCaptureChecks('visual', [
+        {
+          checks: value as Parameters<
+            typeof designReview.validateCaptureChecks
+          >[1][number]['checks']
+        }
+      ])
+    },
     validateCompletion: async (signal?: AbortSignal): Promise<void> => {
       if (!designReview.isAccepted()) return
       try {
