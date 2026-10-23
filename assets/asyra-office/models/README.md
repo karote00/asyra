@@ -8,6 +8,22 @@ All listed batches have user approval for their drawings and documentation. **No
 
 ## Start here
 
+### CI classification of reference inputs
+
+Reference inputs are development documentation, not shipped app assets. The
+repository CI relationship policy recognizes model specifications and
+`*-measurements.json`, plus files inside a batch's `review/` directory:
+versioned drawing JSON (`*-v*.json`), layout/annotation records (`*-layout.json`
+and `*-record.json`), `comparison.json` and `comparison-run.json`, SVG drawing
+layers, Python drawing/review helpers, and archived Python source (`*.py.txt`).
+Existing Markdown, PNG and JPG reference classification remains unchanged.
+
+This classification does not execute the helpers or certify model geometry.
+Run each batch's documented numeric and visual checks when changing its inputs.
+Runtime code, package/configuration manifests, model exports, and Python outside
+`review/` are not admitted by these reference-input rules. Moving a helper into
+app generation or a build requires its runtime owner and validation routing.
+
 ### Asset types - 2026-10-07
 
 Use the [asset type classification](ASSET-TYPES.md) alongside the existing
