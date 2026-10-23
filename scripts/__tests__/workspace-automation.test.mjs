@@ -1354,7 +1354,10 @@ test('shared CI downloads the scope plan instead of putting large JSON in the en
   const runIndex = job.steps.findIndex((step) => step.id === 'selected_checks')
   const step = job.steps[runIndex]
   assert.equal(step.env.CI_EXECUTION_PLAN, undefined)
-  assert.equal(step.env.CI_SCOPE_EVIDENCE_FILE, 'ci-scope-evidence.json')
+  assert.equal(
+    step.env.CI_SCOPE_EVIDENCE_FILE,
+    'tmp/ci-scope/ci-scope-evidence.json'
+  )
   const downloadIndex = job.steps.findIndex(
     (entry) =>
       entry.uses?.startsWith('actions/download-artifact@') &&
@@ -1362,4 +1365,21 @@ test('shared CI downloads the scope plan instead of putting large JSON in the en
   )
   assert.ok(downloadIndex >= 0 && downloadIndex < runIndex)
   assert.notEqual(job.steps[downloadIndex]['continue-on-error'], true)
+  assert.equal(
+    path.posix.join(
+      job.steps[downloadIndex].with.path,
+      'ci-scope-evidence.json'
+    ),
+    step.env.CI_SCOPE_EVIDENCE_FILE
+  )
+  const ignored = spawnSync(
+    'git',
+    ['check-ignore', '--no-index', step.env.CI_SCOPE_EVIDENCE_FILE],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+  assert.equal(
+    ignored.status,
+    0,
+    'Generated CI evidence must not be scanned as authored source'
+  )
 })
