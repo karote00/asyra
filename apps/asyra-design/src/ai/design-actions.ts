@@ -10,7 +10,12 @@ import {
   subscribeToBrowserDragPhases,
   subscribeToDiagnosticCounters
 } from '@asyra/utils'
-import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
+import {
+  AiActionExecutionError,
+  AiTransactionSettlementError,
+  runAiMutation,
+  type AiActionDefinition
+} from '@asyra/ai-agent-runtime'
 import { yieldToCooperativeHost } from '@asyra/core'
 import {
   elementApis,
@@ -274,173 +279,217 @@ export const createPreparedDesignAction = (
     const appliedElementIds: string[] = []
     let appliedElementCount = 0
     let offset = firstEntry
-    while (offset < design.entries.length) {
-      const parentId = design.entries[offset].parentId ?? targetParentId
-      checkCurrent(parentId)
-      const descriptors: PreparedElementDescriptor[] = []
-      let points = 0
-      while (
-        offset < design.entries.length &&
-        descriptors.length < PREPARED_DRAWING_SLICE_ELEMENT_BUDGET
-      ) {
-        const entry = design.entries[offset]
-        if ((entry.parentId ?? targetParentId) !== parentId) break
-        const count = Object.keys(entry.descriptor.points ?? {}).length
-        if (
-          descriptors.length &&
-          points + count > PREPARED_DRAWING_SLICE_POINT_BUDGET
-        )
-          break
-        if (apis.getElementType(entry.descriptor.id) !== undefined)
-          throw new Error('A design object already exists.')
-        descriptors.push(entry.descriptor)
-        points += count
-        offset++
-      }
-      const transactionStartedAt = now()
-      let callbackMs = 0
-      const ids = await runAiMutation(context, () => {
-        const callbackStartedAt = now()
+    try {
+      while (offset < design.entries.length) {
+        const parentId = design.entries[offset].parentId ?? targetParentId
         checkCurrent(parentId)
-        if (appliedElementCount === 0 && args.attachmentEvidence) {
-          const attachment = args.attachmentEvidence
+        const descriptors: PreparedElementDescriptor[] = []
+        let points = 0
+        while (
+          offset < design.entries.length &&
+          descriptors.length < PREPARED_DRAWING_SLICE_ELEMENT_BUDGET
+        ) {
+          const entry = design.entries[offset]
+          if ((entry.parentId ?? targetParentId) !== parentId) break
+          const count = Object.keys(entry.descriptor.points ?? {}).length
           if (
-            attachment.workspaceId !== workspaceId ||
-            attachment.parentId !== targetParentId
+            descriptors.length &&
+            points + count > PREPARED_DRAWING_SLICE_POINT_BUDGET
           )
-            throw new Error(
-              'Reviewed attachment parent or workspace changed before application.'
-            )
-          if (!evidence?.isCurrent(attachment.evidence))
-            throw new Error(
-              'Reviewed attachment evidence expired before application; review current dependencies.'
-            )
+            break
+          if (apis.getElementType(entry.descriptor.id) !== undefined)
+            throw new Error('A design object already exists.')
+          descriptors.push(entry.descriptor)
+          points += count
+          offset++
         }
-        if (
-          descriptors.some(
-            (descriptor) => apis.getElementType(descriptor.id) !== undefined
-          )
+        const transactionStartedAt = now()
+        let callbackMs = 0
+        await runAiMutation(
+          context,
+          () => {
+            const callbackStartedAt = now()
+            checkCurrent(parentId)
+            if (appliedElementCount === 0 && args.attachmentEvidence) {
+              const attachment = args.attachmentEvidence
+              if (
+                attachment.workspaceId !== workspaceId ||
+                attachment.parentId !== targetParentId
+              )
+                throw new Error(
+                  'Reviewed attachment parent or workspace changed before application.'
+                )
+              if (!evidence?.isCurrent(attachment.evidence))
+                throw new Error(
+                  'Reviewed attachment evidence expired before application; review current dependencies.'
+                )
+            }
+            if (
+              descriptors.some(
+                (descriptor) => apis.getElementType(descriptor.id) !== undefined
+              )
+            )
+              throw new Error('A design object already exists.')
+            const createStartedAt = now()
+            validationMs += createStartedAt - callbackStartedAt
+            const stopPhases = subscribeToBrowserDragPhases(
+              (name, durationMs) => {
+                const entry = canonicalWork.phases[name] ?? {
+                  count: 0,
+                  totalMs: 0
+                }
+                entry.count++
+                entry.totalMs += durationMs
+                canonicalWork.phases[name] = entry
+              }
+            )
+            const stopCounters = subscribeToDiagnosticCounters(
+              (name, value) => {
+                canonicalWork.counters[name] =
+                  (canonicalWork.counters[name] ?? 0) + value
+              }
+            )
+            try {
+              const shift = continuationOffset()
+              const values =
+                design.continuation && parentId === design.rootId
+                  ? descriptors.map((d) => ({
+                      ...d,
+                      x: Number(d.x) + shift.x,
+                      y: Number(d.y) + shift.y
+                    }))
+                  : descriptors
+              return apis.create(values, parentId)
+            } finally {
+              stopPhases()
+              stopCounters()
+              createMs += now() - createStartedAt
+              callbackMs = now() - callbackStartedAt
+            }
+          },
+          (ids) => {
+            if (
+              !ids ||
+              ids.length !== descriptors.length ||
+              ids.some((id, i) => id !== descriptors[i].id)
+            )
+              throw new Error(
+                'Design creation did not preserve its object identities.'
+              )
+            appliedElementCount += ids.length
+            if (args.response !== 'compact') appliedElementIds.push(...ids)
+          }
         )
-          throw new Error('A design object already exists.')
-        const createStartedAt = now()
-        validationMs += createStartedAt - callbackStartedAt
-        const stopPhases = subscribeToBrowserDragPhases((name, durationMs) => {
-          const entry = canonicalWork.phases[name] ?? { count: 0, totalMs: 0 }
-          entry.count++
-          entry.totalMs += durationMs
-          canonicalWork.phases[name] = entry
-        })
-        const stopCounters = subscribeToDiagnosticCounters((name, value) => {
-          canonicalWork.counters[name] =
-            (canonicalWork.counters[name] ?? 0) + value
-        })
-        try {
-          const shift = continuationOffset()
-          const values =
-            design.continuation && parentId === design.rootId
-              ? descriptors.map((d) => ({
-                  ...d,
-                  x: Number(d.x) + shift.x,
-                  y: Number(d.y) + shift.y
-                }))
-              : descriptors
-          return apis.create(values, parentId)
-        } finally {
-          stopPhases()
-          stopCounters()
-          createMs += now() - createStartedAt
-          callbackMs = now() - callbackStartedAt
-        }
-      })
-      transactionMs += Math.max(0, now() - transactionStartedAt - callbackMs)
-      sliceCount++
-      if (
-        !ids ||
-        ids.length !== descriptors.length ||
-        ids.some((id, i) => id !== descriptors[i].id)
-      )
-        throw new Error(
-          'Design creation did not preserve its object identities.'
-        )
-      appliedElementCount += ids.length
-      if (args.response !== 'compact') appliedElementIds.push(...ids)
-      const yieldStartedAt = now()
-      await yieldToHost()
-      cooperativeYieldMs += now() - yieldStartedAt
-    }
-    checkCurrent(workspaceId ?? '')
-    const selectionStartedAt = now()
-    let selectionCallbackMs = 0
-    let materialProvenance:
-      { status: 'available' | 'unavailable'; message?: string } | undefined
-    await runAiMutation(context, () => {
-      const callbackStartedAt = now()
-      checkCurrent(workspaceId)
-      const selectStartedAt = now()
-      validationMs += selectStartedAt - callbackStartedAt
-      apis.select([design.rootId])
-      if (materialIds.length || (design.continuation && material)) {
-        try {
-          if (!material)
-            throw new Error('Material provenance consumer is unavailable.')
-          material.capture(
-            design.rootId,
-            materialIds,
-            signal,
-            !!design.continuation
-          )
-          if (materialIds.length) materialProvenance = { status: 'available' }
-        } catch (error) {
-          materialProvenance = {
-            status: 'unavailable',
-            message: error instanceof Error ? error.message : String(error)
+        transactionMs += Math.max(0, now() - transactionStartedAt - callbackMs)
+        sliceCount++
+        const yieldStartedAt = now()
+        await yieldToHost()
+        cooperativeYieldMs += now() - yieldStartedAt
+      }
+      checkCurrent(workspaceId ?? '')
+      const selectionStartedAt = now()
+      let selectionCallbackMs = 0
+      let materialProvenance:
+        { status: 'available' | 'unavailable'; message?: string } | undefined
+      await runAiMutation(context, () => {
+        const callbackStartedAt = now()
+        checkCurrent(workspaceId)
+        const selectStartedAt = now()
+        validationMs += selectStartedAt - callbackStartedAt
+        apis.select([design.rootId])
+        if (materialIds.length || (design.continuation && material)) {
+          try {
+            if (!material)
+              throw new Error('Material provenance consumer is unavailable.')
+            material.capture(
+              design.rootId,
+              materialIds,
+              signal,
+              !!design.continuation
+            )
+            if (materialIds.length) materialProvenance = { status: 'available' }
+          } catch (error) {
+            materialProvenance = {
+              status: 'unavailable',
+              message: error instanceof Error ? error.message : String(error)
+            }
           }
         }
+        selectionMs += now() - selectStartedAt
+        selectionCallbackMs = now() - callbackStartedAt
+      })
+      transactionMs += Math.max(
+        0,
+        now() - selectionStartedAt - selectionCallbackMs
+      )
+      const totalMs = now() - startedAt
+      const orchestrationMs = Math.max(
+        0,
+        totalMs -
+          admissionMs -
+          createMs -
+          cooperativeYieldMs -
+          transactionMs -
+          selectionMs -
+          validationMs
+      )
+      return {
+        status: 'complete',
+        ...(materialProvenance ? { materialProvenance } : {}),
+        timing: {
+          canonicalWork,
+          admissionMs,
+          createMs,
+          transactionMs,
+          selectionMs,
+          validationMs,
+          orchestrationMs,
+          cooperativeYieldMs,
+          totalMs,
+          sliceCount,
+          elementCount: appliedElementCount
+        },
+        compositionId: design.rootId,
+        ...(args.response === 'compact'
+          ? { appliedElementCount }
+          : {
+              appliedElementIds,
+              keyToId: design.keyToId,
+              roleToElementIds: Object.fromEntries(
+                Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
+              )
+            })
       }
-      selectionMs += now() - selectStartedAt
-      selectionCallbackMs = now() - callbackStartedAt
-    })
-    transactionMs += Math.max(
-      0,
-      now() - selectionStartedAt - selectionCallbackMs
-    )
-    const totalMs = now() - startedAt
-    const orchestrationMs = Math.max(
-      0,
-      totalMs -
-        admissionMs -
-        createMs -
-        cooperativeYieldMs -
-        transactionMs -
-        selectionMs -
-        validationMs
-    )
-    return {
-      status: 'complete',
-      ...(materialProvenance ? { materialProvenance } : {}),
-      timing: {
-        canonicalWork,
-        admissionMs,
-        createMs,
-        transactionMs,
-        selectionMs,
-        validationMs,
-        orchestrationMs,
-        cooperativeYieldMs,
-        totalMs,
-        sliceCount,
-        elementCount: appliedElementCount
-      },
-      compositionId: design.rootId,
-      ...(args.response === 'compact'
-        ? { appliedElementCount }
-        : {
-            appliedElementIds,
-            keyToId: design.keyToId,
-            roleToElementIds: Object.fromEntries(
-              Object.entries(design.keyToId).map(([key, id]) => [key, [id]])
-            )
-          })
+    } catch (error) {
+      if (!appliedElementCount) throw error
+      let settlement: 'completed' | 'partial' | 'unknown' =
+        appliedElementCount === design.entries.length - firstEntry
+          ? 'completed'
+          : 'partial'
+      if (
+        error instanceof AiTransactionSettlementError &&
+        error.status === 'unknown'
+      )
+        settlement = 'unknown'
+      throw new AiActionExecutionError(
+        'Design application stopped after acknowledged changes. Inspect the retained receipt; do not replay the drawing.',
+        {
+          settlement,
+          result: {
+            status: 'partial',
+            compositionId: design.rootId,
+            appliedElementCount,
+            plannedElementCount: design.entries.length - firstEntry,
+            appliedRange: {
+              start: firstEntry,
+              end: firstEntry + appliedElementCount
+            },
+            ...(args.response === 'compact' ? {} : { appliedElementIds }),
+            recovery:
+              'Do not replay this artifact or acknowledged mutations. Inspect the current state and retained source before choosing confirmed remaining work.'
+          }
+        }
+      )
     }
   }
 })

@@ -8130,3 +8130,178 @@ it('execution proof follows union entry navigation and valid recovery without re
   }
   expect(dispatch).not.toHaveBeenCalled()
 })
+
+it('execution proof preserves interrupted owner results without replay', async () => {
+  vi.stubGlobal('window', {})
+  const { createPreparedDesignAction } =
+    await import('../../src/ai/design-actions')
+  const { createAiAgentRuntime } = await import('@asyra/ai-agent-runtime')
+  const entries = new Map<string, PreparedElementDescriptor>()
+  const create = vi.fn((values: readonly PreparedElementDescriptor[]) => {
+    for (const entry of values) entries.set(entry.id, entry)
+    return values.map((entry) => entry.id)
+  })
+  const select = vi.fn()
+  const action = createPreparedDesignAction(
+    {
+      getWorkspaceId: () => 'workspace',
+      getElementType: (id) => entries.get(id)?.type,
+      getElementMetadata: () => undefined,
+      getPlacement: (id) => entries.get(id),
+      isContainerType: (type) => type === 'group',
+      isLocked: () => false,
+      create,
+      select
+    },
+    async () => {
+      throw new Error('Work window ended')
+    }
+  )
+  const design = prepareDesign(
+    {
+      type: 'group',
+      name: 'Composition',
+      key: 'root',
+      children: [
+        {
+          type: 'rect',
+          key: 'panel',
+          name: 'Panel',
+          x: 0,
+          y: 0,
+          width: 20,
+          height: 20,
+          fill: '#123456'
+        }
+      ]
+    },
+    'interruption-proof'
+  )
+  let receipt: AiBatchReceipt | undefined
+  const runtime = createAiAgentRuntime({
+    provider: {
+      requestActionBatch: async (_input, options) => {
+        receipt = await options.executeBatch?.({
+          batchId: 'draw',
+          actions: [
+            {
+              id: 'apply',
+              name: action.name,
+              arguments: { design, response: 'compact' },
+              summary: 'Draw'
+            }
+          ]
+        })
+        return { batchId: 'report', actions: [] }
+      }
+    },
+    actionDefinitions: [action],
+    contextProvider: { getContext: async () => ({}) },
+    permissionPolicy: { evaluate: () => 'allow' },
+    confirmationHandler: { confirm: async () => true },
+    transactionRunner: { run: async (_label, work) => work() }
+  })
+  try {
+    await runtime.run({ intent: 'Draw', signal: new AbortController().signal })
+    expect(receipt).toMatchObject({
+      failure: { settlement: 'partial' },
+      actionResults: [
+        {
+          actionId: 'apply',
+          result: {
+            status: 'partial',
+            compositionId: design.rootId,
+            appliedElementCount: 1,
+            plannedElementCount: 2,
+            appliedRange: { start: 0, end: 1 }
+          }
+        }
+      ]
+    })
+    expect([...entries.keys()]).toEqual([design.rootId])
+    expect(create).toHaveBeenCalledTimes(1)
+    expect(select).not.toHaveBeenCalled()
+  } finally {
+    await runtime.dispose()
+    vi.unstubAllGlobals()
+  }
+})
+
+it('execution proof preserves cancellation evidence through native invocation', async () => {
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const controller = new AbortController()
+  const receipts = {
+    batches: [
+      {
+        actionResults: [
+          {
+            actionId: 'draw',
+            actionName: 'draw',
+            result: {
+              status: 'partial',
+              compositionId: 'root',
+              appliedElementCount: 1
+            }
+          }
+        ],
+        failure: { code: 'AI_EXECUTION_FAILED', settlement: 'partial' }
+      }
+    ]
+  }
+  const call = vi.fn(async () => {
+    controller.abort()
+    throw new Error('Interrupted')
+  })
+  const host = createLocalToolHost({
+    requestId: 'interruption-proof',
+    signal: controller.signal,
+    capacity: 16,
+    receiptCapacity: 4,
+    artifactCapacity: 16,
+    limits: {
+      steps: 8,
+      bindings: 80,
+      bindingDepth: 16,
+      bytes: 16000,
+      issues: 8
+    },
+    store: {
+      read: async () => undefined,
+      list: async () => [],
+      write: async () => {
+        throw new Error('No recipe save')
+      }
+    },
+    executionEvidence: () => receipts,
+    createGroups: () => [
+      {
+        name: 'drawing',
+        description: 'Drawing',
+        owner: {
+          call,
+          definitions: [
+            {
+              name: 'draw',
+              description: 'Draw',
+              inputSchema: { type: 'object' },
+              ...toolSemantics({ type: 'object' }, 'mutation', ['document'])
+            }
+          ]
+        }
+      }
+    ]
+  })
+  try {
+    await expect(
+      host.invoke({ name: 'drawing.draw', input: {} })
+    ).rejects.toMatchObject({
+      receipt: { result: receipts, settlement: 'partial' }
+    })
+    await expect(
+      host.invoke({ name: 'drawing.draw', input: {} })
+    ).rejects.toThrow()
+    expect(call).toHaveBeenCalledTimes(1)
+  } finally {
+    await host.dispose()
+  }
+})

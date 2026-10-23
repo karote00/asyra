@@ -279,8 +279,19 @@ Registered executors can throw `AiActionExecutionError` with a static, bounded
 public explanation and recovery guidance. Runtime preserves that message with
 `AI_EXECUTION_FAILED` and stage `execution`; ordinary errors still receive the
 generic execution-failure message. Never wrap raw provider/transport/canonical
-exception text in this class. Failure policy, failed-action identity and transaction
-settlement remain authoritative and unchanged.
+exception text in this class. An executor may attach an owner-issued receipt
+(result and settlement) to this existing error when acknowledged work precedes failure. Runtime detaches/redacts it
+into the existing actionResults and failed-action observation; it is not a successful
+action or a retry instruction. Callback failure settlement preserves this evidence.
+Cancelled terminal results may retain actionResults when the transaction committed
+or its settlement is unknown; rolled-back results cannot claim retained mutations.
+Failure policy, failed-action identity and transaction settlement remain authoritative
+and unchanged. Receipt production belongs to the action owner, not diagnostics.
+
+An aborted action that already returned a result retains that result on the existing
+`AiExecutionError.receipt`; its `AI_EXECUTION_ABORTED` code and class remain unchanged.
+The same detached receipt shape is used by `AiActionExecutionError`. Neither carrier
+converts cancellation into success or overrides final transaction rollback.
 
 ## Shared Invocation and Execution Profiler
 

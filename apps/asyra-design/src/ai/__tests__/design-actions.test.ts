@@ -99,11 +99,13 @@ describe('prepared editable design application', () => {
       { design: fixture() },
       {
         signal: new AbortController().signal,
-        runMutation: async (mutate) => {
+        runMutation: async (mutate, settled) => {
           members++
           inMutation = true
           try {
-            return mutate()
+            const value = mutate()
+            settled?.(value)
+            return value
           } finally {
             inMutation = false
           }
@@ -299,7 +301,7 @@ describe('prepared editable design application', () => {
         { design: fixture() },
         context()
       )
-    ).rejects.toThrow('no longer available')
+    ).rejects.toMatchObject({ receipt: { settlement: 'partial' } })
     expect(api.create).toHaveBeenCalledTimes(1)
   })
   it('rejects collisions and locked workspaces before creating anything', async () => {
@@ -330,7 +332,7 @@ describe('prepared editable design application', () => {
         { design },
         context()
       )
-    ).rejects.toThrow('creation failed')
+    ).rejects.toMatchObject({ receipt: { settlement: 'partial' } })
     expect(api.create).toHaveBeenCalledTimes(2)
     expect(api.select).not.toHaveBeenCalled()
   })
@@ -714,7 +716,10 @@ it.each([false, true])(
         if (!parent) throw new Error('Missing canonical parent')
         if (lockDuringYield) parent.lock = true
       }).execute({ design: fixture(), parentId: 'existing' }, context())
-      if (lockDuringYield) await expect(promise).rejects.toThrow('not editable')
+      if (lockDuringYield)
+        await expect(promise).rejects.toMatchObject({
+          receipt: { settlement: 'partial' }
+        })
       else expect(await promise).toMatchObject({ status: 'complete' })
       expect(yields).toBeGreaterThan(0)
       expect(snapshot).not.toHaveBeenCalled()
@@ -907,4 +912,75 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
     action.execute({ design: session.resolve(later.artifactId) }, context())
   ).rejects.toThrow(/already exists/)
   expect(entries.size).toBe(13095)
+})
+
+it.each(['compact', 'full'] as const)(
+  'retains the confirmed prefix after interruption in %s mode',
+  async (response) => {
+    const design = fixture()
+    const api = apis()
+    const controller = new AbortController()
+    const action = createPreparedDesignAction(api, async () =>
+      controller.abort()
+    )
+    const failure = await action
+      .execute(
+        { design, response },
+        {
+          signal: controller.signal,
+          runMutation: async (write, settled) => {
+            const result = write()
+            settled?.(result)
+            return result
+          }
+        }
+      )
+      .catch((error: unknown) => error)
+    expect(failure).toMatchObject({
+      receipt: {
+        settlement: 'partial',
+        result: {
+          status: 'partial',
+          compositionId: design.rootId,
+          appliedElementCount: 1,
+          plannedElementCount: 3,
+          appliedRange: { start: 0, end: 1 },
+          recovery: expect.stringContaining('Do not replay')
+        }
+      }
+    })
+    expect(api.create).toHaveBeenCalledTimes(1)
+    expect(api.select).not.toHaveBeenCalled()
+    if (response === 'full')
+      expect(failure).toMatchObject({
+        receipt: {
+          result: { appliedElementIds: [design.rootId] }
+        }
+      })
+  }
+)
+
+it('retains all acknowledged writes when final selection fails without marking delivery complete', async () => {
+  const api = apis()
+  api.select = vi.fn(() => {
+    throw new Error('Selection interrupted')
+  })
+  await expect(
+    createPreparedDesignAction(api, async () => undefined).execute(
+      { design: fixture() },
+      context()
+    )
+  ).rejects.toMatchObject({
+    receipt: {
+      settlement: 'completed',
+      result: {
+        status: 'partial',
+        appliedElementCount: 3,
+        plannedElementCount: 3,
+        appliedRange: { start: 0, end: 3 }
+      }
+    }
+  })
+  expect(api.create).toHaveBeenCalledTimes(3)
+  expect(api.select).toHaveBeenCalledTimes(1)
 })

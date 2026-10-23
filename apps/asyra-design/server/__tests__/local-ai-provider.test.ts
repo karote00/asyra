@@ -7123,3 +7123,419 @@ it('continues capacity in one native call and preserves retained source ownershi
       .filter((action) => action.name === AiActionNames.APPLY_PREPARED_DESIGN)
   ).toHaveLength(2)
 })
+
+it.each([1, 40])(
+  'delivers %i settled interrupted owner receipts to the bounded report without restarting tools',
+  async (actionCount) => {
+    const report = {
+      batchId: 'report',
+      actions: [
+        {
+          id: 'report',
+          name: 'report_outcome',
+          arguments: {
+            outcome: 'unsupported',
+            message: 'Partial drawing retained; further work unconfirmed.'
+          },
+          summary: 'Report'
+        }
+      ]
+    }
+    let turns = 0
+    let calls = 0
+    let finishOwner!: () => void
+    const interrupted = new Promise<void>((resolve) => {
+      finishOwner = resolve
+    })
+    const executeBatch = vi.fn(async (batch: AiActionBatch) => {
+      calls++
+      await interrupted
+      return {
+        context: {},
+        actionResults: batch.actions.map((action) => ({
+          actionId: action.id,
+          actionName: action.name,
+          result: {
+            status: 'partial',
+            compositionId: 'root',
+            appliedElementCount: 33,
+            plannedElementCount: 41,
+            appliedRange: { start: 0, end: 33 },
+            geometry: 'OMITTED_GEOMETRY',
+            recovery: 'UNTRUSTED_OWNER_TEXT'
+          }
+        })),
+        failure: {
+          code: 'AI_EXECUTION_FAILED',
+          stage: 'execution',
+          message: 'Stopped',
+          settlement: 'partial',
+          actionId: batch.actions[0].id,
+          actionName: batch.actions[0].name,
+          actionExecutionMs: 1,
+          contextFresh: true
+        }
+      } as AiBatchReceipt
+    })
+    const server = fakeServer({
+      hold: true,
+      holdMethod: 'turn/start',
+      manualToolReplies: true,
+      onRequest(packet) {
+        if (packet.method === 'turn/start') {
+          turns++
+          const turnId = turns === 1 ? 'turn-1' : 'report-turn'
+          server.send({ id: packet.id, result: { turn: { id: turnId } } })
+          if (turns === 1)
+            server.send({
+              id: 701,
+              method: 'item/tool/call',
+              params: {
+                threadId: 'thread-1',
+                turnId,
+                callId: 'draw',
+                tool: 'execute_design_batch',
+                arguments: {
+                  operations: Array.from({ length: actionCount }, () => ({
+                    name: 'select_elements',
+                    arguments: { elementIds: [] }
+                  }))
+                }
+              }
+            })
+          else {
+            server.notify('item/completed', {
+              turnId,
+              item: {
+                type: 'agentMessage',
+                phase: 'final_answer',
+                text: JSON.stringify(report)
+              }
+            })
+            server.notify('turn/completed', {
+              turnId,
+              turn: { id: turnId, status: 'completed' }
+            })
+          }
+        }
+        if (packet.method === 'turn/interrupt')
+          queueMicrotask(() => {
+            server.notify('turn/completed', {
+              turn: { id: 'turn-1', status: 'interrupted' }
+            })
+            finishOwner()
+          })
+      }
+    })
+    spawn.mockReturnValue(server.child)
+    await requestLocalAiActionBatch(
+      {
+        ...input,
+        actions: [
+          {
+            name: 'select_elements',
+            description: 'Select',
+            inputSchema: {},
+            effect: 'mutation'
+          }
+        ],
+        metadata: {
+          evaluationWindow: {
+            workDeadlineAt: Date.now() + 150,
+            reportTimeoutMs: 500
+          }
+        }
+      },
+      {
+        model: 'selected-model',
+        executable: 'codex',
+        executeBatch,
+        signal: new AbortController().signal
+      }
+    )
+    expect(calls).toBe(1)
+    expect(retainedRecords).toContainEqual(
+      expect.objectContaining({
+        stage: 'tool_failed',
+        evidence: expect.objectContaining({
+          callId: 'draw',
+          settlement: 'partial',
+          result: expect.objectContaining({
+            batches: expect.objectContaining({ count: 1, truncated: false })
+          })
+        })
+      })
+    )
+    const reportInput = server.packets.filter(
+      (p) => p.method === 'turn/start'
+    )[1].params.input
+    expect(JSON.stringify(reportInput)).toContain('appliedElementCount')
+    expect(JSON.stringify(reportInput)).toContain('33')
+    expect(JSON.stringify(reportInput)).toContain('root')
+    expect(JSON.stringify(reportInput)).not.toContain('OMITTED_GEOMETRY')
+    expect(JSON.stringify(reportInput)).not.toContain('UNTRUSTED_OWNER_TEXT')
+    const factText = (reportInput as { text: string }[])[1].text
+    const facts = JSON.parse(factText.slice(factText.indexOf('{')))
+    expect(facts.actionResultCount).toBe(actionCount)
+    expect(facts.actionResults).toHaveLength(Math.min(32, actionCount))
+    expect(facts.omittedActionResults).toBe(Math.max(0, actionCount - 32))
+    expect(facts.batches).toMatchObject([
+      { failure: { settlement: 'partial' } }
+    ])
+    expect(JSON.stringify(reportInput)).not.toContain(
+      'plannedElementCount":41,"appliedElementCount":41'
+    )
+    expect(
+      server.packets.filter((p) => p.method === 'turn/start')
+    ).toHaveLength(2)
+  }
+)
+
+it('delivers real interrupted Core results through Runtime and the native report handoff', async () => {
+  vi.stubGlobal('window', {})
+  const { default: core } = await import('@asyra/core')
+  const { default: factory } = await import('@asyra/factory')
+  const { default: props } = await import('@asyra/props-manager')
+  const { default: scene } = await import('@asyra/scene-tree')
+  const { applyPreset, PresetDefaults, PresetProfiles } =
+    await import('@asyra/preset')
+  const { createAiAgentRuntime } = await import('@asyra/ai-agent-runtime')
+  const { createPreparedDesignAction } =
+    await import('../../src/ai/design-actions')
+  const { createAiActions } = await import('../../src/ai/actions')
+  const { createAiTransactionRunner } = await import('../../src/ai/transaction')
+  const { observeAiAction } = await import('../../src/ai/runtime-input')
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [
+      PresetDefaults.BASIC_SHAPES,
+      PresetDefaults.CONTAINERS,
+      PresetDefaults.VECTOR,
+      PresetDefaults.SELECTION
+    ]
+  })
+  const initial = {
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          visible: true,
+          lock: false,
+          children: []
+        }
+      }
+    }
+  }
+  core.load(initial)
+  factory.transact.reset()
+  const snapshot = () => ({
+    version: '1.0.0',
+    props: props.save(),
+    sceneTree: scene.save()
+  })
+  let releaseOwner!: () => void
+  const interrupted = new Promise<void>((resolve) => {
+    releaseOwner = resolve
+  })
+  let yields = 0
+  const action = observeAiAction(
+    createPreparedDesignAction(undefined, async () => {
+      if (++yields === 2) await interrupted
+    })
+  )
+  const reportAction = createAiActions().find(
+    (entry) => entry.name === AiActionNames.REPORT_OUTCOME
+  )
+  if (!reportAction) throw new Error('Missing report owner')
+  let turns = 0
+  let ownerReceipt: AiBatchReceipt | undefined
+  let dispatchedBatches = 0
+  let reportSnapshot: ReturnType<typeof snapshot> | undefined
+  let facts:
+    | {
+        actionResults: {
+          result?: unknown
+          compositionId: string
+          appliedElementCount: number
+          plannedElementCount: number
+          appliedRange: { start: number; end: number }
+        }[]
+      }
+    | undefined
+  const server = fakeServer({
+    hold: true,
+    holdMethod: 'turn/start',
+    manualToolReplies: true,
+    onRequest(packet) {
+      if (packet.method === 'turn/start') {
+        const turnId = ++turns === 1 ? 'turn-1' : 'report-turn'
+        server.send({ id: packet.id, result: { turn: { id: turnId } } })
+        if (turns === 1)
+          server.send({
+            id: 901,
+            method: 'item/tool/call',
+            params: {
+              threadId: 'thread-1',
+              turnId,
+              callId: 'draw',
+              tool: 'prepare_and_apply_design',
+              arguments: {
+                inspection: 'defer',
+                response: 'compact',
+                draft: {
+                  type: 'group',
+                  name: 'Facade',
+                  children: Array.from({ length: 40 }, (_, index) => ({
+                    type: 'rect',
+                    key: `panel-${index}`,
+                    name: `Panel ${index}`,
+                    x: index * 50,
+                    y: 20,
+                    width: 30,
+                    height: 40,
+                    fill: '#246080'
+                  }))
+                }
+              }
+            }
+          })
+        else {
+          const evidence = (packet.params.input as { text: string }[])[1].text
+          facts = JSON.parse(evidence.slice(evidence.indexOf('{')))
+          reportSnapshot = snapshot()
+          // The protocol peer echoes supplied facts; it is not a model and does
+          // not prove that a model would understand or choose this report.
+          server.notify('item/completed', {
+            turnId,
+            item: {
+              type: 'agentMessage',
+              phase: 'final_answer',
+              text: JSON.stringify({
+                batchId: 'report',
+                actions: [
+                  {
+                    id: 'report',
+                    name: reportAction.name,
+                    arguments: {
+                      outcome: 'unsupported',
+                      message: JSON.stringify(facts?.actionResults[0])
+                    },
+                    summary: 'Report retained work'
+                  }
+                ]
+              })
+            }
+          })
+          server.notify('turn/completed', {
+            turnId,
+            turn: { id: turnId, status: 'completed' }
+          })
+        }
+      }
+      if (packet.method === 'turn/interrupt') {
+        server.notify('turn/completed', {
+          turn: { id: 'turn-1', status: 'interrupted' }
+        })
+        releaseOwner()
+      }
+    }
+  })
+  spawn.mockReturnValue(server.child)
+  const deadline = Date.now() + 1500
+  const runtime = createAiAgentRuntime({
+    provider: {
+      requestActionBatch: async (providerInput, options) =>
+        (await requestLocalAiActionBatch(
+          {
+            ...providerInput,
+            metadata: {
+              evaluationWindow: {
+                workDeadlineAt: deadline,
+                reportTimeoutMs: 3000
+              }
+            }
+          },
+          {
+            model: 'selected-model',
+            executable: 'codex',
+            signal: options.signal,
+            executeBatch: async (batch) => {
+              dispatchedBatches++
+              if (!options.executeBatch)
+                throw new Error('Missing Runtime dispatcher')
+              const receipt = await options.executeBatch(batch)
+              ownerReceipt = receipt as AiBatchReceipt
+              return ownerReceipt
+            }
+          }
+        )) as AiActionBatch
+    },
+    actionDefinitions: [action, reportAction],
+    contextProvider: { getContext: async () => ({}) },
+    permissionPolicy: { evaluate: () => 'allow' },
+    confirmationHandler: { confirm: async () => true },
+    transactionRunner: createAiTransactionRunner({
+      getMutationDeadline: () => deadline
+    })
+  })
+  try {
+    const result = await runtime.run({
+      intent: 'Build facade',
+      signal: new AbortController().signal
+    })
+    expect(ownerReceipt).toMatchObject({
+      failure: { settlement: 'partial' },
+      actionResults: [
+        {
+          result: {
+            status: 'partial',
+            appliedElementCount: 33,
+            plannedElementCount: 41,
+            appliedRange: { start: 0, end: 33 }
+          }
+        }
+      ]
+    })
+    if (!ownerReceipt) throw new Error('Missing owner receipt')
+    const owner = ownerReceipt.actionResults[0].result as {
+      compositionId: string
+    }
+    expect(facts?.actionResults).toEqual([
+      expect.objectContaining({
+        actionId: ownerReceipt.actionResults[0].actionId,
+        status: 'partial',
+        compositionId: owner.compositionId,
+        appliedElementCount: 33,
+        plannedElementCount: 41,
+        appliedRange: { start: 0, end: 33 }
+      })
+    ])
+    expect(result.status).toBe('executed')
+    expect(result.actionResults?.at(-1)?.result).toMatchObject({
+      outcome: 'unsupported',
+      message: JSON.stringify(facts?.actionResults[0])
+    })
+    expect(Object.keys(snapshot().sceneTree.elements)).toHaveLength(34)
+    expect(snapshot()).toEqual(reportSnapshot)
+    expect(yields).toBe(2)
+    expect(dispatchedBatches).toBe(1)
+    expect(factory.getUndoHistoryDepth()).toBe(1)
+    expect(turns).toBe(2)
+    expect(
+      server.packets.filter((p) => p.method === 'turn/interrupt')
+    ).toHaveLength(1)
+  } finally {
+    releaseOwner()
+    await runtime.dispose()
+    core.load(initial)
+    factory.transact.reset()
+    vi.unstubAllGlobals()
+  }
+}, 10000)

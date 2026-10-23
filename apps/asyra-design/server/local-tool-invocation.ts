@@ -1,4 +1,6 @@
 import {
+  AiActionExecutionError,
+  AiExecutionError,
   createAiInvoker,
   createAiToolContract,
   inspectAiToolResult,
@@ -120,7 +122,11 @@ export const localToolOutcome = (
       )
     : []
   const partOutcomes = parts.map(localToolOutcome)
-  const childOutcomes = [...receiptOutcomes, ...partOutcomes]
+  const batches = Array.isArray(value.batches)
+    ? value.batches.filter(record)
+    : []
+  const batchOutcomes = batches.map(localToolOutcome)
+  const childOutcomes = [...receiptOutcomes, ...partOutcomes, ...batchOutcomes]
   const followupIssues = ['measurementIssues', 'inspectionIssues'].flatMap(
     (key) =>
       Array.isArray(value[key])
@@ -141,6 +147,7 @@ export const localToolOutcome = (
       ...receiptOutcomes[index]
     })),
     ...parts.map((part, index) => ({ ...part, ...partOutcomes[index] })),
+    ...batches.map((batch, index) => ({ ...batch, ...batchOutcomes[index] })),
     ...followupIssues
   ]
   const issues = observations
@@ -194,6 +201,23 @@ export const localToolOutcome = (
     )
   )
     settlement = value.settlement as AiToolOutcome['settlement']
+  if (record(value.failure)) {
+    const failedSettlement = value.failure.settlement
+    if (
+      failedSettlement === 'unknown' ||
+      childOutcomes.some((outcome) => outcome.settlement === 'unknown')
+    )
+      settlement = 'unknown'
+    else if (failedSettlement === 'completed') settlement = 'completed'
+    else if (failedSettlement === 'partial') settlement = 'partial'
+    else if (failedSettlement === 'not-started') {
+      settlement = childOutcomes.some(
+        (outcome) => outcome.settlement !== 'not-started'
+      )
+        ? 'partial'
+        : 'not-started'
+    }
+  }
   return { status, settlement, issues }
 }
 
@@ -287,11 +311,11 @@ export const invokeLocalTool = async (
       args,
       signal
     )
-    signal.throwIfAborted()
     stage = 'decoding'
     reportPhase()
     let value = JSON.parse(text)
     decodedResult = value
+    signal.throwIfAborted()
     const resultIssue = owner.resultIssue?.(definition.name, value)
     if (resultIssue) throw new Error(resultIssue)
     let toolOutcome =
@@ -332,7 +356,6 @@ export const invokeLocalTool = async (
       })
     return reply
   } catch (error) {
-    signal.throwIfAborted()
     const inputFailure = error instanceof LocalToolInputError
     const batchError =
       error instanceof BrowserBatchExecutionError ? error : undefined
@@ -348,6 +371,20 @@ export const invokeLocalTool = async (
       evidence.find(hasAcknowledgedActions) ??
       evidence.find((value) => value != null) ??
       null
+    if (signal.aborted) {
+      if (
+        (error instanceof AiActionExecutionError ||
+          error instanceof AiExecutionError) &&
+        error.receipt
+      )
+        throw error
+      if (hasAcknowledgedActions(executionResult))
+        throw new AiExecutionError({
+          result: JSON.parse(serializeToolPayload(executionResult).serialized),
+          settlement: localToolOutcome(executionResult).settlement
+        })
+      signal.throwIfAborted()
+    }
     const hasPriorExecution =
       record(executionResult) &&
       ((Array.isArray(executionResult.batches) &&
@@ -469,6 +506,14 @@ export const observeLocalToolExecution = async (
         observation.trace?.('action_failed', {
           ...evidence,
           reason: localToolErrorMessage(event.error),
+          ...((event.error instanceof AiActionExecutionError ||
+            event.error instanceof AiExecutionError) &&
+          event.error.receipt
+            ? {
+                result: event.error.receipt.result,
+                settlement: event.error.receipt.settlement
+              }
+            : {}),
           executionMs: event.durationMs
         })
       }

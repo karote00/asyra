@@ -3329,3 +3329,34 @@ node/optional groups stay rejected, all legal branches remain available, unrelat
 catalog growth does not inflate startup guidance, and completed writes are not
 replayed during informational recovery. No live-model latency claim follows from
 these deterministic tests.
+
+### Interrupted owner results
+
+Stopping prepared drawing does not erase acknowledged mutation members. Before any
+acknowledgement, retain ordinary failure/cancellation. After a confirmed prefix, the
+App execution owner supplies a detached partial result with its actual composition,
+confirmed count and prefix range (full responses may include IDs), planned count,
+and non-replay guidance. A completed drawing followed by a delivery interruption is
+not an unstarted drawing. Failed or unconfirmed members never enter the prefix.
+Runtime retains this owner result in the existing action receipt, independently of
+the failed/cancelled invocation. Final transaction rollback overrides retained-write
+claims; unknown transaction settlement never certifies persistence or safe replay.
+
+The existing invocation failure path must preserve structured evidence while still
+rejecting cancellation. The existing causal receipt ancestry retains request-level
+batch evidence for the report phase after active tools settle. Ordinary requests do
+not retain an additional request-root receipt lifetime. The report input carries
+bounded factual receipts, not geometry, full schemas, diagnostic inference or presumed
+model understanding. Summaries reuse the existing receipt-count budget, mark omitted
+actions/batches explicitly, and omit long identifiers rather than truncating them into
+a different identity. Reporting admits no further tools or mutations. Normal requests
+without an evaluation window do not start a report turn. Expired artifacts and partial
+members cannot produce an invented resume invocation; reuse existing remaining-only
+recovery only where the owner can prove it safe.
+
+DoD: formal tests interrupt before mutation, between acknowledged members and after
+writes before delivery; verify true cancellation, failure and final rollback separately.
+Follow actual owner results through Runtime, native delivery and report input. Verify
+saved/reloaded canonical values and hierarchy, ordered collaboration publication and
+remote application, no echo/remote History, one intended local Undo/Redo entry and no
+replay. Neither an error label nor presence of a result alone establishes settlement.

@@ -979,3 +979,57 @@ it('does not reinterpret domain parts as workflow execution receipts', () => {
     })
   ).toMatchObject({ status: 'failed', settlement: 'not-started' })
 })
+
+it.each(['partial', 'unknown', 'completed'] as const)(
+  'preserves cancellation with %s owner settlement without replacing the receipt',
+  async (settlement) => {
+    const controller = new AbortController()
+    const result = {
+      actionResults: [
+        {
+          actionId: 'draw',
+          actionName: 'draw',
+          result: {
+            status: 'partial',
+            appliedElementCount: 1
+          }
+        }
+      ],
+      failure: { code: 'AI_EXECUTION_FAILED', settlement }
+    }
+    await expect(
+      invokeLocalTool(
+        {
+          call: async () => {
+            controller.abort()
+            return JSON.stringify(result)
+          }
+        },
+        definition,
+        {},
+        controller.signal
+      )
+    ).rejects.toMatchObject({
+      receipt: { settlement, result }
+    })
+  }
+)
+
+it('keeps ordinary cancellation without an acknowledged owner result', async () => {
+  const controller = new AbortController()
+  const reason = new Error('Cancelled before acknowledgement')
+  await expect(
+    invokeLocalTool(
+      {
+        call: async () => {
+          controller.abort(reason)
+          throw reason
+        }
+      },
+      definition,
+      {},
+      controller.signal,
+      () => ({ batches: [] })
+    )
+  ).rejects.toBe(reason)
+})
