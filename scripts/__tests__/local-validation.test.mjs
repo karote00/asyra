@@ -296,7 +296,7 @@ test('unselected security audit does not query the registry for documentation ed
 })
 
 for (const paths of [
-  ['apps/fieldscope/src/domain/kinematic-trigonometry.ts'],
+  ['apps/asyra-fieldscope/src/domain/kinematic-trigonometry.ts'],
   ['packages/render-engine-pixi/src/mesh-material-shader.ts'],
   [
     'packages/render-engine/src/index.ts',

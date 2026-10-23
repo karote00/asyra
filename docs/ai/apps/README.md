@@ -5,6 +5,7 @@ This folder contains app-level implementation contexts.
 Current apps:
 
 - `asyra-design/`
+- [Asyra FieldScope](asyra-fieldscope/README.md) - greenhouse planning and harvesting-robot workspace.
 - [Starter App](starter-app/README.md) - maintained complete App standard for new
   products and developer-Agent guidance.
 

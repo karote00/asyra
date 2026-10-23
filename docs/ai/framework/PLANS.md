@@ -37,9 +37,9 @@ or unsupported capability claims.
 - [Adoption Entry and Onboarding Program](plans/adoption-entry-and-onboarding-program-plan.md)
   - ACTIVE. Tasks 1-8 and their recorded Starter, CLI, AI onboarding,
     publication, README gate and screenshot results remain complete.
-  - The bounded remaining sequence is FieldScope fact correction (delivered in
+  - The bounded remaining sequence is Asyra FieldScope fact correction (delivered in
     the current corrective PR), primary Generic Starter entry routing and
-    regression coverage, and cross-domain FieldScope/Asyra Sim homepage
+    regression coverage, and cross-domain Asyra FieldScope/Asyra Sim homepage
     evidence and direct website validation, followed by separately authorized
     production deployment and page acceptance.
   - The independent Root README evidence plan remains completed.

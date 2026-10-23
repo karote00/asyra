@@ -645,7 +645,7 @@ At the user's request, cancelled local validation
 `3a9d22de-d38a-4346-b31b-0b4af2fb4390` through its owned runner's termination
 handler. Its temporary listeners were cleaned up; the original document site and
 the isolated review site remain running. Cancellation is not a passing gate.
-The earlier Fieldscope screenshot mismatch remains recorded in
+The earlier Asyra FieldScope screenshot mismatch remains recorded in
 `d13d2aae-5c74-4c04-9ea7-18a469c10834`; unchanged focused repeats and its complete
 E2E group passed, but its original cause is not established.
 
@@ -775,20 +775,20 @@ checks, and retain the unchanged renderer evidence.
 
 ### PR validation correction - 2026-10-06
 
-PR #295 run 37472317121 failed dependency security admission and the FieldScope
+PR #295 run 37472317121 failed dependency security admission and the Asyra FieldScope
 desktop panel browser case. Design functional, collaboration and render browser
 gates passed. The user approved updating the vulnerable indirect dependencies
 in this PR: simple-git 4.0.2, tinypool 2.1.2 and source-map-js 1.2.2.
 
 This correction is bounded to dependency resolution and consumer compatibility,
-the FieldScope panel test environment and its direct verification documentation.
+the Asyra FieldScope panel test environment and its direct verification documentation.
 Product rendering, user documents, model execution, CI thresholds and resource
 deadlines remain unchanged. Existing security audit failures are the dependency
 regression oracle. A retained consumer test additionally exposed the simple-git
 4 CommonJS export change in context-rag; a one-line Yarn patch migrates that
 consumer to the named factory, without relaxing security checks.
 
-The FieldScope case exhausted its 60-second CI guard. Local software-rendered
+The Asyra FieldScope case exhausted its 60-second CI guard. Local software-rendered
 trace completed in 34 seconds, with repeated waits around layer hiding and panel
 resizes. Panel tests now use the existing reduced-motion presentation in software
 rendering, as the robot workspace tests already do. All edit, canvas identity,

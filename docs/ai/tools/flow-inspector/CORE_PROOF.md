@@ -533,7 +533,7 @@ tools, Framework release readiness, selected production artifacts, and the reusa
 or skips and consumes completed job results; it does not analyze runtime source
 or execute a second test suite. An app-only change runs that app's tests/build
 and downstream consumers reached through declared workspace dependencies. A
-Framework runtime change also selects dependent apps, including Fieldscope and
+Framework runtime change also selects dependent apps, including Asyra FieldScope and
 Starter App. Test-only and Markdown changes do not propagate to those consumers.
 Root manifest fields and base/candidate lock resolution closures select their
 actual consumers; CI scripts and workflow metadata select contracts. Global

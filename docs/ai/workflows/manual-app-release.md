@@ -8,10 +8,10 @@ an explicit **Run workflow** action; updating or merging main does not deploy.
 
 The three frontend App demos use the separate [Cloudflare App delivery](app-cloudflare.md) workflow. The operator flow below applies only to Vercel.
 
-Every deployed App, including Fieldscope, disables Vercel Git auto-deployment
+Every deployed App, including Asyra FieldScope, disables Vercel Git auto-deployment
 with `git.deploymentEnabled: false`. This preserves the projects and their build
 settings for explicit manual publication. The release controller entries below
-cover the website, Design and Sim; Fieldscope retains provider-side manual
+cover the website, Design and Sim; Asyra FieldScope retains provider-side manual
 deployment and the separate manual Cloudflare App workflow.
 
 ## Operator flow

@@ -38,9 +38,9 @@ test('practical resources preserve real evidence and three distinct building ent
   assert.match(content, /loading="lazy"/)
   assert.doesNotMatch(content, /<h1|poc-story|action-film|drawTower|drawHouse/)
 })
-test('homepage product evidence covers Design, FieldScope and Sim with verified scope and limits', async () => {
+test('homepage product evidence covers Design, Asyra FieldScope and Sim with verified scope and limits', async () => {
   const content = await read('components/home-resources.tsx')
-  for (const product of ['Asyra Design', 'FieldScope', 'Asyra Sim'])
+  for (const product of ['Asyra Design', 'Asyra FieldScope', 'Asyra Sim'])
     assert.ok(content.includes(product), `Missing ${product} product case`)
   for (const claim of [
     /cucumber and tomato crops/u,
@@ -52,7 +52,7 @@ test('homepage product evidence covers Design, FieldScope and Sim with verified 
   ])
     assert.match(content, claim)
   for (const destination of [
-    'https://github.com/karote00/asyra/blob/main/apps/fieldscope/src/domain/__tests__/crop-layout.test.ts',
+    'https://github.com/karote00/asyra/blob/main/apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts',
     'https://asyra-sim.pages.dev',
     'https://github.com/karote00/asyra/blob/main/apps/asyra-sim/src/features/__tests__/analysis.test.ts'
   ]) {
@@ -69,7 +69,7 @@ test('homepage product evidence covers Design, FieldScope and Sim with verified 
   await Promise.all([
     access(
       new URL(
-        '../../fieldscope/src/domain/__tests__/crop-layout.test.ts',
+        '../../asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts',
         import.meta.url
       )
     ),
@@ -81,24 +81,24 @@ test('homepage product evidence covers Design, FieldScope and Sim with verified 
     )
   ])
 })
-test('homepage FieldScope and Sim cases include real product screenshots', async () => {
+test('homepage Asyra FieldScope and Sim cases include real product screenshots', async () => {
   const content = await read('components/home-resources.tsx')
   const slider = await read('components/product-evidence-slider.tsx')
   for (const [name, file, alt] of [
     [
-      'FieldScope overview',
+      'Asyra FieldScope overview',
       'public/product-evidence/fieldscope-greenhouse-overview.webp',
-      'FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame'
+      'Asyra FieldScope oblique overview of the four-bay greenhouse, crop rows, and steel frame'
     ],
     [
-      'FieldScope end elevation',
+      'Asyra FieldScope end elevation',
       'public/product-evidence/fieldscope-greenhouse-end-elevation.webp',
-      'FieldScope end elevation of the four connected greenhouse bays and planted rows'
+      'Asyra FieldScope end elevation of the four connected greenhouse bays and planted rows'
     ],
     [
-      'FieldScope aisle detail',
+      'Asyra FieldScope aisle detail',
       'public/product-evidence/fieldscope-greenhouse-internal-detail.webp',
-      'FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure'
+      'Asyra FieldScope aisle view with tomato fruit, leaves, and greenhouse support structure'
     ],
     [
       'Asyra Sim',
@@ -115,7 +115,7 @@ test('homepage FieldScope and Sim cases include real product screenshots', async
     await access(new URL(`../${file}`, import.meta.url))
   }
   assert.match(content, /same greenhouse model, shown in overview/u)
-  assert.ok(content.includes('label="FieldScope"'))
+  assert.ok(content.includes('label="Asyra FieldScope"'))
   assert.ok(content.includes('slides={fieldScopeSlides}'))
   assert.ok(content.includes('label="Asyra Sim"'))
   assert.ok(content.includes('slides={simSlides}'))
@@ -127,7 +127,7 @@ test('homepage FieldScope and Sim cases include real product screenshots', async
   assert.match(slider, /object-contain shadow-lg/u)
   assert.doesNotMatch(
     slider,
-    /translateY|translate3d|Previous FieldScope image|Next FieldScope image/u
+    /translateY|translate3d|Previous Asyra FieldScope image|Next Asyra FieldScope image/u
   )
 })
 test('homepage routes the published Starter before Design and advanced composition', async () => {

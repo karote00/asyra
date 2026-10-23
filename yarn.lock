@@ -309,9 +309,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@asyra/fieldscope@workspace:apps/fieldscope":
+"@asyra/asyra-fieldscope@workspace:apps/asyra-fieldscope":
   version: 0.0.0-use.local
-  resolution: "@asyra/fieldscope@workspace:apps/fieldscope"
+  resolution: "@asyra/asyra-fieldscope@workspace:apps/asyra-fieldscope"
   dependencies:
     "@asyra/core": "workspace:*"
     "@asyra/preset": "workspace:*"

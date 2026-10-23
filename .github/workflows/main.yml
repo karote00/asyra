@@ -445,19 +445,19 @@ jobs:
         with:
           name: ci-selected-check-results
           path: .
-      - name: Require complete FieldScope heavy profiles
+      - name: Require complete Asyra FieldScope heavy profiles
         env:
           PROFILE_FILES: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).heavy) }}
           PROFILE_RESULT: ${{ needs.fieldscope-profile-heavy.result }}
         run: |
           if [ "$PROFILE_FILES" = '[]' ]; then test "$PROFILE_RESULT" = skipped; else test -n "$PROFILE_FILES" && test "$PROFILE_RESULT" = success; fi
-      - name: Require complete FieldScope source profiles
+      - name: Require complete Asyra FieldScope source profiles
         env:
           PROFILE_FILES: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).source) }}
           PROFILE_RESULT: ${{ needs.fieldscope-profile-source.result }}
         run: |
           if [ "$PROFILE_FILES" = '[]' ]; then test "$PROFILE_RESULT" = skipped; else test -n "$PROFILE_FILES" && test "$PROFILE_RESULT" = success; fi
-      - name: Require complete FieldScope remaining profiles
+      - name: Require complete Asyra FieldScope remaining profiles
         env:
           PROFILE_FILES: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).remaining) }}
           PROFILE_RESULT: ${{ needs.fieldscope-profile-remaining.result }}

@@ -438,7 +438,7 @@ on one runtime source; eligibility is true. Real 101 wall-clock improvement is
 not yet measured; these tests prove work counts and correctness, not model time.
 
 The final local routing run passed dependencies, declarations, shared checks,
-Design, the public documentation site, Office, Sim, Core and FieldScope before
+Design, the public documentation site, Office, Sim, Core and Asyra FieldScope before
 the Inspector check found its generated workspace snapshot stale. Regenerate
 that snapshot with the existing generator; no App or Framework runtime fix was
 needed. Resume the failed/unrun owner checks plus checks selected by the exact
@@ -461,7 +461,7 @@ render-contract gates; runtime source is unchanged.
 ### Final validation result - measured corrections
 
 All applicable local obligations passed across the source-verified routed runs.
-`53693fda-a70d-4051-8ee6-e7ce2ed08073` retains unchanged App/Core/FieldScope
+`53693fda-a70d-4051-8ee6-e7ce2ed08073` retains unchanged App/Core/Asyra FieldScope
 passes; `1ca6f8de-2d29-4e53-bb63-12ad4f69cf5b` adds corrected Inspector,
 remaining package/profile checks and collaboration E2E;
 `1277588f-6ae8-4f22-8a80-442d21d6da0d` passes the final shared/Design checks,
@@ -3386,7 +3386,7 @@ points before changing production code. No new cache or changed drawing policy.
 
 All applicable local release checks pass on the integrated main source
 `9f3c5b561866f0915d56b729a9e14698ea97bc40`. The supported local validation
-runner selected 24 workspace owners, shared checks, four Fieldscope profiles,
+runner selected 24 workspace owners, shared checks, four Asyra FieldScope profiles,
 and Design E2E. Unchanged owner results were reused only after comparing exact
 input fingerprints; corrected owner tests were rerun. Final evidence is
 `tmp/local-validation/progress-release-e2e-final/result.json`, with

@@ -110,7 +110,7 @@ identity, task order, and every required job outcome. A missing matrix result,
 omitted workspace, failed task, or skipped selected gate cannot satisfy the
 required aggregate.
 
-FieldScope's selected numerical profile owner runs heavy, source and remaining
+Asyra FieldScope's selected numerical profile owner runs heavy, source and remaining
 groups in order on separate CI runners after its ordinary workspace validation.
 A change to the profile workflow selects those groups directly. Profile-only
 verification can follow a skipped ordinary matrix; a failed ordinary matrix blocks
@@ -140,7 +140,7 @@ yarn lint:workspaces:ci # lint the repository
 
 The same `start:<app>`, `test:<app>`, `test:<app>:ci`, `lint:<app>`, and
 `test:e2e:<app>` commands are available for `asyra-framework-site`,
-`asyra-sim`, `fieldscope`, and `starter-app`.
+`asyra-sim`, `asyra-fieldscope`, and `starter-app`.
 
 Any root, app, CI, E2E, or deployment command that directly depends on a
 package-specific Turbo task must first pass `gen:turbo:check` or call a root

@@ -419,7 +419,7 @@ Applicable local gates passed using the unchanged-source results from
 `tmp/document-load/local-continuation2`. The only repair between those runs was
 regenerating the Inspector workspace catalog; file hashes verify the reused
 runtime inputs. Covered dependencies, declarations, shared checks, complete
-selected App/package lint/build/tests, FieldScope profiles, collaboration
+selected App/package lint/build/tests, Asyra FieldScope profiles, collaboration
 (14 passed, 3 conditional skips), functional E2E (382 passed, 18 conditional
 skips), and render contracts (3 passed). No flaky retries were used. The final
 local-only measurement and release/document edits receive separate focused
@@ -529,7 +529,7 @@ baseline 72); navigation measures 59.2–59.6 submissions/s at DPR 1/2, no long 
 or geometry re-upload. These remain local observations, not CI timing gates.
 
 The full local run d033272e-8583-4cc8-bd4f-13d5272f3e98 passed dependencies,
-declarations, shared validation, all selected workspace checks, all 30 FieldScope
+declarations, shared validation, all selected workspace checks, all 30 Asyra FieldScope
 profiles and collaboration. Its functional failure exposed a test assumption:
 shader identity must be retained per batcher, not globally across independent
 surface/snapshot instruction sets. After correcting that owner assertion, the
@@ -540,21 +540,21 @@ the isolated traced case and full software collaboration rerun passed. Do not
 represent that first attempt as a flawless run.
 
 The user also authorized CI selection repair before push. Its bounded owner is
-local-affected-validation/select; see FieldScope's test-routing plan and the local
+local-affected-validation/select; see Asyra FieldScope's test-routing plan and the local
 validation contract. It uses actual workspace export/source mappings and runtime
 imports, retains unknown consumers, and separates owner-local validation inputs.
-The actual full PR selects 42 ordinary FieldScope files and 25 profiles rather
+The actual full PR selects 42 ordinary Asyra FieldScope files and 25 profiles rather
 than all 30 profiles. A Pixi-material-only change selects 3 ordinary files and 2
 profiles. Shared RenderEngine and removed Preset inputs in this PR conservatively
 retain the spatial consumers; no robot, numerical assertion or watchdog changes.
 93 routing/runner/parity cases pass; selected small ordinary/profile suites also
-execute through the existing guards. Unchanged FieldScope runtime inputs retain
+execute through the existing guards. Unchanged Asyra FieldScope runtime inputs retain
 the full passing run's evidence. Regenerate the Inspector workspace bundle and
 public docs, then rerun affected shared/Inspector checks before commit/push.
 Evidence root: tmp/document-load/ci-298. Remote CI remains separate; no merge.
 
 Final scoped closure: shared lint/scripts/naming and Flow Inspector lint/build/tests
-passed after regeneration. The actual 42-file ordinary FieldScope selection also
+passed after regeneration. The actual 42-file ordinary Asyra FieldScope selection also
 passed through its existing supervisor. Hash comparison against the earlier full
 local run confirms its only changed original inputs are the separately reverified
 material test and this plan; all 25 selected profiles are contained in that run's

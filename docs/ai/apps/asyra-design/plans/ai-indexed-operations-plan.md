@@ -201,10 +201,10 @@ results, source verified. The only intervening source edit corrected the new
 relative-move fixture's parent oracle; production inputs stayed identical.
 The full 101 milestone also passes at `tmp/ai-indexed-operations/large-query-final`.
 
-An existing FieldScope Fit all screenshot comparison failed once. Without
+An existing Asyra FieldScope Fit all screenshot comparison failed once. Without
 production or assertion changes, three isolated repetitions and the full owner
 suite passed; the intermittent cause remains unproven and its failure is retained.
-No FieldScope implementation or CI routing was changed for this task.
+No Asyra FieldScope implementation or CI routing was changed for this task.
 
 Source candidate `c719b611-8214-4e7b-b031-40e4360e4d76` and target assessment
 `5e898825-1fad-4fbc-a10c-4325a727873e` pass the reviewed execution contract.

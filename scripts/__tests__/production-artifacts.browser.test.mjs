@@ -242,10 +242,10 @@ test(
 )
 
 test(
-  'FieldScope production artifact supports local scene editing, history and language persistence',
+  'Asyra FieldScope production artifact supports local scene editing, history and language persistence',
   { timeout: 90_000 },
   async (t) => {
-    const server = await appServer('fieldscope')
+    const server = await appServer('asyra-fieldscope')
     const page = await browserPage(t, server.url, server.close)
     await expect(page.getByText('空間模型已就緒')).toBeVisible({
       timeout: 30_000

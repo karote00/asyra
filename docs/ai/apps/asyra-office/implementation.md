@@ -4,7 +4,7 @@ The unchanged [product plan](asyra-office-product-plan.md) remains the whole-pro
 
 ## Foundation
 
-Preset owns the optional shared Three.js adapter, spatial descriptors, geometry, resource disposal and instancing/LoD mechanisms. Sim and FieldScope retain their capability identities, scene composition, lighting and product behavior. The entry is `@asyra/preset/spatial`, explicitly selected under CUSTOM; 2D composition must not load Three.js. No new SDK/version is introduced. Existing Sim and FieldScope engine/descriptor suites are preservation gates.
+Preset owns the optional shared Three.js adapter, spatial descriptors, geometry, resource disposal and instancing/LoD mechanisms. Sim and Asyra FieldScope retain their capability identities, scene composition, lighting and product behavior. The entry is `@asyra/preset/spatial`, explicitly selected under CUSTOM; 2D composition must not load Three.js. No new SDK/version is introduced. Existing Sim and Asyra FieldScope engine/descriptor suites are preservation gates.
 
 ## Integration and projections
 

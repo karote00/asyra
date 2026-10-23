@@ -21,11 +21,11 @@ into main. The independent AI onboarding verification is recorded below.
 **Current status: ACTIVE - bounded remaining Adoption work.** PR #263 merged at
 `12052c6a6480ee9d74820abf0935a79074bc8261` and recorded Tasks 1-8 as complete.
 Post-merge comparison against the original user request found three outcomes
-that were not included in that closeout: FieldScope's current crop state was
+that were not included in that closeout: Asyra FieldScope's current crop state was
 described incorrectly, the primary homepage Start building links still route to
 the custom-composition guide instead of Generic Starter, and the homepage's
 `HomeResources` product-evidence section still presents Asyra Design alone,
-without the requested cross-domain FieldScope and Asyra Sim examples. The root
+without the requested cross-domain Asyra FieldScope and Asyra Sim examples. The root
 README already contains both examples. The correction and remaining sequence
 below supersede the program-level completion claim; the integrated Task 1-8
 results and their evidence remain valid. The independent Root README plan
@@ -33,18 +33,18 @@ remains completed.
 
 ### Remaining Adoption sequence
 
-1. **FieldScope facts and Adoption status** - correct the stale FieldScope
+1. **Asyra FieldScope facts and Adoption status** - correct the stale Asyra FieldScope
    README and restore this plan to active status with the bounded follow-up
    sequence. Completed in this corrective PR; PR integration remains a separate
-   gate. The current crop owners are `apps/fieldscope/src/domain/crop-layout.ts`
+   gate. The current crop owners are `apps/asyra-fieldscope/src/domain/crop-layout.ts`
    and `crop-models.ts`, with formal evidence in
-   `apps/fieldscope/src/domain/__tests__/crop-layout.test.ts` and
+   `apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts` and
    `crop-models.test.ts`. The robot boundary remains in
-   `docs/ai/apps/fieldscope/specs/harvest-robot.md`.
+   `docs/ai/apps/asyra-fieldscope/specs/harvest-robot.md`.
 2. **Primary Starter entry** - route both primary homepage Start building
    links to Generic Starter and add focused regression coverage. Preserve the
    accepted six-chapter spatial story without redesigning it.
-3. **Cross-domain homepage product evidence** - add verifiable FieldScope and
+3. **Cross-domain homepage product evidence** - add verifiable Asyra FieldScope and
    Asyra Sim examples to the homepage `HomeResources` section, then validate
    the directly affected website experience. Both examples already appear in
    the completed root README evidence.
@@ -179,7 +179,7 @@ public APIs; a no-provider compatibility branch does not prove Headless support.
 Prefer explicit Save/Reload for V1, subject to the existing canonical persistence
 contract. Do not claim automatic incremental persistence from full snapshots.
 
-Design, FieldScope, and Sim provide evidence of App-owned domains and engines,
+Design, Asyra FieldScope, and Sim provide evidence of App-owned domains and engines,
 not an official production 3D Preset, built-in physics, or industrial safety.
 Preserve each App's maturity and release limitations.
 
@@ -202,9 +202,9 @@ The initial read-only assessment found:
   described supersession notice. Establish the actual accepted homepage baseline
   before changing its routes; do not reconstruct a presumed six-chapter design.
 - Support wording is enforced by generators and tests, not only README prose.
-- FieldScope's README said there were no plants. The current correction uses
-  `apps/fieldscope/src/domain/crop-layout.ts` and `crop-models.ts`, with formal
-  evidence in `apps/fieldscope/src/domain/__tests__/crop-layout.test.ts` and
+- Asyra FieldScope's README said there were no plants. The current correction uses
+  `apps/asyra-fieldscope/src/domain/crop-layout.ts` and `crop-models.ts`, with formal
+  evidence in `apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts` and
   `crop-models.test.ts`; this initial observation remains historical.
 
 These are observations from the initial local inspection, not an assertion about
@@ -534,7 +534,7 @@ Undo/Redo, projection, and explicit Save/Reload. Authorized mutation families
 are the new canonical App source, its app-local docs/tests, and only the direct
 workspace metadata required to run that App. It must not create the public CLI,
 generated template, release config, package publication, homepage routing,
-community policy, FieldScope evidence, Design AI work, or release scripts.
+community policy, Asyra FieldScope evidence, Design AI work, or release scripts.
 
 Acceptance for that task:
 
@@ -596,7 +596,7 @@ product contract.
 True starter prerequisites are: supported Core/Preset browser composition, an
 App-owned Item schema decision, the Feature/App API transaction path, explicit
 Save/Reload validation, and a replacement plan for the retired generic CLI
-contract when the CLI slice begins. Community/support wording, FieldScope crop
+contract when the CLI slice begins. Community/support wording, Asyra FieldScope crop
 claims, homepage/public activation, registry publication, and Design AI evidence
 remain separate adoption tasks and must not block the minimal starter App
 implementation.
@@ -608,7 +608,7 @@ one bounded slice without completing the whole task or adoption program.
 
 | Task | Bounded result and owners | Acceptance and dependency |
 | --- | --- | --- |
-| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | The example-link repair and merged PRs #243/#245 established the entry and Starter-readiness documentation baseline; #244 was closed without merge. Tasks 2-8 supplied the Starter runtime, registry CLI/template, README/site entry, FieldScope evidence wording, support policy, and live public activation. The composite `yarn docs:readme:check` passed on 2026-09-26 for main source `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`. The current desktop/narrow README matrix with media loaded/unavailable is committed beside the completed Root README plan and linked there. Publication and deployment are complete. This row records the original sequence only; the three outcomes found after PR #263 remain in the active corrective sequence above. |
+| 1 - Reconcile contracts | This plan, existing entry/README/site plans, directly relevant public-entry authorities | The example-link repair and merged PRs #243/#245 established the entry and Starter-readiness documentation baseline; #244 was closed without merge. Tasks 2-8 supplied the Starter runtime, registry CLI/template, README/site entry, Asyra FieldScope evidence wording, support policy, and live public activation. The composite `yarn docs:readme:check` passed on 2026-09-26 for main source `3e9bdc0488a0d1b53430abb44fc7cfbf79bff043`. The current desktop/narrow README matrix with media loaded/unavailable is committed beside the completed Root README plan and linked there. Publication and deployment are complete. This row records the original sequence only; the three outcomes found after PR #263 remain in the active corrective sequence above. |
 | 2 - Minimal canonical App | `apps/starter-app`, workspace `@asyra/starter-app`, and direct app-local tests/docs | Merged in child PR #247 at `407fd9c833889ce04ee8bdde3934b4076320435f`. The integrated App is revalidated in Task 7 below. This slice alone did not create the CLI/template, release, or public activation. |
 | 3 - CLI and standalone template | Public `create-asyra-app` CLI, `create-app/starter-app`, `release-configs/starter-app.json`, generated `create-app/starter-app/template`, and directly affected release/generation tests | Merged in child PR #249 at `b1dcfa106b44a0f3b56ee605612b072e2dfb3602` into `codex/adoption-onboarding`; Task 4 starts from that exact integrated head. Task 3's local validation covered naming, focused CLI/template tests, Starter test/typecheck/lint/react:build, root lint, template sync, package artifacts, and packed-artifact template consumer install/typecheck/lint/build/test/startup smoke. This records Task 3 integration, not registry publication or public activation. |
 | 4 - AI-first starter onboarding | Canonical Starter AGENTS/onboarding/prompt, opt-in priority exercise and formal tests, generated template sync | Merged in child PR #250 at `b785160c5645212509d3e1ca1ed4e8647922961c` into `codex/adoption-onboarding`. The priority tests failed before implementation and then passed through the App schema, Feature/API transaction, projection and Save/Reload owners. Starter test/typecheck/lint/build, desktop/narrow E2E, CLI/template tests, root lint, naming, template sync and packed-artifact generated consumer passed locally. The consumer reported `READY` for install/typecheck/lint/build/test/startup smoke on Node `v24.13.0` and Yarn `4.3.1`. No independent fresh coding-agent conversation or registry verification was performed; no AI provider was added. |
@@ -1057,7 +1057,7 @@ and the fixed public page inventory remain unchanged.
 Fixed discovery and proof: inspect the current entry sources and destination
 files/routes, Starter onboarding/priority source and tests, the published
 Design CLI registry identity/version and integrated Design case/source and
-product evidence tests, FieldScope crop and Sim workbench source/tests,
+product evidence tests, Asyra FieldScope crop and Sim workbench source/tests,
 current support guide, public documentation generator/validators, and the
 homepage contract/Inspector. Registry queries are read-only. The published
 version, integrated source, and another task's uncommitted Design work are
@@ -1074,7 +1074,7 @@ Acceptance cases and permanent tests:
   release-owned activation changes the contract and tests.
 - Coding-agent source edits and the opt-in priority exercise are described as
   App-owned extension, never as built-in AI runtime behavior.
-- Design's editable 2D product proof, FieldScope's implemented crops, and Sim's
+- Design's editable 2D product proof, Asyra FieldScope's implemented crops, and Sim's
   local development workbench are grounded in direct source/tests. No official
   production 3D Preset, built-in physics, or industrial safety is inferred.
 - Public docs generation and both `llms.txt` copies remain synchronized. The

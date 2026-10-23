@@ -250,10 +250,10 @@ persistence contracts, and explicit optional collaboration and AI paths.
 
 Other Apps show how different domains remain App-owned:
 
-- **FieldScope** models a greenhouse with cucumber and tomato crops in an
-  App-owned Three.js scene. Its [crop layout source](apps/fieldscope/src/domain/crop-layout.ts)
-  and [formal crop tests](apps/fieldscope/src/domain/__tests__/crop-layout.test.ts)
-  cover the planted scene. This is FieldScope behavior, not an official 3D
+- **Asyra FieldScope** models a greenhouse with cucumber and tomato crops in an
+  App-owned Three.js scene. Its [crop layout source](apps/asyra-fieldscope/src/domain/crop-layout.ts)
+  and [formal crop tests](apps/asyra-fieldscope/src/domain/__tests__/crop-layout.test.ts)
+  cover the planted scene. This is Asyra FieldScope behavior, not an official 3D
   Preset or a built-in agricultural model.
 - **Asyra Sim** is a local robot-workcell experiment workbench and a
   development checkpoint, not an R0 release or industrial safety approval.

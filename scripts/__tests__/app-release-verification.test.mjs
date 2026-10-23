@@ -65,11 +65,13 @@ for (let mask = 1; mask < 8; mask++) {
       Sim: 'asyra-sim',
       Design: 'asyra-design',
       Website: 'asyra-framework',
-      FieldScope: 'fieldscope'
+      'Asyra FieldScope': 'asyra-fieldscope'
     }
     assert.equal(titles.length, Object.keys(owners).length)
     for (const title of titles) {
-      const owner = owners[title.split(' ')[0]]
+      const owner = Object.entries(owners).find(([label]) =>
+        title.startsWith(`${label} production `)
+      )?.[1]
       assert.ok(
         owner,
         'Every browser case must have an explicit selection owner'

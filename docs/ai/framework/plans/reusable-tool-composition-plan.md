@@ -6634,10 +6634,10 @@ The full ordinary affected-package suites passed on the final implementation:
 | Sim                | 13 supervisor, 874 ordinary and 9 guarded heavy/representative/witness tests; 77 original conditional skips | `tmp/stage8-sim-all.log`, `tmp/test-supervision/1791916198975037000-89058/`                                                              |
 | Office             | Complete 14-test suite                                                                                      | `tmp/stage8-office-all.log`                                                                                                              |
 | Starter            | Complete 44-test suite                                                                                      | `tmp/stage8-starter-all.log`                                                                                                             |
-| FieldScope         | 8 supervisor and 6 direct bootstrap/history/shortcut tests                                                  | `tmp/stage8-fieldscope-direct.log`                                                                                                       |
+| Asyra FieldScope         | 8 supervisor and 6 direct bootstrap/history/shortcut tests                                                  | `tmp/stage8-fieldscope-direct.log`                                                                                                       |
 
 All five changed framework packages compiled successfully. Design server/browser,
-Sim, Office, FieldScope and Starter package typechecks passed. Full changed-owner
+Sim, Office, Asyra FieldScope and Starter package typechecks passed. Full changed-owner
 source lint and Sim/Starter package lint passed (25 existing console warnings,
 zero errors); naming passed. Evidence: `tmp/stage8-*-types.log`,
 `tmp/stage8-owner-lint.log`, `tmp/stage8-sim-lint.log`,
@@ -6657,8 +6657,8 @@ found after these corrections. Existing regressions prove local acceptance
 accumulation, mutation-preserving inspection failure, finite mechanical repair,
 no replay during primary-agent continuation, normalized purpose/trace agreement
 and native image reuse/invalidation. Sim's exact ordered insertion journal was
-updated in Stage 3; Office, FieldScope and Starter direct consumers require no
-additional production change. FieldScope precision profiles are unrelated to
+updated in Stage 3; Office, Asyra FieldScope and Starter direct consumers require no
+additional production change. Asyra FieldScope precision profiles are unrelated to
 the changed publication contract and were not run.
 
 Limits remain explicit: image comparison requires caller-aligned native crops and
@@ -7545,7 +7545,7 @@ Final self-review checked synchronous and asynchronous boundaries, scalar/batch 
 ### Factory correction - cross-consumer review
 
 - Objective: review the changed source-slice identity through enqueue, microtask/settlement, publication, rollback, grouped/replace-latest History, replay and durable consumption.
-- Scope: Factory delivery owner and direct Core/Preset/App consumers. Inspect current call sites and existing tests, including non-AI Design gestures, Office, Sim, FieldScope and Starter. No unrelated domain calculation audit.
+- Scope: Factory delivery owner and direct Core/Preset/App consumers. Inspect current call sites and existing tests, including non-AI Design gestures, Office, Sim, Asyra FieldScope and Starter. No unrelated domain calculation audit.
 - Contract comparison: the settle-local-shared-projection step preserves ordered channel batches, asynchronous window separation, explicit progressive source order, one intended Undo entry and inverse compensation. Transport acknowledgement remains distinct from backend durability.
 - Gates: existing Factory suite and Core/Preset lifecycle/history suites; existing direct App runtime/storage tests; existing Design gesture/publication tests and two-actor collaboration with Undo/Redo and reload. Reuse unchanged earlier real-edit checkpoint proofs. Any demonstrated regression requires a permanent failing test before correction, scoped lint/types and repeated affected gates.
 - Stop: report findings and exact evidence/limits after these boundaries pass; no push, monitor or live 101.
@@ -7560,7 +7560,7 @@ The current protocol still couples reconstruction of canonical changes to ordere
 
 - No new regression found in the frozen Factory correction and its direct consumers. No additional production changes were made during this review. The token is transaction-instance-local, advances at microtask/settlement/discard boundaries, and is copied into immutable source batches before replay. Local channel delivery remains synchronous; history staging and public source-window batching remain separate responsibilities. Existing source IDs preserve replay and compensation rather than regenerating boundaries from inverse calls.
 - Existing coverage inspected includes scalar/batch equivalence, explicit progressive ordering, immediate/deferred mixtures, bounded publication windows, custom channels, rejected append, partial compensation, observer isolation/reentrancy, nested replay, grouped History and replace-latest gestures. Direct App inspection covers Design pointer/pen/gradient/stroke paths and other Apps' Core transactions and durable consumers. Compiled Factory output used by packed consumers contains the current correction.
-- Fresh tests: Factory 292; Core history/hierarchy/persistence/observer 41; Preset lifecycle/group/selection 54; Office complete suite 14; Starter complete suite 44; Sim selected runtime/storage/observation suites 50; FieldScope selected runtime/history/workspace suites 11; Design gesture/history/publication/outbox/lifecycle/reducer/queue suites 126. Total 632 passed. Logs: `tmp/factory-impact-{factory,core,preset,office,starter,sim,fieldscope,design}.log`. Sim and FieldScope use their existing guarded supervisors. Existing mocked canvas warnings in Sim are not product browser failures.
+- Fresh tests: Factory 292; Core history/hierarchy/persistence/observer 41; Preset lifecycle/group/selection 54; Office complete suite 14; Starter complete suite 44; Sim selected runtime/storage/observation suites 50; Asyra FieldScope selected runtime/history/workspace suites 11; Design gesture/history/publication/outbox/lifecycle/reducer/queue suites 126. Total 632 passed. Logs: `tmp/factory-impact-{factory,core,preset,office,starter,sim,fieldscope,design}.log`. Sim and Asyra FieldScope use their existing guarded supervisors. Existing mocked canvas warnings in Sim are not product browser failures.
 - Existing collaboration suite: all 14 tests passed in 2.7 minutes, including 16/320/1280-item two-actor batches, persistence/reload, reconnect/reset recovery, nested Group restoration, remote hierarchy/geometry Redo, vector anchors, live create/drag/pen before pointer-up and Fill Undo/Redo. Log: `tmp/factory-impact-collaboration.log`. These use deterministic existing fixtures, not live model calls.
 - Retained earlier evidence: actual Frame revisions at both viewport sizes, each edit/Undo/Redo backend digest, reload, structural operations/fresh load, Factory exact-negative proof, lint and production types. Runtime source was unchanged during this review, so these unchanged gates were not repeated.
 - Limits: this is the complete direct-impact review of the Factory correction, not every unrelated App feature or domain simulation. Backend low-level-evidence coupling remains as documented above; no claim of protocol decoupling. No live101, push or monitoring.
@@ -8499,7 +8499,7 @@ History admission closure - 2026-10-16:
 - Test-first evidence: the actual browser accepted three extra history inputs
   during held Factory replay before the fix. The source-bound proof also failed
   only apply.history-intent before implementation. No duplicated busy state.
-- Core 269, InputSystem 36, App mapping/Feature 13 and FieldScope shortcut 1 pass.
+- Core 269, InputSystem 36, App mapping/Feature 13 and Asyra FieldScope shortcut 1 pass.
   Four actual browser cases cover Undo/Redo success/failure, same/opposite inputs,
   unrelated input, no delayed replay, subsequent action and exact save/reload.
   Existing history regression: 18 browser cases pass (including the four above).

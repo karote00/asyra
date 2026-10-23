@@ -117,7 +117,7 @@ test('only tested static artifacts reach the three main-only publication jobs', 
   assert.match(deploy.with.command, /--branch=main --commit-hash=/)
   assert.deepEqual(publish.strategy.matrix.include, [
     { app: 'asyra-design', project: 'asyra-design' },
-    { app: 'fieldscope', project: 'asyra-fieldscope' },
+    { app: 'asyra-fieldscope', project: 'asyra-fieldscope' },
     { app: 'asyra-sim', project: 'asyra-sim' }
   ])
   assert.ok(

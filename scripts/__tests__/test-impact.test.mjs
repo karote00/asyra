@@ -5,14 +5,16 @@ import path from 'node:path'
 import { selectTestImpact, requiresTestParser } from '../test-impact.mjs'
 
 const root = process.cwd()
-const directory = 'apps/fieldscope'
+const directory = 'apps/asyra-fieldscope'
 const select = (...inputs) => selectTestImpact(root, directory, inputs)
 test('UI inputs do not select numerical profiles', () => {
-  const result = select('apps/fieldscope/src/ui/walking-runtime-selector.tsx')
+  const result = select(
+    'apps/asyra-fieldscope/src/ui/walking-runtime-selector.tsx'
+  )
   assert.equal(result.profiles.length, 0)
 })
 test('crop changes select source consumers but not pure trigonometry', () => {
-  const result = select('apps/fieldscope/src/domain/crop-models.ts')
+  const result = select('apps/asyra-fieldscope/src/domain/crop-models.ts')
   assert.ok(
     result.profiles.some((f) =>
       f.endsWith('crop-models.source.profile.test.ts')
@@ -31,7 +33,7 @@ test('crop changes select source consumers but not pure trigonometry', () => {
 })
 test('walking fixtures select their transitive profile consumers', () => {
   const result = select(
-    'apps/fieldscope/src/simulation/__tests__/walking-motion-test-fixtures.ts'
+    'apps/asyra-fieldscope/src/simulation/__tests__/walking-motion-test-fixtures.ts'
   )
   assert.ok(
     result.profiles.some((f) =>
@@ -48,8 +50,8 @@ test('upstream, unknown and deleted inputs retain the full inventory', () => {
   const full = select('packages/core/src/core.ts')
   assert.ok(full.profiles.length > 0)
   for (const input of [
-    'apps/fieldscope/src/deleted.ts',
-    'apps/fieldscope/vitest.config.ts'
+    'apps/asyra-fieldscope/src/deleted.ts',
+    'apps/asyra-fieldscope/vitest.config.ts'
   ])
     assert.deepEqual(select(input).profiles, full.profiles)
 })
@@ -74,7 +76,7 @@ test('new tests and cyclic imports are discovered without a name list', (t) => {
 })
 
 test('resource edits and upstream dependencies retain profiles, E2E is separately owned', () => {
-  const full = select('apps/fieldscope/src/domain/data.json')
+  const full = select('apps/asyra-fieldscope/src/domain/data.json')
   assert.ok(full.profiles.length > 0)
   assert.ok(full.ordinary.length > 0)
 })
@@ -106,8 +108,8 @@ test('unresolved imports conservatively select their consumers without losing cy
 test('pre-install classification needs the parser only for registered source changes', () => {
   assert.equal(
     requiresTestParser(
-      ['apps/fieldscope/src/ui/workbench.tsx'],
-      ['apps/fieldscope']
+      ['apps/asyra-fieldscope/src/ui/workbench.tsx'],
+      ['apps/asyra-fieldscope']
     ),
     true
   )
@@ -115,9 +117,9 @@ test('pre-install classification needs the parser only for registered source cha
     'packages/core/src/core.ts',
     'docs/ai/plan.md',
     'apps/other/src/index.ts',
-    'apps/fieldscope/e2e/panels.spec.ts'
+    'apps/asyra-fieldscope/e2e/panels.spec.ts'
   ])
-    assert.equal(requiresTestParser([file], ['apps/fieldscope']), false)
+    assert.equal(requiresTestParser([file], ['apps/asyra-fieldscope']), false)
 })
 
 test('proven upstream sources enter at package imports and preserve transitive owner consumers', (t) => {

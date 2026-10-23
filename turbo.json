@@ -61,6 +61,19 @@
         "@asyra/render-engine-pixi#build:render-engine-pixi"
       ]
     },
+    "@asyra/asyra-fieldscope#react:build": {
+      "cache": false,
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "@asyra/core#build:core",
+        "@asyra/preset#build:preset",
+        "@asyra/render#build:render",
+        "@asyra/render-engine#build:render-engine",
+        "@asyra/utils#build:utils"
+      ]
+    },
     "@asyra/asyra-framework-site#build:asyra-framework-site": {
       "cache": false,
       "outputs": [
@@ -158,19 +171,6 @@
       ],
       "dependsOn": [
         "@asyra/reactive-events#build:reactive-events",
-        "@asyra/utils#build:utils"
-      ]
-    },
-    "@asyra/fieldscope#react:build": {
-      "cache": false,
-      "outputs": [
-        "dist/**"
-      ],
-      "dependsOn": [
-        "@asyra/core#build:core",
-        "@asyra/preset#build:preset",
-        "@asyra/render#build:render",
-        "@asyra/render-engine#build:render-engine",
         "@asyra/utils#build:utils"
       ]
     },

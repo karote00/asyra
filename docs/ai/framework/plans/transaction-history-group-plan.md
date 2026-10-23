@@ -411,7 +411,7 @@ E2E, Preset/Reactive/Factory/Core, collaboration, and final 7076 milestone.
 
 On 2026-10-02 the user authorized resolving the remaining CI blocker, merging
 this Framework PR only after all checks pass, then rebasing and continuing the
-original AI worktree. Mutation scope for this follow-up is Fieldscope's panel
+original AI worktree. Mutation scope for this follow-up is Asyra FieldScope's panel
 E2E allocation, its existing CI group registry, direct workflow documentation
 and this plan. Existing CI attempts 1 and 4 reproduce the monolithic panel
 case exceeding 60 seconds at different late-stage operations; the unchanged

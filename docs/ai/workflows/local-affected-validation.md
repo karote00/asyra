@@ -97,7 +97,7 @@ CI installs the declared parser before classification when a discovered local or
 upstream workspace source path needs parsing; unrelated PRs retain pre-install
 selection.
 
-FieldScope's ordinary files run through `test:affected` and its existing
+Asyra FieldScope's ordinary files run through `test:affected` and its existing
 supervisor. Profile selection is partitioned by the existing profile owner;
 CI runs nonempty groups on independent runners, while local validation consumes
 the same selected files sequentially. Each process remains single-worker for

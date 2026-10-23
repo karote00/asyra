@@ -9,7 +9,7 @@ It does not change App runtime, backend, AI or Inspector behavior.
 | App | Public origin | Static output |
 | --- | --- | --- |
 | Asyra Design | <a href="https://asyra-design.pages.dev/?fileId=demo" target="_blank" rel="noopener noreferrer">Open Design</a> | `apps/asyra-design/dist/frontend` |
-| FieldScope | <a href="https://asyra-fieldscope.pages.dev" target="_blank" rel="noopener noreferrer">Open FieldScope</a> | `apps/fieldscope/dist/frontend` |
+| Asyra FieldScope | <a href="https://asyra-fieldscope.pages.dev" target="_blank" rel="noopener noreferrer">Open Asyra FieldScope</a> | `apps/asyra-fieldscope/dist/frontend` |
 | Asyra Sim | <a href="https://asyra-sim.pages.dev" target="_blank" rel="noopener noreferrer">Open Sim</a> | `apps/asyra-sim/dist` |
 
 These deployments contain frontend assets only. Editing, local history, browser
@@ -64,11 +64,11 @@ configuration does not itself grant an agent permission to merge.
 ## Verification and recovery
 
 ```bash
-VITE_COLLABORATION_WS_URL='' yarn turbo run @asyra/asyra-design#react:build @asyra/fieldscope#react:build @asyra/asyra-sim#react:build --concurrency=2
+VITE_COLLABORATION_WS_URL='' yarn turbo run @asyra/asyra-design#react:build @asyra/asyra-fieldscope#react:build @asyra/asyra-sim#react:build --concurrency=2
 yarn workspace @asyra/asyra-design typecheck
 SOURCE_SHA=$(git rev-parse HEAD) node scripts/app-cloudflare.mjs prepare
-APP_ARTIFACT_ROOT=tmp/cloudflare-apps node --test --test-concurrency=1 '--test-name-pattern=^(Design|Sim|FieldScope) production ' scripts/__tests__/production-artifacts.browser.test.mjs
-APP_PUBLIC_TEST=1 node --test --test-concurrency=1 '--test-name-pattern=^(Design|Sim|FieldScope) production ' scripts/__tests__/production-artifacts.browser.test.mjs
+APP_ARTIFACT_ROOT=tmp/cloudflare-apps node --test --test-concurrency=1 '--test-name-pattern=^(Design|Sim|Asyra FieldScope) production ' scripts/__tests__/production-artifacts.browser.test.mjs
+APP_PUBLIC_TEST=1 node --test --test-concurrency=1 '--test-name-pattern=^(Design|Sim|Asyra FieldScope) production ' scripts/__tests__/production-artifacts.browser.test.mjs
 ```
 
 Check GitHub Actions **Apps - Cloudflare Pages**, each publication job's summary,

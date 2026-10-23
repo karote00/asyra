@@ -287,7 +287,7 @@ test('transitive package sources select the consumer owner suite, not Vitest rel
 })
 
 test('repository contracts follow their declared inputs without a whole-script fallback', () => {
-  const app = classifyChanges(['apps/fieldscope/src/main.tsx'], manifests)
+  const app = classifyChanges(['apps/asyra-fieldscope/src/main.tsx'], manifests)
   assert.equal(app.executionPlan.checks.repositoryScripts.mode, 'not-selected')
   for (const file of [
     'scripts/ci-scope.mjs',
@@ -312,7 +312,7 @@ test('repository contracts follow their declared inputs without a whole-script f
 test('plan-only changes select plan checks without API analysis or declaration builds', () => {
   for (const input of [
     'docs/ai/framework/plans/ci-workflow-splitting-plan.md',
-    'docs/ai/apps/fieldscope/plans/completed/example/plan.md',
+    'docs/ai/apps/asyra-fieldscope/plans/completed/example/plan.md',
     'docs/ai/framework/PLANS.md',
     'docs/ai/framework/decisions/releases/unreleased.md'
   ]) {
@@ -439,7 +439,7 @@ test('Framework changes follow declared workspace edges transitively', () => {
   assert.ok(names(result).includes('@asyra/core'))
   assert.ok(names(result).includes('@asyra/asyra-design'))
   assert.ok(names(result).includes('@asyra/asyra-sim'))
-  assert.ok(names(result).includes('@asyra/fieldscope'))
+  assert.ok(names(result).includes('@asyra/asyra-fieldscope'))
   assert.ok(names(result).includes('@asyra/starter-app'))
   assert.ok(
     result.relationshipMap.dependencyEdges.some(
@@ -726,12 +726,12 @@ test('selected CI checks run only planned owners and record declared skips', asy
     {
       version: 1,
       mode: 'incremental',
-      changedPaths: ['apps/fieldscope/src/main.tsx'],
+      changedPaths: ['apps/asyra-fieldscope/src/main.tsx'],
       unknownRelations: [],
       checks: {
         lint: {
           mode: 'files',
-          inputs: ['apps/fieldscope/src/main.tsx'],
+          inputs: ['apps/asyra-fieldscope/src/main.tsx'],
           reason: 'changed-files'
         },
         repositoryScripts: {
@@ -743,7 +743,7 @@ test('selected CI checks run only planned owners and record declared skips', asy
         naming: {
           mode: 'full',
           command: 'lint:naming',
-          inputs: ['apps/fieldscope/src/main.tsx'],
+          inputs: ['apps/asyra-fieldscope/src/main.tsx'],
           reason: 'cross-file-name-and-persisted-identity-contract'
         },
         workspaces: [],
@@ -785,7 +785,7 @@ test('explicit documentation relationships select their actual workspace consume
   assert.deepEqual(names(website), ['@asyra/asyra-framework-site'])
 
   const appDocs = classifyChanges(
-    ['docs/ai/apps/fieldscope/PLANS.md'],
+    ['docs/ai/apps/asyra-fieldscope/PLANS.md'],
     manifests
   )
   assert.deepEqual(names(appDocs), [])
@@ -985,7 +985,7 @@ test('full validation does not lose repository checks on a documentation-only ch
 test('documentation and test-only package edits do not select consumer builds or release readiness', () => {
   for (const input of [
     'packages/core/README.md',
-    'docs/ai/apps/fieldscope/PLANS.md'
+    'docs/ai/apps/asyra-fieldscope/PLANS.md'
   ]) {
     const result = classifyChanges([input], manifests)
     assert.deepEqual(names(result), [], input)
@@ -1311,17 +1311,17 @@ test('selected build regression files retain the serial resource boundary', () =
   assert.deepEqual(result.executedTests, selection.tests)
 })
 
-test('FieldScope profiles follow its selected test owner without activating for unrelated CI or plans', () => {
+test('Asyra FieldScope profiles follow its selected test owner without activating for unrelated CI or plans', () => {
   for (const [file, expected] of [
-    ['apps/fieldscope/src/simulation/walking-motion.ts', true],
+    ['apps/asyra-fieldscope/src/simulation/walking-motion.ts', true],
     [
-      'apps/fieldscope/src/simulation/__tests__/walking-motion-sheet-subdivision.profile.test.ts',
+      'apps/asyra-fieldscope/src/simulation/__tests__/walking-motion-sheet-subdivision.profile.test.ts',
       true
     ],
     ['.github/workflows/fieldscope-profile.yml', true],
-    ['docs/ai/apps/fieldscope/plans/harvest-robot/plan.md', false],
+    ['docs/ai/apps/asyra-fieldscope/plans/harvest-robot/plan.md', false],
     ['scripts/ci-scope.mjs', false],
-    ['apps/fieldscope/e2e/panels.spec.ts', false]
+    ['apps/asyra-fieldscope/e2e/panels.spec.ts', false]
   ]) {
     assert.equal(
       classifyChanges([file], manifests).relationshipMap
@@ -1334,8 +1334,8 @@ test('FieldScope profiles follow its selected test owner without activating for 
 
 test('internal BDD specifications and reference images are document inputs, while executable docs remain blocked', () => {
   for (const file of [
-    'docs/ai/apps/fieldscope/bdd-features/harvest-robot.feature',
-    'docs/ai/apps/fieldscope/references/robot-components/01-chassis.png'
+    'docs/ai/apps/asyra-fieldscope/bdd-features/harvest-robot.feature',
+    'docs/ai/apps/asyra-fieldscope/references/robot-components/01-chassis.png'
   ]) {
     const result = classifyChanges([file], manifests)
     assert.deepEqual(result.unknownPaths, [], file)
@@ -1348,10 +1348,10 @@ test('internal BDD specifications and reference images are document inputs, whil
   }
   assert.deepEqual(
     classifyChanges(
-      ['docs/ai/apps/fieldscope/references/execute.cjs'],
+      ['docs/ai/apps/asyra-fieldscope/references/execute.cjs'],
       manifests
     ).unknownPaths,
-    ['docs/ai/apps/fieldscope/references/execute.cjs']
+    ['docs/ai/apps/asyra-fieldscope/references/execute.cjs']
   )
 })
 
@@ -1396,13 +1396,13 @@ test('developer Agent inputs select their packaging contract without product bui
   }
 })
 
-test('upstream renderer changes retain FieldScope render consumers without pure numerical profiles', () => {
+test('upstream renderer changes retain Asyra FieldScope render consumers without pure numerical profiles', () => {
   const result = classifyChanges(
     ['packages/render-engine-pixi/src/mesh-material-shader.ts'],
     manifests
   )
   const owner = result.relationshipMap.workspaceMatrix.find(
-    (w) => w.name === '@asyra/fieldscope'
+    (w) => w.name === '@asyra/asyra-fieldscope'
   )
   assert.equal(owner.testSelection.mode, 'files')
   assert.ok(
@@ -1434,7 +1434,7 @@ test('upstream validation-only inputs do not broaden unrelated runtime consumers
   const select = (paths) => classifyChanges(paths, manifests)
   const fieldscope = (scope) =>
     scope.relationshipMap.workspaceMatrix.find(
-      (owner) => owner.name === '@asyra/fieldscope'
+      (owner) => owner.name === '@asyra/asyra-fieldscope'
     )
   const mixed = select([runtime, ...validation])
   assert.deepEqual(
@@ -1448,7 +1448,7 @@ test('upstream validation-only inputs do not broaden unrelated runtime consumers
   assert.ok(names(mixed).includes('@asyra/preset'))
   const local = select(validation)
   assert.ok(names(local).includes('@asyra/preset'))
-  assert.ok(!names(local).includes('@asyra/fieldscope'))
+  assert.ok(!names(local).includes('@asyra/asyra-fieldscope'))
   const unknown = fieldscope(
     select([runtime, 'packages/preset/unknown-resource.json'])
   )
@@ -1472,7 +1472,7 @@ test('mixed material delivery retains shared spatial consumers without unrelated
     manifests
   )
   const owner = result.relationshipMap.workspaceMatrix.find(
-    (entry) => entry.name === '@asyra/fieldscope'
+    (entry) => entry.name === '@asyra/asyra-fieldscope'
   )
   assert.equal(owner.testSelection.mode, 'files')
   assert.equal(
@@ -1502,13 +1502,13 @@ test('mixed material delivery retains shared spatial consumers without unrelated
   assert.equal(owner.e2eSelection.mode, 'full')
 })
 
-test('FieldScope uses exact supervised selections for ordinary tests and profiles', () => {
+test('Asyra FieldScope uses exact supervised selections for ordinary tests and profiles', () => {
   const result = classifyChanges(
-    ['apps/fieldscope/src/ui/walking-runtime-selector.tsx'],
+    ['apps/asyra-fieldscope/src/ui/walking-runtime-selector.tsx'],
     manifests
   )
   const owner = result.relationshipMap.workspaceMatrix.find(
-    (w) => w.name === '@asyra/fieldscope'
+    (w) => w.name === '@asyra/asyra-fieldscope'
   )
   assert.equal(owner.testSelection.mode, 'files')
   assert.ok(
@@ -1519,11 +1519,11 @@ test('FieldScope uses exact supervised selections for ordinary tests and profile
   assert.deepEqual(owner.profileSelection.files, [])
   assert.equal(result.relationshipMap.fieldscopeProfilesRequired, false)
   const crop = classifyChanges(
-    ['apps/fieldscope/src/domain/crop-models.ts'],
+    ['apps/asyra-fieldscope/src/domain/crop-models.ts'],
     manifests
   )
   const profiles = crop.relationshipMap.workspaceMatrix.find(
-    (w) => w.name === '@asyra/fieldscope'
+    (w) => w.name === '@asyra/asyra-fieldscope'
   ).profileSelection.files
   assert.ok(
     profiles.some((f) => f.endsWith('crop-models.source.profile.test.ts'))
@@ -1541,7 +1541,7 @@ test('profile workflow changes retain full profiles even when accompanied by UI-
   const mixed = classifyChanges(
     [
       '.github/workflows/fieldscope-profile.yml',
-      'apps/fieldscope/src/ui/walking-runtime-selector.tsx'
+      'apps/asyra-fieldscope/src/ui/walking-runtime-selector.tsx'
     ],
     manifests
   )
@@ -1558,7 +1558,7 @@ test('profile workflow ownership supplies local build prerequisites', () => {
   )
   assert.ok(
     scope.relationshipMap.workspaceMatrix.some(
-      (w) => w.directory === 'apps/fieldscope'
+      (w) => w.directory === 'apps/asyra-fieldscope'
     )
   )
 })

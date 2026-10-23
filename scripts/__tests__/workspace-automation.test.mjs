@@ -136,9 +136,9 @@ test('workspace test:ci contracts cannot turn test failures into successful skip
   }
 })
 
-test('Fieldscope E2E CI command supplies its portable local app URL', () => {
-  const manifest = readJSON('apps/fieldscope/package.json')
-  const example = readText('apps/fieldscope/.env.example')
+test('Asyra FieldScope E2E CI command supplies its portable local app URL', () => {
+  const manifest = readJSON('apps/asyra-fieldscope/package.json')
+  const example = readText('apps/asyra-fieldscope/.env.example')
   assert.match(
     manifest.scripts['test:e2e:ci'],
     /^APP_URL=http:\/\/127\.0\.0\.1:5178 node scripts\/run-e2e-ci\.mjs$/u
@@ -152,7 +152,7 @@ test('root E2E commands name the app and separate local from CI runners', () => 
     'asyra-design',
     'asyra-framework-site',
     'asyra-sim',
-    'fieldscope',
+    'asyra-fieldscope',
     'starter-app'
   ]) {
     const manifest = readJSON(`apps/${app}/package.json`)
@@ -377,7 +377,7 @@ test('standard manifest E2E owners use the runner Chrome in CI and locally', () 
   const workspaces = [
     ['apps/asyra-framework-site', 'test:e2e:ci'],
     ['apps/asyra-sim', 'test:e2e:ci'],
-    ['apps/fieldscope', 'test:e2e:ci'],
+    ['apps/asyra-fieldscope', 'test:e2e:ci'],
     ['apps/starter-app', 'test:e2e:ci']
   ]
   for (const [directory, task] of workspaces) {
@@ -1023,7 +1023,12 @@ test('root app commands are scoped by app and purpose', () => {
       'test:ci'
     ],
     'asyra-sim': ['@asyra/asyra-sim', 'dev', 'test:local', 'test:ci'],
-    fieldscope: ['@asyra/fieldscope', 'dev', 'test:local', 'test:ci'],
+    'asyra-fieldscope': [
+      '@asyra/asyra-fieldscope',
+      'dev',
+      'test:local',
+      'test:ci'
+    ],
     'starter-app': ['@asyra/starter-app', 'dev', 'test:local', 'test:ci']
   }
   for (const [
@@ -1262,7 +1267,7 @@ test('a timed-out build command terminates its descendant process', async () => 
   assert.ok(status === '' || status.startsWith('Z'), status)
 })
 
-test('FieldScope selected profile groups are independent and each blocks validation', () => {
+test('Asyra FieldScope selected profile groups are independent and each blocks validation', () => {
   const workflow = yaml.load(readText('.github/workflows/main.yml'))
   for (const group of ['heavy', 'source', 'remaining']) {
     const job = workflow.jobs[`fieldscope-profile-${group}`]
@@ -1274,7 +1279,8 @@ test('FieldScope selected profile groups are independent and each blocks validat
       workflow.jobs.validate.needs.includes(`fieldscope-profile-${group}`)
     )
     const gate = workflow.jobs.validate.steps.find(
-      (step) => step.name === `Require complete FieldScope ${group} profiles`
+      (step) =>
+        step.name === `Require complete Asyra FieldScope ${group} profiles`
     )
     for (const files of ['[]', '["src/example.profile.test.ts"]'])
       for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
@@ -1302,7 +1308,7 @@ test('FieldScope selected profile groups are independent and each blocks validat
     profile.jobs.profile.steps.some(
       (step) =>
         step.run ===
-        'yarn turbo run react:build --filter=@asyra/fieldscope --concurrency=2'
+        'yarn turbo run react:build --filter=@asyra/asyra-fieldscope --concurrency=2'
     )
   )
   const run = profile.jobs.profile.steps.find(
@@ -1312,7 +1318,7 @@ test('FieldScope selected profile groups are independent and each blocks validat
   assert.equal(run.env.PROFILE_GROUP, '${{ inputs.group }}')
 })
 
-test('FieldScope profile failures retain complete bounded supervision artifacts', () => {
+test('Asyra FieldScope profile failures retain complete bounded supervision artifacts', () => {
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')
   )
@@ -1322,6 +1328,9 @@ test('FieldScope profile failures retain complete bounded supervision artifacts'
   assert.ok(upload, 'profile diagnostics must survive the ephemeral runner')
   assert.equal(upload.if, 'always()')
   assert.equal(upload.with.name, 'fieldscope-profile-${{ inputs.group }}')
-  assert.equal(upload.with.path, 'apps/fieldscope/.artifacts/test-supervision/')
+  assert.equal(
+    upload.with.path,
+    'apps/asyra-fieldscope/.artifacts/test-supervision/'
+  )
   assert.equal(upload.with['include-hidden-files'], true)
 })
