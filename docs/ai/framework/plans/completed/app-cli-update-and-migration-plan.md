@@ -608,3 +608,19 @@ version availability, guide completeness and executable fixture contracts.
 The known Text projection boundary and shared-relation behavior remain explicit
 acceptance obligations. Completion requires both the first adoption and the
 subsequent update proof; a useful guide alone does not prove every custom App safe.
+
+## Closeout
+
+Completed: 2026-10-24
+Reviewed source: a51f1107576af794eba8dbcc3077b121d70fec7a
+Outcome: Tasks 1-4 are complete within the modeled local-candidate scope. Public update guides and discovery entries support official definitions with retained App extensions; permanent Text fixtures preserve custom fields, Features and saved data through first and subsequent adoption.
+Decision: Accept the completed guidance and local-candidate evidence. Task 4's first independent acceptance satisfies its fresh-AI requirement. The revision-2 existing-context rerun and permanent fixture checks are separate follow-up evidence, not pending work. Publication and production release support remain outside this closeout.
+Exit criteria: Task 3's independent run passed 14 tests and its retained fixture passes 18; Task 4's independent run passed 29, its revision-2 context rerun passed 34, and its combined fixture passes 41. Both permanent fixtures pass typecheck, lint and build. Submission checks pass 31 documentation tests, 23 website browser cases, website lint/typecheck/build, 7 artifact/handoff checks, and 115 evidence/delivery file hashes. The schema inventory regression fails at 43 pages and passes at 46.
+
+Canonical completed record: `docs/ai/framework/plans/completed/app-cli-update-and-migration-plan.md`.
+Acceptance records: `fixtures/app-update-text-consumer/VERIFICATION.md` and
+`fixtures/app-update-text-subsequent/VERIFICATION.md`. Their historical plan
+associations retain the original active path; this record is its completed
+successor. Original prompts, input manifests, patches, logs, screenshots and the
+revision-2 delivery archive remain byte-identical. No new independent acceptance
+is required, and no version bump, tag, package publication or deployment occurred.

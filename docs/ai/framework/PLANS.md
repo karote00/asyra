@@ -44,32 +44,6 @@ or unsupported capability claims.
     production deployment and page acceptance.
   - The independent Root README evidence plan remains completed.
 
-## Proposed App Version Differences and Integration
-
-- [App Version Differences and AI-Assisted Integration](plans/app-cli-update-and-migration-plan.md)
-  - TASKS 1-4 COMPLETE LOCALLY - use official definitions as the base and retain App extensions.
-    Provide current-to-target change guides for the consumer's AI, with Text
-    field/behavior overlap examples, existing migration APIs, adoption records
-    and subsequent-update acceptance. Whole-template merging is not the core.
-    The concrete Text guide uses a modeled consumer and a pinned source target;
-    the public update index and Text revision 2 are available as Markdown and in
-    generated discovery. A fresh AI integrated the modeled consumer with local
-    packed candidates; 14 initial independent tests passed, and 18 retained tests
-    pass after the separately recorded maintainer follow-up. Later browser evidence
-    is retained; revision 3 clarifies shared defaults and verification boundaries
-    while preserving the revision 2 acceptance.
-    Task 4 used another fresh AI and a private modeled spacing-default candidate;
-    all 29 preservation tests and typecheck/lint/build pass, including intervening
-    rejected approval and two fresh-runtime reloads. The next guide, artifact
-    identities and exact six-file integration are retained separately.
-    Revision 2 adds a retained pre-update delivery and warning/attachment guidance.
-    Its existing-context rerun passed 34 tests; the combined permanent suite passes
-    41. These are separate follow-up checks; the original 29-test independent
-    result satisfies Task 4's fresh-AI requirement. No further independent
-    acceptance is pending or required for Task 4.
-    npm Preset 0.5.8 lacks the required Text exports. Publication remains
-    unperformed; CLI and Framework/runtime implementation remain outside scope.
-
 ## Active Developer Agent Work
 
 - [Asyra Developer Agent Distribution and Maintenance](plans/asyra-developer-agent-plan.md)

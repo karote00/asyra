@@ -198,3 +198,18 @@
   excluded. The closeout workflow, checker and Skill now express that boundary.
 - Completed record:
   [Preset 3D Foundation and App Migration](/docs/ai/framework/plans/completed/preset-3d-foundation-plan.md).
+## 2026-10-24 - Complete App Update Guidance and Text Acceptance
+
+- Context: Consumers need to identify official changes while retaining their
+  App-owned extensions and saved data through repeated updates.
+- Decision: Close Tasks 1-4 using official definitions as the base, versioned
+  update guides, adoption records and existing define/register/migration APIs.
+  Whole-template merging and new CLI/runtime update machinery are not required.
+- Outcome: Task 4 is complete. Its first independent acceptance (29 tests),
+  revision-2 existing-context rerun (34), and permanent fixture (41) remain
+  distinct. The later checks do not reopen the independent-acceptance requirement.
+  Task 3 evidence and all original acceptance artifacts are preserved.
+- Consequences: Guidance is accepted within the pinned local-candidate model.
+  Published release-to-release support, package releases, deployment and merge
+  are separate operations; none is performed or authorized by closeout.
+- Completed record: `docs/ai/framework/plans/completed/app-cli-update-and-migration-plan.md`.
