@@ -59,6 +59,18 @@ or unsupported capability claims.
 
 None.
 
+## Preset 3D Foundation
+
+- [Preset 3D Foundation and App Migration](plans/preset-3d-foundation-plan.md)
+  - Scope approved on 2026-10-24; design review and implementation pending.
+  - One canonical 3D architecture for Sim, FieldScope and Office. Scene Tree
+    presentation and camera angles/modes remain App-owned; shared controls and
+    projection mechanisms are optional Preset foundations.
+  - Includes incremental projection, neutral spatial queries, resource/control
+    mechanisms, App migrations, generic editing/restricted assets and gated
+    official `3D` activation. Task 1 resolves composition/defaults and the
+    complete reviewed flow before production work. `HYBRID` remains deferred.
+
 ## Transaction History Groups
 
 - [Transaction History Groups](plans/transaction-history-group-plan.md)
@@ -196,10 +208,13 @@ Preview `READY` evidence on 2026-08-05. The retained records are:
 - Publish a render-mode profile only after its concrete engine and canonical
   feature/property/schema/render/input default modules exist and pass the engine
   boundary contract.
-- `3d` requires a supported 3D engine; `hybrid` additionally requires an
+- `3D` requires a supported 3D engine; `HYBRID` additionally requires an
   explicit multi-engine composition and interaction contract.
 - Do not expose empty, placeholder, or capability-incomplete profiles.
 - Reference: `docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md`
+- The active [Preset 3D foundation plan](plans/preset-3d-foundation-plan.md)
+  owns the consumer migration and evidence work for `3D`; this roadmap entry
+  does not independently activate either reserved profile.
 
 3. Auto-layout behavior engine (lowest-priority roadmap family)
 

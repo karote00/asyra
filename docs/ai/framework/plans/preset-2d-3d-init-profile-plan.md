@@ -4,6 +4,13 @@
 
 Deferred and prerequisite-gated.
 
+The approved [Preset 3D Foundation and App Migration](preset-3d-foundation-plan.md)
+owns the active foundation/migration work and its Task 8 supplies the evidence
+for the 3D gate below. Its design review and implementation are pending; `3D`
+remains unavailable until those prerequisites pass. This document retains the
+activation criteria rather than duplicating that work plan. `HYBRID` remains
+deferred and outside the new plan.
+
 The public profile vocabulary is owned by the active Preset Profile and
 Selectable Defaults plan:
 

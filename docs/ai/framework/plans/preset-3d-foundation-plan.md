@@ -1,0 +1,454 @@
+# Preset 3D Foundation and App Migration
+
+## Status and task association
+
+Created: 2026-10-24.
+
+Status: scope approved; planning recorded; design review and implementation
+pending. The user approved the proposed foundation and migration scope with
+the two binding ownership corrections below. The current delivery creates this
+plan and its index/activation references; it does not execute production tasks.
+
+Planning base: local `main` at
+`eaddcdba2c1705dca6646a730cd87818ae214d56`.
+Planning branch: `codex/preset-3d-foundation-plan`.
+Closeout owner: the coordinating agent in the originating Preset 3D conversation
+with Asa. Individual task completion does not close this plan.
+
+Future work selects an exact Task heading below using
+[task context](../../workflows/task-context.md). Select a base containing this
+plan and the accepted prerequisite changes; the planning base above does not
+already contain the new plan. Record the actual base SHA, prerequisites and
+reviewed flow revision at handoff. Repository Git and execution rules apply.
+
+The existing [3D and Hybrid activation plan](preset-2d-3d-init-profile-plan.md)
+continues to own profile activation prerequisites. This plan owns the bounded
+3D foundation, consumer migrations and evidence that satisfy its 3D gate.
+HYBRID activation remains outside this plan. No current availability or runtime
+contract changes merely because this plan exists.
+
+## Binding product decisions
+
+1. **One 3D architecture.** There are no separate document-editor and
+   domain-presentation framework modes. All Apps use the same canonical owners,
+   Feature/API boundaries, derived projection and rendering contracts. Whether
+   an App exposes a Scene Tree panel, and how it presents that structure, is an
+   App UI decision. Tree visibility cannot select a different state model,
+   persistence path, interaction runtime or rendering architecture.
+2. **App-controlled camera policy.** The App chooses camera angles, projection
+   mode, navigation mode, targets, view presets, bindings, speeds and follow
+   behavior. Framework/Preset provides neutral camera control mechanisms and
+   supported capabilities. It does not choose an overview, orbit/fly mode,
+   selected-agent view or a product-specific camera preset.
+3. **Generic foundation only.** Preset supplies optional official defaults and
+   shared mechanisms. Domain geometry, simulation, decisions, assets and product
+   workflows stay in Apps. Shared code must not branch on an App identity.
+4. **Preserve existing Asyra ownership.** No second canonical scene store,
+   selection runtime, transaction journal, history stack or engine-owned domain
+   model is introduced. A derived mesh is not automatically a new canonical
+   element; existing App model granularity remains App-owned within the single
+   architecture, independently of whether a tree is displayed.
+
+## Objective and bounded scope
+
+Deliver a reusable Preset 3D foundation consumed by Asyra Sim, Asyra FieldScope
+and Asyra Office, followed by evidence-gated official `3D` profile activation.
+Keep existing product behavior, saved identities and `2D`/`CUSTOM` composition
+intact. Deliver the agreed generic editing and restricted asset extensions as
+separate bounded tasks; profile activation alone is not whole-plan completion.
+
+The implementation family is `packages/preset`, required engine-neutral
+contracts in `packages/render-engine`, their direct Render/Core facade owners,
+and the three Apps' composition, spatial projection, camera, interaction and
+asset adapters. Include direct permanent tests, package/public documentation,
+reviewed flow artifacts and applicable release metadata. Task 1 narrows each
+slice to an exact allowlist before implementation; this family is not blanket
+permission to refactor Framework or App domains.
+
+Discovery is limited to those owners, their current public APIs, the sources
+listed below, affected tests and direct consumers. After each slice begins,
+review only its diff, affected consumers, regressions and frozen gates. Stop an
+affected slice if it requires a new domain decision, unsupported public API,
+unreviewed architecture change or an out-of-scope dependency. Preserve independent
+in-scope work without inventing a fallback or weakening acceptance.
+
+## Current source and behavior to preserve
+
+The planning baseline has a shared `@asyra/preset/spatial` CUSTOM adapter, not
+an available official `3D` profile. `3D` and `HYBRID` remain unavailable.
+
+| Consumer   | Current behavior and foundation needs                                                                                                        | App-owned semantics                                                                                                         |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Sim        | Primitive/original triangle meshes, rigid poses, perspective depth picking, camera navigation/fit, restricted GLB preview, playback feedback | Robot joints/FK, trajectories, source bindings, collision/clearance analysis, experiments, evidence and persistence policy  |
+| FieldScope | Procedural site/crop/robot output, vertex colors/UV/maps, repeated instances, LoD, visibility/opacity, navigation and bounds                 | Farm/crop generation, placement, source geometry, harvesting/walking/observation models and engineering decisions           |
+| Office     | Room/object composition, canonical layout editing, semantic activity presentation, movement, focus/follow and camera transitions             | Room/furniture/character/pet content, destinations, task-to-behavior decisions, placement validity, rewards and permissions |
+
+Office's complete decorating, floor construction, snapping and advanced detail
+requirements are requirements, not existing verified behavior. Preserve its
+implemented layout/history/save boundary while introducing only the generic
+mechanisms selected by this plan.
+
+Direct source anchors:
+
+- [Preset contract](../packages/preset.md),
+  [engine contract](../packages/render-engine.md),
+  [Framework architecture](../ARCHITECTURE.md).
+- [Shared spatial entry](../../../../packages/preset/src/spatial.ts),
+  [descriptors](../../../../packages/preset/src/spatial/spatial-contract.ts),
+  [Three adapter](../../../../packages/preset/src/spatial/three-engine.ts).
+- [Sim architecture](../../apps/asyra-sim/ARCHITECTURE.md),
+  [CUSTOM contract](../../apps/asyra-sim/specs/custom-engine-v0.md),
+  [Sim layer](../../../../apps/asyra-sim/src/render-app/spatial-layer.ts).
+- [FieldScope architecture](../../apps/asyra-fieldscope/ARCHITECTURE.md),
+  [rendering](../../apps/asyra-fieldscope/modules/rendering.md),
+  [FieldScope layer](../../../../apps/asyra-fieldscope/src/render-app/spatial-layer.ts).
+- [Office implementation](../../apps/asyra-office/implementation.md) and
+  [product requirements](../../apps/asyra-office/asyra-office-product-plan.md).
+
+Observed design constraints to resolve, not unproven bug claims:
+
+- Sim and FieldScope retain similar SpatialLayer implementations; FieldScope
+  additionally skips unchanged admitted descriptor submissions.
+- The spatial entry mixes pure admission/contracts and concrete SDK exports.
+- Sim retains narrower admission and distinct lighting/capability policy.
+- Spatial local/global queries explicitly reject the ordinary 2D query route;
+  projected screen bounds are not world-space bounds.
+- Current spatial transforms consume completed world poses. Render ownership
+  parenting must not silently become transform parenting.
+- Current world camera support is a single perspective camera. The screen-space
+  orthographic bridge is not a public orthographic world camera capability.
+- Instance transforms currently use position/yaw. Shadow casting currently
+  depends on selectability, and LoD includes a fixed screen-error threshold.
+  Decide neutral mechanisms and explicit defaults without changing App output
+  accidentally.
+- App-local engine tests are preservation evidence sources; their presence is
+  not proof that the shared owner or a new official profile has passed.
+
+## Ownership and intended flow
+
+| Owner                        | Responsibility                                                                                                          | Forbidden responsibility                                        |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| App                          | Domain model/geometry, product validation, scene contents, tree UI, camera choices, input policy and persistence policy | A parallel canonical graph, SDK mutation through Core internals |
+| Feature System               | Intent execution, sessions, cancellation and interaction coordination                                                   | Camera style, robot/office/farm decisions                       |
+| Core                         | Registration, composition lock, public facade, startup and lifecycle coordination                                       | Concrete SDK inspection or App-specific presets                 |
+| Scene Tree / Props / Factory | Canonical hierarchy/properties, validation, transactions, replay and history                                            | GPU objects or per-frame animation state                        |
+| Render                       | State-to-output adaptation, layers, handle mapping, normalized interaction and frame orchestration                      | Domain geometry generation or concrete engine dependency        |
+| Render Engine contract       | Neutral commands, queries, capabilities, resources and lifecycle                                                        | Three.js types or product behavior                              |
+| Preset foundation            | Optional generic registrations, admission, projection/control helpers and official provider policy                      | Domain decisions or replacement runtime ownership               |
+| Concrete spatial adapter     | SDK objects, buffers, materials, textures, camera execution, drawing and release                                        | Editable state, physics truth or App camera decisions           |
+
+Intended connected routes for Task 1's exact flow design:
+
+1. App composition chooses explicit defaults/provider policy and supported
+   capabilities through Preset/Core before startup. Preset validates before
+   mutation and owns rollback of acquired registrations; Core owns startup.
+2. Input/commands enter Features, then approved App/shared APIs. Canonical edits
+   use existing validation and transactions. Invalid edits preserve state.
+3. Canonical changes, load and replay reach their existing state owners and
+   projections. Load/replay are state-apply paths, not fresh product decisions.
+4. App domain owners produce completed neutral geometry/poses. Shared admission
+   validates at the actual trust boundary and produces detached immutable data.
+   Projection retains derived identities and submits only required changes.
+5. Render maps objects/layers and submits abstract commands. The concrete
+   adapter owns SDK resources and draws only on explicit Render flush.
+6. Camera intentions use App-selected values and neutral control mechanisms.
+   Presentation interpolation consumes explicit time and target inputs; frames
+   do not rerun product decisions, write documents or create history.
+7. Engine hits/coordinates cross neutral queries and Render/Core mapping back
+   to App/Feature interaction. Picking is visual evidence, never collision or
+   safety evidence. Scene Tree panel visibility does not change this route.
+8. Retirement closes admission, cancels owned work, drains/invalidates pending
+   callbacks and releases resources through their existing lifecycle owners.
+   Retired work cannot mutate a successor runtime.
+
+These routes are design inputs, not an admitted Inspector or runtime evidence.
+Task 1 supplies exact conditions, bypasses, contributors, boundaries, handoffs
+and failure owners using the current supported Flow Inspector format.
+
+## Capability scope
+
+Names below identify responsibilities, not approved public identifiers or
+selectable module IDs. Resolve names and existing owners before introducing APIs.
+
+| Capability                      | Required outcome                                                                                                                                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spatial contracts and admission | Versioned neutral vectors, quaternion/pose, shapes, cameras, material/surface and instances; finite values, index/size limits, detached immutable output and owner-issued receipts             |
+| Coordinates and transforms      | Explicit handedness, axes, units and quaternion order; local/world/screen distinctions; preserve completed world-pose semantics and review any scale/hierarchy addition                        |
+| Geometry                        | Existing box/sphere/capsule/indexed triangles with topology, colors and UV preserved; additional primitives only for selected real consumer cases                                              |
+| Model defaults                  | Optional neutral schemas/components/render strategies through existing registration APIs; no alternate 3D state architecture or forced conversion of derived primitives into document elements |
+| Spatial projection              | Stable visual/entity identity, atomic accepted submissions, create/update/remove, visibility, camera-only updates, coalescing and unchanged-output reuse                                       |
+| Bounds                          | Correct local/world/screen and instance-aware bounds, shared preparation at its valid lifetime, no per-instance full vertex expansion                                                          |
+| Camera controls                 | App-supplied pose/projection parameters, resize/aspect, pan/orbit/dolly/fly/look/fit/focus calculations and cancellable interpolation/follow primitives; App chooses modes, angles and targets |
+| Queries and interaction         | Neutral ray/projection/hit contracts, depth and eligibility, stable element/instance mapping, normalized pointer coordinates and cancellation through existing owners                          |
+| Selection and overlays          | Existing selection authority, generic highlight/handle/grid/axes mechanisms when required by real cases; App chooses selection policy and UI                                                   |
+| Materials and lighting          | Existing appearance and texture features, neutral light/shadow controls, replaceable defaults; separate casting, visibility and selectability semantics                                        |
+| Instancing and LoD              | Shared geometry, stable instance mapping and transforms, completed detail geometry selection, culling and current results after visibility changes; App supplies content/detail policy         |
+| Presentation updates            | Explicit timing, pose interpolation, stop/cancel/retarget and reduced-motion input; no simulation authority or independent permanent draw loop                                                 |
+| Generic editing                 | Transaction/session-safe transform gestures, plane/grid snapping, preview/commit/cancel and neutral validity feedback; App owns placement/domain constraints                                   |
+| Restricted assets               | Bounded supported GLB decoding/admission, detached neutral meshes, source identity, cancellation/stale-result handling and disposal; App owns acceptance and storage                           |
+| Lifecycle and composition       | Partial-failure cleanup, idempotent retirement, runtime isolation, capability failures, selected-module isolation and ordinary Core customization                                              |
+
+## Composition constraints and readiness findings
+
+Profile continues to select provider policy; defaults continue to select
+official modules independently. App custom providers remain a `CUSTOM`
+composition through Core. Do not add App installers, arbitrary callbacks or a
+parallel extension registry to `applyPreset`.
+
+The current omitted-defaults contract selects every available default. Adding
+3D modules or binding a 3D provider must not silently change existing `2D`
+behavior, install incompatible 2D features, or filter defaults by profile.
+Task 1 must resolve the module/capability design against this exact contract.
+Prefer preserving it through genuinely neutral modules and explicit optional
+entrypoints. If that cannot satisfy the agreed behavior, record the precise
+contract conflict and obtain a product decision before changing public defaults
+semantics. No activation proceeds with this finding unresolved.
+
+Pure spatial data/control imports must not initialize or load a concrete
+renderer. The ordinary 2D runtime import/bundle path must not acquire Three.js
+execution through the new profile. Validate actual runtime/module boundaries,
+not merely package names. Keep the currently approved Preset spatial adapter
+boundary unless reviewed evidence requires a separately owned provider package;
+do not create one speculatively.
+
+Shared capabilities describe implemented mechanics, not App identities. Preserve
+saved/wire identities where applicable and put necessary migration at the App
+load owner. Remove superseded internal paths after consumer cutover; do not
+retain unrequested legacy runtime fallbacks.
+
+## Task 1 - Review the product contract and complete flow
+
+Prerequisites: this plan is present in the selected base.
+
+Scope: this plan, the activation reference, directly affected package contracts,
+existing Preset composition architecture and the new spatial flow representation.
+No production changes. Inspect current Flow Inspector authoring support before
+choosing file/target identities; do not copy old acceptance or fabricate admission.
+
+Work: refine the thin public product contract; resolve composition/defaults,
+capability ownership, pure/SDK entries, transform/query semantics and App camera
+control boundaries. Map every required outcome to a bounded owner and executable
+product case. Review each producer/consumer pair, whole-flow feasibility,
+failure/retirement routes and accepted behavior preservation. Declare exact
+implementation allowlists and gates for later tasks.
+
+Acceptance: reviewed flow and product contract agree; source-backed design
+findings are resolved; actual supported admission/evidence references are
+recorded. Readiness is pending until this work passes. A missing tool mapping
+blocks the affected proof claim, not permission to invent another ledger.
+
+## Task 2 - Consolidate spatial contracts and resource ownership
+
+Prerequisites: Task 1 design/readiness for this owner.
+
+Scope: Preset spatial contracts/entries/adapter/resource owners, required neutral
+engine types and the three Apps' direct imports/admission adapters.
+
+Work: separate pure contracts from SDK execution; consolidate shared admission
+without widening Sim's product admission; preserve geometry/material/texture
+lifetimes and explicit capability failures. Move generic conformance coverage
+to the common owner while retaining App-specific preservation tests.
+
+Acceptance: invalid updates are atomic; caller mutation/freezing cannot bypass
+admission; admitted unchanged geometry avoids repeated scans/copies; cleanup
+and foreign/retired-handle cases pass. Pure imports and unchanged 2D imports do
+not load the spatial SDK. Existing App rendering contracts remain supported.
+
+## Task 3 - Share incremental spatial projection and bounds
+
+Prerequisites: Tasks 1-2.
+
+Scope: shared Preset projection/bounds owners and direct Sim/FieldScope/Office
+layer integration; domain builders remain unchanged.
+
+Work: consolidate SpatialLayer identity/reconcile/submission semantics; retain
+pending model/camera ordering, unchanged-descriptor skipping and entity mapping.
+Share correct bounds computation with instance transforms and bounded lifetime.
+
+Acceptance: invalid/duplicate IDs leave accepted pending output intact;
+camera-only submissions do not resubmit meshes; pose/material changes retain
+topology resources; removals release exactly once. Instance bounds include
+current transforms without rescanning each instance's source vertices. An App
+with no tree panel uses exactly the same canonical/projection flow.
+
+## Task 4 - Share App-directed camera control mechanisms
+
+Prerequisites: Tasks 1-3.
+
+Scope: neutral camera helpers/projection updates and direct App camera callers.
+
+Work: share navigation/fit/projection math and cancellable transition/follow
+mechanisms. Apps retain mode selection, angles, projection choices, presets,
+targets, speed, bindings and reduced-motion policy. Do not introduce a global
+camera mode or choose a mode from App identity or tree visibility.
+
+Acceptance: existing App framing/navigation remains correct across aspect,
+resize, clipping and coordinate boundaries; rapid retargeting cancels obsolete
+presentation; camera changes do not create canonical writes, history or mesh
+rebuilds. Unsupported projection modes fail explicitly. No world orthographic
+support is claimed from the existing screen bridge.
+
+## Task 5 - Complete neutral spatial queries and interaction
+
+Prerequisites: Tasks 1-4.
+
+Scope: necessary Render Engine query/capability types, Render/Core facades,
+spatial adapter and direct picking/selection consumers.
+
+Work: define distinct 3D ray/projection/bounds queries; preserve existing 2D
+query meanings. Resolve element/instance identity, visibility/selectability,
+hit ordering and App input handoff through public owners. Reuse selection and
+Feature session/cancel mechanisms.
+
+Acceptance: CSS scale/DPR/resize and outside/zero-sized surfaces have defined
+results; depth and instance identity remain correct through LoD; unsupported
+queries fail without fallback. UI/Apps never extract SDK objects to implement
+queries, and visual hits never become solver evidence.
+
+## Task 6 - Complete selectable content and presentation mechanisms
+
+Prerequisites: Tasks 1-5 and the resolved defaults design.
+
+Scope: neutral component/schema/strategy installers, material/light/instance/LoD
+owners and their direct App composition.
+
+Work: expose optional reusable model defaults within the single architecture;
+separate shadow casting from selectability; retain texture sharing and immutable
+geometry. Generalize only required instance transforms/detail controls and
+explicitly timed pose presentation. Apps supply geometry, detail alternatives,
+camera choices and domain-driven targets.
+
+Acceptance: unselected defaults register no product state; explicit defaults
+have deterministic dependencies/cleanup; App customization uses public Core
+registration. LoD affects presentation only; hiding/showing uses current inputs;
+material/pose updates do not regenerate geometry. No camera mode or domain
+animation policy is installed by the foundation.
+
+## Task 7 - Complete the three App migrations
+
+Prerequisites: Tasks 2-6 integrated; incremental consumer proofs accompany each
+earlier owner slice rather than waiting for this checkpoint.
+
+Scope: FieldScope, Sim and Office composition/projection/control adapters and
+their existing affected behavior tests/docs.
+
+Work: complete FieldScope's high-reuse projection/resource migration, Sim's
+strict geometry/admission integration, and Office's scene/control presentation
+integration sequentially. Delete superseded duplicate mechanisms after each
+cutover. Do not rewrite domain algorithms or saved data for cosmetic naming.
+
+Acceptance: all three Apps use the shared foundation on the same source. Preserve
+Sim's complete original geometry and analysis/playback evidence boundaries;
+FieldScope's configuration/pose/visibility update isolation; Office's layout
+transaction, proposal revision and save acknowledgement semantics. Tree UI and
+camera modes remain App choices. Run their affected real-WebGL workflows.
+
+## Task 8 - Activate the official 3D profile
+
+Prerequisites: Tasks 1-7 and every applicable 3D prerequisite in the existing
+activation plan; no unresolved composition/defaults finding.
+
+Scope: Preset catalog/provider policy, direct lifecycle/composition tests,
+consumer startup and support documentation. HYBRID remains unavailable.
+
+Work: bind the production provider through Core using the reviewed loading
+boundary. Verify explicit/empty/omitted defaults, failure rollback, startup and
+runtime isolation, load/replay/local shared channels and real App operation.
+
+Acceptance: profile/default independence and existing `2D`/`CUSTOM` behavior
+pass; no unsupported capability falls back to Pixi, fake geometry or a
+placeholder surface. Real production use and synchronized visual evidence pass.
+Record actual evidence before reporting profile availability. This milestone
+does not close the remaining generic extension tasks.
+
+## Task 9 - Deliver generic editing and restricted asset extensions
+
+Prerequisites: reviewed Task 1 cases and Tasks 2-7; these mechanisms may be
+verified under CUSTOM before Task 8 without activating a profile early.
+
+Scope: neutral transform/snapping/preview mechanisms, bounded restricted asset
+decoding and the direct real App consumers selected during Task 1.
+
+Work: deliver move/rotate and supported scale controls, plane/grid snapping,
+preview/commit/cancel and generic interaction feedback. App validators decide
+legal placement. Extract Sim's restricted GLB mechanics without expanding its
+format claims or transferring App storage/source-binding authority. Include
+grid/axes/handles only where the accepted interaction requires them.
+
+Acceptance: one intended edit has one history boundary; invalid/cancelled edits
+preserve canonical state according to the declared session policy; replay and
+save/load reproduce accepted edits. Rejected/oversized/unsupported assets create
+no partial scene; stale async completion cannot attach to a retired runtime.
+Every mechanism has a real consumer and permanent behavior evidence. Broader
+formats and orthographic/multiview support require a separately selected scope.
+
+## Task 10 - Integrated verification and closeout
+
+Prerequisites: Tasks 1-9 and all required same-source evidence.
+
+Scope: final affected tests, public/package/App documentation and this plan's
+closeout under the existing workflow; no new feature discovery.
+
+Acceptance: each task, upstream handoff, whole target and preservation obligation
+passes on the integrated source. Review generated documentation and package
+entry/dependency boundaries. Report remaining unsupported capabilities honestly.
+Close the plan only through the existing closeout workflow after review; profile
+activation, a green generic CI job or one App's passing suite is insufficient.
+
+## Required product cases and verification
+
+- Shared architecture: show/hide an App tree panel without changing canonical
+  identity, history, projection or persistence; derived mesh count does not
+  force a document-mode switch.
+- Camera ownership: two consumers choose different angles/modes/targets through
+  the same controls; the foundation does not override either App's choices.
+- Geometry/admission: valid, empty-by-contract, invalid, oversized and mutated
+  input; quaternion/units/index/UV/color correctness; unchanged admitted reuse.
+- Projection: accepted call ordering, duplicate identity rejection, unchanged
+  output skipping, pose/material-only updates, removal and instance mapping.
+- Queries: screen/world/local distinctions, depth, CSS scaling, DPR, clipping,
+  visibility, instances and capability errors.
+- Canonical operations: edit, failed edit, cancel, Undo/Redo, load validation,
+  serialization and local shared-channel projection parity without echo.
+- Resources: shared texture lifetime, geometry replacement, partial startup
+  failure, idempotent teardown and stale callbacks across runtime replacement.
+- Work counts: camera updates perform no geometry generation/admission/copy;
+  pose updates retain topology; bounds do not scan vertices per instance;
+  unrelated UI/locale/save acknowledgements do not rebuild scenes. Verify
+  invalidation and output equivalence, not just helper calls or FPS.
+- Composition: unavailable profiles fail before mutation; selected defaults
+  remain independent; pure/2D imports exclude spatial execution; separate
+  runtime resources do not leak across instances.
+- Visual: real WebGL cameras, materials/transparency/shadows, dense instances,
+  LoD transitions, selection and editing at relevant scale. Semantic geometry
+  oracles precede screenshots; synthetic drivers alone do not prove rendering.
+
+Task 1 selects exact permanent cases and test commands at their current owners.
+Run focused cases first, then affected package/App tests, types, lint, builds,
+dependency and documentation checks, and real E2E/visual gates at complete-slice
+checkpoints. Preserve existing App test supervisors and resource guards.
+Use the existing naming gate before new identifiers propagate. Bug discoveries
+follow formal test-first rules; optimization requires meaningful operation counts
+and justified lifetime/invalidation evidence. Do not add caches without evidence.
+
+## Exclusions and completion boundary
+
+Excluded: robot FK/IK, simulation/solver algorithms, crop/room/character assets,
+task-to-animation decisions, rewards/achievements/permissions, full glTF,
+skeletal animation, general physics/pathfinding, multiview and HYBRID activation,
+and any new external dependency or tool upgrade without separate authorization.
+Orthographic support remains an explicitly unsupported or separately scoped
+capability until a reviewed real consumer requires it; the App still owns the
+choice among supported projection modes.
+
+Complete means the shared foundation, all three migrations, official 3D
+activation and agreed generic extensions satisfy their reviewed cases with
+existing behavior preserved. It does not mean every possible 3D engine feature,
+Office roadmap feature or simulation capability has been implemented.
+
+## Planning validation
+
+The planning delivery requires English project prose, valid local references,
+unique task headings, an indexed plan, consistent activation cross-references,
+and a scoped diff/format review. It does not claim production test execution,
+Inspector admission, implementation readiness or runtime completion.
