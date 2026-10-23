@@ -49,6 +49,30 @@ export const measureDesignBudget = (
     }
     return count
   }
+  const definitions =
+    record(draft) && record(draft.motifTemplates) ? draft.motifTemplates : {}
+  const definitionCounts = new Map<
+    string,
+    { motifs: unknown[]; points: number; largest: number }
+  >()
+  for (const [name, source] of Object.entries(definitions)) {
+    const motifs = Array.isArray(source) ? source : []
+    let total = 0,
+      largest = 0
+    for (const motif of motifs) {
+      const vertices = record(motif) ? motif.vertices : undefined
+      const count = Array.isArray(vertices) ? vertices.length : 0
+      total += count
+      largest = Math.max(largest, count)
+    }
+    definitionCounts.set(name, { motifs, points: total, largest })
+    observed.sourceNodes += motifs.length
+    observed.sourcePathCommands += total
+    observed.sourcePrimitivePathCommands = Math.max(
+      observed.sourcePrimitivePathCommands,
+      largest
+    )
+  }
   const visit = (value: unknown, depth: number, multiplier = 1) => {
     if (!record(value)) return
     observed.sourceNodes++
@@ -117,20 +141,28 @@ export const measureDesignBudget = (
         Number.isSafeInteger(value.rows) && Number.isSafeInteger(value.columns)
           ? Math.max(0, Number(value.rows)) * Math.max(0, Number(value.columns))
           : 0
-      const motifs = Array.isArray(value.motifs) ? value.motifs : []
-      const counts = motifs.map((motif) =>
-        record(motif) && Array.isArray(motif.vertices)
-          ? motif.vertices.length
-          : 0
-      )
-      const motifPoints = counts.reduce((sum, count) => sum + count, 0)
+      const reference =
+        record(value.motifs) && typeof value.motifs.template === 'string'
+          ? definitionCounts.get(value.motifs.template)
+          : undefined
+      const motifs = Array.isArray(value.motifs)
+        ? value.motifs
+        : (reference?.motifs ?? [])
+      let motifPoints = reference?.points ?? 0
+      primitivePoints = Math.max(4, reference?.largest ?? 0)
+      if (!reference)
+        for (const motif of motifs) {
+          const vertices = record(motif) ? motif.vertices : undefined
+          const count = Array.isArray(vertices) ? vertices.length : 0
+          motifPoints += count
+          primitivePoints = Math.max(primitivePoints, count)
+        }
       sourcePoints =
         (Array.isArray(value.boundary) ? value.boundary.length : 0) +
-        motifPoints
-      primitivePoints = counts.reduce((max, count) => Math.max(max, count), 4)
+        (reference ? 0 : motifPoints)
       generatedNodes = instances * motifs.length
       expandedPoints = instances * motifPoints
-      observed.sourceNodes += motifs.length
+      observed.sourceNodes += reference ? 0 : motifs.length
     } else if (value.type === 'projected-face') {
       sourcePoints = Array.isArray(value.vertices) ? value.vertices.length : 0
     } else sourcePoints = points(value.rings)
@@ -309,6 +341,7 @@ export const partitionDesignBudget = (
           'projection',
           'children',
           'fillTemplates',
+          'motifTemplates',
           'linearFields',
           'x',
           'y'
@@ -350,14 +383,11 @@ export const partitionDesignBudget = (
   }
   const whole = measureDesignBudget(input, expandedNodeLimit)
   if (whole.lowerBound || !whole.exceeded.length) return
-  const empty = () => ({
-    sourceNodes: 1,
-    expandedNodes: 1,
-    sourcePathCommands: 0,
-    sourcePrimitivePathCommands: 0,
-    expandedPathCommands: 0,
-    depth: 1
-  })
+  const sharedCost = measureDesignBudget(
+    { ...input, children: [] },
+    expandedNodeLimit
+  ).observed
+  const empty = () => ({ ...sharedCost })
   const parts: DesignBudgetPartition[] = []
   let selections: DesignSourceSelection[] = []
   let cost = empty()
@@ -407,19 +437,25 @@ export const partitionDesignBudget = (
     }
     // Measure the source component once. Only output cost scales with instances;
     // sparse ranges of one component share its source cost within each artifact.
+    const member = pattern
+      ? {
+          ...value,
+          instanceRanges: [{ start: ranges[0].start, end: ranges[0].start + 1 }]
+        }
+      : value
     const measured = measureDesignBudget(
-      pattern
-        ? {
-            ...value,
-            instanceRanges: [
-              { start: ranges[0].start, end: ranges[0].start + 1 }
-            ]
-          }
-        : value,
+      { ...input, children: [member] },
       expandedNodeLimit
     )
     if (measured.lowerBound || measured.exceeded.length) return
-    const unit = measured.observed
+    const unit = {
+      ...measured.observed,
+      sourceNodes: measured.observed.sourceNodes - sharedCost.sourceNodes,
+      sourcePathCommands:
+        measured.observed.sourcePathCommands - sharedCost.sourcePathCommands,
+      expandedNodes: measured.observed.expandedNodes - 1,
+      depth: measured.observed.depth - 1
+    }
     if (
       !Object.values(unit).every(Number.isSafeInteger) ||
       unit.expandedNodes <= 0

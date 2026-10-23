@@ -1894,6 +1894,36 @@ and cooperative preparation windows. Global key conflicts remain errors. Invalid
 or nonplanar/degenerate surfaces reject before application; no approximation is
 used to fit them into the supported primitive.
 
+### Shared normalized motifs
+
+A draft may define `motifTemplates` as a root-local map of names to the existing
+ordered inline motif arrays. Each surface-grid accepts either that inline array or
+`motifs: { template: key }`, with no other fields or overrides. The same definition
+may be used by grids with different boundaries, orientations, counts and painter
+orders, including pattern members. Templates are generic normalized polygons, not
+semantic presets. Do not infer repeats or require template use.
+
+Every named definition has a nonempty key of at most 160 characters and a nonempty
+array of valid motifs. Missing references, duplicate motif keys, invalid definitions
+and inline/reference conflicts reject before application. Definition validation and
+camera-dependent offsets occur once per construction invocation; each boundary and
+cell mapping remains independent. All definitions count toward source admission;
+each use counts its complete expanded output. Existing limits remain unchanged.
+
+Preparation retains definitions in its existing immutable source; repair and parts
+reuse that source. No new canonical property, cache across invocations, registry or
+storage mechanism is introduced. Ordinary vectors retain the inline equivalent's
+geometry, material values, keys, names, parents and painter order. Independent inline
+motifs, current partial receipts and no-replay recovery remain valid.
+
+Selected usage delivers the complete inline/reference contract and executable owner
+example without additional queries or pages. Compare total first-use bytes, including
+instructions, example and invocation; shrinking arguments alone is insufficient.
+Formal cases cover generic non-window polygons, varied planes/counts/orders, palettes,
+offsets, pattern members, malformed references, source lifetime and real application,
+Undo/Redo and durable reload. Saved design evidence is a regression fixture, never a
+runtime special case or proof of reduced model latency.
+
 ### Retained consumer lifetime
 
 Every reusable snapshot delivery admits a request-owned lease before returning.

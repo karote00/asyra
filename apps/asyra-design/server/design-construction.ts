@@ -534,6 +534,78 @@ export function* constructDesignSteps(
     }
     return result
   }
+  interface CompiledMotif {
+    key: string
+    name: string
+    fill: unknown
+    fills?: unknown[]
+    offset: { x: number; y: number }
+    worldOffset: Point3
+    vertices: { u: number; v: number }[]
+  }
+
+  const motifDefinitions = new Map<string, CompiledMotif[]>()
+  function* compileMotifs(
+    source: unknown
+  ): Generator<void, CompiledMotif[], void> {
+    const projectMotif = project
+    if (!projectMotif)
+      return fail('surface grid motifs require shared projection')
+    if (!Array.isArray(source) || !source.length)
+      return fail('surface grid motifs')
+    const motifs: CompiledMotif[] = []
+    const keys = new Set<string>()
+    for (const item of source) {
+      if (!record(item)) return fail('surface grid motif')
+      fields(
+        item,
+        ['key', 'name', 'fill', 'fills', 'offset', 'vertices'],
+        'surface grid motif'
+      )
+      const motifKey = label(item.key, 'surface grid motif key', 40)
+      if (keys.has(motifKey)) return fail('duplicate surface grid motif key')
+      keys.add(motifKey)
+      if (item.fill !== undefined && !isDesignFill(item.fill))
+        return fail('surface grid motif fill')
+      const fills = item.fills
+      if (
+        fills !== undefined &&
+        (!Array.isArray(fills) || !fills.length || !fills.every(isDesignFill))
+      )
+        return fail('surface grid motif fills')
+      let offset = { x: 0, y: 0 }
+      let worldOffset = { x: 0, y: 0, z: 0 }
+      if (item.offset !== undefined) {
+        const shift = point3(item.offset)
+        worldOffset = shift
+        const zero = projectMotif({ x: 0, y: 0, z: 0 })
+        const moved = projectMotif(shift)
+        offset = { x: moved.x - zero.x, y: moved.y - zero.y }
+      }
+      const rawVertices = item.vertices
+      if (!Array.isArray(rawVertices) || rawVertices.length < 3)
+        return fail('surface grid motif vertices')
+      if (sourceWork.admit(rawVertices.length)) yield
+      const vertices = rawVertices.map((point) => {
+        if (!record(point)) return fail('surface grid motif point')
+        fields(point, ['u', 'v'], 'surface grid motif point')
+        return {
+          u: number(point.u, 'surface grid u', 0, 1),
+          v: number(point.v, 'surface grid v', 0, 1)
+        }
+      })
+      motifs.push({
+        key: motifKey,
+        name: label(item.name, 'surface grid motif name', 60),
+        fill: item.fill,
+        fills: fills as unknown[] | undefined,
+        offset,
+        worldOffset,
+        vertices
+      })
+    }
+    return motifs
+  }
   function* expandGrid(
     value: Node,
     parent: string,
@@ -584,82 +656,38 @@ export function* constructDesignSteps(
       winding = Math.sign(cross)
     }
     const count = rows * columns
-    if (
-      !Array.isArray(value.motifs) ||
-      !value.motifs.length ||
-      nodeCount + count * value.motifs.length > limits.expandedNodes
-    )
+    let motifs: CompiledMotif[]
+    if (Array.isArray(value.motifs)) motifs = yield* compileMotifs(value.motifs)
+    else {
+      if (!record(value.motifs)) return fail('surface grid motifs')
+      fields(value.motifs, ['template'], 'surface grid motif reference')
+      const template = label(
+        value.motifs.template,
+        'surface grid motif template',
+        160
+      )
+      const definition = motifDefinitions.get(template)
+      if (!definition) return fail(`unknown motif template ${template}`)
+      motifs = definition
+    }
+    if (nodeCount + count * motifs.length > limits.expandedNodes)
       return fail('surface grid node limit')
-    const motifs: {
-      key: string
-      name: string
-      fill: unknown
-      fills?: unknown[]
-      offset: { x: number; y: number }
-      vertices: { u: number; v: number }[]
-    }[] = []
-    const keys = new Set<string>()
-    for (const item of value.motifs) {
-      if (!record(item)) return fail('surface grid motif')
-      fields(
-        item,
-        ['key', 'name', 'fill', 'fills', 'offset', 'vertices'],
-        'surface grid motif'
-      )
-      const motifKey = label(item.key, 'surface grid motif key', 40)
-      if (keys.has(motifKey)) return fail('duplicate surface grid motif key')
-      keys.add(motifKey)
-      if (item.fill !== undefined && !isDesignFill(item.fill))
-        return fail('surface grid motif fill')
-      const fills = item.fills
-      if (
-        fills !== undefined &&
-        (!Array.isArray(fills) || !fills.length || !fills.every(isDesignFill))
-      )
-        return fail('surface grid motif fills')
-      let offset = { x: 0, y: 0 }
-      let worldOffset = { x: 0, y: 0, z: 0 }
-      if (item.offset !== undefined) {
-        const shift = point3(item.offset)
-        worldOffset = shift
-        const zero = project({ x: 0, y: 0, z: 0 })
-        const moved = project(shift)
-        offset = { x: moved.x - zero.x, y: moved.y - zero.y }
-      }
+    for (const motif of motifs) {
+      vertexCount += count * motif.vertices.length
+      if (vertexCount > limits.expandedPathCommands)
+        return fail('surface grid vertex limit')
       if (worldBounds)
         for (const point of boundary)
           for (const axis of ['x', 'y', 'z'] as const) {
             worldBounds.min[axis] = Math.min(
               worldBounds.min[axis],
-              point[axis] + worldOffset[axis]
+              point[axis] + motif.worldOffset[axis]
             )
             worldBounds.max[axis] = Math.max(
               worldBounds.max[axis],
-              point[axis] + worldOffset[axis]
+              point[axis] + motif.worldOffset[axis]
             )
           }
-      if (!Array.isArray(item.vertices) || item.vertices.length < 3)
-        return fail('surface grid motif vertices')
-      if (sourceWork.admit(item.vertices.length)) yield
-      vertexCount += count * item.vertices.length
-      if (vertexCount > limits.expandedPathCommands)
-        return fail('surface grid vertex limit')
-      const vertices = item.vertices.map((point) => {
-        if (!record(point)) return fail('surface grid motif point')
-        fields(point, ['u', 'v'], 'surface grid motif point')
-        return {
-          u: number(point.u, 'surface grid u', 0, 1),
-          v: number(point.v, 'surface grid v', 0, 1)
-        }
-      })
-      motifs.push({
-        key: motifKey,
-        name: label(item.name, 'surface grid motif name', 60),
-        fill: item.fill,
-        fills: fills as unknown[] | undefined,
-        offset,
-        vertices
-      })
     }
     const result: Node[] = []
     const total = count * motifs.length
@@ -782,6 +810,7 @@ export function* constructDesignSteps(
       delete node.sharedFills
       delete node.linearFields
       delete node.fillTemplates
+      delete node.motifTemplates
     }
     if (node.type === 'projected-face') node = face(node, key, parent)
     nodes.set(key, { node, parent })
@@ -810,6 +839,14 @@ export function* constructDesignSteps(
       node.children = children
     }
     return node
+  }
+  if (input.motifTemplates !== undefined) {
+    if (!record(input.motifTemplates))
+      return fail('motifTemplates must be a named map')
+    for (const [name, source] of Object.entries(input.motifTemplates)) {
+      label(name, 'motif template key', 160)
+      motifDefinitions.set(name, yield* compileMotifs(source))
+    }
   }
   const draft = yield* copy(input)
   const conflicts = [...keyPaths]

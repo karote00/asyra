@@ -35,6 +35,7 @@ import {
   designConstructionSchema,
   projectedFaceSchema,
   surfaceGridSchema,
+  surfaceMotifsSchema,
   designPatternSchema
 } from './design-construction-schema'
 
@@ -258,6 +259,7 @@ const preparationSchema = {
     }
   },
   $defs: {
+    surfaceMotifs: surfaceMotifsSchema,
     node: {
       anyOf: [
         nodeSchema,

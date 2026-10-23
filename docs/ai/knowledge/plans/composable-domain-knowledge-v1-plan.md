@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Repetition handoff slice converged after round 3 of at most 3 and the separately authorized live observation. Valid component repetition satisfies the current drawing; layer repetition is not mandatory. Task 3 remains active. Next: read-only analysis of the 34.826-second pre-submission interval; no new implementation or model run.**
+Status: **Shared normalized motifs handoff closed after deterministic verification and one explicitly authorized live observation. Task 3 remains active. Prior repetition slice remains closed at round 3 of 3. No further model run is authorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,11 +20,11 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `77debb2224b7fdc4129f775340bdc95437834938` (integrated before the convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: layer-preserving pattern examples and early executable usage delivery.
-  Reuse existing construction, preparation, owner examples, scope selection and dispatcher.
-  Preserve geometry, materials, painter order, references and recovery without increasing
-  first-use bytes or round trips. No geometry rewriting, new tool, automatic compaction,
-  raised budget, Knowledge, refresh-policy, model/101, push, goal or automation changes.
+- Current scope: close and push the completed shared normalized motifs slice. The
+  next authorized activity is read-only investigation of read_design_context field
+  delivery across API and native-tool identities. No implementation of that finding,
+  model/101, new tool/state/registry, budget experiment, Knowledge change, refresh
+  change, unrelated cleanup or further repetition iteration is authorized.
 - Future implementation requires the exact affected contract to be reconciled and
   admitted first. A previous accepted Inspector snapshot does not admit these changes.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
@@ -85,6 +85,138 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Shared normalized motifs handoff - 2026-10-23
+
+Bounded contract: generic reuse of an ordered normalized polygon definition across
+independent planar grids, not a building/window-specific algorithm. Entry source:
+86b391f9f4624e018a08b0824bacaa216a072174. Saved first input from run 1792750592095
+contains six identical 278-byte motif arrays in a 7,807-byte invocation. Grids differ
+in boundaries/counts, so translation-only pattern cannot replace them. Public events
+bound the final preparatory read to first submission at 34.826 seconds; serialized
+App arguments do not establish model-generated code size or causality for that delay.
+
+Public contract: optional root motifTemplates maps names to existing ordered inline
+motif arrays; a grid uses either its existing array or motifs:{template:key}. No
+per-reference overrides, inheritance, recursion or automatic deduplication. Inline
+arrays remain independent. Root-local references disappear into ordinary vectors;
+canonical IDs, materials and painter order do not change. Invalid/missing references
+reject before writes. Existing retained recipes own source snapshots and repairs.
+
+Owner review: construction validates a named definition once per compilation and
+reuses only normalized motifs and camera-projected offsets. Each grid independently
+validates/projects its boundary and expands cells. Budget admission resolves the same
+root-local source to count all expanded nodes/points before cloning; partitions retain
+root definitions. No cross-preparation cache. Source edits, repair, cancellation and
+release follow existing preparation lifetime. No Framework API change is necessary.
+
+Step Execution Card - prepare:
+- Spec: Shared normalized motifs; Inspector prepare, compose-to-prepare and existing
+  prepare/apply routes. Inputs: draft, root definitions, current budgets; outputs:
+  ordinary prepared artifact, real source-work counts, retained source/error receipts.
+- Conditions: same shared projection, absolute root, strict inline-or-reference form;
+  bypass: direct edits and drafts without templates retain current behavior.
+- Contributors: construction, budget, preparation, existing repair/parts. Forbidden:
+  model calls, canonical writes in preparation, geometry inference, sorting, global cache.
+- Allowlist: design-construction.ts, design-budget.ts, design-construction-schema.ts,
+  local-design-tools.ts, their formal tests/recorded fixture, execution-flow proof.
+- Test first: shared vs inline exact outputs, generic non-window motifs on varied
+  planes/counts/orders/palettes/offsets, pattern members, missing/invalid references,
+  count bounds, cancellation, mutation isolation, repair and release. Browser verifies
+  real application, Undo/Redo and durable reload through existing test harness.
+
+Step Execution Card - compose (after prepare passes):
+- Same spec; Inspector compose and compose-to-prepare. Inputs: canonical selected
+  schema and owner examples; outputs: executable selected guide with all constraints.
+- Existing discovery/filtering/example and dispatcher owners only; known calls bypass
+  discovery. No additional lookup or broader preload. Inline/independent choices legal.
+- Allowlist: design-preparation-examples.ts, design-workflow-discovery.ts if needed,
+  local-design-workflow.ts if needed, local-design-tools.ts, direct delivery tests.
+- Execute the actual delivered example, then the saved compact input through main
+  workflow; verify partial outcomes and recovery without replaying completed writes.
+
+Fixed DoD:
+1. Permanent provenance-bearing fixture, no ignored tmp dependency; formal red before
+   implementation. Recorded invocation decreases at least 15% with unchanged content.
+2. Total first-use delivery (startup/query/guide/example/input) decreases, guide bytes
+   and page count do not increase, no new lookup. Measure the baseline on entry source.
+3. All 2,669 recorded objects retain geometry, material values, order, keys and parents;
+   generic cases preserve palettes, offsets, both orders, pattern references and inline.
+4. Definition validation occurs once per compilation; repeated artifact lookup does no
+   source work. Budget admission counts expanded output; no persistent cache or limits change.
+5. Invalid references reject before writes; cancellation, repair, release, partial success
+   and recovery retain truthful results and never replay acknowledged parts.
+6. Actual apply/Undo/Redo/durable reload, relevant integration tests, production types,
+   scoped lint/naming, Inspector admission/proof/static gates and bounded self-review.
+7. No fixture names, dates, counts or building semantics in runtime branches. Deterministic
+   improvement does not establish AI adoption or reduced live latency.
+
+Stop on a contract/owner conflict or if the proposed delivery cannot meet the fixed
+byte/round-trip DoD; revise this bounded plan from evidence, never silently weaken it.
+No fourth round of the closed repetition slice and no capacity experiment.
+
+Result - deterministic DoD complete:
+- Structural admission passed before implementation (66 mapped cases). The formal
+  red reproduced unsupported shared input and incorrect reference budget accounting.
+  Construction now parses each named normalized array once, independently projects
+  each boundary and retains existing expanded output and source limits.
+- Saved first invocation: 7,807 -> 6,614 bytes (15.28% less); all 2,669 canonical
+  objects, geometry, materials, source keys, names, parents and order are identical.
+  Selected guide: 27,021 -> 27,009 wire bytes, still two pages. Guide plus invocation:
+  34,828 -> 33,623 bytes (1,205 / 3.46% less). Existing initial scope instructions and
+  query route are unchanged; no added lookup or preliminary capability read.
+- The actual delivered root-material/independent-node/pattern example executes through
+  the main dispatcher. Generic triangles/chevrons on different planes/counts, both
+  painter orders, palettes, world offsets, mixed inline exceptions and pattern members
+  pass. Work-count tests prove one definition read and separate boundary projection;
+  unused definitions still consume source budget, and source edits recompile correctly.
+- Partial part failure returns an owned draft; repairing its missing reference uses
+  the existing retained source and preserves the completed part without replay.
+  Cancellation, invalid definitions, release and source-selected parts retain current
+  protection. No production budget change or live capacity experiment.
+- Eight focused server suites passed 465 tests; the final strengthened 15-case motif
+  suite passed again. Production App/server/proof types, scoped lint (zero errors,
+  one preexisting console warning), naming and static Inspector checks passed.
+  Browser application/Undo/Redo/durable reload passed in 28.4 seconds, with real
+  canonical geometry/parent/order checks and full scene/props persistence digests.
+  Its owned services were stopped; evidence is under tmp/shared-motifs-browser/.
+- Isolated proof initially could not capture a fixture from __tests__; static import
+  did not change that owner boundary. Keep the full recorded fixture in ordinary
+  formal tests; the self-contained mapped proof uses generic polygons, following
+  the existing verifier contract. No Inspector engine change or missing-proof pass.
+  Candidate c98d057b-1bd3-417f-a63d-2ee3ab43c29c passed 66/66; contract review had no
+  blockers and was accepted. Admitted revision 71 verification
+  bb5694c5-d18f-43a2-b627-29ca02d50133 also passed 66/66 on the same runtime source.
+- Bounded self-review covered the changed owner, schema/selected reference closure,
+  inline consumers, budget partitions, retained repair, material compilation and
+  browser lifecycle. No building-specific runtime branch, new owner registry,
+  persistent state or compatibility alias. Initial compressed wording was clarified
+  to retain absolute-root and row-major requirements while staying below baseline.
+- Evidence and failed attempts are retained under tmp/shared-motifs-*. No model/101,
+  Knowledge edit or additional push. AI adoption and first-frame latency are not
+  established by these deterministic results.
+
+Result - authorized live observation and convergence:
+- Run 1792759840879 used the production 10,000 ceiling, no video, 120 seconds of
+  work and at most 60 seconds of reporting. Four independent grids referenced one
+  three-motif definition. No motif-specific supplementary query, refresh or repeated
+  drawing submission occurred. The same saved input is 4,483 bytes versus 5,676
+  bytes with inline definitions: 21.0% less, with all 2,119 compiled entries equal.
+- First submission was at 52.37 seconds and first content at 53.81 seconds, compared
+  with 62.53 and 64.28 seconds previously. Different initial drawing scope and optional
+  contract selection prevent assigning the whole timing difference to motifs. The
+  bounded success is useful reuse and reduced redundant input without changed output;
+  overall task duration is not an additional closure requirement.
+- Work stopped at 120 seconds; reporting took about 13.88 seconds. Full retained
+  input/output, report text, images and reload evidence are saved with the run. The
+  material judgment remained failed and the building incomplete. A later context
+  field query returned partial coverage across two identities; tool-host cleanup
+  also failed after the deadline. Neither is recorded as successful or repaired by
+  the motifs slice. They do not reopen its unchanged fixed DoD.
+- The user accepted convergence and authorized push. Before closeout, all 861 files
+  in the accepted Inspector source and all 2,744 live source manifest entries matched
+  the worktree. Historical evidence remains immutable; only this active plan records
+  the subsequent observation. The next context-delivery investigation is read-only.
+
 ### Repetition handoff convergence - 2026-10-23
 
 The user accepted closure of this bounded slice and authorized pushing the completed
@@ -129,12 +261,10 @@ Naming and static Inspector checks passed (34 cases). The five preexisting conso
 warnings in the wider scoped lint remain warnings, not errors. Evidence is retained
 in `tmp/repetition-integrated-*`; complete commit-dependent checks before pushing.
 
-Next authorized investigation: explain the interval from final preparatory read
-at 27.702 seconds to first submission at 62.528 seconds using saved payloads and
-current public owner capabilities. Identify one bounded App/framework handoff,
-its evidence, competing explanations, minimum proposal and DoD. No production edits,
-model run, new logger, or renewed investigation of unobservable native argument
-streaming is authorized by this investigation.
+The subsequent read-only investigation identified identical normalized motifs on
+independent grids as one bounded input-contract gap. Its authorized implementation
+and fixed DoD are recorded above. The 34.826-second interval remains unassigned to
+specific native generation/streaming work; no new logger or model run was introduced.
 
 ### Layer-preserving pattern handoff - 2026-10-23
 

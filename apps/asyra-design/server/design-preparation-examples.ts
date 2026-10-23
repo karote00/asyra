@@ -313,6 +313,14 @@ const composedMaterialExample = {
     name: 'Assembly',
     projection: surfaceGridExample.draft.projection,
     fillTemplates: { edge: '#123456' },
+    motifTemplates: {
+      detail: [
+        {
+          ...surfaceGridExample.draft.children[0].motifs[0],
+          fill: { template: 'edge' }
+        }
+      ]
+    },
     linearFields: {
       glass: continuousWorldMaterialExample.draft.linearFields.glass
     },
@@ -353,12 +361,7 @@ const composedMaterialExample = {
         members: [
           {
             ...surfaceGridExample.draft.children[0],
-            motifs: [
-              {
-                ...surfaceGridExample.draft.children[0].motifs[0],
-                fill: { template: 'edge' }
-              }
-            ]
+            motifs: { template: 'detail' }
           }
         ]
       }
