@@ -44,13 +44,60 @@ test('model reference documents and images are recognized without runtime select
   assert.equal(result.frameworkReleaseRequired, false)
 })
 
-test('model reference classification does not admit executable or unrelated assets', () => {
+test('model reference measurements and review evidence stay outside runtime selection', () => {
+  const inputs = [
+    'assets/asyra-office/models/people/man-reference-measurements.json',
+    'assets/another-app/models/chair/review/02-floor-v6.json',
+    'assets/another-app/models/chair/review/03-partition-v5-side.json',
+    'assets/another-app/models/chair/review/bench-reference-layout.json',
+    'assets/another-app/models/chair/review/awning-annotation-record.json',
+    'assets/another-app/models/chair/review/evidence/comparison.json',
+    'assets/another-app/models/chair/review/evidence/comparison-run.json',
+    'assets/another-app/models/chair/review/runs/abc/bench-reference-layout.json',
+    'assets/another-app/models/chair/review/02-floor-v6.svg'
+  ]
+  const result = classifyChanges(inputs, manifests)
+  assert.deepEqual(result.unknownPaths, [])
+  assert.deepEqual(names(result), [])
+  assert.equal(result.designE2ERequired, false)
+  assert.equal(result.frameworkReleaseRequired, false)
+  assert.equal(
+    result.relationshipMap.executionPlan.checks.repositoryScripts.mode,
+    'not-selected'
+  )
+})
+
+test('model reference Python drawing helpers and archived source are scoped to review directories', () => {
+  const result = classifyChanges(
+    [
+      'assets/another-app/models/chair/review/draw_reference.py',
+      'assets/another-app/models/chair/review/test_reference.py',
+      'assets/another-app/models/chair/review/history/run/draw_reference.py.txt'
+    ],
+    manifests
+  )
+  assert.deepEqual(result.unknownPaths, [])
+  assert.deepEqual(names(result), [])
+  assert.equal(result.designE2ERequired, false)
+  assert.equal(result.frameworkReleaseRequired, false)
+})
+
+test('model reference classification does not admit runtime paths or unrelated assets', () => {
   for (const input of [
     'assets/asyra-office/models/generate.py',
     'assets/asyra-office/models/runtime.js',
     'assets/asyra-office/models/package.json',
     'assets/asyra-office/runtime/config.json',
-    'assets/asyra-office/models/scene.glb'
+    'assets/asyra-office/models/scene.glb',
+    'assets/asyra-office/models/chair/review/runtime.js',
+    'assets/asyra-office/models/chair/review/package.json',
+    'assets/asyra-office/models/chair/review/config.json',
+    'assets/asyra-office/models/chair/review/scene.glb',
+    'assets/asyra-office/models/chair/draw_reference.py',
+    'assets/asyra-office/models/chair/draw_reference.py.txt',
+    'assets/asyra-office/runtime/review/draw_reference.py',
+    'assets/asyra-office/models/chair/preview/draw_reference.py',
+    'assets/asyra-office/models/chair/review/notebook.ipynb'
   ]) {
     assert.ok(classifyChanges([input], manifests).unknownPaths.includes(input))
   }
