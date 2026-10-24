@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 import unittest
 from collections import Counter
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 def spec(batch):
     return json.loads((ROOT / batch / (batch + '-model-spec.json')).read_text())

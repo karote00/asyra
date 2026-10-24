@@ -208,8 +208,8 @@ the mug's lower handle root, toilet hinge supports, non-pinching tube bends,
 marker cap retention, clipped soil volumes and rooted planter vines. Existing
 surface colours remain defaults. Wallpaper repeats in final local metres.
 
-Run the [remaining-spec numeric checks](review/__tests__/test_remaining_specs.py)
-with `python3 -B assets/asyra-office/models/review/__tests__/test_remaining_specs.py`.
+Run the [remaining-spec numeric checks](shared/review/__tests__/test_remaining_specs.py)
+with `python3 -B assets/asyra-office/models/shared/review/__tests__/test_remaining_specs.py`.
 They exercise component contacts, section closure, thickness, openings, default
 fits and computed bounds. They do not certify production Boolean results,
 all reference pixels, dynamic joint motion, or rendered LoD transitions.
