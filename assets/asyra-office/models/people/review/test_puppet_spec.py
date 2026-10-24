@@ -37,6 +37,8 @@ def ring_point(row, phi, inset=0):
 
 
 def groove_depth(seam, z):
+    if seam is None:
+        return 0
     u = (z - seam['zRange'][0]) / (seam['zRange'][1] - seam['zRange'][0])
     return seam['depth'] * (1 - math.cos(2 * math.pi * u)) / 2 if 0 <= u <= 1 else 0
 

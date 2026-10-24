@@ -2,7 +2,8 @@
 
 Status: `office-man` documentation approved for commit after scoped numeric checks. No model,
 Blender process, renderer, animation rig or wardrobe runtime has been produced.
-This is the current male construction contract. The female baseline is separate.
+This is the current male construction contract. The [female modular profile](WOMAN-PUPPET-SPEC.md)
+reuses its general equations with independent female dimensions and fit data.
 
 ## 1. Reference measurements and authority
 

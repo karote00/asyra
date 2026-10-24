@@ -7,7 +7,7 @@ Status: the user approved committing both sheets on 2026-10-04.
 
 Each sheet contains FRONT, SIDE, BACK, TOP, and THREE-QUARTER. Hair, clothing, and proportions must remain consistent. The man's left-facing and woman's right-facing side layouts do not define different coordinates; modeling uses front -Y and right +X.
 
-The [original reference](../../architecture/review/approved-office-reference.jpg) controls appearance. The male specification uses [the puppet recipe](../PUPPET-SPEC.md) and [male numeric specification](../man-puppet-model-spec.json); the female baseline uses [its geometry specification](../GEOMETRY-SUPPLEMENT.md) and [inline numeric specification](../people-model-spec.json). Both TOP views are slightly tilted top-appearance illustrations, not orthographic measurement sources. Actual model top review uses +Z.
+The [original reference](../../architecture/review/approved-office-reference.jpg) controls appearance. The male specification uses [the puppet recipe](../PUPPET-SPEC.md) and [male numeric specification](../man-puppet-model-spec.json); the female profile uses [its modular construction contract](../WOMAN-PUPPET-SPEC.md) and [female numeric specification](../woman-puppet-model-spec.json). Both TOP views are slightly tilted top-appearance illustrations, not orthographic measurement sources. Actual model top review uses +Z.
 
 No animals, props, chairs, status lights, or animation. Review hidden-area completions and authored dimensions together. Slight image tonal variation does not become baked lighting; use solid-colour model materials.
 
@@ -29,4 +29,24 @@ The bare skin head is separately specified as 560 mm wide.
 No source pixels were changed in this task. New hidden anatomy, depth, garment
 interiors, hair decomposition and sockets are authored. The user approved
 committing the revised documentation after its scoped numeric checks. This
-documentation approval does not prove a rendered match. The female baseline retains its separate review status.
+documentation approval does not prove a rendered match. The female modular documentation is also approved for commit; its rendered model remains unverified.
+
+## Female modular specification revision
+
+The [original female sheet](02-woman-v1.png) is retained byte-for-byte. The
+[female construction contract](../WOMAN-PUPPET-SPEC.md) follows the male logical
+part decomposition with independent female measurements, sockets, black bob
+hair, cheek regions and clothing cavities. No default glasses, male buttons or
+male shoe grooves are added.
+
+The [measurement record](../woman-reference-measurements.json) binds the source
+hash and pixel picks. At 1200 mm height, the visible hair span is about 617 mm;
+620 mm is the construction target, and the bare skin head is separately 500 mm
+wide. The old approximate 520 mm caption is superseded for construction.
+
+Hidden geometry is explicitly authored. The user approved the new documentation for commit after scoped numeric checks. Passing numeric checks does not approve a mesh or rendered match.
+Run the female document checks with:
+
+```sh
+python3 -B assets/asyra-office/models/people/review/__tests__/test_woman_puppet_spec.py
+```

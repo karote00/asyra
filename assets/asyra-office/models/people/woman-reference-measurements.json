@@ -1,0 +1,131 @@
+{
+  "source": "review/02-woman-v1.png",
+  "sha256": "5a8f9f480b63e36fe4cb3ac77c9887fe2253d8b415a3306554c6470c58868dc6",
+  "imagePixels": [1536, 1024],
+  "method": "Manual FRONT pixel landmarks on the original sheet; approximate 3 px picking uncertainty. Not calibrated photogrammetry. Use the silhouette, not the dimension line endpoints.",
+  "frontOriginPixels": [206.5, 791],
+  "crownY": 274,
+  "soleY": 791,
+  "heightPixels": 517,
+  "adoptedHeightMetres": 1.2,
+  "metresPerPixel": 0.0023210831721470018,
+  "estimatedPickingUncertaintyPixels": 3,
+  "estimatedPickingUncertaintyMetres": 0.006963249516441006,
+  "conversion": "X=(pixelX-206.5)*scale; Z=(791-pixelY)*scale. Widths use pixel differences; FRONT cannot determine depth.",
+  "anchors": [
+    {
+      "feature": "hair width",
+      "measurementKind": "span",
+      "pixels": [75, 341],
+      "measuredMetres": 0.6174081237911024,
+      "referenceTargetMetres": 0.62,
+      "modelDefaultMetres": 0.62,
+      "modelValueSource": "/defaultDimensions/hairWidthTarget",
+      "differenceFromMeasurementMetres": 0.002591876208897559
+    },
+    {
+      "feature": "hand span",
+      "measurementKind": "span",
+      "pixels": [87, 327],
+      "measuredMetres": 0.5570599613152805,
+      "referenceTargetMetres": 0.558,
+      "modelDefaultMetres": 0.558,
+      "modelValueSource": "/defaultDimensions/handSpan",
+      "differenceFromMeasurementMetres": 0.0009400386847195907
+    },
+    {
+      "feature": "shoe span",
+      "measurementKind": "span",
+      "pixels": [141, 273],
+      "measuredMetres": 0.30638297872340425,
+      "referenceTargetMetres": 0.306,
+      "modelDefaultMetres": 0.306,
+      "modelValueSource": "/defaultDimensions/shoeSpan",
+      "differenceFromMeasurementMetres": -0.0003829787234042592
+    },
+    {
+      "feature": "eyes height",
+      "measurementKind": "height",
+      "pixels": [456],
+      "measuredMetres": 0.7775628626692456,
+      "referenceTargetMetres": 0.778,
+      "modelDefaultMetres": 0.778,
+      "modelValueSource": "/bodyAndFaceParts/eye-right/centreXZ/1",
+      "differenceFromMeasurementMetres": 0.0004371373307544557
+    },
+    {
+      "feature": "eye half spacing",
+      "measurementKind": "offset",
+      "pixels": [252],
+      "measuredMetres": 0.10560928433268858,
+      "referenceTargetMetres": 0.106,
+      "modelDefaultMetres": 0.106,
+      "modelValueSource": "/bodyAndFaceParts/eye-right/centreXZ/0",
+      "differenceFromMeasurementMetres": 0.00039071566731141427
+    },
+    {
+      "feature": "nose height",
+      "measurementKind": "height",
+      "pixels": [472],
+      "measuredMetres": 0.7404255319148936,
+      "referenceTargetMetres": 0.74,
+      "modelDefaultMetres": 0.74,
+      "modelValueSource": "/bodyAndFaceParts/nose/centreXZ/1",
+      "differenceFromMeasurementMetres": -0.00042553191489358433
+    },
+    {
+      "feature": "mouth endpoints",
+      "measurementKind": "height",
+      "pixels": [491],
+      "measuredMetres": 0.6963249516441006,
+      "referenceTargetMetres": 0.696,
+      "modelDefaultMetres": 0.696,
+      "modelValueSource": "/bodyAndFaceParts/mouth/pointsXZ/0/1",
+      "differenceFromMeasurementMetres": -0.00032495164410062394
+    },
+    {
+      "feature": "chin height",
+      "measurementKind": "height",
+      "pixels": [521],
+      "measuredMetres": 0.6266924564796905,
+      "referenceTargetMetres": 0.627,
+      "modelDefaultMetres": 0.627,
+      "modelValueSource": "head.centre[2] - head.radii[2]",
+      "differenceFromMeasurementMetres": 0.0003075435203094834
+    },
+    {
+      "feature": "shirt hem",
+      "measurementKind": "height",
+      "pixels": [614],
+      "measuredMetres": 0.41083172147001934,
+      "referenceTargetMetres": 0.41,
+      "modelDefaultMetres": 0.41,
+      "modelValueSource": "/clothing/shirt/bodyOuterRings/0/0",
+      "differenceFromMeasurementMetres": -0.0008317214700193643
+    },
+    {
+      "feature": "shoe top",
+      "measurementKind": "height",
+      "pixels": [759],
+      "measuredMetres": 0.07427466150870406,
+      "referenceTargetMetres": 0.076,
+      "modelDefaultMetres": 0.076,
+      "modelValueSource": "/clothing/shoes/shoe-right/outerRings/-1/0",
+      "differenceFromMeasurementMetres": 0.0017253384912959413
+    }
+  ],
+  "modelDeviationToleranceMetres": 0.01,
+  "valueAuthority": "Raw pixel conversion, rounded reference targets and explicit model construction values are separate. Resolve modelValueSource against woman-puppet-model-spec.json; stable IDs address list entries.",
+  "depthAuthority": "Y depths, bare anatomy, garment cavities, sockets and hair paths are authored completions. SIDE informs depth qualitatively. TOP is a tilted appearance view.",
+  "oldImageCaption": "Approximate 0.52 m caption is superseded for construction. At retained 1.20 m height, the visible hair width is about 0.617 m; target 0.620 m. Bare skin head is separately authored at 0.470 m. Original source pixels are preserved.",
+  "numericEnvelopeReview": {
+    "method": "1025 samples per leaf path; exact elliptical section extrema per sample; scalp crown and lateral extrema included. No model generated.",
+    "sampledBoundsMetres": {
+      "width": 0.6216977701736471,
+      "depth": 0.5281446377687079,
+      "top": 1.2
+    },
+    "hairInputSHA256": "723181a94c04e78d0313023ce4c505bf59865866201446e5260653c084358f05",
+    "limits": "Sampled width/depth/top only; not a proof of continuous extrema, hair/face clearance or rendered appearance."
+  }
+}
