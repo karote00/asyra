@@ -16,8 +16,8 @@ Eight vertices, six planar quad faces or twelve triangles. Use outward winding a
 
 Two rectangular intrinsic-color regions lie on the front face at Y=-0.0075:
 
-| Mark | X range | Z range |
-| --- | --- | --- |
+| Mark  | X range       | Z range      |
+| ----- | ------------- | ------------ |
 | Upper | -0.040..0.040 | 0.117..0.133 |
 | Lower | -0.040..0.040 | 0.067..0.083 |
 
@@ -34,3 +34,13 @@ This is only a coordinate example. Hardware, app snapping and editable signage a
 ## Future acceptance
 
 After modeling authorization, verify bounds within 0.0002 m, plain back, two front-only marks, closed faces and correct origin. No model or export validation has occurred. Twelve triangles suffice for the base plate; no alternate LOD mesh is delivered.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Plate and placement
+
+The 180 x 15 x 200 mm plate needs twelve geometry triangles; both 80 x 16 mm bars are front-only artwork. Keep the same base mesh across LoD tiers. After resizing depth by Sy, place the origin at Y=-7.5*Sy mm to keep the rear on a wall at Y=0. A fixed -7.5 mm translation after resizing would embed or detach the plaque. The bars use inverse-scaled default coordinates, so their relative layout stretches with the plate; they are not repeating wallpaper. Plate and marks remain separate appearance regions.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

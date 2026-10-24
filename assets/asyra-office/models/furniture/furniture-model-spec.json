@@ -225,7 +225,107 @@
         "plain apron",
         "no drawers"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "WRITING-DESK-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "contacts": "Leg and apron flat tops contact tabletop underside at Z=0.61. Apron/leg joints overlap; preserve the rounded-volume witnesses in the construction document.",
+        "referenceViews": "Elevated illustrations, not calibrated projections; all four legs have equal height."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "defaultNormalization": "none",
+        "rule": "Default coordinates already match the declared size. Apply target/default XYZ ratios to every part about the ground origin once; include bevels and joint overlap."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "tabletop",
+            "parts": [
+              "top"
+            ],
+            "defaultMaterial": "oak"
+          },
+          {
+            "id": "aprons",
+            "parts": [
+              "front-apron",
+              "back-apron",
+              "left-apron",
+              "right-apron"
+            ],
+            "defaultMaterial": "oak"
+          },
+          {
+            "id": "legs",
+            "parts": [
+              "leg-1",
+              "leg-2",
+              "leg-3",
+              "leg-4"
+            ],
+            "defaultMaterial": "dark-frame"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise desk material, otherwise preset; then region colour, otherwise desk colour. Retain other properties and isolate instances.",
+        "woodMappingSpace": "resized-local-metres-before-placement",
+        "grainSecondaryDefault": "oak-grain",
+        "patternOwnership": "The selected material owns the pattern. Base-colour override preserves the selected material; the grain secondary colour is separately configurable. A plain material replacement has no forced oak grain.",
+        "roundedSurfaceMapping": {
+          "method": "normalized-absolute-normal-blend",
+          "normalSpace": "default-local-geometric-normal",
+          "positionSpace": "resized-local-metres-before-placement",
+          "weights": "wTop=max(nZ,0)/sum(abs(n)); wLong=abs(nY)/sum(abs(n)); other weight is solid base colour.",
+          "grain": "G=wTop*g(X,Y)+wLong*g(X,Z), using the existing g formula; C=base*(1-0.18*G)+secondary*0.18*G in normalized sRGB, then convert to linear.",
+          "scope": "Default tabletop wood only; replacement materials own their mappings. Normals are geometric interpolation normals, not lighting or normal-map samples."
+        }
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "bevelSegments": 3,
+            "maxTriangles": 1600,
+            "maxSurfaceError": 0.0005,
+            "topBevelSegments": 4,
+            "topCornerTopology": "normalized-barycentric-grid",
+            "otherCornerTopology": "normalized-barycentric-grid"
+          },
+          {
+            "id": "lod1",
+            "bevelSegments": 2,
+            "maxTriangles": 1000,
+            "maxSurfaceError": 0.001,
+            "topBevelSegments": 2,
+            "topCornerTopology": "centre-fan",
+            "otherCornerTopology": "centre-fan"
+          },
+          {
+            "id": "lod2",
+            "bevelSegments": 1,
+            "maxTriangles": 500,
+            "maxSurfaceError": 0.003,
+            "topBevelSegments": 1,
+            "topCornerTopology": "centre-fan",
+            "otherCornerTopology": "single-triangle"
+          }
+        ],
+        "errorMetric": "Maximum adaptive bidirectional distance per part against ideal default rounded surfaces. Include hidden caps in total triangles.",
+        "preserve": [
+          "nine parts",
+          "four flat grounded feet",
+          "flat tabletop contacts",
+          "eight apron-leg overlaps",
+          "complete bounds and appearance regions"
+        ],
+        "failurePolicy": "Reject an exceeded budget or error; do not remove supports, resize parts, add patches or silently increase limits."
+      }
     },
     {
       "moduleId": "work-chair",
@@ -348,12 +448,12 @@
           "size": [
             0.022,
             0.022,
-            0.34
+            0.28361735458966025
           ],
           "centre": [
             -0.14,
-            0.17,
-            0.4
+            0.1734356579878017,
+            0.427981188860695
           ],
           "radius": 0.003,
           "material": "dark-frame",
@@ -365,12 +465,12 @@
           "size": [
             0.022,
             0.022,
-            0.34
+            0.28361735458966025
           ],
           "centre": [
             0.14,
-            0.17,
-            0.4
+            0.1734356579878017,
+            0.427981188860695
           ],
           "radius": 0.003,
           "material": "dark-frame",
@@ -398,6 +498,110 @@
           "back-post-1"
         ],
         "rule": "translate assembly after rotation so maxY=.24 and maxZ=.70"
+      },
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "WORK-CHAIR-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "boundsAuthority": "ideal-rounded-surface-support",
+        "rotationOrder": "Rotate each back part around its own centre, then apply the same ideal-support-derived translation to all three.",
+        "visualReviewPoint": "Reference BACK shows back posts ending at the seat lower edge. Post lower bounds are Z=0.290 m, with original upper endpoints and -7 degree inclination preserved; no dangling stubs below the seat."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "defaultNormalization": "back-assembly-translation-only",
+        "origin": "Keep authored root (0,0,0); default bounds Y midpoint is +0.01 m.",
+        "rule": "Assemble the default chair, then scale all placed points and seat datum by requested/default XYZ ratios once. Never repeat back normalization or retune angles per LOD or instance."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "seat",
+            "parts": [
+              "seat"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "backrest",
+            "parts": [
+              "backrest"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "posts",
+            "parts": [
+              "back-post--1",
+              "back-post-1"
+            ],
+            "defaultMaterial": "dark-frame"
+          },
+          {
+            "id": "legs",
+            "parts": [
+              "leg-1",
+              "leg-2",
+              "leg-3",
+              "leg-4"
+            ],
+            "defaultMaterial": "dark-frame"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise chair material, otherwise preset; then region colour, otherwise chair colour. Preserve other properties and isolate instances.",
+        "mapping": "Defaults are solid colours. Replacement materials own their mappings under the shared resized-local-space contract; no forced wood grain or fabric texture."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "cushionBevelSegments": 6,
+            "cushionCornerTopology": "normalized-barycentric-grid",
+            "postBevelSegments": 3,
+            "postCornerTopology": "normalized-barycentric-grid",
+            "legRadialSegments": 32,
+            "legBevelSegments": 3,
+            "maxTriangles": 4000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod1",
+            "cushionBevelSegments": 4,
+            "cushionCornerTopology": "normalized-barycentric-grid",
+            "postBevelSegments": 2,
+            "postCornerTopology": "centre-fan",
+            "legRadialSegments": 24,
+            "legBevelSegments": 2,
+            "maxTriangles": 2200,
+            "maxSurfaceError": 0.002
+          },
+          {
+            "id": "lod2",
+            "cushionBevelSegments": 2,
+            "cushionCornerTopology": "centre-fan",
+            "postBevelSegments": 1,
+            "postCornerTopology": "single-triangle",
+            "legRadialSegments": 12,
+            "legBevelSegments": 1,
+            "maxTriangles": 900,
+            "maxSurfaceError": 0.004
+          }
+        ],
+        "supportPlanes": "All tiers retain ideal-support witnesses for complete bounds and use one shared back placement. Insert boundary-consistent ideal-surface samples; count additional triangles.",
+        "errorMetric": "Adaptive bidirectional surface distance per part against ideal default placed surfaces. Include hidden caps; base-sampling checks do not certify the final mesh.",
+        "preserve": [
+          "eight closed solids",
+          "four ground contacts",
+          "seat and back-post overlaps",
+          "rotated backrest support extrema",
+          "independent appearance regions"
+        ],
+        "failurePolicy": "Reject a budget or error failure; do not remove supports, fit each tier separately or silently relax limits."
       }
     },
     {
@@ -414,14 +618,14 @@
           "partId": "base",
           "primitive": "rounded-box",
           "size": [
-            1.35,
-            0.65,
-            0.16
+            1.15,
+            0.55,
+            0.21
           ],
           "centre": [
             0,
-            0,
-            0.2
+            -0.05,
+            0.175
           ],
           "radius": 0.045,
           "material": "sage"
@@ -432,12 +636,12 @@
           "size": [
             1.21,
             0.135,
-            0.42
+            0.52
           ],
           "centre": [
             0,
             0.2575,
-            0.49
+            0.34
           ],
           "radius": 0.045,
           "material": "sage"
@@ -448,12 +652,12 @@
           "size": [
             0.12,
             0.63,
-            0.31
+            0.47
           ],
           "centre": [
             -0.615,
             0,
-            0.375
+            0.295
           ],
           "radius": 0.048,
           "material": "sage"
@@ -463,12 +667,12 @@
           "primitive": "rounded-box",
           "size": [
             0.545,
-            0.45,
+            0.5,
             0.09
           ],
           "centre": [
             -0.278,
-            -0.05,
+            -0.075,
             0.295
           ],
           "radius": 0.035,
@@ -480,12 +684,12 @@
           "size": [
             0.545,
             0.11,
-            0.325
+            0.385
           ],
           "centre": [
             -0.278,
             0.148,
-            0.525
+            0.5072120950006342
           ],
           "radius": 0.04,
           "material": "sage",
@@ -497,12 +701,12 @@
           "size": [
             0.12,
             0.63,
-            0.31
+            0.47
           ],
           "centre": [
             0.615,
             0,
-            0.375
+            0.295
           ],
           "radius": 0.048,
           "material": "sage"
@@ -512,12 +716,12 @@
           "primitive": "rounded-box",
           "size": [
             0.545,
-            0.45,
+            0.5,
             0.09
           ],
           "centre": [
             0.278,
-            -0.05,
+            -0.075,
             0.295
           ],
           "radius": 0.035,
@@ -529,12 +733,12 @@
           "size": [
             0.545,
             0.11,
-            0.325
+            0.385
           ],
           "centre": [
             0.278,
             0.148,
-            0.525
+            0.5072120950006342
           ],
           "radius": 0.04,
           "material": "sage",
@@ -544,14 +748,14 @@
           "partId": "foot-1",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            -0.55,
+            -0.615,
             -0.23,
             0
           ],
           "topCentre": [
-            -0.55,
+            -0.615,
             -0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -562,14 +766,14 @@
           "partId": "foot-2",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            0.55,
+            0.615,
             -0.23,
             0
           ],
           "topCentre": [
-            0.55,
+            0.615,
             -0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -580,14 +784,14 @@
           "partId": "foot-3",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            -0.55,
+            -0.615,
             0.23,
             0
           ],
           "topCentre": [
-            -0.55,
+            -0.615,
             0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -598,14 +802,14 @@
           "partId": "foot-4",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            0.55,
+            0.615,
             0.23,
             0
           ],
           "topCentre": [
-            0.55,
+            0.615,
             0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -616,12 +820,12 @@
       "seatDatums": [
         [
           -0.278,
-          -0.05,
+          -0.075,
           0.34
         ],
         [
           0.278,
-          -0.05,
+          -0.075,
           0.34
         ]
       ],
@@ -634,12 +838,156 @@
       "excluded": [
         "yellow throw pillows"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "TWO-SEAT-SOFA-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "referenceRelationship": "Back cushions rise above rear shell and join seat cushions. Arms extend to short-foot level. Twelve solids form one connected assembly.",
+        "dimensionAuthority": "Overall size and seat height retained. Component revisions are explicit construction choices to satisfy the illustrated relationships, not calibrated image measurements."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Complete the default assembly including local back-cushion rotations, then apply requested/default XYZ ratios once to every part, joint gap and seat datum about the ground origin. Do not refit cushions, feet or radii after scaling."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "base",
+            "parts": [
+              "base"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "back-shell",
+            "parts": [
+              "back-shell"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "arm--1",
+            "parts": [
+              "arm--1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "seat-cushion--1",
+            "parts": [
+              "seat-cushion--1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "back-cushion--1",
+            "parts": [
+              "back-cushion--1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "arm-1",
+            "parts": [
+              "arm-1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "seat-cushion-1",
+            "parts": [
+              "seat-cushion-1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "back-cushion-1",
+            "parts": [
+              "back-cushion-1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "foot-1",
+            "parts": [
+              "foot-1"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "foot-2",
+            "parts": [
+              "foot-2"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "foot-3",
+            "parts": [
+              "foot-3"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "foot-4",
+            "parts": [
+              "foot-4"
+            ],
+            "defaultMaterial": "dark-wood"
+          }
+        ],
+        "overrideOrder": "Part region material, otherwise sofa material, otherwise preset; then part region colour, otherwise sofa colour. Preserve remaining material properties and isolate instances.",
+        "mapping": "Solid defaults; replacement material owns mappings under the shared resized-local-space rule."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "bevelSegments": 8,
+            "cornerTopology": "normalized-barycentric-grid",
+            "footRadialSegments": 32,
+            "footBevelSegments": 3,
+            "maxTriangles": 8500,
+            "maxSurfaceError": 0.001,
+            "maxFootSurfaceError": 0.00025
+          },
+          {
+            "id": "lod1",
+            "bevelSegments": 5,
+            "cornerTopology": "normalized-barycentric-grid",
+            "footRadialSegments": 24,
+            "footBevelSegments": 2,
+            "maxTriangles": 4500,
+            "maxSurfaceError": 0.002,
+            "maxFootSurfaceError": 0.0005
+          },
+          {
+            "id": "lod2",
+            "bevelSegments": 3,
+            "cornerTopology": "centre-fan",
+            "footRadialSegments": 12,
+            "footBevelSegments": 1,
+            "maxTriangles": 1800,
+            "maxSurfaceError": 0.006,
+            "maxFootSurfaceError": 0.0015
+          }
+        ],
+        "rule": "Keep twelve closed parts, four flat foot contacts, all attachment overlaps, two seat/back divisions and common ideal bounds. Count caps and hidden faces. Include boundary-consistent support samples for rotated cushion extrema.",
+        "errorMetric": "Adaptive bidirectional distance per part against the ideal default placed surface. Subdivision bounds do not certify a produced mesh.",
+        "failurePolicy": "Reject a triangle or error budget failure; never hide gaps with patches or silently remove parts.",
+        "attachmentRule": "Every attachment witness must stay strictly inside both closed convex parts at each LOD. Its default-space interior margin must exceed the applicable part error bound. Feet have separate tighter bounds. All generated meshes still require signed-distance, topology and budget verification."
+      }
     },
     {
       "moduleId": "lounge-armchair",
       "name": "Lounge armchair - single unit",
-      "reviewDrawing": "review/04-armchair-v1.png",
+      "reviewDrawing": "source/side-source-reset/five-views-v3-wider.png",
       "size": [
         0.62,
         0.61,
@@ -812,7 +1160,7 @@
           "topCentre": [
             0.0,
             -0.18,
-            0.285
+            0.295
           ],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
@@ -823,14 +1171,14 @@
           "partId": "leg-2",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            0.207846,
+            0.207846096908265,
             0.12,
             0
           ],
           "topCentre": [
-            0.155885,
+            0.155884572681199,
             0.09,
-            0.285
+            0.295
           ],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
@@ -841,14 +1189,14 @@
           "partId": "leg-3",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            -0.207846,
+            -0.207846096908265,
             0.12,
             0
           ],
           "topCentre": [
-            -0.155885,
+            -0.155884572681199,
             0.09,
-            0.285
+            0.295
           ],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
@@ -863,7 +1211,94 @@
         "three splayed feet at 120 degrees",
         "no underside shelf"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "COFFEE-TABLE-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "legConstruction": "Round tapered profile with tangent inward rim fillets, followed by height-dependent XY shear. End caps remain horizontal.",
+        "attachment": "Each leg embeds 10 mm into the tabletop; no separate brackets or underside platform."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Assemble the default four-part unit first, then apply requested/default XYZ ratios once about the ground origin to all points, caps, grain coordinates and attachment datums. Nonuniform sizing may turn circles into ellipses; never compensate by rebuilding parts."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "top",
+            "parts": [
+              "top"
+            ],
+            "defaultMaterial": "oak"
+          },
+          {
+            "id": "leg-1",
+            "parts": [
+              "leg-1"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "leg-2",
+            "parts": [
+              "leg-2"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "leg-3",
+            "parts": [
+              "leg-3"
+            ],
+            "defaultMaterial": "dark-wood"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise table material, otherwise preset; then region colour, otherwise table colour. Preserve other properties and independent instances.",
+        "mapping": "Top grain uses resized local X/Y; circular side grain uses X/Z. Blend on rounded rims using default geometric normals as documented. Underside and legs are solid defaults; replacement materials own their mappings."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "topRadialSegments": 64,
+            "legRadialSegments": 32,
+            "rimSegments": 3,
+            "baseTriangles": 2560,
+            "maxTriangles": 2800,
+            "maxTopSurfaceError": 0.001,
+            "maxLegSurfaceError": 0.00025
+          },
+          {
+            "id": "lod1",
+            "topRadialSegments": 48,
+            "legRadialSegments": 24,
+            "rimSegments": 2,
+            "baseTriangles": 1440,
+            "maxTriangles": 1600,
+            "maxTopSurfaceError": 0.0015,
+            "maxLegSurfaceError": 0.0005
+          },
+          {
+            "id": "lod2",
+            "topRadialSegments": 24,
+            "legRadialSegments": 12,
+            "rimSegments": 1,
+            "baseTriangles": 480,
+            "maxTriangles": 600,
+            "maxTopSurfaceError": 0.005,
+            "maxLegSurfaceError": 0.002
+          }
+        ],
+        "rule": "Retain four closed convex inscribed parts, three horizontal ground contacts, exact whole bounds and embedded upper joints. Compare signed containment at the three documented Z=.292 m axis witnesses. Count all caps and hidden faces.",
+        "errorMetric": "Per-part adaptive bidirectional distance to the ideal placed default surface, including leg shear. Analytic sampling bounds are not exported-mesh verification.",
+        "failurePolicy": "Reject budget, attachment or error failures; do not move feet, add patch geometry or silently relax limits."
+      }
     }
   ],
   "construction": {

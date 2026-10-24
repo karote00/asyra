@@ -1,0 +1,314 @@
+{
+  "source": "02-entry-chalkboard-v1.png",
+  "sourceSHA256": "90163e40e6b48a51db99523d02a7ee5e4b24582b0469c61231b191068a4b9000",
+  "output": "02-entry-chalkboard-annotated-v1.png",
+  "outputSHA256": "852203d9e3941b6e442cf76665e29acee81743c7443791feba71035540cc5991",
+  "annotationLayer": "02-entry-chalkboard-annotation-layer.png",
+  "annotationLayerSHA256": "461ef6b8cb127d8869b3bc7d19e7beda7f90df6e34120295b21680a200a722d5",
+  "sheetPixels": [
+    1536,
+    1024
+  ],
+  "sourceOffset": [
+    0,
+    0
+  ],
+  "sourceScale": 1,
+  "unchangedOutsideAnnotations": true,
+  "resampling": "none",
+  "redrawnObjectViews": 0,
+  "defaultOverallMillimetres": [
+    420.0,
+    362.31940984822523,
+    681.6262273491942
+  ],
+  "callouts": [
+    {
+      "number": 1,
+      "partId": "hinge-covers",
+      "centre": [
+        430,
+        212
+      ],
+      "leader": [
+        [
+          440,
+          223
+        ],
+        [
+          461,
+          241
+        ],
+        [
+          485,
+          276
+        ]
+      ],
+      "target": [
+        485,
+        276
+      ]
+    },
+    {
+      "number": 2,
+      "partId": "hinge-heads",
+      "centre": [
+        560,
+        212
+      ],
+      "leader": [
+        [
+          550,
+          223
+        ],
+        [
+          531,
+          246
+        ],
+        [
+          497,
+          266
+        ]
+      ],
+      "target": [
+        497,
+        266
+      ]
+    },
+    {
+      "number": 3,
+      "partId": "side-spreaders",
+      "centre": [
+        356,
+        429
+      ],
+      "leader": [
+        [
+          367,
+          440
+        ],
+        [
+          398,
+          472
+        ],
+        [
+          496,
+          513
+        ]
+      ],
+      "target": [
+        496,
+        513
+      ]
+    },
+    {
+      "number": 4,
+      "partId": "spreader-fastener-heads",
+      "centre": [
+        623,
+        463
+      ],
+      "leader": [
+        [
+          613,
+          476
+        ],
+        [
+          587,
+          493
+        ],
+        [
+          563,
+          513
+        ]
+      ],
+      "target": [
+        563,
+        513
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "text": "DEFAULT OVERALL (W x D x H): 420 x 362.319 x 681.626 mm",
+      "bounds": [
+        40,
+        113,
+        767,
+        136
+      ]
+    },
+    {
+      "text": "Original views preserved. Blue notes identify parts and clarify dimensions; they are not model geometry.",
+      "bounds": [
+        40,
+        152,
+        926,
+        170
+      ]
+    },
+    {
+      "text": "1",
+      "bounds": [
+        424,
+        205,
+        435,
+        219
+      ]
+    },
+    {
+      "text": "2",
+      "bounds": [
+        554,
+        205,
+        565,
+        219
+      ]
+    },
+    {
+      "text": "3",
+      "bounds": [
+        350,
+        422,
+        361,
+        436
+      ]
+    },
+    {
+      "text": "4",
+      "bounds": [
+        617,
+        456,
+        628,
+        470
+      ]
+    },
+    {
+      "text": "WOODEN FRAME ONLY",
+      "bounds": [
+        93,
+        798,
+        268,
+        809
+      ]
+    },
+    {
+      "text": "APPROX. - EXACT DEPTH ABOVE",
+      "bounds": [
+        383,
+        798,
+        609,
+        808
+      ]
+    },
+    {
+      "text": "1  HINGE COVER",
+      "bounds": [
+        40,
+        918,
+        203,
+        933
+      ]
+    },
+    {
+      "text": "hinge-covers",
+      "bounds": [
+        40,
+        948,
+        132,
+        963
+      ]
+    },
+    {
+      "text": "2 outer tapered metal plates",
+      "bounds": [
+        40,
+        974,
+        237,
+        989
+      ]
+    },
+    {
+      "text": "2  AXLE HEAD",
+      "bounds": [
+        418,
+        918,
+        554,
+        933
+      ]
+    },
+    {
+      "text": "hinge-heads",
+      "bounds": [
+        418,
+        948,
+        507,
+        963
+      ]
+    },
+    {
+      "text": "2 visible circular heads",
+      "bounds": [
+        418,
+        974,
+        581,
+        986
+      ]
+    },
+    {
+      "text": "3  SIDE SPREADER",
+      "bounds": [
+        796,
+        918,
+        980,
+        933
+      ]
+    },
+    {
+      "text": "side-spreaders",
+      "bounds": [
+        796,
+        948,
+        902,
+        963
+      ]
+    },
+    {
+      "text": "2 rounded wooden support bars",
+      "bounds": [
+        796,
+        974,
+        1021,
+        989
+      ]
+    },
+    {
+      "text": "4  FASTENER HEAD",
+      "bounds": [
+        1174,
+        918,
+        1363,
+        933
+      ]
+    },
+    {
+      "text": "spreader-fastener-heads",
+      "bounds": [
+        1174,
+        948,
+        1348,
+        963
+      ]
+    },
+    {
+      "text": "4 total - 2 on each side",
+      "bounds": [
+        1174,
+        974,
+        1334,
+        986
+      ]
+    }
+  ],
+  "scope": "Dimension clarification and part identification only; no geometry reconstruction or model acceptance."
+}

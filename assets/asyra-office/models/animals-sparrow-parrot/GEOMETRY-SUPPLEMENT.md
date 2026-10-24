@@ -1,5 +1,11 @@
 # Birds - Geometry Supplement
 
+The [sparrow construction contract](TREE-SPARROW-SPEC.md) owns sparrow-specific
+source-label mapping, complete sizing, feet, appearance and LOD clarifications.
+The [cockatiel construction contract](COCKATIEL-SPEC.md) owns its crest, beak,
+feet, sizing, appearance and LOD clarifications. Each contract takes precedence
+for its own bird; existing raw geometry remains unchanged.
+
 ## Coordinate and authority contract
 
 Read the numeric specification with this document and the surface recipes. Metres, +Z up, -Y front, +X anatomical right. Front camera is on -Y, right on +X, back on +Y, top on +Z, bottom on -Z; oblique camera on (+X,-Y,+Z). Top and bottom drawings may rotate the animal on the page for readability; world coordinates control construction. Reflect X to obtain the opposite side. Static closed-beak, wings-folded standing poses only.
@@ -18,7 +24,7 @@ Sparrow beak rows are [Y, centreZ, radiusX, radiusZ], using the same constructio
 
 ## Cockatiel crest
 
-Three independent overlapping feather lofts form the swept-back crest. Each row is [Z, centreX, centreY, radiusX, radiusY]. Use the same 64-sample capped XY-ellipse loft construction as the upper beak, with outward normals. Roots overlap the head; tips are closed and rounded by their small final ellipses. No extra feather strands. Include the crest in final bounds normalization.
+Three independent head-attached feather lofts form the swept-back crest. Their side projections may overlap, but adjacent X intervals have at least 2 mm clearance; do not union the feathers together. Each row is [Z, centreX, centreY, radiusX, radiusY]. Use the same 64-sample capped XY-ellipse loft construction as the upper beak, with outward normals. Roots overlap the head; tips are closed and rounded by their small final ellipses. No extra feather strands. Include the crest in final bounds normalization.
 
 ## Legs and exact toe counts
 
@@ -28,7 +34,7 @@ The sparrow has THREE toes toward -Y and ONE toward +Y on each foot. The parrot 
 
 ## Final bounds
 
-Build all geometry in raw coordinates. Compute complete raw bounds lo/hi, including toes, beak and tail. Transform every part uniformly by the following per-axis normalization:
+Build all geometry in raw coordinates. Compute complete raw bounds lo/hi, including toes, beak and tail. Apply the same following per-axis normalization to every part:
 
 - X'=(X-(loX+hiX)/2)*targetX/(hiX-loX)
 - Y'=(Y-(loY+hiY)/2)*targetY/(hiY-loY)

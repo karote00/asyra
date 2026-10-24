@@ -15,3 +15,16 @@ Use case: stylized-concept. Create five-view sheet of ONE wall-mounted blank whi
 ## Inspection notes
 
 Both sheets show five labeled views, without chairs, stationery, room objects, or projected shadows. Some table elevations expose rear legs using perspective: all four actual legs end on Z=0. The side 0.70 m arrow is drawn beside the apron area; it denotes floor-to-tabletop-underside height, not the shorter clear height below the apron. Whiteboard corner strokes are illustrative joins, not grooves. Numeric documents govern tray placement below the frame, panel recess, and hidden structure. Incidental tonal variation is not a lighting texture. No calibrated projections or model verification are claimed.
+
+## Whiteboard side-view correction
+
+Current sheet: `02-blank-whiteboard-v2.png`. Original v1 is immutable source
+history. Two imagegen edit attempts were rejected: both left the tray too high;
+the second also ignored explicit pixel coordinates. Neither is a current asset.
+
+The final correction uses `draw_whiteboard_side.py`: project JSON Y/Z bounds
+into a RIGHT orthographic view at 500 px/m, +Y screen-right and +Z screen-up.
+The tray projects left, its top equals the frame bottom, and both rear edges
+align. Replace only the bounded RIGHT inset using the SVG layer; preserve all
+other view pixels. `whiteboard-side-record.json` records geometry, source hash,
+patch bounds and pixel verification. This is a reference drawing, not a model.

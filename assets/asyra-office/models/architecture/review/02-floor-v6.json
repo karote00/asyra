@@ -1,0 +1,90 @@
+{
+  "status": "dimension-driven drawing; pending user review; not a model",
+  "specification": "../architecture-model-spec.json",
+  "moduleId": "floor-plank",
+  "sizeMetres": [
+    1.2,
+    0.18,
+    0.025
+  ],
+  "pixelsPerMetre": 900,
+  "orthographicBoundsPixels": {
+    "front": [
+      [
+        110.0,
+        355.0
+      ],
+      [
+        1190.0,
+        355.0
+      ],
+      [
+        1190.0,
+        332.5
+      ],
+      [
+        110.0,
+        332.5
+      ]
+    ],
+    "side": [
+      [
+        1739.0,
+        355.0
+      ],
+      [
+        1901.0,
+        355.0
+      ],
+      [
+        1901.0,
+        332.5
+      ],
+      [
+        1739.0,
+        332.5
+      ]
+    ],
+    "top": [
+      [
+        110.0,
+        836.0
+      ],
+      [
+        1190.0,
+        836.0
+      ],
+      [
+        1190.0,
+        674.0
+      ],
+      [
+        110.0,
+        674.0
+      ]
+    ]
+  },
+  "ratios": {
+    "front": 47.99999999999999,
+    "side": 7.199999999999999,
+    "top": 6.666666666666667
+  },
+  "obliqueProjection": {
+    "azimuthDegrees": -60,
+    "elevationDegrees": 35,
+    "matrix": [
+      [
+        779.4228634059947,
+        450.0000000000001,
+        0.0
+      ],
+      [
+        258.10939635797075,
+        -447.0585884029386,
+        -737.2368398600926
+      ]
+    ]
+  },
+  "bevelRepresentation": "outer-envelope drawing; the 1 mm bevel remains specified, not resolved as bevel facets",
+  "material": "existing Plank surface recipe; no short-end grain or closed grain loops"
+}

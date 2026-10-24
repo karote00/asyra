@@ -12,17 +12,18 @@ Origin: rear mounting disk center on wall plane Y=0. Exactly one disk on the lef
 
 The disk is radius 0.025, extending from Y=0 to -0.008. Use 64 radial segments. The rod has radius 0.006 and follows centerline points (0,-0.008,0), (0,-0.080,0), (0,-0.080,-0.018), (0.120,-0.080,-0.018), (0.120,-0.080,0). This adds the short downward neck shown between the projecting arm and spindle.
 
-Replace all centerline right-angle corners with tangent arcs of radius 0.006. Each arc uses 16 equal angle segments; sample the rod cross-section with 48 vertices and transport the cross-section frame continuously along the path. Cap both free path ends. The arm's first cap touches the disk front; the final cap faces upward. Do not add a second mount, cover, spring, screw, or decorative tip.
+Replace all centerline right-angle corners with tangent arcs of radius 0.008. The 0.006 tube radius leaves a positive 0.002 inner bend radius; adjacent bends leave 0.002 of the 0.018 vertical segment straight. Each arc uses 16 equal angle segments; sample the rod cross-section with 48 vertices and transport the cross-section frame continuously along the path. Cap both free path ends. The arm's first cap touches the disk front; the final cap faces upward. Do not add a second mount, cover, spring, screw, or decorative tip.
 
 Bounds: X=-0.025 to 0.126, Y=-0.086 to 0, Z=-0.025 to 0.025. The mounting disk sets the total 0.050 height. The rod and disk may remain separate closed solids in one placeable assembly.
 
-The existing 0.100-wide paper roll can center at (0.060,-0.080,-0.018), axis +X. Its bore radius is 0.017, leaving clearance around the radius-0.006 spindle. The straight spindle lies between the tangent positions X=0.006 and 0.114. This positioning note does not bundle the roll into the holder or implement placement behavior.
+The existing 0.100-wide paper roll can center at (0.060,-0.080,-0.018), axis +X. Its bore radius is 0.017, leaving clearance around the radius-0.006 spindle. The straight spindle lies between the tangent positions X=0.008 and 0.112. This positioning note does not bundle the roll into the holder or implement placement behavior.
 
 ## Soap pump bottle
 
 Origin: center of bottom contact face. Revolve the closed radius/Z profile in JSON about Z with 96 angular segments. The body diameter is 0.070; its bottom is flat, shoulders taper into a neck, and the top closes at Z=0.145. This is a simplified opaque display body, not a functional fluid container.
 
 Separate parts:
+
 - Sage collar: radius 0.017, Z=0.145 to 0.153.
 - Sage stem: radius 0.005, Z=0.153 to 0.171.
 - Sage round head: radius 0.014, Z=0.171 to 0.180.
@@ -38,3 +39,17 @@ Complete bounds: X +/-0.035, Y=-0.045 to 0.035, Z=0 to 0.180. The nozzle points 
 FRONT looks along +Y; RIGHT along -X; BACK along -Y; TOP along -Z with +Y upward. Oblique views are illustrative. Occlusion must not create additional parts.
 
 Future model review checks bounds within 0.0005, the holder's single mounting disk and continuous rod, fit with the separate paper roll, real nozzle outlet recess, closed bottom/back surfaces, and separate pump parts. Check all views and close details. No model, fit simulation, or runtime behavior has been validated at this stage.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Holder and pump
+
+Holder bounds are X=-25..126, Y=-86..0, Z=-25..25 mm. The revised 8 mm bend radius exceeds the 6 mm rod radius, avoiding a zero-radius pinched inner elbow. The 100 mm roll occupies X=10..110 mm on the straight spindle X=8..112 mm, with 2 mm longitudinal clearance at either end and 11 mm radial bore clearance. These are default fit values, not guarantees after independently resizing the two assets.
+
+Soap bottle complete size is 70 x 80 x 180 mm, including the forward nozzle; body diameter alone is 70 mm. The downward outlet is a real radius-2 mm, depth-5 mm blind recess. Its cylinder spans Z=161..168 mm, leaving a 2 mm roof. Outlet uses the sage pump material by default, including cut faces. Keep body and pump regions independently replaceable.
+
+LoD preserves holder bends, positive inner radius, pump joins and the outlet recess. No dynamic pump mechanism, liquid or paper simulation is included.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

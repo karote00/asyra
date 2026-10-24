@@ -1,18 +1,21 @@
 # Asyra Office - Group 4F - Rugs and Throw Pillow
 
-Status: **The user approved these drawings and documents for commit. No Blender, exported models, animation, app implementation or model verification.**
+Status: **Original drawings and both rug construction revisions are approved. The throw-pillow construction revision is approved by the user for commit. No production model verification.**
 
-| One placeable unit | Source in the central office | X x Y x Z (m) | Sheet |
-| --- | --- | --- | --- |
-| Rectangular green rug | Floor beside the left laptop desk and sleeping pet | 1.40 x 0.95 x 0.008 | [Rectangular rug](review/01-rectangular-rug-v1.png) |
-| Round grey-lavender rug | Beneath the small table in front of the green sofa | 1.20 x 1.20 x 0.008 | [Round rug](review/02-round-rug-v1.png) |
-| Mustard throw pillow | Yellow cushions on the green sofa | 0.32 x 0.11 x 0.32 | [Pillow](review/03-throw-pillow-v1.png) |
+| One placeable unit      | Source in the central office                       | X x Y x Z (m)       | Sheet                                               |
+| ----------------------- | -------------------------------------------------- | ------------------- | --------------------------------------------------- |
+| Rectangular green rug   | Floor beside the left laptop desk and sleeping pet | 1.40 x 0.95 x 0.008 | [Rectangular rug](review/01-rectangular-rug-v1.png) |
+| Round grey-lavender rug | Beneath the small table in front of the green sofa | 1.20 x 1.20 x 0.008 | [Round rug](review/02-round-rug-v1.png)             |
+| Mustard throw pillow    | Yellow cushions on the green sofa                  | 0.32 x 0.11 x 0.32  | [Pillow](review/03-throw-pillow-v1.png)             |
 
 Each rug sheet has top, front edge, right edge, bottom and oblique views. The pillow has front, right, back, top and oblique views. One rug is one textile unit, not a ground tile or furniture set. One pillow is independent of its sofa. No preset arrangement is supplied.
 
 ## Reconstruction inputs
 
 - [Approved original reference](../architecture/review/approved-office-reference.jpg): central office first.
+- [Rectangular rug construction](RECTANGULAR-RUG-SPEC.md): exact edge sweep, binding mask, default appearance, size overrides and LoD.
+- [Round rug construction](ROUND-RUG-SPEC.md): circular profile, cap and binding dimensions, replaceable defaults, elliptical sizing and LoD.
+- [Throw pillow construction](THROW-PILLOW-SPEC.md): inflated patches, inset sides, seam, replaceable defaults, size overrides and LoD.
 - [Geometry supplement](GEOMETRY-SUPPLEMENT.md): bounds, bevels, backs, pillow shape and seam.
 - [JSON specification](textiles-model-spec.json): exact geometry, origin, materials and region masks.
 - [Surface recipes](SURFACE-RECIPES.md): deterministic intrinsic weave without lighting.

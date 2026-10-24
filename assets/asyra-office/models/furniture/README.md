@@ -14,6 +14,40 @@ Status: **The user approved committing drawings/documents for five items; models
 
 Each has front, right, back, top, and oblique views. Legs and structural seat/back cushions belong to the furniture unit. Yellow throw pillows, laptops, mugs, rugs, and plants remain separate.
 
+## Writing desk review
+
+The [updated desk contract](WRITING-DESK-SPEC.md) is approved for commit. It
+preserves the nine-part design and original sheet, specifies beveled contacts,
+whole-unit sizing, replaceable defaults and unverified LOD limits, and selects
+programmatic primitives for future production. No generator or model is delivered.
+
+## Work chair review
+
+The [updated work-chair contract](WORK-CHAIR-SPEC.md) is approved for commit.
+It defines rounded-surface back positioning, eight-part assembly, explicit
+post termination at the seat bottom, replacement regions and unverified LOD limits.
+Only the post lower ends are shortened to match the sheet; other geometry inputs
+and reference pixels remain unchanged. No model is verified.
+
+## Two-seat sofa review
+
+The [revised sofa contract](TWO-SEAT-SOFA-SPEC.md) is approved for commit. It
+corrects rear-shell/cushion height ordering and attachment, extends the arms to
+short-foot level, and insets the base to avoid duplicate exterior surfaces.
+Default bounds and seat height remain 1.35 x 0.65 x 0.70 m and 0.34 m. Exact
+component revisions are construction choices, not measurements from pixels.
+The original sheet is preserved; its side-height label is explicitly corrected
+in the document. No model or app output is verified.
+
+## Round coffee table review
+
+The [coffee-table contract](COFFEE-TABLE-SPEC.md) is approved for commit. It
+preserves the 0.62 m diameter and 0.32 m height, defines three tapered legs with
+horizontal caps, adds 10 mm embedment and specifies replaceable surfaces and
+unverified LOD budgets. The unchanged illustration is not a calibrated set of
+projections; exact three-leg construction is defined numerically. No model is
+verified.
+
 ## Sources and modeling inputs
 
 - [Original approved image](../architecture/review/approved-office-reference.jpg): central office first.

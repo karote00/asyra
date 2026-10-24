@@ -6,23 +6,41 @@ Metres, +Z up, -Y front, +X right. Origin is the centre of the footprint at Z=0.
 
 ## Square low stool
 
-One orange rounded box has bounds X/Y=-0.18..0.18, Z=0.16..0.30. Radius is 0.035 on all twelve edges. Define this surface as the Minkowski sum of a centred box of size (0.29,0.29,0.07) and a sphere of radius 0.035, then translate to Z=0.23. This defines planar centre regions, quarter-cylinder edges and spherical corners without scaling drift. Use eight equal angular intervals per quarter circle; preserve the exact outer bounds. No sculpted bulge, piping, button, seam, extra layer or indentation.
+The [square low stool contract](SQUARE-LOW-STOOL-SPEC.md) owns the complete
+construction and LOD rules. All original dimensions remain: 360 x 360 x 300 mm,
+one radius 35 mm rounded cushion, four vertical 35 mm square legs at XY=+-125 mm.
+Source legs reach Z=175 mm, embedding 15 mm into the cushion beginning at 160 mm.
+Every leg cap stays inside the planar underside with 2.5 mm margin.
 
-Four straight square wooden legs have centres X/Y=+-0.125, section 0.035, and run from Z=0 to 0.175. Each penetrates the cushion underside by 0.015 within its planar underside region. Legs are vertical, not splayed. No bevel, rail, stretcher, upholstery fastener or additional support block.
+The revised handoff makes the clipped exterior explicit: remove four holes from
+the flat underside, trim hidden leg sides/tops, and stitch the four leg rims to
+those holes into one closed exterior with five replaceable surface regions.
+The underside has 26 triangles without extra vertices, not two triangles covering
+the leg contacts. No legs, caps, seams, rails or support blocks are added.
 
-Treat legs and cushion as separate material parts of one placeable unit. Clip each leg at Z=0.16 for the visible exterior and remove covered contact faces when creating a unified watertight exterior; preserve the orange underside outside the four contact footprints. The untrimmed overlap coordinates specify the fit and do not authorize visible duplicate surfaces. Leg bottoms are plain dark wood.
-
-Front/back/right silhouettes match; two rear legs are occluded in exact orthographic front/right views. Top shows only the rounded square cushion. Oblique view can reveal all four legs, with the far leg partially occluded.
+Use normalized barycentric corner grids and matching atan2 edge samples under
+the new LOD contract, replacing the earlier equal-angle sampling instruction.
+Preserve exact outer bounds and ground contacts. Source drawings remain
+illustrative; no model or rendered likeness has been verified.
 
 ## Pedestal side table
 
-Revolve the JSON tabletop profile around Z with 96 angular segments. Each pair is (radius,Z), in order. Close the profile back to its first point, collapse radius-zero rings to single centre vertices and join matching rings. The resulting disk has diameter 0.42, bottom Z=0.412, top Z=0.440 and 0.003 straight edge chamfers. Do not add a rim or slope to its central flat surface.
+The [pedestal side table contract](PEDESTAL-SIDE-TABLE-SPEC.md) defines the
+shared exposed union profile and LOD sampling. Original external dimensions
+remain: 420 mm top diameter, 440 mm height, 35 mm column diameter and 250 mm base
+diameter. The top has 3 mm straight chamfers; the base has 2 mm straight chamfers.
+The construction column embeds 3 mm into the base and 6 mm into the top.
 
-The pedestal is a closed cylinder radius 0.0175 from Z=0.015 to 0.418 with 64 perimeter segments. Revolve the base profile with 96 angular segments: maximum diameter 0.25, Z=0..0.018, edge chamfer 0.002. Join pedestal and base by solid union. At the wood contact, keep the material boundary at Z=0.412 and remove covered surfaces; no hidden upper plate or screws are needed. Both visible pedestal and base are dark metal.
+Revolve the complete exposed profile using identical ring angles and segment
+counts, including the column and both disk openings. LOD0 uses 96 segments
+throughout, superseding the original 64-segment column. Remove hidden column
+caps and covered disk centres. Retain one closed shell and independently
+replaceable top, column and base regions. No flange or additional support.
 
-The source does not fully resolve the base. A simple circular base is the explicitly selected completion, approved for this reference handoff. No tripod, cross feet, floor protector or underside recess.
-
-Top projection shows only the wooden circle; the smaller base and pedestal are fully hidden. Front/right/back have identical geometry. The wood grain direction distinguishes their surface appearance only.
+The plain circular base remains the selected completion of the partly hidden
+source. Front/right/back geometry is rotationally symmetric; TOP hides the base
+and column. The original image is unchanged. Future model verification remains
+required; analytic document checks do not certify rendered likeness.
 
 ## Future acceptance
 

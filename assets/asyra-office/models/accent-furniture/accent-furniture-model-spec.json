@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "user-authorized-reference-commit",
+  "status": "Original references and stool revision approved; pedestal side table document revision approved by the user for commit; no model verification",
   "units": "metres",
   "axes": {
     "up": "+Z",
@@ -39,25 +39,13 @@
   "assets": [
     {
       "name": "square-low-stool",
-      "bounds": [
-        0.36,
-        0.36,
-        0.3
-      ],
+      "bounds": [0.36, 0.36, 0.3],
       "parts": [
         {
           "name": "cushion",
           "primitive": "rounded-box",
-          "size": [
-            0.36,
-            0.36,
-            0.14
-          ],
-          "center": [
-            0,
-            0,
-            0.23
-          ],
+          "size": [0.36, 0.36, 0.14],
+          "center": [0, 0, 0.23],
           "radius": 0.035,
           "quarterArcSegments": 8,
           "material": "orange"
@@ -65,105 +53,135 @@
         {
           "name": "leg-0-0",
           "primitive": "box",
-          "size": [
-            0.035,
-            0.035,
-            0.175
-          ],
-          "center": [
-            -0.125,
-            -0.125,
-            0.0875
-          ],
+          "size": [0.035, 0.035, 0.175],
+          "center": [-0.125, -0.125, 0.0875],
           "bevel": 0,
           "material": "darkWood"
         },
         {
           "name": "leg-0-1",
           "primitive": "box",
-          "size": [
-            0.035,
-            0.035,
-            0.175
-          ],
-          "center": [
-            -0.125,
-            0.125,
-            0.0875
-          ],
+          "size": [0.035, 0.035, 0.175],
+          "center": [-0.125, 0.125, 0.0875],
           "bevel": 0,
           "material": "darkWood"
         },
         {
           "name": "leg-1-0",
           "primitive": "box",
-          "size": [
-            0.035,
-            0.035,
-            0.175
-          ],
-          "center": [
-            0.125,
-            -0.125,
-            0.0875
-          ],
+          "size": [0.035, 0.035, 0.175],
+          "center": [0.125, -0.125, 0.0875],
           "bevel": 0,
           "material": "darkWood"
         },
         {
           "name": "leg-1-1",
           "primitive": "box",
-          "size": [
-            0.035,
-            0.035,
-            0.175
-          ],
-          "center": [
-            0.125,
-            0.125,
-            0.0875
-          ],
+          "size": [0.035, 0.035, 0.175],
+          "center": [0.125, 0.125, 0.0875],
           "bevel": 0,
           "material": "darkWood"
         }
-      ]
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "SQUARE-LOW-STOOL-SPEC.md",
+        "productionRoute": "programmatic-rounded-box-and-prisms",
+        "logicalPartCount": 5,
+        "exteriorShellCount": 1,
+        "visibleLegTopZ": 0.16,
+        "flatUndersideTriangleCount": 26,
+        "rule": "Preserve original five component volumes; form one closed exterior with four underside holes and four open-top leg exteriors, retaining independent material regions."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ extents once to the complete unit about the ground origin. Preserve joins and scale all details; no mirroring, independent refitting or terrain conformity."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "cushion",
+            "parts": ["cushion"],
+            "defaultMaterial": "orange"
+          },
+          {
+            "id": "leg-0-0",
+            "parts": ["leg-0-0"],
+            "defaultMaterial": "darkWood"
+          },
+          {
+            "id": "leg-0-1",
+            "parts": ["leg-0-1"],
+            "defaultMaterial": "darkWood"
+          },
+          {
+            "id": "leg-1-0",
+            "parts": ["leg-1-0"],
+            "defaultMaterial": "darkWood"
+          },
+          {
+            "id": "leg-1-1",
+            "parts": ["leg-1-1"],
+            "defaultMaterial": "darkWood"
+          }
+        ],
+        "overrideOrder": "Resolve colour and material independently from component to stool to preset; apply colour after material resolution without altering other properties or instances.",
+        "defaultSurface": "Solid orange cushion and dark wood legs. No baked lines, weave or grain required; replacements own mapping after overall sizing."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "cornerSegments": 8,
+            "cornerTopology": "normalized-barycentric-grid",
+            "bottomHoleCount": 4,
+            "analyticTriangles": 780,
+            "maxTriangles": 1000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod1",
+            "cornerSegments": 5,
+            "cornerTopology": "normalized-barycentric-grid",
+            "bottomHoleCount": 4,
+            "analyticTriangles": 396,
+            "maxTriangles": 550,
+            "maxSurfaceError": 0.002
+          },
+          {
+            "id": "lod2",
+            "cornerSegments": 3,
+            "cornerTopology": "normalized-barycentric-grid",
+            "bottomHoleCount": 4,
+            "analyticTriangles": 220,
+            "maxTriangles": 300,
+            "maxSurfaceError": 0.004
+          }
+        ],
+        "samplingRule": "Use matching atan2(j,n-j) corner-edge samples, replacing the equal-angle interpretation of the quarterArcSegments default. The existing value 8 remains the LOD0 segment count.",
+        "rule": "Keep one closed exterior, five independently replaceable regions, four underside holes and four flat ground contacts. Include all hidden faces and added triangulation vertices in each ceiling.",
+        "failurePolicy": "Reject open joins, missing holes, collapsed underside strips, error or triangle overflow. Do not remove legs or add patches."
+      }
     },
     {
       "name": "round-pedestal-side-table",
-      "bounds": [
-        0.42,
-        0.42,
-        0.44
-      ],
+      "bounds": [0.42, 0.42, 0.44],
       "parts": [
         {
           "name": "top",
           "primitive": "revolved-profile",
           "profile": [
-            [
-              0,
-              0.412
-            ],
-            [
-              0.207,
-              0.412
-            ],
-            [
-              0.21,
-              0.415
-            ],
-            [
-              0.21,
-              0.437
-            ],
-            [
-              0.207,
-              0.44
-            ],
-            [
-              0,
-              0.44
-            ]
+            [0, 0.412],
+            [0.207, 0.412],
+            [0.21, 0.415],
+            [0.21, 0.437],
+            [0.207, 0.44],
+            [0, 0.44]
           ],
           "segments": 96,
           "material": "wood"
@@ -174,42 +192,117 @@
           "radius": 0.0175,
           "zMin": 0.015,
           "zMax": 0.418,
-          "segments": 64,
+          "segments": 96,
           "material": "metal"
         },
         {
           "name": "base",
           "primitive": "revolved-profile",
           "profile": [
-            [
-              0,
-              0
-            ],
-            [
-              0.123,
-              0
-            ],
-            [
-              0.125,
-              0.002
-            ],
-            [
-              0.125,
-              0.016
-            ],
-            [
-              0.123,
-              0.018
-            ],
-            [
-              0,
-              0.018
-            ]
+            [0, 0],
+            [0.123, 0],
+            [0.125, 0.002],
+            [0.125, 0.016],
+            [0.123, 0.018],
+            [0, 0.018]
           ],
           "segments": 96,
           "material": "metal"
         }
-      ]
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "PEDESTAL-SIDE-TABLE-SPEC.md",
+        "productionRoute": "programmatic-shared-profile-revolution",
+        "logicalPartCount": 3,
+        "exteriorShellCount": 1,
+        "exteriorProfile": [
+          [0, 0],
+          [0.123, 0],
+          [0.125, 0.002],
+          [0.125, 0.016],
+          [0.123, 0.018],
+          [0.0175, 0.018],
+          [0.0175, 0.412],
+          [0.207, 0.412],
+          [0.21, 0.415],
+          [0.21, 0.437],
+          [0.207, 0.44],
+          [0, 0.44]
+        ],
+        "profileEdgeRegions": [
+          "base",
+          "base",
+          "base",
+          "base",
+          "base",
+          "pedestal",
+          "top",
+          "top",
+          "top",
+          "top",
+          "top"
+        ],
+        "rule": "Revolve the exposed union profile using shared ring angles. Preserve three surface regions; remove buried column caps and covered disk centres. No added flange or support plate."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ extents once to the complete assembled unit about its ground origin; all profiles, joints and region boundaries follow. No mirroring, independent fitting or terrain conformity."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "top",
+            "parts": ["top"],
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "pedestal",
+            "parts": ["pedestal"],
+            "defaultMaterial": "metal"
+          },
+          {
+            "id": "base",
+            "parts": ["base"],
+            "defaultMaterial": "metal"
+          }
+        ],
+        "overrideOrder": "Resolve material and colour independently from component to table to preset. Apply resolved colour to selected material while retaining other properties and isolating instances.",
+        "defaultSurface": "Wood top with the existing continuous grain recipe; charcoal pedestal and base. Replacement surfaces own mapping after overall sizing."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "radialSegments": 96,
+            "analyticTriangles": 1920,
+            "maxTriangles": 2000,
+            "maxSurfaceError": 0.00015
+          },
+          {
+            "id": "lod1",
+            "radialSegments": 48,
+            "analyticTriangles": 960,
+            "maxTriangles": 1050,
+            "maxSurfaceError": 0.0005
+          },
+          {
+            "id": "lod2",
+            "radialSegments": 24,
+            "analyticTriangles": 480,
+            "maxTriangles": 550,
+            "maxSurfaceError": 0.002
+          }
+        ],
+        "samplingRule": "Use theta=2*pi*i/N with identical N and phase for every ring, including the column and both disk openings. All N are divisible by four to retain cardinal support vertices.",
+        "rule": "Keep one closed outward exterior, three replaceable regions, both chamfers, exact bounds and a flat ground cap. Count all caps and hidden faces.",
+        "failurePolicy": "Reject open joins, nonmanifold edges, missing regions, bound drift or error/budget overflow. Do not add patches or normalize individual LODs."
+      }
     }
   ]
 }

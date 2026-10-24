@@ -2,6 +2,22 @@
 
 This batch uses uniform intrinsic colors from the original architecture palette. It deliberately has no procedural fleck or grain. All faces assigned to a material have the same color.
 
+## Default assignment
+
+Use these defaults when no colour or material override is supplied:
+
+| Component | Part | Default material and sRGB base colour |
+| --- | --- | --- |
+| Flat roof slab | Entire slab | Stone, `#D6D0C1` |
+| Rooftop parapet | Body | Plaster, `#E4D9C4` |
+| Rooftop parapet | Cap | Cream cap, `#EEE4D2` |
+
+These assignments match the numeric JSON. They remain replaceable independently
+of geometry; an instance override must not mutate another instance. Diagram
+face tones are not additional material defaults.
+
+## Default material parameters
+
 | Material | sRGB base color | Roughness | Metallic | Alpha | Emission |
 | --- | --- | --- | --- | --- | --- |
 | Stone | #D6D0C1 | 0.90 | 0 | 1 | 0 |

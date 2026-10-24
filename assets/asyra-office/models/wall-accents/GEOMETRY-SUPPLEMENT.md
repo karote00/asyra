@@ -35,3 +35,17 @@ Letter contours are a deterministic handwritten-style completion, not an exact r
 ## Future checks
 
 No models have been produced. Future comparison must cover the five views, shade underside, plain print back, declared bounds within 0.001 m, one curved fixture, open shade, visible unlit bulb, one thin frame, exact three-line wording and zero baked illumination. The app owns placement and future lighting; no electrical safety or hardware installation specification is implied.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Sconce and print
+
+Sconce default bounds are X=+/-70, Y=-230..0, Z=0..250 mm. The 60 mm arm centreline arc plus 5 mm tube radius sets its top at 250 mm; the 27.5 mm bulb radius sets its bottom at zero. Shade outer/inner bottom radii are 70/66 mm. Preserve this real opening and the bulb protrusion; an opaque bottom disk would contradict the reference. Join hidden arm/neck/shade contacts without duplicate visible faces, while keeping bronze, brass, shade and bulb regions. Emission and actual scene lights remain app-owned.
+
+Print default extent is 340 x 22 x 460 mm. The 18 mm border leaves a 304 x 424 mm opening. Four rails meet at 45-degree mitres. Paper front Y=-16 mm is 6 mm behind the outer frame; paper thickness is 0.5 mm, support depth 11.5 mm and backing depth 4 mm. Support/paper/back meet at identical planes. The backing overlaps the frame by 3 mm around the aperture. Lettering is the supplied vector mask, not extruded glyphs or a dependency on an installed font. Text can be replaced independently of paper and frame.
+
+LoD preserves the shade opening, bulb, curved arm and frame recess. Text remains artwork at all tiers; do not add lettering polygons.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

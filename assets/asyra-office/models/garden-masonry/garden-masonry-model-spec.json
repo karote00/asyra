@@ -67,7 +67,7 @@
     "bakedLighting": false
   },
   "surfaceRecipe": {
-    "space": "local object coordinates in metres",
+    "space": "resized local object coordinates in metres, after overall-size scaling and before world placement; at default size identical to authored local coordinates",
     "field": "s=sin(2*pi*(x/0.019+y/0.023+z/0.017))*sin(2*pi*(x/0.031-y/0.013+z/0.029))",
     "mask": "smoothstep(0.68,0.90,abs(s))",
     "linearColourMixWeight": "0.30*mask",

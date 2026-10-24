@@ -74,31 +74,15 @@
       "unitCount": 1,
       "reviewDrawing": "review/01-laptop-v2.png",
       "bounds": {
-        "min": [
-          -0.15,
-          -0.105,
-          0
-        ],
-        "max": [
-          0.15,
-          0.15780290509423475,
-          0.1975676583792996
-        ]
+        "min": [-0.15, -0.105, 0],
+        "max": [0.15, 0.15780290509423475, 0.1975676583792996]
       },
       "components": [
         {
           "partId": "base",
           "primitive": "rounded-box",
-          "size": [
-            0.3,
-            0.21,
-            0.012
-          ],
-          "centre": [
-            0,
-            0,
-            0.006
-          ],
+          "size": [0.3, 0.21, 0.0105],
+          "centre": [0, 0, 0.00675],
           "planCornerRadius": 0.006,
           "edgeBevel": 0.001,
           "bevelSegments": 3,
@@ -110,55 +94,22 @@
           "axis": "X",
           "length": 0.25,
           "radius": 0.003,
-          "centre": [
-            0,
-            0.09,
-            0.015
-          ],
+          "centre": [0, 0.09, 0.015],
           "radialSegments": 48,
           "material": "key"
         },
         {
           "partId": "lid",
           "primitive": "rounded-box-in-local-basis",
-          "sizeWidthThicknessHeight": [
-            0.3,
-            0.006,
-            0.19
-          ],
-          "origin": [
-            0,
-            0.09,
-            0.018
-          ],
-          "basisWidth": [
-            1,
-            0,
-            0
-          ],
-          "basisUp": [
-            0,
-            0.3420201433256687,
-            0.9396926207859084
-          ],
-          "basisFront": [
-            0,
-            -0.9396926207859084,
-            0.3420201433256687
-          ],
+          "sizeWidthThicknessHeight": [0.3, 0.006, 0.19],
+          "origin": [0, 0.09, 0.018],
+          "basisWidth": [1, 0, 0],
+          "basisUp": [0, 0.3420201433256687, 0.9396926207859084],
+          "basisFront": [0, -0.9396926207859084, 0.3420201433256687],
           "localExtents": {
-            "width": [
-              -0.15,
-              0.15
-            ],
-            "normal": [
-              -0.003,
-              0.003
-            ],
-            "height": [
-              0,
-              0.19
-            ]
+            "width": [-0.15, 0.15],
+            "normal": [-0.003, 0.003],
+            "height": [0, 0.19]
           },
           "planCornerRadius": 0.004,
           "edgeBevel": 0.0005,
@@ -184,10 +135,7 @@
             "cornerRadius": 0.001,
             "material": "screen",
             "uvOrigin": "bottom left when viewed from front",
-            "uvRange": [
-              0,
-              1
-            ],
+            "uvRange": [0, 1],
             "separateSurfaceRegion": true
           },
           "cameraDot": {
@@ -200,21 +148,11 @@
         {
           "partId": "standard-keys",
           "primitive": "rounded-box-array",
-          "rowsY": [
-            0.063,
-            0.042,
-            0.021,
-            0,
-            -0.021
-          ],
+          "rowsY": [0.063, 0.042, 0.021, 0, -0.021],
           "columns": 14,
           "firstX": -0.117,
           "pitchX": 0.018,
-          "keySize": [
-            0.015,
-            0.014,
-            0.001
-          ],
+          "keySize": [0.015, 0.014, 0.001],
           "centreZ": 0.0125,
           "planCornerRadius": 0.002,
           "edgeBevel": 0.0002,
@@ -225,25 +163,10 @@
           "partId": "bottom-row",
           "primitive": "rounded-box-array-with-spacebar",
           "rowY": -0.042,
-          "smallKeyCentresX": [
-            -0.114,
-            -0.096,
-            -0.078,
-            0.078,
-            0.096,
-            0.114
-          ],
-          "smallKeySize": [
-            0.015,
-            0.014,
-            0.001
-          ],
+          "smallKeyCentresX": [-0.114, -0.096, -0.078, 0.078, 0.096, 0.114],
+          "smallKeySize": [0.015, 0.014, 0.001],
           "spacebarCentreX": 0,
-          "spacebarSize": [
-            0.126,
-            0.014,
-            0.001
-          ],
+          "spacebarSize": [0.126, 0.014, 0.001],
           "centreZ": 0.0125,
           "planCornerRadius": 0.002,
           "edgeBevel": 0.0002,
@@ -253,11 +176,7 @@
         {
           "partId": "trackpad",
           "primitive": "coplanar material region on base top",
-          "centre": [
-            0,
-            -0.078,
-            0.012
-          ],
+          "centre": [0, -0.078, 0.012],
           "width": 0.126,
           "depth": 0.039,
           "cornerRadius": 0.003,
@@ -271,12 +190,7 @@
           "centreHeight": 0.1,
           "displayWidth": 0.018,
           "displayHeight": 0.024,
-          "svgViewBox": [
-            -12,
-            -16,
-            24,
-            32
-          ],
+          "svgViewBox": [-12, -16, 24, 32],
           "svgPaths": [
             "M 0 -7 C -5 -12 -11 -8 -10 -1 C -10 6 -6 12 -3 11 C -1 10 1 10 3 11 C 6 12 10 6 10 3 C 5 2 5 -3 10 -5 C 8 -10 3 -11 0 -7 Z",
             "M 0 -10 C 0 -14 4 -16 7 -15 C 7 -12 3 -9 0 -10 Z"
@@ -284,6 +198,42 @@
           "svgYDirection": "down",
           "material": "emblem",
           "note": "Authored simplified apple-shaped silhouette; no claim of exact manufacturer logo geometry"
+        },
+        {
+          "partId": "underside-pad-1",
+          "primitive": "rounded-box",
+          "size": [0.018, 0.008, 0.0015],
+          "centre": [-0.12, -0.08, 0.00075],
+          "planCornerRadius": 0.004,
+          "edgeBevel": 0,
+          "material": "key"
+        },
+        {
+          "partId": "underside-pad-2",
+          "primitive": "rounded-box",
+          "size": [0.018, 0.008, 0.0015],
+          "centre": [0.12, -0.08, 0.00075],
+          "planCornerRadius": 0.004,
+          "edgeBevel": 0,
+          "material": "key"
+        },
+        {
+          "partId": "underside-pad-3",
+          "primitive": "rounded-box",
+          "size": [0.018, 0.008, 0.0015],
+          "centre": [-0.12, 0.08, 0.00075],
+          "planCornerRadius": 0.004,
+          "edgeBevel": 0,
+          "material": "key"
+        },
+        {
+          "partId": "underside-pad-4",
+          "primitive": "rounded-box",
+          "size": [0.018, 0.008, 0.0015],
+          "centre": [0.12, 0.08, 0.00075],
+          "planCornerRadius": 0.004,
+          "edgeBevel": 0,
+          "material": "key"
         }
       ],
       "omissions": [
@@ -292,7 +242,6 @@
         "cable",
         "key legends",
         "speaker holes",
-        "rubber feet",
         "screen content",
         "screen reflection",
         "table"
@@ -312,16 +261,8 @@
       "unitCount": 1,
       "reviewDrawing": "review/02-ceramic-mug-v1.png",
       "bounds": {
-        "min": [
-          -0.042,
-          -0.042,
-          0
-        ],
-        "max": [
-          0.077,
-          0.042,
-          0.09
-        ]
+        "min": [-0.042, -0.042, 0],
+        "max": [0.077, 0.042, 0.09]
       },
       "components": [
         {
@@ -332,22 +273,13 @@
           "profile": [
             {
               "line": [
-                [
-                  0,
-                  0
-                ],
-                [
-                  0.031,
-                  0
-                ]
+                [0, 0],
+                [0.031, 0]
               ]
             },
             {
               "arc": {
-                "centre": [
-                  0.031,
-                  0.003
-                ],
+                "centre": [0.031, 0.003],
                 "radius": 0.003,
                 "startDegrees": -90,
                 "endDegrees": 0,
@@ -356,22 +288,13 @@
             },
             {
               "line": [
-                [
-                  0.034,
-                  0.003
-                ],
-                [
-                  0.042,
-                  0.0875
-                ]
+                [0.034, 0.003],
+                [0.042, 0.0875]
               ]
             },
             {
               "arc": {
-                "centre": [
-                  0.0395,
-                  0.0875
-                ],
+                "centre": [0.0395, 0.0875],
                 "radius": 0.0025,
                 "startDegrees": 0,
                 "endDegrees": 180,
@@ -380,22 +303,13 @@
             },
             {
               "line": [
-                [
-                  0.037,
-                  0.0875
-                ],
-                [
-                  0.029,
-                  0.01
-                ]
+                [0.037, 0.0875],
+                [0.029, 0.01]
               ]
             },
             {
               "arc": {
-                "centre": [
-                  0.027,
-                  0.01
-                ],
+                "centre": [0.027, 0.01],
                 "radius": 0.002,
                 "startDegrees": 0,
                 "endDegrees": -90,
@@ -404,18 +318,9 @@
             },
             {
               "line": [
-                [
-                  0.027,
-                  0.008
-                ],
-                [
-                  0,
-                  0.008
-                ],
-                [
-                  0,
-                  0
-                ]
+                [0.027, 0.008],
+                [0, 0.008],
+                [0, 0]
               ]
             }
           ],
@@ -424,17 +329,15 @@
         {
           "partId": "handle",
           "primitive": "capped tube swept over half ellipse in X/Z plane",
-          "centrelineFormula": "(0.038 + 0.034*cos(t), 0, 0.049 + 0.028*sin(t))",
-          "tDegrees": [
-            90,
-            -90
-          ],
+          "centrelineFormula": "(0.038 + 0.034*cos(t) - lowerRootInset*min(0,sin(t))^2, 0, 0.049 + 0.028*sin(t))",
+          "tDegrees": [90, -90],
           "pathSegments": 48,
           "tubeRadius": 0.005,
           "tubeSegments": 16,
           "frame": "cross-section spanned by +Y and the unit in-plane normal perpendicular to centreline tangent",
           "material": "ceramic",
-          "join": "union with vessel; remove any handle geometry intruding into the vessel cavity defined by the inner profile; no separate ring or interior nub"
+          "join": "union with vessel; remove any handle geometry intruding into the vessel cavity defined by the inner profile; no separate ring or interior nub",
+          "lowerRootInset": 0.005
         }
       ],
       "omissions": [

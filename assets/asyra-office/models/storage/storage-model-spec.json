@@ -1,6 +1,6 @@
 {
   "specVersion": "1.0.0",
-  "status": "pending user review; drawings and documents only; not committed",
+  "status": "Original reference sheets retained; snack-cabinet and bookcase construction revisions approved by the user for commit; no verified production models",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -49,511 +49,610 @@
       "name": "Snack cabinet - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/01-snack-cabinet-v2.png",
-      "overallSize": [
-        0.7,
-        0.378,
-        1.0
-      ],
-      "bodySize": [
-        0.7,
-        0.34,
-        1
-      ],
+      "overallSize": [0.7, 0.378, 1.0],
+      "bodySize": [0.7, 0.34, 1],
       "components": [
         {
           "partId": "side-left",
-          "primitive": "rounded-box",
-          "size": [
-            0.025,
-            0.34,
-            0.96
-          ],
-          "centre": [
-            -0.33749999999999997,
-            0,
-            0.52
-          ],
+          "primitive": "box-union-input",
+          "size": [0.025, 0.34, 0.935],
+          "centre": [-0.3375, 0, 0.5075],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "side-right",
-          "primitive": "rounded-box",
-          "size": [
-            0.025,
-            0.34,
-            0.96
-          ],
-          "centre": [
-            0.33749999999999997,
-            0,
-            0.52
-          ],
+          "primitive": "box-union-input",
+          "size": [0.025, 0.34, 0.935],
+          "centre": [0.3375, 0, 0.5075],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "top",
-          "primitive": "rounded-box",
-          "size": [
-            0.6499999999999999,
-            0.34,
-            0.025
-          ],
-          "centre": [
-            0,
-            0,
-            0.9875
-          ],
+          "primitive": "box-union-input",
+          "size": [0.7, 0.34, 0.025],
+          "centre": [0, 0, 0.9875],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "bottom",
-          "primitive": "rounded-box",
-          "size": [
-            0.6499999999999999,
-            0.34,
-            0.025
-          ],
-          "centre": [
-            0,
-            0,
-            0.052500000000000005
-          ],
+          "primitive": "box-union-input",
+          "size": [0.65, 0.34, 0.025],
+          "centre": [0, 0, 0.0525],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "back",
-          "primitive": "rounded-box",
-          "size": [
-            0.6499999999999999,
-            0.018,
-            0.9099999999999999
-          ],
-          "centre": [
-            0,
-            0.161,
-            0.52
-          ],
+          "primitive": "box-union-input",
+          "size": [0.65, 0.018, 0.91],
+          "centre": [0, 0.161, 0.52],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "plinth",
-          "primitive": "rounded-box",
-          "size": [
-            0.6399999999999999,
-            0.28,
-            0.04
-          ],
-          "centre": [
-            0,
-            0.01,
-            0.02
-          ],
+          "primitive": "box-union-input",
+          "size": [0.64, 0.28, 0.04],
+          "centre": [0, 0.01, 0.02],
           "material": "oak-dark",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "shelf-1",
-          "primitive": "rounded-box",
-          "size": [
-            0.6499999999999999,
-            0.322,
-            0.025
-          ],
-          "centre": [
-            0,
-            -0.009,
-            0.4475
-          ],
+          "primitive": "box-union-input",
+          "size": [0.65, 0.322, 0.025],
+          "centre": [0, -0.009, 0.4475],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "shelf-2",
-          "primitive": "rounded-box",
-          "size": [
-            0.6499999999999999,
-            0.322,
-            0.025
-          ],
-          "centre": [
-            0,
-            -0.009,
-            0.71
-          ],
+          "primitive": "box-union-input",
+          "size": [0.65, 0.322, 0.025],
+          "centre": [0, -0.009, 0.71],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "carcass",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "door--1",
           "primitive": "rounded-box",
-          "size": [
-            0.321,
-            0.02,
-            0.38
-          ],
-          "centre": [
-            -0.1645,
-            -0.168,
-            0.25
-          ],
+          "size": [0.319, 0.02, 0.366],
+          "centre": [-0.1635, -0.168, 0.25],
           "material": "oak",
           "radius": 0.003,
           "recess": {
-            "width": 0.261,
-            "height": 0.32,
+            "width": 0.259,
+            "height": 0.306,
             "depth": 0.004,
-            "transition": 0.002
+            "transition": 0.002,
+            "floorSize": [0.255, 0.302],
+            "slopeDegrees": 63.43494882292202,
+            "floorY": -0.174,
+            "cornerJoin": "sharp rectangular outline; four planar slopes meet with 45-degree XZ mitres"
           }
         },
         {
           "partId": "handle--1",
           "primitive": "rounded-box",
-          "size": [
-            0.014,
-            0.022,
-            0.052
-          ],
-          "centre": [
-            -0.028,
-            -0.197,
-            0.365
-          ],
+          "size": [0.014, 0.022, 0.052],
+          "centre": [-0.028, -0.197, 0.365],
           "material": "dark",
-          "radius": 0.006
+          "radius": 0.006,
+          "constructionGroup": "handle--1"
         },
         {
           "partId": "handle-mount--1--1",
           "primitive": "rounded-box",
-          "size": [
-            0.012,
-            0.02,
-            0.012
-          ],
-          "centre": [
-            -0.028,
-            -0.183,
-            0.348
-          ],
+          "size": [0.012, 0.015, 0.012],
+          "centre": [-0.028, -0.1855, 0.348],
           "material": "dark",
-          "radius": 0.004
+          "radius": 0.004,
+          "flatContactFace": "+Y",
+          "edgePolicy": "All edges round inward by 4 mm; the remaining central +Y face is a flat 4 x 4 mm door contact",
+          "constructionGroup": "handle--1",
+          "contactPatchSize": [0.004, 0.004]
         },
         {
           "partId": "handle-mount--1-1",
           "primitive": "rounded-box",
-          "size": [
-            0.012,
-            0.02,
-            0.012
-          ],
-          "centre": [
-            -0.028,
-            -0.183,
-            0.382
-          ],
+          "size": [0.012, 0.015, 0.012],
+          "centre": [-0.028, -0.1855, 0.382],
           "material": "dark",
-          "radius": 0.004
+          "radius": 0.004,
+          "flatContactFace": "+Y",
+          "edgePolicy": "All edges round inward by 4 mm; the remaining central +Y face is a flat 4 x 4 mm door contact",
+          "constructionGroup": "handle--1",
+          "contactPatchSize": [0.004, 0.004]
         },
         {
           "partId": "door-1",
           "primitive": "rounded-box",
-          "size": [
-            0.321,
-            0.02,
-            0.38
-          ],
-          "centre": [
-            0.1645,
-            -0.168,
-            0.25
-          ],
+          "size": [0.319, 0.02, 0.366],
+          "centre": [0.1635, -0.168, 0.25],
           "material": "oak",
           "radius": 0.003,
           "recess": {
-            "width": 0.261,
-            "height": 0.32,
+            "width": 0.259,
+            "height": 0.306,
             "depth": 0.004,
-            "transition": 0.002
+            "transition": 0.002,
+            "floorSize": [0.255, 0.302],
+            "slopeDegrees": 63.43494882292202,
+            "floorY": -0.174,
+            "cornerJoin": "sharp rectangular outline; four planar slopes meet with 45-degree XZ mitres"
           }
         },
         {
           "partId": "handle-1",
           "primitive": "rounded-box",
-          "size": [
-            0.014,
-            0.022,
-            0.052
-          ],
-          "centre": [
-            0.028,
-            -0.197,
-            0.365
-          ],
+          "size": [0.014, 0.022, 0.052],
+          "centre": [0.028, -0.197, 0.365],
           "material": "dark",
-          "radius": 0.006
+          "radius": 0.006,
+          "constructionGroup": "handle-1"
         },
         {
           "partId": "handle-mount-1--1",
           "primitive": "rounded-box",
-          "size": [
-            0.012,
-            0.02,
-            0.012
-          ],
-          "centre": [
-            0.028,
-            -0.183,
-            0.348
-          ],
+          "size": [0.012, 0.015, 0.012],
+          "centre": [0.028, -0.1855, 0.348],
           "material": "dark",
-          "radius": 0.004
+          "radius": 0.004,
+          "flatContactFace": "+Y",
+          "edgePolicy": "All edges round inward by 4 mm; the remaining central +Y face is a flat 4 x 4 mm door contact",
+          "constructionGroup": "handle-1",
+          "contactPatchSize": [0.004, 0.004]
         },
         {
           "partId": "handle-mount-1-1",
           "primitive": "rounded-box",
-          "size": [
-            0.012,
-            0.02,
-            0.012
-          ],
-          "centre": [
-            0.028,
-            -0.183,
-            0.382
-          ],
+          "size": [0.012, 0.015, 0.012],
+          "centre": [0.028, -0.1855, 0.382],
           "material": "dark",
-          "radius": 0.004
+          "radius": 0.004,
+          "flatContactFace": "+Y",
+          "edgePolicy": "All edges round inward by 4 mm; the remaining central +Y face is a flat 4 x 4 mm door contact",
+          "constructionGroup": "handle-1",
+          "contactPatchSize": [0.004, 0.004]
         }
       ],
       "compartments": {
         "openCount": 2,
         "lowerDoors": 2,
         "clearIntervalsZ": [
-          [
-            0.46,
-            0.6975
-          ],
-          [
-            0.7225,
-            0.975
-          ]
+          [0.46, 0.6975],
+          [0.7225, 0.975]
         ],
         "clearWidth": 0.65,
         "clearDepth": 0.322
       },
       "sourceStatus": "not clearly present in reference; new style-compatible design",
-      "rear": "plain oak backing; no branding or vents"
+      "rear": "plain oak backing; no branding or vents",
+      "bounds": {
+        "min": [-0.35, -0.208, 0],
+        "max": [0.35, 0.17, 1]
+      },
+      "constructionDocument": "SNACK-CABINET-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "modelVerified": false,
+        "outputSolidCount": 5,
+        "carcassInputs": [
+          "side-left",
+          "side-right",
+          "top",
+          "bottom",
+          "back",
+          "plinth",
+          "shelf-1",
+          "shelf-2"
+        ],
+        "method": "Numeric assembly, clearances, contact and document checks; no boolean mesh or model exported",
+        "doorGaps": {
+          "side": 0.002,
+          "top": 0.002,
+          "bottom": 0.002,
+          "centre": 0.008
+        },
+        "lowerCavityBounds": {
+          "min": [-0.325, -0.158, 0.065],
+          "max": [0.325, 0.152, 0.435]
+        },
+        "handleFrontClearance": 0.008,
+        "meshTopologyVerified": false,
+        "gapTolerance": 0.0002,
+        "mountContactTolerance": 1e-5
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": {
+          "material": ["part", "assembly-group", "whole-unit", "preset"],
+          "color": [
+            "part",
+            "assembly-group",
+            "whole-unit",
+            "selected material color"
+          ]
+        },
+        "colorFallback": "selected material color",
+        "instanceIsolation": true,
+        "parts": {
+          "side-left": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "side-right": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "top": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "bottom": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "back": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "plinth": {
+            "defaultMaterial": "oak-dark",
+            "defaultColorSRGB": "#A68760"
+          },
+          "shelf-1": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "shelf-2": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "door--1": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "handle--1": {
+            "defaultMaterial": "dark",
+            "defaultColorSRGB": "#44443C"
+          },
+          "handle-mount--1--1": {
+            "defaultMaterial": "dark",
+            "defaultColorSRGB": "#44443C"
+          },
+          "handle-mount--1-1": {
+            "defaultMaterial": "dark",
+            "defaultColorSRGB": "#44443C"
+          },
+          "door-1": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "handle-1": {
+            "defaultMaterial": "dark",
+            "defaultColorSRGB": "#44443C"
+          },
+          "handle-mount-1--1": {
+            "defaultMaterial": "dark",
+            "defaultColorSRGB": "#44443C"
+          },
+          "handle-mount-1-1": {
+            "defaultMaterial": "dark",
+            "defaultColorSRGB": "#44443C"
+          }
+        },
+        "grainCoordinates": "final resized local metres before world placement",
+        "filletOwnership": "closest adjacent surviving source face; ties follow component table order"
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [0.7, 0.378, 1],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "boundsCentreY": -0.019,
+        "notes": "Preserve asymmetric Y bounds; scale body, handle projection, recesses and all clearances once about the ground origin",
+        "deformation": false
+      },
+      "lod": {
+        "tiers": [
+          {
+            "id": "lod0",
+            "bevelSegments": 3,
+            "triangleBudget": 6000,
+            "actualTriangleCount": null,
+            "verified": false
+          },
+          {
+            "id": "lod1",
+            "bevelSegments": 2,
+            "triangleBudget": 3000,
+            "actualTriangleCount": null,
+            "verified": false
+          },
+          {
+            "id": "lod2",
+            "bevelSegments": 1,
+            "triangleBudget": 1500,
+            "actualTriangleCount": null,
+            "verified": false
+          }
+        ],
+        "budgetStatus": "implementation admission targets, not measured or proven mesh counts",
+        "preserve": [
+          "overall bounds",
+          "two open compartments",
+          "two doors and four door-gap dimensions",
+          "door recesses",
+          "both handles and mounting contacts"
+        ],
+        "switchingOwner": "app"
+      }
     },
     {
       "moduleId": "low-bookcase",
       "name": "Bookcase - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/02-bookcase-v1.png",
-      "overallSize": [
-        0.42,
-        0.26,
-        0.82
-      ],
+      "overallSize": [0.42, 0.26, 0.82],
       "components": [
         {
           "partId": "side-left",
-          "primitive": "rounded-box",
-          "size": [
-            0.022,
-            0.26,
-            0.7849999999999999
-          ],
-          "centre": [
-            -0.19899999999999998,
-            0,
-            0.4275
-          ],
+          "primitive": "box-union-input",
+          "size": [0.022, 0.26, 0.785],
+          "centre": [-0.199, 0, 0.4275],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "side-right",
-          "primitive": "rounded-box",
-          "size": [
-            0.022,
-            0.26,
-            0.7849999999999999
-          ],
-          "centre": [
-            0.19899999999999998,
-            0,
-            0.4275
-          ],
+          "primitive": "box-union-input",
+          "size": [0.022, 0.26, 0.785],
+          "centre": [0.199, 0, 0.4275],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "top",
-          "primitive": "rounded-box",
-          "size": [
-            0.376,
-            0.26,
-            0.022
-          ],
-          "centre": [
-            0,
-            0,
-            0.8089999999999999
-          ],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.26, 0.022],
+          "centre": [0, 0, 0.809],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "bottom",
-          "primitive": "rounded-box",
-          "size": [
-            0.376,
-            0.26,
-            0.022
-          ],
-          "centre": [
-            0,
-            0,
-            0.046
-          ],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.26, 0.022],
+          "centre": [0, 0, 0.046],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "back",
-          "primitive": "rounded-box",
-          "size": [
-            0.376,
-            0.018,
-            0.7409999999999999
-          ],
-          "centre": [
-            0,
-            0.12100000000000001,
-            0.4275
-          ],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.018, 0.741],
+          "centre": [0, 0.121, 0.4275],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "plinth",
-          "primitive": "rounded-box",
-          "size": [
-            0.36,
-            0.2,
-            0.035
-          ],
-          "centre": [
-            0,
-            0.01,
-            0.0175
-          ],
+          "primitive": "box-union-input",
+          "size": [0.36, 0.2, 0.035],
+          "centre": [0, 0.01, 0.0175],
           "material": "oak-dark",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "shelf-1",
-          "primitive": "rounded-box",
-          "size": [
-            0.376,
-            0.24200000000000002,
-            0.025
-          ],
-          "centre": [
-            0,
-            -0.009,
-            0.297
-          ],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.242, 0.025],
+          "centre": [0, -0.009, 0.297],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "shelf-2",
-          "primitive": "rounded-box",
-          "size": [
-            0.376,
-            0.24200000000000002,
-            0.025
-          ],
-          "centre": [
-            0,
-            -0.009,
-            0.547
-          ],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.242, 0.025],
+          "centre": [0, -0.009, 0.547],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         }
       ],
       "compartments": {
         "openCount": 3,
         "clearIntervalsZ": [
-          [
-            0.057,
-            0.2845
-          ],
-          [
-            0.3095,
-            0.5345
-          ],
-          [
-            0.5595,
-            0.798
-          ]
+          [0.057, 0.2845],
+          [0.3095, 0.5345],
+          [0.5595, 0.798]
         ],
         "clearWidth": 0.376,
         "clearDepth": 0.242
       },
       "sourceStatus": "narrow shelf beside green sofa; hidden back and exact shelf count are explicit completion",
-      "rear": "plain oak backing"
+      "rear": "plain oak backing",
+      "bounds": {
+        "min": [-0.21, -0.13, 0],
+        "max": [0.21, 0.13, 0.82]
+      },
+      "constructionDocument": "BOOKCASE-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "modelVerified": false,
+        "outputSolidCount": 1,
+        "unionInputs": [
+          "side-left",
+          "side-right",
+          "top",
+          "bottom",
+          "back",
+          "plinth",
+          "shelf-1",
+          "shelf-2"
+        ],
+        "method": "Numeric input bounds, contact connectivity, unrounded union volume and cavity checks; no model exported",
+        "unroundedUnionVolume": 0.025366528,
+        "joinTolerance": 1e-5,
+        "plinthInsets": {
+          "left": 0.03,
+          "right": 0.03,
+          "front": 0.04,
+          "back": 0.02
+        },
+        "meshTopologyVerified": false
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": {
+          "material": ["part", "whole-unit", "preset"],
+          "color": ["part", "whole-unit", "selected material color"]
+        },
+        "colorFallback": "selected material color",
+        "instanceIsolation": true,
+        "parts": {
+          "side-left": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "side-right": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "top": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "bottom": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "back": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "plinth": {
+            "defaultMaterial": "oak-dark",
+            "defaultColorSRGB": "#A68760"
+          },
+          "shelf-1": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "shelf-2": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          }
+        },
+        "grainCoordinates": "final resized local metres before world placement",
+        "filletOwnership": "closest adjacent surviving source face; ties follow component table order"
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [0.42, 0.26, 0.82],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "notes": "Scale all board positions, thicknesses, openings, plinth offset and roundovers together; no fixed-size detail compensation",
+        "deformation": false
+      },
+      "lod": {
+        "tiers": [
+          {
+            "id": "lod0",
+            "bevelSegments": 3,
+            "triangleBudget": 3000,
+            "actualTriangleCount": null,
+            "verified": false
+          },
+          {
+            "id": "lod1",
+            "bevelSegments": 2,
+            "triangleBudget": 1500,
+            "actualTriangleCount": null,
+            "verified": false
+          },
+          {
+            "id": "lod2",
+            "bevelSegments": 1,
+            "triangleBudget": 800,
+            "actualTriangleCount": null,
+            "verified": false
+          }
+        ],
+        "budgetStatus": "implementation admission targets; actual boolean and bevel tessellation not measured",
+        "preserve": [
+          "one closed body",
+          "three open compartments",
+          "plain closed backing",
+          "between-side top",
+          "recessed plinth",
+          "overall bounds and origin"
+        ],
+        "switchingOwner": "app"
+      }
     },
     {
       "moduleId": "wall-shelf-plank",
       "name": "Wall shelf - single plank",
       "unitCount": 1,
       "reviewDrawing": "review/03-wall-shelf-v1.png",
-      "overallSize": [
-        0.6,
-        0.18,
-        0.035
-      ],
+      "overallSize": [0.6, 0.18, 0.035],
       "components": [
         {
           "partId": "plank",
           "primitive": "rounded-box",
-          "size": [
-            0.6,
-            0.18,
-            0.035
-          ],
-          "centre": [
-            0,
-            -0.09,
-            0.0175
-          ],
+          "size": [0.6, 0.18, 0.035],
+          "centre": [0, -0.09, 0.0175],
           "material": "oak",
           "radius": 0.004,
           "rearEdgeRule": "rear plane Y=0 and hole entrances planar; bevel all other exposed edges only",
           "sockets": [
             {
-              "centre": [
-                -0.2,
-                -0.0125,
-                0.0175
-              ],
+              "centre": [-0.2, -0.0125, 0.0175],
               "axis": "Y",
               "radius": 0.004,
               "length": 0.025
             },
             {
-              "centre": [
-                0.2,
-                -0.0125,
-                0.0175
-              ],
+              "centre": [0.2, -0.0125, 0.0175],
               "axis": "Y",
               "radius": 0.004,
               "length": 0.025
@@ -573,14 +672,8 @@
       "mounting": {
         "wallPlaneY": 0,
         "socketCentresXZ": [
-          [
-            -0.2,
-            0.0175
-          ],
-          [
-            0.2,
-            0.0175
-          ]
+          [-0.2, 0.0175],
+          [0.2, 0.0175]
         ],
         "wallAndPinsIncluded": false
       },

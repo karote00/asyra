@@ -10,11 +10,11 @@ Front looks along +Y, back along -Y, right along -X, top along -Z and bottom alo
 
 For each radius r and height z, create six vertices (r*cos(k*pi/3), r*sin(k*pi/3), z), k=0..5. All rings share this orientation.
 
-| Ring | Radius | Z |
-| --- | --- | --- |
-| Graphite base | 0.001 | 0.006 |
+| Ring                | Radius | Z     |
+| ------------------- | ------ | ----- |
+| Graphite base       | 0.001  | 0.006 |
 | Sharpened wood base | 0.0035 | 0.020 |
-| Flat tail | 0.0035 | 0.180 |
+| Flat tail           | 0.0035 | 0.180 |
 
 Connect the apex to the first ring with six graphite triangles. Connect ring 1 to ring 2 with six exposed-wood quads. Connect ring 2 to ring 3 with six sage-painted quads. Close the tail with a flat hexagonal face.
 
@@ -33,3 +33,13 @@ From below, the graphite point and wood taper occlude the painted barrel end. Th
 ## Future acceptance
 
 After modeling authorization, verify ring dimensions within 0.0001 m, closed tail, six facets, sharp apex, flush core marking and single-unit boundary. No model or export validation has occurred. Placement, writing, sharpening, wear, animation and alternate LOD meshes are outside this handoff.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Hexagonal size and tail
+
+Default dimensions are 7 x (3.5*sqrt(3)) x 180 mm, approximately 7 x 6.062178 x 180 mm. Do not use 7 mm for both horizontal axes. Graphite apex, wood taper and paint share rings at Z=6 and 20 mm. The flat tail has a flush graphite hexagon inside exposed wood; it is not a hole. This is one closed six-sided object with three replaceable appearance regions. Preserve all six facets at every LoD; a small fixed mesh is sufficient, with no cylinder conversion or duplicated internal caps. Scaling the complete unit also scales the tip and tail mask.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

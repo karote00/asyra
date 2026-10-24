@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "user-approved-reference",
+  "status": "Original references and daybed revision approved; sleeping pillow document revision approved by the user for commit; no model verification",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -12,88 +12,38 @@
   "assets": [
     {
       "id": "sage-nap-daybed",
-      "bounds": [
-        1.8,
-        0.75,
-        0.65
-      ],
+      "bounds": [1.8, 0.75, 0.65],
       "parts": {
         "legs": {
           "method": "boxes",
           "centersXY": [
-            [
-              -0.78,
-              -0.255
-            ],
-            [
-              -0.78,
-              0.255
-            ],
-            [
-              0.78,
-              -0.255
-            ],
-            [
-              0.78,
-              0.255
-            ]
+            [-0.78, -0.255],
+            [-0.78, 0.255],
+            [0.78, -0.255],
+            [0.78, 0.255]
           ],
-          "sizeXY": [
-            0.06,
-            0.06
-          ],
-          "zRange": [
-            0,
-            0.28
-          ],
+          "sizeXY": [0.06, 0.06],
+          "zRange": [0, 0.28],
           "material": "wood"
         },
         "platform": {
           "method": "box",
-          "min": [
-            -0.9,
-            -0.375,
-            0.28
-          ],
-          "max": [
-            0.9,
-            0.375,
-            0.34
-          ],
+          "min": [-0.9, -0.375, 0.28],
+          "max": [0.9, 0.375, 0.34],
           "material": "wood"
         },
         "headboard": {
           "method": "box",
-          "min": [
-            -0.9,
-            -0.375,
-            0.34
-          ],
-          "max": [
-            -0.86,
-            0.375,
-            0.65
-          ],
+          "min": [-0.9, -0.375, 0.34],
+          "max": [-0.86, 0.375, 0.65],
           "material": "wood"
         },
         "pad": {
           "method": "rounded box as Minkowski sum of inner box and sphere",
-          "center": [
-            0.02,
-            0,
-            0.38
-          ],
-          "outerSize": [
-            1.74,
-            0.71,
-            0.08
-          ],
+          "center": [0.02, 0, 0.38],
+          "outerSize": [1.74, 0.71, 0.08],
           "roundingRadius": 0.02,
-          "innerBoxSize": [
-            1.7,
-            0.67,
-            0.04
-          ],
+          "innerBoxSize": [1.7, 0.67, 0.04],
           "material": "sage"
         }
       },
@@ -104,42 +54,168 @@
         "footboard",
         "drawer",
         "reclining mechanism"
-      ]
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "geometryRecipe": "DAYBED-SPEC.md",
+        "referenceSheet": "review/01-sage-nap-daybed-v1.png",
+        "productionRoute": "programmatic-boxes-and-rounded-pad",
+        "closedComponentCount": 7,
+        "contactCount": 6,
+        "modelVerified": false,
+        "rule": "Preserve existing primitive dimensions and six positive-area flush interfaces. The pad underside contact is its inner-box XY rectangle. Keep the 10 mm minimum headboard gap; the pillow remains independent."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ scale once to the complete assembly about the floor origin. Scale contacts, margins, rounding and component positions together, then resolve appearance."
+      },
+      "appearance": {
+        "regions": [
+          {
+            "id": "leg-0",
+            "part": "legs",
+            "index": 0,
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "leg-1",
+            "part": "legs",
+            "index": 1,
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "leg-2",
+            "part": "legs",
+            "index": 2,
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "leg-3",
+            "part": "legs",
+            "index": 3,
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "platform",
+            "part": "platform",
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "headboard",
+            "part": "headboard",
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "pad",
+            "part": "pad",
+            "defaultMaterial": "sage"
+          }
+        ],
+        "overrideOrder": "Resolve material and colour independently: component, part group, daybed, preset. Apply supplied colour after material selection and isolate instances.",
+        "coordinateSpace": "resized local metres before placement",
+        "defaultOpacity": 1,
+        "defaultTransmission": 0,
+        "defaultEmission": 0,
+        "defaultClearcoat": 0,
+        "bakedLighting": false
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "segmentsPerQuarter": 12,
+            "triangleCount": 2580,
+            "maxTriangles": 2700,
+            "maxSurfaceError": 0.000172
+          },
+          {
+            "id": "lod1",
+            "segmentsPerQuarter": 6,
+            "triangleCount": 756,
+            "maxTriangles": 800,
+            "maxSurfaceError": 0.000682
+          },
+          {
+            "id": "lod2",
+            "segmentsPerQuarter": 3,
+            "triangleCount": 276,
+            "maxTriangles": 300,
+            "maxSurfaceError": 0.00268
+          }
+        ],
+        "rule": "Daybed-only override of the shared 12-segment default. Six planar pad faces, twelve quarter-cylinders and eight spherical octants with welded poles and boundaries; six closed wood boxes. Preserve all contacts, gap, extrema and regions."
+      }
     },
     {
       "id": "ivory-sleeping-pillow",
-      "bounds": [
-        0.5,
-        0.32,
-        0.1
-      ],
+      "bounds": [0.5, 0.32, 0.1],
       "construction": {
         "method": "rounded box as Minkowski sum of inner box and sphere",
-        "center": [
-          0,
-          0,
-          0.05
-        ],
-        "outerSize": [
-          0.5,
-          0.32,
-          0.1
-        ],
+        "center": [0, 0, 0.05],
+        "outerSize": [0.5, 0.32, 0.1],
         "roundingRadius": 0.04,
-        "innerBoxSize": [
-          0.42,
-          0.24,
-          0.02
-        ]
+        "innerBoxSize": [0.42, 0.24, 0.02]
       },
       "material": "ivory",
-      "excluded": [
-        "seam",
-        "piping",
-        "wrinkles",
-        "buttons",
-        "cloth simulation"
-      ]
+      "excluded": ["seam", "piping", "wrinkles", "buttons", "cloth simulation"],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "geometryRecipe": "SLEEPING-PILLOW-SPEC.md",
+        "referenceSheet": "review/02-ivory-sleeping-pillow-v1.png",
+        "productionRoute": "programmatic-rounded-box",
+        "closedComponentCount": 1,
+        "modelVerified": false,
+        "rule": "One closed Minkowski rounded-box boundary with the existing centre, inner box and radius. No casing, separate fill, base plate, seam or bundled daybed. Preserve the planar bottom contact footprint."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ scale once about the bottom contact origin. Scale the centre and all curved patches together; retain bottom Z=0, then resolve appearance and world placement."
+      },
+      "appearance": {
+        "regions": [
+          {
+            "id": "body",
+            "defaultMaterial": "ivory"
+          }
+        ],
+        "overrideOrder": "Resolve material and supplied colour independently: body, pillow, preset. Apply colour after material selection, preserve other properties and isolate instances.",
+        "coordinateSpace": "final resized geometry before placement; replacement material owns mapping",
+        "defaultOpacity": 1,
+        "defaultTransmission": 0,
+        "defaultEmission": 0,
+        "defaultClearcoat": 0,
+        "bakedLighting": false
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "segmentsPerQuarter": 12,
+            "triangleCount": 2508,
+            "maxTriangles": 2600,
+            "maxSurfaceError": 0.000343
+          },
+          {
+            "id": "lod1",
+            "segmentsPerQuarter": 6,
+            "triangleCount": 684,
+            "maxTriangles": 700,
+            "maxSurfaceError": 0.001364
+          },
+          {
+            "id": "lod2",
+            "segmentsPerQuarter": 4,
+            "triangleCount": 332,
+            "maxTriangles": 350,
+            "maxSurfaceError": 0.003045
+          }
+        ],
+        "rule": "Pillow-only tier override. Reuse the documented six-face, twelve-cylinder, eight-octant patch topology; weld poles and boundaries. Preserve exact extrema, flat support, one closed component and one region."
+      }
     }
   ],
   "construction": {

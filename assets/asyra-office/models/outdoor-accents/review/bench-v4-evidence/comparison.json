@@ -1,0 +1,132 @@
+[
+  {
+    "view": "FRONT",
+    "sourceCropPixels": [
+      20,
+      126,
+      598,
+      446
+    ],
+    "sourceObjectBox": [
+      11,
+      10,
+      567,
+      312
+    ],
+    "candidateObjectBox": [
+      60,
+      100,
+      1020,
+      620
+    ],
+    "sourceScale": 1.4028776978417266,
+    "candidateScale": 0.8125,
+    "alignedWidthPixels": 780,
+    "alignedHeightDifferencePixels": -2,
+    "method": "Uniform width alignment and bottom datum; no camera calibration or geometric acceptance implied"
+  },
+  {
+    "view": "RIGHT",
+    "sourceCropPixels": [
+      635,
+      125,
+      887,
+      446
+    ],
+    "sourceObjectBox": [
+      15,
+      11,
+      245,
+      313
+    ],
+    "candidateObjectBox": [
+      176,
+      100,
+      584,
+      620
+    ],
+    "sourceScale": 3.391304347826087,
+    "candidateScale": 1.911764705882353,
+    "alignedWidthPixels": 780,
+    "alignedHeightDifferencePixels": -30,
+    "method": "Uniform width alignment and bottom datum; no camera calibration or geometric acceptance implied"
+  },
+  {
+    "view": "BACK",
+    "sourceCropPixels": [
+      944,
+      126,
+      1512,
+      446
+    ],
+    "sourceObjectBox": [
+      12,
+      10,
+      557,
+      312
+    ],
+    "candidateObjectBox": [
+      60,
+      100,
+      1020,
+      620
+    ],
+    "sourceScale": 1.4311926605504588,
+    "candidateScale": 0.8125,
+    "alignedWidthPixels": 780,
+    "alignedHeightDifferencePixels": -10,
+    "method": "Uniform width alignment and bottom datum; no camera calibration or geometric acceptance implied"
+  },
+  {
+    "view": "TOP",
+    "sourceCropPixels": [
+      90,
+      590,
+      685,
+      837
+    ],
+    "sourceObjectBox": [
+      5,
+      11,
+      578,
+      237
+    ],
+    "candidateObjectBox": [
+      120,
+      171,
+      1080,
+      579
+    ],
+    "sourceScale": 1.361256544502618,
+    "candidateScale": 0.8125,
+    "alignedWidthPixels": 780,
+    "alignedHeightDifferencePixels": 24,
+    "method": "Uniform width alignment and bottom datum; no camera calibration or geometric acceptance implied"
+  },
+  {
+    "view": "THREE-QUARTER",
+    "sourceCropPixels": [
+      825,
+      508,
+      1505,
+      968
+    ],
+    "sourceObjectBox": [
+      10,
+      17,
+      596,
+      455
+    ],
+    "candidateObjectBox": [
+      214,
+      57,
+      1223,
+      810
+    ],
+    "sourceScale": 1.3310580204778157,
+    "candidateScale": 0.7730426164519326,
+    "alignedWidthPixels": 780,
+    "alignedHeightDifferencePixels": -1,
+    "method": "Uniform width alignment and bottom datum; no camera calibration or geometric acceptance implied"
+  }
+]

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "user-authorized-reference-commit",
+  "status": "post-v3-user-approved-for-commit; panel-v2-user-approved-for-commit",
   "units": "metres",
   "axes": {
     "up": "+Z",
@@ -15,7 +15,8 @@
     "roughness": 0.8,
     "opacity": 1,
     "emission": 0,
-    "bakedLighting": false
+    "bakedLighting": false,
+    "role": "Replaceable default for the whole unit; review colours are not runtime material defaults."
   },
   "construction": {
     "boxBevel": 0,
@@ -37,14 +38,14 @@
           "name": "shaft",
           "primitive": "box",
           "size": [
-            0.045,
-            0.045,
-            0.622
+            0.065,
+            0.065,
+            0.614
           ],
           "center": [
             0,
             0,
-            0.311
+            0.307
           ]
         },
         {
@@ -53,12 +54,12 @@
           "size": [
             0.08,
             0.08,
-            0.032
+            0.04
           ],
           "center": [
             0,
             0,
-            0.636
+            0.632
           ]
         },
         {
@@ -190,16 +191,17 @@
     ],
     "postCenters": [
       [
-        -0.4725,
+        -0.4825,
         0,
         0
       ],
       [
-        0.4725,
+        0.4825,
         0,
         0
       ]
     ],
-    "note": "Illustrative fit only, not a new combined asset or implemented placement behavior"
-  }
+    "note": "Default illustrative fit only; recalculate from final part bounds after sizing. Not a combined asset or implemented placement behavior."
+  },
+  "dimensionPolicy": "Dimensions are default reference geometry. Explicit overall XYZ sizes and appearance overrides follow ../README.md#overall-size-and-appearance---2026-10-09."
 }

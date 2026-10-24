@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="2120" viewBox="0 0 2560 2120">
+<title>Street lantern - independent annotation layer</title>
+<desc>Place the unchanged 1536 x 1024 original at (64,168). This layer does not cover that rectangle. All lengths are millimetres unless stated.</desc>
+<defs><pattern id="cut-hatch" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#D4DDE2"/><path d="M-7,14 L7,0 M7,14 L21,0" stroke="#91A4B1" stroke-width="1"/></pattern></defs>
+<text x="64" y="44" font-family="Arial,sans-serif" font-size="48" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">STREET LANTERN - DIMENSIONED REFERENCE</text>
+<text x="64" y="108" font-family="Arial,sans-serif" font-size="28" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Original artwork preserved at native resolution. Units: mm. Diagrams follow the numeric specification.</text>
+<polyline points="64.000,145.000 2496.000,145.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<polyline points="1640.000,168.000 2496.000,168.000 2496.000,1192.000 1640.000,1192.000 1640.000,168.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<text x="1672" y="200" font-family="Arial,sans-serif" font-size="31" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">DIMENSIONS - FRONT PROPORTIONS</text>
+<text x="1672" y="268" font-family="Arial,sans-serif" font-size="27" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Overall height (base to tip)</text>
+<text x="2460" y="268" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#18364D" text-anchor="end" dominant-baseline="hanging">2740</text>
+<text x="1672" y="317" font-family="Arial,sans-serif" font-size="27" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Roof eave width / depth</text>
+<text x="2460" y="317" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#18364D" text-anchor="end" dominant-baseline="hanging">530 / 530</text>
+<text x="1672" y="366" font-family="Arial,sans-serif" font-size="27" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Base maximum diameter</text>
+<text x="2460" y="366" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#18364D" text-anchor="end" dominant-baseline="hanging">440</text>
+<text x="1672" y="415" font-family="Arial,sans-serif" font-size="27" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Shaft diameter - lower / upper</text>
+<text x="2460" y="415" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#18364D" text-anchor="end" dominant-baseline="hanging">160 / 150</text>
+<text x="1672" y="464" font-family="Arial,sans-serif" font-size="27" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Frame outer side - bottom / top</text>
+<text x="2460" y="464" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#18364D" text-anchor="end" dominant-baseline="hanging">300 / 440</text>
+<text x="1672" y="513" font-family="Arial,sans-serif" font-size="27" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Roof overhang - each side</text>
+<text x="2460" y="513" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#18364D" text-anchor="end" dominant-baseline="hanging">45</text>
+<polyline points="1672.000,581.000 2460.000,581.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<text x="1672" y="607" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">FRAME FACE ANGLE</text>
+<polygon points="1730.000,1080.000 1763.097,862.504 1762.687,862.442 1762.276,862.380 1761.865,862.320 1761.454,862.260 1761.043,862.201 1760.632,862.143 1760.220,862.086 1759.809,862.029 1759.398,861.973 1758.986,861.918 1758.574,861.864 1758.162,861.810 1757.750,861.757 1757.338,861.705 1756.926,861.654 1756.514,861.604 1756.102,861.554 1755.689,861.505 1755.277,861.457 1754.864,861.410 1754.452,861.363 1754.039,861.317 1753.626,861.272 1753.213,861.228 1752.800,861.185 1752.387,861.142 1751.974,861.100 1751.561,861.059 1751.147,861.019 1750.734,860.979 1750.320,860.940 1749.907,860.902 1749.493,860.865 1749.079,860.829 1748.666,860.793 1748.252,860.758 1747.838,860.724 1747.424,860.691 1747.010,860.659 1746.596,860.627 1746.182,860.596 1745.768,860.566 1745.353,860.536 1744.939,860.508 1744.525,860.480 1744.110,860.453 1743.696,860.427 1743.281,860.401 1742.867,860.377 1742.452,860.353 1742.037,860.330 1741.623,860.307 1741.208,860.286 1740.793,860.265 1740.378,860.245 1739.964,860.226 1739.549,860.207 1739.134,860.190 1738.719,860.173 1738.304,860.157 1737.889,860.141 1737.474,860.127 1737.059,860.113 1736.644,860.100 1736.229,860.088 1735.813,860.077 1735.398,860.066 1734.983,860.056 1734.568,860.047 1734.153,860.039 1733.737,860.032 1733.322,860.025 1732.907,860.019 1732.492,860.014 1732.076,860.010 1731.661,860.006 1731.246,860.004 1730.831,860.002 1730.415,860.000 1730.000,860.000" fill="#E5F0F6" stroke="none" stroke-width="2"/>
+<text x="1672" y="650" font-family="Arial,sans-serif" font-size="21" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Vertical</text>
+<text x="1810" y="650" font-family="Arial,sans-serif" font-size="21" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Frame face</text>
+<polyline points="1730.000,1080.000 1730.000,660.000" fill="none" stroke="#506778" stroke-width="2" stroke-dasharray="10 8"/>
+<polyline points="1730.000,1080.000 1793.913,660.000" fill="none" stroke="#18364D" stroke-width="3"/>
+<polyline points="1763.097,862.504 1762.687,862.442 1762.276,862.380 1761.865,862.320 1761.454,862.260 1761.043,862.201 1760.632,862.143 1760.220,862.086 1759.809,862.029 1759.398,861.973 1758.986,861.918 1758.574,861.864 1758.162,861.810 1757.750,861.757 1757.338,861.705 1756.926,861.654 1756.514,861.604 1756.102,861.554 1755.689,861.505 1755.277,861.457 1754.864,861.410 1754.452,861.363 1754.039,861.317 1753.626,861.272 1753.213,861.228 1752.800,861.185 1752.387,861.142 1751.974,861.100 1751.561,861.059 1751.147,861.019 1750.734,860.979 1750.320,860.940 1749.907,860.902 1749.493,860.865 1749.079,860.829 1748.666,860.793 1748.252,860.758 1747.838,860.724 1747.424,860.691 1747.010,860.659 1746.596,860.627 1746.182,860.596 1745.768,860.566 1745.353,860.536 1744.939,860.508 1744.525,860.480 1744.110,860.453 1743.696,860.427 1743.281,860.401 1742.867,860.377 1742.452,860.353 1742.037,860.330 1741.623,860.307 1741.208,860.286 1740.793,860.265 1740.378,860.245 1739.964,860.226 1739.549,860.207 1739.134,860.190 1738.719,860.173 1738.304,860.157 1737.889,860.141 1737.474,860.127 1737.059,860.113 1736.644,860.100 1736.229,860.088 1735.813,860.077 1735.398,860.066 1734.983,860.056 1734.568,860.047 1734.153,860.039 1733.737,860.032 1733.322,860.025 1732.907,860.019 1732.492,860.014 1732.076,860.010 1731.661,860.006 1731.246,860.004 1730.831,860.002 1730.415,860.000 1730.000,860.000" fill="none" stroke="#18364D" stroke-width="3"/>
+<polygon points="1763.097,862.504 1756.612,858.556 1755.738,864.371" fill="#18364D" stroke="none" stroke-width="2"/>
+<polygon points="1730.000,860.000 1736.994,862.953 1737.006,857.073" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="1900" y="728" font-family="Arial,sans-serif" font-size="31" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">8.653° from vertical</text>
+<polyline points="1900.000,772.000 1840.000,772.000 1746.596,860.627" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="1746.596,860.627 1755.726,857.174 1750.523,851.690" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="1900" y="836" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">70 mm outward / 460 mm upward</text>
+<text x="1900" y="884" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">True angle; vertical dashed baseline.</text>
+<text x="1900" y="925" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">The pane follows the same slope.</text>
+<text x="1672" y="1132" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Section details below: A - pane seat; B - roof.</text>
+<polyline points="64.000,1250.000 1264.000,1250.000 1264.000,1980.000 64.000,1980.000 64.000,1250.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<text x="96" y="1278" font-family="Arial,sans-serif" font-size="32" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">A - PANE / FRAME SEAT</text>
+<text x="96" y="1323" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Plan section at Z = 2200. Sharp seats; metal hatched.</text>
+<path d="M636.000,1440.000 L1020.000,1440.000 L1020.000,1824.000 L732.000,1824.000 L732.000,1728.000 L636.000,1728.000 Z M636.000,1536.000 L684.000,1536.000 L684.000,1572.414 L636.000,1572.414 Z" fill="url(#cut-hatch)" fill-rule="evenodd" stroke="#18364D" stroke-width="2"/>
+<polygon points="420.000,1536.000 684.000,1536.000 684.000,1572.414 420.000,1572.414" fill="#EAC579" stroke="#18364D" stroke-width="2"/>
+<polyline points="636.000,1530.000 636.000,1385.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<polyline points="684.000,1530.000 684.000,1385.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<polyline points="636.000,1395.000 684.000,1395.000" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="636.000,1395.000 644.000,1398.360 644.000,1391.640" fill="#18364D" stroke="none" stroke-width="2"/>
+<polygon points="684.000,1395.000 676.000,1391.640 676.000,1398.360" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="660.0" y="1361" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#18364D" text-anchor="middle" dominant-baseline="hanging">4 mm embed</text>
+<polyline points="636.000,1440.000 564.000,1440.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<polyline points="420.000,1536.000 564.000,1536.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<polyline points="588.000,1440.000 588.000,1536.000" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="588.000,1440.000 584.640,1448.000 591.360,1448.000" fill="#18364D" stroke="none" stroke-width="2"/>
+<polygon points="588.000,1536.000 591.360,1528.000 584.640,1528.000" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="358" y="1455" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">8 mm setback</text>
+<text x="358" y="1484" font-family="Arial,sans-serif" font-size="23" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">in the XY plane</text>
+<text x="105" y="1640" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">3 mm normal thickness</text>
+<text x="105" y="1678" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Measured normal to the sloped pane.</text>
+<polyline points="445.000,1638.000 480.000,1610.000 528.000,1554.207" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="528.000,1554.207 519.265,1558.565 524.996,1563.495" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="704" y="1850" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#18364D" text-anchor="middle" dominant-baseline="hanging">Frame / fitted pane seat</text>
+<text x="96" y="1898" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Plan-cut thickness = 3.0345 mm; true normal thickness = 3 mm.</text>
+<text x="96" y="1934" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">The 4 mm dimension is insertion into metal, not an air gap.</text>
+<polyline points="1296.000,1250.000 2496.000,1250.000 2496.000,1980.000 1296.000,1980.000 1296.000,1250.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<text x="1328" y="1278" font-family="Arial,sans-serif" font-size="32" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">B - ROOF CENTRE SECTION</text>
+<text x="1328" y="1323" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Computed from wall planes; shown before 3 mm edge rounding.</text>
+<path d="M1405.750,1880.000 L1405.750,1796.750 L1729.500,1556.250 L2062.500,1556.250 L2386.250,1796.750 L2386.250,1880.000 Z M1427.950,1857.800 L1427.950,1807.914 L1736.843,1578.450 L2055.157,1578.450 L2364.050,1807.914 L2364.050,1857.800 Z" fill="url(#cut-hatch)" fill-rule="evenodd" stroke="#18364D" stroke-width="2"/>
+<text x="1760" y="1412" font-family="Arial,sans-serif" font-size="26" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">12 mm top cap</text>
+<polyline points="1880.000,1450.000 1896.000,1498.000 1896.000,1567.350" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="1896.000,1567.350 1899.780,1558.350 1892.220,1558.350" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="2162" y="1435" font-family="Arial,sans-serif" font-size="26" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">12 mm wall</text>
+<text x="2162" y="1471" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">normal to slope</text>
+<polyline points="2236.827,1685.750 2223.589,1703.571" fill="none" stroke="#18364D" stroke-width="3"/>
+<polyline points="2240.000,1510.000 2290.000,1580.000 2230.208,1694.660" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="2230.208,1694.660 2237.721,1688.428 2231.017,1684.933" fill="#18364D" stroke="none" stroke-width="2"/>
+<polyline points="1405.750,1796.750 1630.750,1796.750" fill="none" stroke="#506778" stroke-width="2" stroke-dasharray="10 8"/>
+<polyline points="1555.750,1796.750 1555.745,1795.552 1555.731,1794.354 1555.707,1793.156 1555.673,1791.959 1555.630,1790.762 1555.578,1789.565 1555.516,1788.369 1555.444,1787.173 1555.363,1785.978 1555.272,1784.783 1555.172,1783.589 1555.062,1782.396 1554.942,1781.204 1554.813,1780.013 1554.675,1778.823 1554.527,1777.635 1554.370,1776.447 1554.203,1775.261 1554.026,1774.076 1553.841,1772.892 1553.645,1771.711 1553.441,1770.530 1553.227,1769.352 1553.003,1768.175 1552.770,1766.999 1552.528,1765.826 1552.276,1764.655 1552.015,1763.486 1551.745,1762.319 1551.465,1761.154 1551.176,1759.991 1550.878,1758.831 1550.571,1757.673 1550.254,1756.518 1549.928,1755.365 1549.593,1754.215 1549.249,1753.068 1548.895,1751.923 1548.533,1750.781 1548.161,1749.642 1547.780,1748.506 1547.390,1747.374 1546.991,1746.244 1546.584,1745.118 1546.167,1743.995 1545.741,1742.875 1545.306,1741.759 1544.863,1740.646 1544.410,1739.537 1543.949,1738.431 1543.479,1737.329 1543.000,1736.231 1542.512,1735.137 1542.016,1734.047 1541.510,1732.960 1540.997,1731.878 1540.474,1730.800 1539.943,1729.726 1539.404,1728.657 1538.856,1727.592 1538.299,1726.531 1537.734,1725.474 1537.161,1724.423 1536.579,1723.375 1535.989,1722.333 1535.390,1721.295 1534.783,1720.262 1534.168,1719.234 1533.545,1718.211 1532.914,1717.193 1532.274,1716.180 1531.627,1715.172 1530.971,1714.169 1530.308,1713.172 1529.637,1712.180 1528.957,1711.193 1528.270,1710.212 1527.575,1709.236 1526.872,1708.266 1526.162,1707.301" fill="none" stroke="#18364D" stroke-width="3"/>
+<polygon points="1555.750,1796.750 1558.634,1789.727 1552.754,1789.774" fill="#18364D" stroke="none" stroke-width="2"/>
+<polygon points="1526.162,1707.301 1527.917,1714.688 1532.665,1711.219" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="1571.75" y="1744.7500000000002" font-family="Arial,sans-serif" font-size="25" font-weight="700" fill="#18364D" text-anchor="start" dominant-baseline="hanging">36.607°</text>
+<text x="1569.75" y="1777.7500000000002" font-family="Arial,sans-serif" font-size="22" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">from horizontal</text>
+<text x="1774" y="1921" font-family="Arial,sans-serif" font-size="26" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">12 mm bottom lid</text>
+<polyline points="1903.000,1910.000 1896.000,1868.900" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="1896.000,1868.900 1893.785,1878.407 1901.237,1877.138" fill="#18364D" stroke="none" stroke-width="2"/>
+<polyline points="1405.750,1884.000 1405.750,1940.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<polyline points="1489.000,1884.000 1489.000,1940.000" fill="none" stroke="#506778" stroke-width="2" stroke-dasharray="10 8"/>
+<polyline points="1405.750,1923.000 1489.000,1923.000" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="1405.750,1923.000 1413.750,1926.360 1413.750,1919.640" fill="#18364D" stroke="none" stroke-width="2"/>
+<polygon points="1489.000,1923.000 1481.000,1919.640 1481.000,1926.360" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="1447.375" y="1934" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#18364D" text-anchor="middle" dominant-baseline="hanging">45</text>
+<polyline points="2386.250,1884.000 2386.250,1940.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<polyline points="2303.000,1884.000 2303.000,1940.000" fill="none" stroke="#506778" stroke-width="2" stroke-dasharray="10 8"/>
+<polyline points="2303.000,1923.000 2386.250,1923.000" fill="none" stroke="#18364D" stroke-width="2"/>
+<polygon points="2303.000,1923.000 2311.000,1926.360 2311.000,1919.640" fill="#18364D" stroke="none" stroke-width="2"/>
+<polygon points="2386.250,1923.000 2378.250,1919.640 2378.250,1926.360" fill="#18364D" stroke="none" stroke-width="2"/>
+<text x="2344.625" y="1934" font-family="Arial,sans-serif" font-size="25" font-weight="400" fill="#18364D" text-anchor="middle" dominant-baseline="hanging">45</text>
+<text x="1672" y="1366" font-family="Arial,sans-serif" font-size="23" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Roof pitch is measured across a face, not along a diagonal hip.</text>
+<polyline points="64.000,2012.000 2496.000,2012.000" fill="none" stroke="#A5B8C5" stroke-width="2"/>
+<text x="64" y="2043" font-family="Arial,sans-serif" font-size="28" font-weight="400" fill="#18364D" text-anchor="start" dominant-baseline="hanging">Reference art above is unchanged. Section colours identify parts; appearance remains replaceable.</text>
+<text x="64" y="2084" font-family="Arial,sans-serif" font-size="23" font-weight="400" fill="#506778" text-anchor="start" dominant-baseline="hanging">Exact geometry: LANTERN-SPEC.md and street-model-spec.json. No baked lighting. No model generated.</text>
+</svg>

@@ -265,6 +265,104 @@
           ],
           "material": "ivory"
         }
+      },
+      "review": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "TREE-SPARROW-SPEC.md",
+        "sourceViewMapping": {
+          "RIGHT": "LEFT",
+          "RIGHT THREE-QUARTER": "FRONT-LEFT THREE-QUARTER"
+        },
+        "limitations": "Source views are illustrative, not calibrated projections. Numeric checks do not prove final mesh or mask agreement."
+      },
+      "sizing": {
+        "defaultBoundsSource": "complete-default-surface-including-feet-beak-tail",
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "normalization": "Apply one complete raw-to-default transform before LOD; preserve it for every component and LOD. Minimum surface Z sets ground, not a raw toe centre.",
+        "maskSpace": "Inverse instance sizing then inverse default normalization recovers raw anatomical coordinates."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "lower-body",
+            "defaultMaterial": "tan"
+          },
+          {
+            "id": "head-and-back",
+            "defaultMaterial": "chestnut"
+          },
+          {
+            "id": "cheeks",
+            "defaultMaterial": "ivory"
+          },
+          {
+            "id": "cheek-spots",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "throat-bib",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "eyes",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "wings",
+            "defaultMaterial": "brown"
+          },
+          {
+            "id": "wing-bars",
+            "defaultMaterial": "ivory"
+          },
+          {
+            "id": "tail",
+            "defaultMaterial": "brown"
+          },
+          {
+            "id": "beak",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "feet",
+            "defaultMaterial": "pinkBrown"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise bird material, otherwise preset; then region colour, otherwise bird colour. Preserve unoverridden properties and other instances.",
+        "maskOwnership": "Preserve named masks independently of colours and atlases. Head pre-blend field must be lower than body; ties belong to body. Raw rotated wing normals determine outward faces."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "maxTriangles": 12000,
+            "maxSurfaceError": 0.0005
+          },
+          {
+            "id": "lod1",
+            "maxTriangles": 6000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod2",
+            "maxTriangles": 3000,
+            "maxSurfaceError": 0.002
+          }
+        ],
+        "errorMetric": "Maximum adaptive bidirectional surface distance in default metres against pre-reduction surfaces, separately per body, wing, tail, beak and foot. Include all triangles and internal caps.",
+        "preserve": [
+          "two folded wings",
+          "eight distinct toes",
+          "two grounded feet",
+          "beak and tail attachment",
+          "named appearance masks"
+        ],
+        "failurePolicy": "Reject if triangle ceiling or surface-error limit fails; do not drop digits, renormalize LODs or silently raise budgets."
       }
     },
     {
@@ -587,6 +685,113 @@
             ]
           }
         ]
+      },
+      "review": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "COCKATIEL-SPEC.md",
+        "sourceViewMapping": {
+          "RIGHT": "LEFT",
+          "RIGHT THREE-QUARTER": "FRONT-LEFT THREE-QUARTER"
+        },
+        "limitations": "Reference images are illustrative, not calibrated geometry. Numeric checks do not certify final surfaces, masks or LOD performance."
+      },
+      "sizing": {
+        "defaultBoundsSource": "complete-default-surface-including-crest-beak-feet-tail",
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "normalization": "One shared raw-to-default transform precedes LOD generation; include three crest feathers, both beak parts, tail and feet. All LODs inherit the same transform and origin.",
+        "maskSpace": "Inverse instance sizing followed by inverse default normalization recovers raw anatomical space; wing patches then use inverse wing rotation."
+      },
+      "crestConstruction": {
+        "topology": "three independent head-attached lofts; no inter-feather union",
+        "minimumRawXIntervalGap": 0.002,
+        "sweepDirection": "+Y",
+        "tipCap": "Closed centre fan on each final ellipse; no additional dome.",
+        "projection": "Side projections may overlap; adjacent feather X intervals remain separated in 3D."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "body",
+            "defaultMaterial": "featherGray"
+          },
+          {
+            "id": "head",
+            "defaultMaterial": "yellow"
+          },
+          {
+            "id": "crest",
+            "defaultMaterial": "yellow"
+          },
+          {
+            "id": "cheeks",
+            "defaultMaterial": "orange"
+          },
+          {
+            "id": "eyes",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "wings",
+            "defaultMaterial": "wingGray"
+          },
+          {
+            "id": "wing-patches",
+            "defaultMaterial": "ivory"
+          },
+          {
+            "id": "tail",
+            "defaultMaterial": "wingGray"
+          },
+          {
+            "id": "upper-beak",
+            "defaultMaterial": "beakGray"
+          },
+          {
+            "id": "lower-beak",
+            "defaultMaterial": "beakGray"
+          },
+          {
+            "id": "feet",
+            "defaultMaterial": "gray"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise bird material, otherwise preset; then region colour, otherwise bird colour. Retain other properties and isolate instances.",
+        "maskOwnership": "Keep named masks independent of palette and atlases. Head field must be lower than body; ties belong to body. Wing patches are wing-local ranges on outward faces only."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "maxTriangles": 16000,
+            "maxSurfaceError": 0.0005
+          },
+          {
+            "id": "lod1",
+            "maxTriangles": 8000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod2",
+            "maxTriangles": 4000,
+            "maxSurfaceError": 0.002
+          }
+        ],
+        "errorMetric": "Maximum adaptive bidirectional surface distance in default metres against normalized pre-reduction surfaces, separately per body, wing, tail, crest feather, beak part and foot. Count all triangles including hidden caps.",
+        "preserve": [
+          "three separate head-attached crest feathers",
+          "closed hooked beak with overlapping mandibles",
+          "two folded wings",
+          "eight distinct toes",
+          "two grounded feet",
+          "tail attachment",
+          "named appearance regions"
+        ],
+        "failurePolicy": "Reject if either budget or surface error fails; do not drop parts, resize individual LODs or silently increase limits."
       }
     }
   ]

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "user-approved-reference",
+  "status": "Original references and meeting table revision approved; whiteboard document revision approved by the user for commit; no model verification",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -12,159 +12,179 @@
       "id": "wooden-meeting-table",
       "source": "Meeting room thumbnail supplies broad silhouette; central office supplies wood palette. Dimensions and concealed structure are authored.",
       "origin": "center of floor footprint",
-      "bounds": [
-        1.4,
-        0.75,
-        0.74
-      ],
+      "bounds": [1.4, 0.75, 0.74],
       "parts": {
         "top": {
           "method": "XY rounded rectangle extrusion",
           "width": 1.4,
           "depth": 0.75,
           "cornerRadius": 0.025,
-          "zRange": [
-            0.7,
-            0.74
-          ],
+          "zRange": [0.7, 0.74],
           "segmentsPerCorner": 16
         },
         "legs": {
           "method": "square box",
           "centersXY": [
-            [
-              -0.58,
-              -0.255
-            ],
-            [
-              0.58,
-              -0.255
-            ],
-            [
-              -0.58,
-              0.255
-            ],
-            [
-              0.58,
-              0.255
-            ]
+            [-0.58, -0.255],
+            [0.58, -0.255],
+            [-0.58, 0.255],
+            [0.58, 0.255]
           ],
-          "crossSection": [
-            0.055,
-            0.055
-          ],
-          "zRange": [
-            0,
-            0.7
-          ]
+          "crossSection": [0.055, 0.055],
+          "zRange": [0, 0.7]
         },
         "longAprons": {
           "method": "box",
-          "xRange": [
-            -0.5525,
-            0.5525
-          ],
-          "centerY": [
-            -0.255,
-            0.255
-          ],
+          "xRange": [-0.5525, 0.5525],
+          "centerY": [-0.255, 0.255],
           "thicknessY": 0.022,
-          "zRange": [
-            0.62,
-            0.7
-          ]
+          "zRange": [0.62, 0.7]
         },
         "shortAprons": {
           "method": "box",
-          "yRange": [
-            -0.2275,
-            0.2275
-          ],
-          "centerX": [
-            -0.58,
-            0.58
-          ],
+          "yRange": [-0.2275, 0.2275],
+          "centerX": [-0.58, 0.58],
           "thicknessX": 0.022,
-          "zRange": [
-            0.62,
-            0.7
-          ]
+          "zRange": [0.62, 0.7]
         }
       },
-      "material": "honey-wood"
+      "material": "honey-wood",
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "geometryRecipe": "MEETING-TABLE-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "closedComponentCount": 9,
+        "contactCount": 16,
+        "modelVerified": false,
+        "rule": "Preserve exact source dimensions, nine closed solids and sixteen positive-area flush contacts. No bevel beyond tabletop XY corners; no Boolean union or added overlap required."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ scale once to the complete assembly about the ground origin. Preserve common mating planes; resolve surfaces after sizing."
+      },
+      "appearance": {
+        "regions": [
+          {
+            "id": "top",
+            "part": "top",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "leg-0",
+            "part": "legs",
+            "index": 0,
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "leg-1",
+            "part": "legs",
+            "index": 1,
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "leg-2",
+            "part": "legs",
+            "index": 2,
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "leg-3",
+            "part": "legs",
+            "index": 3,
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "front-apron",
+            "part": "longAprons",
+            "index": 0,
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "back-apron",
+            "part": "longAprons",
+            "index": 1,
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "left-apron",
+            "part": "shortAprons",
+            "index": 0,
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "right-apron",
+            "part": "shortAprons",
+            "index": 1,
+            "defaultMaterial": "honey-wood"
+          }
+        ],
+        "overrideOrder": "Resolve material and colour independently: region, part group, table, preset. Apply colour after material selection; preserve other material properties and isolate instances.",
+        "coordinateSpace": "resized local metres before placement",
+        "defaultOpacity": 1,
+        "defaultTransmission": 0,
+        "defaultEmission": 0,
+        "defaultClearcoat": 0,
+        "bakedLighting": false
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "segmentsPerCorner": 16,
+            "triangleCount": 364,
+            "maxTriangles": 400,
+            "maxSurfaceError": 3.1e-5
+          },
+          {
+            "id": "lod1",
+            "segmentsPerCorner": 8,
+            "triangleCount": 236,
+            "maxTriangles": 260,
+            "maxSurfaceError": 0.000121
+          },
+          {
+            "id": "lod2",
+            "segmentsPerCorner": 4,
+            "triangleCount": 172,
+            "maxTriangles": 200,
+            "maxSurfaceError": 0.000481
+          }
+        ],
+        "rule": "Closed caps without additional triangulation vertices; eight 12-triangle boxes. Retain nine regions, sixteen exact contacts and all physical extrema. Scale error by maximum instance axis scale."
+      }
     },
     {
       "id": "blank-whiteboard",
       "source": "Authored supplementary design, not a clearly identifiable object in the approved reference.",
       "origin": "center of frame rear plane on wall Y=0",
       "bounds": {
-        "x": [
-          -0.45,
-          0.45
-        ],
-        "y": [
-          -0.06,
-          0
-        ],
-        "z": [
-          -0.312,
-          0.3
-        ]
+        "x": [-0.45, 0.45],
+        "y": [-0.06, 0],
+        "z": [-0.312, 0.3]
       },
       "parts": {
         "frame": {
           "method": "rectangular ring extrusion in XZ",
-          "outer": [
-            0.9,
-            0.6
-          ],
-          "inner": [
-            0.85,
-            0.55
-          ],
-          "yRange": [
-            -0.025,
-            0
-          ]
+          "outer": [0.9, 0.6],
+          "inner": [0.85, 0.55],
+          "yRange": [-0.025, 0]
         },
         "writingPanel": {
           "method": "box",
-          "min": [
-            -0.425,
-            -0.021,
-            -0.275
-          ],
-          "max": [
-            0.425,
-            -0.017,
-            0.275
-          ]
+          "min": [-0.425, -0.021, -0.275],
+          "max": [0.425, -0.017, 0.275]
         },
         "backing": {
           "method": "box",
-          "min": [
-            -0.425,
-            -0.005,
-            -0.275
-          ],
-          "max": [
-            0.425,
-            0,
-            0.275
-          ]
+          "min": [-0.425, -0.005, -0.275],
+          "max": [0.425, 0, 0.275]
         },
         "tray": {
           "method": "box",
-          "min": [
-            -0.3,
-            -0.06,
-            -0.312
-          ],
-          "max": [
-            0.3,
-            0,
-            -0.3
-          ]
+          "min": [-0.3, -0.06, -0.312],
+          "max": [0.3, 0, -0.3]
         }
       },
       "materials": {
@@ -172,6 +192,135 @@
         "backing": "honey-wood",
         "tray": "honey-wood",
         "writingPanel": "ivory"
+      },
+      "frameMembers": [
+        {
+          "id": "frame-top",
+          "polygonXZ": [
+            [-0.45, 0.3],
+            [-0.425, 0.275],
+            [0.425, 0.275],
+            [0.45, 0.3]
+          ]
+        },
+        {
+          "id": "frame-right",
+          "polygonXZ": [
+            [0.45, 0.3],
+            [0.425, 0.275],
+            [0.425, -0.275],
+            [0.45, -0.3]
+          ]
+        },
+        {
+          "id": "frame-bottom",
+          "polygonXZ": [
+            [0.45, -0.3],
+            [0.425, -0.275],
+            [-0.425, -0.275],
+            [-0.45, -0.3]
+          ]
+        },
+        {
+          "id": "frame-left",
+          "polygonXZ": [
+            [-0.45, -0.3],
+            [-0.425, -0.275],
+            [-0.425, 0.275],
+            [-0.45, 0.3]
+          ]
+        }
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "geometryRecipe": "WHITEBOARD-SPEC.md",
+        "productionRoute": "programmatic-prisms-and-boxes",
+        "closedComponentCount": 7,
+        "contactCount": 13,
+        "modelVerified": false,
+        "rule": "Extrude four counter-clockwise XZ frame polygons through parts.frame.yRange. Preserve sharp 45-degree default miters, original ring envelope, three boxes and positive-area flush contacts. Do not emit parts.frame as an additional mesh; it supplies the ring envelope and depth only. Emit four frameMembers prisms plus writingPanel, backing and tray boxes, exactly once each.",
+        "referenceSheet": "review/02-blank-whiteboard-v2.png",
+        "referenceCorrection": "RIGHT inset generated from the existing frame/tray bounds: forward projection is screen-left and tray top equals frame bottom. Other four views retain source pixels; v1 is historical input only."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "defaultExtentsXYZ": [0.9, 0.06, 0.612],
+        "invalidExtentPolicy": "reject",
+        "rule": "Scale every part once about the frame rear mounting origin; preserve Y=0 and asymmetric Z bounds. Do not recenter, refit frame members or restore miter angles after nonuniform sizing."
+      },
+      "appearance": {
+        "regions": [
+          {
+            "id": "frame-top",
+            "part": "frame",
+            "member": "frame-top",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "frame-right",
+            "part": "frame",
+            "member": "frame-right",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "frame-bottom",
+            "part": "frame",
+            "member": "frame-bottom",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "frame-left",
+            "part": "frame",
+            "member": "frame-left",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "writing-panel",
+            "part": "writingPanel",
+            "defaultMaterial": "ivory"
+          },
+          {
+            "id": "backing",
+            "part": "backing",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "tray",
+            "part": "tray",
+            "defaultMaterial": "honey-wood"
+          }
+        ],
+        "overrideOrder": "Resolve material and colour independently: region, part group, whiteboard, preset. Apply supplied colour after material selection; isolate instance state.",
+        "coordinateSpace": "resized local metres before placement",
+        "defaultOpacity": 1,
+        "defaultTransmission": 0,
+        "defaultEmission": 0,
+        "defaultClearcoat": 0,
+        "bakedLighting": false
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "triangleCount": 84,
+            "maxTriangles": 84,
+            "maxSurfaceError": 0
+          },
+          {
+            "id": "lod1",
+            "triangleCount": 84,
+            "maxTriangles": 84,
+            "maxSurfaceError": 0
+          },
+          {
+            "id": "lod2",
+            "triangleCount": 84,
+            "maxTriangles": 84,
+            "maxSurfaceError": 0
+          }
+        ],
+        "rule": "Reuse the same seven closed components across tiers, with seven regions and thirteen flush contacts. No geometric simplification, cavity fill or cap deletion."
       }
     }
   ],

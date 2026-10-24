@@ -66,22 +66,10 @@
       "name": "Wall clock - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/01-wall-clock-v2.png",
-      "overallSize": [
-        0.6,
-        0.055,
-        0.6
-      ],
+      "overallSize": [0.6, 0.055, 0.6],
       "bounds": {
-        "min": [
-          -0.3,
-          -0.055,
-          -0.3
-        ],
-        "max": [
-          0.3,
-          0,
-          0.3
-        ]
+        "min": [-0.3, -0.055, -0.3],
+        "max": [0.3, 0, 0.3]
       },
       "origin": "centre of rear mounting plane",
       "components": [
@@ -146,34 +134,13 @@
           "primitive": "extruded-planar-polygon",
           "localCoordinates": "[tangent,radial] before clockwise rotation",
           "vertices": [
-            [
-              -0.01,
-              -0.014
-            ],
-            [
-              0.01,
-              -0.014
-            ],
-            [
-              0.011,
-              0.035
-            ],
-            [
-              0.005,
-              0.147
-            ],
-            [
-              0,
-              0.158
-            ],
-            [
-              -0.005,
-              0.147
-            ],
-            [
-              -0.011,
-              0.035
-            ]
+            [-0.01, -0.014],
+            [0.01, -0.014],
+            [0.011, 0.035],
+            [0.005, 0.147],
+            [0, 0.158],
+            [-0.005, 0.147],
+            [-0.011, 0.035]
           ],
           "angle": 47.5,
           "yMin": -0.048,
@@ -181,37 +148,18 @@
           "edgeBevel": 0.0005,
           "bevelSegments": 2,
           "material": "ink",
-          "pivot": [
-            0,
-            -0.047,
-            0
-          ]
+          "pivot": [0, -0.047, 0]
         },
         {
           "partId": "minute-hand",
           "primitive": "extruded-planar-polygon",
           "localCoordinates": "[tangent,radial] before clockwise rotation",
           "vertices": [
-            [
-              -0.006,
-              -0.012
-            ],
-            [
-              0.006,
-              -0.012
-            ],
-            [
-              0.005,
-              0.192
-            ],
-            [
-              0,
-              0.205
-            ],
-            [
-              -0.005,
-              0.192
-            ]
+            [-0.006, -0.012],
+            [0.006, -0.012],
+            [0.005, 0.192],
+            [0, 0.205],
+            [-0.005, 0.192]
           ],
           "angle": 210,
           "yMin": -0.051,
@@ -219,11 +167,7 @@
           "edgeBevel": 0.0005,
           "bevelSegments": 2,
           "material": "ink",
-          "pivot": [
-            0,
-            -0.05,
-            0
-          ]
+          "pivot": [0, -0.05, 0]
         },
         {
           "partId": "centre-pin",
@@ -262,38 +206,18 @@
       "name": "Vertical wallpaper - single strip",
       "unitCount": 1,
       "reviewDrawing": "review/02-vertical-wallpaper-v1.png",
-      "overallSize": [
-        0.4,
-        0.001,
-        1.2
-      ],
+      "overallSize": [0.4, 0.001, 1.2],
       "bounds": {
-        "min": [
-          -0.2,
-          -0.001,
-          0
-        ],
-        "max": [
-          0.2,
-          0,
-          1.2
-        ]
+        "min": [-0.2, -0.001, 0],
+        "max": [0.2, 0, 1.2]
       },
       "origin": "bottom centre of rear mounting plane",
       "components": [
         {
           "partId": "paper",
           "primitive": "box",
-          "size": [
-            0.4,
-            0.001,
-            1.2
-          ],
-          "centre": [
-            0,
-            -0.0005,
-            0.6
-          ],
+          "size": [0.4, 0.001, 1.2],
+          "centre": [0, -0.0005, 0.6],
           "bevel": null,
           "backAndEdgesMaterial": "cream",
           "frontMaterial": "analytic two-color bands",
@@ -323,45 +247,33 @@
         "adhesive geometry",
         "cast shadow",
         "preset strip array"
-      ]
+      ],
+      "resizedPattern": {
+        "repeatMetres": 0.4,
+        "phaseOrigin": "left edge for vertical stripes; bottom edge for horizontal stripes",
+        "sageFraction": [0.25, 0.75],
+        "formula": "q=fract(distanceFromPhaseOriginInFinalLocalMetres/0.4); sage when 0.25<=q<0.75; cream otherwise",
+        "backAndEdges": "cream",
+        "geometry": "One closed strip; repetition changes appearance only."
+      }
     },
     {
       "moduleId": "horizontal-wallpaper-strip",
       "name": "Horizontal wallpaper - single strip",
       "unitCount": 1,
       "reviewDrawing": "review/03-horizontal-wallpaper-v1.png",
-      "overallSize": [
-        1.2,
-        0.001,
-        0.4
-      ],
+      "overallSize": [1.2, 0.001, 0.4],
       "bounds": {
-        "min": [
-          -0.6,
-          -0.001,
-          0
-        ],
-        "max": [
-          0.6,
-          0,
-          0.4
-        ]
+        "min": [-0.6, -0.001, 0],
+        "max": [0.6, 0, 0.4]
       },
       "origin": "bottom centre of rear mounting plane",
       "components": [
         {
           "partId": "paper",
           "primitive": "box",
-          "size": [
-            1.2,
-            0.001,
-            0.4
-          ],
-          "centre": [
-            0,
-            -0.0005,
-            0.2
-          ],
+          "size": [1.2, 0.001, 0.4],
+          "centre": [0, -0.0005, 0.2],
           "bevel": null,
           "backAndEdgesMaterial": "cream",
           "frontMaterial": "analytic two-color bands",
@@ -391,7 +303,15 @@
         "adhesive geometry",
         "cast shadow",
         "preset strip array"
-      ]
+      ],
+      "resizedPattern": {
+        "repeatMetres": 0.4,
+        "phaseOrigin": "left edge for vertical stripes; bottom edge for horizontal stripes",
+        "sageFraction": [0.25, 0.75],
+        "formula": "q=fract(distanceFromPhaseOriginInFinalLocalMetres/0.4); sage when 0.25<=q<0.75; cream otherwise",
+        "backAndEdges": "cream",
+        "geometry": "One closed strip; repetition changes appearance only."
+      }
     }
   ],
   "futureAcceptance": {

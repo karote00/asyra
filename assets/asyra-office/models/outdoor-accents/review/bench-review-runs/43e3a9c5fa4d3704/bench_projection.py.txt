@@ -1,0 +1,142 @@
+"""Orthographic drawing of one shared analytic scene; no mesh or model export."""
+import itertools
+import math
+import numpy as np
+from PIL import Image
+
+
+def camera_basis(azimuth, elevation):
+    az, el = np.radians([azimuth, elevation])
+    eye = np.array([math.sin(az)*math.cos(el), -math.cos(az)*math.cos(el), math.sin(el)])
+    right = np.array([math.cos(az), math.sin(az), 0.])
+    up = np.cross(eye, right)
+    return right, up, -eye
+
+
+def primitive_extent(p):
+    if p['kind'] == 'box':
+        return np.abs(p['rotation']) @ p['half']
+    if p['kind'] == 'sphere':
+        return np.full(3, p['r'])
+    return np.abs(p['axis'])*p['half'] + p['r']*np.sqrt(np.maximum(0, 1-p['axis']**2))
+
+
+def render(primitives, wood_frames, source, camera, pixels_per_metre=800, size=(1100, 800)):
+    supersample = 2
+    width, height = (v*supersample for v in size)
+    scale = pixels_per_metre*supersample
+    right, up, direction = camera_basis(camera['azimuthDegrees'], camera['elevationDegrees'])
+    target = np.array(camera['targetMetres'])
+    origin = np.array([width/2, height/2])
+    depth = np.full((height, width), np.inf)
+    owner = np.full((height, width), -1, dtype=np.int16)
+    normals = np.zeros((height,width,3))
+    for p in primitives:
+        extent = primitive_extent(p)
+        corners = p['c'] + np.array(list(itertools.product((-1, 1), repeat=3)))*extent
+        projected = np.column_stack(((corners-target)@right, (corners-target)@up))
+        lo, hi = projected.min(axis=0), projected.max(axis=0)
+        x0 = max(0, int(math.floor(origin[0]+scale*lo[0]))-1)
+        x1 = min(width, int(math.ceil(origin[0]+scale*hi[0]))+1)
+        y0 = max(0, int(math.floor(origin[1]-scale*hi[1]))-1)
+        y1 = min(height, int(math.ceil(origin[1]-scale*lo[1]))+1)
+        if x1<=x0 or y1<=y0:
+            continue
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        rays = (target-3*direction + ((xx+.5-origin[0])/scale)[...,None]*right
+                + ((origin[1]-yy-.5)/scale)[...,None]*up)
+        o = rays-p['c']
+        hit = np.full(xx.shape, np.inf)
+        if p['kind'] == 'sphere':
+            b = o@direction
+            disc = b*b-(np.sum(o*o, axis=-1)-p['r']**2)
+            hit = np.where(disc>=0, -b-np.sqrt(np.maximum(disc,0)), np.inf)
+        elif p['kind'] == 'box':
+            local, d = o@p['rotation'], direction@p['rotation']
+            near, far = np.full(xx.shape,-np.inf), np.full(xx.shape,np.inf)
+            valid = np.ones(xx.shape,dtype=bool)
+            for axis in range(3):
+                if abs(d[axis])<1e-12:
+                    valid &= np.abs(local[...,axis])<=p['half'][axis]
+                else:
+                    a = (-p['half'][axis]-local[...,axis])/d[axis]
+                    b = (p['half'][axis]-local[...,axis])/d[axis]
+                    near = np.maximum(near,np.minimum(a,b))
+                    far = np.minimum(far,np.maximum(a,b))
+            hit = np.where(valid&(near<=far), near, np.inf)
+        else:
+            axis = p['axis']; axial = o@axis; da = direction@axis
+            perpendicular = o-axial[...,None]*axis; dp = direction-da*axis
+            a = dp@dp; b = perpendicular@dp
+            c = np.sum(perpendicular**2,axis=-1)-p['r']**2
+            if a>1e-12:
+                disc = b*b-a*c
+                t = (-b-np.sqrt(np.maximum(disc,0)))/a
+                hit = np.where((disc>=0)&(np.abs(axial+t*da)<=p['half']),t,np.inf)
+            if abs(da)>1e-12:
+                for sign in (-1,1):
+                    t = (sign*p['half']-axial)/da
+                    radial = perpendicular+t[...,None]*dp
+                    hit = np.where((np.sum(radial**2,axis=-1)<=p['r']**2)&(t<hit),t,hit)
+        area = np.s_[y0:y1,x0:x1]
+        visible = (hit>=0)&(hit<depth[area]-1e-10)
+        # Surface-normal discontinuities expose real cap/face boundaries without lighting.
+        finite_hit = np.where(np.isfinite(hit),hit,0)
+        local_point = o+finite_hit[...,None]*direction
+        if p['kind'] == 'sphere':
+            normal = local_point / p['r']
+        elif p['kind'] == 'box':
+            q = local_point @ p['rotation']
+            face = np.argmax(np.abs(q)/p['half'],axis=-1)
+            local_normal = np.eye(3)[face]*np.take_along_axis(np.sign(q),face[...,None],axis=-1)
+            normal = local_normal @ p['rotation'].T
+        else:
+            along = local_point @ p['axis']
+            normal = (local_point-along[...,None]*p['axis'])/p['r']
+            cap = np.abs(np.abs(along)-p['half'])<1e-8
+            normal[cap] = np.sign(along[cap,None])*p['axis']
+        normals[area][visible] = normal[visible]
+        depth[area][visible] = hit[visible]
+        owner[area][visible] = p['group']
+
+    pixels = np.full((height,width,3),255,dtype=np.uint8)
+    pixels[owner==7] = [69,71,68]
+    wood_boxes = [(130,792,630,820),(130,740,630,766),(130,683,630,710),(130,627,630,655)]
+    for group,(centre,half,rotation) in wood_frames.items():
+        yy,xx = np.where(owner==group)
+        points = (target-3*direction+((xx+.5-origin[0])/scale)[:,None]*right
+                  +((origin[1]-yy-.5)/scale)[:,None]*up+depth[yy,xx,None]*direction)
+        local = (points-centre)@rotation
+        sample_box = wood_boxes[group%4]
+        if group>=4:
+            sample_box = [(70,231,548,258),(70,187,548,215),(70,142,548,170)][group-4]
+        texture = np.asarray(source.crop(sample_box).convert('RGB'))
+        u = np.clip((local[:,0]+half[0])/(2*half[0]),0,1)
+        # Choose the long face coordinate visible to the camera, including slat ends.
+        face = np.argmax(np.abs(local)/half,axis=1)
+        across = np.where(face==2,local[:,1],local[:,2])
+        extent = np.where(face==2,half[1],half[2])
+        v = np.clip((across+extent)/(2*extent),0,1)
+        pixels[yy,xx] = texture[np.rint(v*(texture.shape[0]-1)).astype(int),np.rint(u*(texture.shape[1]-1)).astype(int)]
+    edge = np.zeros(owner.shape,dtype=bool)
+    edge[1:] |= owner[1:]!=owner[:-1]; edge[:-1] |= owner[:-1]!=owner[1:]
+    edge[:,1:] |= owner[:,1:]!=owner[:,:-1]; edge[:,:-1] |= owner[:,:-1]!=owner[:,1:]
+    creases = np.zeros(owner.shape,dtype=bool)
+    for axis in (0,1):
+        prev = np.roll(normals,1,axis=axis)
+        same = (owner==np.roll(owner,1,axis=axis))&(owner>=0)
+        creases |= same & (np.sum(normals*prev,axis=-1)<.7)
+    edge |= creases
+    pixels[edge&(owner>=0)&(owner<7)] = [111,79,48]
+    pixels[edge&(owner==7)] = [45,47,44]
+    ys,xs = np.where(owner>=0)
+    if not len(xs):
+        raise AssertionError('Empty projection')
+    if not (xs.min()>2 and ys.min()>2 and xs.max()<width-3 and ys.max()<height-3):
+        raise AssertionError(('Clipped projection',camera))
+    visible_groups = [int(v) for v in np.unique(owner) if v>=0]
+    return Image.fromarray(pixels).resize(size,Image.Resampling.LANCZOS), dict(
+        camera=camera,pixelsPerMetre=pixels_per_metre,supersampling=supersample,
+        sizePixels=list(size),visibleGroups=visible_groups,
+        projectionBasis=[right.tolist(),up.tolist(),direction.tolist()],
+        rasterBounds=[float(xs.min()/2),float(ys.min()/2),float((xs.max()+1)/2),float((ys.max()+1)/2)])

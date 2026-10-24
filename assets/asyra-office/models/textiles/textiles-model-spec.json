@@ -1,6 +1,6 @@
 {
   "specVersion": "1.0.0",
-  "status": "User approved drawings and documents for commit; no verified models",
+  "status": "Original drawings and all three textile construction revisions approved by the user for commit; no verified production models",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -74,22 +74,10 @@
       "name": "Rectangular rug - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/01-rectangular-rug-v1.png",
-      "overallSize": [
-        1.4,
-        0.95,
-        0.008
-      ],
+      "overallSize": [1.4, 0.95, 0.008],
       "bounds": {
-        "min": [
-          -0.7,
-          -0.475,
-          0
-        ],
-        "max": [
-          0.7,
-          0.475,
-          0.008
-        ]
+        "min": [-0.7, -0.475, 0],
+        "max": [0.7, 0.475, 0.008]
       },
       "geometry": {
         "primitive": "rounded-rectangle extrusion",
@@ -122,29 +110,118 @@
         "plain tan backing",
         "thin edge binding",
         "corner radius"
-      ]
+      ],
+      "constructionDocument": "RECTANGULAR-RUG-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "closedComponentCount": 1,
+        "modelVerified": false,
+        "method": "In-memory analytic construction checks; no production model export",
+        "flatCapSize": [1.398, 0.948],
+        "flatCapRadius": 0.024,
+        "flatBindingWidth": 0.011,
+        "verticalSideZ": [0.001, 0.007],
+        "edgeProfile": "Inward circular sweep with fixed XY corner centres; equations in constructionDocument"
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": ["region", "whole-rug", "default"],
+        "instanceIsolation": true,
+        "regions": [
+          {
+            "id": "top-body",
+            "defaultMaterial": "sage",
+            "defaultColorSRGB": "#758074",
+            "defaultWeave": true
+          },
+          {
+            "id": "top-binding",
+            "defaultMaterial": "sage-binding",
+            "defaultColorSRGB": "#606B5B",
+            "defaultWeave": false
+          },
+          {
+            "id": "sides-and-bevels",
+            "defaultMaterial": "sage-binding",
+            "defaultColorSRGB": "#606B5B",
+            "defaultWeave": false
+          },
+          {
+            "id": "bottom-body",
+            "defaultMaterial": "backing",
+            "defaultColorSRGB": "#B8AD96",
+            "defaultWeave": true
+          },
+          {
+            "id": "bottom-binding",
+            "defaultMaterial": "sage-binding",
+            "defaultColorSRGB": "#606B5B",
+            "defaultWeave": false
+          }
+        ],
+        "bindingMask": {
+          "width": 1.376,
+          "depth": 0.926,
+          "radius": 0.013,
+          "boundaryOwner": "binding",
+          "coordinates": "default local XY, inverse-scaled after size changes",
+          "evaluation": "per surface sample on flat caps; all sides and bevels use binding"
+        },
+        "weaveCoordinates": "final resized local XY metres before world placement",
+        "colorApplication": "Resolved colour tints the resolved material; a material replacement owns its surface recipe"
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [1.4, 0.95, 0.008],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "binding": "scales with geometry",
+        "weave": "physical repeat retained in final local metres",
+        "deformation": false
+      },
+      "lod": {
+        "representation": "one closed body with surface-sample region masking; no additional cap cuts",
+        "tiers": [
+          {
+            "id": "lod0",
+            "segmentsPerCorner": 12,
+            "bevelSegments": 3,
+            "triangleCount": 828,
+            "maxTriangles": 850,
+            "maxSurfaceError": 8.8e-5
+          },
+          {
+            "id": "lod1",
+            "segmentsPerCorner": 8,
+            "bevelSegments": 2,
+            "triangleCount": 428,
+            "maxTriangles": 450,
+            "maxSurfaceError": 0.000197
+          },
+          {
+            "id": "lod2",
+            "segmentsPerCorner": 4,
+            "bevelSegments": 1,
+            "triangleCount": 156,
+            "maxTriangles": 180,
+            "maxSurfaceError": 0.000774
+          }
+        ],
+        "scaledError": "default bound multiplied by maximum XYZ scale",
+        "switchingOwner": "app",
+        "productionVerified": false
+      }
     },
     {
       "moduleId": "round-rug",
       "name": "Round rug - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/02-round-rug-v1.png",
-      "overallSize": [
-        1.2,
-        1.2,
-        0.008
-      ],
+      "overallSize": [1.2, 1.2, 0.008],
       "bounds": {
-        "min": [
-          -0.6,
-          -0.6,
-          0
-        ],
-        "max": [
-          0.6,
-          0.6,
-          0.008
-        ]
+        "min": [-0.6, -0.6, 0],
+        "max": [0.6, 0.6, 0.008]
       },
       "geometry": {
         "primitive": "cylinder",
@@ -176,191 +253,182 @@
         "diameter",
         "plain tan backing",
         "exact border width"
-      ]
+      ],
+      "constructionDocument": "ROUND-RUG-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "closedComponentCount": 1,
+        "modelVerified": false,
+        "method": "In-memory analytic construction checks; no production model export",
+        "flatCapRadius": 0.599,
+        "flatCapDiameter": 1.198,
+        "flatBindingWidth": 0.024,
+        "verticalSideZ": [0.001, 0.007],
+        "edgeProfile": "Inward circular profile revolved about Z; equations in constructionDocument"
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": {
+          "material": ["region", "whole-rug", "preset"],
+          "color": ["region", "whole-rug", "selected material color"]
+        },
+        "colorFallback": "selected material color",
+        "instanceIsolation": true,
+        "regions": [
+          {
+            "id": "top-body",
+            "defaultMaterial": "lavender",
+            "defaultColorSRGB": "#858393",
+            "defaultWeave": true
+          },
+          {
+            "id": "top-binding",
+            "defaultMaterial": "lavender-binding",
+            "defaultColorSRGB": "#706D7E",
+            "defaultWeave": false
+          },
+          {
+            "id": "sides-and-bevels",
+            "defaultMaterial": "lavender-binding",
+            "defaultColorSRGB": "#706D7E",
+            "defaultWeave": false
+          },
+          {
+            "id": "bottom-body",
+            "defaultMaterial": "backing",
+            "defaultColorSRGB": "#B8AD96",
+            "defaultWeave": true
+          },
+          {
+            "id": "bottom-binding",
+            "defaultMaterial": "lavender-binding",
+            "defaultColorSRGB": "#706D7E",
+            "defaultWeave": false
+          }
+        ],
+        "bindingMask": {
+          "radius": 0.575,
+          "boundaryOwner": "binding",
+          "coordinates": "default local XY, inverse-scaled after size changes",
+          "evaluation": "per surface sample on flat caps; all sides and bevels use binding"
+        },
+        "weaveCoordinates": "final resized local XY metres before world placement",
+        "colorApplication": "Apply explicit colour overrides only; otherwise retain selected material colour. Selected material owns its surface recipe."
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [1.2, 1.2, 0.008],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "binding": "scales with geometry; not a constant-width offset after unequal XY scaling",
+        "weave": "physical repeat retained in final local metres",
+        "deformation": false
+      },
+      "lod": {
+        "representation": "one closed body with surface-sample region masking; no additional cap cuts",
+        "tiers": [
+          {
+            "id": "lod0",
+            "radialSegments": 192,
+            "bevelSegments": 3,
+            "triangleCount": 3068,
+            "maxTriangles": 3100,
+            "maxSurfaceError": 0.000115
+          },
+          {
+            "id": "lod1",
+            "radialSegments": 96,
+            "bevelSegments": 2,
+            "triangleCount": 1148,
+            "maxTriangles": 1200,
+            "maxSurfaceError": 0.000398
+          },
+          {
+            "id": "lod2",
+            "radialSegments": 48,
+            "bevelSegments": 1,
+            "triangleCount": 380,
+            "maxTriangles": 400,
+            "maxSurfaceError": 0.001578
+          }
+        ],
+        "scaledError": "default bound multiplied by maximum XYZ scale",
+        "switchingOwner": "app",
+        "productionVerified": false
+      }
     },
     {
       "moduleId": "throw-pillow",
       "name": "Throw pillow - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/03-throw-pillow-v1.png",
-      "overallSize": [
-        0.32,
-        0.11,
-        0.32
-      ],
+      "overallSize": [0.32, 0.11, 0.32],
       "bounds": {
-        "min": [
-          -0.16,
-          -0.055,
-          0
-        ],
-        "max": [
-          0.16,
-          0.055,
-          0.32
-        ]
+        "min": [-0.16, -0.055, 0],
+        "max": [0.16, 0.055, 0.32]
       },
       "geometry": {
         "primitive": "two inflated radial patches sharing one closed Bezier seam",
-        "centre": [
-          0,
-          0,
-          0.16
-        ],
+        "centre": [0, 0, 0.16],
         "outlineCoordinates": "X and Z relative to centre",
         "outlineCubicSegments": [
           [
-            [
-              -0.142,
-              0.16
-            ],
-            [
-              -0.072,
-              0.148
-            ],
-            [
-              0.072,
-              0.148
-            ],
-            [
-              0.142,
-              0.16
-            ]
+            [-0.142, 0.16],
+            [-0.072, 0.148],
+            [0.072, 0.148],
+            [0.142, 0.16]
           ],
           [
-            [
-              0.142,
-              0.16
-            ],
-            [
-              0.155,
-              0.16
-            ],
-            [
-              0.16,
-              0.155
-            ],
-            [
-              0.16,
-              0.142
-            ]
+            [0.142, 0.16],
+            [0.155, 0.16],
+            [0.16, 0.155],
+            [0.16, 0.142]
           ],
           [
-            [
-              0.16,
-              0.142
-            ],
-            [
-              0.148,
-              0.072
-            ],
-            [
-              0.148,
-              -0.072
-            ],
-            [
-              0.16,
-              -0.142
-            ]
+            [0.16, 0.142],
+            [0.148, 0.072],
+            [0.148, -0.072],
+            [0.16, -0.142]
           ],
           [
-            [
-              0.16,
-              -0.142
-            ],
-            [
-              0.16,
-              -0.155
-            ],
-            [
-              0.155,
-              -0.16
-            ],
-            [
-              0.142,
-              -0.16
-            ]
+            [0.16, -0.142],
+            [0.16, -0.155],
+            [0.155, -0.16],
+            [0.142, -0.16]
           ],
           [
-            [
-              0.142,
-              -0.16
-            ],
-            [
-              0.072,
-              -0.148
-            ],
-            [
-              -0.072,
-              -0.148
-            ],
-            [
-              -0.142,
-              -0.16
-            ]
+            [0.142, -0.16],
+            [0.072, -0.148],
+            [-0.072, -0.148],
+            [-0.142, -0.16]
           ],
           [
-            [
-              -0.142,
-              -0.16
-            ],
-            [
-              -0.155,
-              -0.16
-            ],
-            [
-              -0.16,
-              -0.155
-            ],
-            [
-              -0.16,
-              -0.142
-            ]
+            [-0.142, -0.16],
+            [-0.155, -0.16],
+            [-0.16, -0.155],
+            [-0.16, -0.142]
           ],
           [
-            [
-              -0.16,
-              -0.142
-            ],
-            [
-              -0.148,
-              -0.072
-            ],
-            [
-              -0.148,
-              0.072
-            ],
-            [
-              -0.16,
-              0.142
-            ]
+            [-0.16, -0.142],
+            [-0.148, -0.072],
+            [-0.148, 0.072],
+            [-0.16, 0.142]
           ],
           [
-            [
-              -0.16,
-              0.142
-            ],
-            [
-              -0.16,
-              0.155
-            ],
-            [
-              -0.155,
-              0.16
-            ],
-            [
-              -0.142,
-              0.16
-            ]
+            [-0.16, 0.142],
+            [-0.16, 0.155],
+            [-0.155, 0.16],
+            [-0.142, 0.16]
           ]
         ],
         "bezierFormula": "B(t)=(1-t)^3*P0+3*(1-t)^2*t*P1+3*(1-t)*t^2*P2+t^3*P3, t in [0,1]",
         "patchFormula": "X=r*Bx(t); Z=0.16+r*Bz(t); Y=sign*0.055*sqrt(1-r*r), r in [0,1], sign=-1 for front and +1 for back",
-        "segmentsPerOutlineCurve": 24,
-        "radialIntervals": 32,
-        "radialSampling": "r=sin(pi*j/64), j=0..32",
+        "radialIntervals": 20,
+        "radialSampling": "a=pi*j/(2*K), r=sin(a), j=0..K; K=radialIntervals; use Y=0 exactly on shared seam",
         "weld": "one centre vertex per side at r=0; one shared seam ring at r=1; shared adjacent curve endpoints",
-        "smoothNormals": true
+        "smoothNormals": true,
+        "outlineIntervals": [16, 4, 16, 4, 16, 4, 16, 4]
       },
       "surfaceRegions": {
         "body": "mustard",
@@ -375,7 +443,90 @@
         "exact cushion volume",
         "mid-thickness seam",
         "no zipper"
-      ]
+      ],
+      "constructionDocument": "THROW-PILLOW-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "closedComponentCount": 1,
+        "modelVerified": false,
+        "method": "In-memory analytic patch construction; no production model export",
+        "sideInset": 0.009,
+        "seamRadialThreshold": 0.999907020470792,
+        "outlineContinuity": "Closed piecewise cubic; endpoint tangents are not guaranteed equal",
+        "normalPolicy": "Normalized sum of incident outward triangle area normals at welded vertices; shared across material/UV splits"
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": {
+          "material": ["region", "whole-pillow", "preset"],
+          "color": ["region", "whole-pillow", "selected material color"]
+        },
+        "colorFallback": "selected material color",
+        "instanceIsolation": true,
+        "regions": [
+          {
+            "id": "body",
+            "defaultMaterial": "mustard",
+            "defaultColorSRGB": "#D4AC57",
+            "defaultWeave": true
+          },
+          {
+            "id": "seam",
+            "defaultMaterial": "mustard-seam",
+            "defaultColorSRGB": "#C49D4E",
+            "defaultWeave": false
+          }
+        ],
+        "seamMask": {
+          "halfWidthY": 0.00075,
+          "boundaryOwner": "seam",
+          "coordinates": "inverse-scaled default local Y",
+          "evaluation": "per surface sample; abs(Y)<=halfWidthY; no raised geometry"
+        },
+        "weaveCoordinates": "final resized local metres with final local normal selecting projection; exact tie order in constructionDocument"
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [0.32, 0.11, 0.32],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "seam": "projected width scales along Y",
+        "weave": "physical repeat retained in final local metres",
+        "deformation": false
+      },
+      "lod": {
+        "representation": "one closed body, shared seam ring, two poles; per-sample seam mask",
+        "tiers": [
+          {
+            "id": "lod0",
+            "outlineIntervals": [16, 4, 16, 4, 16, 4, 16, 4],
+            "radialIntervals": 20,
+            "triangleCount": 6240,
+            "maxTriangles": 6400,
+            "maxSurfaceError": 0.000915
+          },
+          {
+            "id": "lod1",
+            "outlineIntervals": [8, 4, 8, 4, 8, 4, 8, 4],
+            "radialIntervals": 12,
+            "triangleCount": 2208,
+            "maxTriangles": 2300,
+            "maxSurfaceError": 0.003104
+          },
+          {
+            "id": "lod2",
+            "outlineIntervals": [6, 2, 6, 2, 6, 2, 6, 2],
+            "radialIntervals": 8,
+            "triangleCount": 960,
+            "maxTriangles": 1000,
+            "maxSurfaceError": 0.006128
+          }
+        ],
+        "scaledError": "default bound multiplied by maximum XYZ scale",
+        "switchingOwner": "app",
+        "productionVerified": false
+      }
     }
   ],
   "surfaceRecipe": {

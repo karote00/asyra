@@ -31,3 +31,15 @@ The listed stations deliberately determine the final silhouette; the drawing is 
 Saucer: front, right, back, top and oblique. Spoon: top, bottom, right, front end-on and oblique. Spoon bottom must include the bowl back; front end-on is a short shallow bowl-width profile. Do not treat the long top silhouette as the front elevation.
 
 After separate modeling authorization, check bounds within 0.0002 m, saucer well/rim and closed underside, spoon length/width/thickness, connected concave shell without holes, five views and no baked lighting. No models have been made or verified. Placement, contact behavior and interactions belong to the app.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Saucer and spoon
+
+Saucer extent is 130 x 130 x 12 mm; the 65 mm diameter central well has a 3 mm floor. A cup is not included. Spoon extent is 25 x 120 x 5 mm, with exactly 1 mm vertical shell thickness and a bowl-floor exterior at Z=0. The handle ends at Y=60 mm after its radius-3.5 mm semicircle. Zero-width tip rows collapse separately on top and bottom, never into one zero-thickness vertex pair shared across the shell.
+
+Ceramic and spoon metal remain independent replaceable defaults. LoD preserves saucer profile stations, spoon outline stations, concavity, one continuous handle connection and true shell thickness. Intermediate longitudinal subdivisions can be reduced; fixed station positions cannot. No painted inner contour is extra geometry.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

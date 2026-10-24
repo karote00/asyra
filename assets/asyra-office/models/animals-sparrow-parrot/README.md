@@ -9,6 +9,22 @@ One independent animal per asset. These birds were requested in the original ani
 | Tree sparrow | Standing, wings folded | 0.160 x 0.230 x 0.200 |
 | Cockatiel | Standing, wings folded | 0.180 x 0.360 x 0.320 |
 
+## Tree sparrow review
+
+The [updated sparrow contract](TREE-SPARROW-SPEC.md) is approved for commit.
+It preserves raw geometry and the original image while defining component sizes,
+eight-toe construction, ground normalization, source-side label mapping,
+replaceable appearance and unverified LOD limits. That review preserved the
+cockatiel geometry; its own review is described below.
+
+## Cockatiel review
+
+The [updated cockatiel contract](COCKATIEL-SPEC.md) is approved for commit.
+It preserves the numeric shape and original sheet while defining three separate
+head-attached crest feathers, hooked-beak overlap, two-forward/two-rear toes,
+complete sizing, source view mapping, editable appearance and unverified LOD
+limits. No model or animation rig is verified.
+
 ## Handoff
 
 - [Review gallery](review/README.md)

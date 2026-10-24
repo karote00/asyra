@@ -74,11 +74,7 @@
       "unitCount": 1,
       "reviewDrawing": "review/01-potted-leaf-plant-v1.png",
       "nominalHeight": 0.32,
-      "potSize": [
-        0.14,
-        0.14,
-        0.12
-      ],
+      "potSize": [0.14, 0.14, 0.12],
       "crownApproximateSpan": 0.26,
       "sourceLimit": "Central-office pale pots and broad leaves; exact six-leaf plant is a simplified authored completion",
       "components": [
@@ -87,62 +83,20 @@
           "primitive": "closed-profile revolution",
           "axis": "Z",
           "profileRZ": [
-            [
-              0,
-              0
-            ],
-            [
-              0.047,
-              0
-            ],
-            [
-              0.05,
-              0.003
-            ],
-            [
-              0.064,
-              0.095
-            ],
-            [
-              0.07,
-              0.098
-            ],
-            [
-              0.07,
-              0.116
-            ],
-            [
-              0.069,
-              0.119
-            ],
-            [
-              0.066,
-              0.12
-            ],
-            [
-              0.063,
-              0.119
-            ],
-            [
-              0.062,
-              0.116
-            ],
-            [
-              0.06,
-              0.1
-            ],
-            [
-              0.044,
-              0.015
-            ],
-            [
-              0.042,
-              0.013
-            ],
-            [
-              0,
-              0.013
-            ]
+            [0, 0],
+            [0.047, 0],
+            [0.05, 0.003],
+            [0.064, 0.095],
+            [0.07, 0.098],
+            [0.07, 0.116],
+            [0.069, 0.119],
+            [0.066, 0.12],
+            [0.063, 0.119],
+            [0.062, 0.116],
+            [0.06, 0.1],
+            [0.044, 0.015],
+            [0.042, 0.013],
+            [0, 0.013]
           ],
           "closeProfile": true,
           "radialSegments": 96,
@@ -159,7 +113,8 @@
           "zMin": 0.085,
           "zMax": 0.108,
           "radialSegments": 96,
-          "material": "soil"
+          "material": "soil",
+          "cavityTrim": "Intersect the entire soil volume with the pot cavity; preserve the flat top."
         },
         {
           "partId": "stem",
@@ -245,11 +200,7 @@
       "unitCount": 1,
       "reviewDrawing": "review/02-potted-cactus-v1.png",
       "nominalHeight": 0.3,
-      "potSize": [
-        0.13,
-        0.13,
-        0.11
-      ],
+      "potSize": [0.13, 0.13, 0.11],
       "sourceLimit": "No clearly identifiable source cactus; new design in the central-office palette",
       "components": [
         {
@@ -257,58 +208,19 @@
           "primitive": "closed-profile revolution",
           "axis": "Z",
           "profileRZ": [
-            [
-              0,
-              0
-            ],
-            [
-              0.042,
-              0
-            ],
-            [
-              0.045,
-              0.003
-            ],
-            [
-              0.059,
-              0.09
-            ],
-            [
-              0.065,
-              0.092
-            ],
-            [
-              0.065,
-              0.106
-            ],
-            [
-              0.063,
-              0.11
-            ],
-            [
-              0.059,
-              0.11
-            ],
-            [
-              0.057,
-              0.106
-            ],
-            [
-              0.055,
-              0.09
-            ],
-            [
-              0.039,
-              0.014
-            ],
-            [
-              0.037,
-              0.012
-            ],
-            [
-              0,
-              0.012
-            ]
+            [0, 0],
+            [0.042, 0],
+            [0.045, 0.003],
+            [0.059, 0.09],
+            [0.065, 0.092],
+            [0.065, 0.106],
+            [0.063, 0.11],
+            [0.059, 0.11],
+            [0.057, 0.106],
+            [0.055, 0.09],
+            [0.039, 0.014],
+            [0.037, 0.012],
+            [0, 0.012]
           ],
           "closeProfile": true,
           "radialSegments": 96,
@@ -325,7 +237,8 @@
           "zMin": 0.078,
           "zMax": 0.098,
           "radialSegments": 96,
-          "material": "soil"
+          "material": "soil",
+          "cavityTrim": "Intersect the entire soil volume with the pot cavity; preserve the flat top."
         },
         {
           "partId": "trunk",
@@ -343,26 +256,10 @@
           "partId": "right-branch",
           "primitive": "ribbed curved tube",
           "cubicBezier": [
-            [
-              0.016,
-              0,
-              0.18
-            ],
-            [
-              0.055,
-              0,
-              0.18
-            ],
-            [
-              0.055,
-              0,
-              0.208
-            ],
-            [
-              0.055,
-              0,
-              0.23
-            ]
+            [0.016, 0, 0.18],
+            [0.055, 0, 0.18],
+            [0.055, 0, 0.208],
+            [0.055, 0, 0.23]
           ],
           "radius": 0.014,
           "ribAmplitude": 0.0012,
@@ -376,26 +273,10 @@
           "partId": "left-branch",
           "primitive": "ribbed curved tube",
           "cubicBezier": [
-            [
-              -0.016,
-              0,
-              0.155
-            ],
-            [
-              -0.048,
-              0,
-              0.155
-            ],
-            [
-              -0.05,
-              0,
-              0.18
-            ],
-            [
-              -0.05,
-              0,
-              0.2
-            ]
+            [-0.016, 0, 0.155],
+            [-0.048, 0, 0.155],
+            [-0.05, 0, 0.18],
+            [-0.05, 0, 0.2]
           ],
           "radius": 0.012,
           "ribAmplitude": 0.001,
@@ -408,28 +289,9 @@
         {
           "partId": "areoles",
           "primitive": "flat capsule colour masks on rib crests",
-          "phiDegrees": [
-            0,
-            45,
-            90,
-            135,
-            180,
-            225,
-            270,
-            315
-          ],
-          "trunkZ": [
-            0.135,
-            0.17,
-            0.205,
-            0.24,
-            0.265
-          ],
-          "branchPathFractions": [
-            0.45,
-            0.7,
-            0.9
-          ],
+          "phiDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
+          "trunkZ": [0.135, 0.17, 0.205, 0.24, 0.265],
+          "branchPathFractions": [0.45, 0.7, 0.9],
           "length": 0.003,
           "width": 0.0015,
           "orientation": "along trunk or branch tangent",

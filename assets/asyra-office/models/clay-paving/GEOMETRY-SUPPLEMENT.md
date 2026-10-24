@@ -4,7 +4,10 @@
 
 Use metres, +Z up, -Y front and +X right. Origin is the bottom footprint centre. Apply identity rotation and unit scale. Front looks along +Y, back along -Y, right along -X, top along -Z and bottom along +Z. Left is geometrically identical to right.
 
-Numeric dimensions define reconstruction. The sheet's bevel lines are enlarged for readability and must not override the 0.001 m offset.
+Numeric dimensions define the default reconstruction. Explicit overall sizes
+follow the [shared sizing rule](../README.md#overall-size-and-appearance---2026-10-09).
+Scale the complete solid about its bottom origin; default chamfer offsets and
+angles need not stay fixed under independent axis scaling. The sheet's bevel lines are enlarged for readability and must not override the 0.001 m offset.
 
 ## Solid and chamfers
 
@@ -24,10 +27,13 @@ No recess, frog, hollow cavity, hole, chipped edge, logo, lettering, mortar join
 
 ## Placement reference
 
-Edge-to-edge copies can be translated by (0.20,0,0) or (0,0.10,0). Chamfers produce a small edge relief without requiring extra gap geometry. The app or user decides wider gaps, row offsets, rotations and paving patterns. No fixed array or grout is part of the asset.
+At default size, edge-to-edge copies can be translated by (0.20,0,0) or (0,0.10,0).
+After an explicit resize, replace those steps with the final X/Y extents. Chamfers produce a small edge relief without requiring extra gap geometry. The app or user decides wider gaps, row offsets, rotations and paving patterns. No fixed array or grout is part of the asset.
 
 Road paint must remain independently placeable and must never acquire a red-brick backing. This handoff does not define paint placement over joints or implement overlays.
 
 ## Future acceptance
 
-When modeling is authorized, verify bounds within 0.0002 m, the one-millimetre chamfers, closed bottom, outward normals and single-unit boundary. No model, export or runtime validation has been performed. The specified base mesh is small; separate LOD meshes are not delivered here.
+When modeling is authorized, verify default bounds within 0.0002 m and one-millimetre chamfers.
+For a resized instance, verify its target bounds and transformed chamfers.
+In both cases verify closed bottom, outward normals and single-unit boundary. No model, export or runtime validation has been performed. The specified base mesh is small; separate LOD meshes are not delivered here.

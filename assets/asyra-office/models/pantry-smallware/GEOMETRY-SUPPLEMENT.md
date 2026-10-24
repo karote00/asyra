@@ -23,3 +23,17 @@ The ivory lid is a separate rotational solid from the JSON profile, maximum radi
 The canister's front/right/back share the same silhouette; top is a wooden disk. Cup top shows one oval opening toward -Y, front is aligned with that opening, and rear does not gain a second opening. The cup bottom is cream and the jar bottom sage, both flat and undecorated. Hidden surfaces are determined by the profiles.
 
 No models have been produced or verified. Future modeling acceptance: profile dimensions within 0.0005 m; correct closed assembled silhouettes, real hollow interiors and sip opening, separate bodies/lids, one continuous sleeve, no extra components and no baked lighting. Inspect all five views and the underside after separate modeling authorization. Drawings are design references, not a claim of calibrated orthographic accuracy.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Lids, clearances and cup opening
+
+Canister extent is 90 x 90 x 125 mm. Lid locating radius 38.5 mm fits the 39 mm mouth with 0.5 mm radial clearance, and its underside rests on the rim at Z=117 mm. Body floor is 6 mm thick. Keep lid and body separate.
+
+Cup extent is 80 x 80 x 120 mm. Sleeve follows the same outer taper as the paper with 1 mm radial thickness. The 14 x 5 mm sip cutter exits the lid at both ends; it cuts only the lid, never the vessel wall or sleeve. Its nearest radial edge is well within the upper lid disk. Preserve the empty cup cavity beneath it. Lid/body overlap is the explicit static visual fit, not a verified removable seal.
+
+Ceramic/wood or paper/lid/kraft remain replaceable regions. LoD preserves real mouths and sip opening, lid steps and sleeve separation; reduce angular sectors only and weld zero-radius endpoints. Never put a dark disk over either cavity.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

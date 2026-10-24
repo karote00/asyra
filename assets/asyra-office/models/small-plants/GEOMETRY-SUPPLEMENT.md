@@ -10,13 +10,13 @@ Revolve each JSON closed radius/height profile about Z with 96 circumference seg
 
 The leafy pot has top diameter 0.14, height 0.12 and bottom diameter 0.094 at ground. The cactus pot has top diameter 0.13, height 0.11 and ground diameter 0.084. Interiors are real cavities with solid bottoms, not dark discs simulating holes. Both pot undersides are flat, closed and unmarked; no drain hole or glazed label.
 
-Soil is an independent opaque cylinder at the radius and Z interval in JSON, with a flat top below the pot rim. Root stems overlap its upper face. The narrow clearance to the inner pot wall is intentional and should remain below 0.001 m. Do not add gravel, mounds, cracks or individual grains.
+Soil starts as an independent opaque cylinder at the radius and Z interval in JSON, then intersect its entire volume with the actual pot cavity. This removes buried soil/pot intersections along the tapered inner wall while preserving the declared flat top below the rim. Root stems overlap its upper face. The narrow clearance to the inner pot wall is intentional and should remain below 0.001 m. Do not add gravel, mounds, cracks or individual grains.
 
 ## Six-leaf plant
 
 Central stem is a capped tapered Z-axis cylinder, Z=0.10..0.29, radii 0.0035 and 0.002, 24 radial segments. Each of the six leaves has a separate petiole from (0,0,attachZ) to (0.009*cos(a),0.009*sin(a),attachZ+0.005), radius 0.0015, 16 radial segments, capped and intersecting the stem and leaf base.
 
-For each instance define er=(cos(a),sin(a),0), et=(-sin(a),cos(a),0). For t=0..1, radial coordinate R(t)=0.009+(tipRadius-0.009)*t; height H(t)=attachZ+0.005+(tipZ-attachZ-0.005)*t+0.008*sin(pi*t). Centreline C(t)=R(t)*er+H(t)*(0,0,1). Half-width W(t)=width/2*sin(pi*t)^0.85.
+For each instance define er=(cos(a),sin(a),0), et=(-sin(a),cos(a),0). For t=0..1, radial coordinate R(t)=0.009+(tipRadius-0.009)*t; height H(t)=attachZ+0.005+(tipZ-attachZ-0.005)*t+0.008*sin(pi*t). Centreline C(t)=R(t)_er+H(t)_(0,0,1). Half-width W(t)=width/2*sin(pi*t)^0.85.
 
 For q=-1..1, the leaf surface is C(t)+q*W(t)*et+0.003*(1-abs(q))*sin(pi*t)*(0,0,1). Make top and bottom surfaces offset by +/-0.0003 in Z, then close their boundary edges. Use 24 intervals along t and eight across q. Weld coincident width-zero vertices at each tip on each face and cap the thickness there. No disconnected cards or black backs. The central fold is actual geometry, not a painted vein.
 
@@ -35,3 +35,17 @@ Areoles are flat cream capsule masks on the eight rib crests, at the listed main
 ## Future validation
 
 After modeling is authorized separately, compare front -Y, right +X, back +Y, top +Z and oblique (1,-1,0.8), plus pot undersides and empty pot cavities with soil hidden. Check pot bounds, ground contact, six leaves, two cactus branches, component names, flat soil and no baked lighting. Nominal dimension tolerance 0.001 m. No such model checks have been run in this drawing-only batch.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Potted foliage and cactus
+
+The six-leaf plant uses one tapered stem, six petioles and exactly six thick folded leaves. Width-zero endpoints must be welded on each skin independently, with closed thickness edges; never duplicate degenerate quads at a tip. Plant height is approximately 320 mm, and the actual constructed leaf bounds include the 0.6 mm thickness. Use those bounds for exact target-size scaling, not the approximate 260 mm crown span.
+
+Both soil volumes are clipped to their pot cavities, retaining the flat upper surface; untrimmed cylinders penetrate the tapered inner pot walls. Preserve the intentionally small top clearance. The cactus retains eight ribs on its trunk and each of two branches. Branch roots overlap the trunk; areoles are flush surface masks, not separate spines.
+
+LoD keeps all six leaves, their thickness, cactus branches, pot cavities and ground contacts. Lower leaf grids and radial intervals first; preserve fold extrema and cap poles. Pot/soil/stem/leaf/cactus/areole appearance regions remain replaceable, with no random additional foliage.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

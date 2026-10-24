@@ -1,0 +1,458 @@
+{
+  "drawing": "02-railing-panel-v2.png",
+  "sheetPixels": [
+    3072,
+    2048
+  ],
+  "pixelsPerMetre": 1100,
+  "sourceSpecification": "../park-railing-model-spec.json",
+  "sourceSHA256": "e4a861ee5727353bbc4cfbce6d14a7cb2438b9a92cb2bf39166ab7c177ea6f6d",
+  "drawingSHA256": "951ef57498c2105f457d7d1d55d0cad1a3c15f5b71920a3f08bc8e32b9a694a0",
+  "views": [
+    {
+      "view": "FRONT",
+      "cameraDirection": [
+        0,
+        -1,
+        0
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        -0.0,
+        0.0,
+        1.0
+      ],
+      "originPixels": [
+        690,
+        900
+      ],
+      "clipPixels": [
+        170,
+        270,
+        1210,
+        925
+      ],
+      "analyticBoundsPixels": [
+        195.0,
+        295.0,
+        1185.0,
+        900.0
+      ],
+      "rasterBoundsPixels": [
+        195.0,
+        295.0,
+        1185.0,
+        900.0
+      ],
+      "maximumBoundaryErrorPixels": 0.0,
+      "visibleParts": [
+        "lower-rail",
+        "upper-rail",
+        "picket-1",
+        "picket-2",
+        "picket-3",
+        "picket-4",
+        "picket-5"
+      ],
+      "topCaps": []
+    },
+    {
+      "view": "RIGHT",
+      "cameraDirection": [
+        1,
+        0,
+        0
+      ],
+      "screenRight": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "originPixels": [
+        1536,
+        900
+      ],
+      "clipPixels": [
+        1485,
+        270,
+        1585,
+        925
+      ],
+      "analyticBoundsPixels": [
+        1522.25,
+        295.0,
+        1549.75,
+        900.0
+      ],
+      "rasterBoundsPixels": [
+        1522.0,
+        295.0,
+        1550.0,
+        900.0
+      ],
+      "maximumBoundaryErrorPixels": 0.25,
+      "visibleParts": [
+        "lower-rail",
+        "upper-rail",
+        "picket-5"
+      ],
+      "topCaps": []
+    },
+    {
+      "view": "BACK",
+      "cameraDirection": [
+        0,
+        1,
+        0
+      ],
+      "screenRight": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        -0.0,
+        1.0
+      ],
+      "originPixels": [
+        2350,
+        900
+      ],
+      "clipPixels": [
+        1830,
+        270,
+        2870,
+        925
+      ],
+      "analyticBoundsPixels": [
+        1855.0,
+        295.0,
+        2845.0,
+        900.0
+      ],
+      "rasterBoundsPixels": [
+        1855.0,
+        295.0,
+        2845.0,
+        900.0
+      ],
+      "maximumBoundaryErrorPixels": 0.0,
+      "visibleParts": [
+        "lower-rail",
+        "upper-rail",
+        "picket-1",
+        "picket-2",
+        "picket-3",
+        "picket-4",
+        "picket-5"
+      ],
+      "topCaps": []
+    },
+    {
+      "view": "TOP",
+      "cameraDirection": [
+        0,
+        0,
+        1
+      ],
+      "screenRight": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "screenUp": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "originPixels": [
+        690,
+        1440
+      ],
+      "clipPixels": [
+        170,
+        1400,
+        1210,
+        1480
+      ],
+      "analyticBoundsPixels": [
+        195.0,
+        1426.25,
+        1185.0,
+        1453.75
+      ],
+      "rasterBoundsPixels": [
+        195.0,
+        1426.0,
+        1185.0,
+        1454.0
+      ],
+      "maximumBoundaryErrorPixels": 0.25,
+      "visibleParts": [
+        "upper-rail",
+        "picket-1",
+        "picket-2",
+        "picket-3",
+        "picket-4",
+        "picket-5"
+      ],
+      "topCaps": [
+        {
+          "part": "picket-1",
+          "boundsPixels": [
+            284.0,
+            1430.0,
+            304.0,
+            1450.0
+          ],
+          "depthMarginsPixels": [
+            4.0,
+            4.0
+          ]
+        },
+        {
+          "part": "picket-2",
+          "boundsPixels": [
+            482.0,
+            1430.0,
+            502.0,
+            1450.0
+          ],
+          "depthMarginsPixels": [
+            4.0,
+            4.0
+          ]
+        },
+        {
+          "part": "picket-3",
+          "boundsPixels": [
+            680.0,
+            1430.0,
+            700.0,
+            1450.0
+          ],
+          "depthMarginsPixels": [
+            4.0,
+            4.0
+          ]
+        },
+        {
+          "part": "picket-4",
+          "boundsPixels": [
+            878.0,
+            1430.0,
+            898.0,
+            1450.0
+          ],
+          "depthMarginsPixels": [
+            4.0,
+            4.0
+          ]
+        },
+        {
+          "part": "picket-5",
+          "boundsPixels": [
+            1076.0,
+            1430.0,
+            1096.0,
+            1450.0
+          ],
+          "depthMarginsPixels": [
+            4.0,
+            4.0
+          ]
+        }
+      ]
+    },
+    {
+      "view": "THREE-QUARTER",
+      "cameraDirection": [
+        1,
+        -1,
+        0.8
+      ],
+      "screenRight": [
+        0.7071067811865475,
+        0.7071067811865475,
+        0.0
+      ],
+      "screenUp": [
+        -0.34815531191139565,
+        0.34815531191139565,
+        0.8703882797784892
+      ],
+      "originPixels": [
+        2360,
+        1690
+      ],
+      "clipPixels": [
+        1980,
+        970,
+        2740,
+        1880
+      ],
+      "analyticBoundsPixels": [
+        2000.259425071344,
+        1018.6521120412557,
+        2719.740574928656,
+        1834.7629786927582
+      ],
+      "rasterBoundsPixels": [
+        2000.5,
+        1019.0,
+        2719.5,
+        1834.5
+      ],
+      "maximumBoundaryErrorPixels": 0.3478879587443089,
+      "visibleParts": [
+        "lower-rail",
+        "upper-rail",
+        "picket-1",
+        "picket-2",
+        "picket-3",
+        "picket-4",
+        "picket-5"
+      ],
+      "topCaps": []
+    }
+  ],
+  "savedPNGChecks": [
+    {
+      "view": "FRONT",
+      "envelopePixels": [
+        990,
+        605
+      ],
+      "targetPixels": [
+        990.0,
+        605.0
+      ]
+    },
+    {
+      "view": "RIGHT",
+      "envelopePixels": [
+        28,
+        605
+      ],
+      "targetPixels": [
+        27.5,
+        605.0
+      ]
+    },
+    {
+      "view": "BACK",
+      "envelopePixels": [
+        990,
+        605
+      ],
+      "targetPixels": [
+        990.0,
+        605.0
+      ]
+    },
+    {
+      "view": "TOP",
+      "envelopePixels": [
+        990,
+        28
+      ],
+      "targetPixels": [
+        990.0,
+        27.5
+      ]
+    }
+  ],
+  "savedPNGTopCaps": [
+    {
+      "part": "picket-1",
+      "columnPixels": 294,
+      "capFillYRangePixels": [
+        1432,
+        1447
+      ]
+    },
+    {
+      "part": "picket-2",
+      "columnPixels": 492,
+      "capFillYRangePixels": [
+        1432,
+        1447
+      ]
+    },
+    {
+      "part": "picket-3",
+      "columnPixels": 690,
+      "capFillYRangePixels": [
+        1432,
+        1447
+      ]
+    },
+    {
+      "part": "picket-4",
+      "columnPixels": 888,
+      "capFillYRangePixels": [
+        1432,
+        1447
+      ]
+    },
+    {
+      "part": "picket-5",
+      "columnPixels": 1086,
+      "capFillYRangePixels": [
+        1432,
+        1447
+      ]
+    }
+  ],
+  "spacingAnnotations": {
+    "units": "default millimetres; scaled with the complete unit",
+    "picketCentrePitch": 180.0,
+    "picketClearGap": 161.99999999999997,
+    "railClearOpening": 404.99999999999994,
+    "equalPicketSpacing": true,
+    "frontPitchEndpointsPixels": [
+      [
+        294.0,
+        425
+      ],
+      [
+        492.0,
+        425
+      ]
+    ],
+    "frontGapEndpointsPixels": [
+      [
+        501.9,
+        550
+      ],
+      [
+        680.1,
+        550
+      ]
+    ],
+    "frontOpeningEndpointsPixels": [
+      [
+        987.0,
+        374.75
+      ],
+      [
+        987.0,
+        820.25
+      ]
+    ]
+  },
+  "rasterTolerancePixels": 1,
+  "savedPNGTolerancePixels": 2,
+  "savedPNGMethod": "Dark contour envelope; pale resampling fringe excluded. Cap fill sampled separately.",
+  "scope": "Reference diagram only; no model, mesh export or app validation."
+}

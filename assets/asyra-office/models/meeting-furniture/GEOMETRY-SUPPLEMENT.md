@@ -8,28 +8,34 @@ The dimensions and hidden details are authored decisions. Do not infer them from
 
 ## Wooden meeting table
 
-Origin is the floor-footprint center. Overall size is 1.400 x 0.750 x 0.740.
+The [meeting table contract](MEETING-TABLE-SPEC.md) completes the exact contour,
+part placement, sixteen flush contacts, sizing, appearance regions and LOD rules.
+Every existing part dimension remains unchanged. Overall size is 1.400 x 0.750
+x 0.740 m. The top spans Z=0.700 to 0.740 with 25 mm XY corner radii and no vertical
+rounding. Four straight square legs and four apron rails remain sharp boxes.
 
-The tabletop is an XY rounded rectangle centered on the origin, width 1.400, depth 0.750, corner radius 0.025. Sample each quarter-circle corner with 16 segments and extrude from Z=0.700 to 0.740. Keep upper/lower faces planar and the vertical corner faces smoothly shaded. No rounding in the vertical direction.
-
-Four straight square legs have 0.055 x 0.055 cross-sections and centers at X=+/-0.580, Y=+/-0.255. They span Z=0 to 0.700. They are vertical, not splayed or tapered.
-
-Four apron rails meet the inner faces of the legs:
-- Long rails: X=-0.5525 to +0.5525, centered at Y=+/-0.255, thickness 0.022 in Y.
-- Short rails: Y=-0.2275 to +0.2275, centered at X=+/-0.580, thickness 0.022 in X.
-- All rails span Z=0.620 to 0.700.
-
-Legs and rails meet the top underside without gaps. No decorative joints, screws, underside plates, drawers, cable ports, cross braces, wheels, feet, or additional props. The apron layout is an authored completion of the obscured source structure.
+All legs/rails end at Z=.700; rail bottoms are at .620. Rail ends contact the
+inner leg faces, not additional corner blocks. These are exact positive-area
+flush interfaces, not required volume overlaps. Keep nine closed components;
+LOD changes only corner sampling. The original drawing remains unchanged.
+No model or rendered likeness has been verified.
 
 ## Blank whiteboard
 
-Origin is the frame center on its rear mounting plane Y=0. Frame bounds: X +/-0.450, Z +/-0.300, Y=-0.025 to 0. The frame is a rectangular ring with square corners, outer width/height 0.900/0.600 and aperture 0.850/0.550. It has a constant 0.025 border.
+The [whiteboard construction contract](WHITEBOARD-SPEC.md) retains all existing
+part dimensions and resolves the frame as four 45-degree mitered prisms. Together
+they occupy the original rectangular ring. Frame XYZ size: 0.900 x 0.025 x 0.600 m
+(width x depth x height), with an .850 x .550 m XZ aperture. A separate panel, backing and flat tray give seven closed
+components with thirteen exact flush contacts. `parts.frame` describes the
+envelope and member depth; it is not an eighth mesh. No bevel, gap or extra connector.
 
-The writing panel fills the aperture, from Y=-0.021 to -0.017. Its front is recessed 0.004 relative to the frame front. A wooden backing fills the same aperture from Y=-0.005 to 0, leaving empty space behind the panel. Frame, panel, and backing are separately closed solids meeting at shared boundaries without extra seams.
-
-The marker tray is a plain flat box: X +/-0.300, Y=-0.060 to 0, Z=-0.312 to -0.300. Its top touches the lower frame edge. It has no front lip or storage groove.
-
-Total bounds including tray: width 0.900, height 0.612, depth 0.060. The frame alone is 0.600 high. No wall mounts, screws, marker, eraser, magnet, writing, stand, or room is included. Writing and interaction belong to the app later.
+The panel front recess is .004 m; the concealed panel/backing cavity is .012 m.
+Total XYZ extents are .900 x .060 x .612 m about the frame's rear mounting origin.
+The tray projects .035 m forward beyond the frame front; its total depth is .060 m.
+The current v2 RIGHT inset is generated from these dimensions: the tray projects
+screen-left and its top meets the frame bottom. Original v1 is historical input;
+its former reversed/elevated tray is not a construction reference.
+See the contract for polygons, topology, defaults, scaling and LOD counts.
 
 ## Views and future acceptance
 

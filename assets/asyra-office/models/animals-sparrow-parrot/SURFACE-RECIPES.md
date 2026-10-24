@@ -15,3 +15,36 @@ Apply base head color, then headCheeks, cheekSpots (sparrow only), throatBib (sp
 Body, tail, legs, toes and beak use their listed flat base materials. Sparrow back above raw Z=0.105 is chestnut; lower body remains tan. The two wings use brown for the sparrow, gray for the cockatiel. Sparrow ivory wing bars apply where raw world Y is inside either listed interval AND the wing normal points outward (normalX*sign(wingCentreX)>0). The masks cover only the outer wing face; no bars on belly or hidden wing roots. Cockatiel white wing patches use the listed wing-local Y and Z ranges on the outward face only; inverse-rotate the point around the wing centre before evaluating. Crest feathers are yellow. The cockatiel body and tail remain gray. Sparse drawn feather contour lines are illustration guides only, not required grooves or pigment.
 
 There is no feather noise or color randomization. If baked base-color textures are required later, use one 2048 x 2048 atlas per bird, nonoverlapping islands and eight pixels of same-color padding. Evaluate all masks before final geometric normalization. Baking must contain intrinsic colors only. Review in an unlit material mode before any lit scene comparison.
+
+## Sparrow replacement and review
+
+The sparrow's numeric `appearance.regions` and
+[construction contract](TREE-SPARROW-SPEC.md) preserve separate editable coat,
+cheek, eye, bib, wing-bar, beak, tail and foot regions, including regions that
+share a default colour. Use region material, otherwise bird material, otherwise
+preset; then region colour, otherwise bird colour. Overrides retain other
+material properties and cannot mutate other instances. Preserve masks separately
+from a flattened atlas.
+
+Undo instance sizing and default normalization before evaluating raw masks.
+Use raw-space normals after wing rotation for wing-bar outward-face checks.
+Head masks require original head-field ownership on the joined body/head surface;
+mask-centre checks do not certify the full visible boundaries. Review final
+mask edges and occlusion during the later model stage.
+
+## Cockatiel replacement and review
+
+Use the numeric cockatiel `appearance.regions` and
+[cockatiel construction contract](COCKATIEL-SPEC.md). Body, head, crest, cheeks,
+eyes, wings, patches, tail, upper beak, lower beak and feet retain separate
+region identities even when default colours match. The crest region covers all
+three feathers. Region material overrides bird material, which overrides the
+preset; apply region colour or otherwise bird colour afterwards, preserving
+other properties and independent instances. Keep masks separate from atlases.
+
+Undo complete sizing before evaluating raw masks. Wing patches additionally
+require subtracting the wing centre and inverse-rotating the local X rotation;
+the local Y/Z ranges must not be tested as raw world Y/Z. Use outward raw-space
+rotated normals. Head/cheek/eye masks retain the common pre-blend ownership
+rule. Later mesh review must check full mask boundaries, occlusion and the
+closed hooked beak; numeric input checks alone do not certify the image match.

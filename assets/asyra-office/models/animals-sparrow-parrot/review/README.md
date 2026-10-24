@@ -4,13 +4,13 @@ Status: user-approved reference sheets.
 
 ## Tree sparrow
 
-One round chestnut-and-tan bird with folded wings. Each foot has three forward toes and one rear toe. Final authored bounds: 0.160 x 0.230 x 0.200 m.
+One round chestnut-and-tan bird with folded wings. Each foot has three forward toes and one rear toe. Default final bounds: 0.160 x 0.230 x 0.200 m. The [updated specification](../TREE-SPARROW-SPEC.md) is approved for commit. The sheet labels RIGHT and RIGHT THREE-QUARTER map to canonical LEFT and FRONT-LEFT THREE-QUARTER; source pixels are preserved.
 
 ![Tree sparrow - six views](01-tree-sparrow-v2.png)
 
 ## Cockatiel
 
-One gray cockatiel with a yellow head and crest, orange cheeks, hooked beak, white wing patches and long tapered tail. Each foot has two forward toes and two rear toes. Final authored bounds: 0.180 x 0.360 x 0.320 m.
+One gray cockatiel with a yellow head and crest, orange cheeks, hooked beak, white wing patches and long tapered tail. Each foot has two forward toes and two rear toes. Default final bounds: 0.180 x 0.360 x 0.320 m. The [updated cockatiel specification](../COCKATIEL-SPEC.md) is approved for commit. The source RIGHT labels map to canonical LEFT views as documented; source pixels are unchanged.
 
 ![Cockatiel - six views](02-cockatiel-v2.png)
 
