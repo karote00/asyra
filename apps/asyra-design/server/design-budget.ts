@@ -1,3 +1,5 @@
+import { designConstructionSchema } from './design-construction-schema'
+import { operationInputIssue } from '../src/ai/tool-schema'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
 
 // Delivery shares the admission owner's limits; it does not estimate or split drafts.
@@ -321,11 +323,19 @@ export const selectDesignSource = (
   return { ...input, children: selected }
 }
 
+export interface DesignPartitionPlan {
+  partitions?: DesignBudgetPartition[]
+  limitation?: { code: string; message: string }
+}
+
 /** Partition source references, never constructed geometry or canonical state. */
 export const partitionDesignBudget = (
   input: unknown,
   expandedNodeLimit: number = limits.expandedNodes
-): DesignBudgetPartition[] | undefined => {
+): DesignPartitionPlan => {
+  const refuse = (code: string, message: string): DesignPartitionPlan => ({
+    limitation: { code, message }
+  })
   if (
     !record(input) ||
     input.type !== 'group' ||
@@ -335,6 +345,7 @@ export const partitionDesignBudget = (
     Object.keys(input).some(
       (key) =>
         ![
+          'brief',
           'type',
           'name',
           'key',
@@ -348,7 +359,30 @@ export const partitionDesignBudget = (
         ].includes(key)
     )
   )
-    return
+    return refuse(
+      'unsupported-root',
+      'Automatic partitions require an independent flat projected group; unsupported root semantics must remain intact.'
+    )
+  if (input.brief !== undefined) {
+    const issue = operationInputIssue(
+      input.brief,
+      designConstructionSchema.brief
+    )
+    if (issue)
+      return refuse(
+        'invalid-brief',
+        `Invalid brief: ${issue}. Correct the retained brief; no source was applied.`
+      )
+    if (
+      record(input.brief) &&
+      Array.isArray(input.brief.checks) &&
+      input.brief.checks.length
+    )
+      return refuse(
+        'whole-design-checks',
+        'Numeric brief checks require final whole-design layout. Automatic partitions cannot evaluate those checks on partial bounds. Source and checks remain retained; do not remove checks to bypass admission.'
+      )
+  }
   const children = input.children
   if (
     children.some(
@@ -359,7 +393,10 @@ export const partitionDesignBudget = (
         )
     )
   )
-    return
+    return refuse(
+      'unsupported-children',
+      'Automatic partitions require independent projected faces, surface grids or patterns; preserve unsupported child relationships.'
+    )
   // Recovery is conservative about global identity: never allow two source key
   // families to become independently valid merely because artifacts are separate.
   const families = children.map((child) => ({
@@ -368,7 +405,11 @@ export const partitionDesignBudget = (
   }))
   if (input.key !== undefined)
     families.push({ key: input.key, generated: false })
-  if (families.some(({ key }) => typeof key !== 'string' || !key.trim())) return
+  if (families.some(({ key }) => typeof key !== 'string' || !key.trim()))
+    return refuse(
+      'source-identity',
+      'Partition source keys must be nonempty and disjoint.'
+    )
   families.sort((a, b) =>
     String(a.key) < String(b.key) ? -1 : Number(String(a.key) > String(b.key))
   )
@@ -379,10 +420,18 @@ export const partitionDesignBudget = (
       earlier.key === current.key ||
       (earlier.generated && String(current.key).startsWith(String(earlier.key)))
     )
-      return
+      return refuse(
+        'source-identity',
+        'Duplicate or overlapping generated source key families cannot be separated into partitions.'
+      )
   }
   const whole = measureDesignBudget(input, expandedNodeLimit)
-  if (whole.lowerBound || !whole.exceeded.length) return
+  if (whole.lowerBound)
+    return refuse(
+      'indeterminate-budget',
+      'Source cost is not exact; automatic partitions cannot establish safe limits.'
+    )
+  if (!whole.exceeded.length) return {}
   const sharedCost = measureDesignBudget(
     { ...input, children: [] },
     expandedNodeLimit
@@ -402,11 +451,19 @@ export const partitionDesignBudget = (
     cost = empty()
   }
   for (const [child, value] of children.entries()) {
-    if (!record(value)) return
+    if (!record(value))
+      return refuse(
+        'invalid-child',
+        'Partition source child must be an object.'
+      )
     let ranges: { start: number; end: number }[] = [{ start: 0, end: 1 }]
     const pattern = value.type === 'pattern'
     if (pattern) {
-      if (!Array.isArray(value.axes) || !value.axes.length) return
+      if (!Array.isArray(value.axes) || !value.axes.length)
+        return refuse(
+          'invalid-pattern',
+          'Pattern axes must define bounded instances.'
+        )
       const total = value.axes.reduce(
         (n, axis) =>
           record(axis) &&
@@ -416,9 +473,17 @@ export const partitionDesignBudget = (
             : NaN,
         1
       )
-      if (!Number.isSafeInteger(total) || total <= 0) return
+      if (!Number.isSafeInteger(total) || total <= 0)
+        return refuse(
+          'invalid-pattern',
+          'Pattern instance count must be a positive safe integer.'
+        )
       const selectedRanges = value.instanceRanges ?? [{ start: 0, end: total }]
-      if (!Array.isArray(selectedRanges) || !selectedRanges.length) return
+      if (!Array.isArray(selectedRanges) || !selectedRanges.length)
+        return refuse(
+          'invalid-pattern',
+          'Pattern ranges must select complete instances.'
+        )
       let previousEnd = 0
       ranges = []
       for (const range of selectedRanges) {
@@ -430,7 +495,10 @@ export const partitionDesignBudget = (
           Number(range.end) > total ||
           Number(range.end) <= Number(range.start)
         )
-          return
+          return refuse(
+            'invalid-pattern',
+            'Pattern ranges must be ordered, disjoint and inside the instance count.'
+          )
         ranges.push({ start: Number(range.start), end: Number(range.end) })
         previousEnd = Number(range.end)
       }
@@ -447,7 +515,11 @@ export const partitionDesignBudget = (
       { ...input, children: [member] },
       expandedNodeLimit
     )
-    if (measured.lowerBound || measured.exceeded.length) return
+    if (measured.lowerBound || measured.exceeded.length)
+      return refuse(
+        'indivisible-capacity',
+        'One complete source component exceeds an artifact guard; automatic partitions cannot split its geometry.'
+      )
     const unit = {
       ...measured.observed,
       sourceNodes: measured.observed.sourceNodes - sharedCost.sourceNodes,
@@ -460,11 +532,18 @@ export const partitionDesignBudget = (
       !Object.values(unit).every(Number.isSafeInteger) ||
       unit.expandedNodes <= 0
     )
-      return
+      return refuse(
+        'indeterminate-budget',
+        'Complete component cost must be exact and positive.'
+      )
     for (const range of ranges) {
       let start = range.start
       while (start < range.end) {
-        if (parts.length >= limits.recoveryParts) return
+        if (parts.length >= limits.recoveryParts)
+          return refuse(
+            'partition-capacity',
+            `Automatic recovery exceeds ${limits.recoveryParts} retained parts; source remains unchanged.`
+          )
         const newSource = selections.at(-1)?.child !== child
         const nextSourceNodes =
           cost.sourceNodes + (newSource ? unit.sourceNodes : 0)
@@ -490,7 +569,11 @@ export const partitionDesignBudget = (
                   : Infinity
               )
         if (!capacity) {
-          if (!selections.length) return
+          if (!selections.length)
+            return refuse(
+              'indivisible-capacity',
+              'One complete source component cannot fit an empty artifact.'
+            )
           flush()
           continue
         }
@@ -517,6 +600,9 @@ export const partitionDesignBudget = (
   }
   flush()
   return parts.length > 1 && parts.length <= limits.recoveryParts
-    ? parts
-    : undefined
+    ? { partitions: parts }
+    : refuse(
+        'partition-capacity',
+        'No bounded multi-part continuation can preserve this source.'
+      )
 }

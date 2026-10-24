@@ -332,6 +332,17 @@ Budget calculation measures each source component once and reuses additive costs
 metadata is limited to 128 parts and charged to the existing retained-byte capacity.
 An unsupported or larger plan remains a no-write failure with ordinary explicit repair.
 
+A valid descriptive root brief with empty checks is preserved unchanged in every
+selected source and prepared review; it does not disable safe capacity continuation.
+Nonempty numeric brief checks refer to final parent-local layout and cannot be
+silently evaluated on partial bounds. Until those whole-design semantics are
+supported across partitions, automatic partitioning returns an explicit no-write
+limitation with the original source and checks retained. Invalid brief fields are
+also explicit input limitations. Single-artifact brief checks keep their existing
+validation and evaluation. Retained refusal diagnostics distinguish unsupported
+partition semantics from measured capacity excess; they never suggest dropping
+checks to bypass admission.
+
 Recovery supports independent fill templates and world linear fields. Unsupported
 layout, relations, nested containers, shared-fill bindings, overlapping source key
 families and indivisible excess remain explicit no-write failures. Automatic recovery
@@ -382,7 +393,6 @@ Safely partitionable excess uses retained-source continuation in the main tool.
 Genuine budget rejection keeps observed/allowed values, no-write settlement and
 retained draft recovery without replaying completed writes. Actual delivered examples must reach the dispatcher and preparation owner;
 formal cases cover the recorded excess, exact boundary, partial success and cancel.
-
 
 The combined preparation/application workflow also accepts ordered ready `parts`.
 Each part has a unique local key and an ordinary draft or repair. `parentPart`
@@ -1646,6 +1656,32 @@ text helper. Retained Code Mode values can be redisplayed without reacquisition.
 Formal tests cover zero/multiple images and exclude base64 from text output;
 an opt-in real-model probe verifies actual image visibility from one acquisition.
 
+### Image result delivery and recovery
+
+The published Code Mode receipt example stores the complete result under a fresh,
+caller-selected key before parsing or forwarding. A display failure does not erase
+acknowledged mutations or the saved original image. The published recovery example
+loads that same key and forwards the retained receipt/images without invoking the
+producer again. Missing or malformed retained results fail explicitly; no fallback
+capture, redraw, automatic retry or invented success. Independent calls use separate
+keys within existing Code Mode storage; no new App retention mechanism is introduced.
+
+The native contract must be tested with the actual published examples and actual
+inputText/inputImage results through the native image helper, reaching the next
+outbound request. Zero, one and multiple image cases preserve bytes and order;
+image base64 must not become receipt text. Mock helper call counts alone do not
+prove this boundary. Fixed offline responses may exercise the native executable
+without invoking a real model. Evidence identifies source/example version and
+native executable, and separates submitted results, native outgoing content,
+unavailable live model visibility and model-authored judgments.
+
+Image redisplay and criterion binding are independent. Existing inspection IDs
+can be bound with bindChecks after criteria are defined, without recapture; current
+revision, local and multiscale invalidation rules still apply. A forwarding failure
+must not replay writes or discard the original execution result. Native regression
+coverage is part of the existing local consumer gate. An unrecorded historical
+forwarding error remains unconfirmed even after current deterministic tests pass.
+
 ### Diagnostic reference recovery
 
 Reference acquisition preserves structured failure stage, reason, HTTP status
@@ -1802,7 +1838,6 @@ text/image receipt forwarding remains independent. Tests execute the actual deli
 example and inspect real native successor requests; neither storage nor tests prove
 model adoption or prevent arbitrary agent-authored oversized output.
 
-
 ### Source and upstream evidence provenance
 
 Offline native delivery verification may replace inference with fixed loopback
@@ -1819,8 +1854,6 @@ content. Missing coverage rejects assembly. Scripted store/load observations do 
 expose native storage internals or establish historical AI behavior; absent public
 orchestration output remains explicitly unavailable.
 
-
-
 For matching discovery and Knowledge calls, retain publicly exposed native completed
 result content through the existing profiler payload sink, separately from App
 output. Decode JSON text before redaction; record original byte counts and digests
@@ -1830,7 +1863,6 @@ visibility. Exec/wait output without an explicit child-call relationship remains
 uncorrelated and its arbitrary body is omitted. No private reasoning or credentials
 may enter the trace. Diagnostic failure does not change tool settlement, recovery,
 refresh/rehydrate or dispatch; no completed operation is replayed for recording.
-
 
 Design captures host source revision and a source-scoped fingerprint at request
 entry, once per invocation, and supplies both to the Runtime profiler and child
@@ -1963,7 +1995,6 @@ scope/field errors with no side effects; they are never reinterpreted as another
 query. To filter a hierarchy result, explicitly retain it and refine its current
 snapshot. Existing snapshot ownership, cancellation and mutation admission remain
 unchanged. A rejected read does not consume or release an earlier valid reference.
-
 
 The App context reader retains ordered membership and requested property columns
 under a bounded snapshotId, document revision and workspace identity. Repeated
@@ -2985,14 +3016,14 @@ only when eligible. Save-only retry never repeats a completed product mutation.
 These product cases apply to their named routes. Proof must use the relevant
 captured source; structural admission alone does not establish runtime correctness.
 
-| Case                        | Producer -> consumer                             | Required success and failure behavior                                                                                                                                                                                                                                                                               |
-| --------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Case              | Producer -> consumer                             | Required success and failure behavior                                                                                                                                                                                                                                                                               |
+| ----------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Current contract  | compose/inspect -> host and primary judgment     | Canonical oval conversion and primary visual fail/correct/pass work; removed alias rejects before dispatch and no independent assessor capability exists.                                                                                                                                                           |
 | Aggregate closure | apply receipt -> inspect -> Runtime verification | Fresh receipt closes selected stale mechanical checks, preserves unrelated visual passes, and executes one admitted known repair; actual Runtime admits the string progress contract and acknowledged revision binding. No-op/cyclic repairs and wrong/mixed repair capabilities stop without initial-write replay. |
 | Freshness race    | canonical edits -> inspect -> settle             | Edit, Undo/Redo, collaborator change or cancellation during check cannot publish stale success; retry only safe reads, preserve unaffected records, and return exact incomplete scope.                                                                                                                              |
 | Delegation        | discovery -> admit/register -> host/invoke       | Exact spec -> invalid recipe correction -> eligible invocation through real host; unsupported intent returns a decision; suitable direct tools need no forced composition.                                                                                                                                          |
-| Reuse            | invoke receipt -> persist -> fresh request       | New input yields new artifacts; failed save retries only storage, revoked dependency rejects, expired transient handles require reacquisition.                                                                                                                                                                      |
-| Settlement       | inspect/apply -> settle -> visible result        | Stage replacement and call start/end ordering are truthful; Stop/partial writes/cleanup failure preserve actual progress; document-save failure, recovery, Undo/Redo and fresh reload are independently proven.                                                                                                     |
+| Reuse             | invoke receipt -> persist -> fresh request       | New input yields new artifacts; failed save retries only storage, revoked dependency rejects, expired transient handles require reacquisition.                                                                                                                                                                      |
+| Settlement        | inspect/apply -> settle -> visible result        | Stage replacement and call start/end ordering are truthful; Stop/partial writes/cleanup failure preserve actual progress; document-save failure, recovery, Undo/Redo and fresh reload are independently proven.                                                                                                     |
 
 Accepted historical evidence is immutable; obsolete executable behavior is
 removed, not emulated. Execution order and stage scope belong to the active
@@ -3147,7 +3178,6 @@ foreign/stale/partial evidence and cancellation, plus Undo/Redo and collaboratio
 through existing owners. The saved 101 sequence supplies input evidence, never
 reusable live receipt IDs. Owner-local proofs alone cannot close this flow.
 
-
 ### Material relationship publication
 
 Material edits use the same canonical publication path as other property changes.
@@ -3161,7 +3191,6 @@ Live peers, bootstrap replay and durable reduction consume the same operations.
 Remote apply creates no receiver History or outbound echo. Malformed evidence
 rejects rather than guessing missing links. A successful local edit does not imply
 durable save; history, compensation, retry and reload retain their existing owners.
-
 
 ### Source-preserving material correction
 
@@ -3181,7 +3210,7 @@ changes. A pre-write rejection identifies the unavailable member, geometry/ances
 or Fill-binding mismatch; bounded numeric differences may explain a geometry
 mismatch but cannot authorize an AI override. Preparing the same retained recipe
 again does not refresh stale creation provenance or authorize replay.
- Missing, changed, foreign or cancelled
+Missing, changed, foreign or cancelled
 provenance rejects before the first write. Material values use canonical Fill APIs,
 transaction history, collaboration and persistence; no material metadata is added
 to saved documents. Committed writes remain committed if subsequent provenance
@@ -3193,7 +3222,6 @@ rejected. Revisions cannot be applied as new geometry. Existing source ownership
 cancellation and request cleanup cover all retained recipes and member mappings.
 The primary agent remains responsible for representative visual acceptance;
 mechanical preparation never approves appearance or makes Knowledge mandatory.
-
 
 ### Retained identity destination binding
 
@@ -3228,7 +3256,6 @@ or invalid examples are explicitly unavailable. Full schemas, exact fragments an
 explicit delivery/context-loss recovery remain authoritative; a returned response is
 not evidence that the model read or understood it.
 
-
 High-level preparation and criteria tools expose their existing executable owner
 examples in the canonical input schema, not only description prose. Usage publishes
 one validated illustrative invocation through the actual native/batch envelope;
@@ -3239,7 +3266,6 @@ An unknown path is recoverable and never dispatches a drawing action. Exact look
 still defaults to full; route-only usage is optional, not a prerequisite. A known
 contract can execute directly, including without Knowledge. Explicit recovery keeps
 view/paths and never retries a previously completed product write.
-
 
 ### Exact-name query selection
 
@@ -3410,7 +3436,6 @@ DoD: execute published examples through the registered dispatcher with both lega
 root types, omitted plan and unchanged read counts; separately validate nested-frame
 selection, frame dimensions, group restrictions and supplied-plan validation.
 Preserve criteria-before-review, partial outcomes and recovery without write replay.
-
 
 The existing workflow discovery menu and unscoped usage expose owner-authored
 selection conditions alongside inputScopes in the same reply. Choose the types

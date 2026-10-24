@@ -162,7 +162,7 @@ it('counts reference output and retains definitions in source-selected parts', (
     }).observed
   ).toMatchObject({ sourcePathCommands: 20, expandedNodes: 25 })
   // Small deterministic partition exercises reference retention, not a live capacity experiment.
-  const partitions = partitionDesignBudget(input, 15)
+  const partitions = partitionDesignBudget(input, 15).partitions
   if (!partitions) throw new Error('Missing partitions')
   expect(partitions).toHaveLength(2)
   for (const part of partitions) {

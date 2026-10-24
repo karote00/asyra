@@ -878,7 +878,12 @@ export const createLocalDesignTools = (
           return JSON.stringify({
             ...budgetIssue,
             settlement: 'not-started',
-            ...retained
+            ...retained,
+            ...(retained.retainedDraft?.partitionLimitation
+              ? {
+                  message: `${budgetIssue.message} Partition limitation: ${retained.retainedDraft.partitionLimitation.message}`
+                }
+              : {})
           })
         }
         const inputIssue = operationInputIssue(

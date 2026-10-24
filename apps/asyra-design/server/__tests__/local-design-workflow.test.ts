@@ -1,3 +1,4 @@
+import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import { projectWorkflowInput } from '../design-workflow-discovery'
 import { informationDeliveryExample } from '../local-information-delivery'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
@@ -10,6 +11,7 @@ import { runInNewContext } from 'node:vm'
 import {
   localToolContent,
   localToolResultExample,
+  localToolResultRecoveryExample,
   type NativeToolDescriptor
 } from '../local-operation-tools'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
@@ -2196,6 +2198,8 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
   const text = vi.fn()
   const image = vi.fn()
   runInNewContext(localToolResultExample, {
+    resultKey: 'test-receipt',
+    store: vi.fn(),
     result: content
       .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
       .join('\n'),
@@ -2311,6 +2315,8 @@ it.each(['compact', 'full'] as const)(
     const text = vi.fn()
     const image = vi.fn()
     runInNewContext(localToolResultExample, {
+      resultKey: 'test-receipt',
+      store: vi.fn(),
       result: content
         .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
         .join('\n'),
@@ -2604,6 +2610,8 @@ it('executes the delivered review-selection example and next invocation with few
     const text = vi.fn(),
       image = vi.fn()
     runInNewContext(localToolResultExample, {
+      resultKey: 'test-receipt',
+      store: vi.fn(),
       result: content
         .map((part) => (part.type === 'inputText' ? part.text : part.imageUrl))
         .join('\n'),
@@ -3093,3 +3101,166 @@ it('delivers an optional selection example for existing criteria without forcing
     (schema.examples[0] as Record<string, unknown>).reviewChecks
   ).toBeUndefined()
 })
+
+it('executes the saved descriptive brief through safe parts without another model submission', async () => {
+  const { workflow, events } = inspectionBoundaryFixture({
+    repeatedTarget: true
+  })
+  const input = structuredClone(briefFixture.input)
+  const result = JSON.parse(
+    (await invokeLocalTool(workflow, workflow.definitions[0], input, signal()))
+      .text
+  )
+  expect(result, JSON.stringify(result)).toMatchObject({
+    status: 'complete',
+    toolOutcome: { status: 'success', settlement: 'completed' }
+  })
+  expect(result.parts).toHaveLength(2)
+  expect(result.parts[0].completedSteps).toContain('define_design_criteria')
+  expect(result.parts[1].completedSteps).not.toContain('define_design_criteria')
+  expect(result.parts.map((part: { review: unknown }) => part.review)).toEqual([
+    input.draft.brief,
+    input.draft.brief
+  ])
+  expect(
+    events.filter((name) =>
+      name.startsWith(AiActionNames.APPLY_PREPARED_DESIGN + ':')
+    )
+  ).toHaveLength(2)
+  expect(
+    result.parts.map(
+      (part: { preparationInput: { draftId: string } }) =>
+        part.preparationInput.draftId
+    )
+  ).toEqual([expect.any(String), result.parts[0].preparationInput.draftId])
+  expect(input).toEqual(briefFixture.input)
+})
+
+it.each(['whole-design-checks', 'invalid-brief'])(
+  'delivers the retained brief limitation before any write: %s',
+  async (code) => {
+    const { workflow, events } = inspectionBoundaryFixture()
+    const input = structuredClone(briefFixture.input)
+    const brief = {
+      ...input.draft.brief,
+      checks:
+        code === 'invalid-brief'
+          ? 'invalid'
+          : [{ key: 'root', property: 'width', expected: 100, tolerance: 1 }]
+    }
+    const result = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        { ...input, draft: { ...input.draft, key: 'root', brief } },
+        signal()
+      )
+    )
+    expect(result.toolOutcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
+    expect(JSON.stringify(result)).toContain(code)
+    expect(JSON.stringify(result)).toContain(
+      code === 'invalid-brief' ? 'Invalid brief' : 'whole-design layout'
+    )
+    expect(events).toEqual([])
+  }
+)
+
+it.each([true, false])(
+  'redisplays a completed workflow result and binds without recapture with criteriaBefore=%s',
+  async (criteriaBefore) => {
+    const options = { staleImage: false }
+    const f = inspectionBoundaryFixture(options)
+    if (criteriaBefore)
+      await f.operations.call(
+        'define_design_criteria',
+        reviewPlanExample,
+        signal()
+      )
+    const raw = await f.workflow.call(
+      'prepare_and_apply_design',
+      { draft, inspection: 'immediate' },
+      signal()
+    )
+    const content = await localToolContent(raw)
+    const result = content
+      .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
+      .join('\n')
+    const saved = new Map<string, unknown>()
+    const context = {
+      resultKey: 'completed-part',
+      text: vi.fn(),
+      store: (key: string, value: unknown) => saved.set(key, value),
+      load: (key: string) => saved.get(key)
+    }
+    expect(() =>
+      runInNewContext(localToolResultExample, {
+        ...context,
+        result,
+        image: () => {
+          throw new Error('Display interrupted')
+        }
+      })
+    ).toThrow('Display interrupted')
+    const beforeRedisplay = [...f.events]
+    const image = vi.fn()
+    runInNewContext(localToolResultRecoveryExample, { ...context, image })
+    expect(f.events).toEqual(beforeRedisplay)
+    expect(image).toHaveBeenCalledOnce()
+    const retained = context.text.mock.calls.at(-1)?.[0]
+    expect(retained.toolOutcome).toMatchObject({
+      status: 'success',
+      settlement: 'completed'
+    })
+    const inspectionIds = retained.actionResults
+      .filter((a: { actionName: string }) => a.actionName === 'inspect_drawing')
+      .map((a: { result: { inspectionId: string } }) => a.result.inspectionId)
+    if (!criteriaBefore)
+      await f.operations.call(
+        'define_design_criteria',
+        reviewPlanExample,
+        signal()
+      )
+    const bind = {
+      phase: 'visual',
+      final: false,
+      bindChecks: [{ criterionId: 'appearance', inspectionIds }]
+    }
+    const bound = JSON.parse(
+      await f.operations.call('review_drawing', bind, signal())
+    )
+    expect(bound.reviewOperation).toBe('bind')
+    expect(bound.recordedChecks).toEqual([])
+    const next = bound.next.arguments
+    const recorded = JSON.parse(
+      await f.operations.call(
+        'review_drawing',
+        {
+          ...next,
+          checks: next.checks.map((check: object) => ({
+            ...check,
+            status: 'pass',
+            evidence: 'The selected local appearance is present.'
+          }))
+        },
+        signal()
+      )
+    )
+    expect(recorded.recordedChecks).toEqual([
+      expect.objectContaining({ criterionId: 'appearance', status: 'pass' })
+    ])
+    options.staleImage = true
+    const stale = JSON.parse(
+      await f.operations.call('review_drawing', bind, signal())
+    )
+    expect(stale.evidenceValidation.invalidInspectionIds).toEqual(inspectionIds)
+    expect(stale.next?.arguments?.checks).toBeUndefined()
+    expect(
+      f.events.filter((e) => e.startsWith('apply_prepared_design:'))
+    ).toHaveLength(1)
+    expect(
+      f.events.filter((e) => e.startsWith('inspect_drawing:'))
+    ).toHaveLength(1)
+  }
+)
