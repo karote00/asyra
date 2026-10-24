@@ -1,0 +1,118 @@
+{
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1792853203510",
+  "sourceHead": "f38f3954bb227e6dfd1e0ae4afb27fe7b9263113",
+  "scope": "Recorded disjoint sibling roots and exact validation payloads. Tests use minimal supported child geometry; original findings and timings are not expected repaired behavior.",
+  "roots": [
+    "design-68e1023e-2e0f-4e38-84bf-9be854ae0fa1-0",
+    "design-ac6aa0a9-cb80-47be-bf12-1aa91d3266e6-0",
+    "design-e5a94f83-bafc-4e64-adf9-f36be636d69e-0"
+  ],
+  "records": [
+    {
+      "path": "43-input.json",
+      "bytes": 204,
+      "sha256": "5d3c2fa414265b35417578907ed9375b636a8fb3e7c36c5dd82d27c4c826213a",
+      "value": {
+        "evidence": {
+          "sessionId": "c5c49a92-62be-43c7-b693-31682ed88807",
+          "revision": 12328,
+          "receiptId": "c62b3e4c-f34d-41ec-b13b-aa4377bfcc83"
+        },
+        "measurementTargets": [
+          "design-68e1023e-2e0f-4e38-84bf-9be854ae0fa1-0"
+        ]
+      }
+    },
+    {
+      "path": "44-output.json",
+      "bytes": 476,
+      "sha256": "007809e71cb560d9f67cfc605b9fc80b5631172dc4d7f3ebca59603709899148",
+      "value": {
+        "current": true,
+        "observation": {
+          "aggregatedNodes": 0,
+          "evaluatedNodes": 0,
+          "reusedNodes": 0,
+          "metadataReads": 0,
+          "computedReads": 0,
+          "textMeasurements": 0
+        },
+        "validatedAt": {
+          "sessionId": "c5c49a92-62be-43c7-b693-31682ed88807",
+          "revision": 12328
+        },
+        "measurements": [
+          {
+            "elementId": "design-68e1023e-2e0f-4e38-84bf-9be854ae0fa1-0",
+            "available": false,
+            "reason": "target-not-covered"
+          }
+        ],
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed"
+        },
+        "actionObservation": {
+          "handlerMs": 1,
+          "executor": "app-browser"
+        }
+      }
+    },
+    {
+      "path": "59-input.json",
+      "bytes": 252,
+      "sha256": "bae96f7e3bc2518630db623586a27b6a94b4d97a7a7233ef15db993e67009949",
+      "value": {
+        "evidence": {
+          "sessionId": "c5c49a92-62be-43c7-b693-31682ed88807",
+          "revision": 13610,
+          "receiptId": "2b57b160-94ce-4c84-8da3-1eb0ed8134d6"
+        },
+        "measurementTargets": [
+          "design-68e1023e-2e0f-4e38-84bf-9be854ae0fa1-0",
+          "design-ac6aa0a9-cb80-47be-bf12-1aa91d3266e6-0"
+        ]
+      }
+    },
+    {
+      "path": "60-output.json",
+      "bytes": 604,
+      "sha256": "f50e03dedb6a4cda80eb476020eefc5614ad61845dc85545f67d3fa518537c9a",
+      "value": {
+        "current": true,
+        "observation": {
+          "aggregatedNodes": 0,
+          "evaluatedNodes": 0,
+          "reusedNodes": 0,
+          "metadataReads": 0,
+          "computedReads": 0,
+          "textMeasurements": 0
+        },
+        "validatedAt": {
+          "sessionId": "c5c49a92-62be-43c7-b693-31682ed88807",
+          "revision": 13610
+        },
+        "measurements": [
+          {
+            "elementId": "design-68e1023e-2e0f-4e38-84bf-9be854ae0fa1-0",
+            "available": false,
+            "reason": "target-not-covered"
+          },
+          {
+            "elementId": "design-ac6aa0a9-cb80-47be-bf12-1aa91d3266e6-0",
+            "available": false,
+            "reason": "target-not-covered"
+          }
+        ],
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed"
+        },
+        "actionObservation": {
+          "handlerMs": 0.10000038146972656,
+          "executor": "app-browser"
+        }
+      }
+    }
+  ]
+}

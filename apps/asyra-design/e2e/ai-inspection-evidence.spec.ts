@@ -14,6 +14,7 @@ import {
   getCoreDocumentDigest,
   getTransactionSnapshot,
   getPersistedDocumentDigest,
+  getPersistedDocumentCheckpoint,
   redo,
   undo,
   waitForAppReady
@@ -2959,7 +2960,7 @@ for (const rootType of ['frame', 'group'] as const) {
     rootType === 'frame'
       ? 'whole subtree reconciliation survives local edits history collaboration and durable reload'
       : 'incremental Group review preserves identity through local edits history collaboration and durable reload',
-    async ({ page, context }) => {
+    async ({ page, context }, testInfo) => {
       const document = createTestDocumentIdentity()
       await page.goto(document.url)
       await waitForAppReady(page)
@@ -3012,7 +3013,11 @@ for (const rootType of ['frame', 'group'] as const) {
       const executeBatch = async (batch: AiActionBatch) => {
         if (
           interrupted &&
-          batch.actions.some((a) => a.arguments.measurementTargets)
+          batch.actions.some(
+            (a) =>
+              a.name === 'validate_inspection_evidence' &&
+              a.arguments.measurementTargets
+          )
         )
           throw new Error('Interrupted coverage delivery')
         return (await page.evaluate(async (batch) => {
@@ -3258,9 +3263,23 @@ for (const rootType of ['frame', 'group'] as const) {
         const subsequent = await getCoreDocumentDigest(page)
         expect(subsequent).not.toEqual(edited)
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(subsequent)
-        await expect
-          .poll(() => getPersistedDocumentDigest(document.fileId))
-          .toEqual(subsequent)
+        try {
+          await expect
+            .poll(() => getPersistedDocumentDigest(document.fileId))
+            .toEqual(subsequent)
+        } catch (error) {
+          await testInfo.attach('mechanical-reload-persistence', {
+            contentType: 'application/json',
+            body: JSON.stringify({
+              expected: subsequent,
+              current: await page.evaluate(async () =>
+                (await import('../src/testing/runtime-access')).core.save()
+              ),
+              persisted: await getPersistedDocumentCheckpoint(document.fileId)
+            })
+          })
+          throw error
+        }
         await undo(page)
         await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
         await redo(page)

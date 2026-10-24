@@ -11,16 +11,24 @@ import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
 import { reviewDesign } from '../common-apis/design-review'
 import { AiActionNames } from '../constants'
 type ReviewResult = Awaited<ReturnType<typeof reviewDesign>>
-type ReviewHandler = (...args: Parameters<typeof reviewDesign>) => Promise<
+type ReviewHandler = (
+  elementId: string,
+  signal?: AbortSignal,
+  measurementTargets?: readonly string[]
+) => Promise<
   Omit<ReviewResult, 'observation'> &
     Partial<Pick<ReviewResult, 'observation'>> & {
       evidence?: InspectionEvidenceStamp
+      coveredMeasurementTargets?: string[]
     }
 >
 export const createDesignReviewAction = (
   review: ReviewHandler = reviewDesign,
   isCurrent?: (stamp: InspectionEvidenceStamp) => boolean
-): AiActionDefinition<{ elementId: string }> => ({
+): AiActionDefinition<{
+  elementId: string
+  measurementTargets?: string[]
+}> => ({
   ...actionToolSemantics(
     AiActionNames.REVIEW_DESIGN,
     toolResultObject(
@@ -37,6 +45,7 @@ export const createDesignReviewAction = (
         checkedElements: toolResultCount,
         measuredTextCount: toolResultCount,
         measuredTextIds: toolResultIds,
+        coveredMeasurementTargets: toolResultIds,
         findings: { type: 'array', items: { type: 'object' } },
         observation: toolResultObject(
           Object.fromEntries(
@@ -62,7 +71,7 @@ export const createDesignReviewAction = (
       ]
     )
   ),
-  revision: 5,
+  revision: 6,
   composition: 'allowed',
   verification: {
     statusPath: '/verification/status',
@@ -80,13 +89,22 @@ export const createDesignReviewAction = (
         ...toolDocumentReference,
         'x-design-element-binding': 'each',
         maxLength: 256
+      },
+      measurementTargets: {
+        type: 'array',
+        uniqueItems: true,
+        items: { type: 'string', minLength: 1, maxLength: 256 },
+        description:
+          'Optional existing measurement targets to select from captured coverage. Returned coveredMeasurementTargets identifies scope only; validate the receipt to reconcile findings and independent evidence. Uncovered targets remain unchanged.'
       }
     }
   },
-  execute: async ({ elementId }, { signal }) => {
+  execute: async ({ elementId, measurementTargets }, { signal }) => {
     if (signal.aborted) throw new Error('Design review cancelled.')
     const measure = async () => {
-      const measurement = await review(elementId, signal)
+      const measurement = await (measurementTargets
+        ? review(elementId, signal, measurementTargets)
+        : review(elementId, signal))
       let status: 'pass' | 'repairable' | 'decision-required' =
         'decision-required'
       if (measurement.complete && !measurement.truncated) {
@@ -124,6 +142,7 @@ export const createDesignReviewAction = (
           available: false,
           complete: false,
           evidence: undefined,
+          coveredMeasurementTargets: [],
           verification: {
             status: 'decision-required',
             progress: Array.from(new Uint8Array(digest), (byte) =>

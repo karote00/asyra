@@ -525,7 +525,12 @@ export const createDesignReviewer = (
   }
   const review = async (rootId: string, signal?: AbortSignal) =>
     (await runReview(rootId, signal)).measurement
-  const capture = async (rootId: string, signal?: AbortSignal) => {
+  const capture = async (
+    rootId: string,
+    signal?: AbortSignal,
+    measurementTargets?: readonly string[]
+  ) => {
+    const candidates = new Set(measurementTargets)
     const start = generation
     const { measurement, coverage } = await runReview(rootId, signal)
     const unavailable = () => ({
@@ -575,6 +580,13 @@ export const createDesignReviewer = (
     return {
       ...measurement,
       available: true,
+      ...(measurementTargets
+        ? {
+            coveredMeasurementTargets: coverage
+              .filter(({ elementId }) => candidates.has(elementId))
+              .map(({ elementId }) => elementId)
+          }
+        : {}),
       evidence: { sessionId, revision: receipt.revision, receiptId }
     }
   }

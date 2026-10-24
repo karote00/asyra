@@ -2401,13 +2401,18 @@ it('does not reuse layout results across edits without canonical revision eviden
     execute.mock.calls
       .filter(([b]) => b.actions[0].name === AiActionNames.REVIEW_DESIGN)
       .map(([b]) => b.actions[0].arguments)
-  expect(reviews()).toEqual([{ elementId: 'text' }])
+  expect(reviews()).toMatchObject([
+    { elementId: 'text', measurementTargets: ['root'] }
+  ])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'root' }])
+  expect(reviews()).toMatchObject([
+    { elementId: 'text', measurementTargets: ['root'] },
+    { elementId: 'root', measurementTargets: ['text'] }
+  ])
   expect(
     tools.settleOutcome({
       batchId: 'done',
@@ -2433,13 +2438,18 @@ it('does not reuse layout results across edits without canonical revision eviden
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'text' }])
+  expect(reviews()).toMatchObject([
+    { elementId: 'text', measurementTargets: ['root'] }
+  ])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'root' }])
+  expect(reviews()).toMatchObject([
+    { elementId: 'text', measurementTargets: ['root'] },
+    { elementId: 'root', measurementTargets: ['text'] }
+  ])
   expect(
     tools.settleOutcome({
       batchId: 'done',
@@ -2471,13 +2481,16 @@ it('does not reuse layout results across edits without canonical revision eviden
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'text' }])
+  expect(reviews()).toMatchObject([
+    { elementId: 'text' },
+    { elementId: 'text' }
+  ])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([
+  expect(reviews()).toMatchObject([
     { elementId: 'text' },
     { elementId: 'text' },
     { elementId: 'root' }
@@ -2513,13 +2526,16 @@ it('does not reuse layout results across edits without canonical revision eviden
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([{ elementId: 'text' }, { elementId: 'text' }])
+  expect(reviews()).toMatchObject([
+    { elementId: 'text' },
+    { elementId: 'text' }
+  ])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
     { arguments: { elementId: 'root' } },
     signal
   )
-  expect(reviews()).toEqual([
+  expect(reviews()).toMatchObject([
     { elementId: 'text' },
     { elementId: 'text' },
     { elementId: 'root' }

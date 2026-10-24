@@ -1672,9 +1672,14 @@ export const createLocalOperationTools = (
   const reconcileMeasurements = async (
     elementId: string,
     evidence: InspectionEvidenceStamp,
+    coveredMeasurementTargets: unknown,
     signal?: AbortSignal
   ) => {
-    const targets = [...measuredTargets.keys()].filter((id) => id !== elementId)
+    if (!Array.isArray(coveredMeasurementTargets)) return
+    const covered = new Set(coveredMeasurementTargets)
+    const targets = [...measuredTargets.keys()].filter(
+      (id) => id !== elementId && covered.has(id)
+    )
     for (let offset = 0; offset < targets.length; offset += 64) {
       signal?.throwIfAborted()
       const ids = targets.slice(offset, offset + 64)
@@ -2045,12 +2050,19 @@ export const createLocalOperationTools = (
       for (let offset = 0; offset < elementIds.length;) {
         signal?.throwIfAborted()
         const ids = elementIds.slice(offset, offset + measurementBatchSize)
-        const actions = ids.map((elementId) => ({
-          id: randomUUID(),
-          name: AiActionNames.REVIEW_DESIGN,
-          arguments: { elementId },
-          summary: 'Checking the layout'
-        }))
+        const candidates = [...new Set([...measuredTargets.keys(), ...ids])]
+        const actions = ids.map((elementId) => {
+          const measurementTargets = candidates.filter((id) => id !== elementId)
+          return {
+            id: randomUUID(),
+            name: AiActionNames.REVIEW_DESIGN,
+            arguments: {
+              elementId,
+              ...(measurementTargets.length ? { measurementTargets } : {})
+            },
+            summary: 'Checking the layout'
+          }
+        })
         let receipt: AiBatchReceipt
         try {
           receipt = await executeBatch({ batchId: randomUUID(), actions })
@@ -2092,12 +2104,13 @@ export const createLocalOperationTools = (
           }
           const stamp = updateMeasurementState(ids[index], result, action.id)
           const reviewed = result.actionResults[0]?.result
-          if (
-            stamp &&
-            isRecord(reviewed) &&
-            Number(reviewed.checkedElements) > 1
-          )
-            await reconcileMeasurements(ids[index], stamp, signal)
+          if (stamp && isRecord(reviewed))
+            await reconcileMeasurements(
+              ids[index],
+              stamp,
+              reviewed.coveredMeasurementTargets,
+              signal
+            )
           if (measuredTargets.get(ids[index]))
             actionResults.push(...result.actionResults)
           else if (receipt.failure)
@@ -3959,10 +3972,29 @@ export const createLocalOperationTools = (
         prepared = resolvePreparedBatch({
           batchId: randomUUID(),
           explanation: message,
-          actions: batchActions.map((action) => ({
-            ...action,
-            summary: message
-          }))
+          actions: batchActions.map((action) => {
+            const args = action.arguments
+            const measurementTargets =
+              action.name === AiActionNames.REVIEW_DESIGN &&
+              isRecord(args) &&
+              args.measurementTargets === undefined
+                ? [...measuredTargets.keys()].filter(
+                    (id) => id !== args.elementId
+                  )
+                : []
+            return {
+              ...action,
+              ...(measurementTargets.length && isRecord(args)
+                ? {
+                    arguments: {
+                      ...args,
+                      measurementTargets
+                    }
+                  }
+                : {}),
+              summary: message
+            }
+          })
         }) as unknown as AiActionBatch
       } catch (error) {
         signal.throwIfAborted()
@@ -4086,10 +4118,11 @@ export const createLocalOperationTools = (
         const reviewed = receipt.actionResults.find(
           (item) => item.actionId === prepared.actions[0].id
         )?.result
-        if (stamp && isRecord(reviewed) && Number(reviewed.checkedElements) > 1)
+        if (stamp && isRecord(reviewed))
           await reconcileMeasurements(
             operationArguments.elementId,
             stamp,
+            reviewed.coveredMeasurementTargets,
             signal
           )
       }
