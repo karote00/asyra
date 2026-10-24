@@ -1,5 +1,22 @@
 # @asyra/core
 
+## Pending metadata child counts
+
+```update-note
+{
+  "change": "metadata-child-count",
+  "owner": "Core metadata facade",
+  "summary": "Read child counts from the canonical Group membership owner without materializing full child snapshots during scalar metadata reads.",
+  "sources": [
+    "packages/core/src/core.ts",
+    "packages/core/src/__tests__/app-runtime-facade.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing public metadata values and membership ownership remain unchanged. No persisted format or consumer migration is required."
+}
+```
+
 ## 0.5.7
 
 ### Patch Changes

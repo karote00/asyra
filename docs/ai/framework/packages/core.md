@@ -463,6 +463,10 @@ hierarchy remains unavailable. This does not add arbitrary container transforms.
 
 - `getElementMetadata(id)` returns detached scalar identity/type/name/parent,
   visibility/lock and `childCount`; it does not serialize properties or children.
+  Count reads consume current canonical container membership without materializing
+  a full child snapshot, including after membership changes and for registered
+  derived containers. Missing IDs remain unavailable and noncontainers report zero.
+  Full child observations retain their ordering and detached snapshot semantics.
 - `getElementChildren(id, offset = 0, limit = 50)` returns a detached current
   child page, total, nextOffset and availability. Container capability includes
   derived types. Restart pagination after membership changes.

@@ -96,6 +96,121 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Metadata child-count handoff - 2026-10-25
+
+Status: locally verified and closed for this bounded handoff; model behavior and
+first-frame effects remain unmeasured.
+
+Evidence: run 1792853203510, provider sequence 486 / 39-output.json records
+599,061 scene-tree:membership:snapshot-items for 6,164 created elements; sequence
+551 / 55-output.json records 6,723 for 641 elements. Payload byte counts and
+SHA-256 match the original provider receipts. Core.getElementMetadata reads the
+full lazy children snapshot only to return its length. The matching Core method,
+Group owner and App inspection dependency sources are unchanged from that run.
+The observer needs parent identity; Group already owns a constant-work child count.
+Historical counters alone cannot assign every copy or millisecond to metadata.
+
+Step Execution Card - inspect / canonical metadata contributor:
+- Objective: remove child snapshot materialization from scalar metadata reads,
+  and prove less copying in the real retained-inspection plus batched-creation
+  flow. Keep public metadata results, complete child lists and current validity.
+- Inputs: current element identity and registered container capability; canonical
+  membership remains owned by Scene Tree Group. Output: the same detached scalar
+  metadata and exact current childCount; unknown IDs remain undefined and leaves
+  report zero. No transaction, provider turn or persisted identity changes.
+- Conditions: use the existing public Group owner count under the current container
+  capability, including registered derived containers. Never read children just
+  for count, add a count cache, mirror membership, infer zero on missing contracts,
+  or change full-list snapshots. Preserve strict invalidation and partial writes.
+- Allowed: Core metadata facade and its existing Scene Tree contributor; existing
+  inspection dependency and creation owners are unchanged consumers. Forbidden:
+  alternate registries, type-name lists, state, delayed notifications, batch-size
+  changes, replay, reduced full-list fidelity, model calls and CI inspection.
+- Boundary: packages/core/src/core.ts, its app-runtime-facade tests; the existing
+  Group public class/type (no new API planned); App metadata-inspection integration
+  test, existing interrupted/prepared delivery and inspection tests, existing
+  execution proof, package test script, existing browser construction cases.
+  Contracts: current plan, Core package bounded observations, App execution spec,
+  inspect step/mapping and generated bundle; release notes and Core changeset.
+- Spec references: Core Bounded document observations; App Metadata child-count
+  handoff. Inspector inspect owns the read handoff and failure; no apply policy
+  or cache dimension changes. Discovery is limited to these direct consumers.
+- Naming: reuse getCanonicalChildCount and registered container capability; no
+  new public/persisted identifier or compatibility path. One owner membership
+  read per metadata call, independent of number of children.
+- Gates: admission; naming baseline; formal failing real-Group and real-App work
+  tests; focused Core/Scene Tree and App consumers; cancellation/remaining-only
+  recovery; browser collaboration, history and reload; production types/build,
+  focused lint, docs/changeset checks and final Inspector proof. Existing saved
+  inputs are permanent fixtures; no ignored data is required by tests.
+- Stop: fixed DoD met, no reduction in real-flow work, a different owner required,
+  or three failed correction iterations. Do not expand to child-page optimization.
+
+Fixed DoD:
+1. Real canonical Group metadata reads after membership mutation reproduce the
+   current copying bug before production changes; avoid mocks hiding lazy reads.
+2. Metadata alone materializes zero child snapshots. The same real App creation
+   sequence with a live unrelated inspection has fewer copied IDs, without
+   removing the observer or changing batch sizes/calls; report exact counts and
+   timings without assigning unobserved historical latency.
+3. All metadata values/counts remain exact for empty/noncontainer/missing and
+   registered derived containers after insert/remove/replace, rollback, history,
+   collaboration and load. Full lists/pages remain ordered and detached; already
+   published child snapshots remain unchanged after later mutations.
+4. Live unrelated local inspection stays current; changes within its dependencies,
+   ancestor/subtree changes and load still invalidate it. No stale pass or skipped
+   required validation can satisfy a lower count.
+5. Real dispatcher/owner preserves partial results and cancellation, remaining-only
+   recovery without replay, Undo/Redo, collaboration and save/reload. Existing
+   direct-consumer suites and Inspector mapping must exercise the changed facade.
+
+Validation and self-review:
+- Admission: candidate 65938e63-3326-48a2-acc9-d6340abf340f; review
+  e1d04292b6c191e9fa2c2d76dca34710d93fe194b43aa89b61810dd39616825b
+  accepted the inspect contract and mapping before production implementation.
+- Red tests: a real registered Group-derived container copied three child IDs
+  on a scalar read; the mapped Inspector case copied two. The real App cases
+  completed their semantic assertions and failed only on copied-ID counts.
+  Fixtures come from the permanent recorded-101 vector-delivery fixture, not tmp.
+- App creation measurements (same dispatcher count, objects and slices):
+
+  | Saved input sequence | Elements | Execution slices | Copied IDs before | Copied IDs after |
+  | --- | ---: | ---: | ---: | ---: |
+  | 483 | 6,164 | 194 | 599,061 | 0 |
+  | 546 | 641 | 21 | 6,722 | 0 |
+
+  These counts cover the apply interval with live retained inspection. Full-list
+  reads outside that interval still produce complete snapshots. The second local
+  case starts with two workspace children; the historical run had three, explaining
+  its original 6,723 count. No historical file was changed.
+  Single-run owner times were 1,443.15 / 132.52 ms before and 1,581.27 / 162.66 ms
+  after under concurrent local validation. These are diagnostics, not evidence of
+  latency improvement or an isolated timing regression.
+- Implementation reuses the already-public Group.getCanonicalChildCount under
+  the existing container capability. Scene Tree membership, batching, observers,
+  complete children reads, recovery and serialization owners are unchanged.
+  No cache, registration list, new API, extra exchange or fallback was added.
+- Final focused gates: Core facade 12, Scene Tree 63, App inspection/action/
+  interruption 89, prepared-delivery integration 29, metadata integration 2,
+  and Inspector 77 cases passed. Naming 15 checks passed. Core production build,
+  all three App type configurations, update-note validation and diff checks passed.
+  Focused ESLint had zero errors and three diagnostic console warnings (two
+  pre-existing; one work-count report in the new formal integration test).
+- The existing browser partition-recovery case passed in 42.9 seconds with strict
+  canonical comparisons across two peers, failure recovery, history and durable
+  reload. Source stayed frozen during validation; owned test server ports were
+  released. No model, 101, CI inspection or recording was run.
+- Final Inspector run e35ef210-1a7b-4313-8c52-cc98f46ef916 passed 77/77 with no
+  pending cases, mapping revision 112. Captured source
+  62d1b3c0635fc771634fd46118334e9a16c905a40a3d53630e4d5657bf9346c4:
+  all 886 captured inputs matched the reviewed checkout after validation.
+- Review covered the owner diff, registered derived containers, live parent-chain
+  consumer, complete ordered observations, detached old snapshots, unrelated
+  inspection preservation, affected-scope/load invalidation, partial cancellation
+  and remaining-only recovery. The formal App test is in the existing response
+  harness; the existing mapped Inspector case now calls the actual metadata owner.
+  General AI adoption and end-to-end first-frame timing are outside this closure.
+
 ### Vector delivery identity reduction - 2026-10-25
 
 Status: locally complete. Admission accepted at revision 111 (candidate

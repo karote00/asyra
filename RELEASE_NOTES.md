@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending metadata child counts
+
+```update-note
+{
+  "change": "metadata-child-count",
+  "owner": "Repository Flow Inspector",
+  "summary": "Require canonical child counts for scalar metadata and prove less copying through the live inspection and creation path.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing public metadata values and membership ownership remain unchanged. No persisted format or consumer migration is required."
+}
+```
+
 ## Pending vector delivery identities
 
 ```update-note

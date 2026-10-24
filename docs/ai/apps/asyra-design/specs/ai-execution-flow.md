@@ -673,6 +673,22 @@ retain complete derivation. Tests must count hierarchy work separately from
 necessary immutable copying and compare every intermediate snapshot. The
 [Preset contract](../../../framework/packages/preset.md) owns projection reuse.
 
+### Metadata child-count handoff
+
+Inspection ancestry reads consume scalar Core metadata. Core obtains childCount
+from the existing canonical Scene Tree membership owner, without materializing
+children merely to count them. Preserve registered container capabilities,
+missing targets, complete child queries and immutable published snapshots.
+No extra model/dispatcher call, observer suppression, cache or membership mirror
+is permitted. Existing inspection dependencies remain authoritative for local,
+ancestor and subtree invalidation, document reload and disposal.
+
+Formal tests must count actual child-snapshot copies with real canonical owners
+and the live App inspection observer during ordinary batched creation. Verify
+lower work with identical metadata, complete ordered output, mutation/history/load
+updates, local-result preservation, cancellation and remaining-only recovery.
+Timing is diagnostic; fewer copies alone do not establish first-frame latency.
+
 ### Prepared design delivery
 
 The existing resolver delivers owned prepared designs with property names instead

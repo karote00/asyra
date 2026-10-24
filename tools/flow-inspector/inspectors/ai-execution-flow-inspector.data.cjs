@@ -837,6 +837,7 @@
         ],
         outputs: ['artifact:inspection-evidence', 'artifact:prepared-review'],
         conditions: [
+          'Scalar Core metadata consumes exact current canonical child counts without materializing full child snapshots, including after membership changes and for registered derived containers. The existing Group membership owner remains authoritative. Preserve complete immutable child observations and inspection invalidation; no count cache, type-name list, observer suppression, extra call or replay. Prove reduced copied identities through the live App inspection and batched creation path.',
           'Current workspace overview resolves the actual scene container through Core and the existing Render snapshot owner; preserve transforms, painter order and visibility without document grouping, camera capture or new tools. Workspace detail/region and missing/empty/noncurrent targets return owner reasons, not blank proof.',
           'Inspection owners explicitly settle completed reads even when imagery is unavailable. All failed captures are failed/completed; mixed results retain partial coverage and completed read settlement. Preserve cancellation/transport uncertainty and never normalize unknown writes. Existing image/check stores retain successes for retry, workspace subtree changes stale broad proof while unrelated local passes survive; load/switch retire old proof.',
           'Projected oval bounds use the same public geometry as preparation and Group normalization. Do not bypass unsupported transformed containers or certify unchecked geometry.',
@@ -984,6 +985,10 @@
           'apps/asyra-design/src/common-apis/design-edit.ts',
           'apps/asyra-design/src/ai/__tests__/review-action.test.ts',
           'packages/core/src/core.ts',
+          'packages/scene-tree/src/components/group.ts',
+          'packages/core/src/__tests__/app-runtime-facade.test.ts',
+          'apps/asyra-design/server/__tests__/metadata-inspection.integration.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/vector-delivery-20261025.json',
           'packages/core/src/index.ts',
           'packages/core/src/__tests__/element-property-api.test.ts',
           'apps/asyra-design/src/common-apis/inspection-dependencies.ts',
@@ -1006,6 +1011,7 @@
           'apps/asyra-design/server/__tests__/local-operation-tools.test.ts'
         ],
         specRefs: [
+          '#metadata-child-count-handoff',
           '#tool-first-correction-contract',
           '#evidence-and-completion',
           '#capture-and-deterministic-review-responsibility',

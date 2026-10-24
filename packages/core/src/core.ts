@@ -14,7 +14,11 @@ import inputSystem, {
   InputSystem,
   type InputEventCombo
 } from '@asyra/input-system'
-import sceneTree, { componentRegistry, SceneTree } from '@asyra/scene-tree'
+import sceneTree, {
+  componentRegistry,
+  SceneTree,
+  type Group
+} from '@asyra/scene-tree'
 import props, {
   commitDeclarativePropertyTypeDefinition,
   getDeclarativePropertyTypeDefinition,
@@ -589,9 +593,9 @@ class Core implements CoreAPIs {
     const element = this.deps.sceneTree.getElementById(elementId)
     if (!element) return undefined
     const type = element.get('type')
-    const children = this.isContainerType(type)
-      ? (element as import('@asyra/utils').GroupInstanceTypes).get('children')
-      : []
+    const childCount = this.isContainerType(type)
+      ? (element as Group).getCanonicalChildCount()
+      : 0
     return {
       id: element.get('id'),
       type,
@@ -599,7 +603,7 @@ class Core implements CoreAPIs {
       parentId: element.get('parentId'),
       visible: element.get('visible'),
       lock: element.get('lock'),
-      childCount: children.length
+      childCount
     }
   }
 

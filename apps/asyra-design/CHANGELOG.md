@@ -1,5 +1,24 @@
 # @asyra/asyra-design
 
+## Pending metadata child counts
+
+```update-note
+{
+  "change": "metadata-child-count",
+  "owner": "Asyra Design inspection integration",
+  "summary": "Exercise saved construction inputs with live inspection dependencies and prove reduced copying while preserving scope invalidation, ordered membership, history and reload.",
+  "sources": [
+    "apps/asyra-design/server/__tests__/metadata-inspection.integration.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/package.json",
+    "apps/asyra-design/flow-contracts.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing public metadata values and membership ownership remain unchanged. No persisted format or consumer migration is required."
+}
+```
+
 ## Pending vector delivery identities
 
 ```update-note

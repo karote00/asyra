@@ -178,7 +178,9 @@
           "testName": "execution proof reconciles scoped criterion results after external edits without recapturing other tiers",
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-design-review.ts"
+            "apps/asyra-design/server/local-design-review.ts",
+            "packages/core/src/core.ts",
+            "packages/scene-tree/src/components/group.ts"
           ]
         },
         {

@@ -2695,6 +2695,53 @@ it('execution proof retains offline diagnostics until a matching durable termina
 })
 
 it('execution proof reconciles scoped criterion results after external edits without recapturing other tiers', async () => {
+  const { Core, default: sharedCore } = await import('@asyra/core')
+  const { Factory } = await import('@asyra/factory')
+  const { createDynamicComponent, componentRegistry, SceneTree } =
+    await import('@asyra/scene-tree')
+  const { subscribeToDiagnosticCounters } = await import('@asyra/utils')
+  const type = 'proof-metadata-container'
+  const Component = createDynamicComponent(
+    type,
+    type,
+    'Container',
+    [],
+    {},
+    true
+  )
+  componentRegistry.register({
+    type,
+    idPrefix: type,
+    namePrefix: 'Container',
+    constructor: Component,
+    properties: [],
+    defaults: {},
+    isContainer: true
+  })
+  const group = new Component({
+    id: 'proof-parent',
+    name: 'Parent'
+  }) as import('@asyra/scene-tree').Group
+  const sceneTree = new SceneTree()
+  sceneTree.getElementById = () => group
+  const metadataCore = new Core({
+    ...sharedCore.deps,
+    factory: new Factory(),
+    sceneTree
+  })
+  let copiedIds = 0
+  const stop = subscribeToDiagnosticCounters((name, count) => {
+    if (name === 'scene-tree:membership:snapshot-items') copiedIds += count
+  })
+  try {
+    group.insertChildrenFromCanonicalBatch(0, ['first', 'second'])
+    expect(metadataCore.getElementMetadata('proof-parent')?.childCount).toBe(2)
+    expect(copiedIds).toBe(0)
+  } finally {
+    stop()
+    componentRegistry.unregister(type)
+  }
+
   let sequence = 0
   const invalid = new Set<string>()
   const execute = vi.fn(async (batch: AiActionBatch) => ({
