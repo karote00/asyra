@@ -16,3 +16,10 @@ The CUSTOM engine advertises only its implemented object, graphics, interaction,
 resource and spatial capabilities. The optional framework snapshot query is not
 supported and fails with UnsupportedRenderEngineCapabilityError before projection
 or drawing. Adding a framework capability does not opt this engine into it.
+
+Camera navigation and flight consume Preset's pure spatial camera controls.
+The App retains its mode presets, 1.5 reference aspect / 150-degree FOV cap,
+24px framing padding, gesture sensitivities, optical zoom limits and movement
+speed. Runtime Features publish camera-only output; controls never read canonical
+site data or rebuild its geometry. Bounds selection and reference-camera zoom
+percent remain App policy.

@@ -189,7 +189,8 @@ and limits. No mode is inferred from the scene or selected entity type.
 An empty fit set preserves the camera. Fit includes selected visible bounds
 chosen by the App; near/far must include that set. CSS viewport dimensions and
 DPR have distinct roles. Camera transitions keep at most one current target;
-retarget/cancel retires the old target without a queue. Reduced-motion input
+retarget/cancel retires the old target without a queue. The caller supplies
+explicit time-derived interpolation progress; the control owns no clock. Reduced-motion input
 settles to the accepted target without animation. Follow consumes current target
 poses; it does not read tasks or decide destinations. No per-frame React document
 publication, geometry rebuilding or extra permanent draw loop is introduced.
@@ -359,3 +360,26 @@ submits derived records to the same layer; layout, activity and camera work
 remain independent of canonical reads during presentation. No new model or
 domain cache is introduced. Task 3 projection criteria cover the current
 position/yaw contracts; later transform/instance extensions remain unaccepted.
+
+## Task 4 delivery boundary
+
+Camera controls use pure numeric perspective contracts and the existing admission
+owner. Invalid camera/control/projection inputs throw before publication; no
+fallback camera is produced. Apps retain their established event-input no-op
+policies before invoking these controls. Logical CSS dimensions determine pan
+and framing; DPR does not change that math. Projection helpers accept the App's
+reference aspect and FOV cap explicitly. Unsupported world projection kinds
+reject; no orthographic capability is added.
+
+Framing accepts either App-selected world bounds or supplied world points.
+Bounds fitting preserves exact corner constraints; point framing uses the
+view-space enclosing prism. Apps choose selection, padding, minimum distance
+and clipping margins. Empty inputs preserve the camera. Both mechanisms preserve
+orientation and enclose the supplied set between near/far planes.
+
+Presentation keeps one admitted target. Retarget replaces it, cancellation
+retires it, and disposal rejects further work. Each advance consumes the current
+camera and App-supplied progress/tolerance/reduced-motion policy. Follow submits
+current target pose through the same mechanism, without document/task reads.
+Invalid retarget/advance leaves the accepted target intact. No timer, frame loop,
+canonical publication or mesh submission is installed by the control.

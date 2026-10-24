@@ -1,3 +1,4 @@
+import { projectSpatialCamera } from '@asyra/preset/spatial'
 import type { SourceRegion } from '../domain/source-occupancy'
 import type { CropSourceAnatomy } from '../domain/crop-models'
 import {
@@ -445,15 +446,9 @@ export function fitCamera(
   camera: SpatialCamera,
   aspect: number
 ): SpatialCamera {
-  if (!Number.isFinite(aspect) || aspect <= 0)
-    throw new Error('Invalid viewport aspect')
-  const factor = Math.max(1, 1.5 / aspect)
-  return {
-    ...camera,
-    fov: Math.min(
-      150,
-      (2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * factor) * 180) /
-        Math.PI
-    )
-  }
+  return projectSpatialCamera(camera, aspect, {
+    projection: 'perspective',
+    minimumAspect: 1.5,
+    maxFov: 150
+  })
 }

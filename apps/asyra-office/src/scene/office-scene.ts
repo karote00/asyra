@@ -1,6 +1,7 @@
 import { type RenderLayerRegistration } from '@asyra/render'
 import {
   SpatialLayer,
+  SpatialCameraPresentation,
   type SpatialFrame,
   type SpatialCamera
 } from '@asyra/preset/spatial'
@@ -45,6 +46,7 @@ export class OfficeScene {
   private readonly root: Visual[] = []
   private readonly room: Visual[] = []
   private readonly projection: SpatialLayer
+  private readonly cameraPresentation = new SpatialCameraPresentation()
   private roomScope = 'room'
   private roomPart = 0
   private readonly parts: Part[] = []
@@ -242,10 +244,16 @@ export class OfficeScene {
       this.cameraGoal = [point[0] + 7, 7, point[2] + 9]
       this.targetGoal = point
     }
+    this.cameraPresentation.retarget({
+      ...this.cameraDescriptor(),
+      position: this.cameraGoal,
+      target: this.targetGoal
+    })
     this.wake()
   }
   follow() {
     this.following = true
+    this.cameraPresentation.cancel()
     this.wake()
   }
   setReducedMotion(value: boolean) {
@@ -300,28 +308,28 @@ export class OfficeScene {
       const p = this.motion.getPosition()
       this.cameraGoal = [p[0] + 0.5, 3, p[2] + 5]
       this.targetGoal = [p[0], 0.8, p[2]]
+      this.cameraPresentation.retarget({
+        ...this.cameraDescriptor(),
+        position: this.cameraGoal,
+        target: this.targetGoal
+      })
     }
-    const mix = (a: Point3, b: Point3): Point3 =>
-      a.map(
-        (value, i) => value + (b[i] - value) * (this.reduced ? 1 : 0.12)
-      ) as unknown as Point3
-    this.cameraPosition = mix(this.cameraPosition, this.cameraGoal)
-    this.cameraTarget = mix(this.cameraTarget, this.targetGoal)
+    const camera = this.cameraPresentation.advance(
+      this.cameraDescriptor(),
+      0.12,
+      { tolerance: 0.005, reducedMotion: this.reduced }
+    )
+    this.cameraPosition = camera.position
+    this.cameraTarget = camera.target
     this.updateCamera()
     this.invalidate()
-    const cameraMoving =
-      this.cameraPosition.some(
-        (value, i) => Math.abs(value - this.cameraGoal[i]) > 0.005
-      ) ||
-      this.cameraTarget.some(
-        (value, i) => Math.abs(value - this.targetGoal[i]) > 0.005
-      )
-    if (this.motion.moving || cameraMoving)
+    if (this.motion.moving || this.cameraPresentation.active)
       this.frame = requestAnimationFrame((time) => this.tick(time))
   }
   dispose() {
     this.closed = true
     if (this.frame !== null) cancelAnimationFrame(this.frame)
+    this.cameraPresentation.dispose()
     this.projection.dispose()
   }
 }

@@ -4,11 +4,11 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1-3 complete within their bounded contracts; stopped for user
-inspection before Task 4. Task 1 produced the reviewed specification and full
+Status: Tasks 1-4 complete within their bounded contracts; stopped for user
+inspection before Task 5. Task 1 produced the reviewed specification and full
 architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
 shared incremental projection/bounds with direct App preservation checks.
-Tasks 4-10 remain unexecuted;
+Task 4 adds App-directed shared Camera controls. Tasks 5-10 remain unexecuted;
 official 3D activation and whole-flow runtime acceptance remain pending.
 
 Planning base: local `main` at
@@ -511,6 +511,55 @@ resize, clipping and coordinate boundaries; rapid retargeting cancels obsolete
 presentation; camera changes do not create canonical writes, history or mesh
 rebuilds. Unsupported projection modes fail explicitly. No world orthographic
 support is claimed from the existing screen bridge.
+
+Task 4 execution contract: continue from Task 3 commit `e8e769735` in the same
+worktree and branch. The `camera` owner supplies pure numeric controls and one
+cancellable presentation target through the optional spatial entry. Direct App
+callers retain mode/angle/limit/binding choices and scheduling. Preserve Sim's
+indexed-point framing and FieldScope's world-bounds framing and narrow-viewport
+FOV policy as explicit inputs to general mechanisms. Office retains its 0.12
+per-frame interpolation and 0.005 settlement tolerance. No canonical writes,
+new cache, SDK, independent draw loop, query extension or profile activation.
+Required gates: shared C06 controls/transition tests, affected three-App camera,
+projection and runtime tests under existing supervisors, Preset suite,
+package/App builds, naming, scoped lint/format, dependencies, generated docs
+and source-bound Flow Inspector evidence. Stop for user inspection before Task 5.
+
+### Task 4 result and inspection checkpoint
+
+Completed pure perspective pan, local translation, orbit/look, dolly, optical
+zoom, aspect projection and bounds/point framing through `@asyra/preset/spatial`.
+`SpatialCameraPresentation` owns one admitted target with retarget/cancel/dispose
+and explicit progress/tolerance/reduced-motion inputs. It owns no clock, draw
+loop, canonical write, history or mesh submission. All work remains in the same
+worktree on `codex/preset-3d-foundation-plan`.
+
+Sim retains wheel normalization, orbit limits, indexed visible/selectable point
+selection and 32px framing. FieldScope retains its presets, narrow-aspect/FOV
+policy, 24px framing, speed and near-plane dolly restriction. Office retains its
+existing angles, 0.12 interpolation, 0.005 tolerance, reduced motion and current
+pose follow. Rapid focus/follow replacement never queues an obsolete target.
+
+Formal regression-first cases proved missing controls, unsafe camera accessor
+rereads and an incorrectly shared App dolly limit before their owner corrections.
+Shared tests additionally cover local axes, clipping, aspect, empty fit, invalid
+input, unsupported projection, singular interpolation, target snapshots and
+independent lifetimes. Office proves focus/follow changes produce zero mesh
+updates while motion remains independent.
+
+Verification: Preset full suite 34 files / 269 tests passed before the final
+App-limit case; final shared camera suite 9 tests passed. Render full suite
+271 tests passed. Sim 4 selected files / 38 tests and FieldScope 4 selected files /
+21 tests passed through their supervisors; their 13 and 8 guard tests passed.
+Office full suite 4 files / 16 tests passed. Preset build and all three App
+TypeScript/production builds passed. Naming (15), dependency validation (29
+workspaces / 6 tests), placement (3), scoped lint/format and public-doc
+regeneration/check/validation passed. Source-bound Inspector evidence records
+C06 and refreshed tested predecessor slices. Whole-flow integration, real-WebGL
+visual approval, new spatial queries and profile activation remain pending.
+
+Bounded self-review found no remaining Task 4 owner mismatch. Stop for user
+inspection; do not start Task 5. No push or dependency change was performed.
 
 ## Task 5 - Complete neutral spatial queries and interaction
 

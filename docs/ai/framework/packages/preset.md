@@ -333,6 +333,29 @@ unavailable. Apps retain scene composition, stricter validation, lighting,
 camera choices and interaction policy. Generic lifecycle conformance belongs to
 Preset; App tests retain their rendering and product preservation obligations.
 
+### App-directed spatial camera controls
+
+The optional spatial entry supplies pure perspective mechanisms:
+`moveSpatialCamera`, `panSpatialCamera`, `orbitSpatialCamera`,
+`lookSpatialCamera`, `dollySpatialCamera`, `zoomSpatialCamera`,
+`projectSpatialCamera`, `fitSpatialCameraBounds` and `frameSpatialCameraPoints`.
+`readSpatialCamera` reuses shared admission and `spatialCameraDistance` measures
+an accepted view. Inputs and results use neutral spatial types; there is no SDK
+or browser dependency in the control implementation. Invalid operations throw
+before publication. Only perspective projection is supported.
+
+Apps supply numeric deltas, polar limits, FOV/aspect policy, logical CSS viewport,
+selected bounds/points, padding and clipping margins. Point framing uses an
+oriented view-space prism; bounds framing uses corner constraints. Empty valid
+fit input preserves the Camera. These helpers choose neither App mode nor angle.
+
+`SpatialCameraPresentation` holds one admitted target. `retarget` replaces it;
+`advance` consumes the current Camera plus explicit progress and App tolerance /
+reduced-motion policy. `cancel` retires the target; `dispose` clears it and
+rejects future work. Invalid retarget/advance preserves the accepted target.
+Follow supplies the current target pose through this same contract. The owner
+has no clock, timer, document reads/writes, history or mesh publication.
+
 ## Shared agent activity contract
 
 `@asyra/preset/agent-activity` exposes version-1 semantic activity admission and

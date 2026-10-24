@@ -327,6 +327,13 @@ subscribers. Playback updates the viewport surface and time caption without
 recreating the viewport options or workbench layout. Removed entities release
 their subscriptions on unmount; replacement creates fresh editor lifetimes.
 
+Viewport navigation uses the optional Preset spatial camera controls for pan,
+orbit, target-centered dolly and point framing. Sim retains gesture bindings,
+wheel normalization, sensitivity and polar limits, 32px fit padding, selectable
+mesh filtering and indexed source-point traversal. Those points stream into the
+shared framing mechanism without allocating another geometry buffer. Camera
+updates stay presentation-only and do not create history or mesh submissions.
+
 The exact navigation and admission contracts remain in
 [editing-v0.md](specs/editing-v0.md) and
 [custom-engine-v0.md](specs/custom-engine-v0.md). Formal work-count, equivalence,

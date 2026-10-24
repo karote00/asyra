@@ -214,3 +214,10 @@ it('reuses immutable model extrema across placement edits while invalidating cha
   expect(measureScene([resized], cache).max[0]).toBe(14)
   cache.dispose()
 })
+
+it('retains the site policy that dolly distance exceeds the near plane', () => {
+  const camera = cameraPreset('overview')
+  expect(() => setCameraDistance(camera, camera.near)).toThrow(
+    'Invalid camera distance'
+  )
+})

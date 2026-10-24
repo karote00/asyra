@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "preset-3d-foundation",
-  "revision": 30,
+  "revision": 49,
   "definition": {
     "title": "Preset 3D foundation and App migration",
     "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
@@ -393,7 +393,14 @@
           "apps/asyra-sim/src/ui/viewport/use-viewport-navigation.ts",
           "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
           "apps/asyra-fieldscope/src/render-app/camera-flight.ts",
-          "apps/asyra-office/src/scene/office-scene.ts"
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "packages/preset/src/spatial.ts",
+          "apps/asyra-fieldscope/src/render-app/site-projection.ts",
+          "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+          "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+          "apps/asyra-sim/src/ui/viewport/__tests__/viewport-camera.test.ts",
+          "apps/asyra-fieldscope/src/render-app/__tests__/camera-flight.test.ts",
+          "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts"
         ],
         "actions": [
           {
@@ -1456,7 +1463,7 @@
           "failureOwnerStepId": "camera",
           "order": 8,
           "inputs": [
-            "App mode/angle/target/limits, explicit time, logical viewport and current target pose",
+            "App mode/angle/target/limits, explicit time or normalized interpolation progress, logical viewport and current target pose",
             "artifact:reviewed-design",
             "artifact:accepted-intent",
             "artifact:retirement",
@@ -1484,7 +1491,14 @@
             "apps/asyra-sim/src/ui/viewport/use-viewport-navigation.ts",
             "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
             "apps/asyra-fieldscope/src/render-app/camera-flight.ts",
-            "apps/asyra-office/src/scene/office-scene.ts"
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "packages/preset/src/spatial.ts",
+            "apps/asyra-fieldscope/src/render-app/site-projection.ts",
+            "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+            "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+            "apps/asyra-sim/src/ui/viewport/__tests__/viewport-camera.test.ts",
+            "apps/asyra-fieldscope/src/render-app/__tests__/camera-flight.test.ts",
+            "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#camera-control"
@@ -2736,12 +2750,13 @@
         "kind": "manual",
         "status": "accepted",
         "actor": "codex-coordinator-self-review",
-        "binding": "2703fbdff5f241b2dbdb3bba28025c41179d24413bc2821d2f64a83465ab748f",
-        "at": "2026-10-23T19:21:19.306Z",
-        "summary": "Bounded self-review: Task 3 projection/bounds and direct App preservation satisfy the reviewed owner boundaries.",
+        "binding": "85bcdc0ccf553731911347fda5d2e80e455afd0666d6069331c78fbdd940abed",
+        "at": "2026-10-24T04:34:51.744Z",
+        "summary": "Task 4 bounded self-review: App-directed controls and one cancellable presentation target satisfy C06.",
         "details": [
-          "Rechecked project/render inputs, outputs, conditions, bypasses, contributors, implementation boundaries and C04-C05 current-format obligations.",
-          "App Camera policies, domain builders, instance-format extensions and whole-flow runtime acceptance remain outside Task 3."
+          "Reviewed the camera owner inputs/outputs, conditions, bypasses, contributors, no-cache boundary and direct App consumers.",
+          "App angles, modes, sensitivities, clipping-distance policies and scheduling retained; no canonical writes, new SDK or frame loop.",
+          "Same worktree and branch; Task 5 queries and world orthographic support remain outside delivery."
         ]
       },
       {
@@ -2750,14 +2765,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task3-local-2026-10-24",
+        "executionId": "task4-local-2026-10-24",
         "caseId": "admit-bounded-preservation",
-        "binding": "7a9cc55511e2f0e5a52d49a96f36ef3c97e3b022ace055650d545ed837e7f055",
-        "at": "2026-10-23T19:21:19.314Z",
-        "summary": "Task 2 admission foundation reverified on Task 3 source.",
+        "binding": "d0695aa6ac0a72f95ae2632002b604b7ab3494b2b5776a766f62e14ca1bd648a",
+        "at": "2026-10-24T04:34:51.751Z",
+        "summary": "Pure admission foundation remains verified on Task 4 source.",
         "details": [
-          "Preset admission 8, Sim admission 4 and FieldScope admission 6 tests passed.",
-          "Preset full suite 261 tests passed; pure entry separation and strict Sim whitelist preserved."
+          "Preset full suite: 269 passed, including admission 8 and pure-entry separation.",
+          "Camera controls consume admitted snapshots; accessor reread regression fails before and passes after correction."
         ]
       },
       {
@@ -2766,15 +2781,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task3-local-2026-10-24",
+        "executionId": "task4-local-2026-10-24",
         "caseId": "engine-bounded-preservation",
-        "binding": "89290e080f61cfa99131d43b1fc6cdf8e48bba8f7019382729f5ad0ec9b61c46",
-        "at": "2026-10-23T19:21:19.321Z",
-        "summary": "Task 2 resource and deferred initialization foundation reverified on Task 3 source.",
+        "binding": "721e5818bf2c930e4c53c6d2408a23bb8daa0254e7ec68932f09da82314ead5a",
+        "at": "2026-10-24T04:34:51.758Z",
+        "summary": "Resource and initialization foundation remains verified on Task 4 source.",
         "details": [
-          "Preset engine 20, entries 6 and resources 1 tests passed in full suite; Sim engine 15 passed.",
-          "Pose/material topology retention, disposal and deferred initialization verified with injected graphics drivers.",
-          "Three App production builds passed; real-WebGL visual approval remains pending."
+          "Preset engine 20, entry 6 and resource 1 tests passed in the full suite.",
+          "Render 271 and three App production builds passed; concrete graphics-driver tests do not claim real-WebGL visual approval."
         ]
       },
       {
@@ -2783,16 +2797,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task3-local-2026-10-24",
+        "executionId": "task4-local-2026-10-24",
         "caseId": "project-bounded-preservation",
-        "binding": "a138e2fb56b165821ce4d3eaa8fb565273fc526bbbb8ba7c895cbd5196d13f40",
-        "at": "2026-10-23T19:21:19.327Z",
-        "summary": "Shared incremental projection and presentation bounds preserve all three App consumers.",
+        "binding": "e5a079d8e6c1d714cb9f0d1afced9381025049faf90e954d3daa23a17fae7106",
+        "at": "2026-10-24T04:34:51.765Z",
+        "summary": "Incremental projection/bounds remain verified with shared Camera consumers.",
         "details": [
-          "Shared layer 6 and bounds 3 tests passed: atomic invalid/sparse IDs, ordering, unchanged mesh writes, removal, explicit identities, lifetime isolation and current transforms.",
-          "Admitted-shape vertices scanned once; repeated transforms use bounded corner work and match fresh-owner bounds.",
-          "Sim 44, FieldScope 32 and Office 15 preservation tests passed; App supervisors retained.",
-          "Render/Preset builds, three App typechecks/builds, naming, scoped lint, dependency, placement and generated-doc gates passed."
+          "Preset shared layer 6 and bounds 3 passed. Sim projection tests and FieldScope navigation/runtime preservation passed under supervisors.",
+          "Office full 16 tests includes zero Camera-only mesh updates, retained visuals and no canonical reads during presentation."
         ]
       },
       {
@@ -2801,15 +2813,33 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task3-local-2026-10-24",
+        "executionId": "task4-local-2026-10-24",
         "caseId": "render-bounded-preservation",
-        "binding": "de031f6b290d01528a37407521232515ba7361dacaedd77ab98f420188d88d27",
-        "at": "2026-10-23T19:21:19.333Z",
-        "summary": "Explicit visual/entity identity resolves current picking independently of display labels.",
+        "binding": "829d61eba7509270faee7855dbe37d29834d80f1c99f6769d30aacc69ee5e0e1",
+        "at": "2026-10-24T04:34:51.772Z",
+        "summary": "Explicit identity and Render scheduling remain verified on Task 4 source.",
         "details": [
-          "Render full suite 271 tests passed, including regression-first identity handoff and atomic invalid assignment.",
-          "Sim workcell behavior preserved with existing labels; shared layer identity remains authoritative.",
-          "No concrete SDK import, domain policy or extra permanent render loop added."
+          "Render full 23 files / 271 tests passed.",
+          "Sim custom renderer and layer tests passed; no Render production edits in Task 4."
+        ]
+      },
+      {
+        "nodeId": "camera",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task4-local-2026-10-24",
+        "caseId": "camera-bounded-preservation",
+        "binding": "eaa7a15855010ce2cebc21f333b9abfd2d74c8f2415351a0b6d967dc42f38206",
+        "at": "2026-10-24T04:34:51.779Z",
+        "summary": "C06: shared perspective controls, framing and cancellable target presentation preserve all three Apps.",
+        "details": [
+          "Final shared camera suite: 9 tests covering CSS pan, App angle/limits, empty fit, aspect/clipping, unsupported projection, atomic retarget/cancel/dispose, snapshots and singular interpolation.",
+          "Sim: 4 files / 38 tests; FieldScope: 4 files / 21 tests through existing supervisors (13 and 8 supervisor guard tests passed).",
+          "Office: full 4 files / 16 tests; rapid focus replacement, follow replacement, 0.12 interpolation and reduced motion produce no mesh writes.",
+          "Preset full suite 269 passed before final App-limit case; final camera suite 9 passed. Preset build and three App typechecks/production builds passed.",
+          "Naming 15, dependencies 29 workspaces / 6 tests, placement 3, scoped lint/format and generated-doc checks passed. No real-WebGL visual acceptance or whole-flow completion claimed."
         ]
       }
     ],
@@ -2818,44 +2848,53 @@
       {
         "nodeId": "admit",
         "status": "in-progress",
-        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
+        "reason": "Tested foundation/projection slice reverified on Task 4 source; later whole-owner runtime obligations remain pending."
       },
       {
         "nodeId": "engine",
         "status": "in-progress",
-        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
+        "reason": "Tested foundation/projection slice reverified on Task 4 source; later whole-owner runtime obligations remain pending."
       },
       {
         "nodeId": "project",
         "status": "in-progress",
-        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
+        "reason": "Tested foundation/projection slice reverified on Task 4 source; later whole-owner runtime obligations remain pending."
       },
       {
         "nodeId": "render",
         "status": "in-progress",
-        "reason": "Task 3 inspection checkpoint reached; bounded foundation/projection evidence passed. Later whole-owner runtime obligations remain pending."
+        "reason": "Tested foundation/projection slice reverified on Task 4 source; later whole-owner runtime obligations remain pending."
+      },
+      {
+        "nodeId": "camera",
+        "status": "in-progress",
+        "reason": "Task 4 C06 verified; stopped for user inspection before Task 5. Whole-flow upstream acceptance remains pending."
       }
     ],
     "sources": [
       {
         "nodeId": "design",
-        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/design-sha256:3b6c846355c74ec725d894363c8dbaaf1b84e3aca1fb662eadf62044f1aa539b"
+        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/design-sha256:ddfaf0c261d3b36d9a6706c1a777a118b8c51d7e7239c01291636f31b514c0cc"
       },
       {
         "nodeId": "admit",
-        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
+        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
       },
       {
         "nodeId": "engine",
-        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
+        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
       },
       {
         "nodeId": "project",
-        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
+        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
       },
       {
         "nodeId": "render",
-        "revision": "698b080b5c2dc9b46f57d47d8e343aa4d2911f38/task3-sha256:b4a9a66ad0ff43b3a509fc00706423f412a6fc527596e33706ccca70b2273eee"
+        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
+      },
+      {
+        "nodeId": "camera",
+        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
       }
     ],
     "warnings": []

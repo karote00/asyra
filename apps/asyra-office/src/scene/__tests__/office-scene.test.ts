@@ -64,3 +64,41 @@ it('retains static visuals across camera, motion and layout projection updates',
   expect(update).toHaveBeenCalledTimes(calls)
   expect(root.children).toHaveLength(0)
 })
+
+it('uses only the latest focus or follow target with the existing interpolation policy', () => {
+  let tick: FrameRequestCallback | undefined
+  const request = vi.fn((callback: FrameRequestCallback) => {
+    tick = callback
+    return 1
+  })
+  vi.stubGlobal('requestAnimationFrame', request)
+  vi.stubGlobal('cancelAnimationFrame', vi.fn())
+  const scene = new OfficeScene(vi.fn())
+  scene.registration.update?.()
+  const root = scene.registration.layer as RenderContainer
+  const update = vi.spyOn(RenderMesh.prototype, 'update')
+  const step = () => {
+    tick?.(performance.now() + 50)
+    scene.registration.update?.()
+  }
+  scene.focus('park')
+  scene.focus('coffee')
+  expect(request).toHaveBeenCalledTimes(1)
+  step()
+  expect(
+    root.children[0].getEngineProperties()[SPATIAL_PROPERTY]
+  ).toMatchObject({ position: [12.94, 11.4, 14.8], target: [1.54, 0, -0.36] })
+  scene.setReducedMotion(true)
+  scene.follow()
+  step()
+  expect(
+    root.children[0].getEngineProperties()[SPATIAL_PROPERTY]
+  ).toMatchObject({ position: [-1, 3, 5], target: [-1.5, 0.8, 0] })
+  scene.focus('overview')
+  step()
+  expect(
+    root.children[0].getEngineProperties()[SPATIAL_PROPERTY]
+  ).toMatchObject({ position: [13, 12, 16], target: [1, 0, 0] })
+  expect(update).not.toHaveBeenCalled()
+  scene.dispose()
+})

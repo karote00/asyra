@@ -1,3 +1,4 @@
+import { orbitSpatialCamera } from '@asyra/preset/spatial'
 import { useCallback, useEffect, useRef } from 'react'
 import type { SimRuntime } from '../../init/bootstrap'
 import type {
@@ -124,27 +125,12 @@ export function useViewportNavigation({
         return
       }
 
-      const start = drag.camera
-
-      const p = start.position.map((v, i) => v - start.target[i])
-
-      const radius = Math.hypot(...p)
-
-      const yaw = Math.atan2(p[0], p[2]) - dx * 0.006
-
-      const polar = Math.max(
-        0.08,
-        Math.min(Math.PI - 0.08, Math.acos(p[1] / radius) + dy * 0.006)
+      updateCamera(
+        orbitSpatialCamera(drag.camera, -dx * 0.006, dy * 0.006, {
+          minPolar: 0.08,
+          maxPolar: Math.PI - 0.08
+        })
       )
-
-      updateCamera({
-        ...start,
-        position: [
-          start.target[0] + radius * Math.sin(polar) * Math.sin(yaw),
-          start.target[1] + radius * Math.cos(polar),
-          start.target[2] + radius * Math.sin(polar) * Math.cos(yaw)
-        ]
-      })
     }
 
     const up = (event: PointerEvent) => {

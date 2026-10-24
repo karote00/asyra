@@ -1,3 +1,4 @@
+import { orbitSpatialCamera, zoomSpatialCamera } from '@asyra/preset/spatial'
 import { SpatialBoundsOwner } from '@asyra/preset/spatial'
 import { RobotProjection } from '../render-app/robot-projection'
 import { WalkingRobotProjection } from '../render-app/walking-robot-projection'
@@ -400,21 +401,12 @@ export async function bootstrap(
       orbit: (dx: number, dy: number) => {
         assertLive()
         if (!Number.isFinite(dx) || !Number.isFinite(dy)) return
-        const [x, y, z] = camera.position.map((v, i) => v - camera.target[i])
-        const radius = Math.hypot(x, y, z)
-        const theta = Math.atan2(x, z) - dx * 0.006
-        const phi = Math.max(
-          0.02,
-          Math.min(Math.PI - 0.015, Math.acos(y / radius) - dy * 0.006)
+        publishCamera(
+          orbitSpatialCamera(camera, -dx * 0.006, -dy * 0.006, {
+            minPolar: 0.02,
+            maxPolar: Math.PI - 0.015
+          })
         )
-        publishCamera({
-          ...camera,
-          position: [
-            camera.target[0] + radius * Math.sin(phi) * Math.sin(theta),
-            camera.target[1] + radius * Math.cos(phi),
-            camera.target[2] + radius * Math.sin(phi) * Math.cos(theta)
-          ]
-        })
       },
       dolly: (delta: number) => {
         assertLive()
@@ -443,16 +435,7 @@ export async function bootstrap(
           Math.min(10000, current * Math.exp(-delta * 0.001))
         )
         // Optical magnification keeps the camera outside the inspected surfaces.
-        publishCamera({
-          ...camera,
-          fov: Math.min(
-            150,
-            (360 / Math.PI) *
-              Math.atan(
-                (Math.tan((camera.fov * Math.PI) / 360) * current) / next
-              )
-          )
-        })
+        publishCamera(zoomSpatialCamera(camera, next / current, 150))
       },
       pan: (dx: number, dy: number) => {
         assertLive()

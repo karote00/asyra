@@ -9,7 +9,10 @@ Preset owns the optional shared Three.js adapter, spatial descriptors, geometry,
 OfficeScene submits stable derived records through `@asyra/preset/spatial`.
 Preset owns reconciliation and resource-facing updates; Office retains furniture
 construction, actor/companion offsets, motion scheduling, lighting and Camera
-angles. Camera-only frames submit no mesh changes. Furniture IDs retain visual
+angles. The shared SpatialCameraPresentation retains only the current focus or
+follow target; the App supplies its existing 0.12 per-frame interpolation, 0.005
+settlement tolerance and reduced-motion setting. The App clock remains the only
+scheduler. Camera-only frames submit no mesh changes. Furniture IDs retain visual
 identity across layout reorder; disposal closes both animation and projection.
 
 ## Integration and projections
