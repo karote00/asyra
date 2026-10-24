@@ -503,6 +503,7 @@
         ],
         outputs: ['artifact:execution-receipt'],
         conditions: [
+          'Preset projects every canonical batch synchronously to complete immutable UI snapshots. Proven fresh depth-first tail additions reuse exact current hierarchy preparation without visiting unrelated subtrees. Cold, interior, mixed or invalidated edits retain complete derivation. Preserve old snapshots, current partial results, cancellation, history and collaboration; no delayed publication, batch enlargement, second tree or replay.',
           'Resolve retained prepared artifacts into current compact delivery without repeated property-ID values or key maps. Browser admission restores only exact derivable identities once and keeps complete canonical validation before mutation. No old full-map wire branch, geometry recomputation, new cache, extra model turn or replay. Explicit full receipts, partial results, history, collaboration and persistence retain canonical identity.',
           'Interrupted prepared application captures only synchronous acknowledged members. Carry detached partial owner results through the existing Runtime failure/actionResults path; preserve cancellation and final transaction authority. Never count failed members or relabel rollback as retained writes. No replay, new History owner or persistence policy.',
           'Optional local evaluation deadlines are checked at the actual synchronous mutation boundary, after idle waiting. Preserve committed members and ordinary history settlement; do not admit late writes or replay completed changes.',
@@ -570,6 +571,7 @@
           'Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only'
         ],
         implementationBoundary: [
+          'package.json',
           'apps/asyra-design/server/__tests__/local-design-tools.test.ts',
           'apps/asyra-design/src/ai/prepared-design.ts',
           'apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts',
@@ -759,6 +761,7 @@
           'apps/asyra-design/e2e/basic-api-actions.spec.ts'
         ],
         specRefs: [
+          '#creation-batch-ui-projection',
           '#prepared-design-delivery','#source-referenced-expansion-recovery',
           '#bounded-evaluation-work-and-self-report',
           '#owner-results-and-workflow-outcomes',

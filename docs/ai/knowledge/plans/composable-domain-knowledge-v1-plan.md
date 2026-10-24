@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 compact prepared delivery has converged on formal local evidence at Inspector revision 86 and is approved for commit/push. AI adoption and live timing effects remain unobserved. The next issue is read-only evidence analysis; no implementation, model, 101 or CI inspection is authorized.**
+Status: **Task 3 incremental UI hierarchy projection is implemented and locally verified. Compact prepared delivery was pushed as e39609395; this slice remains local. No model, 101, CI or push was run for this slice.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -8,6 +8,13 @@ source of the completed Knowledge-only run `1792471047468`. This revision explai
 its remaining discovery, material-judgment and status findings. Those earlier live-run
 authorizations belong to historical checkpoints; only the current bounded correction
 below governs this follow-up. Never automatically retry a model run.
+
+Current authorized follow-up - 2026-10-24: close and push the locally verified
+projection slice, then run one 101 observation with 120 seconds of work and at
+most 60 seconds of reporting, no video and the production 10,000-node limit.
+Preserve complete provider input/output, report text and screenshots; analyze
+recent handoffs separately from AI behavior and timings. Do not modify product
+behavior, retry the model run, query CI or infer unobserved recovery success.
 
 ## Current authority and task boundary
 
@@ -20,7 +27,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: remove derivable identity-map repetition at prepared-design delivery, preserving canonical admission, execution and recovery. WebMCP is design context only; no browser API integration is authorized.
+- Current scope: reduce repeated UI hierarchy derivation during continuous creation while preserving each immutable publication and all recovery semantics.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -78,6 +85,120 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Incremental UI hierarchy projection - 2026-10-24
+
+Step Execution Card - apply / canonical creation to UI projection:
+- Objective: avoid rediscovering roots and walking unchanged subtrees during
+  continuous creation, while retaining each exact batch's complete immutable
+  flattened list and projected rows. Preserve cancellation, recovery and history.
+- Evidence: saved run 1792770001609, original provider 32-output.json, SHA-256
+  a0b9871ea8bebe255f9551b704985ce450fe2aaaf33441d190d7dba52c45155f:
+  4,114 entries, 130 publications, 268,435 flattened output identities and 66.6 ms
+  inclusive UI projection. Source snapshot matches current projection owner.
+  Output copying is required; these counts alone do not prove unnecessary work.
+- Owner: existing Preset data-channel UI projection under apply. Input is the
+  admitted ordered Scene Tree batch and exact current map/array identities.
+  Output is the same ordered immutable UI snapshots, synchronously per batch.
+  Failure owner: existing projection lifecycle, never a new mutation/retry owner.
+- Conditions: reuse only complete retained hierarchy with matching published
+  identities and live observer. Prove additions are fresh, empty of pre-existing
+  children, at their parent's tail, and extend the current depth-first tail.
+  The existing full derivation remains necessary for cold/incomplete/reseeded
+  projection, interior insertion, move, removal, reorder and mixed structural work.
+  No type/tool-specific route, batch enlargement or delayed/coalesced publication.
+- Feasibility: the existing parents/children maps and last flattened ID establish
+  the terminal ancestry and child counts. A request-local append sequence can be
+  proven before mutating projection, consumed for memberships and flattened
+  output, then discarded. Reuse the same hierarchy lifetime; add no retained
+  cache, authoritative tree, scheduler, registry or public/persisted identity.
+- Names: internal append planning and diagnostic work counts belong to
+  preset/subscriptions/data-channel.ts. Existing event names, UI properties,
+  publication cadence and immutable array/map contracts remain unchanged.
+- Allowed contributors: canonical Scene Tree changes, current Preset projection,
+  existing diagnostic helpers and public Core/UI subscriptions. Forbidden:
+  canonical rereads for future state, App hints, renderer writes, guessed order,
+  mutation replay, shared mutable published arrays and full-document gating.
+- Implementation boundary: packages/preset/src/subscriptions/data-channel.ts and
+  its selection-subscriptions.test.ts; existing App prepared-delivery and
+  interrupted-design integration tests, execution-flow-proof.test.ts and mapping;
+  root existing test:design-execution-flow registration, active plan, preset
+  package spec, App execution spec, Inspector and generated bundle. No App UI or
+  canonical mutation implementation changes; test existing direct consumers.
+- Fixed discovery: above owner, its direct UI subscribers, original saved case,
+  existing real-Core/Runtime/history/durable collaboration tests. No broader audit.
+- Fixed DoD: (1) formal real-owner test first fails on unchanged-subtree visits;
+  (2) retained tail additions visit no unrelated subtree regardless of unrelated
+  existing document size, with derivation, immutable copying and publications
+  measured separately; (3) every batch equals full derivation, old snapshots stay
+  unchanged and future batches never leak; (4) interior insertion, move/remove,
+  reorder, custom containers, reload, foreign reseed, failure/reentry/disposal
+  remain correct and invalidate reuse when necessary; (5) saved-input real
+  dispatcher/Core plus cancellation, partial receipts, no-replay continuation,
+  Undo/Redo, collaboration and durable reload pass with UI projection enabled;
+  (6) existing App layer/selection/drag direct-consumer tests stay green and
+  formal owner tests join the existing root gate. No live latency claim.
+- Gates: naming baseline and final; task context; Inspector admission before
+  tests/implementation; owner formal red/green; direct-consumer tests; existing
+  root execution-flow gate; preset build and App production types; scoped lint;
+  generated Inspector tests; bounded self-review. No model, 101, CI or push.
+- Stop/replan if three owner correction attempts fail, if incremental ordering
+  requires new retained state or owner, or if correctness requires deferring
+  publication. Self-review confirms the full derivation is a valid current path,
+  not compatibility or a way to conceal malformed output.
+
+
+Local closure and bounded self-review:
+- Initial admission preceded regression/production edits: review
+  9695f1befc856aaf0e39ccd89e256b135436bb3b50b7da0a678e4d3f41bfeffa.
+  Final accepted review
+  17d0e79c1f7125e3fc97d8abae2f7345c2691401821fd91fc79492a63975737f;
+  verification 506e4f9c-2250-4814-bd60-4899072c8728 passed at revision 89,
+  source e442ad1ad5bde4ec75662c2fb1aa4398aab3ab9314093ddc950b1435d75b6f34.
+- Formal red: three tail publications revisited 32/1,024 unrelated identities
+  288/9,216 times through actual Map reads. The unchanged formal assertion now
+  observes zero such reads. Existing tests covered row reuse but missed this
+  retained-tree traversal. No temporary test or ignored fixture is required.
+- Implementation reuses existing complete hierarchy preparation. A local terminal
+  ancestry proof admits fresh tail entries, appends private memberships and
+  creates the full immutable ID array. There is no new retained state, changed
+  canonical owner, enlarged batch or deferred publication. Complete derivation
+  remains authoritative for all other structural changes.
+- Self-review found mixed indexed/unindexed scalar additions could reorder private
+  memberships on the fast path. A formal warm-versus-cold regression reproduced
+  the mismatch before correction. Flush already-collected additions before an
+  unindexed append; preserve both immediate ordering and later derivation.
+  Reentry and failing descriptor reads retire preparation; existing event-bus
+  observer isolation is preserved, not relabeled as a new recovery mechanism.
+- The Inspector reference check found full document paths in section-only
+  specRefs. Corrected the references to the current App section, linking its
+  Preset authority there; the authority check itself was not weakened.
+- Saved-input real dispatcher/Runtime/Core replay preserves all 4,114 identities,
+  geometry/materials, 130 complete publications and every earlier snapshot.
+  Counts: one root candidate/complete-tree visit at initialization, 4,113 appended
+  entries and 386 terminal-ancestry visits. Required immutable copying remains
+  264,321 old IDs and cumulative complete output remains 268,435 IDs. These costs
+  are explicitly retained, not counted as eliminated work or smaller delivery.
+- Final root test:design-execution-flow passed: Runtime 433, Preset 37, App
+  harness 1,646 and Inspector 72. The Preset build and formal owner suite now run
+  through this existing entry before App integration. Two existing harness cases
+  were skipped: installed native registration without an explicitly supplied
+  executable, and opt-in large-checkpoint transport encoding/decoding. Neither
+  is changed by this projection slice or counted as passing coverage.
+- Direct consumers: 48 tests across nine files passed on the final built owner,
+  including UI rows/order, interrupted partial receipts, remaining-parts recovery
+  without replay, Undo/Redo, durable collaboration/reload, layers, selection and
+  drag. Generated Inspector/contract tests: 27 passed. Naming: 15 passed.
+  Preset build, App production typechecks, task-context preflight and diff checks
+  passed. Scoped lint: zero errors, three diagnostic-console warnings (one new
+  bounded work-count measurement and two pre-existing measurement warnings).
+- Logs: tmp/ui-projection-red.log, tmp/ui-projection-mixed-red.log,
+  tmp/ui-projection-preservation-final.log, tmp/ui-projection-root-flow-final.log,
+  tmp/ui-projection-consumers-final.log and tmp/ui-projection-inspector-tests.log.
+  Formal tests and the existing compressed saved-input fixture are tracked;
+  these local logs are supplementary evidence only.
+- This bounded slice is complete; Task 3 remains active. No model/101 execution,
+  CI query, push or new first-frame/visual-quality/Knowledge-effect claim.
 
 ### Compact prepared delivery - 2026-10-24
 

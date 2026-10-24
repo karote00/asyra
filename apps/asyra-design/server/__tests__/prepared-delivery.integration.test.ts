@@ -323,7 +323,8 @@ it('executes resolver delivery through the dispatcher and real Core with full re
       PresetDefaults.BASIC_SHAPES,
       PresetDefaults.CONTAINERS,
       PresetDefaults.VECTOR,
-      PresetDefaults.SELECTION
+      PresetDefaults.SELECTION,
+      PresetDefaults.UI_CONTEXT
     ]
   })
   core.load({
@@ -346,6 +347,12 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     }
   })
   const initial = await core.save()
+  const uiSnapshots: string[][] = []
+  const uiSubscription = core
+    .getUIPropertySubject<string[]>('flattenedElementIds')
+    ?.subscribe((ids) => {
+      if (ids.length) uiSnapshots.push(ids)
+    })
   const action = createPreparedDesignAction(undefined, async () => undefined)
   const definitions = [createAiToolContract(action)]
   const compile = vi.fn<typeof prepareDesignAsync>(
@@ -411,6 +418,48 @@ it('executes resolver delivery through the dispatcher and real Core with full re
       keyToId: fixture.prepared.design.keyToId
     })
     const created = await core.save()
+    const expectedIds = fixture.prepared.design.entries.map(
+      (entry: { descriptor: { id: string } }) => entry.descriptor.id
+    )
+    const ownerResult = receipt?.actionResults[0].result as {
+      timing: {
+        sliceCount: number
+        canonicalWork: { counters: Record<string, number> }
+      }
+    }
+    const counters = ownerResult.timing.canonicalWork.counters
+    expect(uiSnapshots).toHaveLength(ownerResult.timing.sliceCount)
+    uiSnapshots.forEach((ids) =>
+      expect(ids).toEqual(expectedIds.slice(0, ids.length))
+    )
+    expect(uiSnapshots.at(-1)).toEqual(expectedIds)
+    expect(counters['ui-context-hierarchy-node-visit']).toBe(1)
+    expect(counters['ui-context-hierarchy-append-entry']).toBe(
+      expectedIds.length - 1
+    )
+    expect(counters['ui-context-sync-flattened-ids']).toBe(uiSnapshots.length)
+    expect(counters['ui-context-flattened-identity-output']).toBe(
+      uiSnapshots.reduce((sum, ids) => sum + ids.length, 0)
+    )
+    expect(counters['ui-context-flattened-identity-copy']).toBe(
+      uiSnapshots.slice(0, -1).reduce((sum, ids) => sum + ids.length, 0)
+    )
+    console.info(
+      JSON.stringify({
+        measurement: 'ui-hierarchy-projection',
+        entries: expectedIds.length,
+        publications: uiSnapshots.length,
+        rootCandidates: counters['ui-context-hierarchy-root-candidate'],
+        fullTreeVisits: counters['ui-context-hierarchy-node-visit'],
+        tailVisits: counters['ui-context-hierarchy-tail-visit'],
+        appendEntries: counters['ui-context-hierarchy-append-entry'],
+        immutableIdCopies: counters['ui-context-flattened-identity-copy'],
+        publishedIds: counters['ui-context-flattened-identity-output']
+      })
+    )
+    // Every published array remains a point-in-time value after later mutations.
+    const savedSnapshots = uiSnapshots.map((ids) => [...ids])
+    uiSubscription?.unsubscribe()
     expect(Object.keys(created.sceneTree.elements)).toHaveLength(
       fixture.prepared.design.entries.length + 1
     )
@@ -448,7 +497,10 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     const reloaded = await core.save()
     expect(reloaded.props).toEqual(created.props)
     expect(reloaded.sceneTree).toEqual(created.sceneTree)
+    expect(core.getUIProperty('flattenedElementIds')).toEqual(expectedIds)
+    expect(uiSnapshots).toEqual(savedSnapshots)
   } finally {
+    uiSubscription?.unsubscribe()
     await runtime.dispose()
     vi.unstubAllGlobals()
   }

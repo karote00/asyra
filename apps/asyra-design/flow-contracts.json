@@ -752,6 +752,14 @@
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-design-review.ts"
           ]
+        },
+        {
+          "id": "apply.ui-projection",
+          "stepId": "apply",
+          "testName": "execution proof preserves incremental UI publications without unrelated hierarchy work",
+          "implementationPaths": [
+            "packages/preset/src/subscriptions/data-channel.ts"
+          ]
         }
       ],
       "handoffs": [

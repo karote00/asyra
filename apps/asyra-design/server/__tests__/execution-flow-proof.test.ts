@@ -8573,3 +8573,101 @@ it('execution proof binds an explicitly selected workflow image through the exis
       .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
   ).toHaveLength(1)
 })
+
+it('execution proof preserves incremental UI publications without unrelated hierarchy work', async () => {
+  vi.resetModules()
+  const { default: core } = await import('@asyra/core')
+  const { applyPreset, PresetProfiles, PresetDefaults } =
+    await import('@asyra/preset')
+  const { subscribeToDiagnosticCounters } = await import('@asyra/utils')
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [
+      PresetDefaults.BASIC_SHAPES,
+      PresetDefaults.CONTAINERS,
+      PresetDefaults.UI_CONTEXT
+    ]
+  })
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          children: [],
+          visible: true,
+          lock: false
+        }
+      }
+    }
+  })
+  core.createElementsInParent(
+    [{ id: 'background', type: 'frame', x: 0, y: 0, width: 400, height: 400 }],
+    'workspace'
+  )
+  const background = Array.from({ length: 128 }, (_, i) => `background-${i}`)
+  core.createElementsInParent(
+    background.map((id) => ({
+      id,
+      type: 'rect',
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10
+    })),
+    'background'
+  )
+  core.createElementsInParent(
+    [{ id: 'target', type: 'frame', x: 0, y: 0, width: 400, height: 400 }],
+    'workspace'
+  )
+  const original = core.getUIProperty<string[]>('flattenedElementIds')
+  const counters = new Map<string, number>()
+  const stop = subscribeToDiagnosticCounters((name, value) =>
+    counters.set(name, (counters.get(name) ?? 0) + value)
+  )
+  const snapshots: string[][] = []
+  const subscription = core
+    .getUIPropertySubject<string[]>('flattenedElementIds')
+    ?.subscribe((ids) => snapshots.push(ids))
+  try {
+    for (let i = 0; i < 3; i++) {
+      core.createElementsInParent(
+        [{ id: `added-${i}`, type: 'rect', x: 0, y: 0, width: 10, height: 10 }],
+        'target'
+      )
+      expect(core.getUIProperty('flattenedElementIds')).toEqual([
+        'background',
+        ...background,
+        'target',
+        ...Array.from({ length: i + 1 }, (_, n) => `added-${n}`)
+      ])
+    }
+    expect(snapshots).toHaveLength(4)
+    expect(original).toEqual(['background', ...background, 'target'])
+    snapshots.forEach((ids, index) =>
+      expect(ids).toEqual([
+        'background',
+        ...background,
+        'target',
+        ...Array.from({ length: index }, (_, n) => `added-${n}`)
+      ])
+    )
+    expect(counters.get('ui-context-hierarchy-node-visit') ?? 0).toBe(0)
+    expect(counters.get('ui-context-hierarchy-root-candidate') ?? 0).toBe(0)
+    expect(counters.get('ui-context-hierarchy-append-entry')).toBe(3)
+    expect(counters.get('ui-context-sync-flattened-ids')).toBe(3)
+    expect(counters.get('ui-context-flattened-identity-output')).toBe(
+      snapshots.slice(1).reduce((sum, ids) => sum + ids.length, 0)
+    )
+  } finally {
+    subscription?.unsubscribe()
+    stop()
+  }
+})

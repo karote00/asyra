@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004"
+          "sha256": "17ab747acefef2c872128f1aca884861df6105959f1765212305c99dffcd51fa"
         }
       ]
     },
@@ -298,7 +298,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "c8d460dbfb681c83e24725c932716048e870da35c519fba3feff5177edc32534"
+          "sha256": "583a0bb433dff0ee783c006151ce76a0d6ba4594740136cc902c51420bdf0212"
         },
         {
           "path": "docs/ai/framework/golden-paths/compose-ai-agent-runtime.md",
@@ -312,7 +312,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "c8d460dbfb681c83e24725c932716048e870da35c519fba3feff5177edc32534"
+          "sha256": "583a0bb433dff0ee783c006151ce76a0d6ba4594740136cc902c51420bdf0212"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -546,7 +546,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/ai-agent-runtime.md",
-          "sha256": "c8d460dbfb681c83e24725c932716048e870da35c519fba3feff5177edc32534"
+          "sha256": "583a0bb433dff0ee783c006151ce76a0d6ba4594740136cc902c51420bdf0212"
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
@@ -658,7 +658,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004"
+          "sha256": "17ab747acefef2c872128f1aca884861df6105959f1765212305c99dffcd51fa"
         },
         {
           "path": "packages/preset/package.json",
@@ -828,7 +828,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "da7237e1720f86d41d832dd35c1c3dfac74ab20c610da9324149efba331199c5"
+          "sha256": "81d67c2b4e5062f71263124fa7e99cde1ec551c981af557fb94509ac1bc17047"
         }
       ]
     },
