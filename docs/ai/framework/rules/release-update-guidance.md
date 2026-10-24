@@ -112,10 +112,36 @@ Published summaries/guide revisions stay immutable: corrections need a new
 revision, reason and supersedes reference, preserving old links and required
 migrations. Guide revisions are not package or document schema versions.
 
-The implemented automatic check covers development PR declarations only. Binding
-its evidence to frozen release artifacts and enforcing it in actual publishers
-are not implemented yet. Existing release gates and permissions remain in force;
-do not claim that a document check prevents direct publication.
+### Implemented release admission and retry boundaries
+
+The existing Framework/create-app publishers and Cloudflare workflows require
+artifact-bound candidate evidence before mutation, independently of the PR
+check. Framework uses `tmp/framework-release-guidance.json`; create-app uses
+`tmp/create-app-release-evidence/<app>/guidance.json`; Cloudflare uses
+`tmp/cloudflare-release-guidance/<app>.json`. Each binds exact source, original
+per-delivery baseline, artifact integrity, update notes and guide hashes. Missing
+history or changed inputs stop admission. Ordinary Markdown-only changes still
+need no new update note; revisions to referenced guides remain bound by hash.
+
+For npm, an identical version/integrity published from an earlier source is an
+unchanged member, using that published source as its baseline. A same-source
+partial retry requires the retained candidate and preserves its original
+predecessor. Missing registry source/tag evidence or same-candidate guidance is
+not an unchanged-package exemption. Never repack different bytes under an
+existing version to bypass the integrity check.
+
+Cloudflare restores immutable candidate checkpoints and per-attempt results from
+its existing Actions workflow, then checks the original baseline. An uploaded
+retry is admitted only for the same candidate source/bytes and the recorded
+production deployment ID. A newer source requires verified predecessor evidence;
+resolve the previous verification failure first. Sources predating the guidance
+protocol keep their existing provider/marker baseline admission. Missing or
+expired protocol evidence is an explicit coverage gap, never an empty summary.
+See [Cloudflare recovery](../../workflows/app-cloudflare.md#verification-and-recovery).
+
+Publication and public verification remain separate outcomes. Local/CI candidate
+files and expiring artifacts do not implement durable public release history or
+consumer discovery; those remain planned. No gate changes release authorization.
 
 ## Consumer preservation and subsequent updates
 

@@ -262,6 +262,14 @@ validated tarballs used by the local packed-consumer gate. Registry errors other
 than an exact-version `E404` fail the stage. The stage does not require pending
 Changesets to remain after the version PR.
 
+Guidance preparation distinguishes an unchanged package already published from
+an earlier source from a same-source partial retry. The former uses its actual
+published source/version as the baseline even when an older candidate file is
+present; the latter requires the retained candidate and keeps its original
+predecessor. Both require identical registry and candidate integrity. Missing
+source/tag evidence or missing same-candidate guidance stops the release. The
+shared rule also applies to create-app; it does not change package versioning.
+
 Historical prerequisite decisions are resolved from Framework
 `decisions/releases/unreleased.md` and all direct `vX.Y.Z.md` archive files,
 independently of the current root version. New unreleased entries never hide

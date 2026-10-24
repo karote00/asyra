@@ -4,8 +4,8 @@
 
 IN PROGRESS - updated 2026-10-24. This revision replaces the Changeset-centered
 proposal with the existing App and Framework release owners. Task 1 is complete;
-Task 2 is DONE; Tasks 3-4 remain PLANNED. Closeout owner: the release update guidance coordinating
-chat.
+Task 2 and its review corrections are complete; Tasks 3-4 remain PLANNED.
+Closeout owner: the release update guidance coordinating chat.
 
 Inspected base: `5f6b0c51aa0dd3178e5a9de285b10141f4691e5e`.
 Branch: `codex/release-update-guidance-plan`. Repository paths below are
@@ -225,7 +225,7 @@ PLANNED. No remote push or publication occurred.
 
 ## Task 2 - Connect guidance to each existing release boundary
 
-Status: DONE - 2026-10-24. Prerequisite: Task 1 is complete.
+Status: DONE, including review corrections. Prerequisite: Task 1 is complete.
 The owner confirmed Cloudflare Pages as the only current hosted deployment
 provider. Integrate both App and website workflows; no Vercel work or change to
 publication providers is authorized. Framework/create-app npm routes remain
@@ -287,6 +287,32 @@ handoff before its existing publisher. Framework history comparisons must use th
 original checkout, not the shallow isolated validation workspace. Existing exact
 version/provider checks and manual publication authorization stay in place.
 
+### Task 2 review correction contract
+
+The bounded correction covers `prepare`, then `admit` and `record`, their existing
+scripts/workflows and permanent tests. First prove both review findings with
+failing tests. Preserve ordinary Markdown exemptions, current providers,
+authorization, static artifacts, package versions and original Text evidence.
+
+Preparation restores the immutable candidate from existing Actions artifacts
+before generating a new Cloudflare summary. Checkpoint it before publication;
+retain result artifacts separately for each run attempt. An uploaded candidate
+may resume only with the same source/artifact and a matching recorded deployment
+ID. Missing recovery evidence stops publication. A newer source must not silently
+adopt a prior candidate whose public verification is unresolved; recover or
+verify that candidate first. Legacy production sources without this guidance
+protocol retain their existing baseline admission. Expired protocol evidence is
+an explicit coverage gap; durable public history remains Task 3.
+
+For npm, an identical package published from an older verified source is an
+unchanged member of the new release set. Only a matching same-source candidate
+uses the partial-retry predecessor. Same-version bytes that differ still fail;
+missing source evidence or missing same-candidate guidance never becomes an
+unchanged-package exemption. Gates cover initial preparation, restored retries,
+source/artifact/deployment mismatch, genuine unchanged packages, missing retry
+evidence and preservation of declaration exemptions. No new release service,
+version policy, public lookup or runtime migration is introduced.
+
 ### Task 2 completion record - 2026-10-24
 
 Completed on `codex/release-update-guidance-plan` from Task 1 base `246690fbd`.
@@ -333,6 +359,50 @@ records remain unchanged. No runtime, consumer data, version, remote push or
 publication changed. Task 3 durable public history/discovery and Task 4 consumer
 preservation exercises remain planned; temporary release evidence is not their
 completion or a claim of comprehensive online release acceptance.
+
+### Task 2 review corrections completed - 2026-10-24
+
+Completed from `7064c612b`. Four regression cases first failed on the reviewed
+implementation: original Cloudflare summary loss, missing checkpoints in both
+workflows, and rejection of an unchanged npm member with older guidance.
+
+Cloudflare now restores candidate checkpoints through the existing Actions API
+and CLI, checks source/bytes and the recorded deployment ID, and saves candidates
+before mutation. Per-attempt result archives preserve failed verification and
+last-known upload receipts. Retries on fresh runners or separate dispatches keep
+the original predecessor, summary and guide hashes. A newer source requires
+verified predecessor evidence; missing/expired protocol evidence stops with a
+coverage gap. Existing pre-protocol production baselines remain admitted. The
+seven-day operational retention is not Task 3 durable public history.
+
+npm now distinguishes unchanged packages published from an earlier source from
+same-source partial retries, including a mixed release set. Earlier publication
+uses its own baseline; the partial retry keeps the frozen original predecessor.
+Different bytes and missing source or retry evidence remain blocking conditions.
+Ordinary Markdown-only updates still need no new note. No new service, runtime,
+version policy or dependency was added.
+
+Validation: 89 release tests and 111 policy tests passed (200 distinct cases).
+Reproduce the release selection with `node --test` and these files:
+
+- `scripts/__tests__/release-guidance.test.mjs`
+- `scripts/__tests__/framework-release-publisher.test.mjs`
+- `scripts/__tests__/framework-release-artifacts.test.mjs`
+- `scripts/__tests__/release-automation.test.mjs`
+- `scripts/__tests__/app-cloudflare.test.mjs`
+- `.github/__tests__/app-cloudflare.test.mjs`
+- `.github/__tests__/site-cloudflare.test.mjs`
+- `tools/flow-inspector/inspectors/__tests__/framework-package-release-flow-inspector.contract.test.cjs`
+
+The policy selection is `scripts/docs/__tests__/release-update-guidance.test.mjs`,
+`scripts/__tests__/{ci-scope,test-file-placement,brand-neutral-code,display-name-separators}.test.mjs`
+and `scripts/docs/__tests__/public-content-contract.test.mjs`.
+Scoped ESLint, naming, update declarations, public documentation checks,
+formatting and whitespace checks passed. Flow Inspector observations bind these
+local tests to the corrected source. Provider, Actions and npm effects use stubs;
+no real workflow run, publication or remote mutation is claimed. All original
+Text guides, fixtures and independent acceptance evidence remain unchanged.
+Tasks 3-4 remain planned.
 
 ## Task 3 - Expose release history and applicable guides
 

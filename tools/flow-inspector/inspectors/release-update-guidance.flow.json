@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "release-update-guidance",
-  "revision": 9,
+  "revision": 16,
   "definition": {
     "title": "Release update guidance",
     "purpose": "Admit current release owners using artifact-bound guidance without publishing during validation.",
@@ -132,7 +132,8 @@
           ],
           "outputs": ["artifact:prepare"],
           "conditions": [
-            "Exact source and artifacts; current release owner only; no publication authorization is inferred."
+            "Exact source and artifacts; current release owner only; no publication authorization is inferred.",
+            "Restore and checkpoint Cloudflare candidates before publication; distinguish unchanged npm members from same-candidate partial retries."
           ],
           "bypasses": [
             "Missing, changed or unverifiable inputs stop this owner; no successful baseline advancement on failure."
@@ -182,7 +183,8 @@
           ],
           "outputs": ["artifact:admit"],
           "conditions": [
-            "Exact source and artifacts; current release owner only; no publication authorization is inferred."
+            "Exact source and artifacts; current release owner only; no publication authorization is inferred.",
+            "An uploaded Cloudflare candidate may resume only against its recorded deployment ID and matching candidate hash; unresolved predecessor verification blocks a newer candidate."
           ],
           "bypasses": [
             "Missing, changed or unverifiable inputs stop this owner; no successful baseline advancement on failure."
@@ -232,7 +234,8 @@
           ],
           "outputs": ["artifact:record"],
           "conditions": [
-            "Exact source and artifacts; current release owner only; no publication authorization is inferred."
+            "Exact source and artifacts; current release owner only; no publication authorization is inferred.",
+            "Actions retain immutable candidate artifacts and separate attempt results; a failed retry does not erase the last known matching publication."
           ],
           "bypasses": [
             "Missing, changed or unverifiable inputs stop this owner; no successful baseline advancement on failure."
@@ -322,14 +325,14 @@
         "criterionId": "contracts",
         "kind": "automated",
         "status": "passed",
-        "binding": "4383c639db3c740ff12622214b7f507032c90130cc9564c61cc795ecbfad531e",
+        "binding": "b3471bdd8688ee59ad2080f7f52f235e2cb9993c458ac47a6e6e19949f242a18",
         "actor": "local-release-validation",
-        "executionId": "task-2-d602f1bb06be",
+        "executionId": "task-2-review-fix-4b4b07af4dd6",
         "caseId": "release-guidance-prepare",
-        "at": "2026-10-24T09:47:51.803Z",
-        "summary": "101 release tests and 126 policy tests passed (209 distinct cases); publication used stubs only.",
+        "at": "2026-10-24T10:35:13.280Z",
+        "summary": "89 release tests and 111 policy tests passed (200 distinct cases); the final 17-case guidance suite also passed after strengthening recovery assertions. Publication used stubs only.",
         "details": [
-          "Permanent selections and boundaries are recorded in the Task 2 completion record. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
+          "Permanent selections and boundaries are recorded in the Task 2 review corrections completion record. Four original regression cases failed before the correction. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
         ]
       },
       {
@@ -337,14 +340,14 @@
         "criterionId": "contracts",
         "kind": "automated",
         "status": "passed",
-        "binding": "221f4583c0ab9cb9bc28b3465a8309b4ae6619d39617b53d6aa514ceaed9cdf0",
+        "binding": "626765cd0b1ea786f5bb0f6091af6c8768624265838fe1356811499b9d2eadb3",
         "actor": "local-release-validation",
-        "executionId": "task-2-d602f1bb06be",
+        "executionId": "task-2-review-fix-4b4b07af4dd6",
         "caseId": "release-guidance-admit",
-        "at": "2026-10-24T09:47:51.807Z",
-        "summary": "101 release tests and 126 policy tests passed (209 distinct cases); publication used stubs only.",
+        "at": "2026-10-24T10:35:13.283Z",
+        "summary": "89 release tests and 111 policy tests passed (200 distinct cases); the final 17-case guidance suite also passed after strengthening recovery assertions. Publication used stubs only.",
         "details": [
-          "Permanent selections and boundaries are recorded in the Task 2 completion record. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
+          "Permanent selections and boundaries are recorded in the Task 2 review corrections completion record. Four original regression cases failed before the correction. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
         ]
       },
       {
@@ -352,14 +355,14 @@
         "criterionId": "contracts",
         "kind": "automated",
         "status": "passed",
-        "binding": "18c4a7c8036ad0fff523166b9bb8e42153e37aa1d494d1ea2d0979420432c932",
+        "binding": "6837f9c8eb738e641b88b0a7528d78e128b3cbc0b0bae9a7fc63d0df5949e7f8",
         "actor": "local-release-validation",
-        "executionId": "task-2-d602f1bb06be",
+        "executionId": "task-2-review-fix-4b4b07af4dd6",
         "caseId": "release-guidance-record",
-        "at": "2026-10-24T09:47:51.809Z",
-        "summary": "101 release tests and 126 policy tests passed (209 distinct cases); publication used stubs only.",
+        "at": "2026-10-24T10:35:13.285Z",
+        "summary": "89 release tests and 111 policy tests passed (200 distinct cases); the final 17-case guidance suite also passed after strengthening recovery assertions. Publication used stubs only.",
         "details": [
-          "Permanent selections and boundaries are recorded in the Task 2 completion record. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
+          "Permanent selections and boundaries are recorded in the Task 2 review corrections completion record. Four original regression cases failed before the correction. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
         ]
       }
     ],
@@ -368,15 +371,15 @@
     "sources": [
       {
         "nodeId": "prepare",
-        "revision": "d602f1bb06beaa0988e489d6c3c288e1c5a425f9045f8c37eaf6f64aedf74ef1"
+        "revision": "4b4b07af4dd6fa683aff805419ca0bca53700db4bd8ed151f879fe225e3caf93"
       },
       {
         "nodeId": "admit",
-        "revision": "d602f1bb06beaa0988e489d6c3c288e1c5a425f9045f8c37eaf6f64aedf74ef1"
+        "revision": "4b4b07af4dd6fa683aff805419ca0bca53700db4bd8ed151f879fe225e3caf93"
       },
       {
         "nodeId": "record",
-        "revision": "d602f1bb06beaa0988e489d6c3c288e1c5a425f9045f8c37eaf6f64aedf74ef1"
+        "revision": "4b4b07af4dd6fa683aff805419ca0bca53700db4bd8ed151f879fe225e3caf93"
       }
     ],
     "warnings": []

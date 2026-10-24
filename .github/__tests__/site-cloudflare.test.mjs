@@ -214,11 +214,49 @@ test('release guidance binds the downloaded candidate before Cloudflare mutation
   assert.ok(result.if.startsWith('always()'))
   assert.equal(result.env.VERIFY_OUTCOME, '${{ steps.verify.outcome }}')
   assert.ok(
-    steps.some((step) => step.with?.path === 'tmp/cloudflare-release-guidance/')
+    steps.some((step) => step.with?.path?.endsWith('.json.result.json.*.json'))
   )
   assert.ok(
     workflow.jobs.build.steps.every(
       (step) => !JSON.stringify(step).includes('secrets.CLOUDFLARE')
+    )
+  )
+})
+
+test('Cloudflare retries restore a frozen candidate and retain it before mutation', () => {
+  const steps = workflow.jobs.publish.steps
+  const restore = steps.findIndex((step) =>
+    step.run?.includes('cloudflare-release-guidance.mjs restore')
+  )
+  const prepare = steps.findIndex((step) =>
+    step.run?.includes('cloudflare-release-guidance.mjs prepare')
+  )
+  const checkpoint = steps.findIndex(
+    (step) => step.id === 'guidance-checkpoint'
+  )
+  const mutation = steps.findIndex(
+    (step) => step.run?.includes('ensure-project') || step.id === 'deploy'
+  )
+  assert.ok(
+    restore >= 0 &&
+      prepare > restore &&
+      checkpoint > prepare &&
+      mutation > checkpoint
+  )
+  assert.equal(steps[checkpoint].with.overwrite, undefined)
+  assert.equal(steps[checkpoint].with['if-no-files-found'], 'error')
+  assert.ok(
+    steps[checkpoint].if.includes(
+      "steps.guidance-restore.outputs.candidate-retained != 'true'"
+    )
+  )
+  assert.equal(steps[restore].id, 'guidance-restore')
+  assert.equal(steps[restore].env.GH_TOKEN, '${{ github.token }}')
+  assert.equal(workflow.jobs.publish.permissions.actions, 'read')
+
+  assert.ok(
+    steps.some((step) =>
+      step.with?.name?.includes('-result-${{ github.run_attempt }}')
     )
   )
 })

@@ -289,6 +289,7 @@ export function admitGuidance({
   deliveries,
   evidence,
   current,
+  publication,
   generatedRoots = []
 }) {
   assert.ok(
@@ -300,6 +301,19 @@ export function admitGuidance({
     deliveries.length,
     'Release guidance baseline inventory changed'
   )
+  if (publication) {
+    assert.equal(
+      publication.guidance,
+      guidanceHash(evidence),
+      'Publication belongs to another candidate'
+    )
+    assert.equal(publication.owner, evidence.owner, 'Publication owner changed')
+    assert.equal(
+      publication.sourceSha,
+      evidence.sourceSha,
+      'Publication source changed'
+    )
+  }
   for (const delivery of deliveries) {
     const live = current.find((item) => item.id === delivery.id)
     assert.ok(live, `Missing current baseline for ${delivery.id}`)
@@ -315,8 +329,13 @@ export function admitGuidance({
             live.sourceSha === baseline.sourceSha) ||
           (live.version === delivery.artifact.version &&
             live.integrity === delivery.artifact.integrity)
-        : live.sourceSha === baseline.sourceSha &&
-          live.deploymentId === baseline.deploymentId
+        : (live.sourceSha === baseline.sourceSha &&
+            live.deploymentId === baseline.deploymentId) ||
+          (live.sourceSha === sourceSha &&
+            publication?.outcomes[delivery.id]?.published === true &&
+            Boolean(publication.outcomes[delivery.id].deploymentId) &&
+            live.deploymentId ===
+              publication.outcomes[delivery.id].deploymentId)
     assert.ok(
       matches,
       `Online baseline changed for ${delivery.id}; prepare new release guidance`
@@ -473,19 +492,27 @@ export function registryPreparationBaseline(
       artifact.integrity,
       'Published candidate integrity differs'
     )
-    const previous = readGuidance(file)
-    assert.equal(
-      previous.sourceSha,
+    if (fs.existsSync(file)) {
+      const previous = readGuidance(file)
+      if (previous.sourceSha === sourceSha) {
+        const prior = previous.deliveries.find(
+          (item) => item.id === artifact.id
+        )
+        assert.deepEqual(
+          prior?.artifact,
+          artifact,
+          'Published candidate has no matching retained guidance'
+        )
+        return { baseline: prior.baseline, current }
+      }
+    }
+    const published = resolveRegistryBaseline(root, current, runCommand)
+    assert.notEqual(
+      published.sourceSha,
       sourceSha,
-      'Published candidate belongs to another source'
+      'Missing release guidance for this published candidate'
     )
-    const prior = previous.deliveries.find((item) => item.id === artifact.id)
-    assert.deepEqual(
-      prior?.artifact,
-      artifact,
-      'Published candidate has no matching retained guidance'
-    )
-    return { baseline: prior.baseline, current }
+    return { baseline: published, current: published }
   }
   const resolved = resolveRegistryBaseline(root, current, runCommand)
   return { baseline: resolved, current: resolved }

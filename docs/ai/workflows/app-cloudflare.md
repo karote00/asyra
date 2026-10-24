@@ -68,7 +68,13 @@ verified static directory from the same workflow run. Obsolete main revisions
 are skipped before publication. Per-App jobs report failures independently. Guidance preparation reads the current
 provider deployment ID and confirms the public SHA, then admission rechecks the
 same source, downloaded bytes and online baseline immediately before upload.
-Candidate and result records are retained separately from the static output.
+Before upload, the workflow saves an immutable
+`release-guidance-<app>-<source>` candidate checkpoint. It restores that checkpoint
+on retries, including new runners and later dispatches of the same source.
+Results use separate `-result-<run-attempt>` artifacts. A retained checkpoint is
+not overwritten within the same run; another dispatch saves the identical
+candidate in its own run. Both remain outside the uploaded static files. The
+website workflow follows the same protocol with owner `asyra-framework`.
 
 `deployment-version.json` records the exact source SHA. Public verification
 waits for it with at most 30 read attempts (two seconds apart, ten-second request
@@ -94,9 +100,24 @@ APP_PUBLIC_TEST=1 node --test --test-concurrency=1 '--test-name-pattern=^(Design
 Check GitHub Actions **Apps - Cloudflare Pages**, each publication job's summary,
 and Cloudflare **Workers & Pages** for the corresponding project. A failed build
 leaves existing deployments intact. A failed public check is not a successful
-release; inspect the project and source marker before retrying. Correct the
-source through a PR, or dispatch a verified current `main` after an operational
-failure is resolved. No automatic rollback or mutation retry is performed.
+release; inspect the project and source marker before retrying. For an operational
+failure, rerun the failed publication job or dispatch the same current `main`:
+`restore` retrieves the original candidate/result, `prepare` preserves its
+baseline and summary, and `check` verifies its bytes and recorded deployment ID.
+A later failed upload retains the last known published deployment receipt without
+claiming that the latest attempt succeeded. No automatic rollback or mutation
+retry is performed.
+
+A newer source cannot silently use an uploaded but unverified predecessor. Verify
+and record that predecessor against its original candidate before proceeding;
+source fixes still require the normal PR and release process. Missing or expired
+candidate/results stop publication with a coverage gap, including if an upload
+succeeded without leaving a deployment receipt. Recover retained original evidence
+and verify the deployment; do not regenerate a target-to-target empty summary.
+The workflows retain these operational artifacts for seven days. They are not
+permanent public release history (Task 3); a release after that retention window
+requires recovered verified evidence. Production sources predating the guidance
+protocol retain their existing provider/marker baseline checks.
 Bounded readiness reads
 allow initial DNS/edge propagation, including transient 522 responses; they never
 accept an old revision or a different App.
@@ -104,3 +125,5 @@ accept an old revision or a different App.
 Guidance baseline authority: <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/get/" target="_blank" rel="noopener noreferrer">Cloudflare project canonical deployment</a>.
 
 API authority: <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/create/" target="_blank" rel="noopener noreferrer">Cloudflare Pages project creation</a> and <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/get/" target="_blank" rel="noopener noreferrer">project lookup</a>.
+
+Recovery transport: <a href="https://docs.github.com/en/rest/actions/artifacts" target="_blank" rel="noopener noreferrer">GitHub Actions artifacts</a> and <a href="https://cli.github.com/manual/gh_run_download" target="_blank" rel="noopener noreferrer">GitHub CLI artifact download</a>.

@@ -138,3 +138,24 @@ These development notes are not published release summaries.
   "reason": "Repository release tooling only; consumer runtime, App customizations and stored data remain unchanged. Maintainers use the existing release entries and the documented guidance/recovery checks."
 }
 ```
+
+```update-note
+{
+  "change": "release-guidance-retry-baselines",
+  "owner": "Repository release tooling",
+  "summary": "Restore frozen Cloudflare candidates across runners and distinguish unchanged npm members from partial publication retries.",
+  "sources": [
+    ".github/__tests__/app-cloudflare.test.mjs",
+    ".github/__tests__/site-cloudflare.test.mjs",
+    ".github/workflows/app-cloudflare.yml",
+    ".github/workflows/site-cloudflare.yml",
+    "scripts/__tests__/release-guidance.test.mjs",
+    "scripts/cloudflare-release-guidance.mjs",
+    "scripts/release-guidance.mjs",
+    "tools/flow-inspector/inspectors/release-update-guidance.flow.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Release admission and recovery only; preserve consumer runtime, custom features and saved data, package versions, authorization and Markdown-only exemptions."
+}
+```

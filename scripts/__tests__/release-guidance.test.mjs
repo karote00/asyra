@@ -188,9 +188,7 @@ test('reverted source does not invent a shipped change and missing history fails
   )
 })
 
-test('Cloudflare uses provider deployment identity and blocks stale artifacts before upload', async (t) => {
-  const { cloudflareGuidance, recordCloudflareGuidance } =
-    await import('../cloudflare-release-guidance.mjs')
+function cloudflareFixture(t) {
   const f = fixture(t)
   const directory = path.join(f.root, 'apps/asyra-design')
   fs.mkdirSync(directory, { recursive: true })
@@ -202,6 +200,20 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
       dependencies: { '@asyra/core': 'workspace:*' }
     })
   )
+  fs.mkdirSync(path.join(f.root, 'docs/public/updates'), { recursive: true })
+  fs.mkdirSync(path.join(f.root, 'scripts'), { recursive: true })
+  fs.writeFileSync(
+    path.join(f.root, 'scripts/cloudflare-release-guidance.mjs'),
+    '// Protocol fixture'
+  )
+  fs.writeFileSync(
+    path.join(f.root, 'docs/public/updates/app.md'),
+    '# Integration\n\n## Canonical sources\n\nPreserve custom fields and stored data.\n'
+  )
+  fs.writeFileSync(
+    path.join(f.root, 'docs/public/content-manifest.json'),
+    JSON.stringify({ pages: [{ path: 'updates/app.md' }] })
+  )
   fs.appendFileSync(
     path.join(f.root, 'RELEASE_NOTES.md'),
     '```update-note\n' +
@@ -209,9 +221,13 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
         change: 'app',
         owner: 'Design',
         summary: 'App release',
-        sources: ['apps/asyra-design/package.json'],
-        impact: 'no-action',
-        guides: [],
+        sources: [
+          'apps/asyra-design/package.json',
+          'scripts/cloudflare-release-guidance.mjs',
+          'docs/public/content-manifest.json'
+        ],
+        impact: 'integration',
+        guides: ['docs/public/updates/app.md'],
         reason: 'Internal change'
       }) +
       '\n```\n'
@@ -228,7 +244,10 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
       app: 'asyra-design'
     })
   )
-  let deploymentId = 'previous-deployment'
+  const provider = {
+    deploymentId: 'previous-deployment',
+    sourceSha: f.baselineSha
+  }
   const methods = []
   const options = {
     root: f.root,
@@ -245,11 +264,11 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
               result: {
                 name: 'asyra-design',
                 canonical_deployment: {
-                  id: deploymentId,
+                  id: provider.deploymentId,
                   environment: 'production',
                   latest_stage: { name: 'deploy', status: 'success' },
                   deployment_trigger: {
-                    metadata: { commit_hash: f.baselineSha }
+                    metadata: { commit_hash: provider.sourceSha }
                   }
                 }
               }
@@ -259,11 +278,18 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
             status: 200,
             json: async () => ({
               app: 'asyra-design',
-              sourceSha: f.baselineSha
+              sourceSha: provider.sourceSha
             })
           }
     }
   }
+  return { ...f, output, provider, methods, options }
+}
+
+test('Cloudflare uses provider deployment identity and blocks stale artifacts before upload', async (t) => {
+  const { cloudflareGuidance, recordCloudflareGuidance } =
+    await import('../cloudflare-release-guidance.mjs')
+  const { root, output, provider, methods, options } = cloudflareFixture(t)
   await assert.rejects(
     cloudflareGuidance('check', 'asyra-design', options),
     /Missing release guidance/
@@ -275,12 +301,12 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
     'previous-deployment'
   )
   await cloudflareGuidance('check', 'asyra-design', options)
-  deploymentId = 'replaced-same-sha'
+  provider.deploymentId = 'replaced-same-sha'
   await assert.rejects(
     cloudflareGuidance('check', 'asyra-design', options),
     /baseline changed/
   )
-  deploymentId = 'previous-deployment'
+  provider.deploymentId = 'previous-deployment'
   fs.writeFileSync(
     path.join(output, 'index.html'),
     'Changed after browser test'
@@ -290,7 +316,7 @@ test('Cloudflare uses provider deployment identity and blocks stale artifacts be
     /artifacts changed/
   )
   const result = recordCloudflareGuidance('asyra-design', {
-    root: f.root,
+    root,
     deploymentId: 'new-deployment',
     published: true,
     verified: false
@@ -532,7 +558,8 @@ test('preparation resumes exact partial candidates without replacing their prede
         () =>
           JSON.stringify({
             version: artifact.version,
-            'dist.integrity': artifact.integrity
+            'dist.integrity': artifact.integrity,
+            gitHead: f.sourceSha
           })
       ),
     /Missing release guidance/
@@ -573,4 +600,424 @@ test('one preparation shares snapshot and delta reads, and the next preparation 
     'export const missing = true'
   )
   assert.throws(() => prepareGuidance(input(f)), /committed source inputs/)
+})
+
+test('Cloudflare retries retain the original summary and guides after upload verification fails', async (t) => {
+  const { cloudflareGuidance, recordCloudflareGuidance } =
+    await import('../cloudflare-release-guidance.mjs')
+  const f = cloudflareFixture(t)
+  const original = await cloudflareGuidance(
+    'prepare',
+    'asyra-design',
+    f.options
+  )
+  recordCloudflareGuidance('asyra-design', {
+    root: f.root,
+    deploymentId: 'candidate-deployment',
+    published: true,
+    verified: false
+  })
+  f.provider.sourceSha = f.options.sourceSha
+  f.provider.deploymentId = 'candidate-deployment'
+  const resumed = await cloudflareGuidance('prepare', 'asyra-design', f.options)
+  assert.deepEqual(resumed, original)
+  assert.ok(resumed.deliveries[0].notes.length > 0)
+  assert.equal(resumed.deliveries[0].guides.length, 1)
+  await cloudflareGuidance('check', 'asyra-design', f.options)
+  f.provider.deploymentId = 'unrecorded-redeployment'
+  await assert.rejects(
+    cloudflareGuidance('check', 'asyra-design', f.options),
+    /baseline changed/
+  )
+})
+
+test('unchanged npm members use the earlier published source without requiring a retry receipt', async (t) => {
+  const { registryPreparationBaseline } =
+    await import('../release-guidance.mjs')
+  const f = fixture(t)
+  const artifact = f.deliveries[1].artifact
+  f.git(
+    'commit',
+    '--allow-empty',
+    '-qm',
+    'Next release with an unchanged member'
+  )
+  const sourceSha = f.git('rev-parse', 'HEAD')
+  const runCommand = () =>
+    JSON.stringify({
+      version: artifact.version,
+      'dist.integrity': artifact.integrity,
+      gitHead: f.sourceSha
+    })
+  for (const file of [
+    f.evidencePath,
+    path.join(f.root, 'missing-retry.json')
+  ]) {
+    const observed = registryPreparationBaseline(
+      f.root,
+      artifact,
+      sourceSha,
+      file,
+      runCommand
+    )
+    assert.equal(observed.baseline.sourceSha, f.sourceSha)
+    assert.equal(observed.baseline.version, artifact.version)
+    assert.notEqual(
+      observed.baseline.sourceSha,
+      f.deliveries[1].baseline.sourceSha
+    )
+  }
+  assert.throws(
+    () =>
+      registryPreparationBaseline(
+        f.root,
+        artifact,
+        sourceSha,
+        f.evidencePath,
+        () =>
+          JSON.stringify({
+            version: artifact.version,
+            'dist.integrity': 'different-bytes',
+            gitHead: f.sourceSha
+          })
+      ),
+    /integrity differs/
+  )
+  assert.throws(
+    () =>
+      registryPreparationBaseline(
+        f.root,
+        artifact,
+        sourceSha,
+        f.evidencePath,
+        (command) => {
+          if (command === 'git') throw new Error('Missing verified tag')
+          return JSON.stringify({
+            version: artifact.version,
+            'dist.integrity': artifact.integrity
+          })
+        }
+      ),
+    /coverage gap/
+  )
+})
+
+function archivedCloudflareRun(f, candidate, result) {
+  const id = 'asyra-design'
+  const name = `release-guidance-${id}-${candidate.sourceSha}`
+  const archive = {
+    id: 10,
+    name,
+    expired: false,
+    workflow_run: {
+      id: 101,
+      head_sha: candidate.sourceSha,
+      head_branch: 'main',
+      repository_id: 1,
+      head_repository_id: 1
+    }
+  }
+  const resultArchive = { id: 11, name: `${name}-result-1`, expired: false }
+  const calls = []
+  const runCommand = (command, args) => {
+    calls.push([command, ...args])
+    assert.equal(command, 'gh')
+    if (args[0] === 'api') {
+      if (args[1].endsWith('actions/runs/101'))
+        return JSON.stringify([
+          {
+            path: '.github/workflows/app-cloudflare.yml',
+            event: 'workflow_dispatch'
+          }
+        ])
+      if (args[1].includes('actions/runs/101/artifacts'))
+        return JSON.stringify([{ artifacts: [resultArchive] }])
+      return JSON.stringify([
+        { artifacts: args[1].includes(`name=${name}&`) ? [archive] : [] }
+      ])
+    }
+    assert.deepEqual(args.slice(0, 3), ['run', 'download', '101'])
+    const directory = args[args.indexOf('--dir') + 1]
+    fs.mkdirSync(directory, { recursive: true })
+    const isResult = args[args.indexOf('--name') + 1] === resultArchive.name
+    fs.writeFileSync(
+      path.join(
+        directory,
+        isResult
+          ? `asyra-design.json.result.json.${result.guidance}.json`
+          : 'asyra-design.json'
+      ),
+      JSON.stringify(isResult ? result : candidate)
+    )
+    return ''
+  }
+  return {
+    archive,
+    resultArchive,
+    calls,
+    options: {
+      ...f.options,
+      runCommand,
+      repository: 'owner/repo',
+      runId: 101,
+      output: path.join(f.root, 'tmp/restore-output')
+    }
+  }
+}
+
+test('a fresh Cloudflare runner restores the frozen candidate and failed attempt through Actions artifacts', async (t) => {
+  const {
+    cloudflareGuidance,
+    recordCloudflareGuidance,
+    restoreCloudflareGuidance
+  } = await import('../cloudflare-release-guidance.mjs')
+  const f = cloudflareFixture(t)
+  const candidate = await cloudflareGuidance(
+    'prepare',
+    'asyra-design',
+    f.options
+  )
+  const result = recordCloudflareGuidance('asyra-design', {
+    root: f.root,
+    deploymentId: 'candidate-deployment',
+    published: true,
+    verified: false
+  })
+  const archived = archivedCloudflareRun(f, candidate, result)
+  f.provider.sourceSha = candidate.sourceSha
+  f.provider.deploymentId = 'candidate-deployment'
+  fs.rmSync(path.join(f.root, 'tmp/cloudflare-release-guidance'), {
+    recursive: true
+  })
+  assert.deepEqual(
+    await restoreCloudflareGuidance('asyra-design', archived.options),
+    { retained: true }
+  )
+  assert.equal(
+    fs.readFileSync(archived.options.output, 'utf8'),
+    'candidate-retained=true\n'
+  )
+  assert.deepEqual(
+    await cloudflareGuidance('prepare', 'asyra-design', f.options),
+    candidate
+  )
+  await cloudflareGuidance('check', 'asyra-design', f.options)
+  assert.ok(archived.calls.some((args) => args.includes('download')))
+  // A separate dispatch checkpoints the same candidate in its own run.
+  assert.deepEqual(
+    await restoreCloudflareGuidance('asyra-design', {
+      ...archived.options,
+      runId: 102
+    }),
+    { retained: false }
+  )
+  const failedRetry = recordCloudflareGuidance('asyra-design', {
+    root: f.root,
+    published: false,
+    verified: false
+  })
+  assert.equal(
+    failedRetry.outcomes['asyra-design'].deploymentId,
+    'candidate-deployment'
+  )
+  assert.equal(failedRetry.outcomes['asyra-design'].published, true)
+  assert.equal(failedRetry.outcomes['asyra-design'].attemptPublished, false)
+  await cloudflareGuidance('check', 'asyra-design', f.options)
+  fs.writeFileSync(
+    path.join(f.output, 'index.html'),
+    'Changed rebuilt artifact'
+  )
+  await assert.rejects(
+    cloudflareGuidance('prepare', 'asyra-design', f.options),
+    /artifacts changed/
+  )
+})
+
+test('missing or expired Cloudflare retry evidence cannot produce a target-to-target summary', async (t) => {
+  const {
+    cloudflareGuidance,
+    recordCloudflareGuidance,
+    restoreCloudflareGuidance
+  } = await import('../cloudflare-release-guidance.mjs')
+  const f = cloudflareFixture(t)
+  const candidate = await cloudflareGuidance(
+    'prepare',
+    'asyra-design',
+    f.options
+  )
+  const result = recordCloudflareGuidance('asyra-design', {
+    root: f.root,
+    deploymentId: 'candidate-deployment',
+    published: true,
+    verified: false
+  })
+  const archived = archivedCloudflareRun(f, candidate, result)
+  f.provider.sourceSha = candidate.sourceSha
+  f.provider.deploymentId = 'candidate-deployment'
+  fs.rmSync(path.join(f.root, 'tmp/cloudflare-release-guidance'), {
+    recursive: true
+  })
+  await assert.rejects(
+    cloudflareGuidance('prepare', 'asyra-design', f.options),
+    /missing original candidate/
+  )
+  archived.archive.expired = true
+  await assert.rejects(
+    restoreCloudflareGuidance('asyra-design', archived.options),
+    /missing original candidate/
+  )
+  archived.archive.expired = false
+  archived.resultArchive.expired = true
+  await restoreCloudflareGuidance('asyra-design', archived.options)
+  await assert.rejects(
+    cloudflareGuidance('prepare', 'asyra-design', f.options),
+    /baseline changed/
+  )
+})
+
+test('newer Cloudflare sources require verified predecessor evidence and preserve documentation exemption', async (t) => {
+  const {
+    cloudflareGuidance,
+    recordCloudflareGuidance,
+    restoreCloudflareGuidance
+  } = await import('../cloudflare-release-guidance.mjs')
+  const f = cloudflareFixture(t)
+  const candidate = await cloudflareGuidance(
+    'prepare',
+    'asyra-design',
+    f.options
+  )
+  const result = recordCloudflareGuidance('asyra-design', {
+    root: f.root,
+    deploymentId: 'candidate-deployment',
+    published: true,
+    verified: false
+  })
+  const archived = archivedCloudflareRun(f, candidate, result)
+  f.provider.sourceSha = candidate.sourceSha
+  f.provider.deploymentId = 'candidate-deployment'
+  fs.writeFileSync(
+    path.join(f.root, 'apps/asyra-design/README.md'),
+    '# Documentation correction\n'
+  )
+  f.git('add', '.')
+  f.git('commit', '-qm', 'Documentation only')
+  const sourceSha = f.git('rev-parse', 'HEAD')
+  fs.writeFileSync(
+    path.join(f.output, 'deployment-version.json'),
+    JSON.stringify({ app: 'asyra-design', sourceSha })
+  )
+  await assert.rejects(
+    cloudflareGuidance('prepare', 'asyra-design', { ...f.options, sourceSha }),
+    /verify its original candidate/
+  )
+  fs.rmSync(path.join(f.root, 'tmp/cloudflare-release-guidance'), {
+    recursive: true
+  })
+  await assert.rejects(
+    restoreCloudflareGuidance('asyra-design', {
+      ...archived.options,
+      sourceSha
+    }),
+    /verify its original candidate/
+  )
+  result.outcomes['asyra-design'].status = 'verified'
+  result.outcomes['asyra-design'].verified = true
+  await restoreCloudflareGuidance('asyra-design', {
+    ...archived.options,
+    sourceSha
+  })
+  const next = await cloudflareGuidance('prepare', 'asyra-design', {
+    ...f.options,
+    sourceSha
+  })
+  assert.equal(next.deliveries[0].baseline.sourceSha, candidate.sourceSha)
+  assert.ok(next.deliveries[0].changes.includes('apps/asyra-design/README.md'))
+  assert.deepEqual(next.deliveries[0].notes, [])
+  await cloudflareGuidance('check', 'asyra-design', { ...f.options, sourceSha })
+})
+
+test('a mixed npm release retains unchanged-member and partial-retry baselines independently', async (t) => {
+  const { registryPreparationBaseline, prepareOrReuseGuidance } =
+    await import('../release-guidance.mjs')
+  const f = fixture(t)
+  const coreFile = path.join(f.root, 'packages/core/package.json')
+  const core = JSON.parse(fs.readFileSync(coreFile, 'utf8'))
+  core.version = '1.2.0'
+  fs.writeFileSync(coreFile, JSON.stringify(core))
+  const notes = path.join(f.root, 'RELEASE_NOTES.md')
+  fs.writeFileSync(
+    notes,
+    fs
+      .readFileSync(notes, 'utf8')
+      .replace('Candidate implementation', 'Next core implementation')
+  )
+  f.git('add', '.')
+  f.git('commit', '-qm', 'Next core with unchanged utility package')
+  const sourceSha = f.git('rev-parse', 'HEAD')
+  const deliveries = f.deliveries.map((item) => ({
+    ...item,
+    artifact: {
+      ...item.artifact,
+      ...(item.id === '@asyra/core' ? { version: '1.2.0' } : {})
+    }
+  }))
+  let partial = false
+  const registry = (command, args) => {
+    assert.equal(command, 'npm')
+    const entry = deliveries.find((item) => `${item.id}@latest` === args[1])
+    const existing = entry.id === '@asyra/utils'
+    const publishedSource = partial ? sourceSha : f.baselineSha
+    return JSON.stringify({
+      version:
+        existing || partial ? entry.artifact.version : entry.baseline.version,
+      'dist.integrity':
+        existing || partial
+          ? entry.artifact.integrity
+          : entry.baseline.integrity,
+      gitHead: existing ? f.sourceSha : publishedSource
+    })
+  }
+  const prepare = () => {
+    const observed = deliveries.map((item) =>
+      registryPreparationBaseline(
+        f.root,
+        item.artifact,
+        sourceSha,
+        f.evidencePath,
+        registry
+      )
+    )
+    return prepareOrReuseGuidance(
+      f.evidencePath,
+      {
+        root: f.root,
+        owner: 'framework',
+        sourceSha,
+        deliveries: deliveries.map((item, index) => ({
+          ...item,
+          baseline: observed[index].baseline
+        }))
+      },
+      observed.map((item) => item.current)
+    )
+  }
+  const candidate = prepare()
+  assert.equal(
+    candidate.deliveries.find((item) => item.id === '@asyra/utils').baseline
+      .sourceSha,
+    f.sourceSha
+  )
+  assert.equal(
+    candidate.deliveries.find((item) => item.id === '@asyra/core').baseline
+      .sourceSha,
+    f.baselineSha
+  )
+  partial = true
+  assert.deepEqual(prepare(), candidate)
+  fs.rmSync(f.evidencePath)
+  assert.throws(
+    prepare,
+    /Missing release guidance for this published candidate/
+  )
 })
