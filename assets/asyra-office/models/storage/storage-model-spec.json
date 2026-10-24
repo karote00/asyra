@@ -1,6 +1,6 @@
 {
   "specVersion": "1.0.0",
-  "status": "Original reference sheets retained; snack-cabinet construction revision approved by the user for commit; no verified production models",
+  "status": "Original reference sheets retained; snack-cabinet and bookcase construction revisions approved by the user for commit; no verified production models",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -418,67 +418,83 @@
       "components": [
         {
           "partId": "side-left",
-          "primitive": "rounded-box",
-          "size": [0.022, 0.26, 0.7849999999999999],
-          "centre": [-0.19899999999999998, 0, 0.4275],
+          "primitive": "box-union-input",
+          "size": [0.022, 0.26, 0.785],
+          "centre": [-0.199, 0, 0.4275],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "side-right",
-          "primitive": "rounded-box",
-          "size": [0.022, 0.26, 0.7849999999999999],
-          "centre": [0.19899999999999998, 0, 0.4275],
+          "primitive": "box-union-input",
+          "size": [0.022, 0.26, 0.785],
+          "centre": [0.199, 0, 0.4275],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "top",
-          "primitive": "rounded-box",
+          "primitive": "box-union-input",
           "size": [0.376, 0.26, 0.022],
-          "centre": [0, 0, 0.8089999999999999],
+          "centre": [0, 0, 0.809],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "bottom",
-          "primitive": "rounded-box",
+          "primitive": "box-union-input",
           "size": [0.376, 0.26, 0.022],
           "centre": [0, 0, 0.046],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "back",
-          "primitive": "rounded-box",
-          "size": [0.376, 0.018, 0.7409999999999999],
-          "centre": [0, 0.12100000000000001, 0.4275],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.018, 0.741],
+          "centre": [0, 0.121, 0.4275],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "plinth",
-          "primitive": "rounded-box",
+          "primitive": "box-union-input",
           "size": [0.36, 0.2, 0.035],
           "centre": [0, 0.01, 0.0175],
           "material": "oak-dark",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "shelf-1",
-          "primitive": "rounded-box",
-          "size": [0.376, 0.24200000000000002, 0.025],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.242, 0.025],
           "centre": [0, -0.009, 0.297],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         },
         {
           "partId": "shelf-2",
-          "primitive": "rounded-box",
-          "size": [0.376, 0.24200000000000002, 0.025],
+          "primitive": "box-union-input",
+          "size": [0.376, 0.242, 0.025],
           "centre": [0, -0.009, 0.547],
           "material": "oak",
-          "radius": 0.003
+          "radius": 0.003,
+          "constructionGroup": "bookcase-body",
+          "edgePolicy": "Union first; 3 mm inward roundover on exposed convex edges only; concave and mating edges remain sharp"
         }
       ],
       "compartments": {
@@ -492,7 +508,126 @@
         "clearDepth": 0.242
       },
       "sourceStatus": "narrow shelf beside green sofa; hidden back and exact shelf count are explicit completion",
-      "rear": "plain oak backing"
+      "rear": "plain oak backing",
+      "bounds": {
+        "min": [-0.21, -0.13, 0],
+        "max": [0.21, 0.13, 0.82]
+      },
+      "constructionDocument": "BOOKCASE-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "modelVerified": false,
+        "outputSolidCount": 1,
+        "unionInputs": [
+          "side-left",
+          "side-right",
+          "top",
+          "bottom",
+          "back",
+          "plinth",
+          "shelf-1",
+          "shelf-2"
+        ],
+        "method": "Numeric input bounds, contact connectivity, unrounded union volume and cavity checks; no model exported",
+        "unroundedUnionVolume": 0.025366528,
+        "joinTolerance": 1e-5,
+        "plinthInsets": {
+          "left": 0.03,
+          "right": 0.03,
+          "front": 0.04,
+          "back": 0.02
+        },
+        "meshTopologyVerified": false
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": {
+          "material": ["part", "whole-unit", "preset"],
+          "color": ["part", "whole-unit", "selected material color"]
+        },
+        "colorFallback": "selected material color",
+        "instanceIsolation": true,
+        "parts": {
+          "side-left": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "side-right": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "top": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "bottom": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "back": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "plinth": {
+            "defaultMaterial": "oak-dark",
+            "defaultColorSRGB": "#A68760"
+          },
+          "shelf-1": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          },
+          "shelf-2": {
+            "defaultMaterial": "oak",
+            "defaultColorSRGB": "#C7A376"
+          }
+        },
+        "grainCoordinates": "final resized local metres before world placement",
+        "filletOwnership": "closest adjacent surviving source face; ties follow component table order"
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [0.42, 0.26, 0.82],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "notes": "Scale all board positions, thicknesses, openings, plinth offset and roundovers together; no fixed-size detail compensation",
+        "deformation": false
+      },
+      "lod": {
+        "tiers": [
+          {
+            "id": "lod0",
+            "bevelSegments": 3,
+            "triangleBudget": 3000,
+            "actualTriangleCount": null,
+            "verified": false
+          },
+          {
+            "id": "lod1",
+            "bevelSegments": 2,
+            "triangleBudget": 1500,
+            "actualTriangleCount": null,
+            "verified": false
+          },
+          {
+            "id": "lod2",
+            "bevelSegments": 1,
+            "triangleBudget": 800,
+            "actualTriangleCount": null,
+            "verified": false
+          }
+        ],
+        "budgetStatus": "implementation admission targets; actual boolean and bevel tessellation not measured",
+        "preserve": [
+          "one closed body",
+          "three open compartments",
+          "plain closed backing",
+          "between-side top",
+          "recessed plinth",
+          "overall bounds and origin"
+        ],
+        "switchingOwner": "app"
+      }
     },
     {
       "moduleId": "wall-shelf-plank",

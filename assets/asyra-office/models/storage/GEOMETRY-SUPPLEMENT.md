@@ -4,7 +4,7 @@ Units m, +Z up, -Y front. JSON size order X/Y/Z; centre is local. Cabinet origin
 
 ## Shared panels
 
-The snack cabinet uses the explicit union-first and contact rules below rather than independently rounding its touching carcass panels. The following general rounded-box definition still applies to isolated rounded parts; bookcase and wall shelf remain unchanged in this review.
+Snack cabinet and bookcase use their explicit union-first rules rather than independently rounding touching carcass panels. The general rounded-box definition below applies to isolated rounded parts. The wall shelf is unchanged in this review.
 
 rounded-box is closed, with all outer edges beveled inward by radius using 3 circular-arc segments, without enlarging bounds. Keep planar normals and smooth arc normals. Front, back, and bottom surfaces are complete; no exposed duplicate contact faces. Bookcase and snack cabinet use actual side, back, bottom, and shelf panels. Compartments are empty space, not black rectangles on solid boxes.
 
@@ -26,9 +26,11 @@ The original office does not clearly identify a standalone snack cabinet. This i
 
 ## Narrow bookcase
 
+The [bookcase construction specification](BOOKCASE-SPEC.md) preserves the original panel sizes and positions. Its 376 mm top fits between the sides, which reach the full 820 mm height; it is not a full-width cap. Union the eight unrounded inputs before adding 3 mm inward roundovers on exposed convex edges. Remove internal faces, keep concave cavity joints sharp and preserve source material regions. The output must be one closed body without joining slits.
+
 Outer width 0.42, depth 0.26, height 0.82. Side thickness 0.022, plinth height 0.035, back thickness 0.018. Two internal shelves of thickness 0.025 at centres Z=0.297 and 0.547 form three open compartments.
 
-Bottom-to-top clear Z intervals are 0.057–0.2845, 0.3095–0.5345, 0.5595–0.798; clear width 0.376 and depth 0.242. No front doors; rear fully closed. Underside shares wood colour; no casters or exposed thin legs. Original books/plants remain separate. Location/colour come from the shelf beside the sofa; exact compartment count and backing are chosen completions.
+Bottom-to-top clear Z intervals are 0.057–0.2845, 0.3095–0.5345, 0.5595–0.798; clear width 0.376 and depth 0.242. The clear heights are 227.5, 225 and 238.5 mm, not equal. The plinth spans X=-180..180, Y=-90..110 and Z=0..35 mm; insets are 30 mm at both sides, 40 mm front and 20 mm back. The cabinet origin remains the body footprint centre on Z=0. No front doors; rear fully closed. Underside shares wood colour; no casters or exposed thin legs. Original books/plants remain separate. Location/colour come from the shelf beside the sofa; exact compartment count and backing are chosen completions.
 
 ## Wall shelf
 

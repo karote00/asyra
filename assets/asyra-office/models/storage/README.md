@@ -1,6 +1,6 @@
 # Asyra Office - Group 4C - Storage Furniture
 
-Status: **Original reference sheets retained. The snack-cabinet construction revision is approved by the user for commit; bookcase and wall shelf are unchanged. No production model verification.**
+Status: **Original reference sheets retained. The snack-cabinet construction revision is approved. The bookcase construction revision is approved by the user for commit; wall shelf is unchanged. No production model verification.**
 
 | Unit                        | X × Y × Z (m)                                   | Source and completion                                                                | Sheet                                           |
 | --------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------- |
@@ -13,6 +13,7 @@ Each has front, right, back, top, and oblique views. Compartments remain empty; 
 ## Documents
 
 - [Snack cabinet construction](SNACK-CABINET-SPEC.md): corrected cap, door clearances, recessed fields, contact planes, replaceable defaults and LoD targets.
+- [Bookcase construction](BOOKCASE-SPEC.md): between-side top, three clear openings, welded joints, plinth offsets, replaceable defaults and LoD targets.
 - [Geometry supplement](GEOMETRY-SUPPLEMENT.md): cabinet panels, real voids, doors, holes, and placement.
 - [Numeric data](storage-model-spec.json): panel dimensions, coordinates, materials, and clearances.
 - [Surface recipes](SURFACE-RECIPES.md): grain/solid colours without baked shadows.

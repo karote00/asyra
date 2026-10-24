@@ -12,4 +12,10 @@ Do not darken compartment backs/sides because of occlusion; retain only intrinsi
 
 The [construction specification](SNACK-CABINET-SPEC.md) and JSON map every snack-cabinet part to its replaceable default. Oak panels retain #C7A376 with #AF895F grain, the plinth uses #A68760, and handles/mounts use #44443C. Resolve part, assembly-group and whole-unit overrides in that order before the preset. With no explicit colour override, retain the selected material's own colour. A replacement does not alter geometry or another cabinet instance.
 
-For this cabinet, evaluate grain in final resized local metres before world placement. Recess floors and slopes inherit the door front mapping. Fillets retain the nearest adjoining surviving source face's region, with table-order ties. The original recipes for bookcase and wall shelf are unchanged. No internal duplicate faces are retained merely to store material regions.
+For this cabinet, evaluate grain in final resized local metres before world placement. Recess floors and slopes inherit the door front mapping. Fillets retain the nearest adjoining surviving source face's region, with table-order ties. The original numeric grain recipe is unchanged; bookcase mapping is clarified below, while wall shelf remains unchanged. No internal duplicate faces are retained merely to store material regions.
+
+## Bookcase appearance and resizing
+
+The [bookcase construction specification](BOOKCASE-SPEC.md) maps seven wood-panel regions to oak #C7A376 with oak-grain #AF895F, and the plinth to oak-dark #A68760. These remain independently replaceable regions on a single joined body. Resolve part material before whole-unit material and then the preset; resolve explicit part colour before whole-unit colour, otherwise retain the selected material's own colour. Keep other bookcase instances unchanged.
+
+Evaluate grain using final resized local metres before world placement, preserving the physical repeat. Roundover faces inherit the closest adjoining surviving source face's region, with component-table order breaking ties. Source region ownership does not add seams, retained internal faces or material-only mesh layers. No interior region uses painted occlusion as its default colour.
