@@ -984,6 +984,37 @@ test('document check execution runs the selected formal files and retains exact 
   )
 })
 
+test('Cloudflare workflow selections execute registered GitHub tests and reject arbitrary paths', () => {
+  const { repositoryScripts } = classifyChanges(
+    ['.github/workflows/app-cloudflare.yml'],
+    manifests
+  ).relationshipMap.executionPlan.checks
+  assert.ok(
+    repositoryScripts.tests.includes(
+      '.github/__tests__/app-cloudflare.test.mjs'
+    )
+  )
+  const calls = []
+  const result = runRepositoryScripts(repositoryScripts, (command, args) =>
+    calls.push({ command, args })
+  )
+  assert.deepEqual(result.executedTests, repositoryScripts.tests)
+  assert.deepEqual(calls, [
+    { command: process.execPath, args: ['--test', ...repositoryScripts.tests] }
+  ])
+  for (const file of [
+    '.github/__tests__/unknown.test.mjs',
+    '.github/../scripts/escape.test.mjs',
+    '.github/workflows/app-cloudflare.yml'
+  ]) {
+    assert.throws(() =>
+      runRepositoryScripts({ ...repositoryScripts, tests: [file] }, () =>
+        assert.fail('must not execute')
+      )
+    )
+  }
+})
+
 test('mixed source and documentation edits combine required repository contracts and declaration build', () => {
   const { checks } = classifyChanges(
     ['docs/ai/framework/PLANS.md', 'packages/core/src/index.ts'],

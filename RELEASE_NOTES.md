@@ -324,14 +324,17 @@ These development notes are not published release summaries.
 {
   "change": "release-guidance-closeout-integration",
   "owner": "Release guidance verification",
-  "summary": "Preserve exact historical cross-version logs in CI and bind continuing checks to permanent rules and the owner plan index before archival.",
+  "summary": "Retain exact cross-version evidence in CI, execute registered Cloudflare workflow tests, and synchronize persistent rule references and Inspector snapshots before archival.",
   "sources": [
+    "docs/public/generated/source-map.json",
+    "scripts/__tests__/ci-scope.test.mjs",
     "scripts/__tests__/fixtures/retained-app-update-evidence.json",
     "scripts/__tests__/workspace-automation.test.mjs",
     "scripts/docs/__tests__/release-update-guidance.test.mjs",
+    "tools/flow-inspector/control-plane/ci-script-selection.cjs",
     "tools/flow-inspector/inspectors/asyra-public-package-documentation-flow-inspector.data.cjs",
     "tools/flow-inspector/inspectors/release-update-guidance.flow.json",
-    "docs/public/generated/source-map.json"
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
   ],
   "impact": "no-action",
   "guides": [],
