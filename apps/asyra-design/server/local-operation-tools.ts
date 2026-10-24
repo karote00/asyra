@@ -2948,14 +2948,27 @@ export const createLocalOperationTools = (
           return 'API discovery omitted a usable continuation'
       }
     },
-    resultOutcome: (name: string, value: unknown) =>
-      localToolOutcome(
+    resultOutcome: (name: string, value: unknown) => {
+      const outcome = localToolOutcome(
         name === AiDesignToolIds.DESCRIBE_DESIGN_APIS &&
           isRecord(value) &&
           typeof value.complete === 'boolean'
           ? { ...value, complete: true }
           : value
-      ),
+      )
+      // An acknowledged read is not a successful capture. This owner knows that
+      // every capture failed; generic batch acknowledgement must not promote it.
+      if (
+        name === AiDesignToolIds.REVIEW_DRAWING &&
+        isRecord(value) &&
+        value.reviewOperation === 'capture' &&
+        value.status === 'failed' &&
+        value.settlement === 'completed' &&
+        outcome.settlement === 'completed'
+      )
+        return { ...outcome, status: 'failed' as const }
+      return outcome
+    },
     call: async (
       name: string,
       args: unknown,
@@ -3569,6 +3582,7 @@ export const createLocalOperationTools = (
         const failedInspections: {
           inspection: NonNullable<typeof targets>[number]
           message: string
+          code?: string
         }[] = []
         for (const target of targets ?? []) {
           signal.throwIfAborted()
@@ -3627,6 +3641,9 @@ export const createLocalOperationTools = (
           } else {
             failedInspections.push({
               inspection: target,
+              ...(isRecord(result) && typeof result.code === 'string'
+                ? { code: result.code }
+                : {}),
               message:
                 isRecord(result) && typeof result.message === 'string'
                   ? result.message
@@ -3639,9 +3656,18 @@ export const createLocalOperationTools = (
           const message =
             'Required captures are unavailable. Retry corrected failedInspections targets as inspections; include inspectionIds only when the returned list is nonempty. Assessment has not run.'
           designReview.requireReview(message)
+          const readsCompleted =
+            capturedResults.length === targets?.length &&
+            capturedResults.every(
+              ({ result }) =>
+                isRecord(result) &&
+                isRecord(result.toolOutcome) &&
+                result.toolOutcome.settlement === 'completed'
+            )
           return JSON.stringify({
             available: false,
-            status: 'partial',
+            status: inspectionIds.length ? 'partial' : 'failed',
+            ...(readsCompleted ? { settlement: 'completed' } : {}),
             phase: reviewArgs.phase,
             accepted: designReview.isAccepted(),
             reviewOperation,

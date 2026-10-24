@@ -1,6 +1,7 @@
 import type { SceneTree } from '@asyra/scene-tree'
 import {
   EntityTypes,
+  calculateEllipseBounds,
   type Bounds,
   type ComputedAttrs,
   type ElementInstanceTypes
@@ -33,6 +34,11 @@ const getFiniteGeometry = (
     return null
   }
 
+  if (element.get('type') === 'oval') {
+    const rotation = element.computed.get('rotation') ?? 0
+    if (typeof rotation !== 'number' || !Number.isFinite(rotation)) return null
+    return calculateEllipseBounds({ x, y, width, height, rotation })
+  }
   return { x, y, width, height }
 }
 

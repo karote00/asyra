@@ -1,9 +1,12 @@
+import { calculateEllipseBounds } from '@asyra/utils'
 // Pure geometry shared by Preset operations and server-side preparation.
 export interface GroupBounds {
   readonly x: number
   readonly y: number
   readonly width: number
   readonly height: number
+  readonly type?: string
+  readonly rotation?: number
 }
 
 export const deriveGroupBounds = (
@@ -18,12 +21,20 @@ export const deriveGroupBounds = (
   let maxX = -Infinity
   let maxY = -Infinity
 
-  rectangles.forEach(({ x, y, width, height }) => {
-    const values = [x, y, width, height]
+  rectangles.forEach(({ x, y, width, height, type, rotation = 0 }) => {
+    const values = [x, y, width, height, rotation]
     if (values.some((value) => !Number.isFinite(value))) {
       throw new Error(
         '[Preset] Group operation requires finite 2D geometry: direct-child rectangle is invalid'
       )
+    }
+    if (type === 'oval' && rotation !== 0) {
+      const bounds = calculateEllipseBounds({ x, y, width, height, rotation })
+      minX = Math.min(minX, bounds.x)
+      maxX = Math.max(maxX, bounds.x + bounds.width)
+      minY = Math.min(minY, bounds.y)
+      maxY = Math.max(maxY, bounds.y + bounds.height)
+      return
     }
     minX = Math.min(minX, x, x + width)
     minY = Math.min(minY, y, y + height)

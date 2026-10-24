@@ -54,7 +54,7 @@ export type DesignFinding =
     }>
 export interface PreparedDesign {
   readonly continuation?: Readonly<{
-    anchor: Readonly<{ id: string; x: number; y: number }>
+    anchor: Readonly<{ id: string; x: number; y: number; rotation?: number }>
   }>
   readonly version: typeof PREPARED_DESIGN_VERSION
   readonly rootId: string

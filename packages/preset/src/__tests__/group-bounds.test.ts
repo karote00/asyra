@@ -24,3 +24,23 @@ describe('pure Group bounds without browser runtime', () => {
     ).toThrow(/finite/)
   })
 })
+
+it('unions exact rotated oval extents without changing its local origin', () => {
+  const oval = {
+    type: 'oval',
+    x: 10,
+    y: 20,
+    width: 20,
+    height: 10,
+    rotation: Math.PI / 4
+  }
+  const bounds = deriveGroupBounds([oval])
+  const cx = 10 + 5 / Math.sqrt(2),
+    cy = 20 + 15 / Math.sqrt(2),
+    radius = Math.sqrt(62.5)
+  expect(bounds.x).toBeCloseTo(cx - radius, 10)
+  expect(bounds.y).toBeCloseTo(cy - radius, 10)
+  expect(bounds.width).toBeCloseTo(2 * radius, 10)
+  expect(bounds.height).toBeCloseTo(2 * radius, 10)
+  expect(oval.x).toBe(10)
+})

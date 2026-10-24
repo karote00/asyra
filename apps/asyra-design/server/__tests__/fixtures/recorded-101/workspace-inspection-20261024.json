@@ -1,0 +1,25 @@
+{
+  "provenance": {
+    "run": "1792847647272",
+    "requestId": "e4064411-79d6-457a-8dea-ab234241a77e",
+    "payload": "84-input.json",
+    "scope": "Exact inspection arguments; no provider dependency at test time."
+  },
+  "input": {
+    "phase": "visual",
+    "inspections": [
+      {
+        "elementId": "workspace",
+        "checks": [
+          {
+            "criterionId": "overall"
+          },
+          {
+            "criterionId": "detail"
+          }
+        ]
+      }
+    ],
+    "final": false
+  }
+}

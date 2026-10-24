@@ -370,239 +370,255 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
   }
 )
 
-it('continues only retained remaining parts after cancellation with real history and durable state', async () => {
-  const initial = {
-    version: '1.0.0',
-    props: {},
-    sceneTree: {
-      workspace: 'workspace',
-      workspaceList: ['workspace'],
-      elements: {
-        workspace: {
-          id: 'workspace',
-          name: 'Workspace',
-          type: 'workspace',
-          parentId: '',
-          visible: true,
-          lock: false,
-          children: []
+it.each(['vertices', 'ellipse'])(
+  'continues only retained remaining parts after cancellation with real history and durable state (%s)',
+  async (geometry) => {
+    const initial = {
+      version: '1.0.0',
+      props: {},
+      sceneTree: {
+        workspace: 'workspace',
+        workspaceList: ['workspace'],
+        elements: {
+          workspace: {
+            id: 'workspace',
+            name: 'Workspace',
+            type: 'workspace',
+            parentId: '',
+            visible: true,
+            lock: false,
+            children: []
+          }
         }
       }
     }
-  }
-  core.load(initial)
-  const snapshot = projectedSnapshot
-  // The existing test budget makes two retained partitions cheaply; this tests
-  // continuation, not budget admission or a changed production limit.
-  const session = createDesignPreparationSession(
-    undefined,
-    undefined,
-    undefined,
-    2000
-  )
-  const draftId = session.retainRejectedDraft({
-    type: 'group',
-    name: 'Facade',
-    brief: {
-      intent: 'Repeat facade panels',
-      viewpoint: 'Oblique',
-      sources: ['User dimensions'],
-      assumptions: ['Finish provisional'],
-      checks: []
-    },
-    projection: {
-      azimuth: 30,
-      elevation: 25,
-      scale: 1,
-      originX: 0,
-      originY: 0
-    },
-    children: Array.from({ length: 2001 }, (_, index) => ({
-      type: 'projected-face',
-      key: `panel-${index}`,
-      name: `Panel ${index}`,
-      vertices: [
-        { x: index * 2, y: 0, z: 0 },
-        { x: index * 2 + 1, y: 0, z: 0 },
-        { x: index * 2 + 1, y: 0, z: 2 },
-        { x: index * 2, y: 0, z: 2 }
-      ],
-      fill: index % 2 ? '#246080' : '#80a0b0'
-    }))
-  })
-  if (!draftId) throw new Error('Missing retained source')
-  const freshSignal = () => new AbortController().signal
-  const firstRepair = { draftId, partition: 0 }
-  const first = await session.prepareAsync(
-    session.repairDraft(firstRepair),
-    freshSignal(),
-    firstRepair
-  )
-  const firstDesign = session.resolve(first.artifactId)
-  expect(first.review).toMatchObject({
-    intent: 'Repeat facade panels',
-    checks: []
-  })
-  const controller = new AbortController()
-  const create = vi.spyOn(elementApis, 'createElementsInParent')
-  const publications: SharedPublication[] = []
-  const stop = core.subscribeToSharedPublication((p) => {
-    const document = prepareCollaborationPublication(p)
-    if (document) publications.push(document)
-  })
-  const action = observeAiAction(
-    createPreparedDesignAction(undefined, async () => {
-      // Cancel after the final acknowledged creation member, before selection and
-      // delivery. Current canonical membership decides when to inject cancellation.
-      if (
-        firstDesign.entries.every((entry) =>
-          core.getElementMetadata(entry.descriptor.id)
-        )
-      )
-        controller.abort()
-    })
-  )
-  const execute = async (design: typeof firstDesign, signal: AbortSignal) => {
-    const runtime = createAiAgentRuntime({
-      provider: {
-        requestActionBatch: async () => ({
-          batchId: 'part',
-          actions: [
-            {
-              id: 'apply',
-              name: action.name,
-              arguments: {
-                design: deliverPreparedDesign(design),
-                response: 'compact'
-              },
-              summary: 'Apply retained part'
-            }
-          ]
-        })
+    core.load(initial)
+    const snapshot = projectedSnapshot
+    // The existing test budget makes two retained partitions cheaply; this tests
+    // continuation, not budget admission or a changed production limit.
+    const session = createDesignPreparationSession(
+      undefined,
+      undefined,
+      undefined,
+      2000
+    )
+    const draftId = session.retainRejectedDraft({
+      type: 'group',
+      name: 'Facade',
+      brief: {
+        intent: 'Repeat facade panels',
+        viewpoint: 'Oblique',
+        sources: ['User dimensions'],
+        assumptions: ['Finish provisional'],
+        checks: []
       },
-      actionDefinitions: [action],
-      contextProvider: { getContext: async () => ({}) },
-      permissionPolicy: { evaluate: () => 'allow' },
-      confirmationHandler: { confirm: async () => true },
-      transactionRunner: createAiTransactionRunner()
+      projection: {
+        azimuth: 30,
+        elevation: 25,
+        scale: 1,
+        originX: 0,
+        originY: 0
+      },
+      children: Array.from({ length: 2001 }, (_, index) => ({
+        type: 'projected-face',
+        key: `panel-${index}`,
+        name: `Panel ${index}`,
+        ...(geometry === 'ellipse'
+          ? {
+              ellipse: {
+                center: { x: index * 2, y: 0, z: 1 },
+                u: { x: 0.5, y: 0, z: 0 },
+                v: { x: 0, y: 0, z: 1 }
+              }
+            }
+          : {
+              vertices: [
+                { x: index * 2, y: 0, z: 0 },
+                { x: index * 2 + 1, y: 0, z: 0 },
+                { x: index * 2 + 1, y: 0, z: 2 },
+                { x: index * 2, y: 0, z: 2 }
+              ]
+            }),
+        fill: index % 2 ? '#246080' : '#80a0b0'
+      }))
     })
-    try {
-      return await runtime.run({ intent: 'Apply retained part', signal })
-    } finally {
-      await runtime.dispose()
-    }
-  }
-  try {
-    const cancelled = await execute(firstDesign, controller.signal)
-    expect(cancelled).toMatchObject({
-      status: 'cancelled',
-      transaction: { status: 'committed' },
-      actionResults: [
-        {
-          result: {
-            compositionId: firstDesign.rootId,
-            appliedElementCount: firstDesign.entries.length,
-            plannedElementCount: firstDesign.entries.length,
-            appliedRange: { start: 0, end: firstDesign.entries.length }
-          }
-        }
-      ]
-    })
-    const retained = snapshot()
-    const acknowledgedIds = create.mock.calls.flatMap(([entries]) =>
-      entries.map((entry) => entry.id)
-    )
-    expect(acknowledgedIds).toEqual(
-      firstDesign.entries.map((entry) => entry.descriptor.id)
-    )
-    expect(factory.getUndoHistoryDepth()).toBe(1)
-
-    // A complete acknowledged partition authorizes existing retained-source
-    // continuation. A merely partial member would not authorize this selection.
-    const repair = {
-      draftId,
-      partition: 1,
-      continueFromArtifact: first.artifactId
-    }
-    const next = await session.prepareAsync(
-      session.repairDraft(repair),
+    if (!draftId) throw new Error('Missing retained source')
+    const freshSignal = () => new AbortController().signal
+    const firstRepair = { draftId, partition: 0 }
+    const first = await session.prepareAsync(
+      session.repairDraft(firstRepair),
       freshSignal(),
-      repair
+      firstRepair
     )
-    const remaining = session.resolve(next.artifactId)
-    expect(next.review).toEqual(first.review)
-    const callsBeforeRecovery = create.mock.calls.length
-    const recovered = await execute(remaining, freshSignal())
-    expect(recovered, JSON.stringify(recovered)).toMatchObject({
-      status: 'executed'
+    const firstDesign = session.resolve(first.artifactId)
+    expect(first.review).toMatchObject({
+      intent: 'Repeat facade panels',
+      checks: []
     })
-    const createdOnRecovery = create.mock.calls
-      .slice(callsBeforeRecovery)
-      .flatMap(([entries]) => entries.map((entry) => entry.id))
-    expect(createdOnRecovery).toEqual(
-      remaining.entries.slice(1).map((entry) => entry.descriptor.id)
-    )
-    expect(createdOnRecovery.some((id) => acknowledgedIds.includes(id))).toBe(
-      false
-    )
-    const complete = snapshot()
-    const callsAfterRecovery = create.mock.calls.length
-    const duplicate = await execute(remaining, freshSignal())
-    expect(duplicate.status).toBe('failed')
-    expect(create).toHaveBeenCalledTimes(callsAfterRecovery)
-    expect(snapshot()).toEqual(complete)
-    expect(Object.keys(complete.sceneTree.elements)).toHaveLength(2003)
-    expect(complete.sceneTree.elements.workspace).toMatchObject({
-      children: [firstDesign.rootId]
+    const controller = new AbortController()
+    const create = vi.spyOn(elementApis, 'createElementsInParent')
+    const publications: SharedPublication[] = []
+    const stop = core.subscribeToSharedPublication((p) => {
+      const document = prepareCollaborationPublication(p)
+      if (document) publications.push(document)
     })
-    expect(factory.getUndoHistoryDepth()).toBe(2)
-    await factory.undo()
-    expect(snapshot()).toEqual(retained)
-    await factory.undo()
-    expect(snapshot()).toEqual(initial)
-    await factory.redo()
-    expect(snapshot()).toEqual(retained)
-    await factory.redo()
-    expect(snapshot()).toEqual(complete)
-    await Promise.resolve()
-    stop()
-
-    const persisted = await persistPublications(initial, publications)
-    expect(persisted).toEqual(complete)
-    core.load(initial)
-    factory.transact.reset()
-    let echoes = 0
-    const unlisten = core.subscribeToSharedPublication(() => echoes++)
-    try {
-      for (const publication of publications)
-        await core.applyRemoteCanonicalChangeSlices({
-          origin: publication.origin,
-          slices: readDocumentPublicationSlices(publication) as Parameters<
-            typeof core.applyRemoteCanonicalChangeSlices
-          >[0]['slices']
-        })
-      await Promise.resolve()
-      expect(snapshot()).toEqual(complete)
-      expect(factory.getUndoHistoryDepth()).toBe(0)
-      expect(echoes).toBe(0)
-    } finally {
-      unlisten()
+    const action = observeAiAction(
+      createPreparedDesignAction(undefined, async () => {
+        // Cancel after the final acknowledged creation member, before selection and
+        // delivery. Current canonical membership decides when to inject cancellation.
+        if (
+          firstDesign.entries.every((entry) =>
+            core.getElementMetadata(entry.descriptor.id)
+          )
+        )
+          controller.abort()
+      })
+    )
+    const execute = async (design: typeof firstDesign, signal: AbortSignal) => {
+      const runtime = createAiAgentRuntime({
+        provider: {
+          requestActionBatch: async () => ({
+            batchId: 'part',
+            actions: [
+              {
+                id: 'apply',
+                name: action.name,
+                arguments: {
+                  design: deliverPreparedDesign(design),
+                  response: 'compact'
+                },
+                summary: 'Apply retained part'
+              }
+            ]
+          })
+        },
+        actionDefinitions: [action],
+        contextProvider: { getContext: async () => ({}) },
+        permissionPolicy: { evaluate: () => 'allow' },
+        confirmationHandler: { confirm: async () => true },
+        transactionRunner: createAiTransactionRunner()
+      })
+      try {
+        return await runtime.run({ intent: 'Apply retained part', signal })
+      } finally {
+        await runtime.dispose()
+      }
     }
-    core.load(persisted)
-    expect(snapshot()).toEqual(complete)
+    try {
+      const cancelled = await execute(firstDesign, controller.signal)
+      expect(cancelled).toMatchObject({
+        status: 'cancelled',
+        transaction: { status: 'committed' },
+        actionResults: [
+          {
+            result: {
+              compositionId: firstDesign.rootId,
+              appliedElementCount: firstDesign.entries.length,
+              plannedElementCount: firstDesign.entries.length,
+              appliedRange: { start: 0, end: firstDesign.entries.length }
+            }
+          }
+        ]
+      })
+      const retained = snapshot()
+      const acknowledgedIds = create.mock.calls.flatMap(([entries]) =>
+        entries.map((entry) => entry.id)
+      )
+      expect(acknowledgedIds).toEqual(
+        firstDesign.entries.map((entry) => entry.descriptor.id)
+      )
+      expect(factory.getUndoHistoryDepth()).toBe(1)
 
-    // Same owner and prepared artifacts without interruption form the canonical
-    // oracle for final geometry, fills, membership and painter order.
-    core.load(initial)
-    expect((await execute(firstDesign, freshSignal())).status).toBe('executed')
-    expect((await execute(remaining, freshSignal())).status).toBe('executed')
-    expect(snapshot()).toEqual(complete)
-  } finally {
-    stop()
-    create.mockRestore()
-    core.load(initial)
-  }
-}, 30000)
+      // A complete acknowledged partition authorizes existing retained-source
+      // continuation. A merely partial member would not authorize this selection.
+      const repair = {
+        draftId,
+        partition: 1,
+        continueFromArtifact: first.artifactId
+      }
+      const next = await session.prepareAsync(
+        session.repairDraft(repair),
+        freshSignal(),
+        repair
+      )
+      const remaining = session.resolve(next.artifactId)
+      expect(next.review).toEqual(first.review)
+      const callsBeforeRecovery = create.mock.calls.length
+      const recovered = await execute(remaining, freshSignal())
+      expect(recovered, JSON.stringify(recovered)).toMatchObject({
+        status: 'executed'
+      })
+      const createdOnRecovery = create.mock.calls
+        .slice(callsBeforeRecovery)
+        .flatMap(([entries]) => entries.map((entry) => entry.id))
+      expect(createdOnRecovery).toEqual(
+        remaining.entries.slice(1).map((entry) => entry.descriptor.id)
+      )
+      expect(createdOnRecovery.some((id) => acknowledgedIds.includes(id))).toBe(
+        false
+      )
+      const complete = snapshot()
+      const callsAfterRecovery = create.mock.calls.length
+      const duplicate = await execute(remaining, freshSignal())
+      expect(duplicate.status).toBe('failed')
+      expect(create).toHaveBeenCalledTimes(callsAfterRecovery)
+      expect(snapshot()).toEqual(complete)
+      expect(Object.keys(complete.sceneTree.elements)).toHaveLength(2003)
+      expect(complete.sceneTree.elements.workspace).toMatchObject({
+        children: [firstDesign.rootId]
+      })
+      expect(factory.getUndoHistoryDepth()).toBe(2)
+      await factory.undo()
+      expect(snapshot()).toEqual(retained)
+      await factory.undo()
+      expect(snapshot()).toEqual(initial)
+      await factory.redo()
+      expect(snapshot()).toEqual(retained)
+      await factory.redo()
+      expect(snapshot()).toEqual(complete)
+      await Promise.resolve()
+      stop()
+
+      const persisted = await persistPublications(initial, publications)
+      expect(persisted).toEqual(complete)
+      core.load(initial)
+      factory.transact.reset()
+      let echoes = 0
+      const unlisten = core.subscribeToSharedPublication(() => echoes++)
+      try {
+        for (const publication of publications)
+          await core.applyRemoteCanonicalChangeSlices({
+            origin: publication.origin,
+            slices: readDocumentPublicationSlices(publication) as Parameters<
+              typeof core.applyRemoteCanonicalChangeSlices
+            >[0]['slices']
+          })
+        await Promise.resolve()
+        expect(snapshot()).toEqual(complete)
+        expect(factory.getUndoHistoryDepth()).toBe(0)
+        expect(echoes).toBe(0)
+      } finally {
+        unlisten()
+      }
+      core.load(persisted)
+      expect(snapshot()).toEqual(complete)
+
+      // Same owner and prepared artifacts without interruption form the canonical
+      // oracle for final geometry, fills, membership and painter order.
+      core.load(initial)
+      expect((await execute(firstDesign, freshSignal())).status).toBe(
+        'executed'
+      )
+      expect((await execute(remaining, freshSignal())).status).toBe('executed')
+      expect(snapshot()).toEqual(complete)
+    } finally {
+      stop()
+      create.mockRestore()
+      core.load(initial)
+    }
+  },
+  30000
+)
 
 it('applies descriptive brief capacity through the main dispatcher into one real Core root', async () => {
   core.load({

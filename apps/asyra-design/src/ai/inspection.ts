@@ -7,7 +7,10 @@ import {
 } from './tool-contract'
 import { inspectionEvidenceSchema } from './inspection-evidence'
 import type { createDesignReviewer } from '../common-apis/design-review'
-import { inspectionInputSchema } from './inspection-schema'
+import {
+  inspectionInputSchema,
+  inspectionFailureSchema
+} from './inspection-schema'
 import type {
   createInspectionEvidence,
   InspectionScopeQuery
@@ -35,9 +38,10 @@ export const createAiInspectionAction = (
       image: toolResultObject({ dataUrl: toolResultString })
     })
   ),
+  recoveryOutputSchema: inspectionFailureSchema,
   name: AiActionNames.INSPECT_DRAWING,
   description:
-    'Inspect an existing drawing or composition using its actual rendered image and current evidence. Fetch needed object data separately through read_design_context. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. Use view=detail for native-resolution close-ups, or region in target-local coordinates at most 1024 per side. A region is always native detail, never an overview. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
+    'Use the actual current workspace ID for overview of all roots in their shared positions/order, without grouping or modifying the document. Workspace does not support detail/region: choose a concrete element for native detail. Unavailable images return a reason and completed read settlement, not visual approval. Inspect an existing drawing or composition using its actual rendered image and current evidence. Fetch needed object data separately through read_design_context. Default overview renders the entire subtree into a bounded composition preview without changing source images, vectors or dimensions. Use view=detail for native-resolution close-ups, or region in target-local coordinates at most 1024 per side. A region is always native detail, never an overview. Read-only; does not change the document. Use the returned image to compare the complete result with the original request/reference, then make supported corrections and inspect again.',
   inputSchema: inspectionInputSchema,
   execute: async (args, { signal }) => {
     if (signal.aborted) throw new Error('Drawing inspection cancelled')

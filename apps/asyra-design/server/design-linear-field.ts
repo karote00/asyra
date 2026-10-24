@@ -130,7 +130,8 @@ export const createLinearFieldFill = (
   fields: ReadonlyMap<string, LinearField>,
   key: unknown,
   vertices: Point[],
-  points: ScreenPoint[]
+  points: ScreenPoint[],
+  localBounds?: { x: number; y: number; width: number; height: number }
 ): ((offset?: Point) => DesignGradientData) => {
   const field = typeof key === 'string' ? fields.get(key) : undefined
   if (!field) return invalid(`unknown materialField ${String(key)}`)
@@ -165,10 +166,10 @@ export const createLinearFieldFill = (
   const ay = (dx * secondPhase - firstPhase * (points[second].x - q.x)) / det
   const xs = points.map((v) => v.x),
     ys = points.map((v) => v.y),
-    x = Math.min(...xs),
-    y = Math.min(...ys)
-  const gx = ax * (Math.max(...xs) - x),
-    gy = ay * (Math.max(...ys) - y),
+    x = localBounds?.x ?? Math.min(...xs),
+    y = localBounds?.y ?? Math.min(...ys)
+  const gx = ax * (localBounds?.width ?? Math.max(...xs) - x),
+    gy = ay * (localBounds?.height ?? Math.max(...ys) - y),
     length = gx * gx + gy * gy
   const initial =
     dot(field.direction, sub(p, field.start)) / field.lengthSquared +

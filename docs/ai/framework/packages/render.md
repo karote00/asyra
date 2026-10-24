@@ -435,3 +435,11 @@ overlay from a spatial hit, with overlay precedence. Legacy
 `getElementIdAtClientPos` retains its surface-coordinate contract. Queries do not
 publish document, history, selection or solver state; Apps route accepted intent
 through their existing Features.
+### Workspace snapshots
+
+`captureElementSnapshot` accepts the actual current workspace identity for a bounded
+overview through the existing scene container. It preserves root transforms and
+order without moving canonical nodes or capturing viewport/selection overlays.
+Workspace native-resolution/region capture and an empty scene are unsupported;
+explicit element snapshots retain their existing detail behavior. Target resolution
+is local to snapshot and does not add the workspace to ordinary element lookup.

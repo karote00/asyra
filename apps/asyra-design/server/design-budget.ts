@@ -1,3 +1,4 @@
+import { facePointCount } from './design-face'
 import { designConstructionSchema } from './design-construction-schema'
 import { operationInputIssue } from '../src/ai/tool-schema'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
@@ -133,8 +134,7 @@ export const measureDesignBudget = (
       observed.sourceNodes += faces.length - 1
       primitivePoints = 0
       for (const face of faces) {
-        const vertices = record(face) ? face.vertices : undefined
-        const pointCount = Array.isArray(vertices) ? vertices.length : 0
+        const pointCount = facePointCount(face)
         primitivePoints = Math.max(primitivePoints, pointCount)
         sourcePoints += pointCount
       }
@@ -166,7 +166,7 @@ export const measureDesignBudget = (
       expandedPoints = instances * motifPoints
       observed.sourceNodes += reference ? 0 : motifs.length
     } else if (value.type === 'projected-face') {
-      sourcePoints = Array.isArray(value.vertices) ? value.vertices.length : 0
+      sourcePoints = facePointCount(value)
     } else sourcePoints = points(value.rings)
     observed.sourcePrimitivePathCommands = Math.max(
       observed.sourcePrimitivePathCommands,
@@ -257,18 +257,10 @@ export const createDesignSourceWork = () => {
 
 export const sourcePathCommandCount = (node: unknown): number => {
   if (!record(node)) return 0
-  if (node.type === 'projected-face')
-    return Array.isArray(node.vertices) ? node.vertices.length : 0
+  if (node.type === 'projected-face') return facePointCount(node)
   if (node.type === 'pattern')
     return Array.isArray(node.faces)
-      ? node.faces.reduce(
-          (total, face) =>
-            total +
-            (record(face) && Array.isArray(face.vertices)
-              ? face.vertices.length
-              : 0),
-          0
-        )
+      ? node.faces.reduce((total, face) => total + facePointCount(face), 0)
       : 0
   const source =
     node.type === 'vector-pattern' && record(node.template)

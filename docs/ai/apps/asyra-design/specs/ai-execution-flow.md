@@ -288,6 +288,49 @@ outcomes, and recover only uncompleted work after overflow/cancellation/refresh.
 Initial reading and unrelated-catalog growth must not increase. Deterministic
 proof establishes contract execution, not model adoption or visual quality.
 
+### Projected ovals
+
+Analytic oval bounds are owned by the existing Utils geometry module and consumed
+by Preset Group normalization and Core scene world bounds, including zoom-fit.
+Canonical creation, review and viewport consumers must agree on rotated extents;
+no direct render lookup or replacement viewport state is allowed.
+
+A projected-face or pattern face chooses vertices (an explicit polygon) or
+ellipse:{center,u,v} (a planar ellipse), exclusively. The nonzero independent
+world radius vectors encode size and direction, including conjugate axes. No
+segments field, sampling knob, polygon or cubic approximation defines an ellipse.
+The existing orthographic camera maps a nondegenerate ellipse to the existing
+oval component. Construction computes its local dimensions, origin and rotation;
+only official prepared admission, dispatcher and Core creation perform writes.
+Tools never access render APIs. Renderer implementation stays owned by the preset.
+
+The same public geometry owner supplies transformed oval bounds to preparation,
+Group normalization and App checks. Keep native geometry and placement distinct:
+normalization translates child origins without changing their rotations. Frame
+checks use transformed extents; unsupported transformed containers stay explicit
+failures/unverified cases, never silently certified. World material fields are
+converted to oval-local paint coordinates and keep their phase under pattern
+translation and material revision. Native inline/template fills remain valid.
+
+Pattern templates compile once, with ordered translated oval instances and stable
+identities/references. Native ovals cost ordinary nodes, not fabricated sampled
+path commands; all node/depth/extent limits still apply. Reject invalid/nonfinite,
+dependent or edge-on inputs before writing. Explicit vertices and independent
+native/vector operations remain valid. Do not migrate historical documents.
+
+Retained continuation records the original anchor rotation. Admission and mutation
+compare it to canonical placement and reject changed rotations, scale/skew,
+hierarchy or binding. Original rotation plus valid Group translation is allowed;
+partial results persist and completed writes are never replayed. Material validity
+uses canonical geometry, not viewport round trips. Save/load, Undo/Redo and
+collaboration use existing owners and stores.
+
+Selected guidance and executable examples deliver the contract in one acquisition.
+Verify projected analytic geometry, transformed bounds, materials, renderer/hit
+handoff, budget/work counts, invalid inputs and real Core interrupted recovery.
+Total selected-guide-plus-input delivery must not increase. No claim about model
+adoption, first-frame timing or visual judgment follows from local tests alone.
+
 ### Translated mixed components
 
 The existing pattern supports either faces or ordered members, never both.
@@ -3516,3 +3559,36 @@ Follow actual owner results through Runtime, native delivery and report input. V
 saved/reloaded canonical values and hierarchy, ordered collaboration publication and
 remote application, no echo/remote History, one intended local Undo/Redo entry and no
 replay. Neither an error label nor presence of a result alone establishes settlement.
+
+### Workspace overview and inspection receipts
+
+The existing inspect_drawing and review_drawing capture routes accept the actual
+current workspace ID for overview. Core.captureElementSnapshot resolves that
+workspace through the existing engine-neutral snapshot owner, using its real
+scene container; no document grouping, reparenting, camera/UI capture or new tool.
+One overview preserves all visible root geometry, transforms, painter order and
+occlusion. It is bounded to the existing 1024-pixel preview and is not native detail.
+Workspace detail/region is unsupported: target a concrete element for those checks.
+Missing/noncurrent targets and empty workspaces produce unavailable evidence with
+specific owner reasons and actionable recovery, never a blank successful review.
+
+Inspection receipts declare settlement from the read owner. A completed read with
+no usable image is failed/completed, not unknown or success; all-failed aggregate
+captures are failed/completed, mixed captures partial/completed, when every read
+settled. Cancellation and transport failures must not claim unobserved completion.
+Keep uncertain mutation evidence unchanged. A changed document invalidates capture;
+no result or malformed output cannot establish evidence. Describe these outcomes
+in the action output contract and deliver the same scope guide on native routes.
+
+Reuse the existing evidence and check stores. Workspace captures depend on the
+whole workspace subtree, including membership/order; local captures retain scoped
+invalidation. Workspace switch/load retires prior evidence. Recover only failed
+captures, retain successful image IDs and independent local judgments, and never
+replay edits or group elements merely to capture. Acquisition is not visual approval.
+
+DoD: execute delivered guides against real owners; multi-root/rotated/occluded/hidden
+pixel and source-space cases; document/selection/history/shared-publication immutability;
+missing/foreign/empty/scope/render/change/cancellation failures; complete versus partial
+coverage and truthful settlement through native reply/presentation; successful capture
+reuse without writes; local versus workspace invalidation and reload. Formal cases
+must not depend on ignored evidence files. No live model is required for this proof.

@@ -1,3 +1,4 @@
+import { readFaceVertices, projectFaceEllipse } from './design-face'
 import { createLinearFieldFill, readLinearFields } from './design-linear-field'
 import { setImmediate as yieldTurn } from 'node:timers/promises'
 import { createDesignSourceWork, sourcePathCommandCount } from './design-budget'
@@ -224,24 +225,57 @@ export function* constructDesignSteps(
     node: Node,
     key: string,
     parent?: string,
-    template = false
+    template = false,
+    worldBounds?: { min: Point3; max: Point3 }
   ): Node => {
     fields(
       node,
-      ['key', 'name', 'type', 'fill', 'materialField', 'vertices'],
+      ['key', 'name', 'type', 'fill', 'materialField', 'vertices', 'ellipse'],
       'projected face'
     )
     if (node.materialField !== undefined && node.fill !== undefined)
       return fail('materialField conflicts with fill')
     if (!project || parent !== rootKey || rootLayout !== 'absolute')
       return fail('projected face requires a shared camera and absolute root')
-    if (
-      !Array.isArray(node.vertices) ||
-      node.vertices.length < 3 ||
-      (vertexCount += node.vertices.length) > limits.expandedPathCommands
+    if (node.ellipse !== undefined) {
+      const oval = projectFaceEllipse(node, project)
+      if (worldBounds) Object.assign(worldBounds, oval.bounds)
+      if (!template) {
+        number(oval.x, 'projected x')
+        number(oval.y, 'projected y')
+      }
+      const compiled: Node = {
+        key,
+        name: node.name,
+        type: 'oval',
+        x: oval.x,
+        y: oval.y,
+        width: oval.width,
+        height: oval.height,
+        rotation: oval.rotation,
+        fill: node.fill
+      }
+      if (node.materialField !== undefined) {
+        const material = createLinearFieldFill(
+          linearFields,
+          node.materialField,
+          oval.world,
+          oval.local,
+          { x: 0, y: 0, width: oval.width, height: oval.height }
+        )
+        compiled.fill = template ? undefined : material()
+        materialFills.set(compiled, material)
+        materialNames.set(compiled, String(node.materialField))
+        if (!template) materialFields[key] = String(node.materialField)
+      }
+      return compiled
+    }
+    const sourceVertices = readFaceVertices(
+      node,
+      limits.expandedPathCommands - vertexCount
     )
-      return fail('face vertex limit')
-    const vertices = node.vertices.map((v) => {
+    vertexCount += sourceVertices.length
+    const vertices = sourceVertices.map((v) => {
       if (!record(v)) return fail('face vertex')
       fields(v, ['x', 'y', 'z'], 'face vertex')
       return {
@@ -336,13 +370,11 @@ export function* constructDesignSteps(
       ['key', 'name', 'origin', 'axes'].some((k) => value[k] === undefined) ||
       (Array.isArray(value.faces) &&
         value.faces.some(
-          (f) =>
-            !record(f) ||
-            ['key', 'name', 'vertices'].some((k) => !Object.hasOwn(f, k))
+          (f) => !record(f) || ['key', 'name'].some((k) => !Object.hasOwn(f, k))
         ))
     )
       return fail(
-        'pattern requires key, name, origin:{x,y,z}, axes:[{count,step:{x,y,z}}], exactly one of faces:[{key,name,vertices:[{x,y,z},...],fill?}] or members:[projected-face|surface-grid]. All names and keys are required, including each face. No canvas changes were made.'
+        'pattern requires key, name, origin:{x,y,z}, axes:[{count,step:{x,y,z}}], exactly one of faces:[{key,name,vertices:[{x,y,z},...] or ellipse:{center,u,v},fill?}] or members:[projected-face|surface-grid]. All names and keys are required, including each face. No canvas changes were made.'
       )
     const mixed = value.members !== undefined
     if (
@@ -443,7 +475,7 @@ export function* constructDesignSteps(
       if (mixed) delete v.type
       fields(
         v,
-        ['key', 'name', 'fill', 'materialField', 'vertices'],
+        ['key', 'name', 'fill', 'materialField', 'vertices', 'ellipse'],
         'pattern face'
       )
       if (v.materialField !== undefined && fills !== undefined)
@@ -451,14 +483,24 @@ export function* constructDesignSteps(
       const faceKey = label(v.key, 'pattern face key', mixed ? 80 : 40)
       if (seen.has(faceKey)) return fail('duplicate pattern face key')
       seen.add(faceKey)
+      if (v.ellipse !== undefined) {
+        if (sourceWork.admit(0)) yield
+        const bounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } }
+        const compiled = face(
+          { ...v, type: 'projected-face' },
+          faceKey,
+          parent,
+          true,
+          bounds
+        )
+        templates.push({ compiled, bounds, faceKey })
+        continue
+      }
       // Read and admit source vertices once; no per-instance source traversal.
-      const vertices = v.vertices
-      if (
-        !Array.isArray(vertices) ||
-        vertices.length < 3 ||
-        vertexCount + vertices.length * count > limits.expandedPathCommands
+      const vertices = readFaceVertices(
+        v,
+        (limits.expandedPathCommands - vertexCount) / count
       )
-        return fail('pattern vertices')
       if (sourceWork.admit(vertices.length)) yield
       const points = vertices.map(point3)
       const bounds = {

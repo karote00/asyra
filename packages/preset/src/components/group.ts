@@ -187,7 +187,7 @@ const normalizeGroupBoundsInTransaction = (
 
   const groupRectangle = readRectangle(projection, groupId)
   const childRectangles = group.children.map((elementId) =>
-    readRectangle(projection, elementId)
+    readRectangle(projection, elementId, data.elements[elementId]?.type)
   )
   const childBounds = deriveGroupBounds(childRectangles)
   const nextBounds =
@@ -306,11 +306,14 @@ const applyGeometryProjection = (
 
 const readRectangle = (
   projection: GroupGeometryProjection,
-  elementId: string
+  elementId: string,
+  type?: string
 ): ElementRectangle => {
   const data = getComputedData(projection, elementId)
   return Object.freeze({
     id: elementId,
+    type,
+    rotation: typeof data.rotation === 'number' ? data.rotation : 0,
     x: readFiniteNumber(data, 'x', elementId),
     y: readFiniteNumber(data, 'y', elementId),
     width: readFiniteNumber(data, 'width', elementId),
@@ -519,10 +522,10 @@ export const projectGroupGeometryPropertyUpdates = (
 
 export { deriveGroupBounds } from '../group-bounds.js'
 
-export const prepareGroupOperation = (
+const readGroupOperation = (
   core: GroupHierarchyReadCore,
   elementIds: readonly string[]
-): PreparedGroupOperation => {
+): { operation: PreparedGroupOperation; data: SceneTreeRawData } => {
   if (
     !Array.isArray(elementIds) ||
     elementIds.length === 0 ||
@@ -563,13 +566,21 @@ export const prepareGroupOperation = (
     )
   }
 
-  return Object.freeze({
-    kind: 'group',
-    parentId,
-    groupIndex: children.indexOf(canonicalIds[0]),
-    elementIds: Object.freeze([...canonicalIds])
-  })
+  return {
+    data,
+    operation: Object.freeze({
+      kind: 'group',
+      parentId,
+      groupIndex: children.indexOf(canonicalIds[0]),
+      elementIds: Object.freeze([...canonicalIds])
+    })
+  }
 }
+
+export const prepareGroupOperation = (
+  core: GroupHierarchyReadCore,
+  elementIds: readonly string[]
+): PreparedGroupOperation => readGroupOperation(core, elementIds).operation
 
 export const prepareUngroupOperation = (
   core: GroupHierarchyReadCore,
@@ -610,10 +621,18 @@ export const groupElements = (
   elementIds: readonly string[],
   options?: EVENT_OPTIONS
 ): GroupOperationResult => {
-  const preparedGroup = prepareGroupOperation(core, elementIds)
+  const { operation: preparedGroup, data } = readGroupOperation(
+    core,
+    elementIds
+  )
   const geometryProjection = createGroupGeometryProjection(core)
+  const sourceElements = data.elements
   const rectangles = preparedGroup.elementIds.map((elementId) =>
-    readRectangle(geometryProjection, elementId)
+    readRectangle(
+      geometryProjection,
+      elementId,
+      sourceElements[elementId]?.type
+    )
   )
   const bounds = deriveGroupBounds(rectangles)
 

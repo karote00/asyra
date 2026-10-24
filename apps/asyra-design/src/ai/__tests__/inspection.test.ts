@@ -1,5 +1,6 @@
 const core = vi.hoisted(() => ({
   getElementData: vi.fn(),
+  getCurrentWorkspaceId: vi.fn(() => 'sheet-a'),
   getElementMetadata: vi.fn(() => ({ parentId: undefined })),
   getElementComputedData: vi.fn(),
   captureElementSnapshot: vi.fn()
@@ -185,4 +186,62 @@ it('binds action output to canonical evidence and validates it without another s
   expect(inspect).toHaveBeenCalledOnce()
   evidence.dispose()
   expect(stop).toHaveBeenCalledOnce()
+})
+
+it('settles workspace overview and explicit unavailable captures at the actual read owner', () => {
+  core.getElementMetadata.mockImplementation((id: string) => ({
+    parentId: undefined,
+    childCount: id === 'empty' ? 0 : 1
+  }))
+  core.getElementData.mockImplementation((id: string) =>
+    id === 'missing'
+      ? undefined
+      : { id, type: 'workspace', children: id === 'empty' ? [] : ['part'] }
+  )
+  core.captureElementSnapshot
+    .mockReset()
+    .mockReturnValue({ dataUrl: 'data:image/png;base64,AA==' })
+  expect(inspectionApis.inspect('sheet-a')).toMatchObject({
+    available: true,
+    settlement: 'completed',
+    imageScope: 'overview'
+  })
+  expect(inspectionApis.inspect('sheet-a', undefined, 'detail')).toMatchObject({
+    available: false,
+    code: 'WORKSPACE_OVERVIEW_ONLY',
+    settlement: 'completed'
+  })
+  expect(
+    inspectionApis.inspect('sheet-a', { x: 0, y: 0, width: 10, height: 10 })
+  ).toMatchObject({
+    available: false,
+    code: 'WORKSPACE_OVERVIEW_ONLY',
+    settlement: 'completed'
+  })
+  expect(inspectionApis.inspect('missing')).toMatchObject({
+    available: false,
+    code: 'INSPECTION_TARGET_UNAVAILABLE',
+    settlement: 'completed'
+  })
+  expect(inspectionApis.inspect('foreign')).toMatchObject({
+    available: false,
+    code: 'INSPECTION_TARGET_UNAVAILABLE',
+    settlement: 'completed'
+  })
+  core.getCurrentWorkspaceId.mockReturnValue('empty')
+  expect(inspectionApis.inspect('empty')).toMatchObject({
+    available: false,
+    code: 'WORKSPACE_EMPTY',
+    settlement: 'completed'
+  })
+  expect(core.captureElementSnapshot).toHaveBeenCalledOnce()
+  core.getCurrentWorkspaceId.mockReturnValue('sheet-a')
+  core.captureElementSnapshot.mockImplementation(() => {
+    throw new Error('renderer failed')
+  })
+  expect(inspectionApis.inspect('sheet-a')).toMatchObject({
+    available: false,
+    code: 'CAPTURE_UNAVAILABLE',
+    settlement: 'completed'
+  })
 })

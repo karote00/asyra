@@ -231,7 +231,14 @@ class Render {
     const engine = this.requireEngine()
     assertRenderEngineCapabilities(engine, [RenderEngineCapabilities.SNAPSHOT])
     this.flushFrame()
-    const object = this.viewport.getElementById(elementId)?.getEngineHandle()
+    const target = this.viewport.getSnapshotTarget(elementId)
+    if (target?.workspace) {
+      if (options?.nativeResolution || options?.region)
+        throw new Error('Workspace snapshot supports overview only')
+      if (!target.node.children.length)
+        throw new Error('Workspace snapshot is empty')
+    }
+    const object = target?.node.getEngineHandle()
     if (!object) throw new Error('Snapshot target is unavailable')
     const result = engine.query({
       type: 'snapshot',

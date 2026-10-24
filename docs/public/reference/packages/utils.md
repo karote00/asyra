@@ -44,6 +44,10 @@ permanently closes the graph and attempts all remaining resource cleanup in
 reverse registration order. Failure is structured and terminal. New composition
 requires a new graph; this method does not reopen a locked runtime.
 
+`calculateEllipseBounds` accepts an ellipse rectangle and optional rotation in
+radians about its local origin, returning its exact axis-aligned extents. Inputs
+must be finite. This pure geometry function requires no render initialization.
+
 ## Relationships
 
 Framework packages import canonical shared shapes from Utils instead of

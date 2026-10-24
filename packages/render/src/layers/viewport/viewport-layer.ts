@@ -36,6 +36,15 @@ export class ViewportLayer {
     return this.renderLayer.getElementById(elementId)
   }
 
+  /** Snapshot-only resolution; workspace is not an ordinary scene element. */
+  getSnapshotTarget(elementId: string) {
+    const workspace = this.renderLayer.view
+    if (elementId && workspace.label === elementId)
+      return { node: workspace, workspace: true }
+    const node = this.getElementById(elementId)
+    if (node) return { node, workspace: false }
+  }
+
   getElementIdsInBounds(
     bounds: import('../../types/render-object.js').RenderBounds
   ): string[] {
