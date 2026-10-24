@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-Implemented contract for [Preset 3D Foundation and App Migration](../plans/preset-3d-foundation-plan.md).
+Implemented contract for [Preset 3D Foundation and App Migration](../plans/completed/preset-3d-foundation-plan.md).
 Tasks 1-9 implement the reviewed boundaries; Task 10 verifies the integrated
 source `e952b9589408e81a758a5be9a9880f82df6affef` and records the user
 inspection checkpoint. The optional public boundaries below are implemented;

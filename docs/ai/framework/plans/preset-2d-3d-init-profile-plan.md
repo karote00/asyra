@@ -4,7 +4,7 @@
 
 3D activated; HYBRID deferred and prerequisite-gated.
 
-The approved [Preset 3D Foundation and App Migration](preset-3d-foundation-plan.md)
+The approved [Preset 3D Foundation and App Migration](completed/preset-3d-foundation-plan.md)
 owns the active foundation/migration work and its Task 8 supplies the evidence
 for the 3D gate below. Its Tasks 1-8 provide reviewed implementation, lifecycle and all three App
 real-WebGL preservation evidence. Official `3D` is available with explicit empty

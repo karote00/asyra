@@ -181,3 +181,20 @@
   entry does not assert new implementation evidence.
 - Completed record:
   `../../plans/completed/ci-workflow-splitting-plan.md`.
+
+## 2026-10-24 - Complete Preset 3D Foundation and App Migration
+
+- Context: PR #357 merged the reviewed Tasks 1-10 into main. The final PR CI
+  passed, and the user requested the remaining plan closeout.
+- Decision: Archive the completed foundation plan with its implementation,
+  preservation and real WebGL evidence. Keep camera choices, scene-tree UI,
+  domain data and product policies in Apps; Preset provides generic mechanisms.
+- Consequences: Official 3D and the three migrated Apps remain available with
+  existing 2D/CUSTOM behavior preserved. HYBRID and the other explicitly excluded
+  capabilities remain deferred. This closeout does not create a release or
+  authorize publication or deployment.
+- Synchronize all references affected by archival as an ordinary closeout duty;
+  unrelated implementation, acceptance changes and historical rewrites remain
+  excluded. The closeout workflow, checker and Skill now express that boundary.
+- Completed record:
+  [Preset 3D Foundation and App Migration](/docs/ai/framework/plans/completed/preset-3d-foundation-plan.md).
