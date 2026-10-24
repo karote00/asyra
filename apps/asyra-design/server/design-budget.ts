@@ -1,4 +1,4 @@
-import { facePointCount } from './design-face'
+import { facePointCount, resolveSurfaceBoundaries } from './design-face'
 import { designConstructionSchema } from './design-construction-schema'
 import { operationInputIssue } from '../src/ai/tool-schema'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
@@ -159,9 +159,10 @@ export const measureDesignBudget = (
           motifPoints += count
           primitivePoints = Math.max(primitivePoints, count)
         }
-      sourcePoints =
-        (Array.isArray(value.boundary) ? value.boundary.length : 0) +
-        (reference ? 0 : motifPoints)
+      let boundaryPoints = 0
+      if (Array.isArray(value.boundary)) boundaryPoints = value.boundary.length
+      else if (record(value.boundary)) boundaryPoints = 4
+      sourcePoints = boundaryPoints + (reference ? 0 : motifPoints)
       generatedNodes = instances * motifs.length
       expandedPoints = instances * motifPoints
       observed.sourceNodes += reference ? 0 : motifs.length
@@ -295,7 +296,9 @@ export const selectDesignSource = (
   input: Record<string, unknown>,
   items: DesignSourceSelection[]
 ) => {
-  const children = input.children as Record<string, unknown>[]
+  const resolved = resolveSurfaceBoundaries(input)
+  if (!record(resolved)) throw new Error('Invalid design source.')
+  const children = resolved.children as Record<string, unknown>[]
   const selected: Record<string, unknown>[] = []
   let previousChild = -1
   for (const item of items) {
@@ -389,6 +392,14 @@ export const partitionDesignBudget = (
       'unsupported-children',
       'Automatic partitions require independent projected faces, surface grids or patterns; preserve unsupported child relationships.'
     )
+  try {
+    resolveSurfaceBoundaries(input)
+  } catch (error) {
+    return refuse(
+      'invalid-boundary',
+      error instanceof Error ? error.message : 'Invalid source boundary.'
+    )
+  }
   // Recovery is conservative about global identity: never allow two source key
   // families to become independently valid merely because artifacts are separate.
   const families = children.map((child) => ({

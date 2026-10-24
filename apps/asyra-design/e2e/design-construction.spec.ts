@@ -13,6 +13,22 @@ const recoveryFixture = JSON.parse(
     'utf8'
   )
 )
+const faceBoundaryFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      '../server/__tests__/fixtures/recorded-101/face-boundary-20261025.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
+const referencedFaceInput = structuredClone(faceBoundaryFixture.inputs[0])
+for (const [path, face] of faceBoundaryFixture.pairs[0]) {
+  let owner = referencedFaceInput.draft
+  for (const key of path.slice(0, -1)) owner = owner[key]
+  owner[path[path.length - 1]] = { face }
+}
+referencedFaceInput.inspection = 'defer'
 const sharedMotifsFixture = JSON.parse(
   readFileSync(
     new URL(
@@ -33,6 +49,10 @@ const layeredFixture = JSON.parse(
 )
 import { getPersistedDocumentDigest } from './test-utils'
 import { expect, test } from '@playwright/test'
+import {
+  createDesignPreparationSession,
+  prepareDesignAsync
+} from '../server/design-preparation'
 import { createLocalDesignTools } from '../server/local-design-tools'
 import { AiActionNames } from '../src/constants/ai-actions'
 import type { PreparedDesign } from '../src/ai/prepared-design'
@@ -676,6 +696,14 @@ test('artifact-targeted mixed batch uses normal actions and one Undo/Redo bounda
 for (const scenario of [
   {
     title:
+      'face boundaries preserve partition recovery, collaboration, Undo and durable reload',
+    input: referencedFaceInput,
+    artifacts: 2,
+    members: 2310,
+    boundaryReferences: true
+  },
+  {
+    title:
       'shared motifs preserve independent surfaces through application, Undo and durable reload',
     input: { draft: sharedMotifsFixture.compact.draft, inspection: 'defer' },
     artifacts: 1,
@@ -696,13 +724,17 @@ for (const scenario of [
     members: 1442
   }
 ])
-  test(scenario.title, async ({ page }) => {
+  test(scenario.title, async ({ page, browser }) => {
     test.setTimeout(180000)
     const designs: PreparedDesign[] = []
     const exchange = createBatchExchange()
     const controller = new AbortController()
     let workflowResult: ReturnType<typeof JSON.parse>
     let serverError: unknown
+    const referenced = 'boundaryReferences' in scenario
+    let attempts = 0
+    let peerContext: Awaited<ReturnType<typeof browser.newContext>> | undefined
+    let peer: import('@playwright/test').Page | undefined
     const server = createServer(async (request, response) => {
       response.setHeader(
         'Access-Control-Allow-Origin',
@@ -728,7 +760,21 @@ for (const scenario of [
           return
         }
         response.setHeader('Content-Type', 'application/x-ndjson')
-        const tools = createLocalDesignTools(input.actions)
+        const tools = createLocalDesignTools(
+          input.actions,
+          referenced
+            ? createDesignPreparationSession(
+                undefined,
+                async (...args) => {
+                  if (++attempts === 2)
+                    throw new Error('Injected preparation interruption')
+                  return prepareDesignAsync(...args)
+                },
+                undefined,
+                2000
+              )
+            : undefined
+        )
         const operations = createLocalOperationTools(
           input.actions,
           tools,
@@ -751,6 +797,23 @@ for (const scenario of [
           controller.signal
         )
         workflowResult = JSON.parse(result.text)
+        if (referenced) {
+          expect(workflowResult.toolOutcome.status).toBe('partial')
+          const recovery = workflowResult.recoveryInvocation
+          expect(recovery.arguments.parts).toHaveLength(1)
+          expect(JSON.stringify(recovery.arguments)).not.toContain('vertices')
+          workflowResult = JSON.parse(
+            (
+              await invokeLocalTool(
+                main,
+                main.definitions[0],
+                recovery.arguments,
+                controller.signal
+              )
+            ).text
+          )
+          expect(attempts).toBe(3)
+        }
         response.end(
           JSON.stringify({
             type: 'result',
@@ -791,6 +854,22 @@ for (const scenario of [
       await waitForAppReady(page)
       const fileId = new URL(page.url()).searchParams.get('fileId')
       if (!fileId) throw new Error('Missing document identity')
+      if (referenced) {
+        peerContext = await browser.newContext()
+        peer = await peerContext.newPage()
+        await peer.goto(page.url())
+        await waitForAppReady(peer)
+        for (const actor of [page, peer])
+          await expect
+            .poll(() =>
+              actor.evaluate(async () =>
+                (await import('../src/testing/runtime-access'))
+                  .getActiveCollaborationHandle()
+                  ?.getStatus()
+              )
+            )
+            .toBe('connected')
+      }
       const before = await getCoreDocumentDigest(page)
       const depth = await getUndoHistoryDepth(page)
       await page.getByRole('button', { name: 'Open Agent' }).click()
@@ -809,7 +888,9 @@ for (const scenario of [
         settlement: 'completed'
       })
       if (scenario.artifacts > 1)
-        expect(workflowResult.parts).toHaveLength(scenario.artifacts)
+        expect(workflowResult.parts).toHaveLength(
+          referenced ? 1 : scenario.artifacts
+        )
       else expect(workflowResult.parts).toBeUndefined()
       expect(designs).toHaveLength(scenario.artifacts)
       expect(await getUndoHistoryDepth(page)).toBe(depth + 1)
@@ -849,17 +930,35 @@ for (const scenario of [
       }, root.id)
       expect(order).toEqual(members.map((entry) => entry.descriptor.id))
       const after = await getCoreDocumentDigest(page)
+      if (peer)
+        await expect
+          .poll(() =>
+            getCoreDocumentDigest(peer as import('@playwright/test').Page)
+          )
+          .toEqual(after)
       await page.getByRole('button', { name: 'Close Agent panel' }).click()
       await page.evaluate(async () => {
         const { historyApis } = await import('../src/common-apis/history')
         await historyApis.undo()
       })
       expect(await getCoreDocumentDigest(page)).toEqual(before)
+      if (peer)
+        await expect
+          .poll(() =>
+            getCoreDocumentDigest(peer as import('@playwright/test').Page)
+          )
+          .toEqual(before)
       await page.evaluate(async () => {
         const { historyApis } = await import('../src/common-apis/history')
         await historyApis.redo()
       })
       expect(await getCoreDocumentDigest(page)).toEqual(after)
+      if (peer)
+        await expect
+          .poll(() =>
+            getCoreDocumentDigest(peer as import('@playwright/test').Page)
+          )
+          .toEqual(after)
       await expect
         .poll(() => getPersistedDocumentDigest(fileId), { timeout: 30000 })
         .toEqual(after)
@@ -867,6 +966,7 @@ for (const scenario of [
       await waitForAppReady(page)
       expect(await getCoreDocumentDigest(page)).toEqual(after)
     } finally {
+      await peerContext?.close()
       controller.abort()
       server.closeAllConnections()
       await new Promise<void>((resolve, reject) =>

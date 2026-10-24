@@ -1,4 +1,8 @@
-import { readFaceVertices, projectFaceEllipse } from './design-face'
+import {
+  readFaceVertices,
+  projectFaceEllipse,
+  resolveSurfaceBoundaries
+} from './design-face'
 import { createLinearFieldFill, readLinearFields } from './design-linear-field'
 import { setImmediate as yieldTurn } from 'node:timers/promises'
 import { createDesignSourceWork, sourcePathCommandCount } from './design-budget'
@@ -190,6 +194,7 @@ export function* constructDesignSteps(
   },
   void
 > {
+  input = resolveSurfaceBoundaries(input)
   if (!record(input)) return fail('draft')
   const rootLayout = input.layout ?? 'absolute'
   const rootKey =

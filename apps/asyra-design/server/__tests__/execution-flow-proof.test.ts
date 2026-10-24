@@ -7313,7 +7313,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     )
   )
   expect(prepared.available).toBe(true)
-  expect(prepared.elementCount).toBe(16)
+  expect(prepared.elementCount).toBe(prepareDesign(source).entries.length)
   expect(execute).not.toHaveBeenCalled()
 })
 
@@ -7806,7 +7806,10 @@ it('execution proof delivers layered repetition before parameters with canonical
   const result = JSON.parse(reply.text)
   expect(result.toolOutcome.settlement).toBe('completed')
   expect(applied).toHaveLength(1)
-  expect(applied[0].entries).toHaveLength(16)
+  expect(applied[0].entries).toEqual(
+    prepareDesign(invocation.arguments.draft, JSON.parse(reply.text).artifactId)
+      .entries
+  )
   expect(applied[0].entries.slice(1, 4).map((entry) => entry.key)).toEqual([
     'unit-0-panel',
     'unit-1-panel',
@@ -7816,7 +7819,9 @@ it('execution proof delivers layered repetition before parameters with canonical
     await designs.call(
       'retain_design_targets',
       {
-        targets: [{ artifactId: result.artifactId, keyPrefix: 'windows-1-' }]
+        targets: [
+          { artifactId: result.artifactId, keyPrefix: 'windows-1-grid-' }
+        ]
       },
       signal
     )
@@ -7826,7 +7831,11 @@ it('execution proof delivers layered repetition before parameters with canonical
       artifactId: retained.artifactId,
       targetSetId: retained.targetSetId
     })
-  ).toEqual(applied[0].entries.slice(10).map((entry) => entry.descriptor.id))
+  ).toEqual(
+    applied[0].entries
+      .filter((entry) => entry.key.startsWith('windows-1-grid-'))
+      .map((entry) => entry.descriptor.id)
+  )
   expect(execute).toHaveBeenCalledOnce()
 })
 
@@ -8068,7 +8077,10 @@ it('execution proof delivers shared motifs through the main workflow without ext
   )
   expect(JSON.parse(reply.text).toolOutcome.settlement).toBe('completed')
   expect(applied).toHaveLength(1)
-  expect(applied[0].entries).toHaveLength(16)
+  expect(applied[0].entries).toEqual(
+    prepareDesign(invocation.arguments.draft, JSON.parse(reply.text).artifactId)
+      .entries
+  )
   const input = { draft: fixture.compact.draft, inspection: 'defer' }
   const recorded = JSON.parse(
     (await invokeLocalTool(main, definition, input, signal)).text
@@ -8945,7 +8957,10 @@ it('execution proof delivers projected ovals through projection and canonical di
   )
   expect(JSON.parse(reply.text).toolOutcome.settlement).toBe('completed')
   expect(applied).toHaveLength(1)
-  expect(applied[0].entries).toHaveLength(16)
+  expect(applied[0].entries).toEqual(
+    prepareDesign(invocation.arguments.draft, JSON.parse(reply.text).artifactId)
+      .entries
+  )
   const input = { draft: fixture.compact.draft, inspection: 'defer' }
   const recorded = JSON.parse(
     (await invokeLocalTool(main, definition, input, signal)).text
@@ -8959,4 +8974,45 @@ it('execution proof delivers projected ovals through projection and canonical di
     expandedNodes: 9,
     expandedPathCommands: 0
   })
+})
+
+it('execution proof preserves face-referenced boundaries through retained source selection', async () => {
+  const { measureDesignBudget, partitionDesignBudget, selectDesignSource } =
+    await import('../design-budget')
+  const { createDesignDraftRepairStore } =
+    await import('../design-draft-repair')
+  const source = sharedMotifProof().compact.draft
+  const grid = source.children[0]
+  const face = {
+    type: 'projected-face',
+    key: 'panel',
+    name: 'Panel',
+    vertices: grid.boundary,
+    fill: '#123456'
+  }
+  const inline = { ...source, children: [face, grid] }
+  const referenced = {
+    ...source,
+    children: [face, { ...grid, boundary: { face: 'panel' } }]
+  }
+  expect(prepareDesign(referenced, 'same')).toEqual(
+    prepareDesign(inline, 'same')
+  )
+  expect(measureDesignBudget(referenced)).toEqual(measureDesignBudget(inline))
+  const partitions = partitionDesignBudget(referenced, 7).partitions
+  expect(partitions).toHaveLength(2)
+  if (!partitions) throw new Error('Missing source partitions')
+  const store = createDesignDraftRepairStore(7)
+  const draftId = store.retain(referenced)
+  const selected = store.repair({ draftId, partition: 1 })
+  expect(prepareDesign(selected, 'same')).toEqual(
+    prepareDesign(selectDesignSource(inline, partitions[1].selections), 'same')
+  )
+  expect(prepareDesign(selected, 'same').entries).toHaveLength(7)
+  expect(() =>
+    prepareDesign({
+      ...source,
+      children: [{ ...grid, boundary: { face: 'absent' } }]
+    })
+  ).toThrow(/boundary reference/)
 })

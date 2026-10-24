@@ -797,6 +797,17 @@
             "apps/asyra-design/server/design-construction-schema.ts",
             "apps/asyra-design/server/design-preparation-examples.ts"
           ]
+        },
+        {
+          "id": "prepare.face-boundary",
+          "stepId": "prepare",
+          "testName": "execution proof preserves face-referenced boundaries through retained source selection",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-face.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-construction-schema.ts"
+          ]
         }
       ],
       "handoffs": [

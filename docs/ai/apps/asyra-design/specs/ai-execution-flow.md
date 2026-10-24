@@ -2134,6 +2134,29 @@ and cooperative preparation windows. Global key conflicts remain errors. Invalid
 or nonplanar/degenerate surfaces reject before application; no approximation is
 used to fit them into the supported primitive.
 
+### Face-referenced surface boundaries
+
+A surface-grid boundary may be four explicit world corners or `{face:key}`.
+The reference selects exactly one projected-face with four polygon vertices in the
+same root children or pattern members scope, regardless of declaration order.
+Corners retain their authored order. No outer-scope, cross-draft, ellipse, ambiguous
+or inferred targets are supported; extra reference fields reject. Existing finite,
+planar, strictly convex projected boundary checks still apply. Inline boundaries
+remain valid and independent; references select geometry, not face materials.
+
+Construction resolves this source-only choice before ordinary compilation. Existing
+source selection resolves from the retained complete source before dropping other
+parts; a selected grid does not recreate its source face. Explicit source repair
+resolves the new source values. Preserve root/pattern translation, material palettes,
+keys, parents, painter order and existing truthful budgets. Do not persist a live
+link, add a cache/store, change rendering or replay acknowledged work.
+
+Selected usage and executable examples expose both forms without another query.
+Formal cases cover inline/reference equivalence, forward references, invalid scope
+and geometry, parts retaining a face from another batch, cancellation/recovery,
+and canonical application with Undo/Redo, collaboration and durable reload. Measure
+net delivery including contract cost; no timing or model-adoption claim follows.
+
 ### Shared normalized motifs
 
 A draft may define `motifTemplates` as a root-local map of names to the existing

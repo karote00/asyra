@@ -96,6 +96,117 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Face-to-grid source boundary handoff - 2026-10-25
+
+Status: local implementation and fixed DoD complete; AI adoption remains unobserved.
+
+Evidence: preserved run 1792853203510 contains six same-scope face/grid pairs
+with identical ordered world corners. Raw input hashes were checked against
+16-input.json and 34-input.json; current construction/schema/examples equal the
+saved source snapshot. Boundary values total 714 bytes; illustrative face references
+use 99 bytes. Net delivery savings must include the changed guide and example.
+No geometry error or timing causation was established by this repetition.
+
+Bounded design and Step Execution Cards:
+- Prepare owner: existing construction source geometry, budget selection and retained
+  repair source. Input is boundary vertices or boundary:{face:key}; output is the
+  same ordinary prepared geometry. Resolve exactly one polygon face in root children
+  or the same pattern members, including forward references. No outer-scope lookup,
+  ellipse conversion, implicit target selection or live document relationship.
+- Resolve before selected-source slicing drops a face; the original retained source
+  stays unchanged so explicit repairs re-resolve current values. Selection never
+  reintroduces an unselected face or changes order. Reuse the existing source owner;
+  no new store, registry, scheduler or cross-invocation cache.
+- Source resolution performs bounded scope indexing once per resolved scope; no
+  geometry projection or expansion. Budget accounting remains equivalent to inline
+  boundaries, including expanded output and per-part source work. Existing compiler
+  owns finite coordinates, planarity, convexity and camera degeneracy validation.
+- Compose owner (after prepare passes): existing selected usage/schema/examples
+  publish the legal boundary union and execute that exact example. No extra tool,
+  preliminary request or unselected schema. No model-authored geometry inference.
+- Inspector authority: prepare and compose inputs/conditions/boundaries; spec section
+  Face-referenced surface boundaries. Forbidden contributors remain renderer, model
+  calls, canonical writes in preparation, source approximation and replay.
+- Allowed files: design-face.ts, design-construction.ts, design-budget.ts,
+  design-construction-schema.ts, design-preparation-examples.ts; their direct formal
+  tests/fixtures, execution-flow proof/mapping and existing construction E2E; active
+  plan/spec/Inspector and generated workspace output. Other owners remain unchanged.
+- Naming: face is a draft-only source selector owned by construction; it is not a
+  canonical/persisted ID. Inline boundaries remain independent valid operations,
+  not compatibility fallback. Existing tool revisioning owns contract publication.
+
+Fixed DoD:
+D1. Permanent extracted-input fixture and formal fail-first tests prove currently
+unsupported references, without ignored tmp dependencies or live model calls.
+D2. Recorded six pairs plus generic root/pattern cases preserve geometry, materials,
+vertex order, painter order, keys and parents exactly against inline preparation.
+D3. Preserve independent inline grids; reject missing/ambiguous/cross-scope targets,
+non-quadrilaterals, ellipse targets, malformed references and invalid geometry without
+inference or approximation. Forward references do not reorder output.
+D4. Expanded and per-part budgets remain truthful. Existing retained-source parts,
+explicit repair, cancellation, partial success and recovery never recreate completed
+faces or replay completed batches. No raised limits or geometry splitting.
+D5. Execute actual selected delivery/examples through formal invocation. Total inputs,
+outputs and changed contract cost decrease on the fixed recorded sequence; calls do
+not increase. Source resolution work is bounded by scopes, not grid-by-face scans.
+D6. Exercise the real dispatcher and canonical creation, durable reload, Undo/Redo
+and collaboration through existing integration/E2E mechanisms. Helper equality alone
+cannot establish completion.
+
+Gates: focused construction/budget/repair/delivery regressions, mapped execution proof,
+server-response harness, affected production types/build, touched lint, naming,
+Inspector architecture/source verification, and focused construction browser flow.
+No model/101, CI, push, unrelated cleanup or completed-plan edits. Stop for an
+unresolved contract mismatch or an out-of-scope owner requirement.
+
+Design self-review: references resolve only source geometry and cannot encode a new
+live dependency. Construction and budget consume the same resolution contract; source
+selection resolves before removing dependencies. Original source and its repair paths
+remain authoritative. Keep invalid target recovery explicit, and validate the complete
+selected output before each existing write boundary. The net-size gate may fail even
+if raw input shrinks; do not claim timing or model adoption from local tests.
+
+Bounded review iteration: the broader discovery harness exposed a regression in the
+published layered example after an attempted delivery-size reduction. Preserve its
+separate painter layers and oval illustration; add the boundary-reference example
+within the existing grid layer and remove redundant prose instead of weakening any
+delivery budget. The fixed DoD remains unchanged. A failing aggregate source-traversal
+regression also requires the existing source-node bound before resolving all scopes.
+This review changes only the admitted prepare/compose files and direct consumers.
+
+Closure evidence:
+- Initial admission: revision 105, review
+  39e5feeaa38c5551e0f996c5c5a8bf1893186d13e9e75bc90315623389933fb3.
+  Final mapped contract accepted at revision 106; verification
+  6ba1875c-c462-42c0-9397-b585ba5a09d5 passed on source
+  e45bfb134d6b4ba76ef052e8da798291643c29ca711b037541983ef20375fa6e.
+- Formal fail-first evidence is preserved in tmp/face-boundary-red.log and
+  tmp/face-boundary-source-bound-red.log. Permanent tests and extracted inputs
+  live in server/__tests__/face-boundary.test.ts and its recorded-101 fixture;
+  the server-response harness now includes this direct consumer.
+- D1-D5: all 19 boundary regressions pass; the complete server-response harness
+  passes 1,706 tests. Two existing opt-in cases remain skipped: installed native
+  registration and large saved-checkpoint bootstrap benchmarking, outside this
+  boundary slice. Neither is counted as passed.
+- Controlled first-use sequence: one selected lookup and three submissions in both
+  versions; 38,309 -> 37,673 bytes including guide, inputs and replies (-636,
+  1.66%). Guide alone: 19,537 -> 19,516 bytes. Existing layered/oval/motif delivery
+  ceilings remain unchanged. These are deterministic delivery measurements, not
+  historical provider timing or model behavior measurements.
+- D6: final-source browser integration passes (39.5s): actual batch dispatcher and
+  creation, two retained parts, interrupted second preparation and remaining-only
+  recovery, one root, exact order, collaboration, Undo/Redo and durable reload.
+  Cancellation before retry performs no write; successful recovery never resends
+  geometry or recreates the completed face. Ambiguous apply failures retain the
+  existing no-automatic-replay protection.
+- Production types/build, touched lint (zero errors; one existing proof-console
+  warning), naming, architecture contract tests and diff checks pass. Build retains
+  its existing chunk-size warning. Test-owned ports are closed.
+- Self-review preserved separate painter layers in the delivered example, independent
+  inline boundaries, source-only reference semantics and immutable repair input.
+  Existing preparation owns all geometry validation; no state/cache/tool/renderer
+  path or capacity limit was added. No model/101, CI or push was performed.
+
 ### Cross-query Knowledge dependency delivery - 2026-10-24
 
 Status: locally complete after admission, formal fail-first regressions and bounded self-review.
