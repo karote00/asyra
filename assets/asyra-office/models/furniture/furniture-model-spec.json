@@ -225,7 +225,107 @@
         "plain apron",
         "no drawers"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "WRITING-DESK-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "contacts": "Leg and apron flat tops contact tabletop underside at Z=0.61. Apron/leg joints overlap; preserve the rounded-volume witnesses in the construction document.",
+        "referenceViews": "Elevated illustrations, not calibrated projections; all four legs have equal height."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "defaultNormalization": "none",
+        "rule": "Default coordinates already match the declared size. Apply target/default XYZ ratios to every part about the ground origin once; include bevels and joint overlap."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "tabletop",
+            "parts": [
+              "top"
+            ],
+            "defaultMaterial": "oak"
+          },
+          {
+            "id": "aprons",
+            "parts": [
+              "front-apron",
+              "back-apron",
+              "left-apron",
+              "right-apron"
+            ],
+            "defaultMaterial": "oak"
+          },
+          {
+            "id": "legs",
+            "parts": [
+              "leg-1",
+              "leg-2",
+              "leg-3",
+              "leg-4"
+            ],
+            "defaultMaterial": "dark-frame"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise desk material, otherwise preset; then region colour, otherwise desk colour. Retain other properties and isolate instances.",
+        "woodMappingSpace": "resized-local-metres-before-placement",
+        "grainSecondaryDefault": "oak-grain",
+        "patternOwnership": "The selected material owns the pattern. Base-colour override preserves the selected material; the grain secondary colour is separately configurable. A plain material replacement has no forced oak grain.",
+        "roundedSurfaceMapping": {
+          "method": "normalized-absolute-normal-blend",
+          "normalSpace": "default-local-geometric-normal",
+          "positionSpace": "resized-local-metres-before-placement",
+          "weights": "wTop=max(nZ,0)/sum(abs(n)); wLong=abs(nY)/sum(abs(n)); other weight is solid base colour.",
+          "grain": "G=wTop*g(X,Y)+wLong*g(X,Z), using the existing g formula; C=base*(1-0.18*G)+secondary*0.18*G in normalized sRGB, then convert to linear.",
+          "scope": "Default tabletop wood only; replacement materials own their mappings. Normals are geometric interpolation normals, not lighting or normal-map samples."
+        }
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "bevelSegments": 3,
+            "maxTriangles": 1600,
+            "maxSurfaceError": 0.0005,
+            "topBevelSegments": 4,
+            "topCornerTopology": "normalized-barycentric-grid",
+            "otherCornerTopology": "normalized-barycentric-grid"
+          },
+          {
+            "id": "lod1",
+            "bevelSegments": 2,
+            "maxTriangles": 1000,
+            "maxSurfaceError": 0.001,
+            "topBevelSegments": 2,
+            "topCornerTopology": "centre-fan",
+            "otherCornerTopology": "centre-fan"
+          },
+          {
+            "id": "lod2",
+            "bevelSegments": 1,
+            "maxTriangles": 500,
+            "maxSurfaceError": 0.003,
+            "topBevelSegments": 1,
+            "topCornerTopology": "centre-fan",
+            "otherCornerTopology": "single-triangle"
+          }
+        ],
+        "errorMetric": "Maximum adaptive bidirectional distance per part against ideal default rounded surfaces. Include hidden caps in total triangles.",
+        "preserve": [
+          "nine parts",
+          "four flat grounded feet",
+          "flat tabletop contacts",
+          "eight apron-leg overlaps",
+          "complete bounds and appearance regions"
+        ],
+        "failurePolicy": "Reject an exceeded budget or error; do not remove supports, resize parts, add patches or silently increase limits."
+      }
     },
     {
       "moduleId": "work-chair",

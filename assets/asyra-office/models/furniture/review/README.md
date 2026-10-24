@@ -14,6 +14,12 @@ Images are not calibrated projections: some front/side views are slightly elevat
 
 No movable tabletop objects, throw pillows, rugs, or plants are included. Other Group 4 items remain later batches in the [main document](../README.md).
 
+## Writing desk document review
+
+The [desk specification](../WRITING-DESK-SPEC.md) is approved for commit. The
+original sheet is preserved; its elevated front/side views do not change the
+four equal-height legs. This step reviews documents, not a modeled result.
+
 ## Lighting revision - 2026-10-04
 
 The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.

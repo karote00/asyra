@@ -14,6 +14,13 @@ Status: **The user approved committing drawings/documents for five items; models
 
 Each has front, right, back, top, and oblique views. Legs and structural seat/back cushions belong to the furniture unit. Yellow throw pillows, laptops, mugs, rugs, and plants remain separate.
 
+## Writing desk review
+
+The [updated desk contract](WRITING-DESK-SPEC.md) is approved for commit. It
+preserves the nine-part design and original sheet, specifies beveled contacts,
+whole-unit sizing, replaceable defaults and unverified LOD limits, and selects
+programmatic primitives for future production. No generator or model is delivered.
+
 ## Sources and modeling inputs
 
 - [Original approved image](../architecture/review/approved-office-reference.jpg): central office first.

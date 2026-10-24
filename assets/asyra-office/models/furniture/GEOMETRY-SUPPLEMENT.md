@@ -12,6 +12,10 @@ Use with [furniture-model-spec.json](furniture-model-spec.json). Units m, +Z up,
 
 ## Writing desk
 
+The [desk construction contract](WRITING-DESK-SPEC.md) supplies the current
+programmatic route, detailed contacts, default/instance sizing, appearance and
+LOD requirements. Its desk-specific clarifications take precedence.
+
 Top size 1.20 × 0.60 × 0.04, Z=0.61–0.65. Four charcoal square legs at X=±0.54, Y=±0.24 run from Z=0 to 0.61. Four wooden aprons sit beneath the top: front/back length 1.06, sides 0.45, centres/thicknesses from JSON.
 
 Front and back are symmetric. No drawers, handles, cross-braces, keyboard tray, or shelf. Top grain runs along X; underside uses the same wood colour. The original does not clearly show the underside, so four legs and aprons are explicit simple completions. The unit includes no laptop, cup, chair, or rug.
