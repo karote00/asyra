@@ -1,5 +1,30 @@
 # @asyra/asyra-design
 
+## Pending mechanical coverage selection
+
+```update-note
+{
+  "change": "mechanical-coverage-selection",
+  "owner": "Asyra Design hosted App",
+  "summary": "Select old mechanical checks from exact captured coverage before requesting reconciliation; preserve independent receipts and failures.",
+  "sources": [
+    "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+    "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/src/ai/__tests__/review-action.test.ts",
+    "apps/asyra-design/src/ai/review-action.ts",
+    "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
+    "apps/asyra-design/src/common-apis/design-review.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/mechanical-coverage-20261025.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal review coordination and validation only. Existing review entry points, canonical writes and saved document formats require no consumer migration."
+}
+```
+
 ## Pending tool handoffs
 
 Development-source changes only; no deployment or model adoption is claimed.

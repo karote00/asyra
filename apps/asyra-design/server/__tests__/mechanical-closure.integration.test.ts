@@ -1,4 +1,5 @@
 import recordedClosure from './fixtures/recorded-101/whole-flow-closure-20261019.json'
+import recordedCoverage from './fixtures/recorded-101/mechanical-coverage-20261025.json'
 import { expect, it, vi } from 'vitest'
 vi.mock('../../src/contexts', () => ({ default: {} }))
 import { createDesignReviewer } from '../../src/common-apis/design-review'
@@ -69,7 +70,11 @@ it('reconciles real subtree receipts through retained reads, verification and fi
     async (batch) => {
       const actionResults = []
       for (const request of batch.actions) {
-        if (dropCoverage && request.arguments.measurementTargets)
+        if (
+          dropCoverage &&
+          request.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
+          request.arguments.measurementTargets
+        )
           throw new Error('Coverage delivery interrupted')
         const action = actions.find((a) => a.name === request.name)
         if (!action) throw new Error('Missing action')
@@ -77,7 +82,10 @@ it('reconciles real subtree receipts through retained reads, verification and fi
           request.arguments as never,
           { signal: abort.signal } as never
         )
-        if (request.arguments.measurementTargets) {
+        if (
+          request.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE &&
+          request.arguments.measurementTargets
+        ) {
           const hook = afterCoverage
           afterCoverage = undefined
           hook?.()
@@ -255,5 +263,206 @@ it('reconciles real subtree receipts through retained reads, verification and fi
         event.evidence.reason?.includes('Request cancelled')
     )
   ).toBe(true)
+  reviewer.dispose()
+})
+
+it('selects recorded mechanical coverage before reconciliation without probing unrelated roots', async () => {
+  const roots = recordedCoverage.roots
+  const data = Object.fromEntries(
+    roots.flatMap((id) => [
+      [id, { type: 'frame', children: [`${id}:child`] }],
+      [`${id}:child`, { type: 'rectangle', parentId: id }]
+    ])
+  )
+  const read = vi.fn((id: string) => data[id])
+  const computed = vi.fn(() => ({
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    rotation: 0
+  }))
+  let change: () => void = () => undefined
+  const reviewer = createDesignReviewer(
+    {
+      read,
+      computed,
+      measure: () => [],
+      observeChanges(listener) {
+        change = listener
+        return () => undefined
+      }
+    },
+    async () => undefined,
+    true
+  )
+  const actions = [
+    createDesignReviewAction(reviewer.capture, reviewer.isCurrent),
+    createInspectionValidationAction(
+      {
+        validate: () => {
+          throw new Error('Unexpected visual work')
+        }
+      } as never,
+      reviewer
+    )
+  ]
+  const checks = createDesignCheckResults()
+  const exchanges: { request: unknown; reply: unknown }[] = []
+  const controller = new AbortController()
+  const owner = createLocalOperationTools(
+    actions,
+    { modelActions: (a) => a, resolveBatch: (a) => a, checkResults: checks },
+    async (batch) => {
+      const actionResults = []
+      for (const request of batch.actions) {
+        const action = actions.find((item) => item.name === request.name)
+        if (!action) throw new Error('Missing registered review action')
+        const result = await action.execute(request.arguments as never, {
+          signal: controller.signal
+        })
+        actionResults.push({
+          actionId: request.id,
+          actionName: request.name,
+          result
+        })
+      }
+      const reply = { context: {}, actionResults }
+      exchanges.push({ request: batch, reply })
+      return reply as never
+    }
+  )
+  for (const elementId of roots)
+    await owner.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId } },
+      controller.signal
+    )
+  expect(exchanges).toHaveLength(roots.length)
+  expect(checks.read({ includePassed: true }).items).toHaveLength(roots.length)
+  expect(
+    checks
+      .read({ includePassed: true })
+      .items.every((item) => item.status === 'pass')
+  ).toBe(true)
+  expect(read).toHaveBeenCalledTimes(roots.length * 2)
+  expect(computed).toHaveBeenCalledTimes(roots.length * 2)
+  const items = checks.read({ includePassed: true }).items
+  expect(
+    new Set(items.map((item) => JSON.stringify(item.dependencies))).size
+  ).toBe(roots.length)
+  // Compare the complete exchange envelopes, including scope hints, with the
+  // original extra validation exchanges on this same canonical fixture.
+  const currentBytes = Buffer.byteLength(JSON.stringify(exchanges))
+  const legacy = JSON.parse(JSON.stringify(exchanges))
+  for (const exchange of legacy) {
+    for (const action of exchange.request.actions)
+      delete action.arguments.measurementTargets
+    for (const action of exchange.reply.actionResults)
+      delete action.result.coveredMeasurementTargets
+  }
+  for (let index = 1; index < roots.length; index++) {
+    const original = legacy[index]
+    const evidence = original.reply.actionResults[0].result.evidence
+    const request = {
+      batchId: 'b'.repeat(36),
+      actions: [
+        {
+          id: 'a'.repeat(36),
+          name: AiActionNames.VALIDATE_INSPECTION_EVIDENCE,
+          arguments: { evidence, measurementTargets: roots.slice(0, index) }
+        }
+      ]
+    }
+    const result = await actions[1].execute(
+      request.actions[0].arguments as never,
+      { signal: controller.signal }
+    )
+    legacy.push({
+      request,
+      reply: {
+        context: {},
+        actionResults: [
+          {
+            actionId: request.actions[0].id,
+            actionName: request.actions[0].name,
+            result
+          }
+        ]
+      }
+    })
+  }
+  expect(currentBytes).toBeLessThan(Buffer.byteLength(JSON.stringify(legacy)))
+  process.stdout.write(
+    `${JSON.stringify({ measurement: 'mechanical-coverage', bytes: currentBytes, previousBytes: Buffer.byteLength(JSON.stringify(legacy)), exchanges: exchanges.length, previousExchanges: legacy.length })}\n`
+  )
+  expect(read).toHaveBeenCalledTimes(roots.length * 2)
+  expect(computed).toHaveBeenCalledTimes(roots.length * 2)
+  // Independent roots cannot turn an old failure into a pass. More retained
+  // obligations must not produce more useless reconciliation dispatches.
+  const { revision: _revision, reason: _reason, ...prior } = items[0]
+  checks.record({
+    ...prior,
+    status: 'fail',
+    evidence: 'Unresolved prior finding'
+  })
+  const failed = checks.read({ ids: [prior.id], includePassed: true }).items[0]
+  for (let index = 0; index < 70; index++) {
+    const elementId = `independent-${index}`
+    data[elementId] = { type: 'frame', children: [`${elementId}:child`] }
+    data[`${elementId}:child`] = { type: 'rectangle', parentId: elementId }
+    await owner.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId } },
+      controller.signal
+    )
+  }
+  expect(exchanges).toHaveLength(roots.length + 70)
+  expect(
+    checks.read({ ids: [prior.id], includePassed: true }).items[0]
+  ).toEqual(failed)
+  // An explicitly empty selection remains empty, even with retained targets.
+  await owner.call(
+    AiActionNames.REVIEW_DESIGN,
+    { arguments: { elementId: roots[2], measurementTargets: [] } },
+    controller.signal
+  )
+  expect(exchanges.at(-1)?.request).toMatchObject({
+    actions: [{ arguments: { measurementTargets: [] } }]
+  })
+  expect(exchanges).toHaveLength(roots.length + 71)
+  // A parent covering more than one validation window still updates only its
+  // descendants after all prior browser receipts were invalidated.
+  const descendants = Array.from(
+    { length: 70 },
+    (_, index) => `independent-${index}`
+  )
+  data.parent = { type: 'frame', children: descendants }
+  for (const id of descendants) data[id].parentId = 'parent'
+  change()
+  await owner.call(
+    AiActionNames.REVIEW_DESIGN,
+    { arguments: { elementId: 'parent' } },
+    controller.signal
+  )
+  expect(exchanges).toHaveLength(roots.length + 74)
+  expect(exchanges.at(-2)?.request).toMatchObject({
+    actions: [{ arguments: { measurementTargets: descendants.slice(0, 64) } }]
+  })
+  expect(exchanges.at(-1)?.request).toMatchObject({
+    actions: [{ arguments: { measurementTargets: descendants.slice(64) } }]
+  })
+  expect(
+    checks.read({ ids: [prior.id], includePassed: true }).items[0]
+  ).toEqual(failed)
+  for (const id of descendants) {
+    const item = checks.read({
+      ids: [`measurement:${id}`],
+      includePassed: true
+    }).items[0]
+    expect(item.status).toBe('pass')
+    const stamp = JSON.parse(item.dependencies[item.id])
+    expect(reviewer.isCurrent(stamp)).toBe(true)
+  }
   reviewer.dispose()
 })

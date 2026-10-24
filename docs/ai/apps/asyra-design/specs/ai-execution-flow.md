@@ -2706,10 +2706,30 @@ IDs, viewport state, diagnostic timing and reuse counters. The verdict is produc
 inside the canonical evidence capture boundary; later writes still invalidate the
 applicable stored checks through their actual dependencies.
 
+### Mechanical coverage selection
+
+A deterministic review may receive optional unique measurementTargets IDs from
+retained checks. The browser reviewer returns coveredMeasurementTargets selected
+from the exact successful capture coverage, with the same receipt. Selection adds
+no geometry reads and exposes only requested IDs, never the complete subtree.
+This selection certifies scope only: it does not certify compatible rule context,
+prior receipt freshness, findings or visual quality. Incomplete/cancelled captures
+do not authorize reconciliation.
+
+The operation owner supplies its existing retained targets in the original review
+exchange, including relevant targets of the same ordered read batch. It reconciles
+only current retained obligations selected by the captured coverage, using the
+existing bounded validation action. Empty or absent selection triggers no extra
+exchange and leaves unrelated results unchanged. Explicit selected review remains
+legal. Object count and server-inferred ancestry cannot select coverage; no
+all-target fallback, added query prerequisite, state store or write replay is allowed.
+
 Canonical canvas measurement results are retained in the same check store per
 checked target, alongside prepared-source and primary-agent evidence. Complete
-rechecks reconcile all existing mechanical obligations proven by their exact
-supported-rule/subtree coverage, including deleted descendants. The browser
+rechecks reconcile existing mechanical obligations proven by their exact
+supported-rule/subtree coverage. Deleted or missing targets are not captured
+coverage: only explicit canonical retirement may retire an obligation; omission
+from coverage never approves or erases it. The browser
 reviewer alone certifies coverage and issues independent target receipts; ancestry
 or an aggregate pass is not sufficient. Partial/uncovered/incompatible results
 remain unresolved. A later sibling edit cannot invalidate a reconciled independent

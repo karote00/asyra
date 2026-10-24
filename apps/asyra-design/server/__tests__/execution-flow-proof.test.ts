@@ -3279,14 +3279,22 @@ it('execution proof checks all acknowledged parts before returning deferred capt
     designs,
     async (batch) => {
       const actionResults = batch.actions.map((action) => {
-        const input = action.arguments as { elementId?: string }
+        const input = action.arguments as {
+          elementId?: string
+          measurementTargets?: string[]
+        }
         order.push(action.name)
         let result: AiBatchReceipt['actionResults'][number]['result']
         if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
           result = { status: 'complete', compositionId: 'part-' + ++writes }
-        else if (action.name === AiActionNames.REVIEW_DESIGN)
+        else if (action.name === AiActionNames.REVIEW_DESIGN) {
+          expect(input.measurementTargets).toEqual(
+            ['part-1', 'part-2'].filter((id) => id !== input.elementId)
+          )
           result = {
             complete: true,
+            checkedElements: 2,
+            coveredMeasurementTargets: [],
             findings: [],
             evidence: {
               sessionId: 'proof-stage',
@@ -3295,7 +3303,7 @@ it('execution proof checks all acknowledged parts before returning deferred capt
             },
             measuredTextIds: []
           }
-        else {
+        } else {
           expect(action.name).toBe(AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
           result = {
             current: true,

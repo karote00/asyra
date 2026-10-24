@@ -96,6 +96,129 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Mechanical coverage selection handoff - 2026-10-25
+
+Status: complete for this bounded local implementation; admission, formal local gates and final Inspector verification passed. AI adoption remains unobserved.
+
+Evidence: saved run 1792853203510 sends the second and third independent root
+receipts to validate one and two prior roots respectively (provider sequences
+493/496 and 558/561). All three return target-not-covered. Payload hashes match;
+local-operation-tools.ts, design-review.ts and review-action.ts match the saved
+source. These are automatic App exchanges after first frame, not AI tool choices
+or evidence of a first-frame delay. Current owner code selects all retained
+measurements solely because checkedElements > 1. Valid subtree reconciliation
+and its refusal of uncovered targets must remain.
+
+Bounded design and Step Execution Card - inspect:
+- Owner: existing browser deterministic reviewer creates coverage and receipts;
+  registered review action carries the contract; local-operation-tools selects
+  existing check-store obligations and consumes validated successors.
+- Inputs: ordinary review target and optional measurementTargets hints drawn from
+  existing retained measurement identities (plus targets in the same read batch).
+  Inputs are IDs only, never geometry or a second hierarchy. Explicit caller
+  hints remain legal. No new persisted or cross-request state.
+- Outputs: capture returns coveredMeasurementTargets from the exact captured
+  subtree, restricted to hints, with its existing current receipt. This is scope
+  selection, not findings, compatibility, currentness of prior receipts or a pass.
+  No complete subtree ID list is delivered. Empty/missing scope selection grants
+  no automatic reconciliation; it does not alter independent results.
+- Consumer: intersect with currently retained obligations, exclude the current
+  root, and use the existing 1-64 target validation windows only for nonempty
+  intersections. Remove the checkedElements heuristic and all-target fallback.
+  Reviewer.reconcile still owns inherited visibility, normalization, findings and
+  fresh successor stamps; existing selected revision/stamp guards own commit.
+- Work: one candidate-ID set per capture; select from its already-produced immutable
+  coverage without geometry reads or another traversal/index/cache. Reconcile
+  creates its existing index only when there is useful scope. Preserve cooperative
+  cancellation and real failure recovery; no mutation or visual acceptance changes.
+- Inspector: inspect inputs/outputs, review-coordinator purpose, mechanical coverage
+  condition, existing verdict/receipt lifetime and failure owner inspect. Allowed
+  contributors: App reviewer, registered action, existing measurement/check store.
+  Forbidden: server-guessed ancestry, global IDs to the model, new state, replay,
+  unknown->success conversion or a model-based scope decision.
+- Mutation boundary: src/common-apis/design-review.ts, src/ai/review-action.ts,
+  server/local-operation-tools.ts and their direct tests, mapped execution proof,
+  existing inspection E2E if needed; one permanent recorded-input fixture; this
+  plan, execution spec, Inspector/generated bundle, flow mapping and owner pending
+  release note. No Framework mutation, new tool or registry, model/101, CI or push.
+- Naming: measurementTargets reuses the existing mechanical target concept;
+  coveredMeasurementTargets is an ephemeral owner-produced scope selection, not a
+  persisted relationship, validation verdict or alternate result store.
+
+Fixed DoD:
+D1. Formal failing integration uses preserved three-root evidence and real reviewer,
+action and operation owner; no ignored tmp runtime dependency.
+D2. Disjoint roots cause zero additional reconciliation exchanges; adding unrelated
+roots does not grow invalid requests. Existing independent result identities are
+preserved; omission is not proof of currentness or pass.
+D3. Parent review still reconciles covered children through the original supported
+rule/visibility normalization and version guards. Missing, deleted, changed and
+incompatible targets retain truthful handling; no ancestry-only approval.
+D4. Cancellation, partial results, failed delivery and late/superseded replies
+preserve acknowledged independent results and never replay canonical writes.
+D5. Count complete browser request/reply bytes, dispatches and owner reads/work over
+the fixed sequence. Total delivery decreases; no model round trip or all-object
+identity dump is added. Prove no repeated geometry evaluation for scope selection.
+D6. Direct consumers and final settlement remain consistent with the retained store;
+mechanical success never certifies visual acceptance. Run focused integration,
+reviewer/action tests, execution proof/server harness, affected production types,
+App build, touched lint/naming, scoped release-note and Inspector gates. Exercise
+real browser dispatch if the changed contract is not otherwise proved there.
+
+Design self-review: returning scope IDs is smaller than moving projection/commit
+into capture and preserves existing failure/partial/version semantics. Passing
+hints also supports rechecks after browser receipt invalidation; filtering only
+browser-retained roots would lose that valid recovery. An unavailable scope cannot
+supply a fallback all-target query. This is one inspect-owner slice. Stop for an
+out-of-scope owner requirement; fixed DoD and historical evidence stay unchanged.
+
+Validation and bounded self-review:
+- Initial admission: candidate 311ff67a-9c83-47d1-82b7-fd109c5abe74,
+  review 0654a1649a0389c56cd63383b73c62434da299699bc5c3108a69813426702b5d,
+  accepted before regression/implementation. Initial formal red: three independent
+  reviews produced five browser exchanges; owner/action tests also lacked scope.
+- D1-D2: permanent recorded fixture with source hashes, real reviewer/action/check
+  store/operation integration, seventy additional disjoint roots, explicit empty
+  selection and preservation of an unrelated failed result pass.
+- D3-D4: seventy covered obligations still reconcile in 64+6 windows after browser
+  invalidation. Existing parent/child normalization, hidden inheritance rejection,
+  independent stamps, unavailable delivery, superseded revision, cancellation and
+  no-write recovery tests pass. Missing/removed coverage cannot retire a result;
+  canonical retirement remains the separate existing owner.
+- D5: fixed three-root fixture counts complete request/reply envelopes: 4,647 to
+  3,001 bytes (35.42% less), five to three exchanges, six metadata and six computed
+  reads unchanged. The comparison replays the former extra validation exchanges
+  against the same canonical fixture; it is not a model or wall-time benchmark.
+  Scope selection performs no additional geometry evaluation. First review omits
+  empty optional hints; explicit empty caller selection remains valid.
+- D6: final server response harness 1,707 passed and two existing opt-in cases
+  skipped (installed native registration and large recorded-checkpoint bootstrap);
+  browser reviewer/action/inspection/startup tests 44 passed. Production
+  typechecks, production App build, naming (15 tests), touched lint and update-note
+  check pass. Lint retains one pre-existing console warning in the proof file;
+  production build retains its existing bundle-size warning. The mapped deferred
+  measurement proof now checks same-batch hints and empty selected scope without
+  a new model call; the existing harness includes the real integration consumer.
+- Real browser final source: Frame and Group lifecycle tests both pass, covering
+  interrupted projection recovery, independent passes, final assessment, Undo/Redo,
+  collaboration, durable save, fresh reload and subsequent editing. An earlier
+  Frame attempt timed out, and another failed a post-reload persistence digest.
+  A control with the original three owner files passed; the restored candidate
+  then passed both cases. Cause of the earlier failures is not established, and
+  no persistence fix is claimed. The formal test now attaches actual current and
+  persisted documents on that failure; its assertions and poll budget are intact.
+- Direct-consumer review: retain old read/write and completion assertions; update
+  argument checks to admit the new optional scope field, and restrict intentional
+  reconciliation-delivery faults to the validation action (scope hints now also
+  occur on review). No status-name substitution, all-target fallback, duplicate
+  state, geometry mutation, automatic replay or Knowledge changes were added.
+- Final Inspector verify c1e00834-d12d-4536-bb2c-6d14bcb11c54 passed at revision
+  108, source 8812f9d7dad83d7dbe684e0e37f8f417d33fe89c72adc5b0f402854cf5157424.
+- Final contract review 3122ac56caac560a264d5bea769c161b1e5a2dea4802bf63d8b9e65c5c633fad
+  accepted the clarified scope-versus-retirement contract. Local evidence logs use
+  tmp/mechanical-coverage-*; raw saved 101 evidence is unchanged. No model/101,
+  CI inspection or remote push was performed for this slice.
+
 ### Face-to-grid source boundary handoff - 2026-10-25
 
 Status: local implementation and fixed DoD complete; AI adoption remains unobserved.

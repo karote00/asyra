@@ -36,6 +36,45 @@ it('forwards review without mutation and respects cancellation', async () => {
   expect(review).toHaveBeenCalledTimes(1)
 })
 
+it('delivers requested measurement scope and withdraws selection with stale evidence', async () => {
+  const stamp = { sessionId: 'session', revision: 1, receiptId: 'receipt' }
+  const review = vi.fn(async () => ({
+    complete: true,
+    truncated: false,
+    checkedElements: 2,
+    measuredTextCount: 0,
+    measuredTextIds: [],
+    findings: [],
+    evidence: stamp,
+    coveredMeasurementTargets: ['child']
+  }))
+  let current = true
+  const action = createDesignReviewAction(review, () => current)
+  const context = { signal: new AbortController().signal }
+  expect(action.inputSchema.properties).toHaveProperty('measurementTargets')
+  expect(
+    await action.execute(
+      { elementId: 'root', measurementTargets: ['child', 'outside'] },
+      context
+    )
+  ).toMatchObject({ coveredMeasurementTargets: ['child'] })
+  expect(review).toHaveBeenCalledWith('root', context.signal, [
+    'child',
+    'outside'
+  ])
+  current = false
+  expect(
+    await action.execute(
+      { elementId: 'root', measurementTargets: ['child'] },
+      context
+    )
+  ).toMatchObject({
+    available: false,
+    complete: false,
+    coveredMeasurementTargets: []
+  })
+})
+
 it('routes mechanical capture and freshness through the real reviewer without visual ownership', async () => {
   const { createDesignReviewer } = await vi.importActual<
     typeof import('../../common-apis/design-review')

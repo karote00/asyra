@@ -843,6 +843,42 @@ it('does not promote inherited hidden coverage or a projection outside its subtr
   f.review.dispose()
 })
 
+it('selects only requested covered targets without extra geometry work or implied acceptance', async () => {
+  const f = retainedFixture()
+  const before = await f.review.capture('f')
+  const reads = f.apis.read.mock.calls.length
+  const selected = await f.review.capture('f', undefined, ['t', 'outside', 't'])
+  expect(selected).toMatchObject({
+    coveredMeasurementTargets: ['t'],
+    evidence: before.evidence
+  })
+  expect(f.apis.read).toHaveBeenCalledTimes(reads)
+  expect(selected.observation).toMatchObject({
+    evaluatedNodes: 0,
+    computedReads: 0
+  })
+  // Unknown changes clear retained receipts. Scope selection must use current
+  // coverage plus caller obligations, not the browser's former receipt map.
+  f.change()
+  expect(await f.review.capture('f', undefined, ['t'])).toMatchObject({
+    coveredMeasurementTargets: ['t']
+  })
+  f.data.f.visible = false
+  f.change({ elementIds: ['f'] })
+  const hidden = await f.review.capture('f', undefined, ['t'])
+  expect(hidden).toMatchObject({ coveredMeasurementTargets: ['t'] })
+  expect(
+    (await f.review.reconcile(requiredEvidence(hidden), ['t'])).measurements[0]
+  ).toMatchObject({
+    available: false,
+    reason: 'incompatible-inherited-visibility'
+  })
+  expect(
+    await f.review.capture('outside', undefined, ['t'])
+  ).not.toHaveProperty('coveredMeasurementTargets')
+  f.review.dispose()
+})
+
 it('preserves the exact receipt identity of unaffected obligations during broader reconciliation', async () => {
   const f = retainedFixture()
   f.data.s = { type: 'rectangle', parentId: 'f' }

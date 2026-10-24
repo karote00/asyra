@@ -953,6 +953,7 @@
               "Stage 2 repair capability coverage belongs to the Design repair owner before writes, not generic Runtime or the checker guessing its caller. Bind successor check selections from acknowledged current revisions; receipt refresh alone is not semantic progress.",
               "Mechanical reads and freshness validation use bounded exact-target exchanges, preserve acknowledged independent results, and continue only a proven unexecuted read suffix after fail-fast failure. Missing, duplicated or cancelled results never become passed evidence.",
               "Explicitly aligned native reference crops may be compared with current isolated target-region pixels on white using fixed baseline, region and tolerances. No resampling, camera inference or model call. Unsupported evidence remains unverified. Retain compact pixel findings in the common check store, validate canonical image dependencies before reuse and after asynchronous work, and reuse unchanged results without decoding. Pixel checks never certify visual meaning.",
+              "Reviewer-certified coveredMeasurementTargets selects only requested retained target IDs from successful capture coverage without new geometry reads. Pass measurementTargets hints in the existing review exchange; reconcile only the intersection with current retained obligations through existing bounded validation and commit guards. Empty/absent coverage sends no extra exchange; count/ancestry inference and all-target fallback are forbidden. Coverage selection is not compatibility, freshness or a pass; no new state, all-object model payload or replay.",
               "Canonical canvas measurements reconcile existing obligations only through reviewer-certified compatible supported-rule/subtree coverage. The validation action accepts bounded measurementTargets with mechanical evidence, never visual scope. Issue independent target receipts sharing immutable reviewed verdicts; nested standalone normalization excludes external containment and rejects incompatible inherited visibility. Commit acknowledged successors only while selected revisions and stamps match; late, partial, cancelled or unavailable coverage cannot erase pending work. Subsequent reads, selected verification and final settlement consume the same ledger. Local unrelated edits preserve independent successors; all unresolved required findings block completion.",
               "Mechanical passes require one exact action acknowledgement, coherent availability/completeness and a canonical stamp. Currency or explicit-check failure preserves prior evidence as unresolved and retires the reusable stamp; later coherent checks may recover. Return bounded check counts and firstPendingId, not all retained evidence. Canonical removal retires only its tool obligation, invalidates dependents and preserves monotonic revisions; explicit reads refresh only selected transitive dependencies and independent failures remain readable.",
               "Canonical deterministic review owns typed mechanical verdict and stable unresolved-state progress inside evidence capture. Only complete supported checks with no findings pass; declared mechanical findings are repairable, unknown/incomplete checks require primary-agent decision. Verdicts never certify visual acceptance.",
@@ -1075,6 +1076,7 @@
               "apps/asyra-design/src/ai/prescribed-position-contract.ts",
               "apps/asyra-design/server/__tests__/local-mechanical-checks.test.ts",
               "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/mechanical-coverage-20261025.json",
               "apps/asyra-design/src/common-apis/design-review.ts",
               "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
               "apps/asyra-design/src/common-apis/inspection.ts",
@@ -1110,7 +1112,8 @@
             "specRefs": [
               "#tool-first-correction-contract",
               "#evidence-and-completion",
-              "#capture-and-deterministic-review-responsibility"
+              "#capture-and-deterministic-review-responsibility",
+              "#mechanical-coverage-selection"
             ],
             "failureOwnerStepId": "inspect"
           },

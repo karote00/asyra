@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending mechanical coverage selection
+
+```update-note
+{
+  "change": "mechanical-coverage-selection-contract",
+  "owner": "Repository Flow Inspector",
+  "summary": "Record the inspect-owner scope selection contract and permanent regression fixture in the existing Inspector.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal review coordination and validation only. Existing review entry points, canonical writes and saved document formats require no consumer migration."
+}
+```
+
 This file tracks releases for Asyra. Previous releases under Asyra (v0.1.0,
 etc.) are not included here.
 
