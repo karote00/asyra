@@ -120,7 +120,7 @@ cache unless a measured need justifies one under existing computation rules.
 ## Permanent rule and workflow deliverables
 
 Task 1 established the authoritative
-[release update guidance rule](../rules/release-update-guidance.md). It defines:
+[release update guidance rule](../../rules/release-update-guidance.md). It defines:
 
 - when a development change needs a pending note or detailed integration guide;
 - each release owner's responsibility to compare actual previous/target delivery,
@@ -653,3 +653,44 @@ flow; unverified old releases remain explicitly outside the supported window.
 - `scripts/release-create-app.js`
 - `scripts/publish-create-app.js`
 - `scripts/app-cloudflare.mjs`
+
+## Closeout
+
+Completed: 2026-10-24
+Reviewed source: b3044dbf3e28dfb7c57be7d581938d3c75cabaac
+Outcome: Tasks 1-4 are complete, with permanent release guidance rules, release admission, public discovery and reproducible cross-version consumer acceptance.
+Decision: Accept the implemented plan within its modeled/local-candidate boundary and archive it; retain independent evidence, errata and maintainer replay as distinct records.
+Exit criteria: Required authoring, release retry, cross-version discovery and consumer preservation cases passed; no package publication, deployment, tag or merge is included.
+
+| Task | Completed result | Retained verification |
+| --- | --- | --- |
+| 1 | Formal project rule and normal development entries require scoped update notes and integration guides, retaining the Markdown-only exemption. | Authoring, duplicate identity, guide reference and large-source metadata regression tests. |
+| 2 | Existing npm and Cloudflare Pages release owners require artifact-bound guidance and preserve actual predecessor evidence across partial failure and retries. | Publisher/workflow tests, unchanged-package cases and verified-then-failed deployment regression; provider and registry effects are stubbed. |
+| 3 | Public history, summaries, prerequisites and applicable guide revisions are discoverable through existing Markdown, site and llms entries. | Cross-version/partial-adoption gap tests, preservation of formal records, declared-path links and website navigation checks. |
+| 4 | Independent Text integration retains intervening custom fields/actions/data through ordered migration and fresh reloads. | Original independent run: 31 tests plus types/lint/build. Permanent fixture replay: the same 31 tests and seven evidence checks, separately recorded. |
+
+The canonical Task 4 evidence is under
+`fixtures/app-update-text-cross-version/evidence/`. The original `input-v1.tar.gz`
+and `independent-v1.tar.gz` remain immutable. `ERRATA.md` corrects the digest
+comparison without editing the independent report; public guide revision 2 also
+clarifies composition-time definition reads. `permanent-replay/` contains the
+maintainer replay, not another independent acceptance. Earlier Text acceptance
+fixtures and their original records remain unchanged.
+
+Before archival, the PR integration checks fixed exact-byte retention of six
+historical logs, enabled execution of registered Cloudflare workflow tests, and
+regenerated the Inspector snapshot. Continuing flow contracts reference the
+permanent release rule; the plan-reading test follows the owner index through
+archival. No consumer runtime or accepted migration semantics changed.
+
+The source was rebased onto main after PR #358. Integration verification also
+synchronized the retired publishing entry, the Pixi case inventory and two
+missing Pixi mappings, and 38 existing Text browser cases with their declared
+responsibilities. All 441 prior functional mapping records remain unchanged;
+these corrections change observation metadata and tests, not product runtime.
+
+The pre-archive review covered the rules, release retry admission, public
+discovery, consumer preservation and the explicitly authorized integration
+corrections. Current-source gate results and any runner failures followed by
+successful reruns are reported separately in the PR. Formal GitHub review and
+target-branch integration remain separate from this local closeout.

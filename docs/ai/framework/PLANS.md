@@ -44,16 +44,14 @@ or unsupported capability claims.
     production deployment and page acceptance.
   - The independent Root README evidence plan remains completed.
 
-## Release Update Guidance
+## Completed Release Update Guidance
 
-- [Release Update Summaries and Consumer Integration Guidance](plans/release-update-guidance-plan.md)
-  - IMPLEMENTATION COMPLETE. Tasks 1-4 are complete: permanent development rules,
-    npm/Cloudflare guidance admission, public release discovery, and independent
-    cross-version/partial-adoption Text acceptance. The independent run and
-    permanent fixture each passed 31 tests plus typecheck, lint and build.
-    Revision 2 clarifies digest algorithms and definition-read timing; original
-    acceptance evidence remains unchanged. Formal archival is a separate closeout.
-    No publication occurred. The prior App update guidance plan remains complete.
+- [Release Update Summaries and Consumer Integration Guidance](plans/completed/release-update-guidance-plan.md)
+  - DONE (2026-10-24). Tasks 1-4 deliver development rules, npm/Cloudflare
+    admission, public cross-version discovery and retained Text acceptance.
+  - Original independent evidence, revision-2 errata and maintainer replay remain
+    distinct and preserved. Acceptance uses pinned local candidate packages;
+    publication and deployment remain separate and were not performed.
 
 ## Active Developer Agent Work
 

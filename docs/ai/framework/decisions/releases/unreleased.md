@@ -213,3 +213,20 @@
   Published release-to-release support, package releases, deployment and merge
   are separate operations; none is performed or authorized by closeout.
 - Completed record: `docs/ai/framework/plans/completed/app-cli-update-and-migration-plan.md`.
+
+## 2026-10-24 - Complete Release Update Guidance
+
+- Context: Consumers need complete cross-version changes and applicable guide
+  revisions while preserving partial adoption, App extensions and saved data.
+- Decision: Close Tasks 1-4 with formal development rules, artifact-bound checks
+  in existing npm/Cloudflare release owners, public history and Text acceptance.
+  Keep official definitions as the base and integrate consumer extensions using
+  existing define/register/migration capabilities.
+- Outcome: Preserve the original independent input/result archives and earlier
+  Text evidence. Revision-2 digest/definition errata and permanent-fixture
+  maintainer replay remain separate records, not new independent acceptance.
+- Consequences: The modeled/local-candidate acceptance does not claim published
+  release-to-release support. Closeout creates no version, tag, package release,
+  deployment or merge. Existing pending release notes retain their own lifecycle.
+- Completed record:
+  [Release Update Summaries and Consumer Integration Guidance](/docs/ai/framework/plans/completed/release-update-guidance-plan.md).
