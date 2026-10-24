@@ -286,15 +286,6 @@ if (!fs.existsSync(pkgPath)) {
 }
 
 // ----------------------
-// Remove .vercel directory
-// ----------------------
-const vercelDir = path.join(DEST_DIR, '.vercel')
-if (fs.existsSync(vercelDir)) {
-  fse.removeSync(vercelDir)
-  if (VERBOSE) console.log('Removed .vercel directory')
-}
-
-// ----------------------
 // Create standalone ESLint config
 // ----------------------
 const eslintConfigDest = path.join(DEST_DIR, 'eslint.config.js')

@@ -10,34 +10,15 @@ Hosting the development workbench does not complete R0 Public Alpha. The
 [first-release gates](FIRST_RELEASE.md) and [offline candidate gates](LOCAL_CANDIDATE.md)
 remain separate. This deployment does not authorize real equipment operation.
 
-## Retained Vercel Configuration
+## Cloudflare configuration
 
-The following records the original Vercel setup, retained as a secondary host.
-Current Vercel operations follow [Manual App Release](../../../workflows/manual-app-release.md).
-The original setup and first-deployment history below do not govern Cloudflare.
-
-- Git repository: `karote00/asyra`.
-- Vercel team: `karote00s-projects`; project ID:
-  `prj_6BMRMmYpGwroBa4v5k9i0chTtN44`.
-- Project root: `apps/asyra-sim`.
-- Include files outside the root directory so Yarn can resolve the monorepo.
-- Framework: Vite; Node.js: `24.x`; Yarn: the repository's declared `4.3.1`.
-- Install, build, static output and HTTP policy are owned by
-  `apps/asyra-sim/vercel.json`, not the repository-root Design configuration.
-- Build only Sim and its declared Framework dependency graph, with two
-  concurrent build tasks. Serve `apps/asyra-sim/dist`, never repository source.
-- Vercel Git deployment behavior is governed by the current Manual App Release
-  contract linked above. The production branch remains `main`.
-- No required runtime environment variable, Vercel Function, database service,
-  account system, analytics, or cloud solver is added.
-- Keep the Vercel Toolbar disabled for both environments: the app intentionally
-  allows only same-origin scripts. Project model-improvement data sharing is off.
-
-The first deployment on 2026-09-07 serves PR checkpoint
-`78694410b1c8f0372f42349c12196f90a50071ef` at the production alias, without merging
-the PR. That initial Git-connected setup has since been superseded by the Manual App
-Release workflow. Deployment IDs and source commits, rather than the mutable
-alias alone, identify the build under review.
+The manual App workflow owns Node 24, locked Yarn installation, the Turbo build
+and publication of `apps/asyra-sim/dist`. `public/_headers` owns the native Pages
+HTTP policy, including same-origin scripts, Workers and connections. Missing
+assets and API routes return real 404s. No backend or cloud solver is deployed.
+The [previous hosting record](../../../decisions/hosting-before-cloudflare.md) is preserved
+verbatim as historical evidence alongside completed plans and release decisions.
+It does not configure the current host.
 
 ## Data and Browser Boundaries
 

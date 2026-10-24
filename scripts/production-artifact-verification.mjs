@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { RELEASE_APPS } from './app-release-plan.mjs'
+import { ARTIFACT_APPS } from './production-artifact-targets.mjs'
 
-// Verification owns build tasks and browser cases; public IDs belong to the plan.
+// Verification owns build tasks and browser cases; public IDs belong to the artifact registry.
 const verification = {
   'asyra-sim': {
     task: '@asyra/asyra-sim#react:build',
@@ -21,17 +21,17 @@ const verification = {
 
 export function runVerification(mode, input, execute = spawnSync) {
   assert.ok(['build', 'test'].includes(mode), 'Unknown verification mode')
-  const apps = input ? JSON.parse(input) : RELEASE_APPS.map((app) => app.id)
+  const apps = input ? JSON.parse(input) : ARTIFACT_APPS.map((app) => app.id)
   assert.ok(Array.isArray(apps) && apps.length > 0, 'Expected selected Apps')
   assert.equal(new Set(apps).size, apps.length, 'Duplicate App selection')
   for (const id of apps) {
     assert.ok(
-      RELEASE_APPS.some((app) => app.id === id),
+      ARTIFACT_APPS.some((app) => app.id === id),
       'Unknown App selection'
     )
   }
   // Canonical order makes one Turbo graph share dependency work across Apps.
-  const selected = RELEASE_APPS.filter((app) => apps.includes(app.id))
+  const selected = ARTIFACT_APPS.filter((app) => apps.includes(app.id))
   const commands =
     mode === 'build'
       ? [
@@ -74,5 +74,5 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  runVerification(process.argv[2], process.env.RELEASE_APPS)
+  runVerification(process.argv[2], process.env.ARTIFACT_APPS)
 }

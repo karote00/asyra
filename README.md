@@ -15,12 +15,12 @@ coordinates the shared infrastructure around them: intent routing,
 registration, transactions, rollback, Undo/Redo, validation, persistence
 boundaries, and downstream projections.
 
-- <a href="https://asyra-framework.vercel.app" target="_blank" rel="noopener noreferrer">Visit the Asyra website</a>
-- <a href="https://asyra-design.vercel.app/?fileId=demo" target="_blank" rel="noopener noreferrer">Try Asyra Design</a>
+- <a href="https://asyra-framework.pages.dev" target="_blank" rel="noopener noreferrer">Visit the Asyra website</a>
+- <a href="https://asyra-design.pages.dev/?fileId=demo" target="_blank" rel="noopener noreferrer">Try Asyra Design</a>
 - [Explore the Generic Starter source](#generic-starter)
 - [Read the documentation](docs/public/index.md)
 - [Install Asyra Skill for your coding agent](plugins/asyra-skill/README.md) -
-  project installation and updates with Vercel Skills or OpenSkills, plus
+  project installation and updates with OpenSkills, plus
   native plugin and Claude Desktop ZIP routes.
 - [Create an Asyra Design app](#complete-design-product)
 - [Install `@asyra/core`](#advanced-composition)
@@ -28,14 +28,15 @@ boundaries, and downstream projections.
 Install the Skill in your product folder:
 
 ```sh
-npx skills add karote00/asyra
+npx openskills@1.5.0 install karote00/asyra/plugins/asyra-skill/skills/asyra-skill --universal --yes
+npx openskills@1.5.0 sync --yes
 ```
 
-Select your coding tool and installation scope when prompted.
+Review the generated `AGENTS.md` instructions before using the Skill.
 
 ## Try the demo
 
-<a href="https://asyra-design.vercel.app/?fileId=demo" target="_blank" rel="noopener noreferrer">Asyra Design</a> is the maintained,
+<a href="https://asyra-design.pages.dev/?fileId=demo" target="_blank" rel="noopener noreferrer">Asyra Design</a> is the maintained,
 complete design-tool product in this repository. It demonstrates App-owned
 Features, editable information, the official `2D` Preset, rendering, Undo/Redo,
 persistence, and explicit optional AI and collaboration composition on the

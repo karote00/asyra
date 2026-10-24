@@ -645,7 +645,6 @@ test('formal path owners reach their selected gates through the final aggregate'
     '.changeset/example.md',
     '.github/dependabot.yml',
     '.github/pull_request_template.md',
-    '.github/app-production-environment.json',
     'README.md',
     'create-app/asyra-design/package.json',
     'scripts/release-package-artifacts.js',

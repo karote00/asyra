@@ -4,7 +4,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { test } from 'node:test'
-import { stripVTControlCharacters } from 'node:util'
 import {
   checkBundle,
   createBundle,
@@ -671,8 +670,6 @@ syncBuiltinESMExports()
       'docs/public/start/extend-with-ai.md'
     ]) {
       for (const command of [
-        'npx skills add karote00/asyra',
-        'npx skills update asyra-skill --project',
         `npx openskills@1.5.0 install ${publicRepository}/${PLUGIN}/${SKILL} --universal --yes`,
         'npx openskills@1.5.0 update asyra-skill'
       ])
@@ -682,22 +679,6 @@ syncBuiltinESMExports()
         )
     }
     const cases = [
-      {
-        name: 'skills',
-        version: '1.7.2',
-        cli: 'skills/bin/cli.mjs',
-        directory: '.agents/skills',
-        publicSource: `https://github.com/karote00/asyra/tree/main/${legacyPlugin}/${legacySkill}`,
-        install: (value) => [
-          'add',
-          value,
-          '--agent',
-          'codex',
-          'claude-code',
-          '--yes'
-        ],
-        update: (name) => ['update', name, '--project', '--yes']
-      },
       {
         name: 'openskills',
         version: '1.5.0',
@@ -756,13 +737,7 @@ syncBuiltinESMExports()
       // A full discovery fixture uses the actual contributor Skills and marketplace.
       // The older version here is synthetic, not a previously released identity.
       const source = fixture()
-      if (item.name === 'skills') {
-        fs.cpSync(
-          path.join(ROOT, '.claude/skills'),
-          path.join(source, '.claude/skills'),
-          { recursive: true }
-        )
-      }
+
       changeVersion(source, '0.1.11')
       const reference = 'docs/public/start/extend-with-ai.md'
       write(
@@ -787,31 +762,15 @@ syncBuiltinESMExports()
       const previousValue = env.GIT_CONFIG_VALUE_0
       env.GIT_CONFIG_COUNT = '1'
       env.GIT_CONFIG_KEY_0 = `url.file://${source}.insteadOf`
-      env.GIT_CONFIG_VALUE_0 =
-        item.name === 'skills' ? remote : remote.replace(/\.git$/, '')
-      const candidateSource =
-        item.name === 'skills'
-          ? publicRepository
-          : `${publicRepository}/${PLUGIN}/${SKILL}`
-      if (item.name === 'skills') {
-        const listing = stripVTControlCharacters(
-          invoke(['add', candidateSource, '--list'], controlled, 'root-list')
-        )
-        assert.match(listing, /Found 1 skill\b/)
-        assert.ok(listing.includes('asyra-skill'))
-        assert.ok(!listing.includes('frontend-design'))
-      }
+      env.GIT_CONFIG_VALUE_0 = remote.replace(/\.git$/, '')
+      const candidateSource = `${publicRepository}/${PLUGIN}/${SKILL}`
+
       invoke(item.install(candidateSource), controlled, 'candidate-install')
       const installed = path.join(controlled, item.directory, 'asyra-skill')
       const sourceSkill = path.join(source, PLUGIN, SKILL)
       const initial = verify(installed, sourceSkill)
       assert.deepEqual(fs.readdirSync(path.dirname(installed)), ['asyra-skill'])
-      if (item.name === 'skills') {
-        assert.equal(
-          fs.realpathSync(path.join(controlled, '.claude/skills/asyra-skill')),
-          fs.realpathSync(installed)
-        )
-      }
+
       fs.rmSync(path.join(source, PLUGIN), { recursive: true })
       fs.cpSync(path.join(ROOT, PLUGIN), path.join(source, PLUGIN), {
         recursive: true
@@ -870,3 +829,15 @@ syncBuiltinESMExports()
     console.log(`Installer evidence: ${root}/report.json`)
   }
 )
+
+test('public Skill distribution advertises only maintained installer routes', () => {
+  for (const file of [
+    `${PLUGIN}/README.md`,
+    `${PLUGIN}/${SKILL}/references/docs/public/start/extend-with-ai.md`
+  ])
+    assert.doesNotMatch(
+      read(ROOT, file),
+      /vercel|npx skills (?:add|update)/i,
+      file
+    )
+})

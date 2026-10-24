@@ -28,22 +28,13 @@ const normalizeOrigin = (value: string, allowLocalHttp = false) => {
   return url.origin
 }
 
-const vercelOrigin = (hostname: string) =>
-  normalizeOrigin(`https://${hostname}`)
-
 export const resolveSiteOrigin = (
   environment: SiteEnvironment = process.env
 ) => {
   if (environment.NEXT_PUBLIC_SITE_URL) {
     return normalizeOrigin(environment.NEXT_PUBLIC_SITE_URL)
   }
-  if (environment.VERCEL_PROJECT_PRODUCTION_URL) {
-    return vercelOrigin(environment.VERCEL_PROJECT_PRODUCTION_URL)
-  }
-  if (environment.VERCEL_URL) {
-    return vercelOrigin(environment.VERCEL_URL)
-  }
-  return normalizeOrigin('https://asyra-framework.vercel.app')
+  return normalizeOrigin('https://asyra-framework.pages.dev')
 }
 
 export const isIndexingAuthorized = (

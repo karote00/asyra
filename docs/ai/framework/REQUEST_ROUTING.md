@@ -88,7 +88,7 @@ Use this file to route a new framework request to the right docs first.
   - `PLANS.md`
   - `plans/completed/framework-release-readiness-and-closeout-plan.md`
   - `plans/framework-release-readiness-flow-inspector.data.cjs`
-  - `plans/node-24-runtime-upgrade-and-vercel-validation-plan.md`
+  - `plans/completed/node-24-runtime-upgrade-and-vercel-validation-plan.md`
   - `plans/completed/local-versioned-package-install-research-plan.md`
   - `../workflows/package-release-validation.md`
   - `rules/release-version-topology.md`

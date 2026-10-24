@@ -146,9 +146,7 @@ bundled copies or the installed cache to conceal source drift.
 
 Use `asyra-skill` for the current installation identifier and paths. The prior
 plans and support evidence retain the identities actually used in those trials.
-The ten contributor Skills under `.claude/skills` have `metadata.internal: true`
-so default Vercel Skills discovery exposes only the public Skill. This metadata
-does not change their local instructions. Explicit internal discovery is outside
-the public installation route; OpenSkills still targets the exact subdirectory.
-See [installer validation](installer-validation.md) for the rename and root-source
-acceptance checks.
+OpenSkills targets the exact public Skill subdirectory. Native plugin and ZIP
+installation use the routes in the plugin README. Historical installer trials
+remain in [installer validation](installer-validation.md); retired discovery
+routes are not current installation instructions.

@@ -16,7 +16,7 @@
       "sourceDigests": {
         "contract": "49e136f470416c0a4c6f6ddc1b9047d988263c83d7aa1939b5fa55a740f7b34d",
         "guide": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
-        "manifest": "3198d4f56ee807098566b8f475d2b2fab20d5ad46f2d02ea709ab71f8eff8fcc"
+        "manifest": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
       },
       "version": "0.5.1"
     },
@@ -38,7 +38,7 @@
       "sourceDigests": {
         "contract": "ed2a892fd151ea3ff8be30477c15d8605264241e49b8dbc9b6ab24efcedd8c5c",
         "guide": "d89bff16e1372b77541c570df2d78a8ec84f4159d0e20f3919e77bc44b621cd5",
-        "manifest": "16b278097f883c54df4bcf294354b950aae4b1dc59e2ec7e75303e663d314c7a"
+        "manifest": "92170542361610b39c1e69a033daee2255205c03fa628814d139bf2de9e435ad"
       },
       "version": "0.5.5"
     },
@@ -73,7 +73,7 @@
       "sourceDigests": {
         "contract": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965",
         "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
-        "manifest": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
+        "manifest": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
       },
       "version": "0.5.7"
     },
@@ -95,7 +95,7 @@
       "sourceDigests": {
         "contract": "94c0a88a9ba5d8b317784d22cdaae2201f26d7c7d70c6821adfcafa8d6e56d09",
         "guide": "c2bc81415b3770b776ecd0b282c3889325c76a75a26bdb2d50be5a85b84b042d",
-        "manifest": "8751a2c979bd19b681f6143deb7cfc56744160cd976c9d6a3cb3444412aea0a8"
+        "manifest": "6bbdb3b8835937194554e7d04873e491cd75b0fc1e9b439cc8a12b9c91503f0c"
       },
       "version": "0.5.5"
     },
@@ -117,7 +117,7 @@
       "sourceDigests": {
         "contract": "3543d8b8fad5ee283611055add412f6591ebe0d02387037a3720ff7b8706e4dc",
         "guide": "f3135c07050bec8d0c4949166149dff46755e6c4daf7254480044ed3ac6d77a2",
-        "manifest": "111a62250e5f486615361cb6c1bed3debb35c25eae8d0fab6deced87e86ce0e8"
+        "manifest": "69bede311c7482ca4df644c2fb01f754e4e067026e6fcedf61e8e6aeb6a029a2"
       },
       "version": "0.5.4"
     },
@@ -139,7 +139,7 @@
       "sourceDigests": {
         "contract": "62faa8740669591ff322af61d655bd253c2a3cb094e8a88538a2a39e3a2e7eb5",
         "guide": "e98668c82c70f2b02bff074d5ee05ab5c97c058fe439e7debb967b18ecc09e1a",
-        "manifest": "8003296f7f49d0b9f9609ebc4df4d769afb0a9444efa47f1195d088217bd3642"
+        "manifest": "e468a6de293c74ee4f00177da5707980dece2a62ac69ccce116185487a84d290"
       },
       "version": "0.5.4"
     },
@@ -161,7 +161,7 @@
       "sourceDigests": {
         "contract": "f66cd80062c5ff2ed6ad0cc3f3e333e6ce5b4f20f00e146086c0b442314e73aa",
         "guide": "d4990de2edfd7ab0a66fa92c5c80581df004b98b4db2f15afe1e45d689b6ec08",
-        "manifest": "f2b6d51e4544caee6e77ef17eebc9639038013e26fa7b20267d77fb18c05cecd"
+        "manifest": "7d303cc2e703afefa9aacaaf9ff0be1f3c627f8d7470ba738b7e5364ee596728"
       },
       "version": "0.5.5"
     },
@@ -182,7 +182,7 @@
       "sourceDigests": {
         "contract": "6ba31c6a0f2f12679cec282ec2bc5054c2cc110cb4e2d54555581b8402bae4a4",
         "guide": "e81642b5d077d418f273319bdb3251976516e77591f69058c54f661abf2b8315",
-        "manifest": "97e91850a0f79ed697b9ec3e27b4fb39b98243a046dd87a3034849ae240605bd"
+        "manifest": "49624e44d0978d5d77cce32c01dacdfe48b54e5afce1fb433e0486cd4cea6096"
       },
       "version": "0.5.3"
     },
@@ -211,7 +211,7 @@
       "sourceDigests": {
         "contract": "866f3693cb51f85319a2d2552b5c6431422091eaaeb808d9b796cc3dd57de32c",
         "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
-        "manifest": "c23748d886dbff1a51569feb6c2dc069cebb9c6c9b1307baef2ac64c1211b4b4"
+        "manifest": "d44d3f8ecec5b395e06e618157873fdc7688148b3b221d7ebd388f4cc01adbd3"
       },
       "version": "0.5.8"
     },
@@ -233,7 +233,7 @@
       "sourceDigests": {
         "contract": "783f9b8631b907999a5317000397b0bb45d40351062772e74f872cceaf082560",
         "guide": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
-        "manifest": "4c01896bc23707dd6381b284d4ac23f157e7719f63c736291c08dd6ce853b653"
+        "manifest": "034085b2dea430349441d6f3338301f02d665f76b0129ccc166d3fe4fbefe666"
       },
       "version": "0.5.4"
     },
@@ -255,7 +255,7 @@
       "sourceDigests": {
         "contract": "9fde25d55c73e61ce823cfc06edd03953fee3fc9fc3de54caf772bf0ca347629",
         "guide": "534d53e7eae5e7f38ddbf2977688a63af2857553e1246ef4f77d5b9eb40df275",
-        "manifest": "0dfbf0a60b0fd9db00624bd02b4b1d24a555544c26f3d5334a64fbecddfe77a1"
+        "manifest": "7bb36c4dadb9c73f4d429f993c20f4665efed496e7e446f6221d1f5c01207dc7"
       },
       "version": "0.5.4"
     },
@@ -282,7 +282,7 @@
       "sourceDigests": {
         "contract": "8abb01d6c6209183e49cf6808521215edcdc64a2474bb85c4309a6b8565064a5",
         "guide": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
-        "manifest": "98371a0e776bedf693e2464b92ea51bce7428c9cb94a66eeaeaad83b01158395"
+        "manifest": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
       },
       "version": "0.5.7"
     },
@@ -302,7 +302,7 @@
       "sourceDigests": {
         "contract": "5311827ccfeac8bba3500fe8f9671169f1bd90c53ee930741e815e14289679ca",
         "guide": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
-        "manifest": "1bd7687ec05a2c910791d8674bd691d694f0fb9a35d8f182c4f0e8c7e387849d"
+        "manifest": "2ffcd587c6076b001aeddbf11d2afbc95e3f8531cef35590e2ff804d59bf31f8"
       },
       "version": "0.5.1"
     },
@@ -323,7 +323,7 @@
       "sourceDigests": {
         "contract": "dd35edcdf0958f0b5f3a10261bcdd8e827bd240ad7464f2d1fea129c1bf99032",
         "guide": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
-        "manifest": "a7c7c847e74f04054de4197b391a844086f120276505272162f6f738724db31e"
+        "manifest": "fb2ed8fd6c93a7bd2353b0253e3dea43cbafb83f52c86386dd92ee5fbbb7030e"
       },
       "version": "0.5.2"
     },
@@ -346,7 +346,7 @@
       "sourceDigests": {
         "contract": "f59f2edd234f5773d1481d68c3e719e67a85b9d8f204e24bb47b52df34326028",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
-        "manifest": "5d47076e1ab211ddf67078fc29374c7ea3d873112b481148a1665b3d2829e0c9"
+        "manifest": "e46c47e2ec31a8f1a9405a0dd54e288bd2f27657ff03b13c944eb7cb623e3719"
       },
       "version": "0.5.4"
     },
@@ -367,7 +367,7 @@
       "sourceDigests": {
         "contract": "400873ab29507532536b9f55e413b9d8205ecc85be6e48913307cd63988e4b17",
         "guide": "16deb78d1dcc80cae96cc3bb423c893eac7249d3fc833d1b1b41371622b42916",
-        "manifest": "d3e232c55b88217b98d1e80ebcaf8424ec51dece6b06190e9303b7851ff8653b"
+        "manifest": "41d75f13e712c5a929f0753fc2ab1f58aca6e7b9d9648691f2b89e3a6257c2ef"
       },
       "version": "0.5.3"
     },
@@ -388,7 +388,7 @@
       "sourceDigests": {
         "contract": "5344cb5fc59a0dcadb32e6484ee259fd54e1d4387f81a14c7da0786f16a8e657",
         "guide": "1a44b5d648932ba135940c17f0a9b9a78e2035363b74c055d5f2b9eb1d78f2d7",
-        "manifest": "8814061ab9e1e542957c036437c4cae9a91235723cb58c4b55f904b0042fc579"
+        "manifest": "cf160587aeaa1e339c2d770de0f25ddce47cc9449ccd167f78b49de0d9c52094"
       },
       "version": "0.5.3"
     },
@@ -411,7 +411,7 @@
       "sourceDigests": {
         "contract": "4a9b1fe9e3abd5483c191cb96b6221cab8da07c709a9acdd8eeee1f2a2270dd7",
         "guide": "2e62ac7870b5879adf014cc48887da26e1530abfa611b9effd97b53e5489aaf4",
-        "manifest": "84aad307f287d47722845b7026d7c0b4f75b7fc1aabd37ab1c732a16e4c531a8"
+        "manifest": "da37179618a803a131ce3a5a08dad2ffaf04dda88f6cf96f83fbc106e209a409"
       },
       "version": "0.5.4"
     },
@@ -430,7 +430,7 @@
       "sourceDigests": {
         "contract": "10f76368c0b6af1ecd727cf90700aaa63cd43c7096293179b77c0acbc6b2da35",
         "guide": "c8f46c0786c0584519150eb8402069259a8a01b75ca01b44113220a5a492a4c7",
-        "manifest": "8fb4a172efbfbd2b65283fc2741d38d682a843a45b2ad5ceca2116845abb11c7"
+        "manifest": "d13130904aebc87f640dbbe3ecd21d7c3a697c354ec1a94c083445230b41a5e6"
       },
       "version": "0.5.2"
     }

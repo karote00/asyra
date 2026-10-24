@@ -13,13 +13,9 @@ PR validation is independent of hosting. Ready PRs require `validate`,
 create-app package archive check. Framework release readiness is selected for
 affected Framework packages and release-validation owner scripts. Draft jobs
 remain deferred until ready for review.
-Vercel statuses from older Git-integrated deployments are historical evidence,
-not merge prerequisites or proof that CI passed.
-
-The three hosted Apps use the explicit [manual App release workflow](manual-app-release.md).
-Their Git connections are removed during cutover, and repository configurations
-also disable automatic Git deployment. A push, PR or merge does not request an
-App deployment. Package registry publication remains a separate workflow.
+The three hosted Apps use [Cloudflare App delivery](app-cloudflare.md).
+The website has its own manual Cloudflare workflow. A push, PR or merge does
+not request a deployment. Package registry publication remains separate.
 
 ## Workspace Build Graph and CI Scope
 

@@ -33,9 +33,13 @@ Build workspace dependencies before app checks when working in a fresh checkout.
 
 Private changes still need an empty changeset. Review the staged diff, create an English PR, and verify all checks on its current head. Do not infer CI success from a previous head.
 
-## Vercel
+## Cloudflare Pages
 
-Follow the Asyra Design deployment pattern: select `apps/asyra-fieldscope` as Root Directory and include files outside the root so workspace packages are available. The committed `vercel.json` owns the exact commands: immutable Yarn 4.3.1 installation from the repository root, filtered Turbo build of `@asyra/asyra-fieldscope`, output `dist/frontend`. Production build does not require `APP_URL`; development server startup does. Node is 24.x. Automatic deployment is enabled for `main` only. Configuration support is not evidence of an existing deployed Vercel project.
+[Cloudflare App delivery](../../workflows/app-cloudflare.md) owns the manual
+production workflow. Build from the repository root using Node 24 and locked
+Yarn dependencies, serve `dist/frontend`, and preserve `public/_headers`.
+Production does not require `APP_URL`; development and E2E do. Pushes and merges
+never deploy. Successful local checks do not prove a public deployment.
 
 The macOS browser suite uses ANGLE Metal to match the desktop GPU. `WEBGL_RENDERER=swiftshader` explicitly selects CPU software rendering; Linux defaults to SwiftShader. Software-rendered cases keep the 1440 × 1100 CSS layout and use a 0.25 device scale factor; the renderer selects level of detail from physical pixels. Software results are not a desktop responsiveness claim. Robot panel-closure and greenhouse panel cases request reduced motion in software-rendered runs and still assert edits, canvas identity and final scene geometry. Hardware-rendered runs retain transitions. Test timeout/resource guards remain unchanged.
 

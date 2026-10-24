@@ -19,7 +19,6 @@ const sourceRoots = runsFromWorkspaceApp
 const sourceExtensions = new Set(['.cjs', '.js', '.mjs', '.ts', '.tsx'])
 const ignoredDirectories = new Set([
   '.turbo',
-  '.vercel',
   'coverage',
   'dist',
   'node_modules',

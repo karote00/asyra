@@ -2,7 +2,7 @@ import { bundleInputPaths } from './developer-agent-bundle.mjs'
 import crypto from 'node:crypto'
 import { selectTestImpact, requiresTestParser } from './test-impact.mjs'
 import { rootInputImpact } from './ci-input-impact.mjs'
-import { RELEASE_APPS } from './app-release-plan.mjs'
+import { ARTIFACT_APPS } from './production-artifact-targets.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -622,7 +622,7 @@ function classifyChanges(
       /^(?:scripts|\.github|\.changeset|agents|\.codex|\.antigravity|release-configs)\//.test(
         changedPath
       ) ||
-      /^(?:eslint\.config\.[cm]?js|turbo(?:\.base)?\.json|\.gitignore|\.env\.example|vercel\.json)$/.test(
+      /^(?:eslint\.config\.[cm]?js|turbo(?:\.base)?\.json|\.gitignore|\.env\.example)$/.test(
         changedPath
       )
     )
@@ -1272,7 +1272,7 @@ function classifyChanges(
         : 'not-selected',
     inputs: controlPlaneInputs
   }
-  const productionApps = RELEASE_APPS.filter(
+  const productionApps = ARTIFACT_APPS.filter(
     (app) =>
       selectEveryWorkspace ||
       affectedWorkspaces.some(

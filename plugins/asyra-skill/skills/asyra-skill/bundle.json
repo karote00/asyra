@@ -20,7 +20,7 @@
     "docs/public/reference/support-release.md": "b4660429ab396323249d15af3f96b16c5c9a600f7576af231dae4e04e8a5766c",
     "docs/public/start/create-design-app.md": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
     "docs/public/start/custom-composition.md": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
-    "docs/public/start/extend-with-ai.md": "9bc6624fc65276ddd302ba9c54bab20a866ab5516aa2f028965e0845d194dcf6"
+    "docs/public/start/extend-with-ai.md": "49a2da62553e2edf5c17ec6680ab2e34b9a2169a8bdda878be5435093d0f252e"
   },
   "referenceVersions": {
     "@asyra/ai-agent-runtime": "0.5.1",
@@ -47,7 +47,7 @@
     ".codex-plugin/plugin.json": "361e1380e2423dd8334ce554c6d69830242599980d852d87407d21ef775b38ef",
     ".claude-plugin/plugin.json": "8b3f125cc0dbf51aa15bfaa06e8a3e40c6cf1a0f6916dc2da7fbfbe05e8daf67",
     "bundle.config.json": "e6bb5ac9a7fff7d4b88f03d5b0244ed0a790192e8300737134810fe4f66f3e09",
-    "README.md": "68d4e7634100d0e59ca672d599859db925613cb2da0d6d9ce901c8ca8a4c86ce",
+    "README.md": "6f9124a92ade9f4d34f4ff247d3c078c76e2a266bf2ebdde5cf0d2f63224372a",
     "CHANGELOG.md": "22c18cc3a0ca76d1ea61dd780b284b0cb32e844c1591528d69880fe4e8af278a",
     "assets/icon.svg": "a7fd594de4944f6cc1daf3ef674efeb10a66e839084bebcbca0414591d96fb82",
     "skills/asyra-skill/SKILL.md": "cc27d89dafd9220d996caed143b23c4bc5f3dcc6565f3463560033b4f564e163",
@@ -69,7 +69,7 @@
     "skills/asyra-skill/references/docs/public/reference/support-release.md": "64309183bc32527ebc05b18d24235e33ff02373b363df7b6a0c991460165e091",
     "skills/asyra-skill/references/docs/public/start/create-design-app.md": "b6dc00b4c1273bf2543122b5b1824f54ff7eff44ee3b03561243b58a2900a434",
     "skills/asyra-skill/references/docs/public/start/custom-composition.md": "ead489fa5c0918b407b064727fae78dd9d4169ec390b67622a1df99f27d92468",
-    "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "226d6a18b610b3657c6e551764494b6005807966fdf7f42ffc49ecc36b10ed02"
+    "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "b12b1a328ad9c17e00a2a0ba79435f9ff7b4446b6e1a2fe2726b17c33a200b03"
   },
-  "contentDigest": "8ad9df982a1d3f40e3ed062b07782e597a63e96e675aea07ea935681b3c373ca"
+  "contentDigest": "50dc4ec56dcb28fccbbba13853978d92c03381247809a3ee082598a4c99d8284"
 }

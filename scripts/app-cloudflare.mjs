@@ -1,5 +1,6 @@
 /* global fetch, AbortSignal */
 import assert from 'node:assert/strict'
+import { parseGlobalHeaders } from './cloudflare-headers.mjs'
 import {
   cp,
   mkdir,
@@ -76,22 +77,12 @@ export async function prepareApps({
     await rm(destination, { recursive: true, force: true })
     await mkdir(destination, { recursive: true })
     await cp(source, destination, { recursive: true })
-    const config = JSON.parse(
-      await readFile(path.join(root, app.root, 'vercel.json'), 'utf8')
+    const headers = await readFile(
+      path.join(root, app.root, 'public/_headers'),
+      'utf8'
     )
-    const headers = (config.headers ?? []).flatMap((rule) => {
-      assert.equal(
-        rule.source,
-        '/(.*)',
-        'Review non-global response headers before publication'
-      )
-      return rule.headers.map(({ key, value }) => `  ${key}: ${value}`)
-    })
-    if (headers.length)
-      await writeFile(
-        path.join(destination, '_headers'),
-        `/*\n${headers.join('\n')}\n`
-      )
+    parseGlobalHeaders(headers)
+    await writeFile(path.join(destination, '_headers'), headers)
     // These Apps use root/query navigation. A real 404 prevents missing API or
     // Worker requests from receiving Pages' implicit SPA index fallback.
     await writeFile(
@@ -194,16 +185,14 @@ export async function verifyDeployment(id, sha = process.env.SOURCE_SHA) {
   for (const missing of ['/api/ai/action-batch', '/missing-worker.js']) {
     assert.equal((await fetch(`${origin}${missing}`)).status, 404, missing)
   }
-  const config = JSON.parse(
+  const headers = parseGlobalHeaders(
     await readFile(
-      new URL(`../${app.root}/vercel.json`, import.meta.url),
+      new URL(`../${app.root}/public/_headers`, import.meta.url),
       'utf8'
     )
   )
-  for (const rule of config.headers ?? []) {
-    for (const { key, value } of rule.headers)
-      assert.equal(response.headers.get(key), value, key)
-  }
+  for (const [key, value] of Object.entries(headers))
+    assert.equal(response.headers.get(key), value, key)
   console.log(`Production verified: ${id} at ${origin} (${sha})`)
 }
 

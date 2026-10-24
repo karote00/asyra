@@ -102,8 +102,6 @@ for (const width of [320, 820, 1440]) {
       })
     ).toBeVisible()
     for (const command of [
-      'npx skills add karote00/asyra',
-      'npx skills update asyra-skill --project',
       'npx openskills@1.5.0 update asyra-skill',
       'npx openskills@1.5.0 sync --yes'
     ]) {

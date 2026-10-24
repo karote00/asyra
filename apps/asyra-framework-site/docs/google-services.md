@@ -1,6 +1,6 @@
 # Google Search Console and GA4
 
-The site loads Google Analytics only when Vercel identifies the deployment as
+The site loads Google Analytics only when `SITE_ENV` identifies the build as
 Production and a valid GA4 measurement ID is configured. Local development and
 Preview deployments do not emit Google tags or the Search Console verification
 meta tag. Empty configuration leaves the services disabled; invalid configured
@@ -8,20 +8,20 @@ Production identifiers fail the build.
 
 ## Production configuration
 
-Set these build-time variables on the existing Vercel site project:
+Set these build-time variables in the Cloudflare website workflow or local `.env`:
 
-| Variable | Value |
-| --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | `https://asyra-framework.vercel.app` |
-| `NEXT_PUBLIC_SITE_INDEXING` | `true` |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | The website stream's `G-...` measurement ID |
-| `GOOGLE_SITE_VERIFICATION` | The HTML meta tag's content value, not the full tag |
+| Variable                        | Value                                               |
+| ------------------------------- | --------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`          | `https://asyra-framework.pages.dev`                 |
+| `NEXT_PUBLIC_SITE_INDEXING`     | `true`                                              |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | The website stream's `G-...` measurement ID         |
+| `GOOGLE_SITE_VERIFICATION`      | The HTML meta tag's content value, not the full tag |
 
-Vercel supplies `VERCEL_ENV`. The site-specific Turbo task forwards these
+Set `SITE_ENV=production` explicitly. The site-specific Turbo task forwards these
 variables to Next.js. Rebuild after configuration changes because metadata,
 scripts, and response headers are emitted at build time.
 
-Creating a GA4 stream or a Search Console property does not configure Vercel.
+Creating a GA4 stream or a Search Console property does not configure the website build.
 Check that both identifier variables actually exist in the site's Production
 environment before deploying. A Ready deployment with empty configuration
 intentionally omits the Google tags and cannot collect visits or verify GSC.
@@ -31,12 +31,14 @@ OAuth token, service-account key, or Analytics API secret in these variables.
 
 ## Search Console
 
-Use the URL-prefix property `https://asyra-framework.vercel.app/`.
-The project does not own DNS for `vercel.app`, so use HTML-tag verification.
-Copy the token into the Production environment variable, merge the reviewed PR and let the existing Git integration deploy main, check that the anonymous homepage head contains the token, then press
+Use the URL-prefix property `https://asyra-framework.pages.dev/`.
+The project does not own DNS for `pages.dev`, so use HTML-tag verification.
+Copy the token into the `GOOGLE_SITE_VERIFICATION` repository variable, merge
+the reviewed PR, and manually run **Website - Cloudflare Pages** on main.
+Check that the anonymous homepage head contains the token, then press
 Verify in Search Console. Keep the token configured after verification.
 
-Submit `https://asyra-framework.vercel.app/sitemap.xml` and inspect the homepage
+Submit `https://asyra-framework.pages.dev/sitemap.xml` and inspect the homepage
 and a representative document URL. Verification and sitemap submission do not
 guarantee indexing or ranking.
 
@@ -66,15 +68,15 @@ The configured root layout owns one interaction collector across every route,
 including client-side navigation. These app-owned event names are stable wire
 identities in `lib/site-interaction-analytics.mjs`.
 
-| Event | Meaning | Parameters beyond `page_path` |
-| --- | --- | --- |
-| `site_cta_click` | Annotated primary CTA: compose, create app, explore Atlas, product case, demo, source | `cta_id`, `link_area` |
-| `site_navigation` | Internal link to a known public route, including section links | `target_path`, `link_area`, `navigation_type` |
-| `site_search` | Nonempty documentation query settles for 500 ms, Enter is pressed, or a result is selected | `result_count`, `query_length` |
-| `site_search_select` | A displayed documentation search result is selected | `target_path`, `result_position` |
-| `site_ui_interaction` | Navigation/docs/search dialog opens or closes; error retry is pressed | `control_id`, `action` |
-| `site_atlas_interaction` | Case selection or run/pause/step/replay/reset intent | `case_id`, `action` |
-| `site_code_copy` | A nonempty selection within one code block is copied | None |
+| Event                    | Meaning                                                                                    | Parameters beyond `page_path`                 |
+| ------------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `site_cta_click`         | Annotated primary CTA: compose, create app, explore Atlas, product case, demo, source      | `cta_id`, `link_area`                         |
+| `site_navigation`        | Internal link to a known public route, including section links                             | `target_path`, `link_area`, `navigation_type` |
+| `site_search`            | Nonempty documentation query settles for 500 ms, Enter is pressed, or a result is selected | `result_count`, `query_length`                |
+| `site_search_select`     | A displayed documentation search result is selected                                        | `target_path`, `result_position`              |
+| `site_ui_interaction`    | Navigation/docs/search dialog opens or closes; error retry is pressed                      | `control_id`, `action`                        |
+| `site_atlas_interaction` | Case selection or run/pause/step/replay/reset intent                                       | `case_id`, `action`                           |
+| `site_code_copy`         | A nonempty selection within one code block is copied                                       | None                                          |
 
 This measures meaningful controls rather than blank-area clicks. CTA and search
 result clicks each produce their own custom event instead of an additional
@@ -140,7 +142,7 @@ For the configured official deployment, run the explicit enabled-services gate
 with the identifiers copied from its GA4 stream and GSC HTML-tag panel:
 
 ```bash
-SITE_URL=https://asyra-framework.vercel.app \
+SITE_URL=https://asyra-framework.pages.dev \
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-YOURMEASUREMENTID \
 GOOGLE_SITE_VERIFICATION=your-html-meta-content \
 yarn workspace @asyra/asyra-framework-site test:google-services

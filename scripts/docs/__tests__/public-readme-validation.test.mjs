@@ -95,7 +95,7 @@ test('README link validation rejects missing and unverified destinations', () =>
     validateReadmeLinks({
       filePath: path.join(repositoryRoot, 'README.md'),
       repositoryRoot,
-      source: '[demo](https://asyra-design.vercel.app/?fileId=demo)'
+      source: '[demo](https://asyra-design.pages.dev/?fileId=demo)'
     })
   })
   assert.throws(

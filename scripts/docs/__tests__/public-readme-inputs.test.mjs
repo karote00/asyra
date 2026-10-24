@@ -68,7 +68,7 @@ test('root README follows the product-to-proof reader journey', () => {
     )
     .replace(/\nexport default undoRedoFeature\s*$/u, '')
 
-  assert.match(readme, /https:\/\/asyra-design\.vercel\.app\/\?fileId=demo/u)
+  assert.match(readme, /https:\/\/asyra-design\.pages\.dev\/\?fileId=demo/u)
   assert.deepEqual(
     [...readme.matchAll(/\[[^\]]+\]\((https?:\/\/[^)]+)\)/gu)].map(
       (match) => match[1]
@@ -81,7 +81,7 @@ test('root README follows the product-to-proof reader journey', () => {
   ]
   assert.equal(
     externalAnchors.filter(([, attributes]) =>
-      attributes.includes('href="https://asyra-design.vercel.app/?fileId=demo"')
+      attributes.includes('href="https://asyra-design.pages.dev/?fileId=demo"')
     ).length,
     2
   )

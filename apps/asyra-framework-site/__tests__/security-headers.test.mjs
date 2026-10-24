@@ -4,10 +4,10 @@ import test from 'node:test'
 
 const readPolicy = async (environment, gaEnvironment) => {
   const originalEnvironment = process.env.NODE_ENV
-  const originalVercel = process.env.VERCEL_ENV
+  const originalSiteEnvironment = process.env.SITE_ENV
   const originalGa = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
   process.env.NODE_ENV = environment
-  process.env.VERCEL_ENV = gaEnvironment ?? 'development'
+  process.env.SITE_ENV = gaEnvironment ?? 'development'
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = 'G-TEST123456'
 
   try {
@@ -26,8 +26,8 @@ const readPolicy = async (environment, gaEnvironment) => {
     } else {
       process.env.NODE_ENV = originalEnvironment
     }
-    if (originalVercel === undefined) delete process.env.VERCEL_ENV
-    else process.env.VERCEL_ENV = originalVercel
+    if (originalSiteEnvironment === undefined) delete process.env.SITE_ENV
+    else process.env.SITE_ENV = originalSiteEnvironment
     if (originalGa === undefined)
       delete process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
     else process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = originalGa

@@ -1,3 +1,4 @@
+/* global URL, Response */
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -23,13 +24,10 @@ test('static delivery preserves assets and headers without publishing source or 
       'postMessage(1)'
     )
     await writeFile(path.join(root, app.root, '.env'), 'SECRET=private')
+    await mkdir(path.join(root, app.root, 'public'), { recursive: true })
     await writeFile(
-      path.join(root, app.root, 'vercel.json'),
-      JSON.stringify({
-        headers: [
-          { source: '/(.*)', headers: [{ key: 'X-Test', value: app.id }] }
-        ]
-      })
+      path.join(root, app.root, 'public/_headers'),
+      `/*\n  X-Test: ${app.id}\n`
     )
   }
   const sha = 'a'.repeat(40)
@@ -197,5 +195,35 @@ test('public readiness tolerates initial propagation but never accepts a stale r
       }
     ),
     /Unexpected deployed App/
+  )
+})
+
+test('public verification uses the native App policy and rejects a missing security header', async (t) => {
+  const { verifyDeployment } = await import('../app-cloudflare.mjs')
+  const { parseGlobalHeaders } = await import('../cloudflare-headers.mjs')
+  const sha = 'c'.repeat(40)
+  const policy = parseGlobalHeaders(
+    await readFile(
+      new URL('../../apps/asyra-sim/public/_headers', import.meta.url),
+      'utf8'
+    )
+  )
+  let omitPolicy = false
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    const pathname = new URL(url).pathname
+    if (pathname === '/deployment-version.json')
+      return Response.json({ app: 'asyra-sim', sourceSha: sha })
+    if (pathname === '/')
+      return new Response('<script src="/assets/app.js"></script>', {
+        headers: omitPolicy ? {} : policy
+      })
+    if (pathname === '/assets/app.js') return new Response('console.log(1)')
+    return new Response('Not found', { status: 404 })
+  })
+  await verifyDeployment('asyra-sim', sha)
+  omitPolicy = true
+  await assert.rejects(
+    verifyDeployment('asyra-sim', sha),
+    /x-content-type-options/
   )
 })

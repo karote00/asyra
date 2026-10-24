@@ -134,22 +134,18 @@ test('all GitHub Actions Node setup owners select the Node.js 24 line', () => {
   }
 })
 
-test('the Vercel project-root manifest selects Node.js 24 without a conflicting custom runtime', () => {
-  const appManifest = readJson('apps/asyra-design/package.json')
-  const vercelConfig = readJson('vercel.json')
-
-  assert.deepEqual(appManifest.engines, { node: supportedNodeRange })
-  assert.equal(vercelConfig.version, 2)
-  assert.equal(vercelConfig.functions, undefined)
-  assert.doesNotMatch(JSON.stringify(vercelConfig), /nodejs20|20\.x/i)
-})
-
-test('the Framework website Vercel build follows its Turbo dependency graph', () => {
-  const vercelConfig = readJson('apps/asyra-framework-site/vercel.json')
-
-  assert.equal(
-    vercelConfig.buildCommand,
-    'cd ../.. && corepack yarn gen:turbo:check && corepack yarn turbo run build:asyra-framework-site --filter=@asyra/asyra-framework-site'
+test('Cloudflare workflows use the supported runtime and static build graph', () => {
+  assert.deepEqual(readJson('apps/asyra-design/package.json').engines, {
+    node: supportedNodeRange
+  })
+  for (const file of ['app-cloudflare.yml', 'site-cloudflare.yml']) {
+    const workflow = readText(`.github/workflows/${file}`)
+    assert.match(workflow, /node-version: '24'/)
+    assert.match(workflow, /yarn install --immutable/)
+  }
+  assert.match(
+    readText('.github/workflows/site-cloudflare.yml'),
+    /build:static/
   )
 })
 

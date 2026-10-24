@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      RELEASE_APPS: ${{ inputs.apps }}
+      ARTIFACT_APPS: ${{ inputs.apps }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -31,8 +31,8 @@ jobs:
           cache: yarn
       - run: yarn install --immutable
       - name: Build production artifacts
-        run: node scripts/app-release-verification.mjs build
+        run: node scripts/production-artifact-verification.mjs build
       - name: Verify bounded production artifact resource evidence
         run: node --test scripts/__tests__/production-artifact-resource-evidence.test.mjs
       - name: Test production artifacts without dev servers
-        run: node scripts/app-release-verification.mjs test
+        run: node scripts/production-artifact-verification.mjs test
