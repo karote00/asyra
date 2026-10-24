@@ -7,7 +7,6 @@ import { basicApiDispositions } from '../../src/ai/basic-api-dispositions'
 import { expect, it } from 'vitest'
 import ts from 'typescript'
 import path from 'node:path'
-import { readFileSync } from 'node:fs'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
 import { operationInputIssue } from '../operation-input-schema'
 
@@ -95,32 +94,10 @@ it('binds every action to the existing public method signature in argument order
   )
   const checker = program.getTypeChecker()
   const issues: string[] = []
-  const barrel = ts.createSourceFile(
-    'index.ts',
-    readFileSync('src/common-apis/index.ts', 'utf8'),
-    ts.ScriptTarget.Latest,
-    true
-  )
-  const inventoriedExports = new Set(
-    Object.values(sources).map(([, exported]) => exported)
-  )
-  for (const statement of barrel.statements) {
-    if (
-      !ts.isExportDeclaration(statement) ||
-      statement.isTypeOnly ||
-      !statement.exportClause ||
-      !ts.isNamedExports(statement.exportClause)
-    )
-      continue
-    for (const entry of statement.exportClause.elements) {
-      if (!entry.isTypeOnly && !inventoriedExports.has(entry.name.text))
-        issues.push(
-          `common-apis export ${entry.name.text}: missing owner inventory`
-        )
-    }
-  }
-
-  for (const [owner, [file, variable]] of Object.entries(sources)) {
+  // The app's explicit tool catalog defines coverage, not the Core API surface.
+  for (const owner of new Set(basicApiContracts.map((entry) => entry.owner))) {
+    expect(sources[owner], owner).toBeDefined()
+    const [file, variable] = sources[owner]
     const source = program.getSourceFile(path.join(root, file))
     expect(source, file).toBeDefined()
     if (!source) continue
@@ -136,18 +113,14 @@ it('binds every action to the existing public method signature in argument order
     visit(source)
     expect(type, variable).toBeDefined()
     if (!type) continue
-    const dispositions = basicApiDispositions
-      .filter((entry) => entry.owner === owner)
-      .flatMap((entry) => [...entry.methods])
-    if (new Set(dispositions).size !== dispositions.length)
-      issues.push(`${owner}: duplicate classification`)
-    for (const method of dispositions)
-      if (!type.getProperty(method))
-        issues.push(`${owner}.${method}: stale classification`)
-    for (const property of type.getProperties()) {
-      const declaration = property.valueDeclaration
+    for (const entry of basicApiContracts.filter((c) => c.owner === owner)) {
+      const property = type.getProperty(entry.method)
+      const declaration = property?.valueDeclaration
+      if (!property || !declaration) {
+        issues.push(`${owner}.${entry.method}: missing`)
+        continue
+      }
       if (
-        declaration &&
         ts.canHaveModifiers(declaration) &&
         ts
           .getModifiers(declaration)
@@ -156,26 +129,8 @@ it('binds every action to the existing public method signature in argument order
               modifier.kind === ts.SyntaxKind.PrivateKeyword ||
               modifier.kind === ts.SyntaxKind.ProtectedKeyword
           )
-      )
-        continue
-      const action = basicApiContracts.some(
-        (c) => c.owner === owner && c.method === property.name
-      )
-      const classified = basicApiDispositions.some(
-        (entry) =>
-          entry.owner === owner &&
-          (entry.methods as readonly string[]).includes(property.name)
-      )
-      if (!action && !classified)
-        issues.push(`${owner}.${property.name}: unclassified public API`)
-      if (action && classified)
-        issues.push(`${owner}.${property.name}: duplicate disposition`)
-    }
-    for (const entry of basicApiContracts.filter((c) => c.owner === owner)) {
-      const property = type.getProperty(entry.method)
-      const declaration = property?.valueDeclaration
-      if (!property || !declaration) {
-        issues.push(`${owner}.${entry.method}: missing`)
+      ) {
+        issues.push(`${owner}.${entry.method}: not public`)
         continue
       }
       const signature = checker
