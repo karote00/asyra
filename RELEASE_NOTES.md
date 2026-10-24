@@ -227,3 +227,17 @@ These development notes are not published release summaries.
   "reason": "Documentation discovery and regression checks only; no runtime, consumer data, package versions or publication changes."
 }
 ```
+
+```update-note
+{
+  "change": "release-history-test-inventory",
+  "owner": "Public release documentation tests",
+  "summary": "Verify existing release records survive fixture additions and resolve discovery links from declared paths.",
+  "sources": [
+    "scripts/docs/__tests__/public-documentation.test.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Test-only corrections; release discovery implementation, consumer behavior, stored data and publication are unchanged."
+}
+```

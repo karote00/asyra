@@ -843,9 +843,32 @@ function assertHistoryAvailability(bundle) {
     !verified
   )
   for (const record of bundle.contentIndex.releaseHistory) {
-    assert.ok(bundle.releaseHistory.includes(`](releases/${record.id}.md)`))
+    const href = path.posix.relative('updates', record.path)
+    assert.ok(bundle.releaseHistory.includes(`](${href})`))
   }
 }
+
+test('history availability uses declared paths when record IDs differ from filenames', async () => {
+  const { readReleaseHistory, renderReleaseHistory } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  const inputs = await f.bundle()
+  const page = inputs.pages.find(
+    (page) => page.path === 'updates/releases/first.md'
+  )
+  const original = page.path
+  page.path = 'updates/releases/core-1-0-0.md'
+  page.id = 'updates/releases/core-1-0-0'
+  f.sources.set(page.path, f.sources.get(original))
+  f.sources.delete(original)
+  const records = readReleaseHistory(inputs)
+  const releaseHistory = renderReleaseHistory(records)
+  assert.ok(releaseHistory.includes('[first](releases/core-1-0-0.md)'))
+  assertHistoryAvailability({
+    contentIndex: { releaseHistory: records },
+    releaseHistory
+  })
+})
 
 test('public history availability follows empty, candidate and verified records', async () => {
   const { readReleaseHistory, renderReleaseHistory } =
@@ -884,7 +907,7 @@ test('release history is discoverable from repository and website entries withou
   )
 })
 
-test('registered release pages flow through real generation without CI artifacts', async (t) => {
+test('registered release pages retain existing verified history through real generation without CI artifacts', async (t) => {
   const f = releaseHistoryFixture()
   await f.bundle()
   const temporaryRoot = path.join(repositoryRoot, 'tmp')
@@ -918,10 +941,10 @@ test('registered release pages flow through real generation without CI artifacts
   const manifestPath = path.join(root, 'docs/public/content-manifest.json')
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
   const template = manifest.pages.find((page) => page.id === 'updates/index')
-  for (const page of f.pages) {
+  const registerPage = (page, source) => {
     const file = path.join(root, 'docs/public', page.path)
     fs.mkdirSync(path.dirname(file), { recursive: true })
-    fs.writeFileSync(file, f.sources.get(page.path))
+    fs.writeFileSync(file, source)
     manifest.pages.push({
       ...template,
       ...page,
@@ -929,18 +952,59 @@ test('registered release pages flow through real generation without CI artifacts
       description: 'Modeled discovery fixture; not a real release claim.'
     })
   }
+  const existing = f.record('existing-release', null, {
+    owner: '@fixture/existing',
+    changes: [
+      {
+        change: 'existing-release',
+        summary: 'Existing verified fixture',
+        impact: 'no-action',
+        reason: 'Model retained release evidence',
+        guides: []
+      }
+    ],
+    guideHashes: {}
+  })
+  registerPage(
+    {
+      id: 'updates/releases/existing-1-0-0',
+      path: 'updates/releases/existing-1-0-0.md'
+    },
+    '# Existing verified fixture\n\n```release-summary\n' +
+      JSON.stringify(existing) +
+      '\n```\n\n## Canonical sources\n'
+  )
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest))
+  const before = await createPublicDocumentationBundle({ repositoryRoot: root })
+  assert.ok(
+    before.contentIndex.releaseHistory.some(
+      (record) => record.id === existing.id && record.status === 'verified'
+    )
+  )
+  for (const page of f.pages) registerPage(page, f.sources.get(page.path))
   fs.writeFileSync(manifestPath, JSON.stringify(manifest))
   const bundle = await createPublicDocumentationBundle({ repositoryRoot: root })
   assert.deepEqual(
     bundle.contentIndex.releaseHistory.map((record) => record.id),
-    ['first', 'second', 'third']
+    [
+      ...before.contentIndex.releaseHistory.map((record) => record.id),
+      ...f.entries.map((record) => record.id)
+    ]
+  )
+  assert.deepEqual(
+    bundle.contentIndex.releaseHistory.slice(
+      0,
+      before.contentIndex.releaseHistory.length
+    ),
+    before.contentIndex.releaseHistory
   )
   assertHistoryAvailability(bundle)
   assert.equal(bundle.contentIndex.pages.length, manifest.pages.length)
-  for (const id of ['first', 'second', 'third']) {
-    assert.ok(bundle.llms.includes(`](updates/releases/${id}.md)`))
-    assert.ok(bundle.websiteLlms.includes(`](/docs/updates/releases/${id})`))
-    assert.ok(bundle.releaseHistory.includes(`](releases/${id}.md)`))
+  for (const record of bundle.contentIndex.releaseHistory) {
+    const page = manifest.pages.find((page) => page.path === record.path)
+    assert.ok(page, `Release page missing from manifest: ${record.id}`)
+    assert.ok(bundle.llms.includes(`](${record.path})`))
+    assert.ok(bundle.websiteLlms.includes(`](/docs/${page.id})`))
   }
   assert.equal(fs.existsSync(path.join(root, 'tmp')), false)
 })

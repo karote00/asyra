@@ -526,6 +526,15 @@ generated indexes are synchronized. This is Task 3 discovery validation only;
 Task 4 and all original Text acceptance evidence remain unchanged. No push or
 publication occurred.
 
+Task 3 test maintenance is complete: two regression cases failed before correcting
+the test assumptions. The integration fixture now seeds a modeled verified record,
+retains the complete pre-addition history, and checks both existing and new records
+through real generation. Link checks use declared paths and manifest page IDs,
+including a record whose ID differs from its filename. All 59 focused tests,
+scoped ESLint, naming, update-note and public freshness checks passed. Production
+implementation and original acceptance evidence are unchanged; no Task 4 work or
+publication occurred.
+
 ## Task 4 - Prove customization and data preservation
 
 Status: PLANNED. Prerequisites: Tasks 1-3.
