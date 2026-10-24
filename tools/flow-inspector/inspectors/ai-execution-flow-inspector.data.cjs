@@ -503,6 +503,7 @@
         ],
         outputs: ['artifact:execution-receipt'],
         conditions: [
+          'Resolve retained prepared artifacts into current compact delivery without repeated property-ID values or key maps. Browser admission restores only exact derivable identities once and keeps complete canonical validation before mutation. No old full-map wire branch, geometry recomputation, new cache, extra model turn or replay. Explicit full receipts, partial results, history, collaboration and persistence retain canonical identity.',
           'Interrupted prepared application captures only synchronous acknowledged members. Carry detached partial owner results through the existing Runtime failure/actionResults path; preserve cancellation and final transaction authority. Never count failed members or relabel rollback as retained writes. No replay, new History owner or persistence policy.',
           'Optional local evaluation deadlines are checked at the actual synchronous mutation boundary, after idle waiting. Preserve committed members and ordinary history settlement; do not admit late writes or replay completed changes.',
           'The 31 previously opaque non-Core document writers declare explicit mutation receipts retaining original value, acceptedIds, unavailableIds and changed from original owner validation and apply evidence. Fulfilled unchanged targets are no-change; mixed unavailable targets are partial and all unavailable targets fail. Empty patches validate target identity. Vector empty-patch shortcuts follow target validation; transient Feature paths retain computed-patch authority. Direct consumers project retained values explicitly, never receipt truthiness. Reject malformed output with settlement and successful identities preserved; no opaque-owner fallback, replay, visual-scope inference or new state owner.',
@@ -569,6 +570,10 @@
           'Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only'
         ],
         implementationBoundary: [
+          'apps/asyra-design/server/__tests__/local-design-tools.test.ts',
+          'apps/asyra-design/src/ai/prepared-design.ts',
+          'apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/prepared-delivery-20261023.json.gz',
           'apps/asyra-design/src/ai/__tests__/interrupted-design.integration.test.ts',
           'packages/ai-agent-runtime/src/__tests__/interrupted-results.test.ts',
           'apps/asyra-design/e2e/design-construction.spec.ts',
@@ -753,7 +758,8 @@
           'apps/asyra-design/e2e/fill-patch.spec.ts',
           'apps/asyra-design/e2e/basic-api-actions.spec.ts'
         ],
-        specRefs: ['#source-referenced-expansion-recovery',
+        specRefs: [
+          '#prepared-design-delivery','#source-referenced-expansion-recovery',
           '#bounded-evaluation-work-and-self-report',
           '#owner-results-and-workflow-outcomes',
           '#core-owner-result-contracts',

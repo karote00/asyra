@@ -152,7 +152,11 @@
           "testName": "execution proof composes preparation and canonical dispatch without repeated work",
           "implementationPaths": [
             "apps/asyra-design/server/local-design-workflow.ts",
-            "apps/asyra-design/server/local-tool-scheduler.ts"
+            "apps/asyra-design/server/local-tool-scheduler.ts",
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/src/ai/prepared-design.ts",
+            "apps/asyra-design/src/ai/prepared-design-admission.ts",
+            "apps/asyra-design/src/ai/design-actions.ts"
           ]
         },
         {

@@ -63,6 +63,43 @@ export interface PreparedDesign {
   readonly findings: readonly DesignFinding[]
 }
 
+export const PREPARED_DESIGN_DELIVERY_VERSION = 2 as const
+export interface PreparedDesignDelivery extends Omit<
+  PreparedDesign,
+  'version' | 'entries' | 'keyToId'
+> {
+  readonly version: typeof PREPARED_DESIGN_DELIVERY_VERSION
+  readonly entries: readonly (Omit<PreparedDesignEntry, 'descriptor'> & {
+    readonly descriptor: Omit<PreparedElementDescriptor, 'props'> & {
+      readonly props: readonly string[]
+    }
+  })[]
+}
+
+/** Project owned canonical data without cloning or recompiling geometry. */
+export function deliverPreparedDesign(
+  design: PreparedDesign
+): PreparedDesignDelivery {
+  const { keyToId, entries, ...rest } = design
+  if (Object.keys(keyToId).length !== entries.length)
+    throw new Error('Prepared design identity map is inconsistent.')
+  const keys = new Set<string>()
+  return {
+    ...rest,
+    version: PREPARED_DESIGN_DELIVERY_VERSION,
+    entries: entries.map((entry) => {
+      const { props, ...descriptor } = entry.descriptor
+      if (keys.has(entry.key) || keyToId[entry.key] !== descriptor.id)
+        throw new Error('Prepared design identity map is inconsistent.')
+      keys.add(entry.key)
+      const names = Object.keys(props)
+      if (names.some((name) => props[name] !== `${descriptor.id}-${name}`))
+        throw new Error('Prepared design property identity is inconsistent.')
+      return { ...entry, descriptor: { ...descriptor, props: names } }
+    })
+  }
+}
+
 // Semantic draft defaults are wire values, independent of Framework runtime
 // installation. Browser admission remains the canonical schema authority.
 export const DesignTextDefaults = Object.freeze({
