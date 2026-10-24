@@ -2,7 +2,7 @@
 
 > Public, source-mapped documentation for people and AI coding agents.
 
-This index contains 54 public Markdown pages.
+This index contains 55 public Markdown pages.
 Current: browser/Core composition, official 2D Preset, and engine-neutral CUSTOM composition.
 Future: Headless Core and Core Kernel for non-visible and machine-facing products; no current public API or delivery date.
 
@@ -66,3 +66,4 @@ Treat app domain schemas, permissions, migration, retrieval, services, and produ
 - [@asyra/utils](/docs/reference/packages/utils): Small shared public utilities without Framework state or lifecycle ownership.
 - [Support, security, and release boundaries](/docs/reference/support-release): Current runtime support, candidate status, security reporting, license, migration, and publication boundaries.
 - [Asyra Design as a complete product implementation](/docs/cases/asyra-design): See how one real product composes Framework infrastructure, Preset defaults, app-domain behavior, collaboration, persistence, and AI.
+- [Adopt canonical property and AI handoffs](/docs/updates/design-owner-handoffs-r1): Pending source-bound integration guidance for property receipts, retained Knowledge, interruption and shared geometry consumers.

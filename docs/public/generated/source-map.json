@@ -867,6 +867,28 @@
           "sha256": "65f45376ceec69a346b050d27ccfb7f28189e5c860774a4961c96c9e7d5d6de2"
         }
       ]
+    },
+    {
+      "id": "updates/design-owner-handoffs-r1",
+      "pageSha256": "26c0dfb64437364fde92124c1609db037efcc35c8ef3d67cdde1ae439e54e726",
+      "sources": [
+        {
+          "path": "packages/core/src/types/property-intents.ts",
+          "sha256": "1767a36ed62cb77b2af71d5cb06a667450688a9ae100fc67c29c89c6e625b76f"
+        },
+        {
+          "path": "packages/ai-agent-runtime/src/knowledge-types.ts",
+          "sha256": "200508d58fd6d79ad419f09c67849d2d6907d1a8b9e50d42af369cd6d87da076"
+        },
+        {
+          "path": "packages/ai-agent-runtime/src/provider.ts",
+          "sha256": "3635d4af27639d0fab8fa312b5c5bd8111fd06330c9d4c9a4de1fc58266aea2e"
+        },
+        {
+          "path": "packages/utils/src/render/geometry-bounds.ts",
+          "sha256": "56a98c58a1543db246dfed313fe3d900423044d5bab769b1e532dcf5825d06ef"
+        }
+      ]
     }
   ],
   "schemaVersion": 1
