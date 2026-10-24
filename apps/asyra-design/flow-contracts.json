@@ -340,7 +340,8 @@
           "stepId": "inspect",
           "testName": "execution proof uses only current conversion and primary judgment contracts",
           "implementationPaths": [
-            "apps/asyra-design/server/local-design-review.ts"
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/server/local-operation-tools.ts"
           ]
         },
         {

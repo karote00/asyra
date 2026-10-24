@@ -1336,12 +1336,36 @@ no preferred angle or universal detail threshold is added. Structural reviews
 do not reject unfinished finish detail. One assessment reports all currently
 visible contradictions within its phase so revisions can address them together.
 
-Review responses provide structured correction context: unresolved criterion
-IDs with complete evidence, known fact-bound target IDs, and the supplied
-inspection targets/regions. Inspection regions retain target-local coordinates;
-no workspace bounds or guessed object IDs are inferred. Missing scope remains
-unknown. Failed checks are not truncated into an actionable subset. This context
-is diagnostic only and cannot authorize completion or replace a fresh review.
+Review responses provide `correction.checks` from the existing pending result
+store and required coverage, including findings outside the submitted subset.
+Each check retains id, criterionId, optional unitId, status, revision, full evidence,
+optional invalidation reason, exact inspectionIds and `factElementIds` from only
+that criterion/unit. No criterion-level evidence aggregation remains. Passed
+checks stay in the result store and are excluded from correction. Missing checks
+retain their coverage status without invented evidence or scope.
+
+`correction.inspections` resolves the union of these checks' retained image IDs
+once. Each entry identifies its image target and optional target-local region;
+`unavailableInspectionIds` preserves retired/missing image identities. Image
+coverage and fact-bound elements are diagnostic context, never an edit target or
+permission. Do not convert target-local regions into workspace edit queries or
+use an overview root as the inferred defect target. Stale evidence stays a
+question for fresh inspection, not a current visual conclusion.
+
+Optional `correction.discovery` supplies the existing query entry and arguments
+with an explicit caller-filled query. Select a capability intent or exact known
+name; consume the returned execution route and complete contract. Known scoped
+edits need no discovery. The review owner never lists repair tools, selects a
+repair policy, reads Knowledge or guesses values. Existing query, preparation,
+mutation and review owners retain validation, cancellation, partial receipts,
+no-replay recovery and fresh affected-evidence requirements. These diagnostics
+cannot authorize completion. No additional result store or retained cache.
+
+Formal local verification executes the delivered guidance through existing query
+and edit consumers, including world-material and local-property routes and missing
+target decisions. It preserves multi-unit/multiscale identity, unrelated passes,
+whole-view obligations and partial recovery. Measure the whole necessary exchange,
+not a shorter summary that forces missing evidence to be read again.
 
 The request retains unresolved primary-agent findings. A subsequent review receives
 those findings as questions to check, not as accepted facts or construction
