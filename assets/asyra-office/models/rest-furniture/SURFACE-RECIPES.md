@@ -24,3 +24,13 @@ before world placement. Resolve material and supplied colour independently from
 component to group to daybed to preset. Apply colour after material selection,
 retaining other properties and isolating instances. Replacement materials own
 mapping and may omit grain. The separate pillow surface is unchanged.
+
+## Sleeping pillow appearance
+
+The [sleeping pillow contract](SLEEPING-PILLOW-SPEC.md) defines one `body` region,
+defaulting to uniform ivory #EEE9DB, roughness .90 and metallic 0. Opacity is 1;
+emission, transmission and clearcoat are zero. There is no default fabric texture.
+Resolve material and supplied colour independently from body to pillow to preset,
+apply colour after material selection, retain other properties and isolate instances.
+Replacement surfaces own their mapping in resized geometry before placement.
+No seam, casing, displacement or extra geometry is implied by appearance options.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "Original references approved; daybed document revision approved by the user for commit; no model verification",
+  "status": "Original references and daybed revision approved; sleeping pillow document revision approved by the user for commit; no model verification",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -159,7 +159,63 @@
         "innerBoxSize": [0.42, 0.24, 0.02]
       },
       "material": "ivory",
-      "excluded": ["seam", "piping", "wrinkles", "buttons", "cloth simulation"]
+      "excluded": ["seam", "piping", "wrinkles", "buttons", "cloth simulation"],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "geometryRecipe": "SLEEPING-PILLOW-SPEC.md",
+        "referenceSheet": "review/02-ivory-sleeping-pillow-v1.png",
+        "productionRoute": "programmatic-rounded-box",
+        "closedComponentCount": 1,
+        "modelVerified": false,
+        "rule": "One closed Minkowski rounded-box boundary with the existing centre, inner box and radius. No casing, separate fill, base plate, seam or bundled daybed. Preserve the planar bottom contact footprint."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ scale once about the bottom contact origin. Scale the centre and all curved patches together; retain bottom Z=0, then resolve appearance and world placement."
+      },
+      "appearance": {
+        "regions": [
+          {
+            "id": "body",
+            "defaultMaterial": "ivory"
+          }
+        ],
+        "overrideOrder": "Resolve material and supplied colour independently: body, pillow, preset. Apply colour after material selection, preserve other properties and isolate instances.",
+        "coordinateSpace": "final resized geometry before placement; replacement material owns mapping",
+        "defaultOpacity": 1,
+        "defaultTransmission": 0,
+        "defaultEmission": 0,
+        "defaultClearcoat": 0,
+        "bakedLighting": false
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "segmentsPerQuarter": 12,
+            "triangleCount": 2508,
+            "maxTriangles": 2600,
+            "maxSurfaceError": 0.000343
+          },
+          {
+            "id": "lod1",
+            "segmentsPerQuarter": 6,
+            "triangleCount": 684,
+            "maxTriangles": 700,
+            "maxSurfaceError": 0.001364
+          },
+          {
+            "id": "lod2",
+            "segmentsPerQuarter": 4,
+            "triangleCount": 332,
+            "maxTriangles": 350,
+            "maxSurfaceError": 0.003045
+          }
+        ],
+        "rule": "Pillow-only tier override. Reuse the documented six-face, twelve-cylinder, eight-octant patch topology; weld poles and boundaries. Preserve exact extrema, flat support, one closed component and one region."
+      }
     }
   ],
   "construction": {

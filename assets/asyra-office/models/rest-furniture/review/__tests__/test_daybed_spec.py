@@ -67,7 +67,8 @@ class DaybedContractTests(unittest.TestCase):
 
     def test_existing_geometry_pillow_palette_and_images_preserved(self):
         self.assertEqual(desk.digest(self.p),BASELINE['parts'])
-        self.assertEqual(desk.digest(self.data['assets'][1]),BASELINE['pillow'])
+        # Pillow now has its own review; preserve its original numeric construction.
+        self.assertEqual(desk.digest(self.data['assets'][1]['construction']),'ca92131076f04d7892c8dcad064549fc8c14e8eaa8baeae96f9c0ece8331f685')
         self.assertEqual(desk.digest(self.data['materials']),BASELINE['materials'])
         for name,checksum in BASELINE['images'].items():
             self.assertEqual(hashlib.sha256((ROOT/'review'/name).read_bytes()).hexdigest(),checksum)

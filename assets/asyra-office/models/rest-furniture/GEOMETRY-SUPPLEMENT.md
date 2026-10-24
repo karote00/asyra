@@ -34,6 +34,13 @@ One rounded box centered at (0,0,0.050), with outside size 0.500 x 0.320 x 0.100
 
 The broad upper and lower middle surfaces are flat, joined by the rounded edge/corner patches. No pointed corners, dents, gravity sag, seams, fabric weave, layered casing, fill simulation or deformation states. All hidden faces are fully defined by the same rounded-box construction.
 
+The [sleeping pillow construction contract](SLEEPING-PILLOW-SPEC.md) specifies
+its one-component topology, 420 x 240 mm flat support, view dimensions, whole-unit
+sizing and one replaceable ivory region. Its pillow-only LOD table overrides the
+shared angular segment default at lower tiers. It reuses the rounded patch recipe,
+not the daybed's dimensions, region count or LOD budgets. Existing pillow geometry
+and reference pixels remain unchanged.
+
 Placement on the daybed is the application's responsibility. Do not bake a fixed pillow position into the daybed or add the pillow to its component count.
 
 ## Views and future acceptance
