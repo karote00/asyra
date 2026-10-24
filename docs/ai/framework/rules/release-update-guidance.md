@@ -193,6 +193,17 @@ that a declared release occurred.
 
 ## Consumer preservation and subsequent updates
 
+Preserve exact adopted record/guide revisions in the adoption note. Resolving
+a newer correction never updates that evidence automatically: include its guide
+and inspect adoption even when the original release is the comparison baseline.
+Each prerequisite owner/channel has its own adoption baseline, selected target
+and pending changes. Traverse its intervening summaries and nested prerequisites;
+missing baselines and unavailable intermediate records remain explicit gaps.
+The internal documentation selector accepts those dependency selections as
+`{ from, to, pending }` per `channel:owner`; `from` is an actually adopted record,
+not an installed package version. Unknown pending state requires inspection.
+This is a documentation query, not a package compatibility solver or migration.
+
 Use official definitions as the base and keep App-owned extensions through
 existing public define/register/update APIs. Inspect the actual API contract and
 registration order; same names alone do not prove equivalent behavior. Remove

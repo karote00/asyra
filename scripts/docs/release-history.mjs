@@ -237,23 +237,29 @@ function releaseSelector(records) {
       gaps: [],
       needsInspection: pending === undefined
     }
-    const start = effective(from)
+    const start = byId.get(from)
     const target = effective(to)
     if (!start) result.gaps.push(`Unsupported baseline: ${from}`)
     if (!target) result.gaps.push(`Missing target: ${to}`)
     if (result.gaps.length) return result
+    const checkedPrerequisites = new Set()
     const requirements = (record) => {
       for (const required of record.requires) {
         const prerequisite = effective(required)
+        if (checkedPrerequisites.has(prerequisite.id)) continue
+        checkedPrerequisites.add(prerequisite.id)
         result.prerequisites.push(prerequisite.id)
-        const installed =
+        const selection =
           dependencies[`${prerequisite.channel}:${prerequisite.owner}`]
-        if (!installed) result.needsInspection = true
-        if (installed && effective(installed)?.id !== prerequisite.id)
+        if (!selection?.to) {
+          result.needsInspection = true
+          result.gaps.push(`Missing prerequisite target: ${prerequisite.owner}`)
+        } else if (effective(selection.to)?.id !== prerequisite.id) {
           result.gaps.push(
-            `Incompatible prerequisite: ${prerequisite.owner} requires ${prerequisite.id}, selected ${installed}`
+            `Incompatible prerequisite: ${prerequisite.owner} requires ${prerequisite.id}, selected ${selection.to}`
           )
-        add(prerequisite)
+        }
+        collectRange(selection?.from, prerequisite, selection?.pending)
       }
     }
     const add = (record) => {
@@ -279,20 +285,43 @@ function releaseSelector(records) {
         )
       return path
     }
-    if (target.status !== 'verified')
-      result.gaps.push(`Release unavailable: ${target.id}`)
-    if (start.status !== 'verified')
-      result.gaps.push(`Baseline unavailable: ${start.id}`)
-    for (const id of pending ?? []) {
-      const deferred = effective(id)
-      if (!deferred) {
-        result.gaps.push(`Missing pending release: ${id}`)
-        continue
+    const collectRange = (adoptedId, end, deferredIds) => {
+      const adopted = byId.get(adoptedId)
+      let baseline = effective(adoptedId)
+      if (
+        !adopted ||
+        adopted.owner !== end.owner ||
+        adopted.channel !== end.channel
+      ) {
+        result.gaps.push(
+          `Unsupported baseline ${adoptedId ?? '(missing)'} for ${end.channel}:${end.owner}`
+        )
+        result.needsInspection = true
+        baseline = undefined
+      } else if (adopted.status !== 'verified') {
+        result.gaps.push(`Baseline unavailable: ${adopted.id}`)
       }
-      for (const record of chain(deferred)) add(record)
+      if (end.status !== 'verified')
+        result.gaps.push(`Release unavailable: ${end.id}`)
+      if (deferredIds === undefined) result.needsInspection = true
+      for (const id of deferredIds ?? []) {
+        const deferred = effective(id)
+        if (!deferred) {
+          result.gaps.push(`Missing pending release: ${id}`)
+          continue
+        }
+        for (const record of chain(deferred)) add(record)
+      }
+      // A correction is guidance to inspect, never evidence of actual adoption.
+      if (baseline && adopted.id !== baseline.id) {
+        result.needsInspection = true
+        add(baseline)
+      }
+      for (const record of chain(end, baseline)) add(record)
+      // Even an already-adopted target may have unresolved prerequisite adoption.
+      requirements(end)
     }
-    for (const record of chain(target, start)) add(record)
-    if (start.id === target.id) requirements(target)
+    collectRange(from, target, pending)
     for (const key of ['guides', 'prerequisites', 'gaps'])
       result[key] = [...new Set(result[key])]
     return result
@@ -347,6 +376,8 @@ export function renderReleaseHistory(records) {
     '',
     '- Stop if a predecessor or guide is missing, the baseline is outside the stated boundary, the target is unavailable, or a prerequisite does not match the selected dependency. Do not infer missing releases from adjacent version numbers.',
     '- Inspect installed packages, actual definitions and Features, stored document schemas and the adoption note separately. Without a note, inspect the App and sample data before deciding what is already adopted.',
+    '- Keep the exact adopted guide revision in that note. A later correction must be read and checked even when its original release is already adopted; resolving a correction does not mark it adopted.',
+    '- For each prerequisite owner/channel, identify its own adopted baseline, selected target and deferred changes, then follow its entire predecessor chain and nested prerequisites. A matching installed or target version is not adoption evidence. Report missing or incompatible baselines, unavailable intermediate releases and unresolved targets before integrating.',
     '- Revisit earlier summaries for retained or deferred changes even when packages are already at the target. Resolve guide corrections without dropping required conversions; retain custom fields, read/write paths, projections, Features and saved data.',
     '- Apply required migrations in their documented order; intermediate package installation is needed only when a guide explicitly requires it. Mark each change adopted, already satisfied, retained, deferred or inapplicable with a reason, and preserve that note for the next update.',
     '',

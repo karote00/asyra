@@ -1299,7 +1299,7 @@
       "wordCount": 513
     },
     {
-      "contentSha256": "f08c0a4e7e25d1e31f2ffde9c85a9be8e9df892c59fb6c7e2c4cbc23220cca91",
+      "contentSha256": "c5a1accd9a5c1db8f054bc23f0406c2d96017e6fe7fd5076ebb0ca9d05da2f20",
       "description": "Select official update guides, retain App-owned extensions and give a coding agent enough context for first and subsequent integrations.",
       "headings": [
         {
@@ -1340,10 +1340,10 @@
       "path": "updates/index.md",
       "section": "Extend",
       "title": "Update your App with an AI coding agent",
-      "wordCount": 1030
+      "wordCount": 1093
     },
     {
-      "contentSha256": "a17ff131fb866a31592b5681f3189294e1e7715e23ca90f9eecc409634f0a65f",
+      "contentSha256": "0ba905db0f527c9fe23a52de65543b0dcd01e8c6ddece092c2308d2ff197dcde",
       "description": "Find per-owner release summaries, verified predecessor boundaries, prerequisites and guide corrections; report gaps and revisit deferred adoption.",
       "headings": [
         {
@@ -1369,7 +1369,7 @@
       "path": "updates/history.md",
       "section": "Extend",
       "title": "Release History and Update Coverage",
-      "wordCount": 263
+      "wordCount": 344
     },
     {
       "contentSha256": "317bf04a5f3db2289629904f2992d534867227e6031a6eb10ca8e52223117bf0",

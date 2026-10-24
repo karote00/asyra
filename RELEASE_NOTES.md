@@ -210,3 +210,20 @@ These development notes are not published release summaries.
   "reason": "Documentation discovery and validation only; consumer runtime, custom features and stored data are unchanged. No historical release availability is inferred."
 }
 ```
+
+```update-note
+{
+  "change": "release-history-adoption-fixes",
+  "owner": "Public release documentation",
+  "summary": "Retain adopted guide revisions and include prerequisite cross-version guidance with explicit baseline gaps.",
+  "sources": [
+    "scripts/docs/release-history.mjs",
+    "scripts/docs/__tests__/public-documentation.test.mjs",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/source-map.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Documentation discovery and regression checks only; no runtime, consumer data, package versions or publication changes."
+}
+```

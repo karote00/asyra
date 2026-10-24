@@ -471,6 +471,15 @@ remote writes or publication. Stop at a validated local Task 3 commit.
 
 ### Task 3 completion record
 
+Review correction scope: preserve the actual adopted revision when resolving
+newer guide corrections. Resolve each prerequisite from its own adopted `from`
+record to its selected `to` record, with its own pending adoption; absent or
+unsupported baselines report inspection/gaps rather than successful coverage.
+Keep the existing pure selector and public documentation owner. Regression gates
+cover corrected baselines, prerequisite intermediate guides and unavailable
+records, unknown baselines, and empty versus verified public history. No new
+service, runtime changes, Text fixture edits, Task 4 or publication is included.
+
 The update entry now links generated `docs/public/updates/history.md`; the
 manifest, content/source indexes, website search/navigation and both `llms.txt`
 copies discover registered release summaries. Required baseline pages remain
@@ -496,6 +505,26 @@ range. These tests prove discovery and validation, not consumer integration or
 data migration. Task 4 remains unstarted. Original Text guides, fixtures and
 independent acceptance evidence are unchanged. No package publication, deployment
 or push occurred.
+
+### Task 3 review corrections - complete
+
+The selector retains the actual adopted revision and includes newer correction
+guides with an inspection requirement, including when the release target is
+unchanged. An already-adopted correction is not selected again. Prerequisites
+use independent adoption ranges and pending items, recursively include required
+intermediate guides, and report absent/unsupported baselines and unavailable
+releases. Shared prerequisite results are collected once per query. Public
+history assertions follow actual empty, candidate, modeled or verified records;
+the real generator fixture also checks the verified-history output.
+
+Four new regression cases failed before the selector correction. After repair,
+58 focused documentation/Inspector tests and all 4 update-guide browser tests
+passed, as did naming, scoped ESLint, public generation/freshness/validation,
+update-note checks and diff review. The broken empty-history oracle was corrected
+directly under the test-oracle exception. Public entry/history instructions and
+generated indexes are synchronized. This is Task 3 discovery validation only;
+Task 4 and all original Text acceptance evidence remain unchanged. No push or
+publication occurred.
 
 ## Task 4 - Prove customization and data preservation
 

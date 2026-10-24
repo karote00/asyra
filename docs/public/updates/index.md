@@ -58,6 +58,13 @@ package. Its own metadata owns the precise scope and evidence limits.
 4. If the range is not documented, report the missing comparison. Do not claim a
    complete version delta or mark the whole App updated from a partial example.
 
+Keep the exact adopted guide revisions in the note. A newer correction to an
+already-adopted release still needs review; it is not automatically adopted.
+For each prerequisite package, select its own actual adoption baseline and target,
+include its intermediate summaries and deferred changes, and repeat for nested
+prerequisites. A matching installed version is insufficient. Report missing
+baselines or unavailable intermediate releases before integration.
+
 ## Give the guide to your AI
 
 Use this request in the App project with the selected guide attached or linked:

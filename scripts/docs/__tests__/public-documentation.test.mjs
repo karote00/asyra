@@ -592,7 +592,9 @@ test('release discovery reports unsupported ranges, unavailable targets and inco
       from: 'app',
       to: 'app',
       pending: [],
-      dependencies: { 'npm:@fixture/core': 'second' }
+      dependencies: {
+        'npm:@fixture/core': { from: 'first', to: 'second', pending: [] }
+      }
     }).gaps.join(' '),
     /Incompatible prerequisite/
   )
@@ -660,6 +662,145 @@ test('guide corrections preserve old records and required changes', async () => 
   assert.throws(() => readReleaseHistory(invalid), /required changes/)
 })
 
+test('adopted guide revisions remain distinct from later corrections', async () => {
+  const { readReleaseHistory, selectReleaseUpdates } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  const guide = 'updates/corrected-guide.md'
+  f.sources.set(guide, f.sources.get(f.guide))
+  f.pages.push({ path: guide })
+  f.entries.push({
+    ...f.entries[1],
+    id: 'second-r2',
+    supersedes: 'second',
+    correction: 'Add data preservation checks',
+    changes: [{ ...f.entries[1].changes[0], guides: [guide] }]
+  })
+  const history = readReleaseHistory(await f.bundle())
+  for (const to of ['second', 'third']) {
+    const result = selectReleaseUpdates(history, {
+      from: 'second',
+      to,
+      pending: []
+    })
+    assert.ok(result.releases.includes('second-r2'))
+    assert.ok(result.guides.includes(guide))
+    assert.equal(result.needsInspection, true)
+    assert.deepEqual(result.gaps, [])
+  }
+  const alreadyAdopted = selectReleaseUpdates(history, {
+    from: 'second-r2',
+    to: 'third',
+    pending: []
+  })
+  assert.deepEqual(alreadyAdopted.releases, ['third'])
+  assert.equal(alreadyAdopted.needsInspection, false)
+  assert.equal(history.find((r) => r.id === 'second').id, 'second')
+})
+
+test('prerequisites include their own cross-version and pending guides', async () => {
+  const { readReleaseHistory, selectReleaseUpdates } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  const intermediate = 'updates/dependency-middle.md'
+  f.sources.set(intermediate, f.sources.get(f.guide))
+  f.pages.push({ path: intermediate })
+  f.entries[1].changes[0].guides = [intermediate]
+  f.entries.push(
+    f.record('app', null, { owner: '@fixture/app', requires: ['third'] })
+  )
+  const history = readReleaseHistory(await f.bundle())
+  const dependencies = {
+    'npm:@fixture/core': { from: 'first', to: 'third', pending: [] }
+  }
+  const result = selectReleaseUpdates(history, {
+    from: 'app',
+    to: 'app',
+    pending: [],
+    dependencies
+  })
+  assert.deepEqual(result.releases, ['second', 'third'])
+  assert.deepEqual(result.guides, [intermediate, f.guide])
+  assert.deepEqual(result.gaps, [])
+  assert.equal(result.needsInspection, false)
+  dependencies['npm:@fixture/core'] = {
+    from: 'third',
+    to: 'third',
+    pending: ['second']
+  }
+  const resumed = selectReleaseUpdates(history, {
+    from: 'app',
+    to: 'app',
+    pending: [],
+    dependencies
+  })
+  assert.ok(resumed.guides.includes(intermediate))
+  assert.deepEqual(resumed.gaps, [])
+})
+
+test('prerequisite baseline gaps and unavailable middle releases cannot claim coverage', async () => {
+  const { readReleaseHistory, selectReleaseUpdates } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  f.entries.push(
+    f.record('app', null, { owner: '@fixture/app', requires: ['third'] })
+  )
+  const history = readReleaseHistory(await f.bundle())
+  for (const from of [undefined, 'missing', 'app']) {
+    const result = selectReleaseUpdates(history, {
+      from: 'app',
+      to: 'app',
+      pending: [],
+      dependencies: { 'npm:@fixture/core': { from, to: 'third', pending: [] } }
+    })
+    assert.match(result.gaps.join(' '), /baseline/i)
+    assert.equal(result.needsInspection, true)
+  }
+  f.entries[1].status = 'candidate'
+  const result = selectReleaseUpdates(readReleaseHistory(await f.bundle()), {
+    from: 'app',
+    to: 'app',
+    pending: [],
+    dependencies: {
+      'npm:@fixture/core': { from: 'first', to: 'third', pending: [] }
+    }
+  })
+  assert.match(result.gaps.join(' '), /Release unavailable: second/)
+})
+
+test('prerequisites preserve adopted revisions and recursively collect shared requirements once', async () => {
+  const { readReleaseHistory, selectReleaseUpdates } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  f.entries.push({
+    ...f.entries[1],
+    id: 'second-r2',
+    supersedes: 'second',
+    correction: 'Clarify data checks'
+  })
+  f.entries.push(
+    f.record('plugin', null, { owner: '@fixture/plugin', requires: ['third'] })
+  )
+  f.entries.push(
+    f.record('app', null, {
+      owner: '@fixture/app',
+      requires: ['plugin', 'third']
+    })
+  )
+  const result = selectReleaseUpdates(readReleaseHistory(await f.bundle()), {
+    from: 'app',
+    to: 'app',
+    pending: [],
+    dependencies: {
+      'npm:@fixture/plugin': { from: 'plugin', to: 'plugin', pending: [] },
+      'npm:@fixture/core': { from: 'second', to: 'third', pending: [] }
+    }
+  })
+  assert.deepEqual(result.releases, ['second-r2', 'third'])
+  assert.equal(result.needsInspection, true)
+  assert.deepEqual(result.gaps, [])
+})
+
 test('release guide validation shares one read per invocation and rereads changed inputs', async () => {
   const { readReleaseHistory } = await import('../release-history.mjs')
   const f = releaseHistoryFixture()
@@ -693,13 +834,46 @@ test('a correction cannot create an effective predecessor cycle', async () => {
   assert.throws(() => readReleaseHistory(inputs), /cycle/)
 })
 
+function assertHistoryAvailability(bundle) {
+  const verified = bundle.contentIndex.releaseHistory.some(
+    (record) => record.status === 'verified'
+  )
+  assert.equal(
+    bundle.releaseHistory.includes('No verified release summaries'),
+    !verified
+  )
+  for (const record of bundle.contentIndex.releaseHistory) {
+    assert.ok(bundle.releaseHistory.includes(`](releases/${record.id}.md)`))
+  }
+}
+
+test('public history availability follows empty, candidate and verified records', async () => {
+  const { readReleaseHistory, renderReleaseHistory } =
+    await import('../release-history.mjs')
+  assertHistoryAvailability({
+    contentIndex: { releaseHistory: [] },
+    releaseHistory: renderReleaseHistory([])
+  })
+  for (const status of ['candidate', 'modeled', 'verified']) {
+    const f = releaseHistoryFixture()
+    f.entries.forEach((record) => {
+      record.status = status
+    })
+    const records = readReleaseHistory(await f.bundle())
+    assertHistoryAvailability({
+      contentIndex: { releaseHistory: records },
+      releaseHistory: renderReleaseHistory(records)
+    })
+  }
+})
+
 test('release history is discoverable from repository and website entries without a fixed page count', async () => {
   const { contentIndex, releaseHistory, llms, websiteLlms } =
     await createPublicDocumentationBundle({ repositoryRoot })
   assert.ok(contentIndex.pages.some((page) => page.id === 'updates/history'))
   assert.ok(llms.includes('](updates/history.md)'))
   assert.ok(websiteLlms.includes('](/docs/updates/history)'))
-  assert.match(releaseHistory, /No verified release summaries/)
+  assertHistoryAvailability({ contentIndex, releaseHistory })
   assert.match(releaseHistory, /Without a note, inspect/)
   assert.match(
     fs.readFileSync(
@@ -761,6 +935,7 @@ test('registered release pages flow through real generation without CI artifacts
     bundle.contentIndex.releaseHistory.map((record) => record.id),
     ['first', 'second', 'third']
   )
+  assertHistoryAvailability(bundle)
   assert.equal(bundle.contentIndex.pages.length, manifest.pages.length)
   for (const id of ['first', 'second', 'third']) {
     assert.ok(bundle.llms.includes(`](updates/releases/${id}.md)`))

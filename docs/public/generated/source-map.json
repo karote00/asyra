@@ -322,7 +322,7 @@
     },
     {
       "id": "updates/index",
-      "pageSha256": "f08c0a4e7e25d1e31f2ffde9c85a9be8e9df892c59fb6c7e2c4cbc23220cca91",
+      "pageSha256": "c5a1accd9a5c1db8f054bc23f0406c2d96017e6fe7fd5076ebb0ca9d05da2f20",
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
@@ -340,11 +340,11 @@
     },
     {
       "id": "updates/history",
-      "pageSha256": "a17ff131fb866a31592b5681f3189294e1e7715e23ca90f9eecc409634f0a65f",
+      "pageSha256": "0ba905db0f527c9fe23a52de65543b0dcd01e8c6ddece092c2308d2ff197dcde",
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "15c7e5d2a0a4047fec06d4c7f1d6abfea28b804395842533421f009b211c791a"
+          "sha256": "3fb1492787c302a4405e80338aefc4145ed4cc0607e552cdb2ef325027baff2e"
         }
       ]
     },
