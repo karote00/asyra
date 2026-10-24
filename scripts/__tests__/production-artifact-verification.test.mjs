@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { runVerification } from '../app-release-verification.mjs'
+import { runVerification } from '../production-artifact-verification.mjs'
 
 const identities = ['asyra-sim', 'asyra-design', 'asyra-framework']
 const tasks = [

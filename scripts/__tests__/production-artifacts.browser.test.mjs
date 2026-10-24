@@ -1,3 +1,4 @@
+import { parseGlobalHeaders } from '../cloudflare-headers.mjs'
 /* global URL, fetch, navigator */
 
 import assert from 'node:assert/strict'
@@ -98,11 +99,8 @@ test(
   'Sim production artifact loads Workers, completes an analysis and retains its project',
   { timeout: 180_000 },
   async (t) => {
-    const config = JSON.parse(
-      await readFile(path.join(root, 'apps/asyra-sim/vercel.json'), 'utf8')
-    )
-    const headers = Object.fromEntries(
-      config.headers[0].headers.map(({ key, value }) => [key, value])
+    const headers = parseGlobalHeaders(
+      await readFile(path.join(root, 'apps/asyra-sim/public/_headers'), 'utf8')
     )
     const server = await appServer('asyra-sim', headers)
     const page = await browserPage(t, server.url, server.close)

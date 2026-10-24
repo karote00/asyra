@@ -20,7 +20,7 @@ active for M6 and R0; no release gate, deployment or publication is waived.
 The bounded implementation and original-part refactor are complete for PR #156.
 Their owner sequence, completion evidence and limits have moved to
 [the completed development-workbench record](completed/development-workbench.md).
-This includes the permanent `asyra-sim.vercel.app` development deployment, not
+This includes the permanent `asyra-sim.pages.dev` development deployment, not
 R0 Public Alpha certification. The remaining roadmap and first-release gates
 stay active; the historical checkpoints below are not current release claims.
 

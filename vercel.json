@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "installCommand": "corepack enable && corepack prepare yarn@4.3.1 --activate && yarn set version 4.3.1 && yarn install --immutable",
-  "buildCommand": "turbo run react:build",
-  "outputDirectory": "dist/frontend",
-  "git": {
-    "deploymentEnabled": false
-  }
-}

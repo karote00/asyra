@@ -41,7 +41,7 @@ M5 must prove offline startup and the clean-consumer artifact, including its
 exact source commit, dependency notices, and checksums.
 
 The separately authorized [hosted development workbench](../release/HOSTED_PREVIEW.md)
-uses the same browser-local runtime at `asyra-sim.vercel.app`. It needs network
+uses the same browser-local runtime at `asyra-sim.pages.dev`. It needs network
 access to obtain its assets and does not replace these offline delivery gates.
 Its HTTPS origin has separate browser storage from the local candidate.
 
@@ -116,28 +116,28 @@ to run from a project-local candidate. Ordinary source tests remain selected.
 The numerical envelope and GLB structural limits remain owned by their
 respective specifications. The following aggregate limits apply in addition:
 
-| Resource                       | Initial limit or behavior                                     |
-| ------------------------------ | ------------------------------------------------------------- |
-| Analysis geometry              | 16 colliders per body, 256 per selected workcell              |
-| Expanded shape pairs           | 4,096 per run, after explicit pair policy                     |
-| Pair/keyframe-segment workload | Counted and warned; no fixed workload-count admission limit    |
-| Concurrent formal jobs         | One; candidates execute sequentially                          |
-| Formal wall-clock budget       | Default 30 s; user range 0.1–120 s                            |
-| Adaptive node budget           | Default 100,000 total; maximum 1,000,000 per run              |
-| Retained interval evidence     | Maximum 200,000 leaves per run                                |
-| Cooperative cancellation grace | 250 ms, then terminate the owned Worker                       |
-| Progress delivery              | At most 10 updates/s; terminal evidence is not throttled away |
-| GLB import deadline            | 5 s, including bounded decoding; terminate on expiry          |
-| CSV input                      | 8 MiB before parsing, with the trajectory's 2,000-frame cap   |
-| Trajectory JSON input          | 1 MiB before parsing, with the same 2,000-frame cap          |
-| Project JSON / portable bundle | 64 MiB before parsing                                         |
-| Individual visual source       | 16 MiB, plus the restricted GLB structural caps               |
-| Referenced visual source bytes | 64 MiB per project                                            |
-| Field observation attachments | Four per note, 2 MiB per file                                  |
-| Observation source archive    | 64 distinct sources / 16 MiB, including Undo-retained bytes      |
-| Field observations            | 20 per retained run / 200 per project                           |
+| Resource                       | Initial limit or behavior                                                |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| Analysis geometry              | 16 colliders per body, 256 per selected workcell                         |
+| Expanded shape pairs           | 4,096 per run, after explicit pair policy                                |
+| Pair/keyframe-segment workload | Counted and warned; no fixed workload-count admission limit              |
+| Concurrent formal jobs         | One; candidates execute sequentially                                     |
+| Formal wall-clock budget       | Default 30 s; user range 0.1–120 s                                       |
+| Adaptive node budget           | Default 100,000 total; maximum 1,000,000 per run                         |
+| Retained interval evidence     | Maximum 200,000 leaves per run                                           |
+| Cooperative cancellation grace | 250 ms, then terminate the owned Worker                                  |
+| Progress delivery              | At most 10 updates/s; terminal evidence is not throttled away            |
+| GLB import deadline            | 5 s, including bounded decoding; terminate on expiry                     |
+| CSV input                      | 8 MiB before parsing, with the trajectory's 2,000-frame cap              |
+| Trajectory JSON input          | 1 MiB before parsing, with the same 2,000-frame cap                      |
+| Project JSON / portable bundle | 64 MiB before parsing                                                    |
+| Individual visual source       | 16 MiB, plus the restricted GLB structural caps                          |
+| Referenced visual source bytes | 64 MiB per project                                                       |
+| Field observation attachments  | Four per note, 2 MiB per file                                            |
+| Observation source archive     | 64 distinct sources / 16 MiB, including Undo-retained bytes              |
+| Field observations             | 20 per retained run / 200 per project                                    |
 | Decoded visual geometry        | 1,000,000 vertices / 3,000,000 indices per archive and expanded workcell |
-| Worker output payload          | 64 MiB encoded evidence, plus the leaf-count cap              |
+| Worker output payload          | 64 MiB encoded evidence, plus the leaf-count cap                         |
 
 Total-node accounting includes initial interval queries across all pairs; a
 per-pair budget alone is insufficient. Preflight rejects workloads above hard

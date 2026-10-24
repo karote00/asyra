@@ -25,7 +25,6 @@ const sourceExtensions = new Set([
 const ignoredDirectories = new Set([
   '.git',
   '.turbo',
-  '.vercel',
   '.yarn',
   'coverage',
   'dist',
@@ -359,7 +358,7 @@ test('Official display names remain distinct from branded code identifiers', () 
   assert.equal(
     isAllowedPublicIdentity(
       'asyra-framework-demo',
-      "const demoUrl = 'https://asra.vercel.app/?fileId=asyra-framework-demo'",
+      "const demoUrl = 'https://asyra-design.pages.dev/?fileId=asyra-framework-demo'",
       fixturePath
     ),
     true

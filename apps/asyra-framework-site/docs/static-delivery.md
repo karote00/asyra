@@ -1,17 +1,15 @@
 # Independent static website delivery
 
-The website supports two independent deployment targets: the existing Vercel
-Next.js application and a Cloudflare Pages static export. Neither target
-redirects to or requires the other. Each build uses its own explicit
-`NEXT_PUBLIC_SITE_URL` for canonical metadata, social images, robots and sitemap.
-The primary production origin is `https://asyra-framework.pages.dev`.
-Vercel remains an independently managed secondary deployment.
+Cloudflare Pages is the website's only production deployment target. Each build
+uses an explicit `NEXT_PUBLIC_SITE_URL` for canonical metadata, social images,
+robots and sitemap. The production origin is `https://asyra-framework.pages.dev`.
 
 The static target preserves all 46 public pages, native document navigation,
 Runtime Atlas, the six-chapter homepage, product sliders, reduced-motion and
 mobile behavior. It has no Pages Functions or Worker. A generated `404.html`
 keeps missing paths, including the retired `/story`, as genuine 404 responses.
-Security headers share the same owner as the Vercel configuration. Only hashed
+Security headers are owned by `lib/site-security-headers.mjs` and emitted into
+the native Pages `_headers` file by `scripts/prepare-static.mjs`. Only hashed
 Next.js assets receive immutable one-year caching; other files retain the
 platform's default revalidation behavior.
 
@@ -33,9 +31,9 @@ Product screenshots retain their original dimensions and content.
 Install the declared dependencies with `yarn install --immutable`. Preserve the
 app's local `.env`; use `.env.example` only when it does not exist. Set the target
 HTTPS origin, `SITE_ENV=production`, and the existing GA4 measurement ID there.
-Google verification is optional and independent of GA. Vercel's environment
-always wins over `SITE_ENV`, so a Vercel preview cannot accidentally enable
-production indexing or analytics through the static setting.
+Google verification is optional and independent of GA. `SITE_ENV=production`
+is required to enable production indexing and analytics; use `preview` for
+non-production exports.
 
 From the repository root:
 
@@ -67,14 +65,6 @@ It retains per-resource encoded-body and transfer bytes as JSON attachments;
 preloaded images count as images regardless of their initiator type. Compare
 first-party transfer separately from the externally hosted analytics library.
 
-The ordinary Vercel build remains:
-
-```sh
-yarn turbo run build:asyra-framework-site --filter=@asyra/asyra-framework-site
-```
-
-It retains Next.js server output in `dist` and native response headers.
-
 ## Publish and verify
 
 Upload only the contents of `out` to the `asyra-framework` Pages Direct Upload
@@ -88,8 +78,7 @@ Git-integrated Pages project.
 After deployment, run the production smoke and social preview test against the
 anonymous HTTPS URL. Inspect home, documents and Atlas, check real 404 status,
 verify the emitted security/cache headers, and verify GA requests use the new
-page location. Dashboard deployment success alone is not acceptance. Keep the
-Vercel project unchanged; future custom-domain adoption is a separate decision.
+page location. Dashboard deployment success alone is not acceptance. Custom-domain adoption is a separate decision.
 
 References:
 
@@ -141,8 +130,8 @@ To activate the workflow after review:
    verified deployment. Confirm the manual run completes successfully.
 
 Every publication requires a separate **Run workflow** action, including after
-a reviewed merge or an out-of-Git configuration change. Existing manual App
-release entries remain Vercel-specific and do not update the primary website.
+a reviewed merge or an out-of-Git configuration change. The separate **Apps - Cloudflare Pages** workflow updates the three frontend
+demos and does not update the primary website.
 Cloudflare's deployment list and the GitHub job summary retain deployment IDs.
 
 If the workflow was disabled to stop automatic delivery, merge the manual-only

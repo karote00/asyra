@@ -18,32 +18,23 @@ conservative lane and energy assessments. It does not simulate patrol or
 harvesting, physical dynamics, robot/crop collision or damage, or connect to
 live equipment.
 
-## Vercel Deployment
+## Cloudflare Pages deployment
 
-The version is `0.1.0`; keep `private: true` and do not publish an npm package.
-Import this repository in Vercel, set Root Directory to `apps/asyra-fieldscope`,
-enable Include source files outside of the Root Directory in the Build Step,
-and select Node.js 24.x. Install, build and output settings come from this
-directory's `vercel.json`; the build uses Turbo to build Asyra dependencies
-first. Static deployment does not need `APP_URL`; that variable is only for
-local development and E2E tests. Output goes to `dist/frontend`; there is no
-backend service. The app currently has only the root page, with no catch-all
-rewrite, so missing JavaScript assets do not return HTML. Scene edits are not
-persisted yet, so reloads return to the default settings.
+The App is private and is not published to npm. Use the repository's manual
+**Apps - Cloudflare Pages** workflow on `main`. It installs locked dependencies,
+builds the App and its dependency graph, verifies the static artifact, and
+publishes `dist/frontend` to `asyra-fieldscope.pages.dev`.
+See [Cloudflare App delivery](../../docs/ai/workflows/app-cloudflare.md).
 
-Vercel configuration reference: <a href="https://vercel.com/docs/monorepos/monorepo-faq" target="_blank" rel="noopener noreferrer">Monorepos FAQ</a>.
-
-The deployment flow follows `asyra-design`: install Yarn workspace
-dependencies from the repository root, build through Turbo and publish
-`dist/frontend`. Git auto-deploys only from main; other branches stay disabled
-by default. Asyra FieldScope's Turbo filter builds only this app and its dependencies
-without changing other app deployment settings.
+`public/_headers` owns the native Pages response policy. Static delivery does
+not need `APP_URL` or host a backend. Missing scripts and APIs return real 404s.
+Pushes and merges do not deploy. Scene edits are not persisted yet, so reloads
+return to the default settings.
 
 ## Product identity
 
 The official product name is Asyra FieldScope, with workspace
 `@asyra/asyra-fieldscope` and source root `apps/asyra-fieldscope`.
-The hosted Cloudflare project remains `asyra-fieldscope`. Existing Vercel
-projects must update their Root Directory to the new source root.
+The hosted Cloudflare project remains `asyra-fieldscope`.
 The locale preference remains `greenhouse-workspace.locale`; this rename
 does not migrate user data, runtime identifiers, or frozen source evidence.

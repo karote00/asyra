@@ -20,7 +20,7 @@
       "sources": [
         {
           "path": "create-app/asyra-design/package.json",
-          "sha256": "96d65f0e4d7195b301027be569d6ee645bae076705b538d3360cf3e96bbebce6"
+          "sha256": "ed2b811d93868977f5c7974bf8d462cb4c97dc7ebed814468935329feb2bc68c"
         },
         {
           "path": "create-app/asyra-design/template/README.md",
@@ -30,7 +30,7 @@
     },
     {
       "id": "start/extend-with-ai",
-      "pageSha256": "9bc6624fc65276ddd302ba9c54bab20a866ab5516aa2f028965e0845d194dcf6",
+      "pageSha256": "49a2da62553e2edf5c17ec6680ab2e34b9a2169a8bdda878be5435093d0f252e",
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
@@ -330,7 +330,7 @@
         },
         {
           "path": "packages/ai-agent-runtime/package.json",
-          "sha256": "3198d4f56ee807098566b8f475d2b2fab20d5ad46f2d02ea709ab71f8eff8fcc"
+          "sha256": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
         }
       ]
     },
@@ -344,7 +344,7 @@
         },
         {
           "path": "packages/collaboration/package.json",
-          "sha256": "16b278097f883c54df4bcf294354b950aae4b1dc59e2ec7e75303e663d314c7a"
+          "sha256": "92170542361610b39c1e69a033daee2255205c03fa628814d139bf2de9e435ad"
         }
       ]
     },
@@ -358,7 +358,7 @@
         },
         {
           "path": "packages/core/package.json",
-          "sha256": "82618a85c0a662d87a7b5e6c6878c824b7c8725f9cc3fca6c2f5142abb12d2a9"
+          "sha256": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
         }
       ]
     },
@@ -372,7 +372,7 @@
         },
         {
           "path": "packages/design-system/package.json",
-          "sha256": "8751a2c979bd19b681f6143deb7cfc56744160cd976c9d6a3cb3444412aea0a8"
+          "sha256": "6bbdb3b8835937194554e7d04873e491cd75b0fc1e9b439cc8a12b9c91503f0c"
         }
       ]
     },
@@ -386,7 +386,7 @@
         },
         {
           "path": "packages/factory/package.json",
-          "sha256": "111a62250e5f486615361cb6c1bed3debb35c25eae8d0fab6deced87e86ce0e8"
+          "sha256": "69bede311c7482ca4df644c2fb01f754e4e067026e6fcedf61e8e6aeb6a029a2"
         }
       ]
     },
@@ -400,7 +400,7 @@
         },
         {
           "path": "packages/feature-system/package.json",
-          "sha256": "8003296f7f49d0b9f9609ebc4df4d769afb0a9444efa47f1195d088217bd3642"
+          "sha256": "e468a6de293c74ee4f00177da5707980dece2a62ac69ccce116185487a84d290"
         }
       ]
     },
@@ -414,7 +414,7 @@
         },
         {
           "path": "packages/input-system/package.json",
-          "sha256": "f2b6d51e4544caee6e77ef17eebc9639038013e26fa7b20267d77fb18c05cecd"
+          "sha256": "7d303cc2e703afefa9aacaaf9ff0be1f3c627f8d7470ba738b7e5364ee596728"
         }
       ]
     },
@@ -428,7 +428,7 @@
         },
         {
           "path": "packages/persistence/package.json",
-          "sha256": "97e91850a0f79ed697b9ec3e27b4fb39b98243a046dd87a3034849ae240605bd"
+          "sha256": "49624e44d0978d5d77cce32c01dacdfe48b54e5afce1fb433e0486cd4cea6096"
         }
       ]
     },
@@ -442,7 +442,7 @@
         },
         {
           "path": "packages/preset/package.json",
-          "sha256": "c23748d886dbff1a51569feb6c2dc069cebb9c6c9b1307baef2ac64c1211b4b4"
+          "sha256": "d44d3f8ecec5b395e06e618157873fdc7688148b3b221d7ebd388f4cc01adbd3"
         }
       ]
     },
@@ -456,7 +456,7 @@
         },
         {
           "path": "packages/props-manager/package.json",
-          "sha256": "4c01896bc23707dd6381b284d4ac23f157e7719f63c736291c08dd6ce853b653"
+          "sha256": "034085b2dea430349441d6f3338301f02d665f76b0129ccc166d3fe4fbefe666"
         }
       ]
     },
@@ -470,7 +470,7 @@
         },
         {
           "path": "packages/reactive-events/package.json",
-          "sha256": "0dfbf0a60b0fd9db00624bd02b4b1d24a555544c26f3d5334a64fbecddfe77a1"
+          "sha256": "7bb36c4dadb9c73f4d429f993c20f4665efed496e7e446f6221d1f5c01207dc7"
         }
       ]
     },
@@ -484,7 +484,7 @@
         },
         {
           "path": "packages/render/package.json",
-          "sha256": "98371a0e776bedf693e2464b92ea51bce7428c9cb94a66eeaeaad83b01158395"
+          "sha256": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
         }
       ]
     },
@@ -498,7 +498,7 @@
         },
         {
           "path": "packages/render-engine/package.json",
-          "sha256": "1bd7687ec05a2c910791d8674bd691d694f0fb9a35d8f182c4f0e8c7e387849d"
+          "sha256": "2ffcd587c6076b001aeddbf11d2afbc95e3f8531cef35590e2ff804d59bf31f8"
         }
       ]
     },
@@ -512,7 +512,7 @@
         },
         {
           "path": "packages/render-engine-pixi/package.json",
-          "sha256": "a7c7c847e74f04054de4197b391a844086f120276505272162f6f738724db31e"
+          "sha256": "fb2ed8fd6c93a7bd2353b0253e3dea43cbafb83f52c86386dd92ee5fbbb7030e"
         }
       ]
     },
@@ -526,7 +526,7 @@
         },
         {
           "path": "packages/scene-tree/package.json",
-          "sha256": "5d47076e1ab211ddf67078fc29374c7ea3d873112b481148a1665b3d2829e0c9"
+          "sha256": "e46c47e2ec31a8f1a9405a0dd54e288bd2f27657ff03b13c944eb7cb623e3719"
         }
       ]
     },
@@ -540,7 +540,7 @@
         },
         {
           "path": "packages/selection/package.json",
-          "sha256": "d3e232c55b88217b98d1e80ebcaf8424ec51dece6b06190e9303b7851ff8653b"
+          "sha256": "41d75f13e712c5a929f0753fc2ab1f58aca6e7b9d9648691f2b89e3a6257c2ef"
         }
       ]
     },
@@ -554,7 +554,7 @@
         },
         {
           "path": "packages/system-context/package.json",
-          "sha256": "8814061ab9e1e542957c036437c4cae9a91235723cb58c4b55f904b0042fc579"
+          "sha256": "cf160587aeaa1e339c2d770de0f25ddce47cc9449ccd167f78b49de0d9c52094"
         }
       ]
     },
@@ -568,7 +568,7 @@
         },
         {
           "path": "packages/ui-context/package.json",
-          "sha256": "84aad307f287d47722845b7026d7c0b4f75b7fc1aabd37ab1c732a16e4c531a8"
+          "sha256": "da37179618a803a131ce3a5a08dad2ffaf04dda88f6cf96f83fbc106e209a409"
         }
       ]
     },
@@ -582,7 +582,7 @@
         },
         {
           "path": "packages/utils/package.json",
-          "sha256": "8fb4a172efbfbd2b65283fc2741d38d682a843a45b2ad5ceca2116845abb11c7"
+          "sha256": "d13130904aebc87f640dbbe3ecd21d7c3a697c354ec1a94c083445230b41a5e6"
         }
       ]
     },
@@ -608,7 +608,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "3fcef00f5f7fe5e7eb8fe7cedf22d3e0837ee1f2f2125b50ac2552355b2d6bd5"
+          "sha256": "8cd72b0426fbbc01bc399ff6eb447566507769b3977570ad33b32e1fb2bb560a"
         }
       ]
     },

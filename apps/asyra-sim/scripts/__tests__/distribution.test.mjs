@@ -227,7 +227,7 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     'tsconfig.json',
     'vite.config.ts',
     'vitest.config.ts',
-    'vercel.json',
+    'public/_headers',
     'playwright.config.ts',
     'app-environment.mjs',
     'app-environment.d.mts',
@@ -295,7 +295,7 @@ test('the producer stages a complete versioned candidate without serving SDK dat
     recoveryFixture
   )
   assert.equal(
-    readFileSync(path.join(candidate, 'sdk/app/vercel.json'), 'utf8'),
+    readFileSync(path.join(candidate, 'sdk/app/public/_headers'), 'utf8'),
     'input'
   )
   assert.ok(

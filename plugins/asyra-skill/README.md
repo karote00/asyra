@@ -66,33 +66,9 @@ below. Do not describe that private local path as a public installation source.
 
 Choose **one** route per product. Run these commands from your product's root
 folder, with Node.js/npm and Git available. No account registration or separate
-upload to either installer service is required: both read our public GitHub
+upload to an installer service is required: OpenSkills reads our public GitHub
 repository. These commands install project files; they do not install Asyra
 Framework dependencies or purchase model access.
-
-### Vercel Skills - Codex and Claude Code
-
-Tested with Skills 1.7.2, which requires Node.js **22.20.0 or newer**.
-The short command uses the current published installer; future versions may
-change their requirements.
-
-```sh
-npx skills add karote00/asyra
-```
-
-Default repository discovery finds only `asyra-skill` (Asyra Skill). Select
-your coding tool and project scope when prompted. For Codex and Claude Code,
-it creates `.agents/skills/asyra-skill/` and links `.claude/skills/asyra-skill/`
-to it. For unattended installation, append `--agent codex claude-code --yes`;
-keep only the tool names you use.
-It includes `SKILL.md`, `bundle.json` and all 19 reference guides. Start a new
-host session in this product, then use the verification prompt below.
-
-To update this project's installation from its recorded source:
-
-```sh
-npx skills update asyra-skill --project
-```
 
 ### OpenSkills - agents that read AGENTS.md and can run commands
 
@@ -141,7 +117,6 @@ use the ZIP-upload route below there. Other tools still need compatible Skill
 loading or the OpenSkills command workflow. You do not need a separate copy of
 the Asyra instructions for each installer.
 
-- <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener noreferrer">Vercel Skills documentation</a>
 - <a href="https://github.com/numman-ali/openskills" target="_blank" rel="noopener noreferrer">OpenSkills documentation</a>
 
 ## Start with the same Skill everywhere

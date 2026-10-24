@@ -821,8 +821,7 @@ test('shared contract documents and tracked root documents require shared valida
 test('non-workflow GitHub configuration and templates use the shared CI owner', () => {
   for (const input of [
     '.github/dependabot.yml',
-    '.github/pull_request_template.md',
-    '.github/app-production-environment.json'
+    '.github/pull_request_template.md'
   ]) {
     const result = classifyChanges([input], manifests)
     assert.deepEqual(result.workspaceMatrix, [], input)

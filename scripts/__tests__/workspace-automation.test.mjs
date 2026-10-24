@@ -622,15 +622,12 @@ test('Asyra Design keeps frontend startup, live transport, and local persistence
 
 test('CI, E2E, and release validation own their bounded integration gates', () => {
   const collaboration = readJSON('packages/collaboration/package.json')
-  const vercel = readJSON('vercel.json')
   const designViteConfig = readText('apps/asyra-design/vite.config.ts')
   const ci = readText('.github/workflows/main.yml')
   const e2e = readText('.github/workflows/e2e.yml')
   const releaseValidation = readText('scripts/release-validate.js')
 
   assert.equal(collaboration.scripts.clean, 'rm -rf dist')
-  assert.equal(vercel.buildCommand, 'turbo run react:build')
-  assert.equal(vercel.outputDirectory, 'dist/frontend')
   assert.match(designViteConfig, /outDir:\s*['"]dist\/frontend['"]/)
   assert.doesNotMatch(designViteConfig, /outDir:\s*['"]\.\.\/\.\.\/dist['"]/)
   assert.match(ci, /yarn gen:turbo:check/)
@@ -645,44 +642,34 @@ test('CI, E2E, and release validation own their bounded integration gates', () =
 })
 
 test('Framework site deployments are independent of PR CI and Git pushes', () => {
-  const siteVercel = readJSON('apps/asyra-framework-site/vercel.json')
-  const ignoreBuild = readText(
-    'apps/asyra-framework-site/scripts/vercel-ignore-build.mjs'
-  )
+  const deployment = readText('.github/workflows/site-cloudflare.yml')
   const ci = readText('.github/workflows/main.yml')
   const sitePlaywright = readText(
     'apps/asyra-framework-site/playwright.config.ts'
   )
 
   assert.match(sitePlaywright, /new URL\(process\.env\.SITE_URL/)
-  assert.equal(siteVercel.git.deploymentEnabled, false)
-  assert.equal(siteVercel.ignoreCommand, undefined)
-  assert.match(ignoreBuild, /apps\/asyra-framework-site/)
-  assert.match(ignoreBuild, /docs\/public/)
-  assert.match(ignoreBuild, /packages/)
-  assert.doesNotMatch(ignoreBuild, /version/i)
+  assert.match(deployment, /workflow_dispatch:/)
+  assert.doesNotMatch(
+    deployment,
+    /^ {2}(push|pull_request|workflow_run|schedule):/m
+  )
   assert.doesNotMatch(ci, /^ {2}deploy:/m)
 })
 
-test('Vite builds rely on dedicated lint gates and native Vercel output configuration', () => {
+test('Vite builds rely on dedicated lint gates and static output configuration', () => {
   const designManifest = readJSON('apps/asyra-design/package.json')
   const designViteConfig = readText('apps/asyra-design/vite.config.ts')
   const designSystemManifest = readJSON('packages/design-system/package.json')
   const designSystemViteConfig = readText(
     'packages/design-system/vite.config.ts'
   )
-  const releaseTemplate = readText('scripts/release-template.js')
 
   for (const manifest of [designManifest, designSystemManifest]) {
     assert.equal(manifest.devDependencies?.['vite-plugin-eslint'], undefined)
   }
-  assert.equal(
-    designManifest.devDependencies?.['vite-plugin-vercel'],
-    undefined
-  )
-  assert.doesNotMatch(designViteConfig, /vite-plugin-(?:eslint|vercel)/)
+  assert.doesNotMatch(designViteConfig, /vite-plugin-eslint/)
   assert.doesNotMatch(designSystemViteConfig, /vite-plugin-eslint/)
-  assert.doesNotMatch(releaseTemplate, /vite-plugin-vercel/)
 })
 
 test('Tailwind 4 uses the dedicated Vite plugin in canonical and generated apps', () => {

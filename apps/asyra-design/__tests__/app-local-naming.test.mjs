@@ -15,7 +15,6 @@ const sourceExtensions = new Set([
 ])
 const ignoredDirectories = new Set([
   '.turbo',
-  '.vercel',
   'coverage',
   'dist',
   'node_modules',

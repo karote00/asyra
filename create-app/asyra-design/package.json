@@ -23,7 +23,7 @@
     "url": "git+https://github.com/karote00/asyra.git",
     "directory": "create-app/asyra-design"
   },
-  "homepage": "https://asyra-framework.vercel.app",
+  "homepage": "https://asyra-framework.pages.dev",
   "keywords": [
     "asyra",
     "canvas-editor",

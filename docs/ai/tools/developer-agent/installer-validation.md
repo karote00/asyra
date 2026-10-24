@@ -1,5 +1,9 @@
 # Skill installer validation
 
+> Historical installer trial record. This document preserves the commands and
+> results used at the time; use the [current installation guide](../../../../plugins/asyra-skill/README.md)
+> for supported installation routes.
+
 ## Task contract
 
 Continuation of PR #321, approved on 2026-10-12. Base: `dd6757567` on

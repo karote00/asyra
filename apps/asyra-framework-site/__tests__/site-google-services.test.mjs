@@ -9,12 +9,12 @@ import {
 } from '../lib/site-google-services.mjs'
 
 const configured = {
-  VERCEL_ENV: 'production',
+  SITE_ENV: 'production',
   NEXT_PUBLIC_GA_MEASUREMENT_ID: 'G-TEST123456',
   GOOGLE_SITE_VERIFICATION: 'test-verification-token'
 }
 
-test('explicit static production enables collection without enabling Vercel previews', () => {
+test('explicit static production enables collection without enabling preview builds', () => {
   const staticEnvironment = {
     SITE_ENV: 'production',
     NEXT_PUBLIC_GA_MEASUREMENT_ID: configured.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -22,10 +22,6 @@ test('explicit static production enables collection without enabling Vercel prev
   assert.deepEqual(resolveGoogleSiteServices(staticEnvironment), {
     measurementId: configured.NEXT_PUBLIC_GA_MEASUREMENT_ID
   })
-  assert.deepEqual(
-    resolveGoogleSiteServices({ ...staticEnvironment, VERCEL_ENV: 'preview' }),
-    {}
-  )
   assert.deepEqual(
     resolveGoogleSiteServices({ ...staticEnvironment, SITE_ENV: 'preview' }),
     {}
@@ -35,21 +31,21 @@ test('explicit static production enables collection without enabling Vercel prev
 test('only a configured production site enables Google services', () => {
   assert.deepEqual(resolveGoogleSiteServices({}), {})
   assert.deepEqual(
-    resolveGoogleSiteServices({ ...configured, VERCEL_ENV: 'preview' }),
+    resolveGoogleSiteServices({ ...configured, SITE_ENV: 'preview' }),
     {}
   )
   assert.deepEqual(
-    resolveGoogleSiteServices({ ...configured, VERCEL_ENV: 'development' }),
+    resolveGoogleSiteServices({ ...configured, SITE_ENV: 'development' }),
     {}
   )
-  assert.deepEqual(resolveGoogleSiteServices({ VERCEL_ENV: 'production' }), {})
+  assert.deepEqual(resolveGoogleSiteServices({ SITE_ENV: 'production' }), {})
   assert.deepEqual(resolveGoogleSiteServices(configured), {
     measurementId: 'G-TEST123456',
     verification: 'test-verification-token'
   })
   assert.deepEqual(
     resolveGoogleSiteServices({
-      VERCEL_ENV: 'production',
+      SITE_ENV: 'production',
       GOOGLE_SITE_VERIFICATION: configured.GOOGLE_SITE_VERIFICATION
     }),
     { verification: configured.GOOGLE_SITE_VERIFICATION }
@@ -110,7 +106,7 @@ test('the site build receives Google and indexing settings through Turbo', async
   )
   const task = turbo.tasks['build:asyra-framework-site']
   for (const key of [
-    'VERCEL_ENV',
+    'SITE_ENV',
     'NEXT_PUBLIC_GA_MEASUREMENT_ID',
     'GOOGLE_SITE_VERIFICATION'
   ]) {

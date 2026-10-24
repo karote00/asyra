@@ -6,7 +6,6 @@ const validationDirectoryPrefix = 'release-validation-'
 const excludedDirectoryNames = new Set([
   '.git',
   '.turbo',
-  '.vercel',
   'coverage',
   'dist',
   'node_modules',

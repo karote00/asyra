@@ -6,19 +6,30 @@ It does not change App runtime, backend, AI or Inspector behavior.
 
 ## Public frontend demos
 
-| App | Public origin | Static output |
-| --- | --- | --- |
-| Asyra Design | <a href="https://asyra-design.pages.dev/?fileId=demo" target="_blank" rel="noopener noreferrer">Open Design</a> | `apps/asyra-design/dist/frontend` |
+| App              | Public origin                                                                                                    | Static output                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Asyra Design     | <a href="https://asyra-design.pages.dev/?fileId=demo" target="_blank" rel="noopener noreferrer">Open Design</a>  | `apps/asyra-design/dist/frontend`     |
 | Asyra FieldScope | <a href="https://asyra-fieldscope.pages.dev" target="_blank" rel="noopener noreferrer">Open Asyra FieldScope</a> | `apps/asyra-fieldscope/dist/frontend` |
-| Asyra Sim | <a href="https://asyra-sim.pages.dev" target="_blank" rel="noopener noreferrer">Open Sim</a> | `apps/asyra-sim/dist` |
+| Asyra Sim        | <a href="https://asyra-sim.pages.dev" target="_blank" rel="noopener noreferrer">Open Sim</a>                     | `apps/asyra-sim/dist`                 |
 
 These deployments contain frontend assets only. Editing, local history, browser
 storage and local Workers remain available. They do not host API routes, AI
 providers, collaboration servers or durable backend storage. Design explicitly
 builds with an empty `VITE_COLLABORATION_WS_URL`. For full service integration,
 clone the repository and follow each App's README and local `.env.example`.
-Browser data belongs to its origin; data saved at a Vercel origin is not copied
+Browser data belongs to its origin; data saved at a previous origin is not copied
 to a Pages origin.
+
+## Native response configuration
+
+Each App owns `public/_headers` in native Cloudflare Pages syntax. Preparation
+validates and copies that file unchanged; public verification and the Sim
+browser proof read the same policy. The current App contract permits literal
+global `/*` rules only. Unsupported patterns, placeholders and duplicate headers
+fail before publication rather than silently escaping verification. Apps without
+custom headers keep an explicit comment-only file. Sim retains its same-origin
+CSP and security headers. The website separately generates `_headers` from its
+existing `site-security-headers.mjs` owner during `build:static`.
 
 ## Manual publication
 

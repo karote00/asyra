@@ -55,7 +55,7 @@ test('the preview route is removed and home keeps canonical metadata', async ({
   expect(new URL(canonical).pathname).toBe('/')
   expect(new URL(canonical).protocol).toBe('https:')
   expect(html).not.toContain(
-    'canonical" href="https://asyra-framework.vercel.app/story'
+    'canonical" href="https://asyra-framework.pages.dev/story'
   )
 })
 

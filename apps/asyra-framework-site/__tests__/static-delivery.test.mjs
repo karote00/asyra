@@ -8,7 +8,7 @@ import { isProductionSite } from '../lib/site-environment.mjs'
 import { siteSecurityHeaders } from '../lib/site-security-headers.mjs'
 import { isIndexingAuthorized, resolveSiteOrigin } from '../lib/site-origin.ts'
 
-test('production identity and indexing require an explicit environment on either host', () => {
+test('production identity and indexing require an explicit environment for Cloudflare delivery', () => {
   const environment = {
     SITE_ENV: 'production',
     NEXT_PUBLIC_SITE_URL: 'https://asyra-framework.pages.dev',
@@ -17,10 +17,6 @@ test('production identity and indexing require an explicit environment on either
   assert.equal(isProductionSite({}), false)
   assert.equal(isIndexingAuthorized(environment), true)
   assert.equal(resolveSiteOrigin(environment), environment.NEXT_PUBLIC_SITE_URL)
-  assert.equal(
-    isIndexingAuthorized({ ...environment, VERCEL_ENV: 'preview' }),
-    false
-  )
   assert.equal(
     isIndexingAuthorized({ ...environment, SITE_ENV: 'preview' }),
     false
@@ -35,10 +31,7 @@ test('production identity and indexing require an explicit environment on either
   assert.throws(() =>
     resolveSiteOrigin({ NEXT_PUBLIC_SITE_URL: 'https://example.com/path' })
   )
-  assert.equal(
-    resolveSiteOrigin({ VERCEL_PROJECT_PRODUCTION_URL: 'existing.vercel.app' }),
-    'https://existing.vercel.app'
-  )
+  assert.equal(resolveSiteOrigin({}), 'https://asyra-framework.pages.dev')
 })
 
 test(

@@ -22,27 +22,9 @@ Skill is separate from the optional in-app `@asyra/ai-agent-runtime`.
 ## Install and update in your product
 
 Choose one installation route, then run its commands from your product root.
-Both installers fetch the public GitHub source directly; maintainers do not need
+The installer fetches the public GitHub source directly; maintainers do not need
 to register or upload another package. Node.js/npm and Git are required.
 The complete Skill includes `SKILL.md`, `bundle.json` and `references/`.
-
-### Vercel Skills
-
-Tested with Skills 1.7.2, which requires Node.js **22.20.0 or newer**.
-The short command uses the current published installer; future versions may
-change their requirements.
-
-Install Asyra Skill, then select your coding tool and project installation:
-
-```sh
-npx skills add karote00/asyra
-npx skills update asyra-skill --project
-```
-
-After this candidate merges, default repository discovery finds only `asyra-skill` (Asyra Skill). Choose
-project scope when prompted. For Codex and Claude Code, the installer uses
-`.agents/skills/asyra-skill/` and links Claude Code's Skill directory.
-Run the second command later to update the project installation.
 
 ### OpenSkills
 

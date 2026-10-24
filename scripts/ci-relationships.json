@@ -332,24 +332,22 @@
       ],
       "requiresFrameworkDeclarations": false
     },
-    "appRelease": {
+    "cloudflareDelivery": {
       "patterns": [
-        "scripts/app-release*",
+        "scripts/app-cloudflare.mjs",
+        "scripts/cloudflare-headers.mjs",
         "scripts/production-artifact*",
-        ".github/workflows/app-release*",
+        ".github/workflows/app-cloudflare.yml",
+        ".github/workflows/site-cloudflare.yml",
         ".github/workflows/production-artifacts.yml",
-        ".github/app-production-environment.json",
         "release-configs/**"
       ],
       "tests": [
-        "scripts/__tests__/app-release-plan.test.mjs",
-        "scripts/__tests__/app-release-service.test.mjs",
-        "scripts/__tests__/app-release-provider.test.mjs",
-        "scripts/__tests__/app-release-entry.test.mjs",
-        "scripts/__tests__/app-release-workflow.test.mjs",
-        "scripts/__tests__/app-release-verification.test.mjs",
-        "scripts/__tests__/app-release-verification.test.mjs",
-        "scripts/__tests__/production-artifact-resource-evidence.test.mjs"
+        "scripts/__tests__/production-artifact-verification.test.mjs",
+        "scripts/__tests__/production-artifact-resource-evidence.test.mjs",
+        "scripts/__tests__/app-cloudflare.test.mjs",
+        "scripts/__tests__/cloudflare-headers.test.mjs",
+        "scripts/__tests__/hosting-retirement.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
     },
@@ -464,10 +462,16 @@
       "patterns": ["domain-knowledge/**"],
       "tests": ["scripts/__tests__/domain-knowledge.test.mjs"],
       "requiresFrameworkDeclarations": false
+    },
+    "retiredHostingInputs": {
+      "patterns": ["vercel.json", ".vercelignore"],
+      "ownsInputs": true,
+      "tests": ["scripts/__tests__/hosting-retirement.test.mjs"],
+      "requiresFrameworkDeclarations": false
     }
   },
   "productionArtifactInputs": [
-    "scripts/app-release-verification.mjs",
+    "scripts/production-artifact-verification.mjs",
     "scripts/production-artifact*",
     ".github/workflows/production-artifacts.yml"
   ],
@@ -476,12 +480,7 @@
     "apps/asyra-fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
     "scripts/__tests__/agent-hook-adapter.test.mjs",
     "scripts/__tests__/agent-safety-hook.test.mjs",
-    "scripts/__tests__/app-release-entry.test.mjs",
-    "scripts/__tests__/app-release-plan.test.mjs",
-    "scripts/__tests__/app-release-provider.test.mjs",
-    "scripts/__tests__/app-release-service.test.mjs",
-    "scripts/__tests__/app-release-verification.test.mjs",
-    "scripts/__tests__/app-release-workflow.test.mjs",
+    "scripts/__tests__/production-artifact-verification.test.mjs",
     "scripts/__tests__/brand-neutral-code.test.mjs",
     "scripts/__tests__/changeset-all-patch.test.mjs",
     "scripts/__tests__/changeset-pr-check.test.mjs",
@@ -522,7 +521,10 @@
     "scripts/__tests__/local-validation.test.mjs",
     "scripts/__tests__/local-validation-runner.test.mjs",
     "scripts/__tests__/test-impact.test.mjs",
-    "scripts/__tests__/domain-knowledge.test.mjs"
+    "scripts/__tests__/domain-knowledge.test.mjs",
+    "scripts/__tests__/app-cloudflare.test.mjs",
+    "scripts/__tests__/cloudflare-headers.test.mjs",
+    "scripts/__tests__/hosting-retirement.test.mjs"
   ],
   "contractOnlyInputs": [
     "tools/flow-inspector/control-plane/ci-script-selection.cjs",

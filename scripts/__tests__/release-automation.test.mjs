@@ -702,7 +702,7 @@ test('create-app package metadata matches the supported public CLI contract', ()
     url: 'git+https://github.com/karote00/asyra.git',
     directory: 'create-app/asyra-design'
   })
-  assert.equal(manifest.homepage, 'https://asyra-framework.vercel.app')
+  assert.equal(manifest.homepage, 'https://asyra-framework.pages.dev')
   assert.ok(manifest.keywords.includes('canvas-editor'))
   assert.ok(manifest.keywords.includes('visual-editor'))
 })
@@ -742,7 +742,7 @@ test('root and Core metadata identify the searchable product category', () => {
     url: 'git+https://github.com/karote00/asyra.git',
     directory: 'packages/core'
   })
-  assert.equal(coreManifest.homepage, 'https://asyra-framework.vercel.app')
+  assert.equal(coreManifest.homepage, 'https://asyra-framework.pages.dev')
 })
 
 test('every public Framework package identifies its repository location', () => {
@@ -768,7 +768,7 @@ test('every public Framework package identifies its repository location', () => 
     )
     assert.equal(
       manifest.homepage,
-      'https://asyra-framework.vercel.app',
+      'https://asyra-framework.pages.dev',
       manifest.name
     )
   }

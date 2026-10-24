@@ -9,9 +9,9 @@
 - Normal composition uses `original-part-clearance-v1@1.0.1`. Complete supplied
   geometry is shared by rendering and analysis. Clearance witnesses cannot hide
   later established penetration; historical method evidence is not rewritten.
-- **Hosting:** the permanent product domain is `asyra-sim.vercel.app`.
+- **Hosting:** the permanent product domain is `asyra-sim.pages.dev`.
   Releases are manually approved from `main`; PRs run CI without automatic
-  Vercel previews. See [manual App release](../../workflows/manual-app-release.md) and
+  deployment previews. See [Cloudflare App delivery](../../workflows/app-cloudflare.md) and
   [HOSTED_PREVIEW.md](release/HOSTED_PREVIEW.md) for configuration, browser-local
   data boundaries and verification.
 - **R0 Public Alpha: not released.** Independent numerical review, representative
@@ -81,7 +81,6 @@
   - Verified: 11 affected browser cases at port 3020 and inspected empty-history
     screenshot; shell/shortcut tests, App build/lint, naming, Inspector contracts
     and test placement. M2 acceptance and M3-M6 scope remain unchanged.
-
 
 - **Completed-edit UX follow-up (2026-09-08).**
   - A bounded review of existing Sim UI controls found two remaining editing

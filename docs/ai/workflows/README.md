@@ -28,7 +28,7 @@ Repository automation contracts:
   `task-context.md`
 - workspace build, generated-template, and release validation:
   `package-release-validation.md`
-- manual App deployment and recovery: `manual-app-release.md`
+- manual App deployment and recovery: `app-cloudflare.md`
 
 ## Authoring Rule
 

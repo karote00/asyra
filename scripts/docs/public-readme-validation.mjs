@@ -14,7 +14,7 @@ import {
 
 const REPOSITORY_URL = 'https://github.com/karote00/asyra'
 const VERIFIED_PUBLIC_LINKS = new Set([
-  'https://asyra-design.vercel.app/?fileId=demo'
+  'https://asyra-design.pages.dev/?fileId=demo'
 ])
 const DESIGN_POLICY =
   'This repository does not accept external issues or contributions'

@@ -111,7 +111,7 @@ test('metadata falls back to the canonical HTTPS origin', async () => {
     'utf8'
   )
 
-  assert.ok(source.includes('https://asyra-framework.vercel.app'))
+  assert.ok(source.includes('https://asyra-framework.pages.dev'))
   assert.doesNotMatch(source, /http:\/\/127\.0\.0\.1:3020/)
 })
 

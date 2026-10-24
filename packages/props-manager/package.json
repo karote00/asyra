@@ -9,7 +9,7 @@
     "url": "git+https://github.com/karote00/asyra.git",
     "directory": "packages/props-manager"
   },
-  "homepage": "https://asyra-framework.vercel.app",
+  "homepage": "https://asyra-framework.pages.dev",
   "type": "module",
   "engines": {
     "node": "24.x"
