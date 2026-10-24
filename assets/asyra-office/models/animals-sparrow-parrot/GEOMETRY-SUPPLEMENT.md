@@ -1,5 +1,9 @@
 # Birds - Geometry Supplement
 
+The [sparrow construction contract](TREE-SPARROW-SPEC.md) owns sparrow-specific
+source-label mapping, complete sizing, feet, appearance and LOD clarifications.
+It takes precedence for the sparrow; the cockatiel recipe remains unchanged.
+
 ## Coordinate and authority contract
 
 Read the numeric specification with this document and the surface recipes. Metres, +Z up, -Y front, +X anatomical right. Front camera is on -Y, right on +X, back on +Y, top on +Z, bottom on -Z; oblique camera on (+X,-Y,+Z). Top and bottom drawings may rotate the animal on the page for readability; world coordinates control construction. Reflect X to obtain the opposite side. Static closed-beak, wings-folded standing poses only.
@@ -28,7 +32,7 @@ The sparrow has THREE toes toward -Y and ONE toward +Y on each foot. The parrot 
 
 ## Final bounds
 
-Build all geometry in raw coordinates. Compute complete raw bounds lo/hi, including toes, beak and tail. Transform every part uniformly by the following per-axis normalization:
+Build all geometry in raw coordinates. Compute complete raw bounds lo/hi, including toes, beak and tail. Apply the same following per-axis normalization to every part:
 
 - X'=(X-(loX+hiX)/2)*targetX/(hiX-loX)
 - Y'=(Y-(loY+hiY)/2)*targetY/(hiY-loY)

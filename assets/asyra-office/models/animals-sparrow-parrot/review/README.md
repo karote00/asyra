@@ -4,7 +4,7 @@ Status: user-approved reference sheets.
 
 ## Tree sparrow
 
-One round chestnut-and-tan bird with folded wings. Each foot has three forward toes and one rear toe. Final authored bounds: 0.160 x 0.230 x 0.200 m.
+One round chestnut-and-tan bird with folded wings. Each foot has three forward toes and one rear toe. Default final bounds: 0.160 x 0.230 x 0.200 m. The [updated specification](../TREE-SPARROW-SPEC.md) is approved for commit. The sheet labels RIGHT and RIGHT THREE-QUARTER map to canonical LEFT and FRONT-LEFT THREE-QUARTER; source pixels are preserved.
 
 ![Tree sparrow - six views](01-tree-sparrow-v2.png)
 
