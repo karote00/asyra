@@ -80,12 +80,12 @@
   "dependencies": {
     "@asyra/core": "workspace:*",
     "@asyra/reactive-events": "workspace:*",
+    "@asyra/render": "workspace:*",
     "@asyra/render-engine": "workspace:*",
     "@asyra/render-engine-pixi": "workspace:*",
     "@asyra/ui-context": "workspace:*",
     "@asyra/utils": "workspace:*",
     "rxjs": "^7.8.1",
-    "three": "0.185.1",
-    "@asyra/render": "workspace:*"
+    "three": "0.185.1"
   }
 }
