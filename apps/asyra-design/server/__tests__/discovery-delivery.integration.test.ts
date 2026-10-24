@@ -1797,17 +1797,17 @@ it('delivers expansion accounting and parts selection before the recorded oversi
   expect(run.execute).not.toHaveBeenCalled()
   const invocation = result.value.tools[0].invocationExample.invocation
   const source = structuredClone(invocation.arguments.draft)
-  const grid = source.children[2].members[0]
+  const grid = source.children[2].members[1]
   const motifs = source.motifTemplates[grid.motifs.template]
   expect(motifs).toHaveLength(1)
   motifs.push({ ...structuredClone(motifs[0]), key: 'accent', fill: '#654321' })
   const inline = structuredClone(source)
-  inline.children[2].members[0].motifs = structuredClone(motifs)
+  inline.children[2].members[1].motifs = structuredClone(motifs)
   delete inline.motifTemplates
-  // Root + two panels + cap + two instances of a 2x3 grid with two motifs.
+  // Root + two panels + cap + two instances of a surface and 2x3 grid with two motifs.
   for (const input of [source, inline]) {
     const budget = measureDesignBudget(input)
-    expect(budget.observed.expandedNodes).toBe(28)
+    expect(budget.observed.expandedNodes).toBe(30)
     expect(budget.lowerBound).toBe(false)
     expect(budget.allowed.expandedNodes).toBe(
       DesignPreparationLimits.expandedNodes
@@ -1821,7 +1821,7 @@ it('delivers expansion accounting and parts selection before the recorded oversi
   })
   expect(submitted.value.toolOutcome.settlement).toBe('completed')
   const expected = prepareDesign(inline, submitted.value.artifactId)
-  expect(expected.entries).toHaveLength(28)
+  expect(expected.entries).toHaveLength(30)
   expect(prepareDesign(source, submitted.value.artifactId)).toEqual(expected)
   expect(run.created).toEqual(expected.entries.map((entry) => entry.descriptor))
 })
@@ -2078,7 +2078,7 @@ it.each([false, true])(
       source.children.map((child: { type: string }) => child.type)
     ).toEqual(['pattern', 'projected-face', 'pattern'])
     const pattern = source.children[0]
-    const grid = source.children[2].members[0]
+    const grid = source.children[2].members[1]
     expect(
       pattern.members.map((member: { type: string }) => member.type)
     ).toEqual(['projected-face'])
@@ -2094,7 +2094,7 @@ it.each([false, true])(
     expect(motifs).toHaveLength(1)
     expect(source.fillTemplates[motifs[0].fill.template]).toBeDefined()
     const inline = structuredClone(source)
-    inline.children[2].members[0].motifs = structuredClone(motifs)
+    inline.children[2].members[1].motifs = structuredClone(motifs)
     delete inline.motifTemplates
     const full = (
       await run.call('describe_design_apis', { ...query, view: 'full' })
@@ -2108,8 +2108,10 @@ it.each([false, true])(
     })
     expect(result.value.toolOutcome.settlement).toBe('completed')
     expect(run.execute).toHaveBeenCalledOnce()
-    expect(run.created).toHaveLength(16)
     const expected = prepareDesign(inline, result.value.artifactId)
+    expect(expected.entries.map((entry) => entry.key)).toContain(
+      'windows-1-surface'
+    )
     expect(prepareDesign(source, result.value.artifactId)).toEqual(expected)
     expect(run.created).toEqual(
       expected.entries.map((entry) => entry.descriptor)
@@ -2137,7 +2139,7 @@ it.each([false, true])(
     expect(run.created).toEqual(retained)
     expect(run.execute).toHaveBeenCalledOnce()
     const broken = structuredClone(source)
-    broken.children[2].members[0].motifs.template = 'missing'
+    broken.children[2].members[1].motifs.template = 'missing'
     const invalid = await run.call(invocation.tool, {
       draft: broken,
       inspection: 'defer'
@@ -2757,12 +2759,13 @@ it.each([false, true])(
       'cap'
     ])
     expect(entries.slice(4).map((e) => e.key)).toEqual(
-      Array.from({ length: 2 }, (_, i) =>
-        Array.from(
+      Array.from({ length: 2 }, (_, i) => [
+        `windows-${i}-surface`,
+        ...Array.from(
           { length: 6 },
           (_, cell) => `windows-${i}-grid-${cell}-inset`
         )
-      ).flat()
+      ]).flat()
     )
     expect(run.created.map((e) => e.name)).toEqual(
       entries.map((e) => e.descriptor.name)
@@ -2772,12 +2775,12 @@ it.each([false, true])(
     expect(
       source.linearFields[source.children[0].members[0].materialField]
     ).toBeDefined()
-    const grid = source.children[2].members[0]
+    const grid = source.children[2].members[1]
     const motifs = source.motifTemplates[grid.motifs.template]
     expect(motifs).toHaveLength(1)
     expect(source.fillTemplates[motifs[0].fill.template]).toBeDefined()
     const inline = structuredClone(source)
-    inline.children[2].members[0].motifs = structuredClone(motifs)
+    inline.children[2].members[1].motifs = structuredClone(motifs)
     delete inline.motifTemplates
     const expected = prepareDesign(inline, outcome.value.artifactId)
     expect(prepareDesign(source, outcome.value.artifactId)).toEqual(expected)
@@ -2845,7 +2848,12 @@ it.each([
               }
               return node
             }
-            const sourcePoints = member[field]
+            const sourcePoints = Array.isArray(member[field])
+              ? member[field]
+              : child.members.find(
+                  (item: (typeof child.members)[number]) =>
+                    item.key === member.boundary.face
+                ).vertices
             node[field] = sourcePoints.map(
               (point: { x: number; y: number; z: number }) => ({
                 x: point.x + 7 + step.x * index,

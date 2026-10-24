@@ -155,6 +155,7 @@
           'The combined preparation route accepts complete source, explicit retained-draft field repair or owner-computed partition repair. Consume successful retained-source capacity plans through the existing ordered parts executor in the same invocation, including the first part. Preserve explicit sequence links, one continuation root and truthful child progress; offer remaining-only invocations after real failure from actual receipts. Invalid or uncertain work never automatically retries',
           'Admit ordered ready-part envelopes and backward parent links before writes; prepare and apply each part before compiling its successor, using actual acknowledged composition IDs, preserving completed receipts and stopping on failure without replay',
           'Compose optional first-write criteria through the existing review owner after preparation and before mutation; reject invalid criteria without canvas writes',
+          'Selected construction contracts and executable examples expose explicit inline or same-scope face-referenced grid boundaries without preliminary lookup. Preserve complete constraints and recovery; measure total delivery including guide cost rather than input bytes alone.',
           'Explain construction choices from supplied coordinate and repetition semantics; preserve direct edits and arbitrary 2D paths, with executable examples and no forced camera or subject-based routing',
           'Preserve original request terms and constraints when organizing the existing plan; separate assumptions without an extra translation call',
           'Initial decisions need no execution or inspection receipt; later decisions consume only receipts actually produced',
@@ -204,6 +205,8 @@
           'apps/asyra-design/e2e/design-construction.spec.ts',
           'apps/asyra-design/server/design-budget.ts',
           'apps/asyra-design/server/design-construction-schema.ts',
+          'apps/asyra-design/server/__tests__/face-boundary.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/face-boundary-20261025.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/expansion-budget-20261022.json',
           'apps/asyra-design/src/ai/__tests__/server-action-batch-provider.test.ts',
           'apps/asyra-design/src/ai/evaluation-window.ts',
@@ -374,7 +377,8 @@
           '#capability-discovery-and-composition',
           '#selected-operation-usage-guide',
           '#selective-nested-knowledge-delivery',
-          '#cross-query-knowledge-dependency-delivery'
+          '#cross-query-knowledge-dependency-delivery',
+          '#face-referenced-surface-boundaries'
         ],
         failureOwnerStepId: 'compose'
       },
@@ -428,6 +432,7 @@
           'Expand request-local vector templates and placements without losing geometry, painter order or stable keys',
           'Executable App representation examples use the existing typed preparation entry points: multi-face patterns preserve declared instance/face painter order, native independent fills, current generated-key targeting and expanded budgets. Advice does not infer repeats or require Knowledge; irregular details remain explicit. Same pattern consumers support optional world material fields without granting visual approval.',
           'Compile explicit draft-local world linearFields on projected and translated pattern faces into ordinary independent native gradients. Resolve exact materialField keys, reject fill/palette conflicts, validate finite distinct endpoints and ordered stops, and pull back affine world phase through the admitted plane and normalized vector bounds. Preserve per-instance phase, constant color/opacity, reversal and non-square geometry; reject unsupported or unrepresentable input before writes. Reuse plane derivation only within preparation, preserve actual source-work budgets and artifact lifetime, and never infer visual approval, change rendering or persist a new live material relation.',
+          'Resolve explicit surface-grid boundary face references from exactly one quadrilateral projected-face in the same root or pattern source scope before ordinary compilation. Forward declarations preserve painter order; no outer-scope, ambiguous or ellipse targets. Existing source selection resolves before dropping unselected faces, retaining original source for repairs; never recreate a source face or replay completed parts. Preserve inline boundaries, geometry validation, materials, identities and truthful budgets; no live relation or new retained state.',
           'Resolve draft-local motifTemplates once per construction invocation to validated normalized motifs and camera offsets; inline arrays remain independent. Budget admission counts definitions once and full output per reference. Grids retain independent boundaries, counts, palette indexing, keys and order; pattern members and retained source/parts reuse the same definitions. Invalid definitions or missing references reject before writes; no semantic preset, inference or cross-invocation cache.',
           'Expand declarative planar convex surface grids from normalized cell motifs using one projected boundary; preserve explicit cell-major or motif-major order, keys, caller-authored per-cell fills, motif world offsets and exact editable vector output; reject unsupported planes and degeneracy rather than approximate them'
         ],
@@ -494,6 +499,8 @@
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/ornament-output-20261019.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/material-field-20261019.json',
           'apps/asyra-design/server/design-construction-schema.ts',
+          'apps/asyra-design/server/__tests__/face-boundary.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/face-boundary-20261025.json',
           'apps/asyra-design/server/design-preparation-examples.ts',
           'apps/asyra-design/server/__tests__/design-patterns.test.ts',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/component-selection-20261022.json',
@@ -503,6 +510,7 @@
           'apps/asyra-design/server/__tests__/design-preparation.test.ts'
         ],
         specRefs: [
+          '#face-referenced-surface-boundaries',
           '#projected-ovals',
           '#shared-normalized-motifs',
           '#preparation-source-reads-and-immutable-lifetime',

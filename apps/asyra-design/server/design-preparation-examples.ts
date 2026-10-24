@@ -298,7 +298,10 @@ const mixedComponentExample = {
             fill: '#abcdef',
             vertices: surfaceGridExample.draft.children[0].boundary
           },
-          surfaceGridExample.draft.children[0]
+          {
+            ...surfaceGridExample.draft.children[0],
+            boundary: { face: 'panel' }
+          }
         ]
       }
     ]
@@ -359,7 +362,15 @@ const composedMaterialExample = {
         axes: [{ count: 2, step: { x: 20, y: 0, z: 0 } }],
         members: [
           {
+            type: 'projected-face',
+            key: 'surface',
+            name: 'Surface',
+            fill: { template: 'edge' },
+            vertices: surfaceGridExample.draft.children[0].boundary
+          },
+          {
             ...surfaceGridExample.draft.children[0],
+            boundary: { face: 'surface' },
             motifs: { template: 'detail' }
           }
         ]

@@ -203,7 +203,7 @@ export const projectedFaceSchema = {
         }
       },
       description:
-        'Analytic planar ellipse: independent nonzero world radius vectors encode size/direction; equal perpendicular radii=circle. Creates an editable oval with rotation and world material phase. No segments or contour approximation. Ordinary node/extent budgets apply; edge-on projection rejects.'
+        'Analytic ellipse: independent nonzero world radii encode size/direction; equal perpendicular radii=circle. Creates an editable oval with rotation/world material phase; no segments/approximation. Node/extent budgets apply; edge-on rejects.'
     },
     vertices: {
       type: 'array',
@@ -218,7 +218,7 @@ export const projectedFaceSchema = {
     }
   },
   description:
-    'Planar face, shared projection, absolute root child/pattern member. Ordered editable polygon or oval; x/y/width/height/rotation are owner-owned. Signed offsets valid; Group preserves workspace geometry; Frame reports overflow. Reject degenerate/nonplanar/excess geometry.'
+    'Shared-projection planar root child/member: ordered editable polygon/oval. Owner computes x/y/width/height/rotation. Signed offsets valid; Group preserves workspace geometry, Frame reports overflow. Reject degenerate/nonplanar/excess geometry.'
 }
 
 const worldPoint = projectedFaceSchema.properties.vertices.items
@@ -239,7 +239,19 @@ export const surfaceGridSchema = {
     type: { const: 'surface-grid' },
     key: { ...key, maxLength: 80 },
     name: { ...key, maxLength: 60 },
-    boundary: { type: 'array', minItems: 4, maxItems: 4, items: worldPoint },
+    boundary: {
+      anyOf: [
+        { type: 'array', minItems: 4, maxItems: 4, items: worldPoint },
+        {
+          type: 'object',
+          additionalProperties: false,
+          required: ['face'],
+          properties: { face: key }
+        }
+      ],
+      description:
+        'Corners or {face:key}: unique same-scope four-vertex projected-face; forward references allowed, no ellipse.'
+    },
     rows: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
     columns: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
     order: { enum: ['cell-major', 'motif-major'] },
@@ -256,7 +268,7 @@ export const surfaceGridSchema = {
     }
   },
   description:
-    'Absolute root child/pattern member; shared projection. Planar convex corners (0,0),(1,0),(1,1),(0,1); uniform rows/columns. Cell-local u/v, world offset; bilinear editable vectors, boundary/offset projected once. fills overrides fill cyclically per row-major cell (full list for irregular paint). cell-major=row-major cells then motifs; motif-major=motifs then row-major cells. Keys:gridKey-cellIndex-motifKey. Count rows*columns*resolved motifs plus other nodes. Budgets/windows apply; no approximation/clipping/lighting/hidden-face removal; keep irregular geometry explicit.'
+    'Shared-projection root child/member. Convex planar corners:(0,0),(1,0),(1,1),(0,1). Uniform cells; local u/v, world offset; bilinear vectors. fills overrides fill cyclically by row-major cell; full list for irregular paint. cell-major:cells/motifs; motif-major:motifs/cells; cells row-major. Keys:gridKey-cellIndex-motifKey. Cost:rows*columns*resolved motifs + other nodes. Budgets/windows apply; no approximation/clipping/lighting/hidden-face removal. Irregulars explicit.'
 }
 
 export const designPatternSchema = {
@@ -296,7 +308,7 @@ export const designPatternSchema = {
       type: 'array',
       minItems: 1,
       description:
-        'Optional sorted nonoverlapping flat instance intervals [start,end), zero-based, last axis fastest. Only selected instances are computed. Keep original indices and palette phase when restoring deferred ranges in a later artifact. Omit a whole pattern rather than sending an empty selection.',
+        'Sorted disjoint flat [start,end), zero-based, last axis fastest. Compute selected only; retain indices/palette phase across artifacts. Omit pattern for empty selection.',
       items: {
         type: 'object',
         additionalProperties: false,
@@ -324,7 +336,7 @@ export const designPatternSchema = {
         ]
       },
       description:
-        'Flat face/grid component, unique keys, shared root projection. No nested patterns/containers/new parent. Instance/member/grid order; palettes restart per instance; world fields translate. Keys:patternKey-instanceIndex-memberOutputKey; generated keys/names <=160 characters.'
+        'Flat face/grid members; unique keys, root projection, no nesting/new parent. Order:instance/member/grid; palettes restart per instance; world fields translate. Keys:patternKey-instanceIndex-memberOutputKey; keys/names <=160 chars.'
     },
     faces: {
       type: 'array',
@@ -355,5 +367,5 @@ export const designPatternSchema = {
     }
   },
   description:
-    'Absolute root, shared projection. faces or members (exclusive); members forbids fills. Translate origin + axes, last axis fastest. Order: instance, member/face, grid. faces fills cycle by original instance index; otherwise retain materials. No lighting/sorting/clipping/inference; irregulars stay explicit. Cost=root + selected instances * objects/points; omitted ranges cost zero. Primitive limits apply; windows have no 1000-item cap; apply slices automatically.'
+    'Absolute root; shared projection. faces XOR members; members forbids fills. origin+axes translation, last axis fastest. Order:instance/member/grid. faces fills cycle by original instance index; otherwise retain materials. No lighting/sorting/clipping/inference; irregulars explicit. Cost:root+selected instances*objects/points; omitted ranges cost zero. Primitive limits apply; windows uncapped by 1000; automatic apply slices.'
 }

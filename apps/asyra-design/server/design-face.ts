@@ -27,6 +27,69 @@ const point = (v: unknown): Point => {
       : fail()
   return { x: read('x'), y: read('y'), z: read('z') }
 }
+/** Resolve source geometry before compilation or slicing; never add source nodes. */
+export const resolveSurfaceBoundaries = (input: unknown): unknown => {
+  if (!record(input) || !Array.isArray(input.children)) return input
+  let remaining = limits.expandedNodes - 1
+  const scope = (members: unknown[], patterns = true): unknown[] => {
+    remaining -= members.length
+    if (remaining < 0)
+      throw new Error('Invalid surface source: source node limit exceeded.')
+    let index: Map<unknown, Record<string, unknown> | null> | undefined
+    let changed = false
+    const result = members.map((member) => {
+      if (!record(member)) return member
+      if (
+        patterns &&
+        member.type === 'pattern' &&
+        Array.isArray(member.members)
+      ) {
+        const resolved = scope(member.members, false)
+        if (resolved === member.members) return member
+        changed = true
+        return { ...member, members: resolved }
+      }
+      if (member.type !== 'surface-grid' || Array.isArray(member.boundary))
+        return member
+      const reference = member.boundary
+      const invalid = (): never => {
+        throw new Error(
+          'Invalid surface grid boundary reference: use boundary:{face:key} for exactly one four-vertex projected-face in the same root children or pattern members scope, or supply four explicit corners. No canvas changes were made.'
+        )
+      }
+      if (
+        !record(reference) ||
+        Object.keys(reference).length !== 1 ||
+        typeof reference.face !== 'string' ||
+        !reference.face.trim() ||
+        reference.face.length > 160
+      )
+        return invalid()
+      if (!index) {
+        index = new Map()
+        for (const item of members)
+          if (record(item)) {
+            const key = item.key
+            index.set(key, index.has(key) ? null : item)
+          }
+      }
+      const target = index.get(reference.face)
+      if (
+        !target ||
+        target.type !== 'projected-face' ||
+        target.ellipse !== undefined
+      )
+        return invalid()
+      const vertices = target.vertices
+      if (!Array.isArray(vertices) || vertices.length !== 4) return invalid()
+      changed = true
+      return { ...member, boundary: vertices }
+    })
+    return changed ? result : members
+  }
+  const children = scope(input.children)
+  return children === input.children ? input : { ...input, children }
+}
 /** Native ovals have object cost; explicit polygons own path command cost. */
 export const facePointCount = (value: unknown): number => {
   if (!record(value) || value.ellipse !== undefined) return 0
