@@ -324,8 +324,9 @@ These development notes are not published release summaries.
 {
   "change": "release-guidance-closeout-integration",
   "owner": "Release guidance verification",
-  "summary": "Retain exact cross-version evidence in CI, execute registered Cloudflare workflow tests, and synchronize persistent rule references and Inspector snapshots before archival.",
+  "summary": "Retain exact cross-version evidence in CI, execute registered Cloudflare workflow tests, keep sitemap assertions aligned with the public inventory, and synchronize persistent rule references and Inspector snapshots before archival.",
   "sources": [
+    "apps/asyra-framework-site/__tests__/e2e/site-links.spec.ts",
     "docs/public/generated/source-map.json",
     "scripts/__tests__/ci-scope.test.mjs",
     "scripts/__tests__/fixtures/retained-app-update-evidence.json",

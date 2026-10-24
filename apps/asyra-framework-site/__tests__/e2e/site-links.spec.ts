@@ -45,7 +45,7 @@ test('the sitemap includes every independently checked public page', async ({
     ([, location]) => new URL(location).pathname
   )
 
-  expect(routes).toHaveLength(51)
+  expect(routes).toHaveLength(publicRoutes.length)
   expect([...routes].sort()).toEqual([...publicRoutes].sort())
 })
 
