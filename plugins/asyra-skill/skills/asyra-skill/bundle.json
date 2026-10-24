@@ -10,7 +10,7 @@
     "docs/public/build/feature-session.md": "91bcc101100bc3ea991fb247e7e0bf5c0a5a08f56fa76294c5fb3bfa14eb9284",
     "docs/public/build/persistence-migration.md": "37200b166098232b1097511b0aa0ce704a75c2fc853d3fb5e78ca1eccec38c65",
     "docs/public/build/render-boundary.md": "8610eaa7d7e318f47327e2514ab0f9db021f539fe4ba220b5c5fa0baa394cf28",
-    "docs/public/index.md": "163cc0659ef45a29ea7cf6b13fbcd4062b8e1e47a4b54a63c93f3435d2277650",
+    "docs/public/index.md": "bff730cbf00018b8fd54549e5f2a07464c76cfea16e5364654912d4a537af2ad",
     "docs/public/learn/canonical-state.md": "c85a25e7c15df4a75f64794d0468e6d92050ef3b77f2f52083d3021121298012",
     "docs/public/learn/intent-and-features.md": "c0a40a212c6d163a2aa8b406d89731814ee36888f0e59da0706cee52287a5b83",
     "docs/public/learn/projection-registration-replacement.md": "1283cef149e402742780622fcb020d51509abf9499933597f90d8dbb60cee572",
@@ -20,7 +20,7 @@
     "docs/public/reference/support-release.md": "79888ae4681529bb11ffa09ec7dec3850cff48d14945b8fe21de12d364df1caa",
     "docs/public/start/create-design-app.md": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
     "docs/public/start/custom-composition.md": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
-    "docs/public/start/extend-with-ai.md": "49a2da62553e2edf5c17ec6680ab2e34b9a2169a8bdda878be5435093d0f252e"
+    "docs/public/start/extend-with-ai.md": "07a55a414cbd753c3d7eb36e7e1c32c2328629fbf2a700e83f994c2ee78d25a7"
   },
   "referenceVersions": {
     "@asyra/ai-agent-runtime": "0.5.1",
@@ -59,7 +59,7 @@
     "skills/asyra-skill/references/docs/public/build/feature-session.md": "b049e3e094d71f8ec5932102b2eaf1d280c5f54f8861b05dfe75e9f7214a280c",
     "skills/asyra-skill/references/docs/public/build/persistence-migration.md": "824ebde74098da8c7d9cef2d55d678e82e66d439d9801b372ad51c840a4f13fd",
     "skills/asyra-skill/references/docs/public/build/render-boundary.md": "d2e60fb69da6927b3938e9e12133948d2960a13581fa3221b6ef6b655420cdd0",
-    "skills/asyra-skill/references/docs/public/index.md": "e4da8df16f2e2f2e78f6ab1fe46522cf4c62dcad4cbb17a2af629f899f443481",
+    "skills/asyra-skill/references/docs/public/index.md": "adec94dfe68900f5288117099ed89eabb6a4a252ef20e822464df8c8e624eb04",
     "skills/asyra-skill/references/docs/public/learn/canonical-state.md": "56d00885cf48d44342683b0458ab33b130882da5773495dba30d4129cc712320",
     "skills/asyra-skill/references/docs/public/learn/intent-and-features.md": "0372d66820e20d85cd5ad4e795d152f0fb5a25d7f1a2b4265cb39733aac280a4",
     "skills/asyra-skill/references/docs/public/learn/projection-registration-replacement.md": "2ab11f417be72c1182136c62072705d65fa2de01440c516f4963f3f41e0bdd62",
@@ -69,7 +69,7 @@
     "skills/asyra-skill/references/docs/public/reference/support-release.md": "f486d597eeed75aff49a8cac1f2720d7eebc43d000cb1077ae4212851bfe08dc",
     "skills/asyra-skill/references/docs/public/start/create-design-app.md": "b6dc00b4c1273bf2543122b5b1824f54ff7eff44ee3b03561243b58a2900a434",
     "skills/asyra-skill/references/docs/public/start/custom-composition.md": "ead489fa5c0918b407b064727fae78dd9d4169ec390b67622a1df99f27d92468",
-    "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "b12b1a328ad9c17e00a2a0ba79435f9ff7b4446b6e1a2fe2726b17c33a200b03"
+    "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "a6a3f2eb807455fce4603a20883966f8c736552d5454f3a59a7c5716d5ea420b"
   },
-  "contentDigest": "1b1f39391caf976696ce54eb4c6e4f71521cd0eecfdbe9487ce921ab966bd58b"
+  "contentDigest": "3151123fb8f135b3ac308bd0b66eb2700b4167992b6c3b79d76545faa343d75c"
 }

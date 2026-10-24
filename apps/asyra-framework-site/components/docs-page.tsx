@@ -74,7 +74,12 @@ export async function DocumentationPage({ pageId }: { pageId: string }) {
   return (
     <SiteFrame>
       <FoundationPageHero
-        aside={<SearchDialog records={searchRecords} />}
+        aside={
+          <SearchDialog
+            pageCount={content.pages.length}
+            records={searchRecords}
+          />
+        }
         className="docs-hero"
       >
         <p className="support-label">Documentation - {page.section}</p>

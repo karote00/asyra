@@ -156,6 +156,16 @@
   ],
   "flowInspectorValidationWorkspaceDirectory": "tools/flow-inspector",
   "repositoryScriptGroups": {
+    "appUpdateFixtures": {
+      "ownsInputs": true,
+      "patterns": [
+        "fixtures/app-update-text-consumer/**",
+        "fixtures/app-update-text-subsequent/**",
+        "fixtures/app-update-text-cross-version/**"
+      ],
+      "tests": ["scripts/__tests__/app-update-fixtures.test.mjs"],
+      "requiresFrameworkDeclarations": false
+    },
     "developerAgent": {
       "ownsInputs": true,
       "patterns": [
@@ -196,7 +206,8 @@
         "scripts/__tests__/task-context.test.mjs",
         "scripts/__tests__/ci-scope.test.mjs",
         "scripts/__tests__/workspace-automation.test.mjs",
-        "scripts/__tests__/changeset-pr-check.test.mjs"
+        "scripts/__tests__/changeset-pr-check.test.mjs",
+        "scripts/docs/__tests__/release-update-guidance.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
     },
@@ -280,6 +291,7 @@
     },
     "workspaceAutomation": {
       "patterns": [
+        "scripts/__tests__/fixtures/retained-app-update-evidence.json",
         "package.json",
         "apps/*/package.json",
         "packages/*/package.json",
@@ -322,13 +334,25 @@
       "patterns": [
         "scripts/release-*",
         "scripts/framework-release-*",
-        ".changeset/config.json"
+        ".changeset/config.json",
+        "scripts/publish-framework-release.js",
+        "scripts/publish-create-app.js",
+        "scripts/create-app-release-artifacts.mjs",
+        "scripts/cloudflare-release-guidance.mjs",
+        "scripts/app-cloudflare.mjs",
+        "scripts/__tests__/fixtures/release-guidance.mjs",
+        ".github/workflows/app-cloudflare.yml",
+        ".github/workflows/site-cloudflare.yml"
       ],
       "tests": [
         "scripts/__tests__/release-automation.test.mjs",
         "scripts/__tests__/release-records.test.mjs",
         "scripts/__tests__/framework-release-publisher.test.mjs",
-        "scripts/__tests__/framework-release-artifacts.test.mjs"
+        "scripts/__tests__/framework-release-artifacts.test.mjs",
+        "scripts/__tests__/release-guidance.test.mjs",
+        "scripts/__tests__/app-cloudflare.test.mjs",
+        ".github/__tests__/app-cloudflare.test.mjs",
+        ".github/__tests__/site-cloudflare.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
     },
@@ -454,7 +478,8 @@
         "scripts/docs/__tests__/public-readme-inputs.test.mjs",
         "scripts/docs/__tests__/public-readme-validation.test.mjs",
         "scripts/docs/__tests__/support-policy-validation.test.mjs",
-        "scripts/docs/__tests__/public-source-map.test.mjs"
+        "scripts/docs/__tests__/public-source-map.test.mjs",
+        "scripts/docs/__tests__/release-update-guidance.test.mjs"
       ],
       "requiresFrameworkDeclarations": true
     },
@@ -486,6 +511,7 @@
     ".github/workflows/production-artifacts.yml"
   ],
   "registeredScriptTests": [
+    "scripts/__tests__/app-update-fixtures.test.mjs",
     "apps/asyra-sim/scripts/__tests__/e2e-ci-groups.test.mjs",
     "apps/asyra-fieldscope/scripts/__tests__/e2e-ci-groups.test.mjs",
     "scripts/__tests__/agent-hook-adapter.test.mjs",
@@ -535,7 +561,11 @@
     "scripts/__tests__/app-cloudflare.test.mjs",
     "scripts/__tests__/cloudflare-headers.test.mjs",
     "scripts/__tests__/hosting-retirement.test.mjs",
-    "scripts/__tests__/plan-flow-documents.test.mjs"
+    "scripts/__tests__/plan-flow-documents.test.mjs",
+    "scripts/docs/__tests__/release-update-guidance.test.mjs",
+    "scripts/__tests__/release-guidance.test.mjs",
+    ".github/__tests__/app-cloudflare.test.mjs",
+    ".github/__tests__/site-cloudflare.test.mjs"
   ],
   "contractOnlyInputs": [
     "tools/flow-inspector/control-plane/ci-script-selection.cjs",

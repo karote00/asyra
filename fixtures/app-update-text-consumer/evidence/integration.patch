@@ -1,0 +1,483 @@
+diff --git a/README.md b/README.md
+index d6ec166..1a8cde8 100644
+--- a/README.md
++++ b/README.md
+@@ -19,3 +19,60 @@ Do not import workspace source or change Framework packages to satisfy a test.
+ 
+ The maintainer's verification record is in `VERIFICATION.md`. It is not input
+ to the independent integration conversation.
++
++## Text adoption - 2026-10-23
++
++Adopted `text-official-fields-example-1`, guide revision 2, for the equivalent
++layout-unit fields case. Target source:
++`7bf3655242e6adca9ac7d81ff57d17df9b310c9e`. Installed Core 0.5.7, Preset 0.5.8
++and Utils 0.5.2 expose the required public APIs. The installed direct package
++versions match
++`updates/target-artifacts.json`; `yarn.lock` resolves the supplied local candidate
++artifacts. The attachment also lists packages not installed in this consumer;
++it is not a claim that every attached package is used. The attachment records
++their SHA-256 identities;
++archive digests were not independently recomputed because the archives are
++outside this consumer. This is local-candidate adoption, not npm release
++verification or a complete release-to-release dependency comparison.
++
++`src/definitions.ts` now installs the official Text schema and property base,
++redefines it before startup with the three original metadata fields, extends the
++official component aliases and registers the official renderer once. Official
++line-height/spacing validators and defaults are shared by Feature writes and the
++loader through the composed schema. The renderer supplies layout bounds and hit
++area behavior as well as drawing. No local typography definitions or duplicate
++renderer remain.
++
++Retained: `approvalStatus`, `sourceRecordId`, `labelCategory`, their validation and
++persistence/projection policies, chart typography and source references, and all
++existing actions in `src/runtime.ts`. The separate App projections and panel
++remain type-scoped and preserve subscription cleanup. There is no equivalent
++exported official App action to replace the local transaction/approval paths.
++The official example's string-based selection projection is intentionally not
++installed: charts also contain `text` and must keep their own controls. There
++are no official field overrides. Rich text, IME, full canvas editing, the official
++example's UI panel and any subsequent update remain outside this adoption.
++
++Document schema remains version 2 with unchanged identities and representation.
++The separately supported version 1 multiplier conversion in `src/documents.ts`
++remains registered through `registerLoadHook`; 1.5 at font size 16 becomes 24
++layout units exactly once. Invalid/overflowing conversions and invalid metadata
++fail before apply. Original `test-data/current.json` and
++`test-data/multiplier.json` are unchanged; no production storage was accessed.
++
++Verification on the working source based on consumer commit
++`719c414b7d8a80685ed042d1e1742bc32e09cb39` plus this uncommitted adoption diff:
++`yarn test` passed 14 tests, `yarn typecheck`, `yarn lint` and `yarn build` passed.
++The original 10-test baseline passed; the added adoption test failed against the
++old local renderer before implementation. Permanent tests now also cover official
++field contracts, fresh defaults, typography boundaries, renderer inputs/bounds/hit
++area, conversion overflow and no repeated conversion. Existing preservation
++assertions were retained. Logs are in `test-results/text-adoption/`.
++
++Evidence limits: the suite uses jsdom canvas stubs, not browser pixel validation.
++The pre-existing selection-overlay warning remains; the production build warns
++about chunks above 500 kB. Guide source links were accessible and installed
++composition APIs were inspected. No blocking guide information was missing for
++this selected case; a verified historical release delta and published package
++availability remain unspecified. No dependency upgrades, commits or pushes were
++performed.
+diff --git a/src/__tests__/text-preservation.test.ts b/src/__tests__/text-preservation.test.ts
+index 3390c6d..5b1380a 100644
+--- a/src/__tests__/text-preservation.test.ts
++++ b/src/__tests__/text-preservation.test.ts
+@@ -1,3 +1,6 @@
++import initialCore from '@asyra/core'
++import { getElementGeometryLocalBounds } from '@asyra/utils'
++import { TEXT_PROPERTY_SCHEMA, TEXT_RENDER_STRATEGY } from '@asyra/preset'
+ import { afterEach, describe, expect, it, vi } from 'vitest'
+ import original from '../../test-data/current.json'
+ import multiplier from '../../test-data/multiplier.json'
+@@ -26,6 +29,124 @@ afterEach(async () => {
+ })
+ 
+ describe('Text consumer preservation', () => {
++  it('installs the official renderer once and uses official field contracts', async () => {
++    const register = vi.spyOn(initialCore, 'registerRenderStrategy')
++    const app = await open()
++    const textRegistrations = register.mock.calls.filter(
++      ([type]) => type === 'text'
++    )
++    expect(textRegistrations).toHaveLength(1)
++    expect(textRegistrations[0][1]).toBe(TEXT_RENDER_STRATEGY)
++    const graphic = {
++      clear: vi.fn(),
++      text: vi.fn(),
++      x: 0,
++      y: 0,
++      hitArea: { contains: (_x: number, _y: number) => false }
++    }
++    const draw = textRegistrations[0][1]
++    draw(
++      graphic as unknown as Parameters<typeof draw>[0],
++      app.core.getElementComputedData('text-1') as unknown as Parameters<
++        typeof draw
++      >[1]
++    )
++    expect(graphic.text).toHaveBeenCalledExactlyOnceWith(
++      expect.objectContaining({
++        text: 'Quarterly report',
++        lineHeight: 24,
++        letterSpacing: 1.5,
++        width: 200,
++        height: 80
++      })
++    )
++    expect(graphic).toMatchObject({ x: 10, y: 20 })
++    expect(
++      getElementGeometryLocalBounds(
++        graphic as unknown as Parameters<
++          typeof getElementGeometryLocalBounds
++        >[0]
++      )
++    ).toEqual({ x: 0, y: 0, width: 200, height: 80 })
++    expect(graphic.hitArea.contains(100, 40)).toBe(true)
++    expect(graphic.hitArea.contains(201, 40)).toBe(false)
++    register.mockRestore()
++    for (const official of TEXT_PROPERTY_SCHEMA.fields) {
++      expect(
++        app.definition?.fields.find((field) => field.key === official.key)
++      ).toMatchObject(official)
++    }
++  })
++
++  it('creates untouched Text with official typography and retained metadata defaults', async () => {
++    const app = await open()
++    const element = app.core.createElement({
++      id: 'new-text',
++      x: 0,
++      y: 0,
++      type: 'text',
++      name: 'New Text'
++    })
++    expect(element).not.toBeNull()
++    expect(app.core.getElementComputedData('new-text')).toMatchObject({
++      lineHeight: 20,
++      letterSpacing: 0,
++      approvalStatus: 'draft',
++      sourceRecordId: '',
++      labelCategory: 'general'
++    })
++  })
++
++  it('enforces official typography boundaries without changing rejected values', async () => {
++    const app = await open()
++    for (const [key, values] of Object.entries({
++      lineHeight: [0, -1, 8193, NaN, Infinity],
++      letterSpacing: [-101, 101, NaN, Infinity]
++    })) {
++      for (const value of values) {
++        const before = await app.save()
++        expect(() =>
++          app.feature.editTypography('text-1', { [key]: value })
++        ).toThrow(`Invalid ${key}`)
++        expect(await app.save()).toEqual(before)
++      }
++    }
++    app.feature.editTypography('text-1', {
++      lineHeight: 8192,
++      letterSpacing: -100
++    })
++    expect(app.core.getElementComputedData('text-1')).toMatchObject({
++      lineHeight: 8192,
++      letterSpacing: -100
++    })
++    app.feature.editTypography('text-1', {
++      lineHeight: Number.MIN_VALUE,
++      letterSpacing: 100
++    })
++    expect(app.core.getElementComputedData('text-1')).toMatchObject({
++      lineHeight: Number.MIN_VALUE,
++      letterSpacing: 100
++    })
++  })
++
++  it('rejects overflowing multiplier conversion before apply and round-trips converted units once', async () => {
++    const app = await open(multiplier)
++    const saved = await app.save()
++    expect(saved.core.props['text-typography']).toMatchObject({
++      lineHeight: 24
++    })
++    app.load(saved)
++    expect(app.core.getElementComputedData('text-1')).toMatchObject({
++      lineHeight: 24
++    })
++    const invalid = structuredClone(multiplier)
++    invalid.core.props['text-typography'].lineHeight = 8192
++    const originalInput = JSON.stringify(invalid)
++    expect(() => app.load(invalid)).toThrow('Invalid lineHeight')
++    expect(await app.save()).toEqual(saved)
++    expect(JSON.stringify(invalid)).toBe(originalInput)
++  })
++
+   it('retains twelve unique fields, aliases and the shared chart relation', async () => {
+     const app = await open()
+     const fields = app.definition?.fields ?? []
+diff --git a/src/definitions.ts b/src/definitions.ts
+index 3780c9a..45a37e0 100644
+--- a/src/definitions.ts
++++ b/src/definitions.ts
+@@ -1,8 +1,16 @@
+-import type { Core, EngineNeutralRenderStrategy } from '@asyra/core'
++import type { Core } from '@asyra/core'
++import {
++  TEXT_COMPONENT_DEFINITION,
++  TEXT_COMPONENT_TYPE,
++  TEXT_PROPERTY_DEFINITION,
++  TEXT_PROPERTY_SCHEMA,
++  TEXT_PROPERTY_TYPE,
++  TEXT_RENDER_STRATEGY
++} from '@asyra/preset'
+ import type { PropertySchema } from '@asyra/utils'
+ 
+-export const TEXT_TYPE = 'text'
+-export const TYPOGRAPHY_TYPE = 'typography'
++export const TEXT_TYPE = TEXT_COMPONENT_TYPE
++export const TYPOGRAPHY_TYPE = TEXT_PROPERTY_TYPE
+ export const CHART_TYPE = 'chart-caption'
+ export const REFERENCE_TYPE = 'caption-reference'
+ export const STORAGE_SLOT = 'text-consumer-document'
+@@ -11,144 +19,74 @@ export const METADATA_UI = 'text-metadata'
+ export const TYPOGRAPHY_UI = 'text-controls'
+ export const CHART_UI = 'chart-caption-controls'
+ 
+-const range = (value: unknown, min: number, max: number) =>
+-  typeof value === 'number' &&
+-  Number.isFinite(value) &&
+-  value >= min &&
+-  value <= max
++const metadataFields = [
++  {
++    key: 'approvalStatus',
++    kind: 'string',
++    defaultValue: 'draft',
++    validate: (v) => v === 'draft' || v === 'approved'
++  },
++  {
++    key: 'sourceRecordId',
++    kind: 'string',
++    defaultValue: '',
++    validate: (v) => typeof v === 'string' && v.length <= 128
++  },
++  {
++    key: 'labelCategory',
++    kind: 'string',
++    defaultValue: 'general',
++    validate: (v) => v === 'general' || v === 'warning'
++  }
++] satisfies PropertySchema['fields']
+ 
+-export const localSchema: PropertySchema = {
+-  type: TYPOGRAPHY_TYPE,
+-  fields: [
+-    {
+-      key: 'text',
+-      kind: 'string',
+-      defaultValue: '',
+-      validate: (v) => typeof v === 'string' && v.length <= 100_000
+-    },
+-    {
+-      key: 'fontFamily',
+-      kind: 'string',
+-      defaultValue: 'sans-serif',
+-      validate: (v) =>
+-        typeof v === 'string' && v.trim().length > 0 && v.length <= 128
+-    },
+-    {
+-      key: 'fontSize',
+-      kind: 'number',
+-      defaultValue: 16,
+-      validate: (v) => range(v, Number.MIN_VALUE, 4096)
+-    },
+-    {
+-      key: 'fontWeight',
+-      kind: 'string',
+-      defaultValue: 'normal',
+-      validate: (v) => v === 'normal' || v === 'bold'
+-    },
+-    {
+-      key: 'fontStyle',
+-      kind: 'string',
+-      defaultValue: 'normal',
+-      validate: (v) => v === 'normal' || v === 'italic'
+-    },
+-    {
+-      key: 'textAlign',
+-      kind: 'string',
+-      defaultValue: 'left',
+-      validate: (v) => v === 'left' || v === 'center' || v === 'right'
+-    },
+-    {
+-      key: 'textColor',
+-      kind: 'string',
+-      defaultValue: '#000000',
+-      validate: (v) => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)
+-    },
+-    {
+-      key: 'lineHeight',
+-      kind: 'number',
+-      defaultValue: 20,
+-      validate: (v) => range(v, Number.MIN_VALUE, 8192)
+-    },
+-    {
+-      key: 'letterSpacing',
+-      kind: 'number',
+-      defaultValue: 0,
+-      validate: (v) => range(v, -100, 100)
+-    },
+-    {
+-      key: 'approvalStatus',
+-      kind: 'string',
+-      defaultValue: 'draft',
+-      validate: (v) => v === 'draft' || v === 'approved'
+-    },
+-    {
+-      key: 'sourceRecordId',
+-      kind: 'string',
+-      defaultValue: '',
+-      validate: (v) => typeof v === 'string' && v.length <= 128
+-    },
+-    {
+-      key: 'labelCategory',
+-      kind: 'string',
+-      defaultValue: 'general',
+-      validate: (v) => v === 'general' || v === 'warning'
+-    }
+-  ]
+-}
+-
+-// This local renderer predates adoption. The guide selects official rendering.
+-export const localTextRenderer: EngineNeutralRenderStrategy<
+-  Record<string, unknown>
+-> = (graphic, data) => {
+-  graphic.clear()
+-  graphic.text({
+-    x: 0,
+-    y: 0,
+-    width: data.width,
+-    height: data.height,
+-    text: String(data.text),
+-    fontFamily: String(data.fontFamily),
+-    fontSize: Number(data.fontSize),
+-    fontWeight: data.fontWeight as 'normal' | 'bold',
+-    fontStyle: data.fontStyle as 'normal' | 'italic',
+-    align: data.textAlign as 'left' | 'center' | 'right',
+-    lineHeight: Number(data.lineHeight),
+-    letterSpacing: Number(data.letterSpacing),
+-    color: String(data.textColor)
+-  })
+-  graphic.x = data.x
+-  graphic.y = data.y
++export const textSchema: PropertySchema = {
++  ...TEXT_PROPERTY_SCHEMA,
++  fields: [...TEXT_PROPERTY_SCHEMA.fields, ...metadataFields]
+ }
+ 
+ export function installText(core: Core) {
+-  core.registerPropertySchema(localSchema)
+-  const keys = localSchema.fields.map((field) => field.key)
+-  core.definePropertyComponent({
+-    type: TYPOGRAPHY_TYPE,
+-    defaults: Object.fromEntries(
+-      localSchema.fields.map((field) => [field.key, field.defaultValue])
+-    ),
+-    persistKeys: keys,
+-    valueKeys: keys
+-  })
+-  core.defineComponent({
+-    type: TEXT_TYPE,
+-    idPrefix: TEXT_TYPE,
+-    namePrefix: 'Text',
+-    properties: [
+-      { name: 'position', type: 'position', alias: ['x', 'y', 'rotation'] },
+-      { name: 'dimension', type: 'dimension', alias: ['width', 'height'] },
+-      { name: TYPOGRAPHY_TYPE, type: TYPOGRAPHY_TYPE, alias: keys }
++  core.registerPropertySchema(TEXT_PROPERTY_SCHEMA)
++  core.definePropertyComponent(TEXT_PROPERTY_DEFINITION)
++  const base = core.getPropertyTypeDefinition(TEXT_PROPERTY_TYPE)
++  if (!base) throw new Error('Missing official typography definition')
++  for (const field of metadataFields) {
++    if (base.fields.some((official) => official.key === field.key)) {
++      throw new Error(`Text extension requires contract review: ${field.key}`)
++    }
++  }
++  core.redefinePropertyType(TEXT_PROPERTY_TYPE, (current) => ({
++    ...current,
++    fields: [
++      ...current.fields,
++      ...metadataFields.map((field) => ({
++        ...field,
++        persist: true,
++        project: true,
++        unit: false
++      }))
+     ]
++  }))
++  core.defineComponent({
++    ...TEXT_COMPONENT_DEFINITION,
++    properties: TEXT_COMPONENT_DEFINITION.properties.map((property) =>
++      property.type === TEXT_PROPERTY_TYPE
++        ? {
++            ...property,
++            alias: [
++              ...(property.alias ?? []),
++              ...metadataFields.map((field) => field.key)
++            ]
++          }
++        : property
++    )
+   })
+-  core.registerRenderStrategy(TEXT_TYPE, localTextRenderer, {
+-    relations: [
+-      {
+-        name: 'property:typography',
+-        target: { kind: 'property', key: TYPOGRAPHY_TYPE },
+-        onTargetUnregister: 'unregister-source'
+-      }
+-    ]
++  core.registerRenderStrategy(TEXT_COMPONENT_TYPE, TEXT_RENDER_STRATEGY, {
++    relations: ['position', 'dimension', TEXT_PROPERTY_TYPE].map((key) => ({
++      name: `property:${key}`,
++      target: { kind: 'property', key },
++      onTargetUnregister: 'unregister-source'
++    }))
+   })
+ }
+ 
+@@ -176,7 +114,7 @@ export function installChart(core: Core) {
+       {
+         name: TYPOGRAPHY_TYPE,
+         type: TYPOGRAPHY_TYPE,
+-        alias: localSchema.fields.map((field) => field.key)
++        alias: textSchema.fields.map((field) => field.key)
+       },
+       { name: REFERENCE_TYPE, type: REFERENCE_TYPE, alias: ['sourceTextId'] }
+     ]
+diff --git a/src/documents.ts b/src/documents.ts
+index 6a999f2..3ddd311 100644
+--- a/src/documents.ts
++++ b/src/documents.ts
+@@ -1,5 +1,5 @@
+ import type { CoreRawData } from '@asyra/utils'
+-import { localSchema, TYPOGRAPHY_TYPE } from './definitions.js'
++import { textSchema, TYPOGRAPHY_TYPE } from './definitions.js'
+ 
+ export interface DocumentEnvelope {
+   documentVersion: number
+@@ -27,7 +27,7 @@ export function prepareDocument(input: unknown): CoreRawData {
+       }
+       values.lineHeight *= values.fontSize
+     }
+-    for (const field of localSchema.fields) {
++    for (const field of textSchema.fields) {
+       if (!field.validate?.(values[field.key]))
+         throw new Error(`Invalid ${field.key}`)
+     }
+diff --git a/src/runtime.ts b/src/runtime.ts
+index d64df5d..5073040 100644
+--- a/src/runtime.ts
++++ b/src/runtime.ts
+@@ -16,7 +16,7 @@ import {
+   TYPOGRAPHY_UI,
+   installText,
+   installChart,
+-  localSchema
++  textSchema
+ } from './definitions.js'
+ import { prepareDocument } from './documents.js'
+ 
+@@ -95,7 +95,7 @@ export function createDocumentRuntime(initial: unknown) {
+   const definition = core.getPropertyTypeDefinition('typography')
+   const update = (id: string, values: Record<string, unknown>) => {
+     for (const [key, value] of Object.entries(values)) {
+-      const field = localSchema.fields.find((field) => field.key === key)
++      const field = textSchema.fields.find((field) => field.key === key)
+       if (!field?.validate?.(value)) throw new Error(`Invalid ${key}`)
+     }
+     return runTransaction(

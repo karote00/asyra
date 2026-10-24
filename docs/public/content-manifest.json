@@ -266,6 +266,149 @@
       ]
     },
     {
+      "id": "updates/index",
+      "path": "updates/index.md",
+      "section": "Extend",
+      "title": "Update your App with an AI coding agent",
+      "description": "Select official update guides, retain App-owned extensions and give a coding agent enough context for first and subsequent integrations.",
+      "sources": [
+        "docs/ai/framework/packages/core.md",
+        "docs/ai/framework/packages/props-manager.md",
+        "docs/ai/framework/packages/persistence.md"
+      ],
+      "packages": ["@asyra/core", "@asyra/preset"]
+    },
+    {
+      "id": "updates/history",
+      "path": "updates/history.md",
+      "section": "Extend",
+      "title": "Release History and Update Coverage",
+      "description": "Find per-owner release summaries, verified predecessor boundaries, prerequisites and guide corrections; report gaps and revisit deferred adoption.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/text-cross-version-example-3",
+      "path": "updates/text-cross-version-example-3.md",
+      "section": "Extend",
+      "title": "Adopt Text Across Versions and Resume Partial Adoption",
+      "description": "Frozen revision-1 input used in the completed independent modeled Text acceptance; see revision 2 for digest and definition-read clarifications.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": ["@asyra/core", "@asyra/preset"]
+    },
+    {
+      "id": "updates/text-cross-version-example-3-r2",
+      "path": "updates/text-cross-version-example-3-r2.md",
+      "section": "Extend",
+      "title": "Adopt Text Across Versions and Resume Partial Adoption",
+      "description": "Revision 2 clarifies digest algorithms and composition-time reads after independent local acceptance with 31 tests; original input and evidence remain preserved.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": ["@asyra/core", "@asyra/preset"]
+    },
+    {
+      "id": "updates/releases/model-text-framework",
+      "path": "updates/releases/model-text-framework.md",
+      "section": "Extend",
+      "title": "Modeled Text Framework",
+      "description": "Retained candidate with shared spacing default 0.5; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/releases/model-text-app-1",
+      "path": "updates/releases/model-text-app-1.md",
+      "section": "Extend",
+      "title": "Modeled Text App 1",
+      "description": "Adopt official typography definitions and retain App extensions; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/releases/model-text-app-2",
+      "path": "updates/releases/model-text-app-2.md",
+      "section": "Extend",
+      "title": "Modeled Text App 2",
+      "description": "Resume deferred shared spacing default adoption; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/releases/model-text-app-3",
+      "path": "updates/releases/model-text-app-3.md",
+      "section": "Extend",
+      "title": "Modeled Text App 3",
+      "description": "Migrate App serialization to typed tracking after multiplier conversion; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/text-official-fields-example-1-r2",
+      "path": "updates/text-official-fields-example-1-r2.md",
+      "section": "Extend",
+      "title": "Adopt Official Text and Keep Your App Extensions",
+      "description": "Worked example, revision 2: adopt equivalent official Text fields while retaining custom metadata, actions, projections and saved data; independent local-candidate acceptance passed; published-package support and subsequent updates remain unverified.",
+      "sources": [
+        "packages/core/package.json",
+        "packages/preset/package.json",
+        "packages/core/src/index.ts",
+        "packages/core/src/core.ts",
+        "packages/preset/src/index.ts",
+        "packages/preset/src/props/components/text-component.ts",
+        "packages/preset/src/components/text.ts",
+        "apps/asyra-design/src/init/capabilities/init-text.ts",
+        "apps/asyra-design/src/properties/text.tsx"
+      ],
+      "packages": ["@asyra/core", "@asyra/preset"]
+    },
+    {
+      "id": "updates/text-official-fields-example-1-r3",
+      "path": "updates/text-official-fields-example-1-r3.md",
+      "section": "Extend",
+      "title": "Adopt Official Text and Keep Your App Extensions",
+      "description": "Worked example, revision 3: clarify shared defaults, browser acceptance and history limits; retain the original revision 2 independent acceptance.",
+      "sources": [
+        "packages/utils/src/propsManager/fills.ts",
+        "packages/core/package.json",
+        "packages/preset/package.json",
+        "packages/core/src/index.ts",
+        "packages/core/src/core.ts",
+        "packages/preset/src/index.ts",
+        "packages/preset/src/props/components/text-component.ts",
+        "packages/preset/src/components/text.ts",
+        "apps/asyra-design/src/init/capabilities/init-text.ts",
+        "apps/asyra-design/src/properties/text.tsx"
+      ],
+      "packages": ["@asyra/core", "@asyra/preset", "@asyra/utils"]
+    },
+    {
+      "id": "updates/text-spacing-example-2-r1",
+      "path": "updates/text-spacing-example-2-r1.md",
+      "section": "Extend",
+      "title": "Update Text Again and Preserve Intervening Extensions",
+      "description": "Modeled subsequent update: adopt a new spacing default using the existing adoption record while preserving intervening rejected approval, custom data and deferred UI; fresh-AI local-candidate acceptance passed with 29 tests; not a published release comparison.",
+      "sources": [
+        "packages/core/src/core.ts",
+        "packages/preset/src/props/components/text-component.ts",
+        "packages/preset/src/components/text.ts",
+        "packages/utils/src/propsManager/fills.ts"
+      ],
+      "packages": ["@asyra/core", "@asyra/preset", "@asyra/utils"]
+    },
+    {
+      "id": "updates/text-spacing-example-2-r2",
+      "path": "updates/text-spacing-example-2-r2.md",
+      "section": "Extend",
+      "title": "Update Text Again and Preserve Intervening Extensions",
+      "description": "Worked example: revision 1 independent acceptance: 29 tests; revision 2 existing-context rerun: 34 tests, not a new independent acceptance. Retained pre-update delivery includes candidate archives and public sources.",
+      "sources": [
+        "packages/core/src/core.ts",
+        "packages/preset/src/props/components/text-component.ts",
+        "packages/preset/src/components/text.ts",
+        "packages/utils/src/propsManager/fills.ts"
+      ],
+      "packages": ["@asyra/core", "@asyra/preset", "@asyra/utils"]
+    },
+    {
       "id": "reference/packages/ai-agent-runtime",
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",

@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 
+import {
+  prepareOrReuseGuidance,
+  registryPreparationBaseline,
+  readGuidance,
+  registryRecord,
+  recordGuidanceResult
+} from './release-guidance.mjs'
 import { createHash } from 'node:crypto'
-import { execSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -208,6 +215,41 @@ const prepareArtifacts = (repositoryRoot) => {
     path.join(artifactDirectory, FRAMEWORK_ARTIFACT_HANDOFF),
     `${JSON.stringify(manifest, null, 2)}\n`
   )
+  const guidanceFile = path.join(
+    repositoryRoot,
+    'tmp/framework-release-guidance.json'
+  )
+  const current = []
+  const deliveries = manifest.packages.map((pkg) => {
+    const artifact = {
+      id: pkg.name,
+      version: pkg.version,
+      integrity: pkg.integrity
+    }
+    const observed = registryPreparationBaseline(
+      repositoryRoot,
+      artifact,
+      sourceCommitSha,
+      guidanceFile
+    )
+    current.push(observed.current)
+    return {
+      id: pkg.name,
+      roots: [`packages/${pkg.name.slice('@asyra/'.length)}`],
+      baseline: observed.baseline,
+      artifact
+    }
+  })
+  prepareOrReuseGuidance(
+    guidanceFile,
+    {
+      root: repositoryRoot,
+      owner: 'framework',
+      sourceSha: sourceCommitSha,
+      deliveries
+    },
+    current
+  )
   process.stdout.write(
     `Framework artifact handoff READY: ${manifest.packages.length} packed packages from ${sourceCommitSha}\n`
   )
@@ -219,6 +261,61 @@ const cleanupArtifacts = (repositoryRoot) => {
   fs.rmSync(validationRoot, { recursive: true, force: true })
   fs.rmSync(pointerPath, { force: true })
   process.stdout.write('Framework release validation workspace cleaned\n')
+}
+
+export function recordFrameworkGuidance({
+  repositoryRoot,
+  runCommand = (command, args, options) =>
+    execFileSync(command, args, { ...options, encoding: 'utf8', stdio: 'pipe' })
+}) {
+  const guidance = readGuidance(
+    path.join(repositoryRoot, 'tmp/framework-release-guidance.json')
+  )
+  const consumer = readJson(
+    path.join(
+      repositoryRoot,
+      'tmp/framework-release-evidence/registry-only-consumer.json'
+    )
+  )
+  if (
+    consumer.status !== 'READY' ||
+    expectedConsumerPhases.some((phase) => !consumer.phases?.includes(phase)) ||
+    consumer.packages?.length !== guidance.deliveries.length
+  )
+    throw new Error('Registry consumer verification is missing or incomplete')
+  const records = guidance.deliveries.map(({ id, artifact }) => ({
+    artifact,
+    current: registryRecord(repositoryRoot, id, runCommand)
+  }))
+  for (const { artifact, current } of records) {
+    if (
+      current.version !== artifact.version ||
+      current.integrity !== artifact.integrity ||
+      !consumer.packages.some(
+        (pkg) =>
+          pkg.name === artifact.id &&
+          pkg.version === artifact.version &&
+          pkg.resolution === 'npm' &&
+          pkg.checksum
+      )
+    )
+      throw new Error(
+        'Framework registry or consumer evidence does not match the candidate'
+      )
+  }
+  for (const { artifact } of records)
+    recordGuidanceResult(
+      path.join(repositoryRoot, 'tmp/framework-release-guidance-result.json'),
+      guidance,
+      artifact.id,
+      'verified',
+      {
+        version: artifact.version,
+        integrity: artifact.integrity,
+        consumerEvidence:
+          'tmp/framework-release-evidence/registry-only-consumer.json'
+      }
+    )
 }
 
 const isDirectExecution =
@@ -233,9 +330,11 @@ if (isDirectExecution) {
   const args = process.argv.slice(2)
   if (
     args.length !== 1 ||
-    !['--prepare', '--cleanup', '--plan'].includes(args[0])
+    !['--prepare', '--cleanup', '--record', '--plan'].includes(args[0])
   ) {
-    throw new Error('Specify exactly one of --prepare, --cleanup, or --plan')
+    throw new Error(
+      'Specify exactly one of --prepare, --cleanup, --record, or --plan'
+    )
   }
   if (args[0] === '--plan') {
     process.stdout.write(
@@ -252,6 +351,8 @@ if (isDirectExecution) {
     )
   } else if (args[0] === '--prepare') {
     prepareArtifacts(repositoryRoot)
+  } else if (args[0] === '--record') {
+    recordFrameworkGuidance({ repositoryRoot })
   } else {
     cleanupArtifacts(repositoryRoot)
   }

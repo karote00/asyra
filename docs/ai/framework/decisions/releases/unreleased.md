@@ -198,3 +198,35 @@
   excluded. The closeout workflow, checker and Skill now express that boundary.
 - Completed record:
   [Preset 3D Foundation and App Migration](/docs/ai/framework/plans/completed/preset-3d-foundation-plan.md).
+## 2026-10-24 - Complete App Update Guidance and Text Acceptance
+
+- Context: Consumers need to identify official changes while retaining their
+  App-owned extensions and saved data through repeated updates.
+- Decision: Close Tasks 1-4 using official definitions as the base, versioned
+  update guides, adoption records and existing define/register/migration APIs.
+  Whole-template merging and new CLI/runtime update machinery are not required.
+- Outcome: Task 4 is complete. Its first independent acceptance (29 tests),
+  revision-2 existing-context rerun (34), and permanent fixture (41) remain
+  distinct. The later checks do not reopen the independent-acceptance requirement.
+  Task 3 evidence and all original acceptance artifacts are preserved.
+- Consequences: Guidance is accepted within the pinned local-candidate model.
+  Published release-to-release support, package releases, deployment and merge
+  are separate operations; none is performed or authorized by closeout.
+- Completed record: `docs/ai/framework/plans/completed/app-cli-update-and-migration-plan.md`.
+
+## 2026-10-24 - Complete Release Update Guidance
+
+- Context: Consumers need complete cross-version changes and applicable guide
+  revisions while preserving partial adoption, App extensions and saved data.
+- Decision: Close Tasks 1-4 with formal development rules, artifact-bound checks
+  in existing npm/Cloudflare release owners, public history and Text acceptance.
+  Keep official definitions as the base and integrate consumer extensions using
+  existing define/register/migration capabilities.
+- Outcome: Preserve the original independent input/result archives and earlier
+  Text evidence. Revision-2 digest/definition errata and permanent-fixture
+  maintainer replay remain separate records, not new independent acceptance.
+- Consequences: The modeled/local-candidate acceptance does not claim published
+  release-to-release support. Closeout creates no version, tag, package release,
+  deployment or merge. Existing pending release notes retain their own lifecycle.
+- Completed record:
+  [Release Update Summaries and Consumer Integration Guidance](/docs/ai/framework/plans/completed/release-update-guidance-plan.md).

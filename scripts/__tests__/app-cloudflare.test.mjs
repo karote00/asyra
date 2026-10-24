@@ -11,7 +11,9 @@ import {
 } from '../app-cloudflare.mjs'
 
 test('static delivery preserves assets and headers without publishing source or services', async (t) => {
-  const root = await mkdtemp(path.join(import.meta.dirname, '.cloudflare-'))
+  const temporaryRoot = path.resolve(import.meta.dirname, '../../tmp')
+  await mkdir(temporaryRoot, { recursive: true })
+  const root = await mkdtemp(path.join(temporaryRoot, 'cloudflare-'))
   t.after(() => rm(root, { recursive: true, force: true }))
   for (const app of DEPLOYMENT_APPS) {
     await mkdir(path.join(root, app.output, 'assets'), { recursive: true })
@@ -67,13 +69,13 @@ test('publication requires an exact source revision', async () => {
   await assert.rejects(prepareApps({ sha: 'main' }), /full Git commit/)
 })
 
-test('project admission creates only missing fixed projects and validates their identity', async () => {
+test('project admission validates existing fixed projects and their identity', async () => {
   const result = {
     name: 'asyra-design',
     production_branch: 'main',
     subdomain: 'asyra-design.pages.dev'
   }
-  for (const missing of [false, true]) {
+  for (const missing of [false]) {
     const calls = []
     await ensureProject('asyra-design', {
       accountId: 'a'.repeat(32),
@@ -226,4 +228,21 @@ test('public verification uses the native App policy and rejects a missing secur
     verifyDeployment('asyra-sim', sha),
     /x-content-type-options/
   )
+})
+
+test('direct project creation stops before POST without matching release guidance', async () => {
+  const calls = []
+  await assert.rejects(
+    ensureProject('asyra-design', {
+      root: path.join(import.meta.dirname, 'missing-guidance-fixture'),
+      accountId: 'a'.repeat(32),
+      token: 'test-token',
+      request: async (url, options) => {
+        calls.push(options.method ?? 'GET')
+        return { status: 404 }
+      }
+    }),
+    /Missing release guidance/
+  )
+  assert.deepEqual(calls, ['GET'])
 })

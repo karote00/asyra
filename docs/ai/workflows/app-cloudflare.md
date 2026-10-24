@@ -1,5 +1,10 @@
 # Cloudflare App Delivery
 
+Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
+for pending impact notes, necessary integration guides and preservation checks.
+The existing publication jobs enforce artifact-bound summary and guide checks.
+See that rule for candidate files, coverage gaps and per-owner recovery.
+
 Task context: standalone continuation of Cloudflare static delivery. This contract
 covers App hosting, deployment verification and the later website entry update.
 It does not change App runtime, backend, AI or Inspector behavior.
@@ -54,12 +59,22 @@ policy must remain main-only. Credentials never enter the build or artifacts.
 No additional token or permission is required. The retained environment name
 also serves the primary website workflow.
 
-The helper admits only the three registry identities, creates a missing Direct
-Upload project with production branch `main`, and rejects changed identity,
-branch, subdomain or Git integration. An API error does not trigger creation.
+The helper admits only the three registry identities and rejects changed identity,
+branch, subdomain or Git integration. Its project-creation path now requires
+matching release guidance before POST; an unestablished first release is an
+explicit coverage gap, not an automatic empty baseline. An API error does not trigger creation.
 Wrangler 4.149.0 runs in an isolated npm directory, then uploads only the
 verified static directory from the same workflow run. Obsolete main revisions
-are skipped before publication. Per-App jobs report failures independently.
+are skipped before publication. Per-App jobs report failures independently. Guidance preparation reads the current
+provider deployment ID and confirms the public SHA, then admission rechecks the
+same source, downloaded bytes and online baseline immediately before upload.
+Before upload, the workflow saves an immutable
+`release-guidance-<app>-<source>` candidate checkpoint. It restores that checkpoint
+on retries, including new runners and later dispatches of the same source.
+Results use separate `-result-<run-attempt>` artifacts. A retained checkpoint is
+not overwritten within the same run; another dispatch saves the identical
+candidate in its own run. Both remain outside the uploaded static files. The
+website workflow follows the same protocol with owner `asyra-framework`.
 
 `deployment-version.json` records the exact source SHA. Public verification
 waits for it with at most 30 read attempts (two seconds apart, ten-second request
@@ -85,11 +100,34 @@ APP_PUBLIC_TEST=1 node --test --test-concurrency=1 '--test-name-pattern=^(Design
 Check GitHub Actions **Apps - Cloudflare Pages**, each publication job's summary,
 and Cloudflare **Workers & Pages** for the corresponding project. A failed build
 leaves existing deployments intact. A failed public check is not a successful
-release; inspect the project and source marker before retrying. Correct the
-source through a PR, or dispatch a verified current `main` after an operational
-failure is resolved. No automatic rollback or mutation retry is performed.
+release; inspect the project and source marker before retrying. For an operational
+failure, rerun the failed publication job or dispatch the same current `main`:
+`restore` retrieves the original candidate/result, `prepare` preserves its
+baseline and summary, and `check` verifies its bytes and recorded deployment ID.
+A later failed upload retains the last known published deployment receipt and its
+verification result. `deploymentId`, `published` and `verified` describe that
+recorded deployment; `status`, `attemptPublished` and `attemptVerified` describe
+the latest attempt. Thus a failed retry stays failed without invalidating a
+previously verified baseline. A newly published deployment uses its own
+verification result and cannot inherit an earlier deployment's success. No
+automatic rollback or mutation retry is performed.
+
+A newer source cannot silently use an uploaded but unverified predecessor. Verify
+and record that predecessor against its original candidate before proceeding;
+source fixes still require the normal PR and release process. Missing or expired
+candidate/results stop publication with a coverage gap, including if an upload
+succeeded without leaving a deployment receipt. Recover retained original evidence
+and verify the deployment; do not regenerate a target-to-target empty summary.
+The workflows retain these operational artifacts for seven days. They are not
+permanent public release history (Task 3); a release after that retention window
+requires recovered verified evidence. Production sources predating the guidance
+protocol retain their existing provider/marker baseline checks.
 Bounded readiness reads
 allow initial DNS/edge propagation, including transient 522 responses; they never
 accept an old revision or a different App.
 
+Guidance baseline authority: <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/get/" target="_blank" rel="noopener noreferrer">Cloudflare project canonical deployment</a>.
+
 API authority: <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/create/" target="_blank" rel="noopener noreferrer">Cloudflare Pages project creation</a> and <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/get/" target="_blank" rel="noopener noreferrer">project lookup</a>.
+
+Recovery transport: <a href="https://docs.github.com/en/rest/actions/artifacts" target="_blank" rel="noopener noreferrer">GitHub Actions artifacts</a> and <a href="https://cli.github.com/manual/gh_run_download" target="_blank" rel="noopener noreferrer">GitHub CLI artifact download</a>.

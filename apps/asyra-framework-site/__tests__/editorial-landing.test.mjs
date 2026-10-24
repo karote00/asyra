@@ -138,7 +138,27 @@ test('the public llms discovery surface mirrors the generated documentation inve
     'utf8'
   )
 
-  assert.equal(websiteLlms, generatedLlms)
+  const entries = (source) => [
+    ...source.matchAll(/^- \[([^\]]+)\]\(([^)]+)\): (.+)$/gm)
+  ]
+  const repositoryEntries = entries(generatedLlms)
+  const websiteEntries = entries(websiteLlms)
+  assert.equal(websiteEntries.length, repositoryEntries.length)
+  for (const [
+    index,
+    [, title, href, description]
+  ] of websiteEntries.entries()) {
+    const [, repositoryTitle, repositoryHref, repositoryDescription] =
+      repositoryEntries[index]
+    assert.equal(title, repositoryTitle)
+    assert.equal(description, repositoryDescription)
+    assert.equal(
+      href,
+      repositoryHref === 'index.md'
+        ? '/docs'
+        : `/docs/${repositoryHref.slice(0, -3)}`
+    )
+  }
   assert.match(websiteLlms, /^# Asyra Framework/m)
   assert.doesNotMatch(websiteLlms, /docs\/ai\//)
 })

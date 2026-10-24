@@ -363,12 +363,23 @@ Implementation entry points:
 
 Apply editable native text with canonical save and replay behavior. Keep native text properties editable and retain them through save, Undo and Redo. Invalid text preparation does not silently rasterize editable content.
 
+Canvas input remains transient until an accepted commit; cancellation, empty creation and stale targets do not create writes or history. Typography commits preserve automatic sizing in the same action. Legacy document loading preserves Text paint through the App migration. Shared Fill controls use the separate `edit-fills` responsibility.
+
 Authority: [Edit native text](editable-text.md).
 
 Implementation entry points:
 
 - `apps/asyra-design/src/properties/text.tsx`
 - `apps/asyra-design/src/ai/design-actions.ts`
+
+- `apps/asyra-design/src/features/text-canvas/index.ts`
+- `apps/asyra-design/src/common-apis/text-canvas.ts`
+- `apps/asyra-design/src/common-apis/text-layout.ts`
+- `apps/asyra-design/src/render-app/text-canvas-editor.tsx`
+- `apps/asyra-design/src/properties/text-field.tsx`
+- `apps/asyra-design/src/properties/text-select.tsx`
+- `apps/asyra-design/src/controllers/scene-tree.ts`
+- `apps/asyra-design/src/collaboration/migrate-text-fills.ts`
 
 ## show-session-status
 

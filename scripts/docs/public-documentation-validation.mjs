@@ -210,7 +210,9 @@ const apiReferences = (source) => {
 }
 
 const apiHeadingForPage = (pageId) => {
-  if (pageId.startsWith('build/')) return '## Public APIs'
+  if (pageId.startsWith('build/') || pageId.startsWith('updates/')) {
+    return '## Public APIs'
+  }
   if (pageId.startsWith('reference/packages/')) {
     return '## Public entrypoints and prerequisites'
   }
@@ -266,7 +268,7 @@ const validateApiReferences = ({ apiIndex, page, repositoryRoot, source }) => {
   return references.length
 }
 
-const validatePageStructure = ({ page, source }) => {
+export const validatePageStructure = ({ page, source }) => {
   const headings = [...source.matchAll(/^(#{1,6})\s+(.+)$/gm)]
   if (headings.length < 2) {
     throw new Error(`${page.id} requires a title and section headings`)
@@ -296,7 +298,8 @@ const validatePageStructure = ({ page, source }) => {
     .replace(/```[\s\S]*?```/g, ' ')
     .split(/\s+/)
     .filter(Boolean).length
-  if (wordCount < 250) {
+  const minimumWords = page.id.startsWith('updates/releases/') ? 40 : 250
+  if (wordCount < minimumWords) {
     throw new Error(`${page.id} is too short for its public contract`)
   }
 }

@@ -1,0 +1,164 @@
+{
+  "threadId": "01a1699d-b07e-7312-986c-86678a5e5e8d",
+  "title": "Text subsequent update independent acceptance",
+  "turnId": "01a1699d-b241-7bd2-a5c5-08f1437cff26",
+  "status": "completed",
+  "durationMs": 180193,
+  "hasOlderTurns": false,
+  "commands": [
+    {
+      "type": "commandExecution",
+      "id": "exec-f3b0cbd4-0477-4169-b63a-dd87e881e7c9",
+      "command": "/bin/zsh -lc 'pwd; ls -a; cat AGENTS.md; cat README.md'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 0
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-15360dfc-74ea-4e91-83c6-2864c690cb1e",
+      "command": "/bin/zsh -lc 'cat package.json; cat updates/text-spacing-example-2-r1.md; cat .yarnrc.yml; rg --files src tools updates'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 0
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-64fbb6b2-4b3f-4455-a214-964787eee350",
+      "command": "/bin/zsh -lc 'mkdir -p test-results/subsequent-adoption; yarn test > test-results/subsequent-adoption/baseline.log 2>&1; tail -n 16 test-results/subsequent-adoption/baseline.log; git status --short; git branch --show-current; cat updates/model-artifact.json; cat src/definitions.ts; cat src/documents.ts'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3550
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-baf4f846-4a71-469e-a1da-cec0e0ce2316",
+      "command": "/bin/zsh -lc 'cat src/__tests__/subsequent-preservation.test.ts; cat src/__tests__/text-preservation.test.ts; cat src/runtime.ts; cat updates/persistence-migration.md; cat updates/index.md'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 0
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-93c2cabd-269f-4d1b-b0cd-f61ae64c7b52",
+      "command": "/bin/zsh -lc 'shasum -a 256 artifacts/asyra-preset-0.5.8*.tgz; cat node_modules/@asyra/preset/package.json | head -n 22; cat node_modules/@asyra/preset/dist/props/components/text-component.d.ts; cat .gitignore'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 0
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-1b17495b-9ffb-4ace-a192-ddbffe004903",
+      "command": "/bin/zsh -lc \"python3 - <<'PY'\nfrom pathlib import Path\np=Path('src/__tests__/text-preservation.test.ts')\ns=p.read_text().replace('letterSpacing: 0,','letterSpacing: 0.5,')\np.write_text(s)\np=Path('src/__tests__/subsequent-preservation.test.ts')\ns=p.read_text().replace(\\\"import { afterEach\\\", \\\"import { createDefaultFill } from '@asyra/utils'\\\\nimport { afterEach\\\")\ns=s.replace(\\\"CHART_UI, METADATA_UI, STORAGE_SLOT\\\", \\\"CHART_TYPE, CHART_UI, METADATA_UI, TYPOGRAPHY_UI, STORAGE_SLOT\\\")\ns += '''\n\ndescribe('Subsequent spacing adoption', () => {\n  it('uses the selected default for new Text and chart and preserves it on reload', async () => {\n    let app = await open(extended)\n    for (const type of ['text', CHART_TYPE]) {\n      const id = \"'`new-${type}`\n      app.core.createElement({ id, type, name: '\"'New typography', x: 0, y: 0 })\n      expect(app.core.getElementComputedData(id)).toMatchObject({\n        letterSpacing: 0.5,\n        textColor: createDefaultFill().color\n      })\n    }\n    await app.save()\n    await app.dispose()\n    runtime = undefined\n    app = await open(readStored())\n    for (const type of ['text', CHART_TYPE]) {\n      expect(app.core.getElementComputedData(\"'`new-${type}`)).toMatchObject({\n        letterSpacing: 0.5,\n        textColor: createDefaultFill().color\n      })\n    }\n    app.feature.select('\"'chart-1')\n    await settle()\n    expect(app.core.getUIProperty(METADATA_UI)).toBeNull()\n    expect(app.core.getUIProperty(TYPOGRAPHY_UI)).toBeNull()\n  })\n\n  it('retains explicit zero on Text and chart through two storage reloads', async () => {\n    const input = structuredClone(extended)\n    for (const property of Object.values(input.core.props)) {\n      if ('letterSpacing' in property) property.letterSpacing = 0\n    }\n    const untouched = structuredClone(input)\n    let app = await open(input)\n    for (let pass = 0; pass < 2; pass++) {\n      for (const id of ['text-1', 'chart-1']) {\n        expect(app.core.getElementComputedData(id)?.letterSpacing).toBe(0)\n      }\n      const saved = await app.save()\n      expect(saved.core).toEqual(input.core)\n      await app.dispose()\n      runtime = undefined\n      app = await open(readStored())\n      expect((await app.save()).core).toEqual(input.core)\n    }\n    expect(input).toEqual(untouched)\n  })\n\n  it.each(['letterSpacing', 'approvalStatus', 'sourceRecordId', 'labelCategory'])(\n    'rejects missing %s without defaulting or changing state',\n    async (key) => {\n      const app = await open(extended)\n      const before = await app.save()\n      const input = structuredClone(extended)\n      delete (input.core.props['text-typography'] as Record<string, unknown>)[key]\n      const untouched = structuredClone(input)\n      expect(() => app.load(input)).toThrow(\"'`Invalid ${key}`)\n      expect(await app.save()).toEqual(before)\n      expect(input).toEqual(untouched)\n    }\n  )\n\n  it('\"'edits each metadata field after reload and retains projections and storage', async () => {\n    let app = await open(extended)\n    await app.save()\n    await app.dispose()\n    runtime = undefined\n    app = await open(readStored())\n    const expected = {\n      approvalStatus: 'draft', sourceRecordId: 'record-after-reload', labelCategory: 'warning'\n    }\n    for (const [key, value] of Object.entries(expected)) {\n      const depth = app.core.getUndoHistoryDepth()\n      app.feature.editMetadata('text-1', { [key]: value })\n      expect(app.core.getUndoHistoryDepth()).toBe(depth + 1)\n      expect(app.core.getElementComputedData('text-1')).toMatchObject({ [key]: value })\n      app.feature.select('text-1')\n      await settle()\n      expect(app.core.getUIProperty(METADATA_UI)).toMatchObject({ [key]: value })\n      app.feature.select('chart-1')\n      await settle()\n      expect(app.core.getUIProperty(CHART_UI)).toMatchObject({ [key]: value, sourceTextId: 'text-1' })\n    }\n    const saved = await app.save()\n    await app.dispose()\n    runtime = undefined\n    app = await open(readStored())\n    expect(app.core.getElementComputedData('text-1')).toMatchObject(expected)\n    expect((await app.save()).core).toEqual(saved.core)\n  })\n})\n'''\np.write_text(s)\nPY\nyarn test > test-results/subsequent-adoption/old-candidate-regression.log 2>&1; tail -n 30 test-results/subsequent-adoption/old-candidate-regression.log\"",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3213
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-450f548b-d4b3-4c83-bef4-24cbf540d293",
+      "command": "/bin/zsh -lc \"python3 - <<'PY'\nimport json,tarfile,hashlib\nfrom pathlib import Path\nreport=json.loads(Path('updates/model-artifact.json').read_text())\narchives=[]\nlines=[]\nfor key in ('from','to'):\n item=report[key]; path=Path('artifacts')/item['file']\n digest=hashlib.sha256(path.read_bytes()).hexdigest()\n assert digest==item['sha256']\n lines.append(f'{path}: {digest}')\n with tarfile.open(path) as archive:\n  archives.append({m.name:archive.extractfile(m).read() for m in archive.getmembers() if m.isfile()})\nchanged=sorted(k for k in archives[0].keys()|archives[1].keys() if archives[0].get(k)\"'!=archives[1].get(k))\nassert changed==sorted(x['\"'path'] for x in report['archiveChanges'])\nlines+=changed\nPath('test-results/subsequent-adoption/artifact-verification.log').write_text('\\\\n'.join(lines)+'\\\\n')\np=Path('package.json'); data=json.loads(p.read_text())\ndata['dependencies']['@asyra/preset']='0.5.8-task4.0'\ndata['resolutions']['@asyra/preset']='file:./artifacts/asyra-preset-0.5.8-task4.0.tgz'\np.write_text(json.dumps(data,indent=2)+'\\\\n')\nPY\nYARN_GLOBAL_FOLDER=\\\"\"'$PWD/.yarn/global\" TMPDIR=\"$PWD/.yarn\" yarn install > test-results/subsequent-adoption/install.log 2>&1; tail -n 14 test-results/subsequent-adoption/install.log\nyarn prettier --write src/__tests__/subsequent-preservation.test.ts > test-results/subsequent-adoption/format.log 2>&1'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 10776
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-9ff46658-c1ff-42e8-aead-074491f258a0",
+      "command": "/bin/zsh -lc 'yarn typecheck > test-results/subsequent-adoption/typecheck.log 2>&1; result=$?; tail -n 12 test-results/subsequent-adoption/typecheck.log; exit $result'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 1416
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-1648d7f2-bad7-48c8-a42a-cba5399575ac",
+      "command": "/bin/zsh -lc 'yarn lint > test-results/subsequent-adoption/lint.log 2>&1; result=$?; tail -n 12 test-results/subsequent-adoption/lint.log; exit $result'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 1938
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-1f857d88-51a5-48d8-bd46-7fc7f7d4bad6",
+      "command": "/bin/zsh -lc 'yarn test > test-results/subsequent-adoption/test.log 2>&1; result=$?; tail -n 12 test-results/subsequent-adoption/test.log; exit $result'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3874
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-f729b5ab-7b0c-429f-8de3-2f1b5a91b517",
+      "command": "/bin/zsh -lc 'yarn build > test-results/subsequent-adoption/build.log 2>&1; result=$?; tail -n 12 test-results/subsequent-adoption/build.log; exit $result'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 4797
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-8e3eebac-c1ef-4d8a-80cc-aee07b475988",
+      "command": "/bin/zsh -lc \"sed -n '190,203p' src/__tests__/subsequent-preservation.test.ts; git diff --stat; git diff -- yarn.lock package.json; cat node_modules/@asyra/preset/dist/props/components/text-component.js | head -n 95\"",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 0
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-816dd4f7-e27f-4297-9c29-582602d9f833",
+      "command": "/bin/zsh -lc \"python3 - <<'PY'\nfrom pathlib import Path\np=Path('src/__tests__/subsequent-preservation.test.ts')\np.write_text(p.read_text().replace(\\\"delete (input.core.props['text-typography'] as Record<string, unknown>)[key]\\\", \\\"Reflect.deleteProperty(input.core.props['text-typography'], key)\\\"))\nPath('test-results/subsequent-adoption/lint.log').rename('test-results/subsequent-adoption/lint-first.log')\nPY\nyarn lint > test-results/subsequent-adoption/lint.log 2>&1; result=\"'$?; cat test-results/subsequent-adoption/lint.log; exit $result'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 794
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-2426b347-aceb-47cc-bc6c-b88c5ac1f46f",
+      "command": "/bin/zsh -lc \"python3 - <<'PY'\nfrom pathlib import Path\nimport json, tarfile\nwith tarfile.open('artifacts/asyra-preset-0.5.8-task4.0.tgz') as archive:\n for member in archive.getmembers():\n  if member.isfile():\n   installed=Path('node_modules/@asyra/preset')/member.name.removeprefix('package/')\n   assert installed.read_bytes()==archive.extractfile(member).read(), member.name\nversions={name:json.loads((Path('node_modules/@asyra')/name/'package.json').read_text())['version'] for name in ['core','preset','utils']}\nassert versions=={'core':'0.5.7','preset':'0.5.8-task4.0','utils':'0.5.2'}\nwith Path('test-results/subsequent-adoption/artifact-verification.log').open('a') as log:\n log.write('All installed Preset archive files match the supplied target.\\\\n'+json.dumps(versions)+'\\\\n')\np=Path('README.md')\nwith p.open('a') as f:\n f.write('''\n\n## Subsequent independent Text adoption - 2026-10-24\n\nAdopted \"'`text-spacing-example-2`, guide revision 1, from the actual first\ncandidate plus shared-gray/approval follow-up and intervening rejected approval\nextensions. This section supersedes the pending status above. V1/V2/V3 adoption\nstages are separate from App document versions; the App format remains version 2.\n\nSelected the supplied private, test-only Preset `0.5.8-task4.0` archive in the\nexisting dependency and resolution. Its SHA-256 is\n`60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7`;\nthe retained previous Preset 0.5.8 archive is\n`465e4e330d272162dc627b9004b109e7b15529eef4699366451697ca86085291`.\nBoth digests were recomputed. Archive comparison confirmed exactly the three\nentries listed in `updates/model-artifact.json`; every installed target archive\nfile matches. Core remains 0.5.7 and resolved Utils remains 0.5.2 (the existing\nmanifest request is 0.5.1 with its unchanged local resolution). The lockfile\nchanges only Preset and its consumer dependency reference. Linked canonical\nGitHub sources were reachable; installed public declarations were inspected.\n\nNew Text and chart typography now inherit spacing 0.5 from the official base.\nExplicit saved spacing, including 0 and 1.5, and saved colors remain unchanged.\nThe existing composition required no runtime rewrite: twelve unique fields,\nmetadata aliases, one official renderer, all three metadata paths, rejected\napproval, approve/reject transactions, shared gray from `createDefaultFill`,\nchart references and Text-only controls are retained. The App loader still\nconverts version-1 multiplier units once and rejects incomplete/invalid data\nbefore apply. Original fixture files and previous candidate archives are intact.\nThe official example UI panel remains deferred and uninstalled; rich text and\nIME remain outside adoption.\n\nVerification: the unmodified baseline passed 22 tests. Before installing the\ncandidate, the updated/new default assertions failed twice with actual 0 versus\nexpected 0.5; the other 27 tests passed. After installation, all 29 permanent\ntests pass, plus typecheck, lint and build. Added coverage verifies new Text and\nchart defaults through fresh load, explicit zero through two storage reloads,\nmissing spacing and each metadata field without canonical mutation, and each\nmetadata Feature write after reload with canonical/projection/storage checks.\nRetained coverage exercises all three document generations, line height 24,\nscene hierarchy and references, rejected approval, one-entry actions, Undo/Redo,\nvalidation, renderer registration and chart control isolation.\n\nLogs are retained in `test-results/subsequent-adoption/`: baseline, old-candidate\nregression, artifact verification, install, formatting, test, typecheck, lint\nand build. The first lint run rejected dynamic deletion in a new test; it was\nreplaced with `Reflect.deleteProperty` and lint passed. Installation reported\nYarn'\"'s optional TypeScript patch warning; typecheck/build passed without changing\ntools or unrelated dependencies. Existing jsdom render warnings and the build's\nlarge-chunk warning remain. Tests use packaged Core with canvas stubs: no browser\npixel, published release, production storage, restored prior-session undo stack,\nor general release-range compatibility claim is made. No publication, push or\nFramework source modification was performed.\n''')\np=Path('updates/index.md')\np.write_text(p.read_text().replace('The update is pending.', 'The consumer adopted revision 1; see the dated subsequent adoption record in\\\\n\"'`README.md` for verification and limitations.'\"'))\nPY\nyarn test > test-results/subsequent-adoption/test.log 2>&1; result=\"'$?; tail -n 7 test-results/subsequent-adoption/test.log; exit $result'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3418
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-abb934a5-7d2e-478e-b140-e9759f8bb996",
+      "command": "/bin/zsh -lc 'git diff --check; git status --short; git diff --numstat -- test-data src/runtime.ts src/definitions.ts src/documents.ts; git diff --unified=2 -- src/__tests__/subsequent-preservation.test.ts src/__tests__/text-preservation.test.ts updates/index.md'",
+      "cwd": "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 0
+    }
+  ],
+  "sourceAccess": [
+    {
+      "type": "webSearch",
+      "id": "exec-e6f0d860-82bb-4c81-8d2c-ead198555c88",
+      "query": "https://github.com/karote00/asyra/blob/7bf3655242e6adca9ac7d81ff57d17df9b310c9e/packages/preset/src/props/components/text-component.ts",
+      "action": {
+        "type": "openPage",
+        "url": "https://github.com/karote00/asyra/blob/7bf3655242e6adca9ac7d81ff57d17df9b310c9e/packages/preset/src/props/components/text-component.ts"
+      }
+    }
+  ],
+  "final": [
+    {
+      "type": "agentMessage",
+      "id": "msg_05fa1077adfd8560016adb8d6715c88191b20542875449a998",
+      "text": "已完成 spacing 0.5 候選套件採用，保留既有儲存值、rejected、三項 metadata、共享灰色及 chart 行為；延後採用項目維持不變。\n\n- 基準 22 項通過；新預設測試先在舊套件失敗。\n- 更新後 29 項測試、typecheck、lint、build 全數通過。\n- 採用紀錄已更新至 README；日誌保留於 `test-results/subsequent-adoption/`。\n- 原始資料與 Framework source 未修改，未發布或推送。\n\n此結果限測試候選套件，不包含瀏覽器像素或正式發布驗證。",
+      "phase": "final_answer"
+    }
+  ]
+}

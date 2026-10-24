@@ -1,0 +1,30 @@
+vite v6.4.5 building for production...
+transforming...
+✓ 1288 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                     0.94 kB │ gzip:   0.38 kB
+dist/assets/_commonjsHelpers-Cpj98o6Y.js            0.24 kB │ gzip:   0.18 kB
+dist/assets/getTextureBatchBindGroup-C_spfQvK.js    0.36 kB │ gzip:   0.28 kB
+dist/assets/Filter-QKUt0K9H.js                      0.91 kB │ gzip:   0.48 kB
+dist/assets/index-D3IG1X6X.js                       5.93 kB │ gzip:   2.15 kB
+dist/assets/canvasUtils-UKlYZLt6.js                 6.04 kB │ gzip:   1.95 kB
+dist/assets/getTexelRangeRects-CTDZ25Z8.js         11.45 kB │ gzip:   3.02 kB
+dist/assets/webworkerAll-D1IzCfm6.js               15.15 kB │ gzip:   4.77 kB
+dist/assets/CanvasRenderer-BXvHlCLf.js             18.08 kB │ gzip:   6.08 kB
+dist/assets/getPo2TextureFromSource-DUJfvrfK.js    25.53 kB │ gzip:   8.82 kB
+dist/assets/BatcherPipe-gPLhnKng.js                28.20 kB │ gzip:   9.17 kB
+dist/assets/browserAll-CHb5CSKj.js                 44.05 kB │ gzip:  11.47 kB
+dist/assets/RenderTargetSystem-BMaJf_jz.js         51.38 kB │ gzip:  14.12 kB
+dist/assets/WebGPURenderer-OEKYy9-G.js             56.00 kB │ gzip:  16.03 kB
+dist/assets/Graphics-DpokTnG6.js                   72.60 kB │ gzip:  23.20 kB
+dist/assets/WebGLRenderer-CtM83FBq.js              73.71 kB │ gzip:  20.17 kB
+dist/assets/CanvasPool-VuNvUV6_.js                113.50 kB │ gzip:  34.61 kB
+dist/assets/event-registry-YAawga-Y.js            117.76 kB │ gzip:  41.72 kB
+dist/assets/index-CYc2qVXP.js                     652.59 kB │ gzip: 176.14 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.45s

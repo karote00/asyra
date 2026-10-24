@@ -1,0 +1,14 @@
+{
+  "kind": "maintainer-permanent-fixture-replay-not-independent-acceptance",
+  "command": "node --test --test-name-pattern='cross-version delivery' scripts/__tests__/app-update-fixtures.test.mjs",
+  "exitStatus": 0,
+  "tests": 31,
+  "gates": {
+    "install": 0,
+    "test": 0,
+    "typecheck": 0,
+    "lint": 0,
+    "build": 0,
+    "evidence-after-replay": 0
+  }
+}

@@ -2,7 +2,7 @@
   "pages": [
     {
       "id": "overview",
-      "pageSha256": "163cc0659ef45a29ea7cf6b13fbcd4062b8e1e47a4b54a63c93f3435d2277650",
+      "pageSha256": "bff730cbf00018b8fd54549e5f2a07464c76cfea16e5364654912d4a537af2ad",
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
@@ -30,7 +30,7 @@
     },
     {
       "id": "start/extend-with-ai",
-      "pageSha256": "49a2da62553e2edf5c17ec6680ab2e34b9a2169a8bdda878be5435093d0f252e",
+      "pageSha256": "07a55a414cbd753c3d7eb36e7e1c32c2328629fbf2a700e83f994c2ee78d25a7",
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
@@ -317,6 +317,226 @@
         {
           "path": "docs/ai/framework/packages/feature-system.md",
           "sha256": "62faa8740669591ff322af61d655bd253c2a3cb094e8a88538a2a39e3a2e7eb5"
+        }
+      ]
+    },
+    {
+      "id": "updates/index",
+      "pageSha256": "0e10f553822bd1cf945e93199518d1be4d836454fcab868f2f0f52c9b98ef62a",
+      "sources": [
+        {
+          "path": "docs/ai/framework/packages/core.md",
+          "sha256": "ec1de2a7849e7312496dddd22f8a01e3af92d3879c78a1caa046fe760326a672"
+        },
+        {
+          "path": "docs/ai/framework/packages/props-manager.md",
+          "sha256": "783f9b8631b907999a5317000397b0bb45d40351062772e74f872cceaf082560"
+        },
+        {
+          "path": "docs/ai/framework/packages/persistence.md",
+          "sha256": "6ba31c6a0f2f12679cec282ec2bc5054c2cc110cb4e2d54555581b8402bae4a4"
+        }
+      ]
+    },
+    {
+      "id": "updates/history",
+      "pageSha256": "fad1881f6caf730c865ce5b0b99b779d58940bd4e66d66339d4a3b1947f1a317",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-cross-version-example-3",
+      "pageSha256": "68f855f9e4649a541ca147cd20a48c5033a01ebd06f5083136f1d60b0ae65148",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-cross-version-example-3-r2",
+      "pageSha256": "463f5a0f378bcdeb4f3a1d6661704f65c8f2b017cc8cef8a99aec8af66c59173",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-framework",
+      "pageSha256": "84bd9a9c23088eb1257c213d2fa9581d0da82340da0afed4811dfb3a1627f553",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-app-1",
+      "pageSha256": "4212408706d4c711fc1c7620f60f930fe4d562f8099283535cf3e74073bea4e0",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-app-2",
+      "pageSha256": "01f4d9e5ec5626c2282c89b48666b41b0acf1b49365775886a448df02b484f2c",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-app-3",
+      "pageSha256": "cc998d9ea61aea465abdf023c7f2593a94967881f9b0c30adad1c9b82d8a4e8b",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "509e6f91c2ae5b92f31cf01402042d0a48cb4c384481c392f1e659444e72e268"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-official-fields-example-1-r2",
+      "pageSha256": "317bf04a5f3db2289629904f2992d534867227e6031a6eb10ca8e52223117bf0",
+      "sources": [
+        {
+          "path": "packages/core/package.json",
+          "sha256": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
+        },
+        {
+          "path": "packages/preset/package.json",
+          "sha256": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
+        },
+        {
+          "path": "packages/core/src/index.ts",
+          "sha256": "70b6fb8b72088329f407b0e053768e44e9cb79405691a47eb9718e0aae8d274d"
+        },
+        {
+          "path": "packages/core/src/core.ts",
+          "sha256": "e13554fa9375eb1beceb40642e2e4c10821be56ea8da16066ad46b6f992adf8a"
+        },
+        {
+          "path": "packages/preset/src/index.ts",
+          "sha256": "ccf8daacd8a0f3814f3dac32954d363ac10c6b84c47c8521eba0e0f9d133aa81"
+        },
+        {
+          "path": "packages/preset/src/props/components/text-component.ts",
+          "sha256": "4666023ffdbc79d282ee39310c9b3c7d985b485a279123467a9df96053ae6883"
+        },
+        {
+          "path": "packages/preset/src/components/text.ts",
+          "sha256": "a3dd8d0e6d7b6bb14a44d0a3d251a36ca4a39272535cb8d68c447b9abc5ca974"
+        },
+        {
+          "path": "apps/asyra-design/src/init/capabilities/init-text.ts",
+          "sha256": "8da839f530c8f94ad97e09fdc309b76dfc58031501725ee8b035fbfe5d3ec97d"
+        },
+        {
+          "path": "apps/asyra-design/src/properties/text.tsx",
+          "sha256": "e56fb50a7889ff488d44dd5fc2c511867e976fe026f3588eaf66541b0797fce8"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-official-fields-example-1-r3",
+      "pageSha256": "ad1b12c46d3caff510055f4d6a4cb3f84f92e3f5f145f05658c5b021bfc615c7",
+      "sources": [
+        {
+          "path": "packages/utils/src/propsManager/fills.ts",
+          "sha256": "2229f2eb1c3060e538886d0e8d016ca39e0c65c9759bafbe113235d721e1a500"
+        },
+        {
+          "path": "packages/core/package.json",
+          "sha256": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
+        },
+        {
+          "path": "packages/preset/package.json",
+          "sha256": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
+        },
+        {
+          "path": "packages/core/src/index.ts",
+          "sha256": "70b6fb8b72088329f407b0e053768e44e9cb79405691a47eb9718e0aae8d274d"
+        },
+        {
+          "path": "packages/core/src/core.ts",
+          "sha256": "e13554fa9375eb1beceb40642e2e4c10821be56ea8da16066ad46b6f992adf8a"
+        },
+        {
+          "path": "packages/preset/src/index.ts",
+          "sha256": "ccf8daacd8a0f3814f3dac32954d363ac10c6b84c47c8521eba0e0f9d133aa81"
+        },
+        {
+          "path": "packages/preset/src/props/components/text-component.ts",
+          "sha256": "4666023ffdbc79d282ee39310c9b3c7d985b485a279123467a9df96053ae6883"
+        },
+        {
+          "path": "packages/preset/src/components/text.ts",
+          "sha256": "a3dd8d0e6d7b6bb14a44d0a3d251a36ca4a39272535cb8d68c447b9abc5ca974"
+        },
+        {
+          "path": "apps/asyra-design/src/init/capabilities/init-text.ts",
+          "sha256": "8da839f530c8f94ad97e09fdc309b76dfc58031501725ee8b035fbfe5d3ec97d"
+        },
+        {
+          "path": "apps/asyra-design/src/properties/text.tsx",
+          "sha256": "e56fb50a7889ff488d44dd5fc2c511867e976fe026f3588eaf66541b0797fce8"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-spacing-example-2-r1",
+      "pageSha256": "0b350b099257f57952f3c4852ddd5eca90d9aff5f32f71acc84b9f8b08adb443",
+      "sources": [
+        {
+          "path": "packages/core/src/core.ts",
+          "sha256": "e13554fa9375eb1beceb40642e2e4c10821be56ea8da16066ad46b6f992adf8a"
+        },
+        {
+          "path": "packages/preset/src/props/components/text-component.ts",
+          "sha256": "4666023ffdbc79d282ee39310c9b3c7d985b485a279123467a9df96053ae6883"
+        },
+        {
+          "path": "packages/preset/src/components/text.ts",
+          "sha256": "a3dd8d0e6d7b6bb14a44d0a3d251a36ca4a39272535cb8d68c447b9abc5ca974"
+        },
+        {
+          "path": "packages/utils/src/propsManager/fills.ts",
+          "sha256": "2229f2eb1c3060e538886d0e8d016ca39e0c65c9759bafbe113235d721e1a500"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-spacing-example-2-r2",
+      "pageSha256": "a3b3c45496ed6a47213fa681122da4305496e6a16e5c884a7629568e6638b25d",
+      "sources": [
+        {
+          "path": "packages/core/src/core.ts",
+          "sha256": "e13554fa9375eb1beceb40642e2e4c10821be56ea8da16066ad46b6f992adf8a"
+        },
+        {
+          "path": "packages/preset/src/props/components/text-component.ts",
+          "sha256": "4666023ffdbc79d282ee39310c9b3c7d985b485a279123467a9df96053ae6883"
+        },
+        {
+          "path": "packages/preset/src/components/text.ts",
+          "sha256": "a3dd8d0e6d7b6bb14a44d0a3d251a36ca4a39272535cb8d68c447b9abc5ca974"
+        },
+        {
+          "path": "packages/utils/src/propsManager/fills.ts",
+          "sha256": "2229f2eb1c3060e538886d0e8d016ca39e0c65c9759bafbe113235d721e1a500"
         }
       ]
     },
@@ -608,7 +828,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "24b364e6dbb61c588198f10933672a3611c046e6a7a8d8acff216270fa64601a"
+          "sha256": "da7237e1720f86d41d832dd35c1c3dfac74ab20c610da9324149efba331199c5"
         }
       ]
     },

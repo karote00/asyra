@@ -80,6 +80,36 @@ test('standalone release consumer inputs select release readiness without unrela
   )
 })
 
+test('App update consumers select retained-artifact validation without unrelated runtime jobs', () => {
+  const inputs = spawnSync(
+    'git',
+    [
+      'ls-files',
+      'fixtures/app-update-text-consumer',
+      'fixtures/app-update-text-subsequent'
+    ],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  )
+  assert.equal(inputs.status, 0)
+  const files = inputs.stdout.trim().split('\n')
+  assert.ok(files.length > 0)
+  const result = classifyChanges(files, manifests)
+  assert.deepEqual(result.unknownPaths, [])
+  assert.deepEqual(names(result), [])
+  assert.equal(result.frameworkReleaseRequired, false)
+  assert.equal(result.designE2ERequired, false)
+  assert.equal(result.relationshipMap.fieldscopeProfilesRequired, false)
+  assert.equal(result.executionPlan.checks.repositoryScripts.mode, 'files')
+  assert.deepEqual(result.executionPlan.checks.repositoryScripts.tests, [
+    'scripts/__tests__/app-update-fixtures.test.mjs'
+  ])
+  assert.deepEqual(
+    classifyChanges(['fixtures/unregistered-update/runtime.ts'], manifests)
+      .unknownPaths,
+    ['fixtures/unregistered-update/runtime.ts']
+  )
+})
+
 test('an app change selects its package scripts and dependent workspace consumers', () => {
   const result = classifyChanges(['apps/asyra-design/src/main.tsx'], manifests)
   assert.deepEqual(names(result), ['@asyra/asyra-design'])
@@ -344,10 +374,11 @@ test('internal workflow documentation selects contract tests without public API 
       'scripts/__tests__/ci-scope.test.mjs'
     )
   )
-  assert.ok(
-    checks.repositoryScripts.tests.every(
-      (file) => !file.startsWith('scripts/docs/')
-    )
+  assert.deepEqual(
+    checks.repositoryScripts.tests.filter((file) =>
+      file.startsWith('scripts/docs/')
+    ),
+    ['scripts/docs/__tests__/release-update-guidance.test.mjs']
   )
   assert.equal(checks.frameworkDeclarations.mode, 'not-selected')
 })
@@ -951,6 +982,37 @@ test('document check execution runs the selected formal files and retains exact 
       }),
     /assertion failed/
   )
+})
+
+test('Cloudflare workflow selections execute registered GitHub tests and reject arbitrary paths', () => {
+  const { repositoryScripts } = classifyChanges(
+    ['.github/workflows/app-cloudflare.yml'],
+    manifests
+  ).relationshipMap.executionPlan.checks
+  assert.ok(
+    repositoryScripts.tests.includes(
+      '.github/__tests__/app-cloudflare.test.mjs'
+    )
+  )
+  const calls = []
+  const result = runRepositoryScripts(repositoryScripts, (command, args) =>
+    calls.push({ command, args })
+  )
+  assert.deepEqual(result.executedTests, repositoryScripts.tests)
+  assert.deepEqual(calls, [
+    { command: process.execPath, args: ['--test', ...repositoryScripts.tests] }
+  ])
+  for (const file of [
+    '.github/__tests__/unknown.test.mjs',
+    '.github/../scripts/escape.test.mjs',
+    '.github/workflows/app-cloudflare.yml'
+  ]) {
+    assert.throws(() =>
+      runRepositoryScripts({ ...repositoryScripts, tests: [file] }, () =>
+        assert.fail('must not execute')
+      )
+    )
+  }
 })
 
 test('mixed source and documentation edits combine required repository contracts and declaration build', () => {

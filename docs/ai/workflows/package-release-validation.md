@@ -1,5 +1,10 @@
 # Package and Release Validation
 
+Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
+for pending impact notes, necessary integration guides and preservation checks.
+Development declarations and artifact-bound publisher admission share that rule.
+See its release admission section for candidate files, coverage gaps and recovery.
+
 This workflow owns the repository automation contract between workspace
 manifests, Turbo, generated app templates, CI, and the explicit release
 command.
@@ -256,6 +261,14 @@ versions already present, and publishes only missing versions from the same
 validated tarballs used by the local packed-consumer gate. Registry errors other
 than an exact-version `E404` fail the stage. The stage does not require pending
 Changesets to remain after the version PR.
+
+Guidance preparation distinguishes an unchanged package already published from
+an earlier source from a same-source partial retry. The former uses its actual
+published source/version as the baseline even when an older candidate file is
+present; the latter requires the retained candidate and keeps its original
+predecessor. Both require identical registry and candidate integrity. Missing
+source/tag evidence or missing same-candidate guidance stops the release. The
+shared rule also applies to create-app; it does not change package versioning.
 
 Historical prerequisite decisions are resolved from Framework
 `decisions/releases/unreleased.md` and all direct `vX.Y.Z.md` archive files,

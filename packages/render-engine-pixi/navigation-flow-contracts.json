@@ -241,6 +241,22 @@
           "implementationPaths": [
             "packages/render-engine-pixi/src/pixi-render-engine.ts"
           ]
+        },
+        {
+          "id": "preserve.spatial-query-rejection",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine rejects spatial queries explicitly without changing legacy screen queries",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
+        },
+        {
+          "id": "preserve.text-resource-mask",
+          "stepId": "execute-render-engine",
+          "testName": "PixiRenderEngine uses native glyphs as a resource paint mask and releases both children on clear",
+          "implementationPaths": [
+            "packages/render-engine-pixi/src/pixi-render-engine.ts"
+          ]
         }
       ],
       "handoffs": [
@@ -270,7 +286,9 @@
             "preserve.19",
             "preserve.20",
             "navigation.lifecycle",
-            "navigation.frame-delivery"
+            "navigation.frame-delivery",
+            "preserve.spatial-query-rejection",
+            "preserve.text-resource-mask"
           ]
         },
         {
@@ -299,7 +317,9 @@
             "preserve.19",
             "preserve.20",
             "navigation.lifecycle",
-            "navigation.frame-delivery"
+            "navigation.frame-delivery",
+            "preserve.spatial-query-rejection",
+            "preserve.text-resource-mask"
           ]
         },
         {

@@ -1,5 +1,10 @@
 # /refactor Workflow
 
+Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
+for pending impact notes, necessary integration guides and preservation checks.
+The document check covers development declarations; publisher enforcement remains
+a separate release integration.
+
 ## Intent
 
 Improve structure/maintainability/performance while preserving intended behavior.

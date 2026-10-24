@@ -11,8 +11,10 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
-import { fileURLToPath, URL } from 'node:url'
+import { URL } from 'node:url'
 
+const temporaryRoot = path.resolve(import.meta.dirname, '../../tmp')
+mkdirSync(temporaryRoot, { recursive: true })
 const require = createRequire(import.meta.url)
 const { load } = require('js-yaml')
 const source = readFileSync(
@@ -22,9 +24,7 @@ const source = readFileSync(
 const workflow = load(source)
 
 test('deployment tooling resolves its own npm root instead of the Yarn repository', () => {
-  const root = mkdtempSync(
-    fileURLToPath(new URL('./.cli-test-', import.meta.url))
-  )
+  const root = mkdtempSync(path.join(temporaryRoot, 'cloudflare-cli-test-'))
   try {
     writeFileSync(path.join(root, 'package.json'), '{"private":true}')
     mkdirSync(path.join(root, 'bin'))
@@ -150,7 +150,7 @@ test('publication waits for its own successful validation and keeps dependency a
 
 test('an obsolete source cannot enable upload or create a deployment tool directory', () => {
   const root = mkdtempSync(
-    fileURLToPath(new URL('./.obsolete-test-', import.meta.url))
+    path.join(temporaryRoot, 'cloudflare-obsolete-test-')
   )
   try {
     mkdirSync(path.join(root, 'bin'))
@@ -185,4 +185,76 @@ test('an obsolete source cannot enable upload or create a deployment tool direct
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
+})
+
+test('release guidance binds the downloaded candidate before Cloudflare mutation', () => {
+  const steps = workflow.jobs.publish.steps
+  const download = steps.findIndex((step) =>
+    step.uses?.startsWith('actions/download-artifact@')
+  )
+  const prepare = steps.findIndex((step) =>
+    step.run?.includes('cloudflare-release-guidance.mjs prepare')
+  )
+  const admission = steps.findIndex((step) =>
+    step.run?.includes('cloudflare-release-guidance.mjs check')
+  )
+  const deploy = steps.findIndex((step) => step.id === 'deploy')
+  assert.ok(
+    download >= 0 &&
+      prepare > download &&
+      admission > prepare &&
+      deploy > admission
+  )
+  assert.equal(steps[admission].if, "steps.current.outputs.publish == 'true'")
+  const result = steps.find((step) =>
+    step.run?.includes('cloudflare-release-guidance.mjs record')
+  )
+  assert.ok(result.if.startsWith('always()'))
+  assert.equal(result.env.VERIFY_OUTCOME, '${{ steps.verify.outcome }}')
+  assert.ok(
+    steps.some((step) => step.with?.path?.endsWith('.json.result.json.*.json'))
+  )
+  assert.ok(
+    workflow.jobs.build.steps.every(
+      (step) => !JSON.stringify(step).includes('secrets.CLOUDFLARE')
+    )
+  )
+})
+
+test('Cloudflare retries restore a frozen candidate and retain it before mutation', () => {
+  const steps = workflow.jobs.publish.steps
+  const restore = steps.findIndex((step) =>
+    step.run?.includes('cloudflare-release-guidance.mjs restore')
+  )
+  const prepare = steps.findIndex((step) =>
+    step.run?.includes('cloudflare-release-guidance.mjs prepare')
+  )
+  const checkpoint = steps.findIndex(
+    (step) => step.id === 'guidance-checkpoint'
+  )
+  const mutation = steps.findIndex(
+    (step) => step.run?.includes('ensure-project') || step.id === 'deploy'
+  )
+  assert.ok(
+    restore >= 0 &&
+      prepare > restore &&
+      checkpoint > prepare &&
+      mutation > checkpoint
+  )
+  assert.equal(steps[checkpoint].with.overwrite, undefined)
+  assert.equal(steps[checkpoint].with['if-no-files-found'], 'error')
+  assert.ok(
+    steps[checkpoint].if.includes(
+      "steps.guidance-restore.outputs.candidate-retained != 'true'"
+    )
+  )
+  assert.equal(steps[restore].id, 'guidance-restore')
+  assert.equal(steps[restore].env.GH_TOKEN, '${{ github.token }}')
+  assert.equal(workflow.jobs.publish.permissions.actions, 'read')
+
+  assert.ok(
+    steps.some((step) =>
+      step.with?.name?.includes('-result-${{ github.run_attempt }}')
+    )
+  )
 })

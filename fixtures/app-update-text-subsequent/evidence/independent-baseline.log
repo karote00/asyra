@@ -1,0 +1,145 @@
+
+ RUN  v3.2.7 /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > installs the official renderer once and uses official field contracts
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/text-preservation.test.ts > Text consumer preservation > creates untouched Text with official typography and retained metadata defaults
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > creates untouched Text with official typography and retained metadata defaults
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > creates untouched Text with official typography and retained metadata defaults
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > uses the shared fill color only for new Text and preserves saved colors
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > disables approval for chart and empty selection and restores it for Text
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > retains shared gray and original properties through memory save, fresh load and Undo/Redo
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > retains shared gray and original properties through memory save, fresh load and Undo/Redo
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > enforces official typography boundaries without changing rejected values
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > rejects overflowing multiplier conversion before apply and round-trips converted units once
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > retains twelve unique fields, aliases and the shared chart relation
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > edits custom metadata through the Feature, projects it, and preserves it across save and a fresh runtime
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > edits custom metadata through the Feature, projects it, and preserves it across save and a fresh runtime
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > creates one history entry per typography or approval action and preserves Undo/Redo
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > rejects invalid custom writes without changing canonical, projected or saved values
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > keeps non-Text chart controls and rejects typography edits on the chart
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > retains the declared multiplier conversion without mutating the source document
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > rejects unknown-version before canonical apply and retains original data
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > rejects invalid-metadata before canonical apply and retains original data
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/text-preservation.test.ts > Text consumer preservation > rejects invalid-multiplier before canonical apply and retains original data
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/text-preservation.test.ts (16 tests) 181ms
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves pre-adoption multiplier documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves pre-adoption multiplier documents through two fresh runtime round trips
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves pre-adoption multiplier documents through two fresh runtime round trips
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves pre-adoption multiplier documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves pre-adoption multiplier documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves first-adoption absolute units documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves first-adoption absolute units documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves first-adoption absolute units documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves intervening rejected approval documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves intervening rejected approval documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > preserves intervening rejected approval documents through two fresh runtime round trips
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > retains reject, all metadata paths, chart references and history after reload
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/subsequent-preservation.test.ts > Intervening consumer changes > retains reject, all metadata paths, chart references and history after reload
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/subsequent-preservation.test.ts (4 tests) 106ms
+stdout | src/__tests__/text-shared-projection.test.ts > updates a selected chart panel when its referenced Text metadata changes
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/text-shared-projection.test.ts > updates a selected chart panel when its referenced Text metadata changes
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at RenderObjectRuntime.queryBounds (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:604:10)
+      at RenderGraphics.getPresentationLocalBounds (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/node_modules/@asyra/render/src/types/render-object.ts:1048:21)
+
+stderr | src/__tests__/text-shared-projection.test.ts > updates a selected chart panel when its referenced Text metadata changes
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/text-shared-projection.test.ts (1 test) 52ms
+ ✓ src/__tests__/target-availability.test.ts (1 test) 2ms
+
+ Test Files  4 passed (4)
+      Tests  22 passed (22)
+   Start at  00:35:21
+   Duration  2.52s (transform 48ms, setup 15ms, collect 887ms, tests 340ms, environment 767ms, prepare 110ms)
+

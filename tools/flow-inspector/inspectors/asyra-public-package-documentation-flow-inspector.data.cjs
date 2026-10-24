@@ -47,6 +47,11 @@ const pageIds = Object.freeze([
   'build/collaboration',
   'build/ai-actions',
   'build/app-retrieval-action',
+  'updates/index',
+  'updates/text-official-fields-example-1-r2',
+  'updates/text-official-fields-example-1-r3',
+  'updates/text-spacing-example-2-r1',
+  'updates/text-spacing-example-2-r2',
   ...packageGuideIds,
   'reference/support-release',
   'cases/asyra-design'
@@ -116,7 +121,7 @@ module.exports = Object.freeze({
       ],
       outputs: ['artifact:public-content-contract'],
       conditions: [
-        'Exactly 41 stable page ids are declared once.',
+        'Required stable page ids remain present; additional update pages are explicitly declared once in the manifest.',
         'Each page owns a Markdown path, section, title, sources, and relationships to packages.',
         'Public indexes exclude internal operations, secrets, obsolete contracts, and historical audits.'
       ],
@@ -298,7 +303,8 @@ module.exports = Object.freeze({
       outputs: ['artifact:public-documentation-bundle'],
       conditions: [
         'Generated indexes are deterministic and source-mapped.',
-        'Plain-text discovery contains only approved public content.'
+        'Plain-text discovery contains only approved public content.',
+        'Durable release summaries retain predecessors, exact prerequisites, guide revisions and availability; missing coverage is explicit.'
       ],
       bypasses: [
         'Website consumers present this bundle but cannot rewrite its semantic claims.'
@@ -314,11 +320,16 @@ module.exports = Object.freeze({
       ],
       implementationBoundary: [
         'docs/public/generated/**',
+        'docs/public/updates/**',
         'docs/public/llms.txt',
         'scripts/docs/**',
         'package.json'
       ],
-      specRefs: ['#ai-readable-documentation-contract', '#freshness-contract'],
+      specRefs: [
+        '#ai-readable-documentation-contract',
+        '#freshness-contract',
+        'docs/ai/framework/rules/release-update-guidance.md#durable-public-release-records'
+      ],
       failureOwnerStepId: 'publish-documentation-indexes'
     }),
     step({
@@ -334,12 +345,16 @@ module.exports = Object.freeze({
       outputs: ['artifact:verified-public-documentation'],
       conditions: [
         'All content cases and documentation quality gates pass.',
+        'Isolated modeled consumer acceptance preserves cross-version changes, customization and data; original evidence remains unchanged.',
         'README and website implementation remain unmodified siblings.'
       ],
       bypasses: [
         'Final public registry and deployment links wait for their external owners.'
       ],
-      allowedContributors: ['deterministic project-owned documentation gates'],
+      allowedContributors: [
+        'deterministic project-owned documentation gates',
+        'isolated consumers using retained public candidate APIs'
+      ],
       forbiddenContributors: [
         'manual spot-check as sole evidence',
         'link suppression',
@@ -348,9 +363,15 @@ module.exports = Object.freeze({
       implementationBoundary: [
         'docs/public/**',
         'scripts/docs/**',
+        'fixtures/app-update-text-cross-version/**',
+        'scripts/__tests__/app-update-fixtures.test.mjs',
         'package.json'
       ],
-      specRefs: ['#quality-gates', '#definition-of-done'],
+      specRefs: [
+        '#quality-gates',
+        '#definition-of-done',
+        'docs/ai/framework/rules/release-update-guidance.md#consumer-preservation-and-subsequent-updates'
+      ],
       failureOwnerStepId: 'verify-public-documentation'
     })
   ]),
@@ -435,7 +456,7 @@ module.exports = Object.freeze({
       id: 'complete-public-ia',
       stepIds: ['freeze-content-contract', 'verify-public-documentation'],
       assertions: [
-        'Exactly 41 stable pages and 19 package guides exist.',
+        'Exactly 46 stable pages and 19 package guides exist.',
         'Start, Learn, Build, Reference, and Cases remain readable Markdown.'
       ]
     }),

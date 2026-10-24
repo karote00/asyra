@@ -49,6 +49,7 @@ test('Framework release publishes only validated Framework package artifacts', (
     ],
     verify: [
       'yarn release:consumer:registry',
+      'node scripts/framework-release-artifacts.js --record',
       'node scripts/framework-release-artifacts.js --cleanup'
     ]
   })
@@ -64,7 +65,7 @@ test('create-app release verifies the Framework registry and publishes only its 
       'yarn release:consumer:registry',
       'yarn release:app --prod=asyra-design',
       'yarn release:validate --prod=asyra-design',
-      'npm pack ./create-app/asyra-design --dry-run --json'
+      'node scripts/create-app-release-artifacts.mjs --prod=asyra-design'
     ],
     publish: ['node scripts/publish-create-app.js --prod=asyra-design']
   })
@@ -87,13 +88,13 @@ test('release publishers enforce separate Framework allowlist and CLI roots', ()
   assert.match(frameworkPublisher, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
   assert.match(releaseRecords, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
   assert.match(frameworkPublisher, /pkg\.artifact\.tarballPath/u)
-  assert.match(frameworkPublisher, /npm', \['view', spec, 'version'/)
+  assert.match(frameworkPublisher, /'view',\s*spec,\s*'version'/u)
   assert.doesNotMatch(
     frameworkPublisher,
     /release-records\/framework\/current\.json/
   )
   assert.doesNotMatch(frameworkPublisher, /create-app/)
-  assert.match(createAppPublisher, /path\.resolve\('create-app', product\)/)
+  assert.match(createAppPublisher, /createAppReleasePaths\(root, product\)/)
   assert.doesNotMatch(createAppPublisher, /FRAMEWORK_RELEASE_PACKAGE_NAMES/)
 })
 

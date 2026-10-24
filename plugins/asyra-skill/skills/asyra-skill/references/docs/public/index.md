@@ -51,6 +51,13 @@ editable design tool whose App-owned behavior you can replace. The
 <a href="https://github.com/karote00/asyra/blob/main/docs/public/cases/asyra-design.md" target="_blank" rel="noopener noreferrer">Asyra Design case study</a> identifies the Framework,
 Preset, App, and backend owners of that product.
 
+### Update an existing App
+
+Use the <a href="https://github.com/karote00/asyra/blob/main/docs/public/updates/index.md" target="_blank" rel="noopener noreferrer">update guides</a> to compare selected official changes
+and let your coding agent integrate them while retaining App-owned extensions
+and saved data. The Text guide is a worked example with explicit artifact and
+verification limits; it is not a new release announcement.
+
 ### Advanced composition
 
 Use [custom composition](start/custom-composition.md#build-one-complete-data-path)

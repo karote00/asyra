@@ -1,0 +1,2476 @@
+import type {
+  SceneTreeRawData,
+  CoreRawData,
+  PropertySchema,
+  PositionData
+} from '@asyra/utils'
+import { isRecord } from '@asyra/utils'
+import factory, {
+  Factory,
+  type SharedPublication,
+  type FactoryMutationDeliverySequence
+} from '@asyra/factory'
+import inputSystem, {
+  InputSystem,
+  type InputEventCombo
+} from '@asyra/input-system'
+import sceneTree, { componentRegistry, SceneTree } from '@asyra/scene-tree'
+import props, {
+  commitDeclarativePropertyTypeDefinition,
+  getDeclarativePropertyTypeDefinition,
+  PropsManager,
+  getPropertyComponent,
+  getPropertySchema,
+  registerPropertySchema,
+  registerPropertyComponent,
+  unregisterPropertyRegistration,
+  PropertyTypeDefinitionError,
+  type PropertyTypeDefinition
+} from '@asyra/props-manager'
+import type { PropertyRegistrationScope } from '@asyra/props-manager'
+import {
+  defineFeature as defineFeatureRuntime,
+  getFeature as getFeatureRuntime,
+  unregisterFeature as unregisterFeatureRuntime,
+  getFeatureRegistry,
+  disposeFeatureSystem,
+  beginFeatureSystemRuntime,
+  type FeatureAPI,
+  type FeatureDefinition,
+  type FeatureKeyMap
+} from '@asyra/feature-system'
+import selection, { SelectionManager } from '@asyra/selection'
+import systemContext, { SystemContext } from '@asyra/system-context'
+import type { FeatureSystemAPIs } from './types/feature-system.js'
+import render, {
+  Render,
+  RenderAdapter,
+  MissingRenderEngineProviderError,
+  IRenderer,
+  RenderOptions,
+  RenderResult,
+  renderStrategyRegistry,
+  resetSharedRenderRuntime,
+  beginSharedRenderRuntime,
+  type RenderEngineProviderCleanup,
+  type RenderStrategy
+} from '@asyra/render'
+import type { RenderEngineProvider } from '@asyra/render-engine'
+import { propertyRegistry } from '@asyra/ui-context'
+import {
+  type DocumentLoadSource,
+  type IPersistenceProvider,
+  type SaveHook,
+  type LoadHook
+} from '@asyra/persistence'
+import {
+  type EventDefinition,
+  type EventRegistration,
+  eventRegistry,
+  fileLoadComplete,
+  runInTransactionReplayMode,
+  settleCooperativeRenderSlice
+} from '@asyra/reactive-events'
+import type { Subscription } from 'rxjs'
+import {
+  CoreRuntimeLifetime,
+  CoreRuntimeResetError,
+  type CoreRuntimeState
+} from './runtime-lifetime.js'
+
+import {
+  CoreAPIs,
+  ElementSelectionActionAPIs,
+  InputSystemAPIs,
+  RenderAPIs,
+  SceneTreeAPIs,
+  UIContextAPIs,
+  SystemManagedPropertyAPIs
+} from './types/index.js'
+import { createAPIs } from './apis/index.js'
+import type {
+  LoadDiagnosticsHook,
+  LoadValidationDiagnostic
+} from './types/load-validation.js'
+import type {
+  ApplyRemoteCanonicalChangeSlicesInput,
+  CoreCollaborationBridge,
+  CoreCollaborationSession
+} from './types/app-runtime.js'
+import {
+  LOAD_HOOK_EXECUTION_ERROR_CODES,
+  LoadHookExecutionError
+} from './types/load-migration.js'
+import type { DataChannelObserverRegistration } from './data-channel-observer.js'
+import * as dataChannelObserver from './data-channel-observer.js'
+import {
+  definePropertyComponent as definePropertyComponentRuntime,
+  definePropertyChildRelation as definePropertyChildRelationRuntime,
+  getPropertyChildRelations as getPropertyChildRelationsRuntime,
+  removePropertyChildRelation as removePropertyChildRelationRuntime,
+  type PropertyChildRelationMetadata,
+  type PropertyComponentDefinition
+} from './define-property-component.js'
+import type { PropertyChildRelationDefinition } from '@asyra/props-manager'
+import {
+  defineComponent as defineComponentRuntime,
+  defineComponentPropertyRelationForSceneTree as defineComponentPropertyRelationRuntime,
+  getComponentPropertyRelations as getComponentPropertyRelationsRuntime,
+  removeComponentPropertyRelationForSceneTree as removeComponentPropertyRelationRuntime,
+  unregisterComponent as unregisterComponentRuntime,
+  unregisterComponentGraphRegistration,
+  type ComponentDefinition,
+  type ComponentPropertyRelationMetadata,
+  type UnregisterComponentOptions,
+  type UnregisterComponentResult
+} from './define-component.js'
+import {
+  RegistrationGraph,
+  RegistrationRelationError,
+  type RegistrationGraphOperation,
+  type RegistrationDefinitionMetadata,
+  type RegistrationNodeMetadata,
+  type RegistrationRef,
+  type RegistrationRelationMetadata,
+  type RelationOperationSuccess,
+  type UnregisterRegistrationSuccess
+} from '@asyra/utils'
+
+interface CoreDeps {
+  inputSystem: InputSystem
+  factory: Factory
+  dataChannelObservers?: dataChannelObserver.DataChannelObserverRegistry
+  props: PropsManager
+  render: Render
+  sceneTree: SceneTree
+  selection: SelectionManager
+  systemContext: SystemContext
+}
+
+const DEFAULT_VERSION = '1.0.0'
+const DATA_VERSION = '1.0.0'
+const INLINE_COMPONENT_RENDER_RELATION = 'component-owner'
+let didWarnAboutSetPersistence = false
+const EMPTY_SCENE_TREE_DATA: SceneTreeRawData = {
+  workspace: '',
+  workspaceList: [],
+  elements: {}
+}
+
+const cloneSerializationSnapshot = (data: CoreRawData): CoreRawData => {
+  if (typeof globalThis.structuredClone === 'function') {
+    return globalThis.structuredClone(data)
+  }
+
+  return JSON.parse(JSON.stringify(data)) as CoreRawData
+}
+
+const cloneLoadObservation = <T>(value: T): T => {
+  if (typeof globalThis.structuredClone === 'function') {
+    return globalThis.structuredClone(value)
+  }
+
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+class Core implements CoreAPIs {
+  version: string = DEFAULT_VERSION
+
+  private readonly defaultRenderer: IRenderer
+  private renderer: IRenderer
+  private renderEngineProviderToken: symbol | null = null
+  private loadSource: DocumentLoadSource | null = null
+  private saveHooks: SaveHook[] = []
+  private loadHooks: LoadHook[] = []
+  private loadDiagnosticsHooks: LoadDiagnosticsHook[] = []
+  private compositionOpen = true
+  private propertyTypeRedefinitionInProgress = false
+  private readonly redefinedPropertyTypes = new Set<string>()
+  private readonly dataChannelObservers: dataChannelObserver.DataChannelObserverRegistry
+  private readonly registrationGraph = new RegistrationGraph({
+    isCompositionOpen: () => this.compositionOpen
+  })
+  private collaborationSession: CoreCollaborationSession | null = null
+  private collaborationDestroyPromise: Promise<void> | null = null
+  private readonly lifetime = new CoreRuntimeLifetime()
+  private readonly runtimeFacade: Core
+  private runtimeResetPromise: Promise<Core> | null = null
+  private readonly runtimeCleanups = new Map<
+    string,
+    () => void | Promise<void>
+  >()
+  private readonly ownedEvents = new Map<string, EventRegistration>()
+  private readonly ownedEventSubscriptions = new Set<Subscription>()
+  private attachedCanvas: HTMLCanvasElement | null = null
+
+  setupInputSystem!: InputSystemAPIs['setupInputSystem']
+
+  getElementIdsInBounds!: RenderAPIs['getElementIdsInBounds']
+  measureElementContentBounds!: RenderAPIs['measureElementContentBounds']
+  captureElementSnapshot!: RenderAPIs['captureElementSnapshot']
+  initRender!: RenderAPIs['initRender']
+  renderIsReady!: RenderAPIs['renderIsReady']
+  registerRenderLayer!: RenderAPIs['registerRenderLayer']
+  unregisterRenderLayer!: RenderAPIs['unregisterRenderLayer']
+  createRenderGradientFillStyle!: RenderAPIs['createRenderGradientFillStyle']
+  createEvenOddFillStyle!: RenderAPIs['createEvenOddFillStyle']
+  createMeshProjection!: RenderAPIs['createMeshProjection']
+  registerRenderInteractionTargets!: RenderAPIs['registerRenderInteractionTargets']
+  updateRenderInteractionTarget!: RenderAPIs['updateRenderInteractionTarget']
+  unregisterRenderInteractionTarget!: RenderAPIs['unregisterRenderInteractionTarget']
+  clearRenderInteractionTargets!: RenderAPIs['clearRenderInteractionTargets']
+  registerRenderInteractionHandler!: RenderAPIs['registerRenderInteractionHandler']
+  unregisterRenderInteractionHandler!: RenderAPIs['unregisterRenderInteractionHandler']
+  propsLoadData!: CoreAPIs['propsLoadData']
+  propsSaveData!: CoreAPIs['propsSaveData']
+  preflightRestoreProperties!: CoreAPIs['preflightRestoreProperties']
+  applyRestoreProperties!: CoreAPIs['applyRestoreProperties']
+  updatePropertyComponents!: CoreAPIs['updatePropertyComponents']
+  updateElementProperties!: CoreAPIs['updateElementProperties']
+  patchElementProperties!: CoreAPIs['patchElementProperties']
+  applyCanonicalChanges!: CoreAPIs['applyCanonicalChanges']
+  isTransactionBoundaryIdle!: CoreAPIs['isTransactionBoundaryIdle']
+  startHistoryGroup!: CoreAPIs['startHistoryGroup']
+  updateHistoryGroup!: CoreAPIs['updateHistoryGroup']
+  endHistoryGroup!: CoreAPIs['endHistoryGroup']
+  getHistoryGroupStatus!: CoreAPIs['getHistoryGroupStatus']
+
+  sceneTreeInit!: SceneTreeAPIs['sceneTreeInit']
+  sceneTreeLoadData!: SceneTreeAPIs['sceneTreeLoadData']
+  sceneTreeSaveData!: SceneTreeAPIs['sceneTreeSaveData']
+  createElement!: SceneTreeAPIs['createElement']
+  createElementInParent!: SceneTreeAPIs['createElementInParent']
+  createElementsInParent!: SceneTreeAPIs['createElementsInParent']
+  createElementsInParentFromCanonicalData!: SceneTreeAPIs['createElementsInParentFromCanonicalData']
+  getElementComputedData!: SceneTreeAPIs['getElementComputedData']
+  moveElements!: SceneTreeAPIs['moveElements']
+  applyHierarchyMoves!: SceneTreeAPIs['applyHierarchyMoves']
+  applyElementDataChanges!: SceneTreeAPIs['applyElementDataChanges']
+  removeSubtrees!: SceneTreeAPIs['removeSubtrees']
+  removeSubtree!: SceneTreeAPIs['removeSubtree']
+  removeSubtreeFromCanonicalData!: SceneTreeAPIs['removeSubtreeFromCanonicalData']
+  removeElementsFromCanonicalData!: SceneTreeAPIs['removeElementsFromCanonicalData']
+  preflightRestoreSubtree!: SceneTreeAPIs['preflightRestoreSubtree']
+  applyRestoreSubtree!: SceneTreeAPIs['applyRestoreSubtree']
+  updateLocalComputedData!: SceneTreeAPIs['updateLocalComputedData']
+  patchLocalComputedData!: SceneTreeAPIs['patchLocalComputedData']
+  projectLocalComputedDataFromPropertyIds!: SceneTreeAPIs['projectLocalComputedDataFromPropertyIds']
+  getAllElementsBounds!: SceneTreeAPIs['getAllElementsBounds']
+  isContainerType!: SceneTreeAPIs['isContainerType']
+  selectByChannel!: ElementSelectionActionAPIs['selectByChannel']
+  selectElements!: ElementSelectionActionAPIs['selectElements']
+  selectVectorPoints!: ElementSelectionActionAPIs['selectVectorPoints']
+  selectVectorSegments!: ElementSelectionActionAPIs['selectVectorSegments']
+
+  initFeatureSystem!: FeatureSystemAPIs['initFeatureSystem']
+  defineUIProperty!: UIContextAPIs['defineUIProperty']
+  registerUIProperty!: UIContextAPIs['registerUIProperty']
+  getUIProperty!: UIContextAPIs['getUIProperty']
+  setUIProperty!: UIContextAPIs['setUIProperty']
+  getUIPropertySubject!: UIContextAPIs['getUIPropertySubject']
+  onUIPropertyChange!: UIContextAPIs['onUIPropertyChange']
+
+  defineSystemProperty!: SystemManagedPropertyAPIs['defineSystemProperty']
+  registerSystemProperty!: SystemManagedPropertyAPIs['registerSystemProperty']
+  getSystemProperty!: SystemManagedPropertyAPIs['getSystemProperty']
+  setSystemProperty!: SystemManagedPropertyAPIs['setSystemProperty']
+  getSystemPropertyObservable!: SystemManagedPropertyAPIs['getSystemPropertyObservable']
+  hasSystemProperty!: SystemManagedPropertyAPIs['hasSystemProperty']
+  unregisterSystemProperty!: SystemManagedPropertyAPIs['unregisterSystemProperty']
+
+  /**
+   * @deprecated App code must use the public Core facade. This dependency
+   * container remains temporarily available only for compatibility while
+   * package integrations migrate.
+   */
+  readonly deps: CoreDeps
+
+  constructor(deps: CoreDeps) {
+    this.deps = deps
+    this.defaultRenderer = new RenderAdapter(deps.render)
+    this.renderer = this.defaultRenderer
+    this.dataChannelObservers =
+      deps.dataChannelObservers ??
+      new dataChannelObserver.DataChannelObserverRegistry(deps.factory)
+    const apis = createAPIs(
+      deps.sceneTree,
+      deps.render,
+      deps.selection,
+      deps.props,
+      deps.factory
+    )
+
+    Object.assign(this, apis as CoreAPIs)
+
+    const setSystemProperty = this.setSystemProperty
+    this.setSystemProperty = ((key, value) => {
+      setSystemProperty(key, value)
+      deps.render.requestRender()
+    }) as SystemManagedPropertyAPIs['setSystemProperty']
+
+    const unregisterSystemProperty = this.unregisterSystemProperty
+    this.unregisterSystemProperty = ((key) => {
+      this.assertCompositionOpen('unregister-registration')
+      return unregisterSystemProperty(key)
+    }) as SystemManagedPropertyAPIs['unregisterSystemProperty']
+
+    const defineUIProperty = this.defineUIProperty
+    const registerUIProperty = this.registerUIProperty
+    this.defineUIProperty = ((key, config) => {
+      this.assertCompositionOpen('register-node')
+      const source = { kind: 'ui-property', key }
+      if (
+        this.registrationGraph.getRegistration(source) ||
+        propertyRegistry.getAllPropertyKeys().includes(key)
+      ) {
+        this.registrationConflict(
+          source,
+          `[PropertyRegistry] Property "${key}" is already registered`
+        )
+      }
+      this.preflightRegistrationDefinition(source, config.registration)
+      defineUIProperty(key, config)
+      this.ensureUIPropertyNode(key, config.registration)
+      this.defineRegistrationRelations(source, config.registration)
+    }) as UIContextAPIs['defineUIProperty']
+    this.registerUIProperty = ((key, config) => {
+      this.assertCompositionOpen('register-node')
+      const source = { kind: 'ui-property', key }
+      if (
+        this.registrationGraph.getRegistration(source) ||
+        propertyRegistry.getAllPropertyKeys().includes(key)
+      ) {
+        this.registrationConflict(
+          source,
+          `[PropertyRegistry] Property "${key}" is already registered`
+        )
+      }
+      this.preflightRegistrationDefinition(source, config.registration)
+      registerUIProperty(key, config)
+      this.ensureUIPropertyNode(key, config.registration)
+      this.defineRegistrationRelations(source, config.registration)
+    }) as UIContextAPIs['registerUIProperty']
+    this.runtimeFacade = this.lifetime.facade(this)
+    return this.runtimeFacade
+  }
+
+  getRuntimeState(): CoreRuntimeState {
+    return this.lifetime.state
+  }
+
+  registerRuntimeCleanup(
+    key: string,
+    cleanup: () => void | Promise<void>
+  ): () => void {
+    this.lifetime.assertActive()
+    if (!key.trim() || this.runtimeCleanups.has(key)) {
+      throw new Error(
+        `Core runtime cleanup key is empty or already registered: "${key}"`
+      )
+    }
+    this.runtimeCleanups.set(key, cleanup)
+    let registered = true
+    return () => {
+      if (!registered) return
+      registered = false
+      if (this.runtimeCleanups.get(key) === cleanup)
+        this.runtimeCleanups.delete(key)
+    }
+  }
+
+  /** Terminal handoff; the App must stop admission and call outside Feature work. */
+  resetRuntime(): Promise<Core> {
+    if (this.runtimeResetPromise) return this.runtimeResetPromise
+    try {
+      this.lifetime.assertResetReady()
+    } catch (error) {
+      return Promise.reject(error)
+    }
+    this.lifetime.state = 'quiescing'
+    let complete: (next: Core) => void = () => undefined
+    let fail: (cause: unknown) => void = () => undefined
+    this.runtimeResetPromise = new Promise<Core>((resolve, reject) => {
+      complete = resolve
+      fail = reject
+    })
+    // Install the shared result before abort/disposal callbacks can reenter.
+    void this.performRuntimeReset().then(complete, fail)
+    return this.runtimeResetPromise
+  }
+
+  private async performRuntimeReset(): Promise<Core> {
+    let phase = 'quiescence'
+    try {
+      const settle = (operation: () => void | Promise<void>) => {
+        try {
+          return Promise.resolve(operation())
+        } catch (error) {
+          return Promise.reject(error)
+        }
+      }
+      const session = this.collaborationSession
+      this.collaborationSession = null
+      const quiescence = await Promise.allSettled([
+        settle(() =>
+          disposeFeatureSystem(() => this.getSystemContextSnapshot())
+        ),
+        settle(() => this.collaborationDestroyPromise ?? session?.dispose())
+      ])
+      await this.lifetime.drain()
+      for (const result of quiescence) {
+        if (result.status === 'rejected') throw result.reason
+      }
+      this.lifetime.state = 'retiring'
+      this.renderEngineProviderToken = null
+      const retire = (owner: string, operation: () => void) => {
+        phase = owner
+        operation()
+      }
+      retire('observers', () => this.dataChannelObservers.resetRuntime())
+      retire('events', () => this.retireOwnedEvents())
+      retire('input', () => this.deps.inputSystem.resetRuntime())
+      retire('render', () => {
+        if (this.renderer !== this.defaultRenderer) this.renderer.destroy()
+        this.deps.render.resetRuntime()
+        this.attachedCanvas?.remove()
+        this.attachedCanvas = null
+      })
+      retire('shared-render', resetSharedRenderRuntime)
+      retire('factory', () => this.deps.factory.resetRuntime())
+      retire('scene', () => this.deps.sceneTree.resetRuntime())
+      retire('props', () => this.deps.props.resetRuntime())
+      retire('selection', () => this.deps.selection.resetRuntime())
+      retire('system-context', () => this.deps.systemContext.resetRuntime())
+      retire('ui-context', () => propertyRegistry.resetRuntime())
+      retire('registrations', () => this.registrationGraph.disposeRuntime())
+      phase = 'composition'
+      const cleanups = [...this.runtimeCleanups.values()].reverse()
+      this.runtimeCleanups.clear()
+      const failures: unknown[] = []
+      this.lifetime.cleanupActive = true
+      try {
+        for (const cleanup of cleanups) {
+          try {
+            await cleanup()
+          } catch (error) {
+            failures.push(error)
+          }
+        }
+      } finally {
+        this.lifetime.cleanupActive = false
+      }
+      if (failures.length > 0) throw failures[0]
+      this.loadSource = null
+      this.saveHooks = []
+      this.loadHooks = []
+      this.loadDiagnosticsHooks = []
+      this.redefinedPropertyTypes.clear()
+      phase = 'successor'
+      const successor = new Core({
+        ...this.deps,
+        dataChannelObservers: this.dataChannelObservers
+      })
+      beginFeatureSystemRuntime()
+      beginSharedRenderRuntime()
+      this.lifetime.state = 'retired'
+      if (core === this.runtimeFacade) core = successor
+      return successor
+    } catch (cause) {
+      this.lifetime.state = 'failed'
+      if (phase === 'successor') {
+        // A failed begin must not leave a newly opened Feature queue accepting work.
+        await Promise.resolve(
+          disposeFeatureSystem(() => this.getSystemContextSnapshot())
+        ).catch(() => undefined)
+      }
+      throw new CoreRuntimeResetError(phase, cause)
+    }
+  }
+
+  private retireOwnedEvents(): void {
+    const subscriptions = [...this.ownedEventSubscriptions]
+    this.ownedEventSubscriptions.clear()
+    const events = [...this.ownedEvents]
+    this.ownedEvents.clear()
+    const failures: unknown[] = []
+    for (const subscription of subscriptions) {
+      try {
+        subscription.unsubscribe()
+      } catch (error) {
+        failures.push(error)
+      }
+    }
+    for (const [name, registration] of events) {
+      try {
+        if (eventRegistry.get(name) === registration)
+          eventRegistry.unregister(name)
+      } catch (error) {
+        failures.push(error)
+      }
+    }
+    if (failures.length > 0) throw failures[0]
+  }
+
+  /** Set an advanced full renderer replacement before startup. */
+  setRenderer(renderer: IRenderer): void {
+    this.assertCompositionOpen('register-node')
+    this.renderer = renderer
+  }
+
+  destroyRenderer(): void {
+    this.renderer.destroy()
+  }
+
+  registerCollaborationSession(session: CoreCollaborationSession): void {
+    if (
+      !session ||
+      typeof session.prepare !== 'function' ||
+      typeof session.activate !== 'function' ||
+      typeof session.dispose !== 'function'
+    ) {
+      throw new Error(
+        'Core collaboration session must implement prepare, activate, and dispose'
+      )
+    }
+    if (this.collaborationSession) {
+      throw new Error('Core collaboration session is already registered')
+    }
+    this.collaborationSession = session
+  }
+
+  async destroy(): Promise<void> {
+    if (this.collaborationDestroyPromise) {
+      return this.collaborationDestroyPromise
+    }
+    const session = this.collaborationSession
+    this.collaborationSession = null
+    const destroying = (async () => {
+      try {
+        await session?.dispose()
+      } finally {
+        this.renderer.destroy()
+      }
+    })()
+    this.collaborationDestroyPromise = destroying.finally(() => {
+      this.collaborationDestroyPromise = null
+    })
+    return this.collaborationDestroyPromise
+  }
+
+  registerInputKeyCombinations(
+    combinations: Record<string, InputEventCombo[]>
+  ): () => void {
+    this.deps.inputSystem.registry.registerKeyCombinations(combinations)
+    const eventNames = Object.keys(combinations)
+    let disposed = false
+    return this.lifetime.cleanup(() => {
+      if (disposed) return
+      disposed = true
+      eventNames.forEach((eventName) => {
+        this.deps.inputSystem.registry.unregister(eventName)
+      })
+    })
+  }
+
+  getElementData(elementId: string) {
+    const data = this.deps.sceneTree.getElementById(elementId)?.save()
+    return data === undefined ? undefined : cloneLoadObservation(data)
+  }
+
+  getElementMetadata(elementId: string) {
+    const element = this.deps.sceneTree.getElementById(elementId)
+    if (!element) return undefined
+    const type = element.get('type')
+    const children = this.isContainerType(type)
+      ? (element as import('@asyra/utils').GroupInstanceTypes).get('children')
+      : []
+    return {
+      id: element.get('id'),
+      type,
+      name: element.get('name'),
+      parentId: element.get('parentId'),
+      visible: element.get('visible'),
+      lock: element.get('lock'),
+      childCount: children.length
+    }
+  }
+
+  getElementChildren(elementId: string, offset = 0, limit = 50) {
+    if (
+      !Number.isSafeInteger(offset) ||
+      offset < 0 ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1
+    )
+      throw new Error(
+        'Child page requires a nonnegative offset and positive limit'
+      )
+    const element = this.deps.sceneTree.getElementById(elementId)
+    const children =
+      element && this.isContainerType(element.get('type'))
+        ? (element as import('@asyra/utils').GroupInstanceTypes).get('children')
+        : []
+    return {
+      available: Boolean(element),
+      elementIds: children.slice(offset, offset + limit),
+      total: children.length,
+      nextOffset: offset + limit < children.length ? offset + limit : null
+    }
+  }
+
+  getCurrentWorkspaceId(): string {
+    return this.deps.sceneTree.workspace
+  }
+
+  getAllElementData() {
+    return Object.freeze(
+      [...this.deps.sceneTree.getAllElements().entries()].map(
+        ([elementId, element]) =>
+          Object.freeze({
+            elementId,
+            data: cloneLoadObservation(element.save()),
+            computed: cloneLoadObservation(element.getAllComputedData())
+          })
+      )
+    )
+  }
+
+  getCanonicalElementCount(): number {
+    return Math.max(
+      0,
+      this.deps.sceneTree.getAllElements().size -
+        this.deps.sceneTree.workspaceList.length
+    )
+  }
+
+  getCanonicalOwnerSnapshot() {
+    return cloneLoadObservation({
+      props: this.deps.props.save(),
+      sceneTree: this.deps.sceneTree.save()
+    })
+  }
+
+  /** Resolve affected elements through canonical nested/shared property indexes. */
+  getPropertyOwnerElementIds(
+    propertyIds: readonly string[],
+    options?: { includeRetired?: boolean }
+  ): string[] {
+    const elementIds = new Set<string>()
+    const componentIds = new Set(propertyIds)
+    const activeIds = options?.includeRetired
+      ? [...componentIds].filter((id) => this.deps.props.getPropertyById(id))
+      : [...componentIds]
+    for (const id of this.deps.props.resolvePropertyAncestorIds(activeIds))
+      componentIds.add(id)
+    for (const propertyId of componentIds) {
+      for (const relation of this.deps.sceneTree.getElementPropertyRelations(
+        propertyId
+      )) {
+        elementIds.add(relation.ownerElementId)
+      }
+    }
+    return [...elementIds]
+  }
+
+  projectLocalComputedDataForElements(elementIds: readonly string[]): void {
+    const propertyIds = new Set<string>()
+    elementIds.forEach((elementId) => {
+      const element = this.deps.sceneTree.getElementById(elementId)
+      if (!element) {
+        return
+      }
+      const props = element.props as typeof element.props & {
+        getCanonicalRootPropertyIds?: () => readonly string[]
+      }
+      const canonicalPropertyIds = props.getCanonicalRootPropertyIds?.()
+      if (!canonicalPropertyIds) {
+        throw new Error(
+          `[Core] element "${elementId}" has no canonical property owner evidence`
+        )
+      }
+      canonicalPropertyIds.forEach((propertyId: string) => {
+        propertyIds.add(propertyId)
+      })
+    })
+    this.deps.sceneTree.projectLocalComputedDataFromPropertyIds([
+      ...propertyIds
+    ])
+  }
+
+  updateElementData(
+    elementId: string,
+    values: Readonly<{
+      name?: string
+      visible?: boolean
+      lock?: boolean
+    }>,
+    options?: Parameters<SceneTree['applyPreparedElementMutation']>[1]
+  ): boolean {
+    const prepared = this.deps.sceneTree.prepareElementDataMutation([
+      { elementId, values }
+    ])
+    return (
+      this.deps.sceneTree.applyPreparedElementMutation(prepared, options)
+        .orderedElementIds.length > 0
+    )
+  }
+
+  getSelectedElementIds(): string[] {
+    return [...this.deps.selection.getElementSelectionIds()]
+  }
+
+  getSystemContextSnapshot() {
+    return cloneLoadObservation(
+      this.deps.systemContext.getSystemContextSnapshot()
+    )
+  }
+
+  resizeRenderer(width: number, height: number): void {
+    if (
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      width <= 0 ||
+      height <= 0
+    ) {
+      throw new RangeError('Renderer size must be finite and positive')
+    }
+    this.renderer.resize(width, height)
+  }
+
+  getCanvas(): HTMLCanvasElement | null {
+    return this.renderer.getCanvas()
+  }
+
+  setCanvasCursor(cursor: string): boolean {
+    const canvas = this.getCanvas()
+    if (!canvas) return false
+    canvas.style.cursor = cursor
+    return true
+  }
+
+  getCanvasBounds(): DOMRect | null {
+    return this.getCanvas()?.getBoundingClientRect() ?? null
+  }
+
+  getViewportPosition(): PositionData {
+    const position = this.deps.render.getViewportPosition()
+    // Engine positions may carry callbacks. The public contract is coordinate
+    // data only, detached from the live engine object on every read.
+    return { x: position.x, y: position.y }
+  }
+
+  getViewportScale(): number {
+    return this.deps.render.getViewportScale()
+  }
+
+  getMousePosInWorkspace(mousePos: { clientX: number; clientY: number }) {
+    return cloneLoadObservation(
+      this.deps.render.getMousePosInWorkspace(mousePos)
+    )
+  }
+
+  workspaceToCanvas(workspacePosition: PositionData): PositionData {
+    return cloneLoadObservation(
+      this.deps.render.workspaceToCanvas(workspacePosition)
+    )
+  }
+
+  getElementIdAtClientPos(clientPos: { x: number; y: number }) {
+    return this.deps.render.getElementIdAtClientPos(clientPos)
+  }
+
+  workspaceToElementLocal(
+    elementId: string,
+    workspacePosition: { x: number; y: number }
+  ) {
+    return cloneLoadObservation(
+      this.deps.render.workspaceToElementLocal(elementId, workspacePosition)
+    )
+  }
+
+  elementLocalToWorkspace(
+    elementId: string,
+    localPosition: { x: number; y: number }
+  ) {
+    return cloneLoadObservation(
+      this.deps.render.elementLocalToWorkspace(elementId, localPosition)
+    )
+  }
+
+  elementSourceToWorkspace(
+    elementId: string,
+    sourcePosition: PositionData
+  ): PositionData | null {
+    return cloneLoadObservation(
+      this.deps.render.elementSourceToWorkspace(elementId, sourcePosition)
+    )
+  }
+
+  workspaceToElementSource(
+    elementId: string,
+    workspacePosition: PositionData
+  ): PositionData | null {
+    return cloneLoadObservation(
+      this.deps.render.workspaceToElementSource(elementId, workspacePosition)
+    )
+  }
+
+  getProjectedElementCount(): number {
+    return this.deps.render.getProjectedElementCount()
+  }
+
+  hasProjectedElement(elementId: string): boolean {
+    return this.deps.render.getElementById(elementId) !== undefined
+  }
+
+  subscribeToFrameComplete(subscriber: () => void): () => void {
+    return this.lifetime.cleanup(
+      this.deps.render.subscribeToFrameComplete(() => {
+        if (this.lifetime.isUsable()) subscriber()
+      })
+    )
+  }
+
+  isInUndoRedo(): boolean {
+    return this.deps.factory.isInUndoRedo()
+  }
+
+  getUndoHistoryDepth(): number {
+    return this.deps.factory.getUndoHistoryDepth()
+  }
+
+  subscribeToSharedPublication(
+    subscriber: (publication: SharedPublication) => void
+  ): () => void {
+    return this.lifetime.cleanup(
+      this.deps.factory.subscribeToSharedPublication((publication) => {
+        if (this.lifetime.isUsable()) subscriber(publication)
+      })
+    )
+  }
+
+  subscribeToTransactionStatus(
+    subscriber: Parameters<Factory['subscribeToTransactionStatus']>[0]
+  ): () => void {
+    return this.lifetime.cleanup(
+      this.deps.factory.subscribeToTransactionStatus((status) => {
+        if (this.lifetime.isUsable()) subscriber(status)
+      })
+    )
+  }
+
+  observeSharedDataChannel(
+    channel: Parameters<Factory['observeSharedDataChannel']>[0],
+    subscriber: Parameters<Factory['observeSharedDataChannel']>[1]
+  ): () => void {
+    return this.lifetime.cleanup(
+      this.deps.factory.observeSharedDataChannel(channel, (change) => {
+        if (this.lifetime.isUsable()) subscriber(change)
+      })
+    )
+  }
+
+  configureSharedDeliverySequence(
+    sequence: FactoryMutationDeliverySequence
+  ): void {
+    const controller = this.deps.factory.getActiveStagedDeliveryController()
+    if (!controller) {
+      throw new Error(
+        '[Core] shared delivery sequence requires an active transaction'
+      )
+    }
+    controller.setDeliverySequence(sequence)
+  }
+
+  async applyRemoteCanonicalChangeSlices({
+    origin,
+    slices
+  }: ApplyRemoteCanonicalChangeSlicesInput): Promise<void> {
+    if (slices.length === 0) return
+    let replayMode: 'redo' | 'rollback' | 'undo' | null = null
+    if (origin === 'undo' || origin === 'redo') {
+      replayMode = origin
+    } else if (origin === 'rollback-compensation') {
+      replayMode = 'rollback'
+    }
+    const mutations = slices.map((changes): (() => void) => () => {
+      const apply = () => this.applyCanonicalChanges(changes)
+      if (replayMode) {
+        runInTransactionReplayMode(replayMode, apply)
+      } else {
+        apply()
+      }
+    })
+    if (mutations.length === 1) {
+      this.deps.factory.runRemoteTransaction(mutations[0] as () => void)
+      return
+    }
+    await this.deps.factory.runRemoteTransactionProgressively(mutations, () =>
+      settleCooperativeRenderSlice()
+    )
+  }
+
+  private createCollaborationBridge(): CoreCollaborationBridge {
+    const bridge: CoreCollaborationBridge = {
+      applyRemoteCanonicalChangeSlices: (input) =>
+        this.runtimeFacade.applyRemoteCanonicalChangeSlices(input),
+      load: (data) => this.runtimeFacade.load(data),
+      subscribeToSharedPublication: (subscriber) =>
+        this.runtimeFacade.subscribeToSharedPublication(subscriber)
+    }
+    return Object.freeze(bridge)
+  }
+
+  setRenderEngineProvider(
+    provider: RenderEngineProvider
+  ): RenderEngineProviderCleanup {
+    this.assertCompositionOpen('register-node')
+    if (this.renderEngineProviderToken) {
+      throw new Error('Core render engine provider is already configured')
+    }
+
+    const renderCleanup = this.deps.render.setEngineProvider(provider)
+    const token = Symbol('core-render-engine-provider')
+    this.renderEngineProviderToken = token
+
+    return () => {
+      if (this.renderEngineProviderToken !== token) {
+        return
+      }
+      this.assertCompositionOpen('unregister-registration')
+      renderCleanup()
+      this.renderEngineProviderToken = null
+    }
+  }
+
+  hasRenderEngineProvider(): boolean {
+    return this.renderEngineProviderToken !== null
+  }
+
+  isCompositionOpen(): boolean {
+    return this.compositionOpen
+  }
+
+  registerDataChannelObserver<TChange = unknown>(
+    registration: DataChannelObserverRegistration<TChange>
+  ): void {
+    this.dataChannelObservers.register(registration)
+  }
+
+  unregisterDataChannelObserver(name: string): boolean {
+    return this.dataChannelObservers.unregister(name)
+  }
+
+  registerSharedDataChannel(
+    name: Parameters<Factory['registerSharedDataChannel']>[0],
+    channel: Parameters<Factory['registerSharedDataChannel']>[1]
+  ): void {
+    this.deps.factory.registerSharedDataChannel(name, channel)
+  }
+
+  unregisterSharedDataChannel(
+    name: Parameters<Factory['unregisterSharedDataChannel']>[0]
+  ): boolean {
+    return this.deps.factory.unregisterSharedDataChannel(name)
+  }
+
+  hasSharedDataChannel(
+    name: Parameters<Factory['hasSharedDataChannel']>[0]
+  ): boolean {
+    return this.deps.factory.hasSharedDataChannel(name)
+  }
+
+  createLocalSharedDataChannel(): ReturnType<
+    Factory['createLocalSharedDataChannel']
+  > {
+    return this.deps.factory.createLocalSharedDataChannel()
+  }
+
+  /** Set the read-only source used during Core startup. */
+  setLoadSource(source: DocumentLoadSource): void {
+    this.loadSource = source
+  }
+
+  /**
+   * @deprecated Use setLoadSource. Core does not call provider save or clear.
+   * This compatibility adapter remains available through the 0.2.x migration
+   * window and is planned for removal in the next major release.
+   */
+  setPersistence(provider: IPersistenceProvider): void {
+    if (!didWarnAboutSetPersistence) {
+      console.warn(
+        'Core.setPersistence is deprecated. Use Core.setLoadSource; Core never saves or clears through this compatibility surface.'
+      )
+      didWarnAboutSetPersistence = true
+    }
+    this.setLoadSource(provider)
+  }
+
+  /**
+   * Register a hook to transform data before saving
+   * @param hook - Function that receives and returns CoreData
+   */
+  registerSaveHook(hook: SaveHook): void {
+    this.saveHooks.push(hook)
+  }
+
+  /**
+   * Register an app-owned hook in the synchronous load-migration chain.
+   * @param hook - Function that receives raw input and returns a versioned document
+   */
+  registerLoadHook(hook: LoadHook): void {
+    this.loadHooks.push(hook)
+  }
+
+  /**
+   * Register a hook to receive non-blocking load diagnostics.
+   * Hooks are called after load validation/apply finishes.
+   */
+  registerLoadDiagnosticsHook(hook: LoadDiagnosticsHook): () => void {
+    this.loadDiagnosticsHooks.push(hook)
+
+    return () => {
+      const hookIndex = this.loadDiagnosticsHooks.indexOf(hook)
+      if (hookIndex === -1) {
+        return
+      }
+      this.loadDiagnosticsHooks.splice(hookIndex, 1)
+    }
+  }
+
+  /**
+   * Start the framework with a custom renderer
+   * @param container - DOM element to attach canvas to
+   * @param renderOptions - Options for renderer initialization
+   */
+  async start(
+    container: HTMLElement,
+    renderOptions: RenderOptions
+  ): Promise<void> {
+    if (this.propertyTypeRedefinitionInProgress) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'UNREGISTER_FAILED',
+        operation: 'transfer-owner',
+        message:
+          'Core cannot start while a property type redefinition is in progress'
+      })
+    }
+    this.compositionOpen = false
+    this.registrationGraph.validateRelations()
+    this.validateRedefinedPropertyRelations()
+
+    const renderer = this.renderer
+    const collaborationSession = this.collaborationSession
+    let collaborationLoadSource: DocumentLoadSource | undefined
+
+    try {
+      // Phase 1: Prepare the optional app-owned collaboration session.
+      const preparation = await collaborationSession?.prepare(
+        this.createCollaborationBridge()
+      )
+      collaborationLoadSource = preparation?.loadSource
+
+      // Phase 2: Initialize renderer.
+      let result: RenderResult
+      try {
+        result = await renderer.init(container, renderOptions)
+      } catch (error) {
+        if (
+          renderer !== this.defaultRenderer ||
+          !(error instanceof MissingRenderEngineProviderError) ||
+          this.hasRenderEngineProvider()
+        ) {
+          throw error
+        }
+        result = { canvas: null, instance: null }
+      }
+
+      if (result.canvas && container) {
+        container.appendChild(result.canvas)
+        this.attachedCanvas = result.canvas
+        // Setup input system to watch the canvas
+        this.setupInputSystem(result.canvas)
+      }
+
+      this.dataChannelObservers.init()
+
+      // Phase 3: Load canonical data from the collaboration checkpoint or
+      // configured read-only source.
+      await this.loadFromSource(collaborationLoadSource ?? this.loadSource)
+
+      // Phase 4: Initialize features.
+      this.initFeatureSystem({
+        inputSystem: this.deps.inputSystem,
+        systemContext: this.deps.systemContext
+      })
+
+      // Phase 5: Apply the collaboration tail and activate live transport.
+      await collaborationSession?.activate()
+
+      // Phase 6: Notify ready only after the complete runtime is active.
+      this.renderIsReady()
+    } catch (error) {
+      if (this.collaborationSession === collaborationSession) {
+        this.collaborationSession = null
+      }
+      await Promise.resolve(collaborationSession?.dispose()).catch(
+        () => undefined
+      )
+      throw error
+    }
+  }
+
+  private async loadFromSource(
+    source: DocumentLoadSource | null = this.loadSource
+  ): Promise<void> {
+    if (!source) {
+      return
+    }
+
+    const data = await source.load()
+    this.load(data)
+  }
+
+  registerEvent<TPayload = unknown, TOptions = unknown>(
+    event: string | EventDefinition<TPayload, TOptions>
+  ) {
+    const registration = eventRegistry.register(event)
+    this.ownedEvents.set(
+      registration.eventName,
+      registration as EventRegistration
+    )
+    return {
+      eventName: registration.eventName,
+      publish: (payload?: TPayload, options?: TOptions) => {
+        this.lifetime.assertActive()
+        registration.publish(payload, options)
+      },
+      subscribe: (
+        handler: (payload?: TPayload, options?: TOptions) => void
+      ) => {
+        this.lifetime.assertActive()
+        return this.subscribeOwnedEvent(registration, handler)
+      }
+    }
+  }
+
+  unregisterEvent(event: string | EventDefinition): boolean {
+    this.ownedEvents.delete(typeof event === 'string' ? event : event.eventName)
+    return eventRegistry.unregister(event)
+  }
+
+  private subscribeOwnedEvent<TPayload, TOptions>(
+    registration: EventRegistration<TPayload, TOptions>,
+    handler: (payload?: TPayload, options?: TOptions) => void
+  ): Subscription {
+    const subscription = registration.subscribe((payload, options) => {
+      if (this.lifetime.isUsable()) handler(payload, options)
+    })
+    this.ownedEventSubscriptions.add(subscription)
+    subscription.add(() => this.ownedEventSubscriptions.delete(subscription))
+    return subscription
+  }
+
+  subscribeEvent<TPayload = unknown, TOptions = unknown>(
+    event: string | EventDefinition<TPayload, TOptions>,
+    handler: (payload?: TPayload, options?: TOptions) => void
+  ): () => void {
+    const eventName = typeof event === 'string' ? event : event.eventName
+    const registration = eventRegistry.get(event)
+    if (!registration) {
+      throw new Error(
+        `[Core] Event "${eventName}" is not registered. Register it before subscribing.`
+      )
+    }
+
+    const subscription = this.subscribeOwnedEvent(registration, handler)
+    return () => subscription.unsubscribe()
+  }
+
+  registerPropertySchema(
+    schema: PropertySchema,
+    options?: Parameters<typeof registerPropertySchema>[1],
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    this.assertCompositionOpen('register-node')
+    const source = { kind: 'property', key: schema.type }
+    if (
+      getPropertySchema(schema.type) ||
+      this.registrationGraph.hasPendingCleanup(source)
+    ) {
+      this.registrationConflict(
+        source,
+        `Property schema "${schema.type}" is already registered`
+      )
+    }
+    this.preflightRegistrationDefinition(source, registration)
+    registerPropertySchema(schema, options)
+    this.ensurePropertyNode(schema.type, registration)
+    this.defineRegistrationRelations(source, registration)
+  }
+
+  getPropertySchema(type: string) {
+    return getPropertySchema(type)
+  }
+
+  definePropertyComponent(
+    definition: PropertyComponentDefinition
+  ): ReturnType<typeof definePropertyComponentRuntime> {
+    this.assertCompositionOpen('register-node')
+    const source = { kind: 'property', key: definition.type }
+    if (
+      getPropertyComponent(definition.type) ||
+      this.registrationGraph.hasPendingCleanup(source)
+    ) {
+      this.registrationConflict(
+        source,
+        `Property component "${definition.type}" is already registered`
+      )
+    }
+    this.preflightRegistrationDefinition(
+      source,
+      definition.registration,
+      'children' in definition && definition.children
+        ? [definition.children.key]
+        : []
+    )
+    if (
+      'children' in definition &&
+      definition.children &&
+      !getPropertyComponent(definition.children.childType)
+    ) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'RELATION_TARGET_NOT_FOUND',
+        operation: 'define-relation',
+        message: `Child property runtime "${definition.children.childType}" is not registered`,
+        source: { kind: 'property', key: definition.type },
+        relationName: definition.children.key,
+        target: { kind: 'property', key: definition.children.childType }
+      })
+    }
+    if ('children' in definition && definition.children) {
+      this.assertRelationEndpointNotPending(
+        { kind: 'property', key: definition.children.childType },
+        'define-relation',
+        source,
+        definition.children.key,
+        { kind: 'property', key: definition.children.childType }
+      )
+    }
+
+    const Constructor = definePropertyComponentRuntime(definition)
+    this.ensurePropertyNode(definition.type, definition.registration)
+    if ('children' in definition && definition.children) {
+      this.ensurePropertyNode(definition.children.childType)
+      this.registrationGraph.defineRelation(
+        { kind: 'property', key: definition.type },
+        {
+          name: definition.children.key,
+          target: { kind: 'property', key: definition.children.childType },
+          onTargetUnregister: 'detach'
+        }
+      )
+    }
+    this.defineRegistrationRelations(source, definition.registration)
+    return Constructor
+  }
+
+  registerPropertyComponent(
+    type: string,
+    component: Parameters<typeof registerPropertyComponent>[1],
+    options?: Parameters<typeof registerPropertyComponent>[2]
+  ): void {
+    this.assertCompositionOpen('register-node')
+    const source = { kind: 'property', key: type }
+    if (
+      getPropertyComponent(type) ||
+      this.registrationGraph.hasPendingCleanup(source)
+    ) {
+      this.registrationConflict(
+        source,
+        `Property component "${type}" is already registered`
+      )
+    }
+    registerPropertyComponent(type, component, options)
+    this.ensurePropertyNode(type)
+  }
+
+  getPropertyComponent(type: string) {
+    return getPropertyComponent(type)
+  }
+
+  getPropertyTypeDefinition<TFields extends object = Record<string, unknown>>(
+    type: string
+  ): Readonly<PropertyTypeDefinition<TFields>> | undefined {
+    this.assertCompositionOpen('transfer-owner', true)
+    return getDeclarativePropertyTypeDefinition<TFields>(type)
+  }
+
+  redefinePropertyType<TFields extends object = Record<string, unknown>>(
+    type: string,
+    update: (
+      current: Readonly<PropertyTypeDefinition<TFields>>
+    ) => PropertyTypeDefinition<TFields>
+  ): Readonly<PropertyTypeDefinition<TFields>> {
+    const target = { kind: 'property', key: type }
+    this.assertPropertyTypeRedefinitionTarget(target)
+    this.propertyTypeRedefinitionInProgress = true
+
+    try {
+      const current = getDeclarativePropertyTypeDefinition<TFields>(type)
+      if (!current) {
+        throw new PropertyTypeDefinitionError({
+          ok: false,
+          code: 'PROPERTY_TYPE_DEFINITION_DRIFT',
+          type,
+          message: `Property type "${type}" has no declarative definition`
+        })
+      }
+
+      const next = update(current)
+      this.assertPropertyTypeRedefinitionTarget(target, true)
+      const committed = commitDeclarativePropertyTypeDefinition(
+        type,
+        next,
+        this.deps.props
+      )
+      this.registrationGraph.transferRegistrationOwner(target, {
+        packageName: 'app',
+        name: type
+      })
+      this.redefinedPropertyTypes.add(type)
+      return committed
+    } finally {
+      this.propertyTypeRedefinitionInProgress = false
+    }
+  }
+
+  unregisterPropertyRegistration(
+    type: string,
+    scope: PropertyRegistrationScope = 'all'
+  ) {
+    this.assertCompositionOpen('unregister-registration')
+    return unregisterPropertyRegistration(type, this.deps.props, scope)
+  }
+
+  definePropertyChildRelation(
+    parentPropertyType: string,
+    relation: PropertyChildRelationDefinition
+  ): RelationOperationSuccess {
+    this.assertRelationCanBeDefined(
+      { kind: 'property', key: parentPropertyType },
+      relation.key,
+      { kind: 'property', key: relation.childType }
+    )
+    const result = definePropertyChildRelationRuntime(
+      parentPropertyType,
+      relation,
+      this.deps.props
+    )
+    this.registrationGraph.defineRelation(
+      { kind: 'property', key: parentPropertyType },
+      {
+        name: relation.key,
+        target: { kind: 'property', key: relation.childType },
+        onTargetUnregister: 'detach'
+      }
+    )
+    return result
+  }
+
+  removePropertyChildRelation(
+    parentPropertyType: string,
+    key: string
+  ): RelationOperationSuccess {
+    this.assertRelationCanBeRemoved(
+      { kind: 'property', key: parentPropertyType },
+      key
+    )
+    const result = removePropertyChildRelationRuntime(
+      parentPropertyType,
+      key,
+      this.deps.props
+    )
+    this.registrationGraph.removeRelation(
+      { kind: 'property', key: parentPropertyType },
+      key
+    )
+    return result
+  }
+
+  getPropertyChildRelations(
+    parentPropertyType: string
+  ): readonly PropertyChildRelationMetadata[] {
+    return getPropertyChildRelationsRuntime(parentPropertyType)
+  }
+
+  unregisterPropertyType(type: string): UnregisterRegistrationSuccess {
+    this.assertCompositionOpen('unregister-registration')
+    const result = this.registrationGraph.unregister({
+      kind: 'property',
+      key: type
+    })
+    this.redefinedPropertyTypes.delete(type)
+    return result
+  }
+
+  defineComponent(definition: ComponentDefinition): void {
+    this.assertCompositionOpen('register-node')
+    const componentRef = { kind: 'component', key: definition.type }
+    if (
+      this.registrationGraph.getRegistration(componentRef) ||
+      componentRegistry.has(definition.type)
+    ) {
+      this.registrationConflict(
+        componentRef,
+        `Component "${definition.type}" is already registered`
+      )
+    }
+    const inlineRenderRef = {
+      kind: 'render-strategy',
+      key: definition.type
+    }
+    if (
+      definition.renderStrategy &&
+      (this.registrationGraph.getRegistration(inlineRenderRef) ||
+        renderStrategyRegistry.has(definition.type))
+    ) {
+      this.registrationConflict(
+        inlineRenderRef,
+        `Render strategy for "${definition.type}" is already registered`
+      )
+    }
+    const propertyNames = new Set<string>()
+    for (const property of definition.properties) {
+      if (propertyNames.has(property.name)) {
+        throw new RegistrationRelationError({
+          ok: false,
+          code: 'DUPLICATE_RELATION',
+          operation: 'define-relation',
+          message: `Component property relation "${definition.type}/${property.name}" is duplicated`,
+          source: { kind: 'component', key: definition.type },
+          relationName: property.name
+        })
+      }
+      propertyNames.add(property.name)
+      if (!getPropertyComponent(property.type)) {
+        throw new RegistrationRelationError({
+          ok: false,
+          code: 'RELATION_TARGET_NOT_FOUND',
+          operation: 'define-relation',
+          message: `Property runtime "${property.type}" is not registered`,
+          source: { kind: 'component', key: definition.type },
+          relationName: property.name,
+          target: { kind: 'property', key: property.type }
+        })
+      }
+      this.assertRelationEndpointNotPending(
+        { kind: 'property', key: property.type },
+        'define-relation',
+        componentRef,
+        property.name,
+        { kind: 'property', key: property.type }
+      )
+    }
+
+    const source = componentRef
+    this.preflightRegistrationDefinition(source, definition.registration, [
+      ...propertyNames
+    ])
+
+    defineComponentRuntime(definition)
+    this.ensureComponentNode(definition.type, definition.registration)
+    if (definition.renderStrategy) {
+      this.ensureRenderStrategyNode(
+        definition.type,
+        definition.registration?.owner
+          ? { owner: definition.registration.owner }
+          : undefined
+      )
+      this.registrationGraph.defineRelation(inlineRenderRef, {
+        name: INLINE_COMPONENT_RENDER_RELATION,
+        target: componentRef,
+        onTargetUnregister: 'unregister-source'
+      })
+    }
+    definition.properties.forEach((property) => {
+      this.ensurePropertyNode(property.type)
+      this.registrationGraph.defineRelation(
+        { kind: 'component', key: definition.type },
+        {
+          name: property.name,
+          target: { kind: 'property', key: property.type },
+          onTargetUnregister: 'detach'
+        }
+      )
+    })
+    this.defineRegistrationRelations(source, definition.registration)
+  }
+
+  unregisterComponent(
+    type: string,
+    options: UnregisterComponentOptions & { detailed: true }
+  ): UnregisterComponentResult
+  unregisterComponent(
+    type: string,
+    options?: UnregisterComponentOptions
+  ): boolean
+  unregisterComponent(
+    type: string,
+    options: UnregisterComponentOptions = {}
+  ): boolean | UnregisterComponentResult {
+    this.assertCompositionOpen('unregister-registration')
+    if (
+      !this.registrationGraph.getRegistration({ kind: 'component', key: type })
+    ) {
+      return unregisterComponentRuntime(type, options)
+    }
+    this.registrationGraph.unregister({ kind: 'component', key: type })
+    if (options.detailed) {
+      return { ok: true, removed: [`component:${type}`], skipped: [] }
+    }
+    return true
+  }
+
+  defineComponentPropertyRelation(
+    componentType: string,
+    property: Parameters<typeof defineComponentPropertyRelationRuntime>[1]
+  ): RelationOperationSuccess {
+    this.assertRelationCanBeDefined(
+      { kind: 'component', key: componentType },
+      property.name,
+      { kind: 'property', key: property.type }
+    )
+    const result = defineComponentPropertyRelationRuntime(
+      componentType,
+      property,
+      this.deps.sceneTree
+    )
+    this.registrationGraph.defineRelation(
+      { kind: 'component', key: componentType },
+      {
+        name: property.name,
+        target: { kind: 'property', key: property.type },
+        onTargetUnregister: 'detach'
+      }
+    )
+    return result
+  }
+
+  removeComponentPropertyRelation(
+    componentType: string,
+    propertyName: string
+  ): RelationOperationSuccess {
+    this.assertRelationCanBeRemoved(
+      { kind: 'component', key: componentType },
+      propertyName
+    )
+    const result = removeComponentPropertyRelationRuntime(
+      componentType,
+      propertyName,
+      this.deps.sceneTree
+    )
+    this.registrationGraph.removeRelation(
+      { kind: 'component', key: componentType },
+      propertyName
+    )
+    return result
+  }
+
+  getComponentPropertyRelations(
+    componentType: string
+  ): readonly ComponentPropertyRelationMetadata[] {
+    return getComponentPropertyRelationsRuntime(componentType)
+  }
+
+  defineFeature<
+    API extends Record<string, unknown> = Record<string, unknown>,
+    State extends Record<string, unknown> = Record<string, unknown>
+  >(
+    name: string,
+    keyConfig: FeatureKeyMap | undefined,
+    definition: FeatureDefinition<API, State>
+  ): { api: FeatureAPI<API>; dispose: () => boolean } {
+    this.assertCompositionOpen('register-node')
+    const source = { kind: 'feature', key: name }
+    if (
+      this.registrationGraph.getRegistration(source) ||
+      getFeatureRegistry().has(name)
+    ) {
+      this.registrationConflict(
+        source,
+        `Feature "${name}" is already registered`
+      )
+    }
+    this.preflightRegistrationDefinition(source, definition.registration)
+    const registration = defineFeatureRuntime(name, keyConfig, definition)
+    this.ensureFeatureNode(name, definition.registration)
+    this.defineRegistrationRelations(source, definition.registration)
+    return {
+      api: this.lifetime.featureAPI(registration.api),
+      dispose: () =>
+        this.lifetime.isUsable() ? this.unregisterFeature(name) : false
+    }
+  }
+
+  getFeature(featureName: string): FeatureAPI {
+    return this.lifetime.featureAPI(getFeatureRuntime(featureName))
+  }
+
+  unregisterFeature(featureName: string): boolean {
+    this.assertCompositionOpen('unregister-registration')
+    if (
+      this.registrationGraph.getRegistration({
+        kind: 'feature',
+        key: featureName
+      })
+    ) {
+      this.registrationGraph.unregister({ kind: 'feature', key: featureName })
+      return true
+    }
+    return unregisterFeatureRuntime(featureName)
+  }
+
+  registerRenderStrategy(
+    type: string,
+    strategy: RenderStrategy,
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    this.assertCompositionOpen('register-node')
+    const source = { kind: 'render-strategy', key: type }
+    if (
+      this.registrationGraph.getRegistration(source) ||
+      renderStrategyRegistry.has(type)
+    ) {
+      this.registrationConflict(
+        source,
+        `Render strategy for "${type}" is already registered`
+      )
+    }
+    this.preflightRegistrationDefinition(source, registration)
+    renderStrategyRegistry.register(type, strategy)
+    this.ensureRenderStrategyNode(type, registration)
+    this.defineRegistrationRelations(source, registration)
+  }
+
+  unregisterRenderStrategy(type: string): boolean {
+    this.assertCompositionOpen('unregister-registration')
+    if (
+      this.registrationGraph.getRegistration({
+        kind: 'render-strategy',
+        key: type
+      })
+    ) {
+      this.registrationGraph.unregister({ kind: 'render-strategy', key: type })
+      return true
+    }
+    return renderStrategyRegistry.unregister(type)
+  }
+
+  unregisterUIProperty(key: string): boolean {
+    this.assertCompositionOpen('unregister-registration')
+    const exists = propertyRegistry.getAllPropertyKeys().includes(key)
+    if (this.registrationGraph.getRegistration({ kind: 'ui-property', key })) {
+      this.registrationGraph.unregister({ kind: 'ui-property', key })
+      return true
+    }
+    propertyRegistry.unregister(key)
+    return exists
+  }
+
+  getRegistration(ref: RegistrationRef): RegistrationNodeMetadata | undefined {
+    return this.registrationGraph.getRegistration(ref)
+  }
+
+  getRegistrations(): readonly RegistrationNodeMetadata[] {
+    return this.registrationGraph.getRegistrations()
+  }
+
+  getRegistrationRelations(): readonly RegistrationRelationMetadata[] {
+    return this.registrationGraph.getRelations()
+  }
+
+  defineSelection(
+    type: Parameters<SelectionManager['register']>[0],
+    selection: Parameters<SelectionManager['register']>[1]
+  ): void {
+    this.deps.selection.register(type, selection)
+  }
+
+  registerSelection(
+    type: Parameters<SelectionManager['register']>[0],
+    selection: Parameters<SelectionManager['register']>[1]
+  ): void {
+    this.defineSelection(type, selection)
+  }
+
+  unregisterSelection(
+    type: Parameters<SelectionManager['unregister']>[0]
+  ): boolean {
+    return this.deps.selection.unregister(type)
+  }
+
+  getSelection(type: Parameters<SelectionManager['get']>[0]) {
+    return this.deps.selection.get(type)
+  }
+
+  getPresetDependencies() {
+    return {
+      sceneTree: this.deps.sceneTree,
+      systemContext: this.deps.systemContext,
+      render: this.deps.render
+    }
+  }
+
+  private assertCompositionOpen(
+    operation: RegistrationGraphOperation,
+    allowDuringPropertyRedefinition = false
+  ): void {
+    if (
+      this.compositionOpen &&
+      (allowDuringPropertyRedefinition ||
+        !this.propertyTypeRedefinitionInProgress)
+    ) {
+      return
+    }
+    throw new RegistrationRelationError({
+      ok: false,
+      code: this.compositionOpen ? 'UNREGISTER_FAILED' : 'COMPOSITION_CLOSED',
+      operation,
+      message: this.compositionOpen
+        ? 'Registration mutation is blocked while a property type redefinition is in progress'
+        : 'Registration composition is permanently closed'
+    })
+  }
+
+  private assertPropertyTypeRedefinitionTarget(
+    target: RegistrationRef,
+    allowInProgress = false
+  ): void {
+    this.assertCompositionOpen('transfer-owner', allowInProgress)
+    if (!this.registrationGraph.getRegistration(target)) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'REGISTRATION_NOT_FOUND',
+        operation: 'transfer-owner',
+        message: `Registration "${target.kind}:${target.key}" was not found`,
+        registration: target
+      })
+    }
+    if (this.registrationGraph.hasPendingCleanup(target)) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'UNREGISTER_FAILED',
+        operation: 'transfer-owner',
+        message: `Registration "${target.kind}:${target.key}" has pending cleanup`,
+        registration: target
+      })
+    }
+  }
+
+  private validateRedefinedPropertyRelations(): void {
+    this.redefinedPropertyTypes.forEach((type) => {
+      const target = { kind: 'property', key: type }
+      const definition = getDeclarativePropertyTypeDefinition(type)
+      if (!definition) {
+        this.failStructuralPropertyRelation(
+          target,
+          type,
+          target,
+          `Redefined property type "${type}" is no longer registered`
+        )
+      }
+
+      const fieldsByKey = new Map(
+        definition.fields.map((field) => [field.key, field])
+      )
+      const dynamicReservedKeys = new Set([
+        'id',
+        'type',
+        ...definition.fields.map((field) => field.key),
+        ...definition.dynamicReservedKeys
+      ])
+      const aliasIsProjected = (alias: string) => {
+        const field = fieldsByKey.get(alias)
+        if (field) return field.project
+        return definition.allowDynamicKeys && !dynamicReservedKeys.has(alias)
+      }
+
+      this.registrationGraph
+        .getIncomingRelations(target)
+        .forEach((relation) => {
+          if (relation.source.kind !== 'component') return
+          const componentRelation = getComponentPropertyRelationsRuntime(
+            relation.source.key
+          ).find(
+            (candidate) =>
+              candidate.name === relation.name &&
+              candidate.property.type === type
+          )
+          if (!componentRelation) {
+            this.failStructuralPropertyRelation(
+              relation.source,
+              relation.name,
+              target,
+              `Component property relation "${relation.source.key}/${relation.name}" no longer resolves to "${type}"`
+            )
+          }
+
+          componentRelation.property.alias?.forEach((alias) => {
+            if (aliasIsProjected(alias)) return
+            this.failStructuralPropertyRelation(
+              relation.source,
+              relation.name,
+              target,
+              `Component property alias "${relation.source.key}/${relation.name}.${alias}" is not projected by "${type}"`
+            )
+          })
+        })
+
+      getPropertyChildRelationsRuntime(type).forEach((relation) => {
+        if (fieldsByKey.get(relation.key)?.project) return
+        this.failStructuralPropertyRelation(
+          relation.source,
+          relation.name,
+          relation.target,
+          `Property child key "${type}.${relation.key}" is not projected by its redefined type`
+        )
+      })
+    })
+  }
+
+  private failStructuralPropertyRelation(
+    source: RegistrationRef,
+    relationName: string,
+    target: RegistrationRef,
+    message: string
+  ): never {
+    throw new RegistrationRelationError({
+      ok: false,
+      code: 'DANGLING_RELATION',
+      operation: 'validate-relations',
+      message,
+      source,
+      relationName,
+      target
+    })
+  }
+
+  private registrationConflict(
+    ref: RegistrationRef,
+    message = `Registration "${ref.kind}:${ref.key}" must be unregistered before it can be defined again`
+  ): never {
+    throw new RegistrationRelationError({
+      ok: false,
+      code: 'UNREGISTER_FAILED',
+      operation: 'register-node',
+      message,
+      registration: ref
+    })
+  }
+
+  private assertRelationCanBeDefined(
+    source: RegistrationRef,
+    relationName: string,
+    target: RegistrationRef
+  ): void {
+    this.assertCompositionOpen('define-relation')
+    if (!this.registrationGraph.getRegistration(source)) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'REGISTRATION_NOT_FOUND',
+        operation: 'define-relation',
+        message: `Registration "${source.kind}:${source.key}" was not found`,
+        source,
+        relationName
+      })
+    }
+    this.assertRelationEndpointNotPending(
+      source,
+      'define-relation',
+      source,
+      relationName,
+      target
+    )
+    if (!this.registrationGraph.getRegistration(target)) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'RELATION_TARGET_NOT_FOUND',
+        operation: 'define-relation',
+        message: `Relation target "${target.kind}:${target.key}" was not found`,
+        source,
+        relationName,
+        target
+      })
+    }
+    this.assertRelationEndpointNotPending(
+      target,
+      'define-relation',
+      source,
+      relationName,
+      target
+    )
+    if (
+      this.registrationGraph
+        .getOutgoingRelations(source)
+        .some((relation) => relation.name === relationName)
+    ) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'DUPLICATE_RELATION',
+        operation: 'define-relation',
+        message: `Relation "${source.kind}:${source.key}/${relationName}" is already defined`,
+        source,
+        relationName
+      })
+    }
+  }
+
+  private assertRelationCanBeRemoved(
+    source: RegistrationRef,
+    relationName: string
+  ): void {
+    this.assertCompositionOpen('remove-relation')
+    if (!this.registrationGraph.getRegistration(source)) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'REGISTRATION_NOT_FOUND',
+        operation: 'remove-relation',
+        message: `Registration "${source.kind}:${source.key}" was not found`,
+        source,
+        relationName
+      })
+    }
+    this.assertRelationEndpointNotPending(
+      source,
+      'remove-relation',
+      source,
+      relationName
+    )
+    if (
+      !this.registrationGraph
+        .getOutgoingRelations(source)
+        .some((relation) => relation.name === relationName)
+    ) {
+      throw new RegistrationRelationError({
+        ok: false,
+        code: 'RELATION_NOT_FOUND',
+        operation: 'remove-relation',
+        message: `Relation "${source.kind}:${source.key}/${relationName}" was not found`,
+        source,
+        relationName
+      })
+    }
+  }
+
+  private preflightRegistrationDefinition(
+    source: RegistrationRef,
+    registration?: RegistrationDefinitionMetadata,
+    reservedRelationNames: readonly string[] = []
+  ): void {
+    if (!registration?.relations?.length) return
+
+    const relationNames = new Set([
+      ...reservedRelationNames,
+      ...this.registrationGraph
+        .getOutgoingRelations(source)
+        .map((relation) => relation.name)
+    ])
+    registration.relations.forEach((relation) => {
+      if (relationNames.has(relation.name)) {
+        throw new RegistrationRelationError({
+          ok: false,
+          code: 'DUPLICATE_RELATION',
+          operation: 'define-relation',
+          message: `Registration relation "${source.kind}:${source.key}/${relation.name}" is duplicated`,
+          source,
+          relationName: relation.name,
+          target: relation.target
+        })
+      }
+      relationNames.add(relation.name)
+      if (!this.registrationGraph.getRegistration(relation.target)) {
+        throw new RegistrationRelationError({
+          ok: false,
+          code: 'RELATION_TARGET_NOT_FOUND',
+          operation: 'define-relation',
+          message: `Relation target "${relation.target.kind}:${relation.target.key}" was not found`,
+          source,
+          relationName: relation.name,
+          target: relation.target
+        })
+      }
+      this.assertRelationEndpointNotPending(
+        relation.target,
+        'define-relation',
+        source,
+        relation.name,
+        relation.target
+      )
+    })
+  }
+
+  private assertRelationEndpointNotPending(
+    ref: RegistrationRef,
+    operation: 'define-relation' | 'remove-relation',
+    source: RegistrationRef,
+    relationName: string,
+    target?: RegistrationRef
+  ): void {
+    if (!this.registrationGraph.hasPendingCleanup(ref)) return
+    throw new RegistrationRelationError({
+      ok: false,
+      code: 'UNREGISTER_FAILED',
+      operation,
+      message: `Registration "${ref.kind}:${ref.key}" still has pending cleanup`,
+      registration: ref,
+      source,
+      relationName,
+      target
+    })
+  }
+
+  private defineRegistrationRelations(
+    source: RegistrationRef,
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    registration?.relations?.forEach((relation) => {
+      this.registrationGraph.defineRelation(source, relation)
+    })
+  }
+
+  private ensurePropertyNode(
+    type: string,
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    if (
+      this.registrationGraph.getRegistration({ kind: 'property', key: type })
+    ) {
+      return
+    }
+    this.registrationGraph.registerNode({
+      ref: { kind: 'property', key: type },
+      owner: registration?.owner,
+      handlers: {
+        isPresent: () => Boolean(getPropertyComponent(type)),
+        preflightUnregister: () => this.assertPropertyTypeUnused(type),
+        preflightDetachRelation: () => this.assertPropertyTypeUnused(type),
+        detachRelation: (relation) => {
+          removePropertyChildRelationRuntime(
+            type,
+            relation.name,
+            this.deps.props
+          )
+        }
+      },
+      resources: [
+        {
+          key: `property:${type}`,
+          dispose: () => {
+            unregisterPropertyRegistration(type, this.deps.props, 'all')
+          }
+        }
+      ]
+    })
+  }
+
+  private ensureComponentNode(
+    type: string,
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    if (
+      this.registrationGraph.getRegistration({ kind: 'component', key: type })
+    ) {
+      return
+    }
+    this.registrationGraph.registerNode({
+      ref: { kind: 'component', key: type },
+      owner: registration?.owner,
+      handlers: {
+        isPresent: () => componentRegistry.has(type),
+        preflightUnregister: () => this.assertComponentTypeUnused(type),
+        preflightDetachRelation: () => this.assertComponentTypeUnused(type),
+        detachRelation: (relation) => {
+          removeComponentPropertyRelationRuntime(
+            type,
+            relation.name,
+            this.deps.sceneTree
+          )
+        }
+      },
+      resources: [
+        {
+          key: `component:${type}`,
+          dispose: () => {
+            unregisterComponentGraphRegistration(type)
+          }
+        }
+      ]
+    })
+  }
+
+  private ensureFeatureNode(
+    name: string,
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    this.registrationGraph.registerNode({
+      ref: { kind: 'feature', key: name },
+      owner: registration?.owner,
+      handlers: { isPresent: () => getFeatureRegistry().has(name) },
+      resources: [
+        {
+          key: `feature:${name}`,
+          dispose: () => {
+            unregisterFeatureRuntime(name)
+          }
+        }
+      ]
+    })
+  }
+
+  private ensureRenderStrategyNode(
+    type: string,
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    this.registrationGraph.registerNode({
+      ref: { kind: 'render-strategy', key: type },
+      owner: registration?.owner,
+      handlers: { isPresent: () => renderStrategyRegistry.has(type) },
+      resources: [
+        {
+          key: `render-strategy:${type}`,
+          dispose: () => {
+            renderStrategyRegistry.unregister(type)
+          }
+        }
+      ]
+    })
+  }
+
+  private ensureUIPropertyNode(
+    key: string,
+    registration?: RegistrationDefinitionMetadata
+  ): void {
+    if (this.registrationGraph.getRegistration({ kind: 'ui-property', key })) {
+      return
+    }
+    this.registrationGraph.registerNode({
+      ref: { kind: 'ui-property', key },
+      owner: registration?.owner,
+      handlers: {
+        isPresent: () => propertyRegistry.getAllPropertyKeys().includes(key)
+      },
+      resources: [
+        {
+          key: `ui-property:${key}`,
+          dispose: () => propertyRegistry.unregister(key)
+        }
+      ]
+    })
+  }
+
+  private assertPropertyTypeUnused(type: string): void {
+    const propertyIds = this.deps.props.getPropertyIdsByType(type)
+    if (propertyIds.length === 0) return
+    throw new RegistrationRelationError({
+      ok: false,
+      code: 'REGISTRATION_IN_USE',
+      operation: 'unregister-registration',
+      message: `Property registration "${type}" is in use by: ${propertyIds.join(', ')}`,
+      registration: { kind: 'property', key: type }
+    })
+  }
+
+  private assertComponentTypeUnused(type: string): void {
+    const activeIds: string[] = []
+    this.deps.sceneTree.getAllElements().forEach((element) => {
+      if (element.get('type') === type) activeIds.push(element.get('id'))
+    })
+    if (activeIds.length === 0) return
+    throw new RegistrationRelationError({
+      ok: false,
+      code: 'REGISTRATION_IN_USE',
+      operation: 'unregister-registration',
+      message: `Component registration "${type}" is in use by: ${activeIds.join(', ')}`,
+      registration: { kind: 'component', key: type }
+    })
+  }
+
+  load(data: unknown): void {
+    if (data == null) {
+      return
+    }
+
+    this.applyLoadedData(data)
+  }
+
+  /** Validate against the current composition without applying a document. */
+  preflightLoad(data: unknown): readonly Readonly<LoadValidationDiagnostic>[] {
+    if (data == null) return Object.freeze([])
+    const { diagnostics } = this.prepareLoadedData(data)
+    return Object.freeze(diagnostics.map((item) => Object.freeze({ ...item })))
+  }
+
+  async save(): Promise<CoreRawData> {
+    const sceneTreeData = await this.sceneTreeSaveData()
+    const systemContextData = this.deps.systemContext.saveManagedProperties()
+
+    let data: CoreRawData = {
+      version: this.version,
+      sceneTree: sceneTreeData,
+      props: this.deps.props.save()
+    }
+    if (Object.keys(systemContextData).length > 0) {
+      data.systemContext = systemContextData
+    }
+
+    data = cloneSerializationSnapshot(data)
+    for (const hook of this.saveHooks) {
+      data = hook(data)
+    }
+    return cloneSerializationSnapshot(data)
+  }
+
+  private normalizeLoadData(
+    rawData: unknown,
+    diagnostics: LoadValidationDiagnostic[],
+    pathPrefix = 'core'
+  ): CoreRawData {
+    if (!isRecord(rawData)) {
+      diagnostics.push({
+        scope: 'core',
+        path: pathPrefix,
+        message:
+          'Expected object payload for core load; fallback to safe defaults'
+      })
+      return {
+        version: DATA_VERSION,
+        sceneTree: EMPTY_SCENE_TREE_DATA,
+        props: {}
+      }
+    }
+
+    const version =
+      typeof rawData.version === 'string' ? rawData.version : DATA_VERSION
+    if (typeof rawData.version !== 'string') {
+      diagnostics.push({
+        scope: 'core',
+        path: `${pathPrefix}.version`,
+        message: 'Invalid version type; fallback to default version'
+      })
+    }
+
+    const sceneTree = isRecord(rawData.sceneTree)
+      ? (rawData.sceneTree as unknown as SceneTreeRawData)
+      : EMPTY_SCENE_TREE_DATA
+    if (!isRecord(rawData.sceneTree)) {
+      diagnostics.push({
+        scope: 'core',
+        path: `${pathPrefix}.sceneTree`,
+        message: 'Invalid sceneTree payload type; fallback to empty scene data'
+      })
+    }
+
+    const props = (
+      isRecord(rawData.props) ? rawData.props : {}
+    ) as CoreRawData['props']
+    if (!isRecord(rawData.props)) {
+      diagnostics.push({
+        scope: 'core',
+        path: `${pathPrefix}.props`,
+        message: 'Invalid props payload type; fallback to empty props map'
+      })
+    }
+
+    const normalized: CoreRawData = {
+      version,
+      sceneTree,
+      props
+    }
+
+    if ('systemContext' in rawData) {
+      normalized.systemContext = rawData.systemContext as Record<
+        string,
+        unknown
+      >
+    }
+
+    return normalized
+  }
+
+  private runLoadHooks(data: unknown): unknown {
+    let nextData = data
+    const loadHooks = [...this.loadHooks]
+    for (const [hookIndex, hook] of loadHooks.entries()) {
+      const result: unknown = hook(nextData)
+      if (
+        isRecord(result) &&
+        'then' in result &&
+        typeof result.then === 'function'
+      ) {
+        void Promise.resolve(result).catch(() => undefined)
+        throw new LoadHookExecutionError(
+          LOAD_HOOK_EXECUTION_ERROR_CODES.ASYNC_UNSUPPORTED,
+          hookIndex
+        )
+      }
+      if (!isRecord(result) || typeof result.version !== 'string') {
+        throw new LoadHookExecutionError(
+          LOAD_HOOK_EXECUTION_ERROR_CODES.INVALID_RESULT,
+          hookIndex
+        )
+      }
+      nextData = result
+    }
+
+    return nextData
+  }
+
+  private prepareLoadedData(rawData: unknown) {
+    const diagnostics: LoadValidationDiagnostic[] = []
+
+    const migrated = this.runLoadHooks(rawData)
+    const normalizedAfterHooks = this.normalizeLoadData(
+      migrated,
+      diagnostics,
+      this.loadHooks.length > 0 ? 'core.hooks' : 'core.input'
+    )
+
+    const propsValidation = this.deps.props.validateLoadData(
+      normalizedAfterHooks.props
+    )
+    diagnostics.push(
+      ...propsValidation.diagnostics.map((item) => ({
+        scope: 'props-manager' as const,
+        path: item.path,
+        message: item.message
+      }))
+    )
+
+    const sceneValidation = this.deps.sceneTree.validateLoadData(
+      normalizedAfterHooks.sceneTree
+    )
+    diagnostics.push(
+      ...sceneValidation.diagnostics.map((item) => ({
+        scope: 'scene-tree' as const,
+        path: item.path,
+        message: item.message
+      }))
+    )
+    const systemValidation = this.deps.systemContext.validateManagedProperties(
+      normalizedAfterHooks.systemContext
+    )
+    diagnostics.push(
+      ...systemValidation.diagnostics.map((item) => ({
+        scope: 'system-context' as const,
+        path: item.path,
+        message: item.message
+      }))
+    )
+
+    if (sceneValidation.valid === false) {
+      throw new Error(
+        '[Core] Scene Tree rejected invalid hierarchy before package apply'
+      )
+    }
+
+    this.deps.sceneTree.preflightLoadPropertyRelations(
+      sceneValidation,
+      propsValidation.data
+    )
+
+    return {
+      normalizedAfterHooks,
+      diagnostics,
+      propsValidation,
+      sceneValidation,
+      systemValidation
+    }
+  }
+
+  private applyLoadedData(rawData: unknown): void {
+    const {
+      normalizedAfterHooks,
+      diagnostics,
+      propsValidation,
+      sceneValidation,
+      systemValidation
+    } = this.prepareLoadedData(rawData)
+
+    this.deps.props.applyValidatedLoad(propsValidation)
+    this.deps.sceneTree.applyValidatedLoad(sceneValidation)
+    this.deps.systemContext.applyValidatedManagedProperties(systemValidation)
+
+    this.version = normalizedAfterHooks.version
+    fileLoadComplete()
+
+    this.emitLoadDiagnostics(diagnostics, () =>
+      this.composeLoadedData(
+        normalizedAfterHooks.version,
+        sceneValidation.data,
+        propsValidation.data
+      )
+    )
+  }
+
+  private composeLoadedData(
+    version: string,
+    sceneTree: SceneTreeRawData,
+    props: CoreRawData['props']
+  ): CoreRawData {
+    const data: CoreRawData = {
+      version,
+      sceneTree,
+      props
+    }
+
+    const managedProperties = this.deps.systemContext.saveManagedProperties()
+    if (Object.keys(managedProperties).length > 0) {
+      data.systemContext = managedProperties
+    }
+
+    return data
+  }
+
+  private emitLoadDiagnostics(
+    diagnostics: LoadValidationDiagnostic[],
+    createData: () => CoreRawData
+  ): void {
+    const hooks = [...this.loadDiagnosticsHooks]
+    if (diagnostics.length === 0 || hooks.length === 0) {
+      return
+    }
+
+    let data: CoreRawData
+    try {
+      data = createData()
+    } catch {
+      return
+    }
+
+    for (const hook of hooks) {
+      try {
+        hook(cloneLoadObservation(diagnostics), cloneLoadObservation(data))
+      } catch {
+        continue
+      }
+    }
+  }
+}
+
+export { Core }
+
+let core = new Core({
+  inputSystem,
+  factory,
+  dataChannelObservers:
+    dataChannelObserver.getDefaultDataChannelObserverRegistry(),
+  props,
+  render,
+  sceneTree,
+  selection,
+  systemContext
+})
+export { core as default }

@@ -218,13 +218,13 @@ test('Framework artifact validation owns CI scope and excludes create-app templa
   const validation = contractText(validationStep)
 
   assert.match(validation, /generated create-app template/i)
-  assert.ok(validationStep.forbiddenContributors.includes(
-    'generated create-app template'
-  ))
   assert.ok(
-    validationStep.implementationBoundary.includes(
-      '.github/workflows/main.yml'
+    validationStep.forbiddenContributors.includes(
+      'generated create-app template'
     )
+  )
+  assert.ok(
+    validationStep.implementationBoundary.includes('.github/workflows/main.yml')
   )
   assert.ok(
     validationStep.implementationBoundary.includes(
@@ -233,7 +233,7 @@ test('Framework artifact validation owns CI scope and excludes create-app templa
   )
 })
 
-test('Inspector restricts Changesets publication to the fixed 19-package set', () => {
+test('Inspector restricts validated tarball publication to the fixed 19-package set', () => {
   const publicationSource = contractText(step('accept-publication-source'))
   const publication = contractText(step('publish-framework-packages'))
   const verification = contractText(step('verify-public-registry'))
@@ -242,11 +242,13 @@ test('Inspector restricts Changesets publication to the fixed 19-package set', (
   assert.match(publicationSource, /feature branch.*publication/i)
   assert.doesNotMatch(publicationSource, /not.*feature branch/i)
   assert.doesNotMatch(publicationSource, /unmerged.*source/i)
-  assert.match(publication, /yarn changeset publish/i)
+  assert.match(publication, /validated tarballs/i)
+  assert.match(publication, /Release guidance must match/i)
+  assert.doesNotMatch(publication, /yarn changeset publish/i)
   assert.match(publication, /successful.*package.*Git tag/i)
   assert.doesNotMatch(publication, /--no-git-tag/i)
   assert.match(publication, /exactly the fixed 19-package allowlist/i)
-  assert.match(publication, /restore.*workspace ranges/i)
+  assert.match(publication, /Source manifests remain unchanged/i)
   assert.match(publication, /create-asyra-design-app.*root.*private/i)
   assert.match(verification, /every expected.*name@version/i)
   assert.match(verification, /dist integrity/i)

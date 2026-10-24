@@ -21,7 +21,7 @@ const releasePlan = {
     'yarn release:consumer:registry',
     `yarn release:app --prod=${product}`,
     `yarn release:validate --prod=${product}`,
-    `npm pack ./create-app/${product} --dry-run --json`
+    `node scripts/create-app-release-artifacts.mjs --prod=${product}`
   ],
   publish: [`node scripts/publish-create-app.js --prod=${product}`]
 }

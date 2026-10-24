@@ -1,0 +1,204 @@
+
+ RUN  v3.2.7 /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version
+
+stderr | src/__tests__/migration-boundaries.test.ts > accepts existing version 3 and keeps wire tracking outside canonical state and projections
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects unsupported version before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects missing spacing before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects conflicting legacy representation before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects conflicting version 3 representation before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking undefined undefined before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking 1.5 em before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking 1.5 layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking 101 layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking NaN layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking Infinity layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid approvalStatus before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid sourceRecordId before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid labelCategory before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid reviewNote before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid multiplier after conversion before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid negative multiplier and font size before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves official flags and all four unique extension fields
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > keeps each action atomic after reload and isolates chart controls
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > keeps each action atomic after reload and isolates chart controls
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/migration-boundaries.test.ts (23 tests) 204ms
+stderr | src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders partial adoption migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders partial adoption migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders partial adoption migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > rejects ambiguous same-name units and invalid migration before canonical mutation
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/cross-version-acceptance.test.ts (4 tests) 88ms
+stdout | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/baseline-preservation.test.ts (4 tests) 127ms
+
+ Test Files  3 passed (3)
+      Tests  31 passed (31)
+   Start at  22:27:52
+   Duration  2.65s (transform 50ms, setup 16ms, collect 948ms, tests 419ms, environment 827ms, prepare 111ms)
+

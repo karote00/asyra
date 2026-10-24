@@ -1,0 +1,7 @@
+artifacts/asyra-preset-0.5.8.tgz: 465e4e330d272162dc627b9004b109e7b15529eef4699366451697ca86085291
+artifacts/asyra-preset-0.5.8-task4.0.tgz: 60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7
+package/dist/props/components/text-component.js
+package/dist/props/components/text-component.js.map
+package/package.json
+All installed Preset archive files match the supplied target.
+{"core": "0.5.7", "preset": "0.5.8-task4.0", "utils": "0.5.2"}

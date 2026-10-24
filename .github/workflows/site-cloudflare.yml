@@ -72,6 +72,8 @@ jobs:
           retention-days: 7
 
   publish:
+    env:
+      RELEASE_OWNER: 'asyra-framework'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -86,6 +88,7 @@ jobs:
         with:
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: '24'
@@ -109,6 +112,36 @@ jobs:
         with:
           name: website-static-${{ env.SOURCE_SHA }}
           path: apps/asyra-framework-site/out/
+      - name: Restore frozen release guidance
+        id: guidance-restore
+        if: steps.current.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/cloudflare-release-guidance.mjs restore 'asyra-framework'
+      - name: Prepare release summary against the current production delivery
+        if: steps.current.outputs.publish == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/cloudflare-release-guidance.mjs prepare 'asyra-framework'
+      - name: Retain frozen candidate before publication
+        id: guidance-checkpoint
+        if: steps.current.outputs.publish == 'true' && steps.guidance-restore.outputs.candidate-retained != 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-guidance-${{ env.RELEASE_OWNER }}-${{ env.SOURCE_SHA }}
+          path: tmp/cloudflare-release-guidance/${{ env.RELEASE_OWNER }}.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Require matching release guidance before upload
+        if: steps.current.outputs.publish == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/cloudflare-release-guidance.mjs check 'asyra-framework'
       - name: Upload verified static files
         if: steps.current.outputs.publish == 'true'
         id: deploy
@@ -121,6 +154,7 @@ jobs:
           workingDirectory: tmp/cloudflare-cli
           command: pages deploy ../../apps/asyra-framework-site/out --project-name='asyra-framework' --branch=main --commit-hash=${{ env.SOURCE_SHA }}
       - name: Verify public production website
+        id: verify
         if: steps.current.outputs.publish == 'true'
         env:
           SITE_URL: 'https://asyra-framework.pages.dev'
@@ -134,3 +168,18 @@ jobs:
           DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
         run: |
           printf 'Source: `%s`\n\nCloudflare deployment: `%s`\n\nProduction: https://asyra-framework.pages.dev\n' "$SOURCE_SHA" "$DEPLOYMENT_ID" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain per-owner release guidance result
+        if: always() && steps.deploy.outcome != 'skipped' && steps.deploy.outcome != ''
+        env:
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: node scripts/cloudflare-release-guidance.mjs record 'asyra-framework'
+      - name: Retain publication attempt evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-guidance-${{ env.RELEASE_OWNER }}-${{ env.SOURCE_SHA }}-result-${{ github.run_attempt }}
+          path: tmp/cloudflare-release-guidance/${{ env.RELEASE_OWNER }}.json.result.json.*.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -8,6 +8,7 @@ import {
   validateMarkdownLinks,
   validatePublicDocumentation,
   validatePublicImportMentions,
+  validatePageStructure,
   validateStarterEntry
 } from '../public-documentation-validation.mjs'
 
@@ -16,10 +17,47 @@ const repositoryRoot = path.resolve(
   '../../..'
 )
 
+test('structured release summaries stay concise while guides retain their depth requirement', () => {
+  const source =
+    '# Release summary\n\n' +
+    'Explain retained data and required consumer actions. '.repeat(8) +
+    '\n\n## Canonical sources\n'
+  assert.doesNotThrow(() =>
+    validatePageStructure({
+      page: { id: 'updates/releases/example', title: 'Release summary' },
+      source
+    })
+  )
+  assert.throws(
+    () =>
+      validatePageStructure({
+        page: { id: 'updates/example', title: 'Release summary' },
+        source
+      }),
+    /too short/
+  )
+  assert.throws(
+    () =>
+      validatePageStructure({
+        page: { id: 'updates/releases/example', title: 'Release summary' },
+        source: '# Release summary\n\n## Canonical sources\n'
+      }),
+    /too short/
+  )
+})
+
 test('complete public documentation passes structural, link, and API gates', async () => {
   const summary = await validatePublicDocumentation({ repositoryRoot })
 
-  assert.equal(summary.pageCount, 41)
+  assert.equal(
+    summary.pageCount,
+    JSON.parse(
+      fs.readFileSync(
+        path.join(repositoryRoot, 'docs/public/content-manifest.json'),
+        'utf8'
+      )
+    ).pages.length
+  )
   assert.equal(summary.packageGuideCount, 19)
   assert.equal(summary.conceptPageCount, 7)
   assert.equal(summary.implementationGuideCount, 11)

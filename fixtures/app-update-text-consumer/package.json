@@ -1,0 +1,65 @@
+{
+  "name": "text-update-consumer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
+  "packageManager": "yarn@4.3.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "react:build": "yarn build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:local": "vitest run",
+    "test:ci": "vitest run",
+    "lint": "eslint .",
+    "start": "vite dev"
+  },
+  "dependencies": {
+    "@asyra/core": "0.5.7",
+    "@asyra/preset": "0.5.8",
+    "@asyra/utils": "0.5.1"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^2.0.1",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^4.7.0",
+    "eslint": "^10.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "jsdom": "^27.4.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.54.0",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.6"
+  },
+  "resolutions": {
+    "@asyra/ai-agent-runtime": "file:../../tmp/text-update-artifacts/asyra-ai-agent-runtime-0.5.1.tgz",
+    "@asyra/collaboration": "file:../../tmp/text-update-artifacts/asyra-collaboration-0.5.5.tgz",
+    "@asyra/core": "file:../../tmp/text-update-artifacts/asyra-core-0.5.7.tgz",
+    "@asyra/design-system": "file:../../tmp/text-update-artifacts/asyra-design-system-0.5.5.tgz",
+    "@asyra/factory": "file:../../tmp/text-update-artifacts/asyra-factory-0.5.4.tgz",
+    "@asyra/feature-system": "file:../../tmp/text-update-artifacts/asyra-feature-system-0.5.4.tgz",
+    "@asyra/input-system": "file:../../tmp/text-update-artifacts/asyra-input-system-0.5.5.tgz",
+    "@asyra/persistence": "file:../../tmp/text-update-artifacts/asyra-persistence-0.5.3.tgz",
+    "@asyra/preset": "file:../../tmp/text-update-artifacts/asyra-preset-0.5.8.tgz",
+    "@asyra/props-manager": "file:../../tmp/text-update-artifacts/asyra-props-manager-0.5.4.tgz",
+    "@asyra/reactive-events": "file:../../tmp/text-update-artifacts/asyra-reactive-events-0.5.4.tgz",
+    "@asyra/render": "file:../../tmp/text-update-artifacts/asyra-render-0.5.7.tgz",
+    "@asyra/render-engine": "file:../../tmp/text-update-artifacts/asyra-render-engine-0.5.1.tgz",
+    "@asyra/render-engine-pixi": "file:../../tmp/text-update-artifacts/asyra-render-engine-pixi-0.5.2.tgz",
+    "@asyra/scene-tree": "file:../../tmp/text-update-artifacts/asyra-scene-tree-0.5.4.tgz",
+    "@asyra/selection": "file:../../tmp/text-update-artifacts/asyra-selection-0.5.3.tgz",
+    "@asyra/system-context": "file:../../tmp/text-update-artifacts/asyra-system-context-0.5.3.tgz",
+    "@asyra/ui-context": "file:../../tmp/text-update-artifacts/asyra-ui-context-0.5.4.tgz",
+    "@asyra/utils": "file:../../tmp/text-update-artifacts/asyra-utils-0.5.2.tgz"
+  }
+}

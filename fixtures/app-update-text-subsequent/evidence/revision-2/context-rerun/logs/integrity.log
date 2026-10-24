@@ -1,0 +1,2 @@
+All handoff hashes match. Both candidate digests and the three-entry archive delta match.
+Installed target matches every archive member. Before documentation, only package.json, yarn.lock and the obsolete test default differ from handoff hashes; new revision-two-adoption.test.ts is added. Runtime, fixtures, guides and other inputs unchanged.

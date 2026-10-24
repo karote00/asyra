@@ -20,6 +20,7 @@ const releasePlan = {
   ],
   verify: [
     'yarn release:consumer:registry',
+    'node scripts/framework-release-artifacts.js --record',
     'node scripts/framework-release-artifacts.js --cleanup'
   ]
 }

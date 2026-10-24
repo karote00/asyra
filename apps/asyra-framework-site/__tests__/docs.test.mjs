@@ -17,7 +17,15 @@ test('all accepted pages map to explicit static documentation route entries', as
       readSiteFile('components/framework-technical-flow.tsx')
     ])
 
-  assert.equal(content.pages.length, 41)
+  assert.equal(
+    content.pages.length,
+    JSON.parse(
+      await readFile(
+        path.resolve(siteRoot, '../../docs/public/content-manifest.json'),
+        'utf8'
+      )
+    ).pages.length
+  )
   assert.match(rootPage, /DocumentationPage/)
   assert.match(detailPage, /generateStaticParams/)
   assert.match(detailPage, /dynamicParams = false/)

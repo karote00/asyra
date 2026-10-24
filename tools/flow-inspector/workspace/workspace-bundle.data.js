@@ -11315,17 +11315,21 @@
             "purpose": "Apply editable native text with canonical save and replay behavior.",
             "inputs": [
               "Selected canonical native text element",
-              "Text and typography field edits",
+              "Canvas text gestures, transient drafts and typography field edits",
+              "Current document generation and legacy text fill data",
               "Save and History replay state"
             ],
             "outputs": [
               "artifact:edit-native-text-outcome"
             ],
             "conditions": [
-              "Keep native text properties editable and retain them through save, Undo and Redo."
+              "Keep native text properties editable and retain them through save, Undo and Redo.",
+              "Canvas drafts stay transient until one accepted commit; cancellation and stale targets cannot overwrite canonical data.",
+              "Typography commits include measured automatic sizing; legacy document load preserves text paint through the App migration."
             ],
             "bypasses": [
-              "Invalid text preparation does not silently rasterize editable content."
+              "Invalid text preparation does not silently rasterize editable content.",
+              "Empty creation, unchanged drafts and cancelled sessions add no document history."
             ],
             "allowedContributors": [
               "Declared public App or Framework APIs",
@@ -11338,7 +11342,15 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/properties/text.tsx",
-              "apps/asyra-design/src/ai/design-actions.ts"
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/features/text-canvas/index.ts",
+              "apps/asyra-design/src/common-apis/text-canvas.ts",
+              "apps/asyra-design/src/common-apis/text-layout.ts",
+              "apps/asyra-design/src/render-app/text-canvas-editor.tsx",
+              "apps/asyra-design/src/properties/text-field.tsx",
+              "apps/asyra-design/src/properties/text-select.tsx",
+              "apps/asyra-design/src/controllers/scene-tree.ts",
+              "apps/asyra-design/src/collaboration/migrate-text-fills.ts"
             ],
             "specRefs": [
               "#edit-native-text"
@@ -34416,6 +34428,7 @@
               "artifact:cli-publication-finding"
             ],
             "conditions": [
+              "The current release guidance admission must match the predecessor, exact packed tarball, source and guide hashes before publication.",
               "The release source is a clean exact source commit and matches the validated candidate checksum and content.",
               "Publication may run from main or a non-main feature branch without making PR merge a prerequisite or a side effect.",
               "Root remains unchanged; private app and create-app template identity are verified; and selected CLI target is explicit before publication.",
@@ -34440,6 +34453,9 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "scripts/publish-create-app.js",
+              "scripts/create-app-release-artifacts.mjs",
+              "scripts/release-guidance.mjs",
               "create-app/asyra-design",
               "docs/ai/framework/plans/completed/create-asyra-design-app-release-plan.md",
               "tmp/create-app-release-evidence"
@@ -35526,9 +35542,9 @@
             "id": "publish-framework-packages",
             "order": 8,
             "laneId": "publication",
-            "title": "Publish the reviewed Framework selection through Changesets",
-            "ownerPackage": "Changesets multi-package publication owner",
-            "purpose": "After the irreversible checkpoint is accepted for the clean exact source commit, assert that the unpublished selection is exactly the fixed 19-package allowlist and run yarn changeset publish once so Changesets publishes and tags successful packages.",
+            "title": "Publish validated Framework tarballs",
+            "ownerPackage": "Framework npm publication owner",
+            "purpose": "After the irreversible checkpoint is accepted for the clean exact source commit, assert that the unpublished selection is exactly the fixed 19-package allowlist and publish only validated tarballs and tag successful packages.",
             "inputs": [
               "artifact:publication-source",
               "validated 19-package publication manifest",
@@ -35539,27 +35555,28 @@
               "artifact:publication-finding"
             ],
             "conditions": [
-              "Workspace-only internal ranges are converted to each exact validated manifest version before Changesets runs.",
-              "Restore development workspace ranges after publication on success or failure.",
+              "Release guidance must match the frozen predecessor, source, tarballs and guide hashes before the first mutation.",
+              "Packed artifacts contain the exact validated publishable dependency ranges.",
+              "Source manifests remain unchanged during publication.",
               "The registry-diff selection is exactly the fixed 19-package allowlist before the first irreversible npm write.",
-              "Changesets creates one Git tag for every successful package publication; no tag is created for a failed package.",
+              "The publisher creates one Git tag for every successful package publication; no tag is created for a failed package.",
               "Keep successful package tags local and unpushed until all 19 public registry records verify.",
               "create-asyra-design-app, root asyra, and private @asyra/asyra-design are excluded.",
-              "Cleanup owner: publish-framework-packages owns the transient publishable range conversion, restoration, and successful local release-tag state; npm owns immutable successful publications."
+              "Cleanup owner: publish-framework-packages owns the validated artifact selection and successful local release-tag state; npm owns immutable successful publications."
             ],
             "bypasses": [
               "Missing authorization, invalid npm identity/scope, unexpected publish selection, dirty source, or range mismatch produces artifact:publication-finding before publication.",
-              "A Changesets partial failure records the successful and unpublished package subsets without overwriting any success."
+              "A partial publication failure records the successful and unpublished package subsets without overwriting any success."
             ],
             "allowedContributors": [
               "artifact:publication-source",
               "validated publication manifest and checksums",
               "existing workspace-version owner",
-              "Changesets publish command",
+              "Validated tarball publisher",
               "authorized npm identity"
             ],
             "forbiddenContributors": [
-              "manual npm publish loop",
+              "unvalidated directory publication",
               "remote tag push before complete registry verification",
               "unvalidated package or version",
               "create-app, root, or private app publication",
@@ -35572,7 +35589,9 @@
               "scripts/__tests__/workspace-automation.test.mjs",
               ".changeset/config.json",
               "packages/*/package.json",
-              "yarn changeset publish"
+              "scripts/publish-framework-release.js",
+              "scripts/framework-release-artifacts.js",
+              "scripts/release-guidance.mjs"
             ],
             "specRefs": [
               "#release-validation-and-publication-boundary"
@@ -36250,7 +36269,7 @@
           {
             "id": "artifact:changesets-publication-result",
             "ownerStepId": "publish-framework-packages",
-            "channel": "Changesets publication result",
+            "channel": "Validated tarball publication result",
             "consumerStepIds": [
               "verify-public-registry",
               "prove-registry-consumer-and-recover",
@@ -36949,6 +36968,7 @@
               "artifact:release-docs-finding"
             ],
             "conditions": [
+              "Release preparation reconciles actual owner deltas with update notes and hashes required guides; publisher admission rechecks the frozen candidate.",
               "Every public import and documented command resolves against the validated package or generated-template route.",
               "Supported Node, Yarn, TypeScript, React, browser, 2D, and CUSTOM ranges are explicit; unavailable 3D/HYBRID and Roadmap behavior remain unavailable.",
               "Deprecated and compatibility-only surfaces name their replacement and migration window without adding new runtime ownership.",
@@ -36972,6 +36992,8 @@
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
+              "scripts/release-guidance.mjs",
+              "scripts/docs/release-update-guidance.mjs",
               "README.md",
               "CHANGELOG.md",
               "RELEASE_NOTES.md",
@@ -39342,6 +39364,11 @@
           "build/collaboration",
           "build/ai-actions",
           "build/app-retrieval-action",
+          "updates/index",
+          "updates/text-official-fields-example-1-r2",
+          "updates/text-official-fields-example-1-r3",
+          "updates/text-spacing-example-2-r1",
+          "updates/text-spacing-example-2-r2",
           "reference/packages/ai-agent-runtime",
           "reference/packages/collaboration",
           "reference/packages/core",
@@ -39422,7 +39449,7 @@
               "artifact:public-content-contract"
             ],
             "conditions": [
-              "Exactly 41 stable page ids are declared once.",
+              "Required stable page ids remain present; additional update pages are explicitly declared once in the manifest.",
               "Each page owns a Markdown path, section, title, sources, and relationships to packages.",
               "Public indexes exclude internal operations, secrets, obsolete contracts, and historical audits."
             ],
@@ -39625,7 +39652,8 @@
             ],
             "conditions": [
               "Generated indexes are deterministic and source-mapped.",
-              "Plain-text discovery contains only approved public content."
+              "Plain-text discovery contains only approved public content.",
+              "Durable release summaries retain predecessors, exact prerequisites, guide revisions and availability; missing coverage is explicit."
             ],
             "bypasses": [
               "Website consumers present this bundle but cannot rewrite its semantic claims."
@@ -39641,13 +39669,15 @@
             ],
             "implementationBoundary": [
               "docs/public/generated/**",
+              "docs/public/updates/**",
               "docs/public/llms.txt",
               "scripts/docs/**",
               "package.json"
             ],
             "specRefs": [
               "#ai-readable-documentation-contract",
-              "#freshness-contract"
+              "#freshness-contract",
+              "docs/ai/framework/rules/release-update-guidance.md#durable-public-release-records"
             ],
             "failureOwnerStepId": "publish-documentation-indexes"
           },
@@ -39666,13 +39696,15 @@
             ],
             "conditions": [
               "All content cases and documentation quality gates pass.",
+              "Isolated modeled consumer acceptance preserves cross-version changes, customization and data; original evidence remains unchanged.",
               "README and website implementation remain unmodified siblings."
             ],
             "bypasses": [
               "Final public registry and deployment links wait for their external owners."
             ],
             "allowedContributors": [
-              "deterministic project-owned documentation gates"
+              "deterministic project-owned documentation gates",
+              "isolated consumers using retained public candidate APIs"
             ],
             "forbiddenContributors": [
               "manual spot-check as sole evidence",
@@ -39682,11 +39714,14 @@
             "implementationBoundary": [
               "docs/public/**",
               "scripts/docs/**",
+              "fixtures/app-update-text-cross-version/**",
+              "scripts/__tests__/app-update-fixtures.test.mjs",
               "package.json"
             ],
             "specRefs": [
               "#quality-gates",
-              "#definition-of-done"
+              "#definition-of-done",
+              "docs/ai/framework/rules/release-update-guidance.md#consumer-preservation-and-subsequent-updates"
             ],
             "failureOwnerStepId": "verify-public-documentation"
           }
@@ -39815,7 +39850,7 @@
               "verify-public-documentation"
             ],
             "assertions": [
-              "Exactly 41 stable pages and 19 package guides exist.",
+              "Exactly 46 stable pages and 19 package guides exist.",
               "Start, Learn, Build, Reference, and Cases remain readable Markdown."
             ]
           },

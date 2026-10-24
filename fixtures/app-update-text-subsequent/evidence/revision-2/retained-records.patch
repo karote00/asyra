@@ -1,0 +1,50 @@
+--- a/README.md
++++ b/README.md
+@@ -179,3 +179,25 @@
+ pixel, published release, production storage, restored prior-session undo stack,
+ or general release-range compatibility claim is made. No publication, push or
+ Framework source modification was performed.
++
++
++## Retained revision-2 integration - 2026-10-24
++
++The current entry is [revision 2](updates/text-spacing-example-2-r2.md). Its
++[delivery inventory](updates/handoff-inventory-r2.md) separates this adopted
++fixture from the immutable pre-update archive for a new AI. Supply only that
++archive and its prompt for a new run.
++
++The first revision-1 independent acceptance remains 29 tests. The same chat later
++completed a revision-2 isolated rerun with existing context: 22 baseline tests,
++two expected old-candidate failures and 34 passing final tests, plus typecheck,
++lint and build. This was not a new independent acceptance. Its original README
++and logs are retained separately under `evidence/revision-2/context-rerun/`.
++
++This permanent fixture combines the unchanged 29 tests with the rerun's 12 new
++cases, for 41 passing tests. Typecheck, lint and build are recorded separately
++in `evidence/revision-2/retained-*`. App runtime, dependencies, original data and
++prior evidence remain unchanged. The warning was explained, not removed; the
++active delivery paths are usable while omitted history and old links retain
++their explicit limitations. See [verification](VERIFICATION.md) for provenance,
++replay and the local-candidate boundary. No publication was performed.
+--- a/updates/index.md
++++ b/updates/index.md
+@@ -1,6 +1,15 @@
+ # Subsequent Text update
+ 
+-Read [the next guide](text-spacing-example-2-r1.md), the current README adoption
+-record, and the attached artifact identities. The consumer adopted revision 1; see the dated subsequent adoption record in
+-`README.md` for verification and limitations. The target
+-is a modeled test candidate, not a published release.
++Use the [revision-2 guide](text-spacing-example-2-r2.md) and
++[delivery inventory](handoff-inventory-r2.md). The retained fixture has already
++adopted the target; its [adoption record](../README.md) owns the current state.
++
++For a new AI, supply only the [pre-update delivery package](../delivery/revision-2/text-spacing-r2-independent.tar.gz)
++and [task prompt](../delivery/revision-2/TASK-PROMPT.md). Do not send the completed
++fixture or maintainer evidence as independent inputs.
++
++The first [revision-1 guide](text-spacing-example-2-r1.md) and its original
++evidence remain unchanged. That independent acceptance passed 29 tests. The
++revision-2 isolated rerun passed 34 tests with existing context; it was not a new
++independent acceptance. See [verification](../VERIFICATION.md) for integration
++checks and limits. No publication has occurred.

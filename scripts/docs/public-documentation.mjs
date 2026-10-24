@@ -6,6 +6,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
+import { readReleaseHistory, renderReleaseHistory } from './release-history.mjs'
 import { readPublicContentContract } from './public-content-contract.mjs'
 import {
   checkPublicPackageReference,
@@ -17,6 +18,7 @@ export const WEBSITE_LLM_DISCOVERY_PATH =
   'apps/asyra-framework-site/public/llms.txt'
 
 export const PUBLIC_DOCUMENTATION_PATHS = Object.freeze({
+  releaseHistory: 'docs/public/updates/history.md',
   apiIndex: 'docs/public/generated/api-index.json',
   contentIndex: 'docs/public/generated/content-index.json',
   llms: 'docs/public/llms.txt',
@@ -186,7 +188,10 @@ export const publicApiEntries = ({ packageReference, repositoryRoot }) => {
 
 const serializeJson = (value) => `${JSON.stringify(value, null, 2)}\n`
 
-const serializeLlms = ({ contentIndex }) => {
+const serializeLlms = ({ contentIndex, website = false }) => {
+  const starterHref = website
+    ? '/docs#generic-starter-source'
+    : 'index.md#generic-starter-source'
   const lines = [
     '# Asyra Framework',
     '',
@@ -196,7 +201,7 @@ const serializeLlms = ({ contentIndex }) => {
     'Current: browser/Core composition, official 2D Preset, and engine-neutral CUSTOM composition.',
     'Future: Headless Core and Core Kernel for non-visible and machine-facing products; no current public API or delivery date.',
     '',
-    'Create a Generic Starter project with `npx create-asyra-app@0.1.0 my-app --package-manager=npm` on Node.js 24; npm and Yarn are supported. See docs/public/index.md#generic-starter-source for source and onboarding links.',
+    `Create a Generic Starter project with \`npx create-asyra-app@0.1.0 my-app --package-manager=npm\` on Node.js 24; npm and Yarn are supported. See [Starter source and onboarding](${starterHref}).`,
     'Use create-asyra-design-app for a ready-to-use design-tool product, or install @asyra/core for advanced composition. Use Extend for app-owned product behavior, and Customize when replacing Framework composition or providers.',
     'Treat app domain schemas, permissions, migration, retrieval, services, and product rules as app-owned.',
     '',
@@ -204,7 +209,9 @@ const serializeLlms = ({ contentIndex }) => {
     ''
   ]
   for (const page of contentIndex.pages) {
-    lines.push(`- [${page.title}](${page.path}): ${page.description}`)
+    let href = page.path
+    if (website) href = page.id === 'overview' ? '/docs' : `/docs/${page.id}`
+    lines.push(`- [${page.title}](${href}): ${page.description}`)
   }
   lines.push('')
   return lines.join('\n')
@@ -217,9 +224,20 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
     repositoryRoot: root
   })
 
+  const markdownByPath = new Map(
+    content.pages
+      .filter((page) => page.path !== 'updates/history.md')
+      .map((page) => [page.path, readSource(root, `docs/public/${page.path}`)])
+  )
+  const releaseHistory = readReleaseHistory({
+    pages: content.pages,
+    read: (file) => markdownByPath.get(file)
+  })
+  const historyMarkdown = renderReleaseHistory(releaseHistory)
+  markdownByPath.set('updates/history.md', historyMarkdown)
   const pages = content.pages.map((page) => {
     const markdownPath = `docs/public/${page.path}`
-    const markdown = readSource(root, markdownPath)
+    const markdown = markdownByPath.get(page.path)
     return {
       contentSha256: sha256(markdown),
       description: page.description,
@@ -236,6 +254,7 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
 
   const contentIndex = {
     pages,
+    releaseHistory,
     release: {
       family: packageReference.release.family,
       packageCount: packageReference.release.packageCount,
@@ -282,19 +301,22 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
   }
 
   return {
+    releaseHistory: historyMarkdown,
     apiIndex,
     contentIndex,
     llms: serializeLlms({ contentIndex }),
+    websiteLlms: serializeLlms({ contentIndex, website: true }),
     sourceMap
   }
 }
 
 const serializedBundle = (bundle) => ({
+  releaseHistory: bundle.releaseHistory,
   apiIndex: serializeJson(bundle.apiIndex),
   contentIndex: serializeJson(bundle.contentIndex),
   llms: bundle.llms,
   sourceMap: serializeJson(bundle.sourceMap),
-  websiteLlms: bundle.llms
+  websiteLlms: bundle.websiteLlms
 })
 
 export const writePublicDocumentation = async ({ repositoryRoot }) => {

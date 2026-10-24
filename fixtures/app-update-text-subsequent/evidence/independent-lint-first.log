@@ -1,0 +1,6 @@
+
+/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/text-update-subsequent-ai-consumer/src/__tests__/subsequent-preservation.test.ts
+  198:77  error  Do not delete dynamically computed property keys  @typescript-eslint/no-dynamic-delete
+
+✖ 1 problem (1 error, 0 warnings)
+

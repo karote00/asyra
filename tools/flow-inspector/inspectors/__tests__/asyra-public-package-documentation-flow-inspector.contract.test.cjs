@@ -18,8 +18,8 @@ test('documentation authority and exact page inventory are frozen', () => {
     'docs/ai/framework/plans/completed/asyra-public-package-documentation-plan.md'
   )
   assert.ok(fs.existsSync(path.join(repoRoot, data.authority.specPath)))
-  assert.equal(data.pageIds.length, 41)
-  assert.equal(new Set(data.pageIds).size, 41)
+  assert.equal(data.pageIds.length, 46)
+  assert.equal(new Set(data.pageIds).size, 46)
   assert.equal(data.packageGuideIds.length, 19)
   assert.deepEqual(
     data.pageIds.filter((id) => id.startsWith('reference/packages/')),
@@ -28,9 +28,8 @@ test('documentation authority and exact page inventory are frozen', () => {
 })
 
 test('package guide inventory matches the release owner exactly', async () => {
-  const { FRAMEWORK_RELEASE_PACKAGE_NAMES } = await import(
-    '../../../../scripts/framework-release-packages.js'
-  )
+  const { FRAMEWORK_RELEASE_PACKAGE_NAMES } =
+    await import('../../../../scripts/framework-release-packages.js')
   assert.deepEqual(data.packageNames, FRAMEWORK_RELEASE_PACKAGE_NAMES)
   assert.deepEqual(
     data.packageGuideIds,
@@ -65,7 +64,7 @@ test('content contract owns schema, stable ids, mappings, and exclusions', () =>
     ...content.allowedContributors,
     ...content.forbiddenContributors
   ].join(' ')
-  assert.match(contract, /Exactly 41 stable page ids/i)
+  assert.match(contract, /additional update pages.*manifest/i)
   assert.match(contract, /Markdown path.*sources.*packages/is)
   assert.doesNotMatch(contract, /example ids/i)
   assert.match(contract, /secrets.*obsolete contracts.*historical audits/is)

@@ -662,10 +662,13 @@ test(
     t.after(() => fixture.restore())
     const baseline = await fixture.run('pixi')
     assert.equal(baseline.result.code, 0, baseline.result.output)
-    assert.equal(baseline.record.cases.length, 27)
+    assert.equal(baseline.record.cases.length, 29)
     assert.deepEqual(baseline.record.issues, [])
     assert.ok(
-      baseline.record.cases.every((item) => item.resolution === 'mapped')
+      baseline.record.cases.every((item) => item.resolution === 'mapped'),
+      JSON.stringify(
+        baseline.record.cases.filter((item) => item.resolution !== 'mapped')
+      )
     )
     fixture.mutatePixi()
     const fault = await fixture.run('pixi')
@@ -747,7 +750,7 @@ test(
     assert.equal(
       recovery.record.cases.filter((item) => item.resolution === 'mapped')
         .length,
-      27
+      29
     )
     assert.deepEqual(fixture.reader.get(fault.record.id), fault.record)
   }

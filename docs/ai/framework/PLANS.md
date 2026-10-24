@@ -44,6 +44,15 @@ or unsupported capability claims.
     production deployment and page acceptance.
   - The independent Root README evidence plan remains completed.
 
+## Completed Release Update Guidance
+
+- [Release Update Summaries and Consumer Integration Guidance](plans/completed/release-update-guidance-plan.md)
+  - DONE (2026-10-24). Tasks 1-4 deliver development rules, npm/Cloudflare
+    admission, public cross-version discovery and retained Text acceptance.
+  - Original independent evidence, revision-2 errata and maintainer replay remain
+    distinct and preserved. Acceptance uses pinned local candidate packages;
+    publication and deployment remain separate and were not performed.
+
 ## Active Developer Agent Work
 
 - [Asyra Developer Agent Distribution and Maintenance](plans/asyra-developer-agent-plan.md)

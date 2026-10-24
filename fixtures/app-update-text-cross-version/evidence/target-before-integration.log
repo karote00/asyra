@@ -1,0 +1,103 @@
+
+ RUN  v3.2.7 /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders partial adoption migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > rejects ambiguous same-name units and invalid migration before canonical mutation
+Render layer "selection-overlay-layer" not found.
+
+ ❯ src/__tests__/cross-version-acceptance.test.ts (4 tests | 4 failed) 70ms
+   × uses official shared defaults without replacing explicit zero or custom gray 42ms
+     → expected { id: 'new-text', x: +0, y: +0, …(16) } to match object { letterSpacing: 0.5, …(1) }
+(17 matching properties omitted from actual)
+   × orders direct legacy migrations and saves version 3 without double conversion 14ms
+     → expected 2 to be 3 // Object.is equality
+   × orders partial adoption migrations and saves version 3 without double conversion 6ms
+     → expected 2 to be 3 // Object.is equality
+   × rejects ambiguous same-name units and invalid migration before canonical mutation 7ms
+     → expected [Function] to throw an error
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+AssertionError: expected { id: 'new-text', x: +0, y: +0, …(16) } to match object { letterSpacing: 0.5, …(1) }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "letterSpacing": 0.5,
++   "letterSpacing": 0,
+    "textColor": "#cccccc",
+  }
+
+ ❯ src/__tests__/cross-version-acceptance.test.ts:23:60
+     21|       y: 0
+     22|     })
+     23|     expect(app.core.getElementComputedData(`new-${type}`)).toMatchObje…
+       |                                                            ^
+     24|       letterSpacing: 0.5,
+     25|       textColor: createDefaultFill().color
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > orders partial adoption migrations and saves version 3 without double conversion
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ src/__tests__/cross-version-acceptance.test.ts:58:37
+     56|       })
+     57|       const saved = await app.save()
+     58|       expect(saved.documentVersion).toBe(3)
+       |                                     ^
+     59|       const wire = saved.core.props['text-typography'] as unknown as R…
+     60|         string,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > rejects ambiguous same-name units and invalid migration before canonical mutation
+AssertionError: expected [Function] to throw an error
+ ❯ src/__tests__/cross-version-acceptance.test.ts:78:37
+     76|   const before = await app.save()
+     77|   const untouched = structuredClone(ambiguous)
+     78|   expect(() => app.load(ambiguous)).toThrow()
+       |                                     ^
+     79|   expect(ambiguous).toEqual(untouched)
+     80|   expect(await app.save()).toEqual(before)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  21:07:39
+   Duration  705ms (transform 34ms, setup 11ms, collect 266ms, tests 70ms, environment 215ms, prepare 33ms)
+

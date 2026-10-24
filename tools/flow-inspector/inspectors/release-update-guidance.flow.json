@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "release-update-guidance",
+  "revision": 23,
+  "definition": {
+    "title": "Release update guidance",
+    "purpose": "Admit current release owners using artifact-bound guidance without publishing during validation.",
+    "nodes": [
+      {
+        "id": "prepare",
+        "title": "Release guidance preparation",
+        "objective": "Candidate summary with complete declared delta and guide hashes",
+        "owner": "Release guidance preparation",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "contracts",
+            "title": "Focused contract tests pass",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "release-guidance-prepare"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
+        ],
+        "implementationRefs": ["scripts/release-guidance.mjs"],
+        "actions": []
+      },
+      {
+        "id": "admit",
+        "title": "Existing publishers",
+        "objective": "Admission before first remote mutation or local release tag",
+        "owner": "Existing publishers",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "release-update-guidance",
+            "nodeId": "prepare"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "contracts",
+            "title": "Focused contract tests pass",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "release-guidance-admit"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
+        ],
+        "implementationRefs": ["scripts/publish-framework-release.js"],
+        "actions": []
+      },
+      {
+        "id": "record",
+        "title": "Existing release result owners",
+        "objective": "Per-owner candidate/publication/verification references; failures remain incomplete",
+        "owner": "Existing release result owners",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "release-update-guidance",
+            "nodeId": "admit"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "contracts",
+            "title": "Focused contract tests pass",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "release-guidance-record"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
+        ],
+        "implementationRefs": ["scripts/cloudflare-release-guidance.mjs"],
+        "actions": []
+      }
+    ],
+    "criteria": [],
+    "architecture": {
+      "schema": {
+        "id": "flow-inspector",
+        "version": 2
+      },
+      "target": {
+        "id": "release-update-guidance",
+        "kind": "tool",
+        "title": "Release guidance",
+        "subtitle": "Task 2"
+      },
+      "authority": {
+        "specPath": "docs/ai/framework/rules/release-update-guidance.md",
+        "inspectorPath": "tools/flow-inspector/inspectors/release-update-guidance.flow.json",
+        "semanticOwner": "Release owners",
+        "inspectorOwner": "Release tooling"
+      },
+      "links": [],
+      "lanes": [
+        {
+          "id": "release",
+          "title": "Release",
+          "order": 1
+        }
+      ],
+      "steps": [
+        {
+          "id": "prepare",
+          "laneId": "release",
+          "order": 1,
+          "title": "Release guidance preparation",
+          "ownerPackage": "Release guidance preparation",
+          "purpose": "Candidate summary with complete declared delta and guide hashes",
+          "inputs": [
+            "Frozen source, actual previous delivery, owner roots and validated artifacts"
+          ],
+          "outputs": ["artifact:prepare"],
+          "conditions": [
+            "Exact source and artifacts; current release owner only; no publication authorization is inferred.",
+            "Restore and checkpoint Cloudflare candidates before publication; distinguish unchanged npm members from same-candidate partial retries."
+          ],
+          "bypasses": [
+            "Missing, changed or unverifiable inputs stop this owner; no successful baseline advancement on failure."
+          ],
+          "allowedContributors": [
+            "Current npm and Cloudflare release entrypoints",
+            "Existing update notes and registered guides"
+          ],
+          "forbiddenContributors": [
+            "Changeset presence as coverage evidence",
+            "Legacy Vercel deployment",
+            "Whole-App merging",
+            "Task 3 public history discovery"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "scripts/release-guidance.mjs",
+            "scripts/cloudflare-release-guidance.mjs",
+            "scripts/create-app-release-artifacts.mjs",
+            "scripts/framework-release-artifacts.js",
+            "scripts/publish-framework-release.js",
+            "scripts/publish-create-app.js",
+            "scripts/release-create-app.js",
+            "scripts/app-cloudflare.mjs",
+            ".github/workflows/app-cloudflare.yml",
+            ".github/workflows/site-cloudflare.yml",
+            "scripts/__tests__",
+            "scripts/docs",
+            "docs/ai/workflows",
+            "docs/ai/framework/rules/release-update-guidance.md"
+          ],
+          "specRefs": [
+            "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
+          ],
+          "failureOwnerStepId": "prepare"
+        },
+        {
+          "id": "admit",
+          "laneId": "release",
+          "order": 2,
+          "title": "Existing publishers",
+          "ownerPackage": "Existing publishers",
+          "purpose": "Admission before first remote mutation or local release tag",
+          "inputs": [
+            "Prepared guidance, current source, current artifacts and online baseline",
+            "artifact:prepare"
+          ],
+          "outputs": ["artifact:admit"],
+          "conditions": [
+            "Exact source and artifacts; current release owner only; no publication authorization is inferred.",
+            "An uploaded Cloudflare candidate may resume only against its recorded deployment ID and matching candidate hash; unresolved predecessor verification blocks a newer candidate."
+          ],
+          "bypasses": [
+            "Missing, changed or unverifiable inputs stop this owner; no successful baseline advancement on failure."
+          ],
+          "allowedContributors": [
+            "Current npm and Cloudflare release entrypoints",
+            "Existing update notes and registered guides"
+          ],
+          "forbiddenContributors": [
+            "Changeset presence as coverage evidence",
+            "Legacy Vercel deployment",
+            "Whole-App merging",
+            "Task 3 public history discovery"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "scripts/release-guidance.mjs",
+            "scripts/cloudflare-release-guidance.mjs",
+            "scripts/create-app-release-artifacts.mjs",
+            "scripts/framework-release-artifacts.js",
+            "scripts/publish-framework-release.js",
+            "scripts/publish-create-app.js",
+            "scripts/release-create-app.js",
+            "scripts/app-cloudflare.mjs",
+            ".github/workflows/app-cloudflare.yml",
+            ".github/workflows/site-cloudflare.yml",
+            "scripts/__tests__",
+            "scripts/docs",
+            "docs/ai/workflows",
+            "docs/ai/framework/rules/release-update-guidance.md"
+          ],
+          "specRefs": [
+            "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
+          ],
+          "failureOwnerStepId": "admit"
+        },
+        {
+          "id": "record",
+          "laneId": "release",
+          "order": 3,
+          "title": "Existing release result owners",
+          "ownerPackage": "Existing release result owners",
+          "purpose": "Per-owner candidate/publication/verification references; failures remain incomplete",
+          "inputs": [
+            "Admitted candidate and individual registry/deployment outcomes",
+            "artifact:admit"
+          ],
+          "outputs": ["artifact:record"],
+          "conditions": [
+            "Exact source and artifacts; current release owner only; no publication authorization is inferred.",
+            "Actions retain immutable candidate artifacts and separate attempt results; a failed upload retry preserves the matching deployment and its verification, while the latest attempt stays failed. New publications use their own verification result."
+          ],
+          "bypasses": [
+            "Missing, changed or unverifiable inputs stop this owner; no successful baseline advancement on failure."
+          ],
+          "allowedContributors": [
+            "Current npm and Cloudflare release entrypoints",
+            "Existing update notes and registered guides"
+          ],
+          "forbiddenContributors": [
+            "Changeset presence as coverage evidence",
+            "Legacy Vercel deployment",
+            "Whole-App merging",
+            "Task 3 public history discovery"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "scripts/release-guidance.mjs",
+            "scripts/cloudflare-release-guidance.mjs",
+            "scripts/create-app-release-artifacts.mjs",
+            "scripts/framework-release-artifacts.js",
+            "scripts/publish-framework-release.js",
+            "scripts/publish-create-app.js",
+            "scripts/release-create-app.js",
+            "scripts/app-cloudflare.mjs",
+            ".github/workflows/app-cloudflare.yml",
+            ".github/workflows/site-cloudflare.yml",
+            "scripts/__tests__",
+            "scripts/docs",
+            "docs/ai/workflows",
+            "docs/ai/framework/rules/release-update-guidance.md"
+          ],
+          "specRefs": [
+            "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
+          ],
+          "failureOwnerStepId": "record"
+        }
+      ],
+      "routes": [
+        {
+          "id": "prepare-next",
+          "from": "prepare",
+          "to": "admit",
+          "kind": "success",
+          "predicate": "Complete matching evidence only",
+          "producedArtifacts": ["artifact:prepare"]
+        },
+        {
+          "id": "admit-next",
+          "from": "admit",
+          "to": "record",
+          "kind": "success",
+          "predicate": "Complete matching evidence only",
+          "producedArtifacts": ["artifact:admit"]
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "artifact:prepare",
+          "ownerStepId": "prepare",
+          "channel": "release-evidence",
+          "consumerStepIds": ["admit"],
+          "terminal": false
+        },
+        {
+          "id": "artifact:admit",
+          "ownerStepId": "admit",
+          "channel": "release-evidence",
+          "consumerStepIds": ["record"],
+          "terminal": false
+        },
+        {
+          "id": "artifact:record",
+          "ownerStepId": "record",
+          "channel": "release-evidence",
+          "consumerStepIds": [],
+          "terminal": true
+        }
+      ],
+      "invariants": [],
+      "acceptanceContracts": []
+    }
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "prepare",
+        "criterionId": "contracts",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "c675b1ec03fee6f3233428da432b65f84bfca49c47571eeb525f9364f5c937a5",
+        "actor": "local-release-validation",
+        "executionId": "task-2-verified-deployment-58bc42e60e96",
+        "caseId": "release-guidance-prepare",
+        "at": "2026-10-24T11:35:23.121Z",
+        "summary": "99 release and declaration tests plus 15 naming tests passed. A verified deployment survives a failed retry and admits the next source; new unverified deployments remain blocked.",
+        "details": [
+          "The verified-then-failed regression failed at predecessor admission before the correction. Scoped ESLint, declaration and formatting checks passed. All provider, Actions and npm effects use stubs. No publication or Task 3 work is claimed."
+        ]
+      },
+      {
+        "nodeId": "admit",
+        "criterionId": "contracts",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "9447a499b388c6c29d55f1d4ce432ea434ba8834efa5e15ad99e737ee9136802",
+        "actor": "local-release-validation",
+        "executionId": "task-2-verified-deployment-58bc42e60e96",
+        "caseId": "release-guidance-admit",
+        "at": "2026-10-24T11:35:23.124Z",
+        "summary": "99 release and declaration tests plus 15 naming tests passed. A verified deployment survives a failed retry and admits the next source; new unverified deployments remain blocked.",
+        "details": [
+          "The verified-then-failed regression failed at predecessor admission before the correction. Scoped ESLint, declaration and formatting checks passed. All provider, Actions and npm effects use stubs. No publication or Task 3 work is claimed."
+        ]
+      },
+      {
+        "nodeId": "record",
+        "criterionId": "contracts",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "f7eddaad32bd2ec71a879e6ca1b8593f65e9da66f241200a3c875544d4f7d9e0",
+        "actor": "local-release-validation",
+        "executionId": "task-2-verified-deployment-58bc42e60e96",
+        "caseId": "release-guidance-record",
+        "at": "2026-10-24T11:35:23.125Z",
+        "summary": "99 release and declaration tests plus 15 naming tests passed. A verified deployment survives a failed retry and admits the next source; new unverified deployments remain blocked.",
+        "details": [
+          "The verified-then-failed regression failed at predecessor admission before the correction. Scoped ESLint, declaration and formatting checks passed. All provider, Actions and npm effects use stubs. No publication or Task 3 work is claimed."
+        ]
+      }
+    ],
+    "notes": [],
+    "progress": [],
+    "sources": [
+      {
+        "nodeId": "prepare",
+        "revision": "58bc42e60e965e5e54f3dec045bc6a5ec40908cf579815c52a1f7ead0c52432b"
+      },
+      {
+        "nodeId": "admit",
+        "revision": "58bc42e60e965e5e54f3dec045bc6a5ec40908cf579815c52a1f7ead0c52432b"
+      },
+      {
+        "nodeId": "record",
+        "revision": "58bc42e60e965e5e54f3dec045bc6a5ec40908cf579815c52a1f7ead0c52432b"
+      }
+    ],
+    "warnings": []
+  }
+}
