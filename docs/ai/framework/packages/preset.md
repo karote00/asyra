@@ -70,10 +70,20 @@ const result = applyPreset(core, {
   `selectedDefaults`, and `appliedDefaults`. It and its arrays are detached and
   deeply frozen; it is not a lifecycle handle and exposes no disposer.
 
-`PresetProfiles` contains `2D`, `3D`, `HYBRID`, and `CUSTOM`. `2D` and `CUSTOM`
-are available. `3D` and `HYBRID` are reserved but unavailable and fail before
-mutation. `2D` registers the preset-owned Pixi provider; `CUSTOM` registers no
-provider.
+`PresetProfiles` contains `2D`, `3D`, `HYBRID`, and `CUSTOM`. `2D`, `3D` and `CUSTOM`
+are available. `HYBRID` remains unavailable and fails before mutation. `2D`
+registers the Pixi provider; `3D` registers the deferred spatial provider;
+`CUSTOM` registers no provider. Official profiles reject an existing provider.
+
+For `3D`, pass explicit `defaults: []` or `[PresetDefaults.INPUT]`. Omitted
+defaults still resolve to all eight and reject with `INVALID_OPTIONS`; unsupported
+selected/applied defaults are identified before mutation, never filtered.
+Optional `spatial: { lighting?, softwareShadowFallback? }` settings are 3D-only,
+validated and detached before installation. `SpatialLighting` and
+`SpatialPresentationOptions` are neutral types. Apps retain light values, Camera
+angles/modes and scene policy; provider/platform callbacks remain CUSTOM-only.
+The spatial SDK loads only during asynchronous engine initialization, with no
+fallback after import/WebGL failure. Separate runtimes own separate engines.
 
 `PresetDefaults` contains, in canonical order:
 
@@ -106,7 +116,7 @@ parallel string constants. App-only properties remain app-owned.
 ```text
 resolve and validate strict request
 -> install selected default dependency closure in catalog order
--> bind the profile-owned provider when profile is 2D
+-> bind the profile-owned provider when profile is 2D or 3D
 -> publish frozen PresetApplyResult
 -> app uses ordinary Core APIs for optional customization
 -> core.start()

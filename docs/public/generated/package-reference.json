@@ -212,8 +212,8 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "d0e06fe75fe05660ee2b4bc48ff4b8e5e14bace93a9a6db2ee949a1f460792a8",
-        "guide": "46fd3b6a88f558f2d23a187d98c29fe62c2fa3dd82b766ffc4e658ceed69bba8",
+        "contract": "3b6f59990beda55630cde446d40781de14928b59f8b3d5782b8c4b167f0bc625",
+        "guide": "3dca0a44027d6d6dfc038c9d6137d857a2f1a162780cd826c5d59a5bd2bed684",
         "manifest": "b634ac4129c43fdb770ba1e6f380abd5b8d320aa8f6a2903c9abbdb04133a24b"
       },
       "version": "0.5.8"

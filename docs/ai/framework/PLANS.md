@@ -61,12 +61,14 @@ None.
 ## Preset 3D Foundation
 
 - [Preset 3D Foundation and App Migration](plans/preset-3d-foundation-plan.md)
-  - Tasks 1-7 complete: reviewed design, pure admission, engine resources, shared
+  - Tasks 1-8 complete: reviewed design, pure admission, engine resources, shared
     projection/bounds, App-directed Camera controls, spatial queries/picking and
     optional content/presentation and three-App integration verified. All 38
     real-WebGL cases pass, including the approved Office activity scheduler
-    correction. Stopped for inspection before Task 8; whole-flow runtime and
-    official 3D activation remain pending.
+    correction. Official 3D and generic lighting settings are enabled; Office
+    preserves its presentation through the official profile. All 38 WebGL cases
+    also pass on Task 8 source. Stopped before Task 9; whole-flow runtime remains
+    pending.
   - One canonical 3D architecture for Sim, FieldScope and Office. Scene Tree
     presentation and camera angles/modes remain App-owned; shared controls and
     projection mechanisms are optional Preset foundations.
@@ -218,8 +220,8 @@ Preview `READY` evidence on 2026-08-05. The retained records are:
 - Do not expose empty, placeholder, or capability-incomplete profiles.
 - Reference: `docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md`
 - The active [Preset 3D foundation plan](plans/preset-3d-foundation-plan.md)
-  owns the consumer migration and evidence work for `3D`; this roadmap entry
-  does not independently activate either reserved profile.
+  owns the consumer migration and evidence for activated `3D`; `HYBRID` remains
+  unavailable.
 
 3. Auto-layout behavior engine (lowest-priority roadmap family)
 

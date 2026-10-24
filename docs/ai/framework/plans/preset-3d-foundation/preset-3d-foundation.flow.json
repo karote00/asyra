@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "preset-3d-foundation",
-  "revision": 158,
+  "revision": 201,
   "definition": {
     "title": "Preset 3D foundation and App migration",
     "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
@@ -38,7 +38,9 @@
             "label": "Review design",
             "kind": "external",
             "instructions": "Read the Task 1 review in the plan and validate this flow with the source CLI. Record only the design review, not runtime completion.",
-            "criterionIds": ["reviewed"]
+            "criterionIds": [
+              "reviewed"
+            ]
           }
         ]
       },
@@ -92,7 +94,9 @@
           "packages/preset/src/__tests__/**",
           "packages/preset/src/spatial/components.ts",
           "packages/preset/src/spatial/registration.ts",
-          "packages/preset/src/__tests__/spatial-registration.test.ts"
+          "packages/preset/src/__tests__/spatial-registration.test.ts",
+          "packages/preset/src/index.ts",
+          "packages/preset/src/spatial/lighting.ts"
         ],
         "actions": [
           {
@@ -100,14 +104,18 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/compose/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           },
           {
             "id": "verify-content",
             "label": "Verify optional content slice",
             "kind": "external",
             "instructions": "Run the permanent Task 6 owner and App preservation tests from the plan. This bounded evidence does not accept profile activation or real-WebGL integration.",
-            "criterionIds": ["content"]
+            "criterionIds": [
+              "content"
+            ]
           }
         ]
       },
@@ -155,7 +163,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/startup/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -199,7 +209,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/canonical/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -246,7 +258,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/domain/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -310,7 +324,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/admit/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -375,7 +391,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/project/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -429,7 +447,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/camera/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -489,7 +509,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/render/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -560,7 +582,8 @@
           "apps/asyra-sim/src/engine/__tests__/three-engine.test.ts",
           "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts",
           "packages/preset/src/__tests__/spatial-query.test.ts",
-          "apps/asyra-office/src/scene/office-scene.ts"
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "packages/preset/src/spatial/lighting.ts"
         ],
         "actions": [
           {
@@ -568,14 +591,18 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/engine/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           },
           {
             "id": "verify-content",
             "label": "Verify optional content slice",
             "kind": "external",
             "instructions": "Run the permanent Task 6 owner and App preservation tests from the plan. This bounded evidence does not accept profile activation or real-WebGL integration.",
-            "criterionIds": ["content"]
+            "criterionIds": [
+              "content"
+            ]
           }
         ]
       },
@@ -634,7 +661,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/queries/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -685,7 +714,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/interaction/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -734,7 +765,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/edit/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -778,7 +811,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/assets/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -828,7 +863,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/retire/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -897,7 +934,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/fieldscope/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -951,7 +990,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/sim/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -992,7 +1033,9 @@
             "label": "Verify activity scheduler",
             "kind": "external",
             "instructions": "Run the permanent ActivityProjection receiver regression and Office integration regression, followed by Office WebGL preservation.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -1050,7 +1093,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/office/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -1111,7 +1156,29 @@
           "packages/preset/src/__tests__/profile-provider.test.ts",
           "packages/preset/src/__tests__/apply-preset.test.ts",
           "docs/ai/framework/packages/preset.md",
-          "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
+          "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md",
+          "packages/preset/src/types.ts",
+          "packages/preset/src/index.ts",
+          "docs/ai/apps/asyra-office/implementation.md",
+          "docs/ai/framework/API_SURFACES.md",
+          "docs/ai/framework/ARCHITECTURE.md",
+          "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
+          "docs/ai/framework/PLANS.md",
+          "docs/ai/framework/RELEASE_SUPPORT.md",
+          "docs/ai/framework/RUNTIME_MATRICES.md",
+          "docs/ai/framework/WORKFLOW.md",
+          "docs/ai/framework/golden-paths/preset-composition.md",
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/public/generated/api-index.json",
+          "docs/public/generated/content-index.json",
+          "docs/public/generated/package-reference.json",
+          "docs/public/generated/source-map.json",
+          "docs/public/reference/packages/preset.md",
+          "docs/public/reference/support-release.md",
+          "docs/public/start/preset-2d.md",
+          "packages/preset/README.md",
+          "scripts/docs/public-package-readmes.mjs"
         ],
         "actions": [
           {
@@ -1119,7 +1186,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/activate/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       },
@@ -1178,7 +1247,9 @@
             "label": "Run bounded owner verification",
             "kind": "external",
             "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/closeout/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
-            "criterionIds": ["runtime"]
+            "criterionIds": [
+              "runtime"
+            ]
           }
         ]
       }
@@ -1256,10 +1327,18 @@
           "purpose": "Task 1: review every owner, handoff, failure path and C01-C12 preservation obligation without production edits.",
           "failureOwnerStepId": "design",
           "order": 1,
-          "inputs": ["Plan scope and current public APIs"],
-          "outputs": ["artifact:reviewed-design"],
-          "conditions": ["No production writes or borrowed runtime evidence."],
-          "bypasses": ["No bypass: implementation requires accepted design."],
+          "inputs": [
+            "Plan scope and current public APIs"
+          ],
+          "outputs": [
+            "artifact:reviewed-design"
+          ],
+          "conditions": [
+            "No production writes or borrowed runtime evidence."
+          ],
+          "bypasses": [
+            "No bypass: implementation requires accepted design."
+          ],
           "allowedContributors": [
             "Current source, public contracts and user-approved ownership corrections"
           ],
@@ -1288,13 +1367,17 @@
           "order": 2,
           "inputs": [
             "App profile/default request; composition-open Core",
-            "artifact:reviewed-design"
+            "artifact:reviewed-design",
+            "Optional 3D-only neutral lighting and software-shadow settings"
           ],
-          "outputs": ["artifact:composition"],
+          "outputs": [
+            "artifact:composition"
+          ],
           "conditions": [
             "3D supports [] or explicit INPUT only; omitted defaults resolve all then reject INVALID_OPTIONS.",
             "2D/CUSTOM resolution unchanged; provider conflicts rejected before install.",
-            "Optional spatial definitions use ordinary pre-start Core registration with atomic cleanup; no new selectable catalog IDs."
+            "Optional spatial definitions use ordinary pre-start Core registration with atomic cleanup; no new selectable catalog IDs.",
+            "Validate, detach and freeze presentation settings before mutation; reject unknown fields and non-3D use. No callbacks or SDK types."
           ],
           "bypasses": [
             "CUSTOM binds no preset provider; empty defaults acquire no catalog modules."
@@ -1316,7 +1399,9 @@
             "packages/preset/src/__tests__/**",
             "packages/preset/src/spatial/components.ts",
             "packages/preset/src/spatial/registration.ts",
-            "packages/preset/src/__tests__/spatial-registration.test.ts"
+            "packages/preset/src/__tests__/spatial-registration.test.ts",
+            "packages/preset/src/index.ts",
+            "packages/preset/src/spatial/lighting.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#composition"
@@ -1345,7 +1430,9 @@
             "No successor before startup settlement and teardown.",
             "Initialization request precedes initialized-surface; only then publish ready-runtime. Errors enter retirement without producing readiness."
           ],
-          "bypasses": ["No spatial startup for nonspatial composition."],
+          "bypasses": [
+            "No spatial startup for nonspatial composition."
+          ],
           "allowedContributors": [
             "Render lifecycle facade and existing Core reset owner"
           ],
@@ -1378,12 +1465,16 @@
             "artifact:accepted-intent",
             "artifact:validated-edit"
           ],
-          "outputs": ["artifact:canonical-change"],
+          "outputs": [
+            "artifact:canonical-change"
+          ],
           "conditions": [
             "Finite mutation validates before one transaction; state-apply does not re-execute Feature decisions.",
             "Factory owns rollback/history; Scene Tree owns membership; Props owns values."
           ],
-          "bypasses": ["Presentation-only intention makes no canonical write."],
+          "bypasses": [
+            "Presentation-only intention makes no canonical write."
+          ],
           "allowedContributors": [
             "Existing public canonical APIs and App revision/domain validators"
           ],
@@ -1415,7 +1506,9 @@
             "artifact:reviewed-design",
             "artifact:canonical-change"
           ],
-          "outputs": ["artifact:source-projection"],
+          "outputs": [
+            "artifact:source-projection"
+          ],
           "conditions": [
             "Preserve original geometry and App kinematics; tree-panel visibility does not change canonical granularity."
           ],
@@ -1456,7 +1549,9 @@
             "artifact:reviewed-design",
             "artifact:source-projection"
           ],
-          "outputs": ["artifact:admitted-spatial"],
+          "outputs": [
+            "artifact:admitted-spatial"
+          ],
           "conditions": [
             "Detached immutable receipts only; stable instance IDs; world pose applied once; preserve spatialV0 saved identity."
           ],
@@ -1509,7 +1604,10 @@
             "artifact:retirement",
             "Explicit pose target, current pose, progress and App tolerance/reduced-motion policy"
           ],
-          "outputs": ["artifact:projection-command", "artifact:scene-bounds"],
+          "outputs": [
+            "artifact:projection-command",
+            "artifact:scene-bounds"
+          ],
           "conditions": [
             "Validate full submissions before replacing pending values; scene/camera order preserved.",
             "Camera-only work does not resend meshes; current instance transforms affect bounds.",
@@ -1572,7 +1670,9 @@
             "artifact:retirement",
             "artifact:scene-bounds"
           ],
-          "outputs": ["artifact:camera-update"],
+          "outputs": [
+            "artifact:camera-update"
+          ],
           "conditions": [
             "Single perspective camera; App controls all mode/policy choices; no target queue."
           ],
@@ -1622,11 +1722,15 @@
             "artifact:projection-command",
             "artifact:retirement"
           ],
-          "outputs": ["artifact:engine-command"],
+          "outputs": [
+            "artifact:engine-command"
+          ],
           "conditions": [
             "One-shot scheduling; only explicit flush draws; identity mapping separate from display labels."
           ],
-          "bypasses": ["No dirty output means no new draw request."],
+          "bypasses": [
+            "No dirty output means no new draw request."
+          ],
           "allowedContributors": [
             "Abstract engine contract and registered render layers"
           ],
@@ -1664,9 +1768,13 @@
             "artifact:engine-command",
             "artifact:retirement",
             "artifact:initialization-request",
-            "artifact:spatial-query-request"
+            "artifact:spatial-query-request",
+            "Admitted neutral lighting and software-shadow settings captured by the synchronous provider"
           ],
-          "outputs": ["artifact:engine-result", "artifact:initialized-surface"],
+          "outputs": [
+            "artifact:engine-result",
+            "artifact:initialized-surface"
+          ],
           "conditions": [
             "No draw from requestFrame; explicit shadow flags independent of selection; actual detail inputs include viewport/DPR.",
             "Full admitted shape owns selectable-instance picking independent of LoD slots."
@@ -1705,7 +1813,8 @@
             "apps/asyra-sim/src/engine/__tests__/three-engine.test.ts",
             "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts",
             "packages/preset/src/__tests__/spatial-query.test.ts",
-            "apps/asyra-office/src/scene/office-scene.ts"
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "packages/preset/src/spatial/lighting.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#task-2-delivery-boundary",
@@ -1731,7 +1840,10 @@
             "artifact:reviewed-design",
             "artifact:engine-result"
           ],
-          "outputs": ["artifact:mapped-hit", "artifact:spatial-query-request"],
+          "outputs": [
+            "artifact:mapped-hit",
+            "artifact:spatial-query-request"
+          ],
           "conditions": [
             "Spatial bounds distinct from old 2D queries; foreign/retired IDs reject; no hit is explicit empty.",
             "A query request precedes its result; the request never requires a previous hit result."
@@ -1782,7 +1894,9 @@
             "artifact:mapped-hit",
             "artifact:decoded-asset"
           ],
-          "outputs": ["artifact:accepted-intent"],
+          "outputs": [
+            "artifact:accepted-intent"
+          ],
           "conditions": [
             "App decides action/selection/camera mode; capture loss follows declared cancellation; existing selection channels."
           ],
@@ -1823,7 +1937,9 @@
             "artifact:reviewed-design",
             "artifact:accepted-intent"
           ],
-          "outputs": ["artifact:validated-edit"],
+          "outputs": [
+            "artifact:validated-edit"
+          ],
           "conditions": [
             "Preview remains transient; commit revalidates revision; one finite transaction; rigid targets reject scale."
           ],
@@ -1862,7 +1978,9 @@
             "artifact:reviewed-design",
             "Pure neutral spatial contract and restricted format limits; no pre-existing decoded receipt"
           ],
-          "outputs": ["artifact:decoded-asset"],
+          "outputs": [
+            "artifact:decoded-asset"
+          ],
           "conditions": [
             "Preserve restricted-glb-v0 limits and meanings; no canonical transaction during decode."
           ],
@@ -1900,7 +2018,9 @@
             "artifact:reviewed-design",
             "artifact:initialization-request"
           ],
-          "outputs": ["artifact:retirement"],
+          "outputs": [
+            "artifact:retirement"
+          ],
           "conditions": [
             "Await existing lifecycle settlement; release every acquired resource; report cleanup errors.",
             "Partial startup cleanup does not require a ready-runtime artifact; initialization failure remains the startup owner error."
@@ -1940,7 +2060,9 @@
             "Integrated shared foundation and unchanged domain outputs",
             "artifact:reviewed-design"
           ],
-          "outputs": ["artifact:fieldscope-preserved"],
+          "outputs": [
+            "artifact:fieldscope-preserved"
+          ],
           "conditions": [
             "Only adapter/control/projection changes; domain geometry and simulations remain authoritative."
           ],
@@ -1982,14 +2104,18 @@
             "Integrated shared foundation and strict App source/admission",
             "artifact:reviewed-design"
           ],
-          "outputs": ["artifact:sim-preserved"],
+          "outputs": [
+            "artifact:sim-preserved"
+          ],
           "conditions": [
             "Preserve source topology, rigid poses, lighting and analysis/playback boundaries."
           ],
           "bypasses": [
             "No bypass: affected source, runtime and real-WebGL cases required."
           ],
-          "allowedContributors": ["Existing App tests and supervisors"],
+          "allowedContributors": [
+            "Existing App tests and supervisors"
+          ],
           "forbiddenContributors": [
             "Solver modifications, visual hits as physical proof, silent admission widening"
           ],
@@ -2025,10 +2151,13 @@
             "App-configured local origin shared by server and browser verification",
             "artifact:activity-notification"
           ],
-          "outputs": ["artifact:office-preserved"],
+          "outputs": [
+            "artifact:office-preserved"
+          ],
           "conditions": [
             "App still chooses camera mode/angle and movement destinations; canonical edits separated from transient pose.",
-            "Browser evidence uses the same configured App origin; build does not require a local server origin."
+            "Browser evidence uses the same configured App origin; build does not require a local server origin.",
+            "Ordinary Office startup uses the official 3D profile with unchanged App-owned light values; explicitly injected custom providers retain CUSTOM."
           ],
           "bypasses": [
             "No bypass: layout/Undo/save/stale-proposal and real-WebGL cases required."
@@ -2072,7 +2201,9 @@
             "artifact:sim-preserved",
             "artifact:office-preserved"
           ],
-          "outputs": ["artifact:official-profile"],
+          "outputs": [
+            "artifact:official-profile"
+          ],
           "conditions": [
             "C01-C08 C11-C12 complete; profile/default independence preserved; no placeholder provider."
           ],
@@ -2092,7 +2223,29 @@
             "packages/preset/src/__tests__/profile-provider.test.ts",
             "packages/preset/src/__tests__/apply-preset.test.ts",
             "docs/ai/framework/packages/preset.md",
-            "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
+            "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md",
+            "packages/preset/src/types.ts",
+            "packages/preset/src/index.ts",
+            "docs/ai/apps/asyra-office/implementation.md",
+            "docs/ai/framework/API_SURFACES.md",
+            "docs/ai/framework/ARCHITECTURE.md",
+            "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
+            "docs/ai/framework/PLANS.md",
+            "docs/ai/framework/RELEASE_SUPPORT.md",
+            "docs/ai/framework/RUNTIME_MATRICES.md",
+            "docs/ai/framework/WORKFLOW.md",
+            "docs/ai/framework/golden-paths/preset-composition.md",
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/public/generated/api-index.json",
+            "docs/public/generated/content-index.json",
+            "docs/public/generated/package-reference.json",
+            "docs/public/generated/source-map.json",
+            "docs/public/reference/packages/preset.md",
+            "docs/public/reference/support-release.md",
+            "docs/public/start/preset-2d.md",
+            "packages/preset/README.md",
+            "scripts/docs/public-package-readmes.mjs"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#composition"
@@ -2114,7 +2267,9 @@
             "artifact:office-preserved",
             "artifact:official-profile"
           ],
-          "outputs": ["artifact:complete-target"],
+          "outputs": [
+            "artifact:complete-target"
+          ],
           "conditions": [
             "Task 9 edits/assets and full integration required in addition to activation."
           ],
@@ -2150,7 +2305,9 @@
             "Validated activity batches, archive acknowledgement and default microtask scheduler",
             "artifact:reviewed-design"
           ],
-          "outputs": ["artifact:activity-notification"],
+          "outputs": [
+            "artifact:activity-notification"
+          ],
           "conditions": [
             "Preserve archive acknowledgement, coalescing, per-agent notification and injected scheduler behavior. Native callbacks receive a valid invocation receiver."
           ],
@@ -2179,7 +2336,9 @@
           "to": "compose",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2187,7 +2346,9 @@
           "to": "startup",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2195,7 +2356,9 @@
           "to": "canonical",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2203,7 +2366,9 @@
           "to": "domain",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2211,7 +2376,9 @@
           "to": "admit",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2219,7 +2386,9 @@
           "to": "project",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2227,7 +2396,9 @@
           "to": "camera",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2235,7 +2406,9 @@
           "to": "render",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2243,7 +2416,9 @@
           "to": "engine",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2251,7 +2426,9 @@
           "to": "queries",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2259,7 +2436,9 @@
           "to": "interaction",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2267,7 +2446,9 @@
           "to": "edit",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2275,7 +2456,9 @@
           "to": "assets",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2283,7 +2466,9 @@
           "to": "retire",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2291,7 +2476,9 @@
           "to": "fieldscope",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2299,7 +2486,9 @@
           "to": "sim",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2307,7 +2496,9 @@
           "to": "office",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2315,7 +2506,9 @@
           "to": "activate",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2323,7 +2516,9 @@
           "to": "closeout",
           "kind": "handoff",
           "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
-          "producedArtifacts": ["artifact:reviewed-design"],
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
           "from": "design"
         },
         {
@@ -2331,7 +2526,9 @@
           "to": "startup",
           "kind": "handoff",
           "predicate": "Request supported and composition open; otherwise fail before mutation.",
-          "producedArtifacts": ["artifact:composition"],
+          "producedArtifacts": [
+            "artifact:composition"
+          ],
           "from": "compose"
         },
         {
@@ -2339,7 +2536,9 @@
           "to": "render",
           "kind": "handoff",
           "predicate": "Initialization settles successfully; partial failure routes to retirement.",
-          "producedArtifacts": ["artifact:ready-runtime"],
+          "producedArtifacts": [
+            "artifact:ready-runtime"
+          ],
           "from": "startup"
         },
         {
@@ -2347,7 +2546,9 @@
           "to": "domain",
           "kind": "handoff",
           "predicate": "Existing owner accepts the mutation/apply; no camera-only publication.",
-          "producedArtifacts": ["artifact:canonical-change"],
+          "producedArtifacts": [
+            "artifact:canonical-change"
+          ],
           "from": "canonical"
         },
         {
@@ -2355,7 +2556,9 @@
           "to": "admit",
           "kind": "handoff",
           "predicate": "Source revision changed; unchanged App preparation is reused.",
-          "producedArtifacts": ["artifact:source-projection"],
+          "producedArtifacts": [
+            "artifact:source-projection"
+          ],
           "from": "domain"
         },
         {
@@ -2363,7 +2566,9 @@
           "to": "project",
           "kind": "handoff",
           "predicate": "Admission succeeds; invalid input retains accepted output.",
-          "producedArtifacts": ["artifact:admitted-spatial"],
+          "producedArtifacts": [
+            "artifact:admitted-spatial"
+          ],
           "from": "admit"
         },
         {
@@ -2371,7 +2576,9 @@
           "to": "engine",
           "kind": "handoff",
           "predicate": "Admission succeeds; invalid input retains accepted output.",
-          "producedArtifacts": ["artifact:admitted-spatial"],
+          "producedArtifacts": [
+            "artifact:admitted-spatial"
+          ],
           "from": "admit"
         },
         {
@@ -2379,7 +2586,9 @@
           "to": "project",
           "kind": "handoff",
           "predicate": "Current target/time; cancellation prevents retired target publication.",
-          "producedArtifacts": ["artifact:camera-update"],
+          "producedArtifacts": [
+            "artifact:camera-update"
+          ],
           "from": "camera"
         },
         {
@@ -2387,7 +2596,9 @@
           "to": "render",
           "kind": "handoff",
           "predicate": "Accepted scene/camera ordering; unchanged meshes produce no mesh command.",
-          "producedArtifacts": ["artifact:projection-command"],
+          "producedArtifacts": [
+            "artifact:projection-command"
+          ],
           "from": "project"
         },
         {
@@ -2395,7 +2606,9 @@
           "to": "engine",
           "kind": "handoff",
           "predicate": "Current runtime ready; one-shot frame invalidation consumed.",
-          "producedArtifacts": ["artifact:engine-command"],
+          "producedArtifacts": [
+            "artifact:engine-command"
+          ],
           "from": "render"
         },
         {
@@ -2403,7 +2616,9 @@
           "to": "queries",
           "kind": "handoff",
           "predicate": "Supported query, owned handle, current projection; empty hit is explicit.",
-          "producedArtifacts": ["artifact:engine-result"],
+          "producedArtifacts": [
+            "artifact:engine-result"
+          ],
           "from": "engine"
         },
         {
@@ -2411,7 +2626,9 @@
           "to": "interaction",
           "kind": "handoff",
           "predicate": "Valid surface query; no-hit or unsupported outcome is explicit.",
-          "producedArtifacts": ["artifact:mapped-hit"],
+          "producedArtifacts": [
+            "artifact:mapped-hit"
+          ],
           "from": "queries"
         },
         {
@@ -2419,7 +2636,9 @@
           "to": "camera",
           "kind": "handoff",
           "predicate": "Input eligible; direct commands bypass hit acquisition but not Feature ownership.",
-          "producedArtifacts": ["artifact:accepted-intent"],
+          "producedArtifacts": [
+            "artifact:accepted-intent"
+          ],
           "from": "interaction"
         },
         {
@@ -2427,7 +2646,9 @@
           "to": "edit",
           "kind": "handoff",
           "predicate": "Input eligible; direct commands bypass hit acquisition but not Feature ownership.",
-          "producedArtifacts": ["artifact:accepted-intent"],
+          "producedArtifacts": [
+            "artifact:accepted-intent"
+          ],
           "from": "interaction"
         },
         {
@@ -2435,7 +2656,9 @@
           "to": "canonical",
           "kind": "handoff",
           "predicate": "Input eligible; direct commands bypass hit acquisition but not Feature ownership.",
-          "producedArtifacts": ["artifact:accepted-intent"],
+          "producedArtifacts": [
+            "artifact:accepted-intent"
+          ],
           "from": "interaction"
         },
         {
@@ -2443,7 +2666,9 @@
           "to": "canonical",
           "kind": "handoff",
           "predicate": "Commit accepted by App validator; cancel/no-op emits no mutation.",
-          "producedArtifacts": ["artifact:validated-edit"],
+          "producedArtifacts": [
+            "artifact:validated-edit"
+          ],
           "from": "edit"
         },
         {
@@ -2451,7 +2676,9 @@
           "to": "interaction",
           "kind": "handoff",
           "predicate": "Current noncancelled decode succeeds; App revalidates before commit.",
-          "producedArtifacts": ["artifact:decoded-asset"],
+          "producedArtifacts": [
+            "artifact:decoded-asset"
+          ],
           "from": "assets"
         },
         {
@@ -2459,7 +2686,9 @@
           "to": "render",
           "kind": "handoff",
           "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
-          "producedArtifacts": ["artifact:retirement"],
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
           "from": "retire"
         },
         {
@@ -2467,7 +2696,9 @@
           "to": "engine",
           "kind": "handoff",
           "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
-          "producedArtifacts": ["artifact:retirement"],
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
           "from": "retire"
         },
         {
@@ -2475,7 +2706,9 @@
           "to": "project",
           "kind": "handoff",
           "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
-          "producedArtifacts": ["artifact:retirement"],
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
           "from": "retire"
         },
         {
@@ -2483,7 +2716,9 @@
           "to": "camera",
           "kind": "handoff",
           "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
-          "producedArtifacts": ["artifact:retirement"],
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
           "from": "retire"
         },
         {
@@ -2491,7 +2726,9 @@
           "to": "activate",
           "kind": "handoff",
           "predicate": "All affected FieldScope preservation obligations verified.",
-          "producedArtifacts": ["artifact:fieldscope-preserved"],
+          "producedArtifacts": [
+            "artifact:fieldscope-preserved"
+          ],
           "from": "fieldscope"
         },
         {
@@ -2499,7 +2736,9 @@
           "to": "closeout",
           "kind": "handoff",
           "predicate": "All affected FieldScope preservation obligations verified.",
-          "producedArtifacts": ["artifact:fieldscope-preserved"],
+          "producedArtifacts": [
+            "artifact:fieldscope-preserved"
+          ],
           "from": "fieldscope"
         },
         {
@@ -2507,7 +2746,9 @@
           "to": "activate",
           "kind": "handoff",
           "predicate": "All affected Sim preservation obligations verified.",
-          "producedArtifacts": ["artifact:sim-preserved"],
+          "producedArtifacts": [
+            "artifact:sim-preserved"
+          ],
           "from": "sim"
         },
         {
@@ -2515,7 +2756,9 @@
           "to": "closeout",
           "kind": "handoff",
           "predicate": "All affected Sim preservation obligations verified.",
-          "producedArtifacts": ["artifact:sim-preserved"],
+          "producedArtifacts": [
+            "artifact:sim-preserved"
+          ],
           "from": "sim"
         },
         {
@@ -2523,7 +2766,9 @@
           "to": "activate",
           "kind": "handoff",
           "predicate": "All affected Office preservation obligations verified.",
-          "producedArtifacts": ["artifact:office-preserved"],
+          "producedArtifacts": [
+            "artifact:office-preserved"
+          ],
           "from": "office"
         },
         {
@@ -2531,7 +2776,9 @@
           "to": "closeout",
           "kind": "handoff",
           "predicate": "All affected Office preservation obligations verified.",
-          "producedArtifacts": ["artifact:office-preserved"],
+          "producedArtifacts": [
+            "artifact:office-preserved"
+          ],
           "from": "office"
         },
         {
@@ -2539,7 +2786,9 @@
           "to": "closeout",
           "kind": "handoff",
           "predicate": "All activation requirements pass on integrated source.",
-          "producedArtifacts": ["artifact:official-profile"],
+          "producedArtifacts": [
+            "artifact:official-profile"
+          ],
           "from": "activate"
         },
         {
@@ -2548,7 +2797,9 @@
           "to": "engine",
           "kind": "handoff",
           "predicate": "Core starts the bound provider; no ready-runtime token is required.",
-          "producedArtifacts": ["artifact:initialization-request"]
+          "producedArtifacts": [
+            "artifact:initialization-request"
+          ]
         },
         {
           "id": "engine-startup-initialized-surface",
@@ -2556,7 +2807,9 @@
           "to": "startup",
           "kind": "handoff",
           "predicate": "Initialization settled; retired delegate is destroyed and never becomes ready.",
-          "producedArtifacts": ["artifact:initialized-surface"]
+          "producedArtifacts": [
+            "artifact:initialized-surface"
+          ]
         },
         {
           "id": "queries-engine-spatial-query-request",
@@ -2564,7 +2817,9 @@
           "to": "engine",
           "kind": "handoff",
           "predicate": "Capability and identity checks succeed; independent of a previous query result.",
-          "producedArtifacts": ["artifact:spatial-query-request"]
+          "producedArtifacts": [
+            "artifact:spatial-query-request"
+          ]
         },
         {
           "id": "project-camera-scene-bounds",
@@ -2572,7 +2827,9 @@
           "to": "camera",
           "kind": "handoff",
           "predicate": "App asks fit/focus; empty bounds preserve camera.",
-          "producedArtifacts": ["artifact:scene-bounds"]
+          "producedArtifacts": [
+            "artifact:scene-bounds"
+          ]
         },
         {
           "id": "startup-retire-partial-acquisition",
@@ -2580,7 +2837,9 @@
           "to": "retire",
           "kind": "failure-or-retirement",
           "predicate": "Failure or retirement may occur before readiness; cleanup receives the generation and partial acquisition.",
-          "producedArtifacts": ["artifact:initialization-request"]
+          "producedArtifacts": [
+            "artifact:initialization-request"
+          ]
         },
         {
           "id": "activity-office-notification",
@@ -2588,7 +2847,9 @@
           "to": "office",
           "kind": "handoff",
           "predicate": "An admitted, acknowledged batch changes the existing read-only activity projection.",
-          "producedArtifacts": ["artifact:activity-notification"]
+          "producedArtifacts": [
+            "artifact:activity-notification"
+          ]
         },
         {
           "id": "design-activity-reviewed",
@@ -2596,7 +2857,9 @@
           "to": "activity",
           "kind": "handoff",
           "predicate": "The bounded scheduler correction is reviewed and authorized.",
-          "producedArtifacts": ["artifact:reviewed-design"]
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
         }
       ],
       "artifacts": [
@@ -2634,7 +2897,9 @@
           "id": "artifact:composition",
           "ownerStepId": "compose",
           "channel": "typed handoff",
-          "consumerStepIds": ["startup"],
+          "consumerStepIds": [
+            "startup"
+          ],
           "title": "composition",
           "description": "Validated explicit defaults and provider binding through Core.",
           "terminal": false
@@ -2643,7 +2908,9 @@
           "id": "artifact:ready-runtime",
           "ownerStepId": "startup",
           "channel": "typed handoff",
-          "consumerStepIds": ["render"],
+          "consumerStepIds": [
+            "render"
+          ],
           "title": "ready runtime",
           "description": "Owned ready generation and validated surface dimensions.",
           "terminal": false
@@ -2652,7 +2919,9 @@
           "id": "artifact:canonical-change",
           "ownerStepId": "canonical",
           "channel": "typed handoff",
-          "consumerStepIds": ["domain"],
+          "consumerStepIds": [
+            "domain"
+          ],
           "title": "canonical change",
           "description": "Validated committed/load/replay state-owner publication.",
           "terminal": false
@@ -2661,7 +2930,9 @@
           "id": "artifact:source-projection",
           "ownerStepId": "domain",
           "channel": "typed handoff",
-          "consumerStepIds": ["admit"],
+          "consumerStepIds": [
+            "admit"
+          ],
           "title": "source projection",
           "description": "Completed original neutral shape/pose values with App source identity.",
           "terminal": false
@@ -2670,7 +2941,10 @@
           "id": "artifact:admitted-spatial",
           "ownerStepId": "admit",
           "channel": "typed handoff",
-          "consumerStepIds": ["project", "engine"],
+          "consumerStepIds": [
+            "project",
+            "engine"
+          ],
           "title": "admitted spatial",
           "description": "Detached immutable accepted descriptor/shape contracts and receipts.",
           "terminal": false
@@ -2679,7 +2953,9 @@
           "id": "artifact:camera-update",
           "ownerStepId": "camera",
           "channel": "typed handoff",
-          "consumerStepIds": ["project"],
+          "consumerStepIds": [
+            "project"
+          ],
           "title": "camera update",
           "description": "App-selected validated camera/transition result.",
           "terminal": false
@@ -2688,7 +2964,9 @@
           "id": "artifact:projection-command",
           "ownerStepId": "project",
           "channel": "typed handoff",
-          "consumerStepIds": ["render"],
+          "consumerStepIds": [
+            "render"
+          ],
           "title": "projection command",
           "description": "Incremental visual identities, geometry/pose/material/visibility and current camera.",
           "terminal": false
@@ -2697,7 +2975,9 @@
           "id": "artifact:engine-command",
           "ownerStepId": "render",
           "channel": "typed handoff",
-          "consumerStepIds": ["engine"],
+          "consumerStepIds": [
+            "engine"
+          ],
           "title": "engine command",
           "description": "Opaque-handle commands and explicit flush through neutral engine contract.",
           "terminal": false
@@ -2706,7 +2986,9 @@
           "id": "artifact:engine-result",
           "ownerStepId": "engine",
           "channel": "typed handoff",
-          "consumerStepIds": ["queries"],
+          "consumerStepIds": [
+            "queries"
+          ],
           "title": "engine result",
           "description": "Typed spatial query result, opaque handle and stable instance identity.",
           "terminal": false
@@ -2715,7 +2997,9 @@
           "id": "artifact:mapped-hit",
           "ownerStepId": "queries",
           "channel": "typed handoff",
-          "consumerStepIds": ["interaction"],
+          "consumerStepIds": [
+            "interaction"
+          ],
           "title": "mapped hit",
           "description": "Public visual/entity/instance result with surface/world coordinate meaning.",
           "terminal": false
@@ -2724,7 +3008,11 @@
           "id": "artifact:accepted-intent",
           "ownerStepId": "interaction",
           "channel": "typed handoff",
-          "consumerStepIds": ["camera", "edit", "canonical"],
+          "consumerStepIds": [
+            "camera",
+            "edit",
+            "canonical"
+          ],
           "title": "accepted intent",
           "description": "App-selected bounded Feature intention or nonmutating presentation request.",
           "terminal": false
@@ -2733,7 +3021,9 @@
           "id": "artifact:validated-edit",
           "ownerStepId": "edit",
           "channel": "typed handoff",
-          "consumerStepIds": ["canonical"],
+          "consumerStepIds": [
+            "canonical"
+          ],
           "title": "validated edit",
           "description": "Revision-checked finite mutation intent; preview never canonical.",
           "terminal": false
@@ -2742,7 +3032,9 @@
           "id": "artifact:decoded-asset",
           "ownerStepId": "assets",
           "channel": "typed handoff",
-          "consumerStepIds": ["interaction"],
+          "consumerStepIds": [
+            "interaction"
+          ],
           "title": "decoded asset",
           "description": "Restricted immutable mesh/source result for App acceptance.",
           "terminal": false
@@ -2751,7 +3043,12 @@
           "id": "artifact:retirement",
           "ownerStepId": "retire",
           "channel": "typed handoff",
-          "consumerStepIds": ["render", "engine", "project", "camera"],
+          "consumerStepIds": [
+            "render",
+            "engine",
+            "project",
+            "camera"
+          ],
           "title": "retirement",
           "description": "Exact generation retirement and cleanup request.",
           "terminal": false
@@ -2760,7 +3057,10 @@
           "id": "artifact:fieldscope-preserved",
           "ownerStepId": "fieldscope",
           "channel": "typed handoff",
-          "consumerStepIds": ["activate", "closeout"],
+          "consumerStepIds": [
+            "activate",
+            "closeout"
+          ],
           "title": "fieldscope preserved",
           "description": "Actual same-source affected source/runtime/profile/WebGL evidence.",
           "terminal": false
@@ -2769,7 +3069,10 @@
           "id": "artifact:sim-preserved",
           "ownerStepId": "sim",
           "channel": "typed handoff",
-          "consumerStepIds": ["activate", "closeout"],
+          "consumerStepIds": [
+            "activate",
+            "closeout"
+          ],
           "title": "sim preserved",
           "description": "Actual same-source strict geometry/runtime/WebGL evidence.",
           "terminal": false
@@ -2778,7 +3081,10 @@
           "id": "artifact:office-preserved",
           "ownerStepId": "office",
           "channel": "typed handoff",
-          "consumerStepIds": ["activate", "closeout"],
+          "consumerStepIds": [
+            "activate",
+            "closeout"
+          ],
           "title": "office preserved",
           "description": "Actual same-source layout/history/camera/WebGL evidence.",
           "terminal": false
@@ -2787,7 +3093,9 @@
           "id": "artifact:official-profile",
           "ownerStepId": "activate",
           "channel": "typed handoff",
-          "consumerStepIds": ["closeout"],
+          "consumerStepIds": [
+            "closeout"
+          ],
           "title": "official profile",
           "description": "Verified available 3D provider with explicit defaults behavior.",
           "terminal": false
@@ -2805,7 +3113,10 @@
           "id": "artifact:initialization-request",
           "ownerStepId": "startup",
           "channel": "typed handoff",
-          "consumerStepIds": ["engine", "retire"],
+          "consumerStepIds": [
+            "engine",
+            "retire"
+          ],
           "title": "initialization request",
           "description": "Validated host/options and generation token, issued before engine readiness.",
           "terminal": false
@@ -2814,7 +3125,9 @@
           "id": "artifact:initialized-surface",
           "ownerStepId": "engine",
           "channel": "typed handoff",
-          "consumerStepIds": ["startup"],
+          "consumerStepIds": [
+            "startup"
+          ],
           "title": "initialized surface",
           "description": "Discriminated initialization outcome: ready owned surface/root/runtime, or explicit error with no ready surface.",
           "terminal": false
@@ -2823,7 +3136,9 @@
           "id": "artifact:spatial-query-request",
           "ownerStepId": "queries",
           "channel": "typed handoff",
-          "consumerStepIds": ["engine"],
+          "consumerStepIds": [
+            "engine"
+          ],
           "title": "spatial query request",
           "description": "Typed query with opaque owned handle and explicit coordinate space.",
           "terminal": false
@@ -2832,7 +3147,9 @@
           "id": "artifact:scene-bounds",
           "ownerStepId": "project",
           "channel": "typed handoff",
-          "consumerStepIds": ["camera"],
+          "consumerStepIds": [
+            "camera"
+          ],
           "title": "scene bounds",
           "description": "Completed current visible/selected world bounds or null.",
           "terminal": false
@@ -2841,7 +3158,9 @@
           "id": "artifact:activity-notification",
           "ownerStepId": "activity",
           "channel": "read-only notification",
-          "consumerStepIds": ["office"],
+          "consumerStepIds": [
+            "office"
+          ],
           "title": "acknowledged activity notification",
           "description": "Existing per-agent/list/log notification after archive acknowledgement; no canonical or renderer state.",
           "terminal": false
@@ -2869,8 +3188,15 @@
         {
           "id": "engine-boundary",
           "statement": "Render and concrete SDK execution meet only through neutral contracts; output never mutates canonical state.",
-          "stepIds": ["render", "engine", "queries"],
-          "artifactIds": ["artifact:engine-command", "artifact:engine-result"],
+          "stepIds": [
+            "render",
+            "engine",
+            "queries"
+          ],
+          "artifactIds": [
+            "artifact:engine-command",
+            "artifact:engine-result"
+          ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#target-public-boundaries"
           ]
@@ -2878,8 +3204,13 @@
         {
           "id": "independent-composition",
           "statement": "Do not filter defaults by profile; reject unsupported official 3D combinations before mutation.",
-          "stepIds": ["compose", "activate"],
-          "artifactIds": ["artifact:composition"],
+          "stepIds": [
+            "compose",
+            "activate"
+          ],
+          "artifactIds": [
+            "artifact:composition"
+          ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#composition"
           ]
@@ -2930,12 +3261,12 @@
         "kind": "manual",
         "status": "accepted",
         "actor": "codex-coordinator-self-review",
-        "binding": "2fc54f8b448a05adce2bb2758bf2017fcfe9ba12492124482a5eee50f5382599",
-        "at": "2026-10-24T07:49:05.135Z",
-        "summary": "Task 7 integration and user-approved minimum activity correction reviewed.",
+        "binding": "1bf13542237c3d8758cead3193f061d809e3cf4bd02a54e6d0b79a9cff74db8e",
+        "at": "2026-10-24T08:19:39.886Z",
+        "summary": "Task 8 contract and complete activation handoffs reviewed.",
         "details": [
-          "Exact owner boundaries, browser receiver regression and Office handoff reviewed; no App policy moved into Preset.",
-          "Tasks 8-10 and whole-flow activation remain pending."
+          "Reviewed Composition, C01-C08/C11-C12, exact owner handoffs and user-approved generic lighting entry.",
+          "Tasks 9-10 remain pending; existing App editing preservation is not generic editing completion."
         ]
       },
       {
@@ -2944,14 +3275,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "admit-integration",
-        "binding": "1fe6a30b92c04aaa2c54ed83852a8f899ddc538eb825c3b303fb837875882d59",
-        "at": "2026-10-24T07:49:05.144Z",
-        "summary": "Neutral immutable admission and App-domain adapters pass.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "admit-activation",
+        "binding": "9682c163e4c569ba5f11bfde3da0e1648119b2a8853d7f8f0b6c9041d8d402cf",
+        "at": "2026-10-24T08:19:39.901Z",
+        "summary": "Task 8 same-source admit behavior and preservation verified.",
         "details": [
-          "Preset admission 10; required unique IDs, quaternions, positive scale, explicit shadows and pixel error; malformed values reject.",
-          "FieldScope paired yaw/neutral receipts reuse captures; Sim and FieldScope preserve rigid domain boundaries."
+          "Preset 333 and affected App suites cover immutable admission, invalid numeric values, instances and strict domain boundaries on this source.",
+          "Logs preset-final.log, fieldscope-unit-final.log, sim-unit-final.log under .artifacts/preset-3d-task8/."
         ]
       },
       {
@@ -2960,14 +3291,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "engine-integration",
-        "binding": "5a6628782cb6e55e92f1b51211c542b33b1e819c3f56eb90dd7e14e6fc3837a6",
-        "at": "2026-10-24T07:49:05.152Z",
-        "summary": "Resource ownership and incremental spatial engine remain verified.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "engine-activation",
+        "binding": "4d1a92af9f3f8f225249bfc0797cc9e6ec56fca3d45cac30d58ec90a66b1f079",
+        "at": "2026-10-24T08:19:39.915Z",
+        "summary": "Task 8 same-source engine behavior and preservation verified.",
         "details": [
-          "Preset engine 24, resources 1 and query 6; instance-count changes retain geometry/material and retire buffers.",
-          "Lighting rejects before driver allocation; original App light/shadow policy is explicit."
+          "Preset full suite covers lazy initialization, retire-during-load, command readiness, retained resources, textures, detail and picking; App focused suites preserve explicit shadow policy.",
+          "Actual production WebGL: FieldScope Chrome Metal; Office/Sim Chrome SwiftShader. No hardware performance claim."
         ]
       },
       {
@@ -2976,14 +3307,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "project-integration",
-        "binding": "4ceea1730514dbcf8643b30747ddf70d4579df952dac29b1625b7491e2e27c16",
-        "at": "2026-10-24T07:49:05.158Z",
-        "summary": "Incremental projection, transformed bounds and caller-timed pose pass.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "project-activation",
+        "binding": "6e7d56d9c1544ecea17c768e136f2b7858301489891a82109a12629f6fb780bb",
+        "at": "2026-10-24T08:19:39.979Z",
+        "summary": "Task 8 same-source project behavior and preservation verified.",
         "details": [
-          "Preset 290 includes bounds 3, pose 2 and layer 6; mesh/instance scales and quaternion composition match concrete transforms.",
-          "Pose retarget/cancel/reduced-motion use explicit caller progress and never write canonical data."
+          "Preset full suite covers incremental projection, scene/camera ordering and current instance bounds; affected App suites preserve geometry work counts and update isolation.",
+          "FieldScope source/profile 32, focused 60; Sim focused 95; final WebGL picking and camera interactions pass."
         ]
       },
       {
@@ -2992,13 +3323,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "render-integration",
-        "binding": "b6276f34e71e07b4fc1a2c868201bec0640bf1cdc021696589484963b8bba831",
-        "at": "2026-10-24T07:49:05.165Z",
-        "summary": "Existing public Render/Core projection and query ownership remain verified.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "render-activation",
+        "binding": "9cdeca4b979e6fedcc9f5eb070c0b3e3a854f67fea5ad81783eb92c1d95ef060",
+        "at": "2026-10-24T08:19:40.002Z",
+        "summary": "Task 8 same-source render behavior and preservation verified.",
         "details": [
-          "Render 273, Core 272 and Render Engine 11 tests pass; no second scheduler or domain state owner added."
+          "Render 273 and Render Engine 11 pass; Preset 333 cover typed commands, incremental handoff, opaque identity, scheduling and explicit flush.",
+          "Production App previews pass 38 real-WebGL cases without fallback surfaces."
         ]
       },
       {
@@ -3007,14 +3339,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "camera-integration",
-        "binding": "5aeb66cef8cba80003a1b01c3efe6b42d97f0d1740bf75a67b180734c810d170",
-        "at": "2026-10-24T07:49:05.173Z",
-        "summary": "App-directed Camera controls preserved through three-App integration.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "camera-activation",
+        "binding": "a35eedb9a8f5db0b1a1af35ee63e2c61465695c5daf911dd60f838d2714451a9",
+        "at": "2026-10-24T08:19:39.988Z",
+        "summary": "Task 8 same-source camera behavior and preservation verified.",
         "details": [
-          "FieldScope 60 focused plus 23 profile tests; Sim 95 focused; Office 20 tests pass.",
-          "Real-WebGL Camera/navigation/flight/touch/follow checks are included in the 38 passing browser cases. Modes and angles remain App policy."
+          "Existing shared Camera and App camera suites pass with no policy migration; FieldScope 18, Sim 18 and Office 2 final real-WebGL cases pass.",
+          "App angles/modes/follow bindings remain unchanged."
         ]
       },
       {
@@ -3023,13 +3355,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "queries-integration",
-        "binding": "17390f5864da3e501545bf318b238edfd8fa53a2ccf15d578d8f8db8209f7c02",
-        "at": "2026-10-24T07:49:05.180Z",
-        "summary": "Full geometry queries use stable source identities and generalized transforms.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "queries-activation",
+        "binding": "5323ed3d9461755179705adefe919672bc39a6d9703895a2202f5f4d2a577617",
+        "at": "2026-10-24T08:19:40.010Z",
+        "summary": "Task 8 same-source queries behavior and preservation verified.",
         "details": [
-          "Preset query 6 verifies transformed instances, source indices/IDs and LoD-independent hits; Render/Core public query tests pass."
+          "Render 273 and Preset 333 cover typed bounds/ray/hit semantics, foreign identities, surface conversion and instance mapping.",
+          "Real App picking and camera navigation pass on final production builds."
         ]
       },
       {
@@ -3038,14 +3371,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "interaction-integration",
-        "binding": "7d4643cb8627dc5f871cc91d43d0b0e59e8da1592f0566e9d94fd72ff1a6548f",
-        "at": "2026-10-24T07:49:05.187Z",
-        "summary": "Three-App interaction and canonical/transient separation preserved.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "interaction-activation",
+        "binding": "f76f561bdab476903d686678f6fc65421dcda8048f99a3c70d47b70eed65a908",
+        "at": "2026-10-24T08:19:40.018Z",
+        "summary": "Task 8 same-source interaction behavior and preservation verified.",
         "details": [
-          "FieldScope 60 focused plus 23 source-profile tests with eight supervisor guards; Sim 95 with 13 guards; Office 20 pass.",
-          "38 real-WebGL cases and synchronized screenshots cover picking, navigation, configuration history, playback, proposal and persistence. No domain decisions moved into Preset."
+          "Shared pointer/session/camera owner tests and final FieldScope touch/camera, Sim navigation/picking and Office follow/layout flows pass.",
+          "No new selection/session store or framework camera policy."
         ]
       },
       {
@@ -3054,14 +3387,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "engine-integration",
-        "binding": "5a6628782cb6e55e92f1b51211c542b33b1e819c3f56eb90dd7e14e6fc3837a6",
-        "at": "2026-10-24T07:49:05.194Z",
-        "summary": "Task 6 presentation policy and resource reuse pass.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "engine-activation",
+        "binding": "4d1a92af9f3f8f225249bfc0797cc9e6ec56fca3d45cac30d58ec90a66b1f079",
+        "at": "2026-10-24T08:19:39.922Z",
+        "summary": "Task 8 same-source engine behavior and preservation verified.",
         "details": [
-          "Permanent tests prove unchanged detail upload counts, hidden/show current inputs, DPR/pixelError selection, explicit shadow independence and instance-count resource retention.",
-          "Task 7 additionally verifies 38 actual browser WebGL cases; this criterion remains bounded to optional presentation."
+          "Preset full suite covers lazy initialization, retire-during-load, command readiness, retained resources, textures, detail and picking; App focused suites preserve explicit shadow policy.",
+          "Actual production WebGL: FieldScope Chrome Metal; Office/Sim Chrome SwiftShader. No hardware performance claim."
         ]
       },
       {
@@ -3070,15 +3403,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "compose-integration",
-        "binding": "65206a193321cc477267f631c5a40ec21164f2b14c974dc41429cac02e9b05c9",
-        "at": "2026-10-24T07:49:05.200Z",
-        "summary": "Opt-in mesh content uses ordinary Core registration and lifetime.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "compose-activation",
+        "binding": "778f1b68f2f3dac25aa5630829ed968cbbddeb946d6d7a09e95d00c879e92bf2",
+        "at": "2026-10-24T08:19:39.935Z",
+        "summary": "Task 8 same-source compose behavior and preservation verified.",
         "details": [
-          "Registration 5 proves explicit install, no implicit registration, rollback, invalid write/load, retained mesh identity, canonical create/save and runtime reset cleanup.",
-          "Preset 37 files / 290 tests and required affected package/App gates pass; see Task 7 plan result.",
-          "Official catalog/profile activation remains pending."
+          "333 Preset tests pass: explicit empty/INPUT 3D, omitted/incompatible defaults rejection before mutation, provider conflict, unchanged 2D/CUSTOM, optional mesh registration and immutable settings capture.",
+          "Logs: .artifacts/preset-3d-task8/preset-final.log; Office profile-bundle.test.ts proves the emitted public entry static closure excludes Three."
         ]
       },
       {
@@ -3087,15 +3419,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "fieldscope-integration",
-        "binding": "0d1442db01dfc50aff92a2d65ed245991c5cb49c1629a2e85e60fedf40eb63d5",
-        "at": "2026-10-24T07:49:05.208Z",
-        "summary": "FieldScope same-source shared integration and Metal WebGL preservation pass.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "fieldscope-activation",
+        "binding": "850096cdca8998d2d16bd99e3752287ea3044c85c1a35cd85422de717aa3b63d",
+        "at": "2026-10-24T08:19:40.033Z",
+        "summary": "Task 8 same-source fieldscope behavior and preservation verified.",
         "details": [
-          "9 files / 60 tests, source-profile 23 tests through supervisors (8 guards each); build and focused lint passed.",
-          "18 browser cases passed at http://127.0.0.1:5178: greenhouse/crops/drains, camera flight/touch, configuration/canvas history and planted responsiveness.",
-          "Inspected overview/front/top, crop/clip/drain detail, mobile Camera and original/changed/Undo screenshots from the actual App. Artifacts: apps/asyra-fieldscope/test-results and .artifacts/task7-interaction."
+          "60 focused tests, 32 source/profile tests, 8 supervisor guards; production build passes.",
+          "18 real WebGL cases pass: fieldscope-webgl-final-model.log and fieldscope-webgl-final-interaction.log. Final overview, clips, drains, Undo and mobile Camera screenshots inspected."
         ]
       },
       {
@@ -3104,15 +3435,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "sim-integration",
-        "binding": "0761317bd6af9a096f429220bb8ad02d5fabdb2258500f20b9e3c8d43b52a1c9",
-        "at": "2026-10-24T07:49:05.216Z",
-        "summary": "Sim same-source original geometry, shared spatial integration and WebGL preservation pass.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "sim-activation",
+        "binding": "06c608ded872393b04b463d5c3a0839d341adc82fc72deef282a990afbe34d10",
+        "at": "2026-10-24T08:19:40.041Z",
+        "summary": "Task 8 same-source sim behavior and preservation verified.",
         "details": [
-          "12 files / 95 tests with 13 supervisor guards; build and focused lint passed.",
-          "18 browser cases passed at http://127.0.0.1:3020 using installed Chrome/SwiftShader WebGL2: workcell/navigation, original-part admission, live playback/continuity and visual sources.",
-          "Inspected selection/pan, live/recorded playback, original source reopening and historical source screenshots. Artifacts: apps/asyra-sim/.artifacts/task7-navigation, task7-playback and task7-sources."
+          "95 focused tests and 13 supervisor guards; production build passes.",
+          "18 real WebGL cases pass: sim-webgl-final-navigation.log (9), sim-webgl-final-playback.log (5), sim-webgl-final-sources.log (4). Selected body, collision closeup and original-part reopen screenshots inspected."
         ]
       },
       {
@@ -3121,15 +3451,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "office-integration",
-        "binding": "e25712f4bfd0c8fff8f370ba1a29d6821ddd53b05080cbe373446b4f7a87990d",
-        "at": "2026-10-24T07:49:05.225Z",
-        "summary": "Office shared integration and real-WebGL preservation pass.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "office-activation",
+        "binding": "465cd0e86a4f535f2c175ae203a3a26ad1a1cc35f9655e485c443cbfcfdfaa09",
+        "at": "2026-10-24T08:19:40.071Z",
+        "summary": "Task 8 same-source office behavior and preservation verified.",
         "details": [
-          "Five files / 20 tests; typecheck/build and scoped lint pass. Server/browser origin parity, invalid origins and build independence are formally tested.",
-          "Two Chrome/SwiftShader WebGL cases pass at http://127.0.0.1:5194: task/follow, layout/Undo/proposal/save and narrow layout.",
-          "Final desktop and narrow screenshots visually inspected in apps/asyra-office/test-results/. No App workaround or weakened assertion."
+          "22 formal tests including official-profile startup and emitted lazy SDK graph; production build passes.",
+          "2 real WebGL cases pass: office-webgl-final.log. Ordinary runtime uses official 3D with exact existing lights/shadows. Desktop and narrow screenshots inspected; explicit injected test providers retain CUSTOM."
         ]
       },
       {
@@ -3138,15 +3467,175 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task7-local-2026-10-24",
-        "caseId": "activity-integration",
-        "binding": "3535d701f8478a741b99660995a66beba7b9288cc3a13cba445c9e45fc802ce9",
-        "at": "2026-10-24T07:49:05.233Z",
-        "summary": "Browser scheduler binding preserves acknowledged activity publication.",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "activity-activation",
+        "binding": "a24ddd25c3e347e5428c089c8621a6de471f06ec5a21edede12c284956cfce27",
+        "at": "2026-10-24T08:19:40.055Z",
+        "summary": "Task 8 same-source activity behavior and preservation verified.",
         "details": [
-          "Permanent Preset owner and Office runtime regressions failed before the correction; default callback adapter resolves native receiver failure.",
-          "Preset 290 tests including nine activity tests; Office 20 tests and two WebGL cases pass after public distribution rebuild.",
-          "Archive acknowledgement, coalescing, per-agent isolation, injection and disposal preserved. Logs: .artifacts/preset-3d-task7/activity-owner-before.log, activity-owner.log, office-unit-final.log, office-webgl-final.log."
+          "Existing acknowledged-activity and scheduler binding tests remain in the passing 333-test Preset suite.",
+          "Office real WebGL task/follow/proposal flow passes through the previously approved scheduler correction."
+        ]
+      },
+      {
+        "nodeId": "admit",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "admit-activation",
+        "binding": "9682c163e4c569ba5f11bfde3da0e1648119b2a8853d7f8f0b6c9041d8d402cf",
+        "at": "2026-10-24T08:19:39.894Z",
+        "summary": "Task 8 same-source admit behavior and preservation verified.",
+        "details": [
+          "Preset 333 and affected App suites cover immutable admission, invalid numeric values, instances and strict domain boundaries on this source.",
+          "Logs preset-final.log, fieldscope-unit-final.log, sim-unit-final.log under .artifacts/preset-3d-task8/."
+        ]
+      },
+      {
+        "nodeId": "engine",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "engine-activation",
+        "binding": "4d1a92af9f3f8f225249bfc0797cc9e6ec56fca3d45cac30d58ec90a66b1f079",
+        "at": "2026-10-24T08:19:39.908Z",
+        "summary": "Task 8 same-source engine behavior and preservation verified.",
+        "details": [
+          "Preset full suite covers lazy initialization, retire-during-load, command readiness, retained resources, textures, detail and picking; App focused suites preserve explicit shadow policy.",
+          "Actual production WebGL: FieldScope Chrome Metal; Office/Sim Chrome SwiftShader. No hardware performance claim."
+        ]
+      },
+      {
+        "nodeId": "compose",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "compose-activation",
+        "binding": "778f1b68f2f3dac25aa5630829ed968cbbddeb946d6d7a09e95d00c879e92bf2",
+        "at": "2026-10-24T08:19:39.928Z",
+        "summary": "Task 8 same-source compose behavior and preservation verified.",
+        "details": [
+          "333 Preset tests pass: explicit empty/INPUT 3D, omitted/incompatible defaults rejection before mutation, provider conflict, unchanged 2D/CUSTOM, optional mesh registration and immutable settings capture.",
+          "Logs: .artifacts/preset-3d-task8/preset-final.log; Office profile-bundle.test.ts proves the emitted public entry static closure excludes Three."
+        ]
+      },
+      {
+        "nodeId": "startup",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "startup-activation",
+        "binding": "75f1f89abec91528967dc7f3d8c8fda708ea5c86ad2962772fec51043b07a469",
+        "at": "2026-10-24T08:19:39.943Z",
+        "summary": "Task 8 same-source startup behavior and preservation verified.",
+        "details": [
+          "Official provider remains synchronous and creates its delegate only during initialize; lifecycle integration proves one delegate, failed initialization without a fallback surface, reset and fresh-Core reapply.",
+          "Core 272, Render 273, Preset 333 pass; logs core.log, render.log, preset-final.log under .artifacts/preset-3d-task8/."
+        ]
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "canonical-activation",
+        "binding": "cd7e1c0d47407a814a80841cc53bfbf2f318f392f6a2b29c0eeafb73b2fd6a1b",
+        "at": "2026-10-24T08:19:39.950Z",
+        "summary": "Task 8 same-source canonical behavior and preservation verified.",
+        "details": [
+          "Core canonical/load/replay suites and existing App tests preserve state owners, rollback and history. Office layout/proposal/stale acceptance and save acknowledgement remain covered.",
+          "Office 22 tests and 2 real WebGL cases; Sim original-part edit/Undo/reopen; FieldScope canvas history tests. Task 9 generic editing is not claimed."
+        ]
+      },
+      {
+        "nodeId": "domain",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "domain-activation",
+        "binding": "59f44fe2a3c61268309e6d2bb2ec30ced20481f25a4761d52994c02050e6f153",
+        "at": "2026-10-24T08:19:39.962Z",
+        "summary": "Task 8 same-source domain behavior and preservation verified.",
+        "details": [
+          "FieldScope 32 source/profile tests plus 60 focused cases; Sim 95 focused cases and real original-part/playback/reopen cases pass. Office 22 tests preserve domain state.",
+          "Existing source geometry, original-source identity and update isolation retained; no domain producer changes in Task 8."
+        ]
+      },
+      {
+        "nodeId": "project",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "project-activation",
+        "binding": "6e7d56d9c1544ecea17c768e136f2b7858301489891a82109a12629f6fb780bb",
+        "at": "2026-10-24T08:19:39.971Z",
+        "summary": "Task 8 same-source project behavior and preservation verified.",
+        "details": [
+          "Preset full suite covers incremental projection, scene/camera ordering and current instance bounds; affected App suites preserve geometry work counts and update isolation.",
+          "FieldScope source/profile 32, focused 60; Sim focused 95; final WebGL picking and camera interactions pass."
+        ]
+      },
+      {
+        "nodeId": "render",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "render-activation",
+        "binding": "9cdeca4b979e6fedcc9f5eb070c0b3e3a854f67fea5ad81783eb92c1d95ef060",
+        "at": "2026-10-24T08:19:39.995Z",
+        "summary": "Task 8 same-source render behavior and preservation verified.",
+        "details": [
+          "Render 273 and Render Engine 11 pass; Preset 333 cover typed commands, incremental handoff, opaque identity, scheduling and explicit flush.",
+          "Production App previews pass 38 real-WebGL cases without fallback surfaces."
+        ]
+      },
+      {
+        "nodeId": "retire",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "retire-activation",
+        "binding": "c8793bf1113292e66dd7d3ad4e48de0c3c641e54ecf1c268ed030d1419486a41",
+        "at": "2026-10-24T08:19:40.026Z",
+        "summary": "Task 8 same-source retire behavior and preservation verified.",
+        "details": [
+          "Core 272, Render 273 and Preset 333 include failure cleanup, destroy during load, late delegate settlement, reset/reapply and independent Render lifetimes.",
+          "Final App suites preserve teardown and restart; no fallback or swallowed startup error introduced."
+        ]
+      },
+      {
+        "nodeId": "activate",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task8-local-2026-10-24",
+        "caseId": "activate-activation",
+        "binding": "885a014c194b31c89729423d8031749fa00fe4b0592d8f5d4fb05768a751ab8d",
+        "at": "2026-10-24T08:19:40.080Z",
+        "summary": "Task 8 same-source activate behavior and preservation verified.",
+        "details": [
+          "Official production 3D available with explicit [] or [INPUT], optional neutral captured lighting/shadow settings; no filtering of defaults, HYBRID unavailable, existing 2D/CUSTOM retained.",
+          "All prerequisite owner tests and 38 real WebGL cases pass; builds, scoped ESLint, naming, dependency/placement and public documentation checks pass. Root-wide ESLint exhausted both default and 8 GiB heaps; it is not a passed gate.",
+          "Evidence: .artifacts/preset-3d-task8/ and final App browser artifacts; Task 8 bounded contract requires scoped lint. Tasks 9-10 and integrated closeout remain pending."
         ]
       }
     ],
@@ -3216,55 +3705,75 @@
     "sources": [
       {
         "nodeId": "design",
-        "revision": "task7-reviewed:0d1513f8d3059b84a2a0f498c963d1cd2e46b0963075535df9880051d78565bd"
+        "revision": "task8-reviewed:49c043179817d7fc49371da429939d7feb90196bec5e440e96b9de489dd21bec"
       },
       {
         "nodeId": "admit",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "engine",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "project",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "render",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "camera",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "queries",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "interaction",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "compose",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "fieldscope",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "sim",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "office",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       },
       {
         "nodeId": "activity",
-        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+      },
+      {
+        "nodeId": "startup",
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+      },
+      {
+        "nodeId": "canonical",
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+      },
+      {
+        "nodeId": "domain",
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+      },
+      {
+        "nodeId": "retire",
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+      },
+      {
+        "nodeId": "activate",
+        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
       }
     ],
     "warnings": []

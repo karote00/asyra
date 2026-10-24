@@ -6,11 +6,11 @@
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
-          "sha256": "94e7a931a04ef001d48e66d122c31b2776b0922732d895c04e48be561fab863c"
+          "sha256": "af9d878f0ef50a3deeea42fac3bf9b25e40e557e9af46288011b052dddd2643f"
         },
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
-          "sha256": "48e45305eb040af36886d97a1d63e80ef81a58781be0d5b1568d2ae565eea801"
+          "sha256": "94083e3717fb3278d0e7738f1214e799ee2bb04f762d7573e9e71fe62e831db5"
         }
       ]
     },
@@ -34,7 +34,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "047ddfb1f0eefedf9ca0ab63f50099502a3bc1223c8c4c4a145803743e5ad52d"
+          "sha256": "69ee5d895be783a3e47241a344b43309b99aa7ae500e09ad42fe042b14be993f"
         },
         {
           "path": "docs/ai/apps/asyra-design/golden-paths/README.md",
@@ -44,15 +44,15 @@
     },
     {
       "id": "start/preset-2d",
-      "pageSha256": "556962323fbe71309c0e639fe71489fa926334c223c845d42642790749ea50cc",
+      "pageSha256": "e582dd2cd484cf36947110632b64120d58051a657ce940acd5a052dab890631c",
       "sources": [
         {
           "path": "docs/ai/framework/golden-paths/preset-composition.md",
-          "sha256": "b2bd57ffa9582737da1e2fcfc9c93e4d28b6d7b2a9869433e38485130f1c08ca"
+          "sha256": "83e5aa0b093868fa02d1831d47e93e2de5938857eb395c731247b89be211201a"
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "d0e06fe75fe05660ee2b4bc48ff4b8e5e14bace93a9a6db2ee949a1f460792a8"
+          "sha256": "3b6f59990beda55630cde446d40781de14928b59f8b3d5782b8c4b167f0bc625"
         }
       ]
     },
@@ -62,7 +62,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
-          "sha256": "48e45305eb040af36886d97a1d63e80ef81a58781be0d5b1568d2ae565eea801"
+          "sha256": "94083e3717fb3278d0e7738f1214e799ee2bb04f762d7573e9e71fe62e831db5"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
@@ -92,7 +92,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
-          "sha256": "94e7a931a04ef001d48e66d122c31b2776b0922732d895c04e48be561fab863c"
+          "sha256": "af9d878f0ef50a3deeea42fac3bf9b25e40e557e9af46288011b052dddd2643f"
         },
         {
           "path": "docs/ai/framework/packages/core.md",
@@ -106,7 +106,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/WORKFLOW.md",
-          "sha256": "047ddfb1f0eefedf9ca0ab63f50099502a3bc1223c8c4c4a145803743e5ad52d"
+          "sha256": "69ee5d895be783a3e47241a344b43309b99aa7ae500e09ad42fe042b14be993f"
         },
         {
           "path": "docs/ai/framework/packages/feature-system.md",
@@ -120,7 +120,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/ARCHITECTURE.md",
-          "sha256": "48e45305eb040af36886d97a1d63e80ef81a58781be0d5b1568d2ae565eea801"
+          "sha256": "94083e3717fb3278d0e7738f1214e799ee2bb04f762d7573e9e71fe62e831db5"
         },
         {
           "path": "docs/ai/framework/packages/system-context.md",
@@ -434,11 +434,11 @@
     },
     {
       "id": "reference/packages/preset",
-      "pageSha256": "46fd3b6a88f558f2d23a187d98c29fe62c2fa3dd82b766ffc4e658ceed69bba8",
+      "pageSha256": "3dca0a44027d6d6dfc038c9d6137d857a2f1a162780cd826c5d59a5bd2bed684",
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "d0e06fe75fe05660ee2b4bc48ff4b8e5e14bace93a9a6db2ee949a1f460792a8"
+          "sha256": "3b6f59990beda55630cde446d40781de14928b59f8b3d5782b8c4b167f0bc625"
         },
         {
           "path": "packages/preset/package.json",
@@ -588,11 +588,11 @@
     },
     {
       "id": "reference/support-release",
-      "pageSha256": "b4660429ab396323249d15af3f96b16c5c9a600f7576af231dae4e04e8a5766c",
+      "pageSha256": "79888ae4681529bb11ffa09ec7dec3850cff48d14945b8fe21de12d364df1caa",
       "sources": [
         {
           "path": "docs/ai/framework/RELEASE_SUPPORT.md",
-          "sha256": "6286224514932ab08594d5bd6a9122867365391d1c4ae19dcb751deeb2d28a23"
+          "sha256": "7cb0ee4ee8a6603ea2a02ba48705f0fe6291a12804d5c9897db1ed410c588b33"
         },
         {
           "path": "SUPPORT.md",

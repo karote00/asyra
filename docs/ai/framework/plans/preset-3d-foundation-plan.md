@@ -4,17 +4,17 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1-7 complete within their bounded contracts. Task 7 verifies all
-three Apps through real WebGL and includes the user-approved minimum activity
-scheduler correction. Stopped for user inspection before Task 8.
+Status: Tasks 1-8 complete within their bounded contracts. Task 8 activates the
+official 3D provider and the approved generic lighting entry; Office uses that
+profile with its original presentation policy. Stopped for inspection before
+Task 9. Task 7 includes the approved minimum activity scheduler correction.
 Task 1 produced the reviewed specification and full
 architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
 shared incremental projection/bounds with direct App preservation checks.
 Tasks 4-5 add App-directed shared Camera controls and typed spatial queries with
 shared picking. Task 6 adds opt-in mesh definitions, generalized instance/pose
 presentation, explicit lighting/shadows and physical-pixel detail controls.
-Tasks 8-10 remain unexecuted;
-official 3D activation and whole-flow runtime acceptance remain pending.
+Tasks 9-10 remain unexecuted; whole-flow runtime acceptance remains pending.
 
 Planning base: local `main` at
 `eaddcdba2c1705dca6646a730cd87818ae214d56`.
@@ -877,6 +877,125 @@ pass; no unsupported capability falls back to Pixi, fake geometry or a
 placeholder surface. Real production use and synchronized visual evidence pass.
 Record actual evidence before reporting profile availability. This milestone
 does not close the remaining generic extension tasks.
+
+Task 8 execution contract: base `d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42`,
+same worktree and branch. Discovery is limited to profile/default composition,
+lazy engine loading, direct Core/Render lifecycle and canonical integration,
+three-App startup/preservation tests, their maintained browser suites, and
+current support documentation. Preserve existing eight default identities and
+resolution, 2D/CUSTOM behavior, App Camera/domain/lighting policy and saved data.
+No HYBRID, Task 9 editing/assets, dependency/tool upgrade, new scheduler or cache.
+Gates: naming; composition/provider/lazy/lifecycle and canonical integration;
+affected packages and App preservation suites; builds, scoped lint, dependency,
+placement and public docs; actual WebGL and inspected App screenshots; source-
+bound Inspector admission. Stop after Task 8 for inspection, or on an unresolved
+product/owner boundary. On 2026-10-24 the user explicitly approved the generic
+official 3D lighting entry and Office adoption preserving its existing appearance.
+
+Task 8 composition Step Execution Card: owner/failure `compose`, with `activate`
+provider binding; specification Composition and C01/C02. Inputs: explicit App
+request and composition-open Core. Output: unchanged resolved selected/applied
+defaults and one synchronous official provider binding. Conditions: 3D admits
+only empty/INPUT defaults, rejects all incompatible selected/applied IDs before
+mutation, and rejects an existing provider; HYBRID remains unavailable. CUSTOM
+bypasses preset provider binding. Contributors: existing catalog/resolver/Core
+facade and pure lazy adapter; forbidden: SDK construction during composition,
+filtering defaults, fallback engines or App installers. No cache. Boundary:
+`catalog.ts`, `composition/**`, existing request-resolution/apply/provider and
+spatial-entry tests under Preset. Reuse existing profile/default identifiers;
+the diagnostic engine ID is the existing `@asyra/preset/spatial-engine` public
+entry, not a persisted identity or import instruction. Add formal cases before
+implementation and verify failure, then run the focused suites, naming and
+bounded diff review before lifecycle work. Catalog availability alone is never
+activation evidence; final availability claims wait for all Task 8 gates.
+
+Task 8 lifecycle Step Execution Card: owner `startup`, followed by `retire`;
+specification Composition, Projection and resources, C02/C12. Inputs are the
+official synchronous binding, host dimensions and current generation; outputs
+are initialized surface/readiness or explicit failure, then settled retirement.
+Existing Core/Render lifecycle and the lazy delegate own work; no SDK tests in
+Core, asynchronous provider, placeholder, timeout-as-settlement or swallowed
+error. Nonspatial startup and repeated cleanup retain existing bypasses. No
+cache. Use the existing Preset runtime-lifecycle integration test (retirement
+allowlist), spatial-entry tests and existing Core/Render owner suites. Verify
+INPUT registration, one delegate per startup, failed initialization cleanup,
+reset/reapply, and no stale host surface. Unit delegates prove coordination only;
+real WebGL remains a separate gate. No production Core/Render change is planned.
+
+Task 8 presentation admission Step Execution Card: owner/failure `compose`,
+then `engine` consumes the admitted settings; specification Composition's
+approved extension. Inputs: optional neutral lighting and software-shadow choice;
+output: detached immutable settings captured by the lazy provider. Validate
+before any registration; omit to retain generic defaults; reject non-3D options,
+unknown keys, malformed vectors/colors/intensities/ranges. No cache or callback.
+Reuse existing SpatialLighting identity at a pure Preset owner and existing
+concrete validation rather than duplicate interpretation. Allowed files: Preset
+types/index, composition, pure spatial lighting owner, concrete engine imports
+and direct owner tests. Forbidden: Office values in defaults, Camera policy,
+SDK imports from composition, CUSTOM capability filtering. Tests prove malformed
+input has no mutations, caller mutation isolation, identical concrete settings
+and unchanged custom engines. Office is a later separate consumer slice.
+
+Task 8 Office Step Execution Card: owner/failure `office`; Composition extension
+and C11/C12. Input: existing App light/shadow values and optional custom provider;
+output: unchanged Office scene/layout/activity behavior through official 3D by
+default, CUSTOM only for an explicit injected provider. No new App UI, Camera
+policy, canonical fields, storage change or cache. Boundary: existing runtime,
+runtime tests, browser tests and implementation documentation. First prove the
+ordinary startup request preserves all original light values and errors still
+retire the runtime. Then replace eager concrete-engine construction with the
+official preset request. Existing provider-injected tests stay CUSTOM; ordinary
+browser tests exercise the real official provider and native WebGL. Compare
+desktop/narrow scene output and task/follow/layout/proposal/save behavior.
+
+Task 8 activation documentation Step Execution Card: owner/failure `activate`;
+Composition and C01-C08/C11-C12. Input: completed owner, lifecycle and three-App
+proof on the integrated source. Output: accurate official 3D availability,
+explicit defaults restrictions and App-owned optional presentation settings.
+Keep HYBRID unavailable and Tasks 9-10 pending. Contributors are the existing
+support/API/start documents, package README generator and plan status indexes;
+no new runtime contributor or cache. Boundary: direct current support documents
+and their generated outputs listed by the activation step. Verify generator
+checks, naming, scoped lint, diff review and source-bound Inspector evidence.
+
+Task 8 result (2026-10-24): official `3D` binds the synchronous lazy spatial
+provider; only explicit `[]` and `[INPUT]` are accepted. Omitted defaults still
+resolve to all eight and reject before mutation. Existing provider conflicts,
+2D/CUSTOM semantics and unavailable HYBRID remain covered. The generic `spatial`
+entry captures detached immutable lighting/shadow values before registration.
+Office supplies its unchanged values; explicit injected providers stay CUSTOM.
+Camera policy, domain algorithms and saved identities remain App-owned.
+
+Validation on the integrated Task 8 source:
+
+- Preset: 38 files / 333 tests; Core 272; Render 273; Render Engine 11.
+  Lifecycle coverage includes reset, failed initialization, separate runtimes,
+  local shared channels and caller mutation isolation. Production bundle graph
+  coverage proves Three remains outside the root entry's static chunk closure.
+- Office: 22 tests including official startup and the emitted bundle graph.
+  FieldScope: 60 focused tests plus 32 source/profile tests and 8 supervisor
+  guards. Sim: 95 focused tests and 13 supervisor guards. A transient supervisor
+  process-group error passed on an unchanged rerun; guards were not bypassed.
+- Preset TypeScript and all three App production builds passed. Naming,
+  dependency/placement and scoped lint gates passed. Root-wide ESLint exhausted
+  the Node heap at both its default limit and 8 GiB; it is not reported as passed.
+  The bounded Task 8 contract requires scoped lint, not repository-wide lint.
+- Actual WebGL: FieldScope 18 cases (10 model, 8 interaction), Sim 18 cases
+  (9 navigation/workcell, 5 playback, 4 source/reopen), Office 2 cases.
+  These ran against frozen production previews at the configured origins
+  127.0.0.1:5178, :3020 and :5194 respectively. FieldScope used Chrome Metal;
+  Sim/Office used Chrome SwiftShader, all DPR 1. No hardware FPS claim is made.
+  An earlier development-server Sim attempt was invalidated by a concurrent
+  dependency rebuild/HMR; final production-preview runs all pass.
+- Inspected real screenshots include FieldScope overview, detailed clips/drains,
+  Undo and mobile Camera; Sim selected canonical body, collision closeup and
+  original-part reopen; Office desktop/narrow scenes and existing interaction
+  flows. Formal source-space and history assertions remain the behavior oracle.
+  Evidence logs are under `.artifacts/preset-3d-task8/`; browser artifacts are
+  each App's `.artifacts/task8-final-*` (Office screenshots in `test-results/`).
+
+The official provider is available; generic editing/assets and whole-plan
+closeout are not claimed. Stop here for user inspection before Task 9.
 
 ## Task 9 - Deliver generic editing and restricted asset extensions
 

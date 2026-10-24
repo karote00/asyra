@@ -60,7 +60,7 @@ The framework guarantees:
 - preset replaceability: defaults are optional, movable, and replaceable by product owners
 - render boundary safety: render is an output/interaction bridge, not a data authority
 - engine replaceability: render orchestration consumes the abstract
-  `@asyra/render-engine` contract; preset binds the official `2D` provider
+  `@asyra/render-engine` contract; preset binds the official `2D` or `3D` provider
   through Core, while apps bind custom providers only with profile `CUSTOM`
 
 ## Current System Position
@@ -116,7 +116,8 @@ Preset owns optional shared App foundations through explicit entries:
 `@asyra/preset/spatial-contract` provides pure descriptor admission,
 `@asyra/preset/spatial` provides neutral incremental projection and presentation
 bounds, and `@asyra/preset/spatial-engine` provides the concrete Three.js adapter
-and resource lifecycle. CUSTOM composition selects its provider explicitly;
+and resource lifecycle. Official `3D` composition uses the deferred adapter with explicit empty/INPUT
+defaults and optional neutral light/shadow settings. CUSTOM selects its provider explicitly;
 default 2D composition remains unchanged. Apps own scene contents, lighting,
 domain validation, camera choices, movement and interaction policy. This shared
 boundary does not transfer canonical runtime ownership from Core or introduce

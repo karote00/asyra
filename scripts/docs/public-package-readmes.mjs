@@ -139,10 +139,10 @@ const PACKAGE_COPY = Object.freeze({
     description:
       'Optional official design-tool baseline with selectable defaults and render profile policy.',
     owns: [
-      'strict profile/default resolution, dependency expansion, deterministic installation, official defaults, and current `2D` provider selection'
+      'strict profile/default resolution, dependency expansion, deterministic installation, official defaults, and official `2D`/`3D` provider selection'
     ],
     doesNotOwn: [
-      'Core lifecycle, App-domain behavior, UI command policy, custom-engine implementation, or unavailable production profiles'
+      'Core lifecycle, App-domain behavior, UI command policy, custom-provider policy, or HYBRID composition'
     ],
     start:
       'Apply all defaults, select only the defaults you need, choose `CUSTOM`, or omit Preset for a fully custom product.',

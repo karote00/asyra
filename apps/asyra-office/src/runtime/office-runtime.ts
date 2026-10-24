@@ -1,6 +1,5 @@
 import currentCore, { type Core } from '@asyra/core'
 import { applyPreset, PresetProfiles } from '@asyra/preset'
-import { ThreeEngine } from '@asyra/preset/spatial-engine'
 import {
   ActivityProjection,
   type ActivityEvent,
@@ -22,28 +21,29 @@ export async function createOfficeRuntime(
   let disposed = false,
     renderRevision = 0
   const disposers: (() => void)[] = []
-  applyPreset(core, { profile: PresetProfiles.CUSTOM, defaults: [] })
-  core.setRenderEngineProvider(
-    provider ??
-      (() =>
-        new ThreeEngine(
-          {},
-          {
-            softwareShadowFallback: true,
-            lighting: {
-              hemisphere: [0xe6eedf, 0xb4bea5, 2],
-              keyPosition: [-15, 35, -20],
-              fillPosition: [25, 20, 20],
-              shadowExtent: 40,
-              shadowFar: 110,
-              keyColor: 0xfff3e5,
-              keyIntensity: 2.6,
-              fillColor: 0xb6d5f5,
-              fillIntensity: 1.2
-            }
-          }
-        ))
-  )
+  if (provider) {
+    applyPreset(core, { profile: PresetProfiles.CUSTOM, defaults: [] })
+    core.setRenderEngineProvider(provider)
+  } else {
+    applyPreset(core, {
+      profile: PresetProfiles['3D'],
+      defaults: [],
+      spatial: {
+        softwareShadowFallback: true,
+        lighting: {
+          hemisphere: [0xe6eedf, 0xb4bea5, 2],
+          keyPosition: [-15, 35, -20],
+          fillPosition: [25, 20, 20],
+          shadowExtent: 40,
+          shadowFar: 110,
+          keyColor: 0xfff3e5,
+          keyIntensity: 2.6,
+          fillColor: 0xb6d5f5,
+          fillIntensity: 1.2
+        }
+      }
+    })
+  }
   for (const name of [
     SharedDataChannelNames.SCENE_TREE,
     SharedDataChannelNames.PROPS

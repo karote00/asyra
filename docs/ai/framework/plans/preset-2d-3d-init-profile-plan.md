@@ -2,13 +2,13 @@
 
 ## Status
 
-Deferred and prerequisite-gated.
+3D activated; HYBRID deferred and prerequisite-gated.
 
 The approved [Preset 3D Foundation and App Migration](preset-3d-foundation-plan.md)
 owns the active foundation/migration work and its Task 8 supplies the evidence
-for the 3D gate below. Its Task 1 design is reviewed; implementation and runtime
-verification remain pending. `3D` remains unavailable until those prerequisites
-pass. This document retains the
+for the 3D gate below. Its Tasks 1-8 provide reviewed implementation, lifecycle and all three App
+real-WebGL preservation evidence. Official `3D` is available with explicit empty
+or INPUT-only defaults and optional generic lighting settings. This document retains the
 activation criteria rather than duplicating that work plan. `HYBRID` remains
 deferred and outside the new plan.
 
@@ -17,12 +17,12 @@ Selectable Defaults plan:
 
 - `2D`: available, preset-owned Pixi provider;
 - `CUSTOM`: available, no preset-owned provider;
-- `3D`: known but unavailable;
+- `3D`: available, preset-owned lazy spatial provider;
 - `HYBRID`: known but unavailable.
 
 This plan no longer decides identifiers or associates defaults with profiles.
-It governs only the future transition of `3D` or `HYBRID` from unavailable to
-available.
+Its 3D activation gate is satisfied; it retains the prerequisites for the future
+HYBRID transition. This is not completion of the foundation plan's Tasks 9-10.
 
 ## Non-Negotiable Separation
 

@@ -42,6 +42,18 @@ it('keeps root/2D, pure admission and mechanism imports independent of the spati
   })
   expect(result.profile).toBe('2D')
   expect(core.setRenderEngineProvider).toHaveBeenCalledTimes(1)
+  const spatialCore = { ...core, setRenderEngineProvider: vi.fn(() => vi.fn()) }
+  const official = root.applyPreset(spatialCore as never, {
+    profile: root.PresetProfiles['3D'],
+    defaults: []
+  })
+  expect(official.presetEngineId).toBe('@asyra/preset/spatial-engine')
+  expect(spatialCore.setRenderEngineProvider).toHaveBeenCalledWith(
+    createSpatialRenderEngine
+  )
+  const engine = createSpatialRenderEngine()
+  expect(engine.capabilities.has(RenderEngineCapabilities.SPATIAL)).toBe(true)
+  engine.destroy()
   expect(contract.readSpatialDescriptor).toBeTypeOf('function')
   expect(spatial).not.toHaveProperty('ThreeEngine')
 })

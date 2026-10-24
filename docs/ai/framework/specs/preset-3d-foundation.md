@@ -75,6 +75,21 @@ retires that generation; a late-loaded delegate is disposed without publishing
 a surface. The startup promise settles before a replacement runtime starts.
 No engine fallback occurs after import/WebGL/capability failure.
 
+Task 8 approved extension (2026-10-24): `applyPreset` accepts optional `spatial`
+presentation settings only with profile `3D`. It contains optional `lighting`
+and `softwareShadowFallback`, using the existing neutral spatial light/shadow
+contract. Lighting covers hemisphere colors/intensity, key/fill positions,
+colors/intensities, shadow extent/far plane and shadow enablement. Settings are
+validated, detached and frozen before any default/provider mutation; malformed
+or unknown fields and settings on `2D`/`CUSTOM` reject with `INVALID_OPTIONS`.
+Omission retains the generic engine defaults. This option accepts no provider,
+SDK/platform object, descriptor reader, Camera policy or App callback. The
+existing software-renderer shadow policy remains explicit; it never substitutes
+an engine or creates fallback geometry. The lazy provider captures only admitted
+presentation settings; later caller mutation cannot change startup output.
+Office adopts this official path with its existing lighting values; custom test
+providers still explicitly select CUSTOM. Other Apps retain their CUSTOM policy.
+
 2D execution must not evaluate/load the spatial SDK. A build may emit a separate
 3D chunk, but must not include it in the eagerly loaded 2D entry/chunk graph.
 Catalog inspection and pure contract imports load no concrete renderer.

@@ -79,8 +79,37 @@ Bind it through `core.setRenderEngineProvider(...)` before startup and verify
 it against the public engine contract. Do not pass providers, engine ids,
 installers, or cleanup callbacks through Preset.
 
-Production `3D` and `HYBRID` profiles are unavailable in the current release.
-Do not infer support from enum names or placeholder configuration.
+## Use the official 3D provider
+
+```ts
+import { applyPreset, PresetProfiles } from '@asyra/preset'
+
+applyPreset(core, {
+  profile: PresetProfiles['3D'],
+  defaults: [],
+  spatial: {
+    lighting: {
+      hemisphere: [0xffffff, 0x777777, 1],
+      keyPosition: [3, 6, 4],
+      fillPosition: [-3, 3, -4],
+      shadowExtent: 10,
+      shadowFar: 50
+    }
+  }
+})
+```
+
+Compose optional spatial definitions/layers through ordinary Core registration,
+then start Core. The App supplies scene contents, Camera angles/modes and input
+policy. Omitting `spatial` uses generic light defaults; supplied settings are
+validated and detached before installation. `softwareShadowFallback` controls
+the existing software-renderer shadow policy, not an engine fallback.
+
+Only empty defaults or explicit `[PresetDefaults.INPUT]` are supported by `3D`.
+Omitting defaults still resolves all eight and fails with `INVALID_OPTIONS`;
+no selection is silently filtered. The synchronous provider loads the concrete
+SDK only during engine initialization. Import/WebGL failures propagate without
+Pixi or placeholder output. `HYBRID` remains unavailable.
 
 ## Canonical sources
 

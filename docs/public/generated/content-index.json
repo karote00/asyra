@@ -269,7 +269,7 @@
       "wordCount": 3121
     },
     {
-      "contentSha256": "556962323fbe71309c0e639fe71489fa926334c223c845d42642790749ea50cc",
+      "contentSha256": "e582dd2cd484cf36947110632b64120d58051a657ce940acd5a052dab890631c",
       "description": "Apply the optional official Preset before Core starts, then keep app-domain choices outside the Framework.",
       "headings": [
         {
@@ -306,6 +306,10 @@
         },
         {
           "depth": 2,
+          "title": "Use the official 3D provider"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources"
         },
         {
@@ -322,7 +326,7 @@
       "path": "start/preset-2d.md",
       "section": "Start",
       "title": "Compose the official 2D baseline",
-      "wordCount": 476
+      "wordCount": 556
     },
     {
       "contentSha256": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
@@ -1771,7 +1775,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "46fd3b6a88f558f2d23a187d98c29fe62c2fa3dd82b766ffc4e658ceed69bba8",
+      "contentSha256": "3dca0a44027d6d6dfc038c9d6137d857a2f1a162780cd826c5d59a5bd2bed684",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -1835,7 +1839,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 700
+      "wordCount": 711
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
@@ -2448,7 +2452,7 @@
       "wordCount": 450
     },
     {
-      "contentSha256": "b4660429ab396323249d15af3f96b16c5c9a600f7576af231dae4e04e8a5766c",
+      "contentSha256": "79888ae4681529bb11ffa09ec7dec3850cff48d14945b8fe21de12d364df1caa",
       "description": "Current runtime support, candidate status, security reporting, license, migration, and publication boundaries.",
       "headings": [
         {
@@ -2494,7 +2498,7 @@
       "path": "reference/support-release.md",
       "section": "Reference",
       "title": "Support, security, and release boundaries",
-      "wordCount": 520
+      "wordCount": 530
     },
     {
       "contentSha256": "9e1954d8a150bfbb3317ad101032170dc9f9fb01ed01b64a08cf783ab38da1d4",

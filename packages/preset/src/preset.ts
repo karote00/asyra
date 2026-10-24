@@ -107,7 +107,11 @@ export const applyPreset = (
       appliedDefaults: resolved.appliedDefaults,
       registerCleanup
     })
-    const provider = bindPresetProfileProvider(core, resolved.profile)
+    const provider = bindPresetProfileProvider(
+      core,
+      resolved.profile,
+      resolved.spatial
+    )
     if (provider.cleanup) {
       registerCleanup('profile:render-engine-provider', provider.cleanup)
     }

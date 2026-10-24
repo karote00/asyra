@@ -3,6 +3,8 @@ import { PresetCatalog } from '../catalog.js'
 import { PRESET_APPLY_ERROR_CODES, PresetProfiles } from '../constants.js'
 import type { PresetCoreAPIs, PresetProfile } from '../types.js'
 import { PresetApplyError } from './error.js'
+import { createSpatialRenderEngine } from '../spatial/lazy-engine.js'
+import type { SpatialPresentationOptions } from '../spatial/lighting.js'
 
 export interface PresetProfileProviderResult {
   readonly presetEngineId: string | null
@@ -11,7 +13,8 @@ export interface PresetProfileProviderResult {
 
 export const bindPresetProfileProvider = (
   core: Pick<PresetCoreAPIs, 'setRenderEngineProvider'>,
-  profile: PresetProfile
+  profile: PresetProfile,
+  spatial?: SpatialPresentationOptions
 ): PresetProfileProviderResult => {
   const descriptor = PresetCatalog.profiles.find(({ id }) => id === profile)
   if (!descriptor?.available) {
@@ -26,7 +29,14 @@ export const bindPresetProfileProvider = (
   }
 
   try {
-    const cleanup = core.setRenderEngineProvider(createPixiRenderEngine)
+    const spatialProvider = spatial
+      ? () => createSpatialRenderEngine({}, spatial)
+      : createSpatialRenderEngine
+    const cleanup = core.setRenderEngineProvider(
+      profile === PresetProfiles['3D']
+        ? spatialProvider
+        : createPixiRenderEngine
+    )
     return Object.freeze({
       presetEngineId: descriptor.presetEngineId,
       cleanup

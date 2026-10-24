@@ -71,8 +71,10 @@ or provider policy is installed.
 
 ## Support, migration, and deprecation
 
-The current production profile is `2D`. `3D` and `HYBRID` are unavailable and
-must not be inferred from ids. Migration from all-defaults to selective defaults
+Official `2D` and `3D` providers are available; `HYBRID` remains unavailable.
+`3D` requires explicit empty/INPUT defaults and optionally admits neutral
+`spatial` light/shadow settings. Omitted or incompatible defaults reject before
+mutation. Migration from all-defaults to selective defaults
 must name the desired catalog entries and respect dependency expansion.
 
 ## Canonical sources and release inventory
@@ -91,8 +93,7 @@ Picking retains source instance index and stable ID across LoD/culling;
 hidden/nonselectable objects are excluded, while transparent selectable geometry
 remains eligible. Screen overlays take precedence. Queries reuse owned geometry
 and do not create GPU resources or solver evidence. Apps keep camera modes,
-angles, input actions and selection policy. This does not activate the reserved
-`3D` profile.
+angles, input actions and selection policy. Queries work through official `3D` and compatible CUSTOM providers.
 
 ## Opt-in mesh definitions and pose presentation
 

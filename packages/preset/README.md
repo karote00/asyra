@@ -21,11 +21,11 @@ Use only the package root and the explicitly documented public subpaths.
 
 ## Owns
 
-- strict profile/default resolution, dependency expansion, deterministic installation, official defaults, and current `2D` provider selection
+- strict profile/default resolution, dependency expansion, deterministic installation, official defaults, and official `2D`/`3D` provider selection
 
 ## Does not own
 
-- Core lifecycle, App-domain behavior, UI command policy, custom-engine implementation, or unavailable production profiles
+- Core lifecycle, App-domain behavior, UI command policy, custom-provider policy, or HYBRID composition
 
 ## Start here
 

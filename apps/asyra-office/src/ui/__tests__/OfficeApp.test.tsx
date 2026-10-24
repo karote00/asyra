@@ -4,6 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GraphicsDriver } from '@asyra/preset/spatial-engine'
 import { OfficeApp } from '../OfficeApp'
 
+vi.mock('../../runtime/office-runtime', async (original) => {
+  const runtime =
+    await original<typeof import('../../runtime/office-runtime')>()
+  const { ThreeEngine } = await import('@asyra/preset/spatial-engine')
+  return {
+    ...runtime,
+    createOfficeRuntime: (
+      ...args: Parameters<typeof runtime.createOfficeRuntime>
+    ) => runtime.createOfficeRuntime(args[0], args[1], () => new ThreeEngine())
+  }
+})
+
 vi.mock('@asyra/preset/spatial-engine', async (original) => {
   const module = await original<typeof import('@asyra/preset/spatial-engine')>()
   return {

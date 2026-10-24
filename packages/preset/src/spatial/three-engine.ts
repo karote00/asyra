@@ -1,3 +1,8 @@
+import {
+  DEFAULT_SPATIAL_LIGHTING,
+  readSpatialLighting,
+  type SpatialPresentationOptions
+} from './lighting.js'
 import { SPATIAL_ENGINE_CAPABILITIES } from './lazy-engine.js'
 import { SurfaceTextureStore } from './surface-textures.js'
 import * as THREE from 'three'
@@ -80,68 +85,9 @@ const createDefaultDriver = (): GraphicsDriver => {
   return driver
 }
 
-export interface SpatialLighting {
-  hemisphere: readonly [number, number, number]
-  keyPosition: readonly [number, number, number]
-  fillPosition: readonly [number, number, number]
-  shadowExtent: number
-  shadowFar: number
-  keyColor?: number
-  keyIntensity?: number
-  fillColor?: number
-  fillIntensity?: number
-  castShadows?: boolean
-}
-export interface SpatialEngineOptions {
-  softwareShadowFallback?: boolean
+export type { SpatialLighting } from './lighting.js'
+export interface SpatialEngineOptions extends SpatialPresentationOptions {
   readDescriptor?: (value: unknown) => SpatialDescriptor
-  lighting?: SpatialLighting
-}
-const DEFAULT_SPATIAL_LIGHTING: SpatialLighting = {
-  hemisphere: [0xffffff, 0x777777, 1],
-  keyPosition: [3, 6, 4],
-  fillPosition: [-3, 3, -4],
-  shadowExtent: 10,
-  shadowFar: 50
-}
-
-function readLighting(input: SpatialLighting): SpatialLighting {
-  const value = {
-    ...input,
-    hemisphere: [...input.hemisphere],
-    keyPosition: [...input.keyPosition],
-    fillPosition: [...input.fillPosition]
-  }
-  const color = (n: unknown) =>
-    typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 0xffffff
-  if (
-    value.hemisphere.length !== 3 ||
-    !color(value.hemisphere[0]) ||
-    !color(value.hemisphere[1]) ||
-    !Number.isFinite(value.hemisphere[2]) ||
-    value.hemisphere[2] < 0 ||
-    [value.keyPosition, value.fillPosition].some(
-      (point) => point.length !== 3 || !point.every(Number.isFinite)
-    ) ||
-    !Number.isFinite(value.shadowExtent) ||
-    value.shadowExtent <= 0 ||
-    !Number.isFinite(value.shadowFar) ||
-    value.shadowFar <= 0.1 ||
-    [value.keyColor, value.fillColor].some(
-      (n) => n !== undefined && !color(n)
-    ) ||
-    [value.keyIntensity, value.fillIntensity].some(
-      (n) => n !== undefined && (!Number.isFinite(n) || n < 0)
-    ) ||
-    (value.castShadows !== undefined && typeof value.castShadows !== 'boolean')
-  )
-    throw new Error('Invalid spatial lighting')
-  return {
-    ...value,
-    hemisphere: value.hemisphere as [number, number, number],
-    keyPosition: value.keyPosition as [number, number, number],
-    fillPosition: value.fillPosition as [number, number, number]
-  }
 }
 
 interface ObjectRecord {
@@ -289,7 +235,7 @@ export class ThreeEngine implements RenderEngine {
     if (this.destroyed || this.driver)
       throw new Error('Engine is not available for initialization')
     this.validateSize(options.width, options.height)
-    const lighting = readLighting(
+    const lighting = readSpatialLighting(
       this.options.lighting ?? DEFAULT_SPATIAL_LIGHTING
     )
     try {

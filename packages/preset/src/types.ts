@@ -1,4 +1,5 @@
 import type { CorePresetDependencies, CorePresetInstallAPIs } from '@asyra/core'
+import type { SpatialPresentationOptions } from './spatial/lighting.js'
 import type {
   PRESET_APPLY_ERROR_CODES,
   PresetDefaults,
@@ -16,6 +17,7 @@ export type PresetApplyErrorCode =
 export interface ApplyPresetOptions {
   profile?: PresetProfile
   defaults?: readonly PresetDefaultId[]
+  spatial?: SpatialPresentationOptions
 }
 
 export interface PresetApplyResult {

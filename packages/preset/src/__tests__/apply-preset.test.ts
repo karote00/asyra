@@ -129,12 +129,133 @@ describe('applyPreset', () => {
     const { core, setRenderEngineProvider } = createCore()
 
     const error = captureApplyError(() =>
-      applyPreset(core, { profile: PresetProfiles['3D'] })
+      applyPreset(core, { profile: PresetProfiles.HYBRID })
     )
 
     expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.UNAVAILABLE_PROFILE)
     expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
     expect(setRenderEngineProvider).not.toHaveBeenCalled()
+  })
+
+  it.each([{ selected: [] }, { selected: [PresetDefaults.INPUT] }])(
+    'installs the exact supported 3D defaults %j',
+    ({ selected }) => {
+      const { core, setRenderEngineProvider } = createCore()
+      const result = applyPreset(core, {
+        profile: PresetProfiles['3D'],
+        defaults: selected
+      })
+      expect(result).toEqual({
+        profile: PresetProfiles['3D'],
+        presetEngineId: '@asyra/preset/spatial-engine',
+        selectedDefaults: selected,
+        appliedDefaults: selected
+      })
+      expect(defaults.installPresetDefaults).toHaveBeenCalledOnce()
+      expect(setRenderEngineProvider).toHaveBeenCalledOnce()
+      expect(setRenderEngineProvider).not.toHaveBeenCalledWith(
+        createPixiRenderEngine
+      )
+    }
+  )
+
+  it.each(allDefaults.filter((id) => id !== PresetDefaults.INPUT))(
+    'rejects incompatible 3D default %s before any mutation',
+    (id) => {
+      const { core, setRenderEngineProvider } = createCore()
+      const error = captureApplyError(() =>
+        applyPreset(core, { profile: PresetProfiles['3D'], defaults: [id] })
+      )
+      expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
+      expect(error.message).toContain(id)
+      if (id === PresetDefaults.UI_CONTEXT) {
+        expect(error.message).toContain(PresetDefaults.SELECTION)
+      }
+      expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
+      expect(setRenderEngineProvider).not.toHaveBeenCalled()
+    }
+  )
+
+  it('rejects omitted 3D defaults without filtering their normal expansion', () => {
+    const { core, setRenderEngineProvider } = createCore()
+    const error = captureApplyError(() =>
+      applyPreset(core, { profile: PresetProfiles['3D'] })
+    )
+    expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
+    for (const id of allDefaults.filter((id) => id !== PresetDefaults.INPUT))
+      expect(error.message).toContain(id)
+    expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
+    expect(setRenderEngineProvider).not.toHaveBeenCalled()
+  })
+
+  it('rejects a 3D provider conflict before installing INPUT', () => {
+    const { core, setRenderEngineProvider } = createCore({ hasProvider: true })
+    const error = captureApplyError(() =>
+      applyPreset(core, {
+        profile: PresetProfiles['3D'],
+        defaults: [PresetDefaults.INPUT]
+      })
+    )
+    expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.ENGINE_PROVIDER_CONFLICT)
+    expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
+    expect(setRenderEngineProvider).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { spatial: null },
+    { spatial: { provider: () => null } },
+    { spatial: { softwareShadowFallback: 'yes' } },
+    { spatial: { lighting: {} } },
+    { spatial: { lighting: { hemisphere: [0, 0, -1] } } }
+  ])('rejects malformed 3D presentation before mutation: %j', (options) => {
+    const { core, setRenderEngineProvider } = createCore()
+    const error = captureApplyError(() =>
+      applyPreset(core, {
+        profile: PresetProfiles['3D'],
+        defaults: [],
+        ...options
+      } as never)
+    )
+    expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
+    expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
+    expect(setRenderEngineProvider).not.toHaveBeenCalled()
+  })
+
+  it.each([PresetProfiles['2D'], PresetProfiles.CUSTOM])(
+    'rejects spatial options for %s instead of silently ignoring them',
+    (profile) => {
+      const { core } = createCore()
+      const error = captureApplyError(() =>
+        applyPreset(core, {
+          profile,
+          defaults: [],
+          spatial: {}
+        } as never)
+      )
+      expect(error.code).toBe(PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS)
+      expect(defaults.installPresetDefaults).not.toHaveBeenCalled()
+    }
+  )
+
+  it('accepts neutral 3D presentation independently of defaults', () => {
+    const { core, setRenderEngineProvider } = createCore()
+    const result = applyPreset(core, {
+      profile: PresetProfiles['3D'],
+      defaults: [],
+      spatial: {
+        softwareShadowFallback: false,
+        lighting: {
+          hemisphere: [0xffffff, 0x777777, 1],
+          keyPosition: [3, 6, 4],
+          fillPosition: [-3, 3, -4],
+          shadowExtent: 10,
+          shadowFar: 50
+        }
+      }
+    } as never)
+    expect(result.appliedDefaults).toEqual([])
+    expect(result.presetEngineId).toBe('@asyra/preset/spatial-engine')
+    expect(setRenderEngineProvider).toHaveBeenCalledOnce()
   })
 
   it('rejects duplicate apply before a second mutation', () => {

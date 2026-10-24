@@ -1,3 +1,5 @@
+import currentCore from '@asyra/core'
+import * as preset from '@asyra/preset'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThreeEngine, type GraphicsDriver } from '@asyra/preset/spatial-engine'
 import { createOfficeRuntime, type OfficeRuntime } from '../office-runtime'
@@ -80,6 +82,41 @@ async function start(storage = new MemoryStorage()) {
   return { runtime, storage }
 }
 describe('Office canonical interaction path', () => {
+  it('requests the official 3D profile with unchanged App lighting before ordinary startup', async () => {
+    const core = currentCore
+    const apply = vi.spyOn(preset, 'applyPreset')
+    const failure = new Error('Stop at the startup boundary')
+    const startup = vi.spyOn(core, 'start').mockRejectedValue(failure)
+    try {
+      await expect(
+        createOfficeRuntime(document.createElement('div'), new MemoryStorage())
+      ).rejects.toThrow(failure)
+      expect(apply).toHaveBeenCalledWith(core, {
+        profile: preset.PresetProfiles['3D'],
+        defaults: [],
+        spatial: {
+          softwareShadowFallback: true,
+          lighting: {
+            hemisphere: [0xe6eedf, 0xb4bea5, 2],
+            keyPosition: [-15, 35, -20],
+            fillPosition: [25, 20, 20],
+            shadowExtent: 40,
+            shadowFar: 110,
+            keyColor: 0xfff3e5,
+            keyIntensity: 2.6,
+            fillColor: 0xb6d5f5,
+            fillIntensity: 1.2
+          }
+        }
+      })
+      expect(currentCore).not.toBe(core)
+      expect(currentCore.hasRenderEngineProvider()).toBe(false)
+    } finally {
+      apply.mockRestore()
+      startup.mockRestore()
+    }
+  })
+
   it('publishes task activity with the browser microtask receiver contract', async () => {
     const enqueue = globalThis.queueMicrotask.bind(globalThis)
     vi.stubGlobal(
