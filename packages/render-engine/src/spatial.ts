@@ -94,18 +94,19 @@ export interface RenderEngineSpatialHit {
   readonly distance: number
   readonly point: SpatialVector
 }
+export interface RenderEngineSpatialProjection {
+  readonly type: 'spatial-projection'
+  readonly point: import('./types.js').RenderEnginePoint | null
+  readonly depth: number | null
+  readonly inFrustum: boolean
+}
 export type RenderEngineSpatialResult =
   | {
       readonly type: 'spatial-pick'
       readonly overlay: import('./types.js').RenderEngineObjectHandle | null
       readonly hit: RenderEngineSpatialHit | null
     }
-  | {
-      readonly type: 'spatial-projection'
-      readonly point: import('./types.js').RenderEnginePoint | null
-      readonly depth: number | null
-      readonly inFrustum: boolean
-    }
+  | RenderEngineSpatialProjection
   | { readonly type: 'spatial-ray'; readonly ray: SpatialRay | null }
   | { readonly type: 'spatial-point'; readonly point: SpatialVector }
   | { readonly type: 'spatial-bounds'; readonly bounds: SpatialBox | null }

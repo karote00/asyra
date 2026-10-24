@@ -5,6 +5,7 @@ import {
   type RenderEngineObjectHandle,
   type RenderEnginePoint,
   type RenderEngineSpatialHit,
+  type RenderEngineSpatialProjection,
   type SpatialRay,
   type SpatialVector
 } from '@asyra/render-engine'
@@ -65,7 +66,7 @@ export class SpatialQueries {
       point: [...hit.point]
     }
   }
-  project(point: SpatialVector) {
+  project(point: SpatialVector): RenderEngineSpatialProjection {
     const result = this.engine.query({ type: 'spatial-project', point })
     if (result.type !== 'spatial-projection')
       throw new Error('Invalid spatial projection result')
