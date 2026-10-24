@@ -1404,7 +1404,15 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')
   )
-  assert.equal(profile.jobs.profile['timeout-minutes'], 20)
+  assert.match(
+    readText('apps/asyra-fieldscope/scripts/supervise-tests.py'),
+    /DEFAULT_HARD_STOP_MS = 20 \* 60 \* 1000/u
+  )
+  assert.ok(
+    profile.jobs.profile['timeout-minutes'] > 20 &&
+      profile.jobs.profile['timeout-minutes'] <= 30,
+    'The bounded job must reserve setup and artifact time around the unchanged 20-minute supervisor deadline'
+  )
   assert.equal(profile.on.workflow_call.inputs.files.required, true)
   assert.equal(profile.on.workflow_call.inputs.group.required, true)
   assert.ok(
