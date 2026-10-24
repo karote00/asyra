@@ -1,6 +1,6 @@
 # Group 4F - Textile Review
 
-Status: original drawings and rectangular-rug construction approved. The round-rug construction revision is approved by the user for commit; throw pillow is unchanged. No production model verification.
+Status: original drawings and both rug construction revisions approved. The throw-pillow construction revision is approved by the user for commit. No production model verification.
 
 1. [Rectangular rug](01-rectangular-rug-v1.png): sage green rug beside the central office laptop desk; one flat unit with simple bound edge.
 2. [Round rug](02-round-rug-v1.png): grey-lavender rug in the central office sofa area; one circular unit.
@@ -15,6 +15,10 @@ The original image is unchanged. Review the [construction specification](../RECT
 ## Round rug construction revision
 
 The original image is unchanged. The [round-rug specification](../ROUND-RUG-SPEC.md) and [JSON](../textiles-model-spec.json) define the inward rounded edge, 24 mm flat binding, five replaceable regions, nonuniform sizing and three LoD tiers. The [permanent checks](__tests__/test_round_rug_spec.py) validate the numeric construction in memory. No production model or app validation is claimed.
+
+## Throw pillow construction revision
+
+The original image and cubic control points remain unchanged. The [construction specification](../THROW-PILLOW-SPEC.md) defines exact landmarks, two inflated patches sharing one seam, material replacement, resizing and lower-density LoD sampling. The [permanent checks](__tests__/test_throw_pillow_spec.py) exercise in-memory analytic construction; no model or app result is certified.
 
 ## Lighting revision - 2026-10-04
 

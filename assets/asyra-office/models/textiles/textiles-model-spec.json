@@ -1,6 +1,6 @@
 {
   "specVersion": "1.0.0",
-  "status": "Original drawings and both rug construction revisions approved by the user for commit; no verified production models",
+  "status": "Original drawings and all three textile construction revisions approved by the user for commit; no verified production models",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -424,11 +424,11 @@
         ],
         "bezierFormula": "B(t)=(1-t)^3*P0+3*(1-t)^2*t*P1+3*(1-t)*t^2*P2+t^3*P3, t in [0,1]",
         "patchFormula": "X=r*Bx(t); Z=0.16+r*Bz(t); Y=sign*0.055*sqrt(1-r*r), r in [0,1], sign=-1 for front and +1 for back",
-        "segmentsPerOutlineCurve": 24,
-        "radialIntervals": 32,
-        "radialSampling": "r=sin(pi*j/64), j=0..32",
+        "radialIntervals": 20,
+        "radialSampling": "a=pi*j/(2*K), r=sin(a), j=0..K; K=radialIntervals; use Y=0 exactly on shared seam",
         "weld": "one centre vertex per side at r=0; one shared seam ring at r=1; shared adjacent curve endpoints",
-        "smoothNormals": true
+        "smoothNormals": true,
+        "outlineIntervals": [16, 4, 16, 4, 16, 4, 16, 4]
       },
       "surfaceRegions": {
         "body": "mustard",
@@ -443,7 +443,90 @@
         "exact cushion volume",
         "mid-thickness seam",
         "no zipper"
-      ]
+      ],
+      "constructionDocument": "THROW-PILLOW-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "closedComponentCount": 1,
+        "modelVerified": false,
+        "method": "In-memory analytic patch construction; no production model export",
+        "sideInset": 0.009,
+        "seamRadialThreshold": 0.999907020470792,
+        "outlineContinuity": "Closed piecewise cubic; endpoint tangents are not guaranteed equal",
+        "normalPolicy": "Normalized sum of incident outward triangle area normals at welded vertices; shared across material/UV splits"
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": {
+          "material": ["region", "whole-pillow", "preset"],
+          "color": ["region", "whole-pillow", "selected material color"]
+        },
+        "colorFallback": "selected material color",
+        "instanceIsolation": true,
+        "regions": [
+          {
+            "id": "body",
+            "defaultMaterial": "mustard",
+            "defaultColorSRGB": "#D4AC57",
+            "defaultWeave": true
+          },
+          {
+            "id": "seam",
+            "defaultMaterial": "mustard-seam",
+            "defaultColorSRGB": "#C49D4E",
+            "defaultWeave": false
+          }
+        ],
+        "seamMask": {
+          "halfWidthY": 0.00075,
+          "boundaryOwner": "seam",
+          "coordinates": "inverse-scaled default local Y",
+          "evaluation": "per surface sample; abs(Y)<=halfWidthY; no raised geometry"
+        },
+        "weaveCoordinates": "final resized local metres with final local normal selecting projection; exact tie order in constructionDocument"
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [0.32, 0.11, 0.32],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "seam": "projected width scales along Y",
+        "weave": "physical repeat retained in final local metres",
+        "deformation": false
+      },
+      "lod": {
+        "representation": "one closed body, shared seam ring, two poles; per-sample seam mask",
+        "tiers": [
+          {
+            "id": "lod0",
+            "outlineIntervals": [16, 4, 16, 4, 16, 4, 16, 4],
+            "radialIntervals": 20,
+            "triangleCount": 6240,
+            "maxTriangles": 6400,
+            "maxSurfaceError": 0.000915
+          },
+          {
+            "id": "lod1",
+            "outlineIntervals": [8, 4, 8, 4, 8, 4, 8, 4],
+            "radialIntervals": 12,
+            "triangleCount": 2208,
+            "maxTriangles": 2300,
+            "maxSurfaceError": 0.003104
+          },
+          {
+            "id": "lod2",
+            "outlineIntervals": [6, 2, 6, 2, 6, 2, 6, 2],
+            "radialIntervals": 8,
+            "triangleCount": 960,
+            "maxTriangles": 1000,
+            "maxSurfaceError": 0.006128
+          }
+        ],
+        "scaledError": "default bound multiplied by maximum XYZ scale",
+        "switchingOwner": "app",
+        "productionVerified": false
+      }
     }
   ],
   "surfaceRecipe": {

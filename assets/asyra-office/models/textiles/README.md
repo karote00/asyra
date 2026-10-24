@@ -1,6 +1,6 @@
 # Asyra Office - Group 4F - Rugs and Throw Pillow
 
-Status: **Original drawings and rectangular-rug construction are approved. The round-rug construction revision is approved by the user for commit; throw pillow is unchanged. No production model verification.**
+Status: **Original drawings and both rug construction revisions are approved. The throw-pillow construction revision is approved by the user for commit. No production model verification.**
 
 | One placeable unit      | Source in the central office                       | X x Y x Z (m)       | Sheet                                               |
 | ----------------------- | -------------------------------------------------- | ------------------- | --------------------------------------------------- |
@@ -15,6 +15,7 @@ Each rug sheet has top, front edge, right edge, bottom and oblique views. The pi
 - [Approved original reference](../architecture/review/approved-office-reference.jpg): central office first.
 - [Rectangular rug construction](RECTANGULAR-RUG-SPEC.md): exact edge sweep, binding mask, default appearance, size overrides and LoD.
 - [Round rug construction](ROUND-RUG-SPEC.md): circular profile, cap and binding dimensions, replaceable defaults, elliptical sizing and LoD.
+- [Throw pillow construction](THROW-PILLOW-SPEC.md): inflated patches, inset sides, seam, replaceable defaults, size overrides and LoD.
 - [Geometry supplement](GEOMETRY-SUPPLEMENT.md): bounds, bevels, backs, pillow shape and seam.
 - [JSON specification](textiles-model-spec.json): exact geometry, origin, materials and region masks.
 - [Surface recipes](SURFACE-RECIPES.md): deterministic intrinsic weave without lighting.
