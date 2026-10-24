@@ -50,9 +50,10 @@ class SleepingCatSpecificationTests(unittest.TestCase):
         self.assertEqual(record['shapeStatus'],'user-approved')
         self.assertFalse(record['modelVerified'])
 
-    def test_other_animal_is_unchanged(self):
+    def test_corgi_geometry_baseline_is_preserved(self):
         dog=next(a for a in self.batch['animals'] if a['id']=='standing-corgi')
-        digest=hashlib.sha256(json.dumps(dog,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        baseline={key:dog[key] for key in ('id','finalSize','ellipsoids','ears','tail','eyes','nose')}
+        digest=hashlib.sha256(json.dumps(baseline,sort_keys=True,separators=(',',':')).encode()).hexdigest()
         self.assertEqual(digest,'4a9bec9a45e7ff101e37c4df785ba10a41ffffa6ae56b658060c6874dd91e570')
 
     def test_default_size_and_scaling_contract(self):

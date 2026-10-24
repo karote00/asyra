@@ -3,7 +3,10 @@
 The sleeping cat uses [its reviewed construction contract](SLEEPING-CAT-SPEC.md)
 for default/instance scaling, valid facial projection, tail continuity, review
 cameras and LOD acceptance. Cat-specific clarifications there take precedence.
-The corgi retains the baseline recipe below and awaits its own review.
+The standing corgi uses [its reviewed construction contract](STANDING-CORGI-SPEC.md)
+for the separate nose, head/muzzle eye projection, source side-label mapping,
+size transforms and LOD limits. Each animal-specific contract takes precedence
+for its own inputs; the raw shape values remain unchanged.
 
 ## Authority, axes and poses
 
@@ -41,7 +44,12 @@ For the cat, use the full-stroke valid-domain check and frontmost head-owned
 union hit in [the cat contract](SLEEPING-CAT-SPEC.md); invalid projection must
 fail, with no square-root clamping or rear-surface painting.
 
-The retained corgi baseline projects graphic landmarks onto the front hemisphere of the head ellipsoid. For a landmark (x,z), its raw Y is cy-ry*sqrt(max(0,1-((x-cx)/rx)^2-((z-cz)/rz)^2)). Reproject along Y to the final union surface if blending displaced it. Graphics are flush intrinsic color, not raised wires or holes.
+For the corgi, validate q=1-((x-cx)/rx)^2-((z-cz)/rz)^2 over the entire eye
+ellipse and reject q<=0. The head front y=cy-ry*sqrt(q) is an initial point only.
+Project onto the first visible union surface owned by head or muzzle, as defined
+in [the corgi contract](STANDING-CORGI-SPEC.md). The muzzle can occlude the lower
+eye projection on the original head ellipsoid. Never clamp invalid points or
+paint behind the muzzle. Graphics are flush intrinsic colour, not raised wires.
 
 Cat eyes and mouth are quadratic Bezier curves through the listed XZ control triples, sampled at 32 intervals. Paint points whose projected XZ distance from a curve is within its lineRadius. The pink cat nose uses the given XZ ellipse. Corgi eyes use the listed XZ ellipses. All eyes are dark, with no glints, whites or lashes.
 

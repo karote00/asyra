@@ -18,9 +18,18 @@ contract](SLEEPING-CAT-SPEC.md) now distinguishes raw part coordinates from the
 380 x 500 x 260 mm default bounds, specifies facial projection failure handling,
 tail/paw checks, independently replaceable appearance regions and unverified
 LOD budgets. The reference image and raw primitive dimensions remain unchanged.
-The revised cat documentation is approved for commit; the corgi has not been
-re-reviewed in this step. The [shared size and appearance contract](../README.md)
+The revised cat documentation is approved for commit. That review preserved
+the corgi geometry; its separate review is described below. The [shared size and appearance contract](../README.md)
 applies to all instances.
+
+## Standing corgi review
+
+The [corgi construction contract](STANDING-CORGI-SPEC.md) now defines default
+320 x 620 x 480 mm bounds including the separate solid nose, raw component
+dimensions, four-paw ground contact, eye projection across head/muzzle surfaces,
+source-label mapping and replaceable appearance/LOD requirements. Source pixels
+and raw geometry remain unchanged. The revised corgi documentation and document-only illustration are approved
+by the user for commit; no model is verified.
 
 ## Handoff
 

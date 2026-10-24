@@ -697,6 +697,137 @@
           0.012
         ],
         "color": "dark"
+      },
+      "review": {
+        "reference": "review/02-standing-corgi-v1.png",
+        "referenceSHA256": "a0236300e3e83265ed0a59b4960dbaf9379cc84b6771ad525242e40983eb0510",
+        "imagePixels": [
+          1536,
+          1024
+        ],
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "STANDING-CORGI-SPEC.md",
+        "sourceViewMapping": {
+          "RIGHT": {
+            "canonicalView": "LEFT",
+            "lookDirection": [
+              1,
+              0,
+              0
+            ],
+            "screenUp": [
+              0,
+              0,
+              1
+            ]
+          },
+          "RIGHT THREE-QUARTER": {
+            "canonicalView": "FRONT-LEFT THREE-QUARTER",
+            "cameraQuadrant": "negative X, negative Y, positive Z"
+          },
+          "mirrorGeometry": false
+        },
+        "limitations": "The source side labels do not match the canonical body-side convention; use sourceViewMapping. TOP is illustrative and not a calibrated orthographic projection. Numeric checks do not certify the final union surface, silhouette or LOD mesh."
+      },
+      "sizing": {
+        "defaultBoundsSource": "complete-default-surface-including-nose",
+        "includeSeparateNoseInBounds": true,
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "normalizationStage": "Normalize complete default body plus separate nose together, once before LOD generation; every part and mask inherits that transform.",
+        "origin": "XY midpoint of default bounds; Z at lowest default surface",
+        "maskSpace": "Inverse instance transform followed by inverse default normalization recovers raw anatomical coordinates.",
+        "lodTransform": "All LODs inherit the default normalization; no per-part or per-LOD recentering or resizing."
+      },
+      "facialProjection": {
+        "invalidDomainPolicy": "reject",
+        "allowedOwners": [
+          "head",
+          "muzzle"
+        ],
+        "unionHit": "frontmost-allowed-owner",
+        "projectionAxis": "+Y",
+        "domain": "Validate the full eye ellipse against the head X/Z projection domain. Cast from outside the full animal front bounds; paint only the first surface hit if its pre-blend owner is head or muzzle.",
+        "occlusionPolicy": "Do not paint an occluded head behind the muzzle, skip a forbidden foreground surface or duplicate eyes on rear surfaces. The lower eye region can belong to muzzle; a head-only ownership rule is invalid.",
+        "bakedGraphic": true,
+        "geometricRelief": 0
+      },
+      "noseConstruction": {
+        "kind": "separate-closed-ellipsoid",
+        "bakedGraphic": false,
+        "attachment": "Positive overlap with muzzle; retain independent nose identity and material. Do not smooth the dark nose into the cream muzzle.",
+        "bounds": "Include in default normalization, triangle budgets and LOD surface-error measurement."
+      },
+      "pawUndersides": {
+        "pads": false,
+        "toeGrooves": false,
+        "defaultMaterial": "cream",
+        "groundContact": "All four raw paw ellipsoids have sole Z=0. Preserve four coplanar support contacts after normalization and each LOD reduction."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "orange-coat",
+            "defaultMaterial": "orange"
+          },
+          {
+            "id": "cream-coat",
+            "defaultMaterial": "cream"
+          },
+          {
+            "id": "ear-interiors",
+            "defaultMaterial": "pink"
+          },
+          {
+            "id": "eyes",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "nose",
+            "defaultMaterial": "dark"
+          }
+        ],
+        "overrideOrder": [
+          "region material",
+          "animal material",
+          "preset material",
+          "region colour or animal colour"
+        ],
+        "regionPreservation": "Keep named masks independent of palette colours; eyes and nose remain separate regions even when both default to dark. Preserve selected material properties not overridden and do not mutate other instances."
+      },
+      "lod": {
+        "verified": false,
+        "referenceSurface": "Normalized complete default body plus separate nose before mesh reduction",
+        "tiers": [
+          {
+            "id": "lod0",
+            "maxTriangles": 12000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod1",
+            "maxTriangles": 6000,
+            "maxSurfaceError": 0.002
+          },
+          {
+            "id": "lod2",
+            "maxTriangles": 2000,
+            "maxSurfaceError": 0.004
+          }
+        ],
+        "errorMetric": "Maximum bidirectional surface distance in default metres; evaluate body and nose separately to prevent one surface hiding errors in the other. Use adaptive surface checks, not vertex-only probes.",
+        "preserve": [
+          "four legs and paw lobes",
+          "four coplanar sole contacts",
+          "two ears",
+          "continuous central tail",
+          "nose overlap and silhouette",
+          "eye placement and region identity"
+        ],
+        "failurePolicy": "Reject a mesh that exceeds either surface error or whole-animal triangle budget; do not remove anatomy, change normalization or silently increase budgets."
       }
     }
   ],

@@ -31,6 +31,20 @@ as specified in [the cat contract](SLEEPING-CAT-SPEC.md).
 - On each ear's front-facing surface, let t=(z-zBase)/(zTip-zBase). Pink applies for 0.18<=t<=0.82 and abs(x-centreX(z))<0.65*radiusX(z). Require a front-facing surface normal (normal Y<0); rear faces remain orange.
 - Use the documented closed-eye curves, mouth and pink nose. No extra facial marks.
 
+## Corgi region ownership and replacement
+
+The numeric corgi `appearance.regions` owns orange/cream coat, pink ear interiors,
+dark eyes and a separate dark nose. Keep eye/nose region identities distinct even
+when their defaults match. Apply the shared material/colour precedence and
+instance isolation. Preserve masks independently of palette colours, evaluated
+in raw anatomical space after inverse size transforms. Do not copy the cat's
+pink nose, paw pads or tail bands.
+
+The nose has its own closed ellipsoid geometry. Eyes are flush colour regions
+on the visible joined head/muzzle surface, applied after the base coat masks.
+Use [the corgi projection contract](STANDING-CORGI-SPEC.md); do not leave lower
+eye pixels on a hidden head surface behind the muzzle.
+
 ## Corgi coat
 
 - Torso starts orange; cream applies below z=0.095. Chest and muzzle are cream.

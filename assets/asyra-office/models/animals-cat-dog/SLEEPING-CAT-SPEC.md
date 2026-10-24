@@ -167,7 +167,7 @@ lobes, two ears, tail continuity and facial placement. No LOD may close an
 anatomical gap with a patch or erase a required part to meet its budget.
 If accuracy and triangle count cannot both pass, reject the mesh for review.
 
-The document checks cover source integrity, unchanged corgi data, dimensions,
+The document checks cover source integrity, preserved corgi geometry baseline, dimensions,
 primitive overlap, tail sampling, face projection, pad domains, explicit
 appearance/LOD rules and links. They do not extract a surface or prove final
 silhouette, field topology, material-mask ownership, budgets or animated fit.
