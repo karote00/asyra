@@ -1,5 +1,26 @@
 # @asyra/asyra-design
 
+## Pending E2E execution continuity
+
+```update-note
+{
+  "change": "e2e-execution-continuity",
+  "owner": "Asyra Design E2E harness",
+  "summary": "Distinguish unexpected runtime replacements and source drift from strict save, history and collaboration failures with phase evidence.",
+  "sources": [
+    "apps/asyra-design/flow-contracts.json",
+    "apps/asyra-design/e2e/execution-evidence.ts",
+    "apps/asyra-design/e2e/test-utils.ts",
+    "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/e2e/fixtures/execution-continuity.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal validation only; no product API, document schema, persistence or consumer migration changes."
+}
+```
+
 ## Pending mechanical coverage selection
 
 ```update-note

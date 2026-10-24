@@ -48,7 +48,10 @@
         "server/**",
         "knowledge/**",
         "vtracer-tool-server.mjs",
-        "collaboration-server.ts"
+        "collaboration-server.ts",
+        "e2e/execution-evidence.ts",
+        "e2e/test-utils.ts",
+        "e2e/fixtures/execution-continuity.json"
       ],
       "entry": null
     },
@@ -807,6 +810,16 @@
             "apps/asyra-design/server/design-construction.ts",
             "apps/asyra-design/server/design-budget.ts",
             "apps/asyra-design/server/design-construction-schema.ts"
+          ]
+        },
+        {
+          "id": "observe.e2e-continuity",
+          "stepId": "observe",
+          "testName": "execution proof preserves E2E runtime continuity and original failure attribution",
+          "implementationPaths": [
+            "apps/asyra-design/e2e/execution-evidence.ts",
+            "apps/asyra-design/e2e/test-utils.ts",
+            "apps/asyra-design/e2e/fixtures/execution-continuity.json"
           ]
         }
       ],

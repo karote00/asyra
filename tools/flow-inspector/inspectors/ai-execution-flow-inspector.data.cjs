@@ -1124,6 +1124,7 @@
         ownerPackage: '@asyra/ai-agent-runtime',
         purpose: 'trace-owner',
         inputs: [
+          'frozen E2E source identity, public runtime/history/document snapshots, backend checkpoint and explicit planned reloads',
           'explicit bounded evaluation window and attributed public self-report',
           'observed provider lifecycle events',
           'host dispatch, middleware, domain outcome/report policy and explicit call provenance',
@@ -1136,6 +1137,7 @@
         ],
         outputs: ['artifact:execution-trace'],
         conditions: [
+          'E2E source drift, unplanned participant navigation or closure invalidates environment continuity separately from strict save/history/collaboration assertions. One explicit planned reload permits one runtime replacement only. Preserve named phases, original errors and unavailable evidence in existing Playwright attachments; no automatic retry, weakened assertion or product owner mutation.',
           'Record the explicit evaluation artifact limit alongside the unchanged production ceiling; obtain actual delivered policy and recovery behavior from linked provider records. A lower test budget cannot certify an untriggered overflow or recovery.',
           'Explicit evaluation work and report budgets remain separate. Capture model-authored report text and screenshot without video, close the work context before fresh-context reload; failed reports and captures remain failures with bounded external cleanup. Never infer causal latency from self-report.',
           'Consume the existing executed conversation result and matching terminal host-marked report receipt; preserve legal action-ID reuse in earlier batches. Project bounded report text and request/turn identity to the existing rendered message; capture exactly the observed request and verify the same assistant result message before screenshot; user/history text is not a substitute. No full-network-body reread, raw-provider fallback, duplicate report store or execution replay; missing, ambiguous, failed and cancelled reports remain failures.',
@@ -1176,6 +1178,7 @@
         ],
         bypasses: ['Missing provider fields remain unavailable'],
         allowedContributors: [
+          'App E2E harness using public Core history/save, backend checkpoints and Playwright lifecycle/attachments',
           'usage instrumentation',
           'bounded receipt timings',
           'read-only record projection and separately attributed feedback',
@@ -1190,6 +1193,10 @@
         ],
         cacheDimensions: [],
         implementationBoundary: [
+          'apps/asyra-design/e2e/execution-evidence.ts',
+          'apps/asyra-design/e2e/test-utils.ts',
+          'apps/asyra-design/e2e/ai-inspection-evidence.spec.ts',
+          'apps/asyra-design/e2e/fixtures/execution-continuity.json',
           'apps/asyra-design/src/ai/evaluation-window.ts',
           'apps/asyra-design/src/ai/__tests__/evaluation-window.test.ts',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/report-capture-20261023.json',
@@ -1271,6 +1278,7 @@
           'apps/asyra-design/test-data/knowledge-evaluation/__tests__/analysis.test.mjs'
         ],
         specRefs: [
+          '#e2e-execution-continuity',
           '#bounded-evaluation-work-and-self-report',
           '#tool-first-correction-contract',
           '#diagnostic-delivery-lifetime',

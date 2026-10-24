@@ -9024,3 +9024,229 @@ it('execution proof preserves face-referenced boundaries through retained source
     })
   ).toThrow(/boundary reference/)
 })
+
+it('execution proof preserves E2E runtime continuity and original failure attribution', async () => {
+  const { undo } = await import('../../e2e/execution-evidence')
+  const press = vi.fn()
+  const page = {
+    getByTestId: () => ({ click: async () => undefined }),
+    keyboard: { down: vi.fn(), press, up: vi.fn() },
+    waitForTimeout: vi.fn()
+  } as unknown as import('@playwright/test').Page
+  const violation = new Error(
+    'Unexpected runtime replacement before history operation'
+  )
+  await expect(
+    undo(page, async () => {
+      throw violation
+    })
+  ).rejects.toBe(violation)
+  expect(press).not.toHaveBeenCalled()
+
+  const { createExecutionEvidence } =
+    await import('../../e2e/execution-evidence')
+  const recorded = (
+    await import('../../e2e/fixtures/execution-continuity.json')
+  ).default
+  const { createHash } = await import('node:crypto')
+  const canonical = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(canonical)
+    if (value && typeof value === 'object')
+      return Object.fromEntries(
+        Object.keys(value)
+          .sort()
+          .map((key) => [
+            key,
+            canonical((value as Record<string, unknown>)[key])
+          ])
+      )
+    return value
+  }
+  const digest = (value: unknown) =>
+    createHash('sha256')
+      .update(JSON.stringify(canonical(value)))
+      .digest('hex')
+  expect(digest(recorded.beforeDocument)).toBe(recorded.beforeDigest)
+  expect(digest(recorded.afterDocument)).toBe(recorded.afterDigest)
+  expect(recorded.afterDocument).not.toEqual(recorded.beforeDocument)
+  const make = async (
+    options: {
+      missingSource?: boolean
+      missingCheckpoint?: boolean
+      attachmentFailure?: boolean
+    } = {}
+  ) => {
+    let runtime = 1
+    let source = 'frozen'
+    let unavailable = false
+    let listener: ((kind: 'navigation' | 'closed') => void) | undefined
+    const attachments: unknown[] = []
+    const participant = {
+      name: 'editor',
+      readRuntime: async () => {
+        if (unavailable) throw new Error('Page closed')
+        return runtime
+      },
+      read: async () => ({
+        runtimeId: runtime,
+        historyDepth: runtime === 1 ? 1 : 0,
+        document: recorded.afterDocument
+      }),
+      subscribe: (next: typeof listener) => {
+        listener = next
+        return () => {
+          listener = undefined
+        }
+      }
+    }
+    const evidence = await createExecutionEvidence({
+      participants: [participant],
+      captureSource: async () => ({
+        sourceIdentityStatus: options.missingSource
+          ? 'unavailable'
+          : 'captured',
+        sourceRevision: 'revision',
+        sourceFingerprint: source
+      }),
+      readCheckpoint: async () => {
+        if (options.missingCheckpoint) throw new Error('Checkpoint unavailable')
+        return {
+          durableSequence: recorded.durableSequence,
+          checkpoint: recorded.afterDocument
+        }
+      },
+      attach: async (value) => {
+        if (options.attachmentFailure) throw new Error('Attachment unavailable')
+        attachments.push(value)
+      }
+    })
+    return {
+      evidence,
+      attachments,
+      reload: () => {
+        runtime++
+        listener?.('navigation')
+      },
+      drift: () => {
+        source = 'changed'
+      },
+      close: () => {
+        unavailable = true
+        listener?.('closed')
+      }
+    }
+  }
+  expect(recorded.expectations[0]).not.toHaveProperty('error')
+  expect(recorded.expectations[1]).toHaveProperty('error')
+  expect(recorded.reloads.length).toBeGreaterThan(0)
+  expect(recorded.historyDepth).toBeNull()
+  const recordedError = recorded.expectations[1].error
+  if (!recordedError) throw new Error('Missing recorded Undo failure')
+  const original = new Error(recordedError.message)
+  const normal = await make()
+  await normal.evidence.phase('persistence', async () => undefined)
+  await expect(
+    normal.evidence.phase('undo', async () => {
+      throw original
+    })
+  ).rejects.toBe(original)
+  await normal.evidence.finish()
+  expect(normal.attachments).toMatchObject([
+    {
+      phases: [
+        { name: 'persistence', status: 'passed' },
+        { name: 'undo', status: 'failed', error: { message: original.message } }
+      ]
+    }
+  ])
+
+  const replaced = await make()
+  await replaced.evidence.phase('persistence', async () => undefined)
+  replaced.reload()
+  const mutation = vi.fn()
+  await expect(replaced.evidence.phase('undo', mutation)).rejects.toThrow(
+    'environment'
+  )
+  expect(mutation).not.toHaveBeenCalled()
+  await expect(replaced.evidence.finish()).rejects.toThrow('environment')
+  expect(replaced.attachments).toMatchObject([
+    {
+      violations: expect.arrayContaining([
+        expect.objectContaining({ kind: 'unexpected-navigation' })
+      ])
+    }
+  ])
+
+  const focus = await make()
+  const focusPress = vi.fn()
+  const focusPage = {
+    getByTestId: () => ({
+      click: async () => {
+        focus.reload()
+      }
+    }),
+    keyboard: { down: vi.fn(), press: focusPress, up: vi.fn() },
+    waitForTimeout: vi.fn()
+  } as unknown as import('@playwright/test').Page
+  await expect(
+    undo(focusPage, focus.evidence.assertContinuous)
+  ).rejects.toThrow('environment')
+  expect(focusPress).not.toHaveBeenCalled()
+  await expect(focus.evidence.finish()).rejects.toThrow('environment')
+
+  const planned = await make()
+  await planned.evidence.reload('editor', async () => {
+    planned.reload()
+  })
+  await planned.evidence.phase(
+    'edit after planned reload',
+    async () => undefined
+  )
+  await planned.evidence.finish()
+  const extra = await make()
+  await expect(
+    extra.evidence.reload('editor', async () => {
+      extra.reload()
+      extra.reload()
+    })
+  ).rejects.toThrow('environment')
+  await expect(extra.evidence.finish()).rejects.toThrow('environment')
+  const missing = await make()
+  await expect(
+    missing.evidence.reload('editor', async () => undefined)
+  ).rejects.toThrow('environment')
+  await expect(missing.evidence.finish()).rejects.toThrow('environment')
+  const changed = await make()
+  changed.drift()
+  await expect(changed.evidence.finish()).rejects.toThrow('environment')
+  expect(changed.attachments).toMatchObject([
+    {
+      violations: expect.arrayContaining([
+        expect.objectContaining({ kind: 'source-changed' })
+      ])
+    }
+  ])
+  const closed = await make()
+  closed.close()
+  await expect(closed.evidence.phase('undo', mutation)).rejects.toThrow(
+    'environment'
+  )
+  await expect(closed.evidence.finish()).rejects.toThrow('environment')
+  expect(closed.attachments).toMatchObject([
+    { phases: [{ before: { participants: [{ status: 'unavailable' }] } }] }
+  ])
+  const noSource = await make({ missingSource: true })
+  await expect(noSource.evidence.finish()).rejects.toThrow('environment')
+  const noCheckpoint = await make({ missingCheckpoint: true })
+  await expect(
+    noCheckpoint.evidence.phase('persistence', mutation)
+  ).rejects.toThrow('environment')
+  await expect(noCheckpoint.evidence.finish()).rejects.toThrow('environment')
+  const noAttachment = await make({ attachmentFailure: true })
+  await expect(noAttachment.evidence.finish(original)).rejects.toMatchObject({
+    errors: [
+      original,
+      expect.objectContaining({ message: 'Attachment unavailable' })
+    ]
+  })
+})

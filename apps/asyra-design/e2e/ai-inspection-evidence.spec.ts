@@ -1,9 +1,15 @@
+import { captureAiSourceIdentity } from '@asyra/ai-agent-runtime/node'
+import { resolve } from 'node:path'
+import {
+  createExecutionEvidence,
+  observeExecutionPage
+} from './execution-evidence'
 import recordedPropertyUndo from '../server/__tests__/fixtures/recorded-101/shared-property-ui-undo.json' with { type: 'json' }
 import { writeFile } from 'node:fs/promises'
 import recordedClosure from '../server/__tests__/fixtures/recorded-101/whole-flow-closure-20261019.json' with { type: 'json' }
 import recordedMechanics from '../server/__tests__/fixtures/recorded-101/mechanical-validity-20261019.json' with { type: 'json' }
 import recordedScope from '../server/__tests__/fixtures/recorded-101/scope-handoff-20261017.json' with { type: 'json' }
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import type { FillAttrs } from '@asyra/utils'
 import type { AiActionBatch, AiProvider } from '@asyra/ai-agent-runtime'
 import type { FillPatch } from '../src/common-apis/fills'
@@ -23,6 +29,15 @@ import {
 // Ordinary local runs do not retry. Retain the first failure's navigation and
 // transport evidence instead of waiting for a retry that will never run.
 test.use({ trace: 'retain-on-failure' })
+
+const attachExecutionEvidence = async (testInfo: TestInfo, value: unknown) => {
+  const path = testInfo.outputPath('execution-continuity.json')
+  await writeFile(path, JSON.stringify(value, null, 2))
+  await testInfo.attach('execution-continuity', {
+    contentType: 'application/json',
+    path
+  })
+}
 
 // These tests prove validity notifications in the real App. Actual image
 // freshness is covered by local-ai-provider.spec.ts's rendered-inspection case.
@@ -2965,110 +2980,130 @@ for (const rootType of ['frame', 'group'] as const) {
       await page.goto(document.url)
       await waitForAppReady(page)
       await waitForCollaboration(page)
-      const { createLocalOperationTools } =
-        await import('../server/local-operation-tools')
-      const fixture = await page.evaluate(async (rootType) => {
-        const { core, testRuntimeState } =
-          await import('../src/testing/runtime-access')
-        const { transactionApis } = await import('../src/common-apis')
-        const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
-        const input = createAiRuntimeInput({
-          permissionRules: {},
-          provider: {
-            requestActionBatch: async () => {
-              throw new Error('Models are forbidden in this integration')
-            }
-          }
-        })
-        testRuntimeState.set('coverage-runtime', input)
-        const ids = transactionApis.runTransaction(() => {
-          const [root] = core.createElementsInParent(
-            [
-              {
-                type: rootType,
-                x: 0,
-                y: 0,
-                width: rootType === 'group' ? 1 : 500,
-                height: rootType === 'group' ? 1 : 500
-              }
-            ],
-            core.getCurrentWorkspaceId()
-          )
-          const children = core.createElementsInParent(
-            [
-              { type: 'rect', x: 10, y: 10, width: 40, height: 40 },
-              { type: 'rect', x: 100, y: 10, width: 40, height: 40 }
-            ],
-            root
-          )
-          return { root, children }
-        })
-        return {
-          ...ids,
-          actions: JSON.parse(JSON.stringify(input.actionDefinitions))
-        }
-      }, rootType)
-      const signal = new AbortController().signal
-      let interrupted = false
-      const executeBatch = async (batch: AiActionBatch) => {
-        if (
-          interrupted &&
-          batch.actions.some(
-            (a) =>
-              a.name === 'validate_inspection_evidence' &&
-              a.arguments.measurementTargets
-          )
-        )
-          throw new Error('Interrupted coverage delivery')
-        return (await page.evaluate(async (batch) => {
-          const { testRuntimeState } =
-            await import('../src/testing/runtime-access')
-          type Input = ReturnType<
-            typeof import('../src/ai/runtime-input').createAiRuntimeInput
-          >
-          const input = testRuntimeState.get<Input>('coverage-runtime')
-          if (!input) throw new Error('Missing runtime')
-          const actionResults = []
-          for (const entry of batch.actions) {
-            const action = input.actionDefinitions.find(
-              (a) => a.name === entry.name
-            )
-            if (!action) throw new Error('Missing action')
-            actionResults.push({
-              actionId: entry.id,
-              actionName: entry.name,
-              result: await action.execute(entry.arguments, {
-                signal: new AbortController().signal
-              })
-            })
-          }
-          return { context: {}, actionResults }
-        }, batch)) as never
-      }
-      const operations = createLocalOperationTools(
-        fixture.actions,
-        { modelActions: (a) => a, resolveBatch: (b) => b },
-        executeBatch
-      )
-      const invoke = async (name: string, args: unknown = {}) =>
-        JSON.parse(await operations.call(name, args, signal))
-      const review = (id: string) =>
-        invoke('review_design', { arguments: { elementId: id } })
-      const resize = async (id: string, width: number) =>
-        page.evaluate(
-          async ({ id, width }) => {
-            const { core } = await import('../src/testing/runtime-access')
-            const { transactionApis } = await import('../src/common-apis')
-            transactionApis.runTransaction(() =>
-              core.updateElementProperties([
-                { elementId: id, values: { width } }
-              ])
-            )
-          },
-          { id, width }
-        )
       const peer = await context.newPage()
+      const evidence = await createExecutionEvidence({
+        participants: [
+          observeExecutionPage(page, 'editor'),
+          observeExecutionPage(peer, 'peer')
+        ],
+        captureSource: () =>
+          captureAiSourceIdentity({
+            directory: resolve(import.meta.dirname, '../../..'),
+            paths: ['.']
+          }),
+        readCheckpoint: () => getPersistedDocumentCheckpoint(document.fileId),
+        attach: (value) => attachExecutionEvidence(testInfo, value)
+      })
+      const phase = <T>(
+        name: string,
+        action: () => Promise<T>,
+        expected?: unknown
+      ) => test.step(name, () => evidence.phase(name, action, expected))
+      let failure: unknown
       try {
+        const { createLocalOperationTools } =
+          await import('../server/local-operation-tools')
+        const fixture = await page.evaluate(async (rootType) => {
+          const { core, testRuntimeState } =
+            await import('../src/testing/runtime-access')
+          const { transactionApis } = await import('../src/common-apis')
+          const { createAiRuntimeInput } =
+            await import('../src/ai/runtime-input')
+          const input = createAiRuntimeInput({
+            permissionRules: {},
+            provider: {
+              requestActionBatch: async () => {
+                throw new Error('Models are forbidden in this integration')
+              }
+            }
+          })
+          testRuntimeState.set('coverage-runtime', input)
+          const ids = transactionApis.runTransaction(() => {
+            const [root] = core.createElementsInParent(
+              [
+                {
+                  type: rootType,
+                  x: 0,
+                  y: 0,
+                  width: rootType === 'group' ? 1 : 500,
+                  height: rootType === 'group' ? 1 : 500
+                }
+              ],
+              core.getCurrentWorkspaceId()
+            )
+            const children = core.createElementsInParent(
+              [
+                { type: 'rect', x: 10, y: 10, width: 40, height: 40 },
+                { type: 'rect', x: 100, y: 10, width: 40, height: 40 }
+              ],
+              root
+            )
+            return { root, children }
+          })
+          return {
+            ...ids,
+            actions: JSON.parse(JSON.stringify(input.actionDefinitions))
+          }
+        }, rootType)
+        const signal = new AbortController().signal
+        let interrupted = false
+        const executeBatch = async (batch: AiActionBatch) => {
+          if (
+            interrupted &&
+            batch.actions.some(
+              (a) =>
+                a.name === 'validate_inspection_evidence' &&
+                a.arguments.measurementTargets
+            )
+          )
+            throw new Error('Interrupted coverage delivery')
+          return (await page.evaluate(async (batch) => {
+            const { testRuntimeState } =
+              await import('../src/testing/runtime-access')
+            type Input = ReturnType<
+              typeof import('../src/ai/runtime-input').createAiRuntimeInput
+            >
+            const input = testRuntimeState.get<Input>('coverage-runtime')
+            if (!input) throw new Error('Missing runtime')
+            const actionResults = []
+            for (const entry of batch.actions) {
+              const action = input.actionDefinitions.find(
+                (a) => a.name === entry.name
+              )
+              if (!action) throw new Error('Missing action')
+              actionResults.push({
+                actionId: entry.id,
+                actionName: entry.name,
+                result: await action.execute(entry.arguments, {
+                  signal: new AbortController().signal
+                })
+              })
+            }
+            return { context: {}, actionResults }
+          }, batch)) as never
+        }
+        const operations = createLocalOperationTools(
+          fixture.actions,
+          { modelActions: (a) => a, resolveBatch: (b) => b },
+          executeBatch
+        )
+        const invoke = async (name: string, args: unknown = {}) =>
+          JSON.parse(await operations.call(name, args, signal))
+        const review = (id: string) =>
+          invoke('review_design', { arguments: { elementId: id } })
+        const resize = async (id: string, width: number) =>
+          page.evaluate(
+            async ({ id, width }) => {
+              const { core } = await import('../src/testing/runtime-access')
+              const { transactionApis } = await import('../src/common-apis')
+              transactionApis.runTransaction(() =>
+                core.updateElementProperties([
+                  { elementId: id, values: { width } }
+                ])
+              )
+            },
+            { id, width }
+          )
         for (const visible of [false, true])
           await invoke('set_element_visibility', {
             arguments: { elementId: fixture.children[0], visible },
@@ -3125,11 +3160,13 @@ for (const rootType of ['frame', 'group'] as const) {
         await expect
           .poll(() => getPersistedDocumentDigest(document.fileId))
           .toEqual(edited)
-        await peer.goto(document.url)
-        await waitForAppReady(peer)
-        await waitForCollaboration(peer)
+        await evidence.reload('peer', async () => {
+          await peer.goto(document.url)
+          await waitForAppReady(peer)
+          await waitForCollaboration(peer)
+        })
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
-        await undo(page)
+        await undo(page, evidence.assertContinuous)
         expect((await invoke('read_design_checks')).counts).toEqual({
           pass: 1,
           fail: 0,
@@ -3138,7 +3175,7 @@ for (const rootType of ['frame', 'group'] as const) {
         })
         await review(fixture.root)
         expect((await invoke('read_design_checks')).counts.pass).toBe(3)
-        await redo(page)
+        await redo(page, evidence.assertContinuous)
         await review(fixture.root)
         expect((await invoke('read_design_checks')).counts.pass).toBe(3)
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
@@ -3252,60 +3289,92 @@ for (const rootType of ['frame', 'group'] as const) {
             ?.ownedResources ?? [])
             await owner.dispose()
         })
-        await page.reload()
-        await waitForAppReady(page)
-        await waitForCollaboration(page)
+        await test.step('planned reload - editor', () =>
+          evidence.reload('editor', async () => {
+            await page.reload()
+            await waitForAppReady(page)
+            await waitForCollaboration(page)
+          }))
         await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
-        await page.evaluate(async (childId) => {
-          const { elementApis } = await import('../src/common-apis')
-          await elementApis.changeElementGeometry(childId, { width: 95 })
-        }, fixture.children[0])
+        await phase('edit after reload', async () => {
+          await page.evaluate(async (childId) => {
+            const { elementApis } = await import('../src/common-apis')
+            await elementApis.changeElementGeometry(childId, { width: 95 })
+          }, fixture.children[0])
+        })
         const subsequent = await getCoreDocumentDigest(page)
         expect(subsequent).not.toEqual(edited)
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(subsequent)
-        try {
-          await expect
-            .poll(() => getPersistedDocumentDigest(document.fileId))
-            .toEqual(subsequent)
-        } catch (error) {
-          await testInfo.attach('mechanical-reload-persistence', {
-            contentType: 'application/json',
-            body: JSON.stringify({
-              expected: subsequent,
-              current: await page.evaluate(async () =>
-                (await import('../src/testing/runtime-access')).core.save()
-              ),
-              persisted: await getPersistedDocumentCheckpoint(document.fileId)
-            })
-          })
-          throw error
-        }
-        await undo(page)
-        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
-        await redo(page)
+        await phase(
+          'persist new edit',
+          async () => {
+            await expect
+              .poll(() => getPersistedDocumentDigest(document.fileId))
+              .toEqual(subsequent)
+          },
+          subsequent
+        )
+        await phase(
+          'undo new edit',
+          async () => {
+            await undo(page, evidence.assertContinuous)
+            await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
+            await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
+            await expect
+              .poll(() => getPersistedDocumentDigest(document.fileId))
+              .toEqual(edited)
+          },
+          edited
+        )
+        await phase(
+          'redo new edit',
+          async () => {
+            await redo(page, evidence.assertContinuous)
+            await expect
+              .poll(() => getCoreDocumentDigest(page))
+              .toEqual(subsequent)
+            await expect
+              .poll(() => getCoreDocumentDigest(peer))
+              .toEqual(subsequent)
+            await expect
+              .poll(() => getPersistedDocumentDigest(document.fileId))
+              .toEqual(subsequent)
+          },
+          subsequent
+        )
+        await test.step('planned reload - editor', () =>
+          evidence.reload('editor', async () => {
+            await page.reload()
+            await waitForAppReady(page)
+            await waitForCollaboration(page)
+          }))
         await expect.poll(() => getCoreDocumentDigest(page)).toEqual(subsequent)
-        await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(subsequent)
-        await expect
-          .poll(() => getPersistedDocumentDigest(document.fileId))
-          .toEqual(subsequent)
-        await page.reload()
-        await waitForAppReady(page)
-        await waitForCollaboration(page)
-        await expect.poll(() => getCoreDocumentDigest(page)).toEqual(subsequent)
+      } catch (error) {
+        failure = error
       } finally {
-        await page.evaluate(async () => {
-          const { testRuntimeState } =
-            await import('../src/testing/runtime-access')
-          type Input = ReturnType<
-            typeof import('../src/ai/runtime-input').createAiRuntimeInput
-          >
-          for (const owner of testRuntimeState.get<Input>('coverage-runtime')
-            ?.ownedResources ?? [])
-            await owner.dispose()
-          testRuntimeState.delete('coverage-runtime')
-        })
+        try {
+          await evidence.finish(failure)
+        } catch (error) {
+          failure = error
+        }
+        try {
+          await page.evaluate(async () => {
+            const { testRuntimeState } =
+              await import('../src/testing/runtime-access')
+            type Input = ReturnType<
+              typeof import('../src/ai/runtime-input').createAiRuntimeInput
+            >
+            for (const owner of testRuntimeState.get<Input>('coverage-runtime')
+              ?.ownedResources ?? [])
+              await owner.dispose()
+            testRuntimeState.delete('coverage-runtime')
+          })
+        } catch (error) {
+          failure ??= error
+        }
         await peer.close()
       }
+      if (failure !== undefined) throw failure
     }
   )
 }
@@ -3590,3 +3659,93 @@ test('recorded UI Undo retires the exact property graph after removing its eleme
     'workspace'
   ])
 })
+
+for (const interruption of ['editor', 'peer', 'closed'] as const) {
+  test(`execution continuity rejects unexpected ${interruption} replacement without rewriting a save failure`, async ({
+    page,
+    context
+  }, testInfo) => {
+    const document = createTestDocumentIdentity()
+    const peer = await context.newPage()
+    let evidence:
+      Awaited<ReturnType<typeof createExecutionEvidence>> | undefined
+    let attachment:
+      | {
+          violations: { kind: string; participant?: string }[]
+          phases: { name: string; status: string }[]
+        }
+      | undefined
+    try {
+      await page.goto(document.url)
+      await waitForAppReady(page)
+      await waitForCollaboration(page)
+      await createRectangle(page)
+      const edited = await getCoreDocumentDigest(page)
+      await expect
+        .poll(() => getPersistedDocumentDigest(document.fileId))
+        .toEqual(edited)
+      await peer.goto(document.url)
+      await waitForAppReady(peer)
+      await waitForCollaboration(peer)
+      await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
+      evidence = await createExecutionEvidence({
+        participants: [
+          observeExecutionPage(page, 'editor'),
+          observeExecutionPage(peer, 'peer')
+        ],
+        captureSource: () =>
+          captureAiSourceIdentity({
+            directory: resolve(import.meta.dirname, '../../..'),
+            paths: ['.']
+          }),
+        readCheckpoint: () => getPersistedDocumentCheckpoint(document.fileId),
+        attach: async (value) => {
+          attachment = value as typeof attachment
+          await attachExecutionEvidence(testInfo, value)
+        }
+      })
+      await evidence.phase(
+        'persistence',
+        async () => {
+          expect(await getPersistedDocumentDigest(document.fileId)).toEqual(
+            edited
+          )
+        },
+        edited
+      )
+      if (interruption === 'closed') await page.close()
+      else {
+        const target = interruption === 'editor' ? page : peer
+        await target.reload()
+        await waitForAppReady(target)
+        await waitForCollaboration(target)
+      }
+      const currentEvidence = evidence
+      await expect(
+        evidence.phase('undo', () =>
+          undo(page, currentEvidence.assertContinuous)
+        )
+      ).rejects.toThrow('environment')
+      await expect(evidence.finish()).rejects.toThrow('environment')
+      expect(attachment?.phases).toMatchObject([
+        { name: 'persistence', status: 'passed' },
+        { name: 'undo', status: 'failed' }
+      ])
+      expect(attachment?.violations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind:
+              interruption === 'closed'
+                ? 'participant-closed'
+                : 'unexpected-navigation',
+            participant: interruption === 'peer' ? 'peer' : 'editor'
+          })
+        ])
+      )
+      expect(await getPersistedDocumentDigest(document.fileId)).toEqual(edited)
+      expect(await getCoreDocumentDigest(peer)).toEqual(edited)
+    } finally {
+      await peer.close()
+    }
+  })
+}

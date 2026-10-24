@@ -3670,3 +3670,23 @@ missing/foreign/empty/scope/render/change/cancellation failures; complete versus
 coverage and truthful settlement through native reply/presentation; successful capture
 reuse without writes; local versus workspace invalidation and reload. Formal cases
 must not depend on ignored evidence files. No live model is required for this proof.
+
+### E2E execution continuity
+
+Formal browser validation must preserve source and runtime continuity independently
+of product correctness. Freeze source before execution and verify its identity at
+closure. Use explicit operation phases rather than current source line numbers to
+attribute failures. An unplanned main-frame navigation, participant closure, source
+change or unavailable required evidence invalidates the environment proof; it must
+not be reported as successful persistence or rewritten as a product save failure.
+
+A planned reload authorizes one replacement of the named participant only. It does
+not authorize another navigation or erase prior violations. Capture public Core
+history depth, runtime identity and documents with backend durable sequence around
+save/history phases in existing Playwright attachments. Preserve the original error
+when capture also fails. Diagnostic state remains test-local and never changes App
+writes, history, collaboration or persistence. Exact Core/backend comparisons and
+Undo/Redo remain strict after planned reload and a new edit. Test the extra-reload
+case deterministically and retain a permanent minimal fixture of the observed
+save-pass/history-failure sequence. Models and private provider internals are not
+needed to prove this contract.

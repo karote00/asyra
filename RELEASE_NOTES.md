@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending E2E execution continuity
+
+```update-note
+{
+  "change": "e2e-execution-continuity",
+  "owner": "Repository Flow Inspector",
+  "summary": "Admit source-frozen E2E lifecycle evidence and deterministic failure attribution without changing product persistence.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal validation only; no product API, document schema, persistence or consumer migration changes."
+}
+```
+
 ## Pending mechanical coverage selection
 
 ```update-note

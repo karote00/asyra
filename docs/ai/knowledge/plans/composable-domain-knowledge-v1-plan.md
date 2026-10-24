@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 cross-query Knowledge dependency delivery is locally complete against the fixed DoD. Workspace overview and oval remain converged. AI adoption and latency effects remain unobserved; no model run, 101, CI inspection or push was performed for this slice.**
+Status: **Task 3 E2E execution continuity is locally complete against its fixed DoD. Previously completed local handoffs remain closed. No persistence owner changes, model run, 101, CI inspection or push were performed.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: workspace overview through the existing snapshot owner and truthful inspection receipts/recovery. No new tools, document regrouping, model/101, CI or push.
+- Current scope: E2E execution continuity and failure attribution only, as bounded below. No persistence owner changes, model/101, CI or push.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,101 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### E2E execution continuity and failure attribution - 2026-10-25
+
+Status: locally complete. Initial admission accepted at revision 109; the permanent
+fixture capture correction was admitted at revision 110. Final verification
+`19bd0faa-737f-48bb-855e-e615c4f78d4c` passed on source
+`1ab8a842562d34fe2576263244d7fd5d75c709b6890a240fb1d2626a627b8c9f`.
+The original failure and its observation limits remain preserved.
+
+Evidence: the preserved Frame trace (SHA-256
+`a2d3b3ad6b4094a367507eab938b6da6f40c488ec2c1a117d960e39e253f1f2e`)
+shows persistence expectation 164 completing, additional Vite full reloads,
+then Undo expectation 175 failing. Durable sequence 9 contains the same width
+95 document as Core. Runtime line 3265 identified the Undo assertion; the source
+embedded after concurrent edits moved that assertion to line 3269. The trace
+therefore does not establish a save corruption. Historical Undo depth and actual
+shortcut handling were not observed. A later passing run does not erase this failure.
+
+Step Execution Card - observe:
+- Owner: existing App E2E harness contributes to Runtime-owned observation. Spec:
+  E2E execution continuity. Inspector: observe inputs, conditions, boundary and
+  failure owner. No prepare/apply/persistence owner behavior changes.
+- Inputs: current public Core snapshots/history depth, backend checkpoint/sequence,
+  main-frame navigation, explicit planned reload and frozen repository source identity.
+- Outputs: named Playwright steps and JSON attachments, exact assertion failures
+  and an explicit environment-continuity failure. No new product state or result store.
+- Conditions: only an explicitly scoped single planned reload may replace one
+  runtime. Extra navigation on either participant remains a latched failure;
+  closing a page or missing evidence cannot certify success. Keep original assertion
+  errors alongside environment violations; never diagnose from a mutable line number.
+- Allowed contributors: existing Playwright page lifecycle/attachments, public Core
+  save/getUndoHistoryDepth, existing backend read and Runtime Node source adapter.
+- Forbidden: persistence repairs, reload suppression, automatic retries, weakened
+  hashes, diagnostics changing product writes, model calls, CI and source edits
+  during validation. No additional packages, state registries or evidence stores.
+- Boundary: e2e/execution-evidence.ts, e2e/test-utils.ts,
+  e2e/ai-inspection-evidence.spec.ts, existing execution-flow proof and e2e/fixtures/execution-continuity.json, current plan/spec/Inspector/mapping, App CHANGELOG and root release notes.
+- Naming: execution-evidence identifiers are internal E2E diagnostics; no persisted
+  document or public product identity changes. cacheDimensions remains empty.
+- Failure owner: observe reports environment/source/evidence violations; an intact
+  environment retains the original save/history/collaboration assertion failure.
+- Gates: admission; formal red proof of the existing shortcut helper ignoring
+  a continuity guard; deterministic lifecycle and saved-sequence regressions;
+  real Frame/Group strict save/history/collaboration/reload and controlled extra
+  reload/closed-page cases; production types, focused lint, naming, update notes,
+  final Inspector verification. Do not rerun unrelated local CI.
+- Stop: fixed DoD complete, or a correction needs a product owner change. Do not
+  reopen earlier converged handoffs or treat missing AI adoption as a new defect.
+
+Fixed DoD:
+1. A permanent minimal fixture preserves the original persistence-pass then
+   Undo-failure sequence and provenance. Tests do not require ignored traces and
+   never use post-hoc line mapping as operation identity.
+2. A deterministic extra reload between edit and Undo fails as runtime replacement,
+   including a reload during focus acquisition or on the peer. No retry-to-green.
+3. Planned reload followed by a new edit supports real Undo/Redo, exact Frame/Group
+   Core and backend digests and collaboration. All existing strict assertions remain.
+4. Phase evidence records source revision/fingerprint, expected and observed document,
+   backend sequence, runtime identity and public history depth before/after operations.
+   Unavailable captures remain explicit. Source drift fails validation separately.
+
+Remaining-work inventory is bounded to this plan: this was the one confirmed active
+correction, now locally complete. Native unfinished-argument progress remains an explicitly deferred
+observability limit. Unobserved live adoption/recovery is not counted as a confirmed
+bug. Historical completed sections are evidence, not an accumulating repair queue;
+no total count of undiscovered App defects is asserted.
+
+Local completion evidence:
+- Red: the existing Undo helper ignored the supplied continuity check and resolved
+  after dispatching the shortcut. The formal regression failed before implementation.
+- Green: all 77 execution proof cases passed in the final isolated Inspector source,
+  with zero pending cases. Production typecheck, focused lint (zero errors, one
+  pre-existing console warning), 15 naming checks and update guidance passed.
+- Real browser preservation: six cases passed in 1.7 minutes, including existing
+  unguarded Undo/Redo/Core-load consumers, full Frame and Group lifecycles, and
+  controlled editor reload, peer reload and closed-page failures. No model was called.
+- Five native Playwright execution-continuity attachments are retained under
+  `apps/asyra-design/test-results/e2e-lifetime-final/`. All have identical before/after
+  source identity `790535be1dcd15d42f89c5d1dd946387b29e7c5cde1be177af332f4110e864d4`.
+  Each Frame/Group new-edit Undo/Redo records public history depth 1 -> 0 -> 1,
+  durable sequences 9 -> 10 -> 11 and strict editor/peer/backend document equality.
+  Negative cases retain explicit environment violations and unchanged documents.
+- Self-review corrected successful-attachment retention through native outputPath
+  and attach, moved the fixture to existing E2E fixtures so isolated capture includes
+  it, narrowed capture to the actual E2E inputs, and preserved both original errors
+  and capture failures. The first isolated verification failure was not waived.
+- Browser source remained frozen throughout each run. The later changes only move
+  the proof fixture, declare isolated inputs and format its proof import; browser
+  test and harness bytes are unchanged from the final browser run. Original trace
+  SHA-256 remains unchanged. Test-owned ports were released.
+- Replaced the persistence-only failure attachment with phase evidence and moved
+  shortcut bodies to the guarded E2E owner; existing utilities re-export them. No product
+  save, history, collaboration or drawing owner was edited. Historical runtime depth
+  and exact shortcut handling remain unobserved; later controlled evidence does not
+  rewrite that historical limitation. No model/101, CI or push.
 
 ### Mechanical coverage selection handoff - 2026-10-25
 
