@@ -1,6 +1,6 @@
 {
   "specVersion": "1.0.0",
-  "status": "Original drawings approved; rectangular-rug construction revision approved by the user for commit; no verified production models",
+  "status": "Original drawings and both rug construction revisions approved by the user for commit; no verified production models",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -253,7 +253,110 @@
         "diameter",
         "plain tan backing",
         "exact border width"
-      ]
+      ],
+      "constructionDocument": "ROUND-RUG-SPEC.md",
+      "constructionReview": {
+        "status": "approved by the user for commit",
+        "closedComponentCount": 1,
+        "modelVerified": false,
+        "method": "In-memory analytic construction checks; no production model export",
+        "flatCapRadius": 0.599,
+        "flatCapDiameter": 1.198,
+        "flatBindingWidth": 0.024,
+        "verticalSideZ": [0.001, 0.007],
+        "edgeProfile": "Inward circular profile revolved about Z; equations in constructionDocument"
+      },
+      "appearance": {
+        "replaceableColor": true,
+        "replaceableMaterial": true,
+        "overrideOrder": {
+          "material": ["region", "whole-rug", "preset"],
+          "color": ["region", "whole-rug", "selected material color"]
+        },
+        "colorFallback": "selected material color",
+        "instanceIsolation": true,
+        "regions": [
+          {
+            "id": "top-body",
+            "defaultMaterial": "lavender",
+            "defaultColorSRGB": "#858393",
+            "defaultWeave": true
+          },
+          {
+            "id": "top-binding",
+            "defaultMaterial": "lavender-binding",
+            "defaultColorSRGB": "#706D7E",
+            "defaultWeave": false
+          },
+          {
+            "id": "sides-and-bevels",
+            "defaultMaterial": "lavender-binding",
+            "defaultColorSRGB": "#706D7E",
+            "defaultWeave": false
+          },
+          {
+            "id": "bottom-body",
+            "defaultMaterial": "backing",
+            "defaultColorSRGB": "#B8AD96",
+            "defaultWeave": true
+          },
+          {
+            "id": "bottom-binding",
+            "defaultMaterial": "lavender-binding",
+            "defaultColorSRGB": "#706D7E",
+            "defaultWeave": false
+          }
+        ],
+        "bindingMask": {
+          "radius": 0.575,
+          "boundaryOwner": "binding",
+          "coordinates": "default local XY, inverse-scaled after size changes",
+          "evaluation": "per surface sample on flat caps; all sides and bevels use binding"
+        },
+        "weaveCoordinates": "final resized local XY metres before world placement",
+        "colorApplication": "Apply explicit colour overrides only; otherwise retain selected material colour. Selected material owns its surface recipe."
+      },
+      "sizing": {
+        "mode": "positive finite whole-unit XYZ scaling",
+        "defaultSize": [1.2, 1.2, 0.008],
+        "origin": [0, 0, 0],
+        "applicationCount": 1,
+        "binding": "scales with geometry; not a constant-width offset after unequal XY scaling",
+        "weave": "physical repeat retained in final local metres",
+        "deformation": false
+      },
+      "lod": {
+        "representation": "one closed body with surface-sample region masking; no additional cap cuts",
+        "tiers": [
+          {
+            "id": "lod0",
+            "radialSegments": 192,
+            "bevelSegments": 3,
+            "triangleCount": 3068,
+            "maxTriangles": 3100,
+            "maxSurfaceError": 0.000115
+          },
+          {
+            "id": "lod1",
+            "radialSegments": 96,
+            "bevelSegments": 2,
+            "triangleCount": 1148,
+            "maxTriangles": 1200,
+            "maxSurfaceError": 0.000398
+          },
+          {
+            "id": "lod2",
+            "radialSegments": 48,
+            "bevelSegments": 1,
+            "triangleCount": 380,
+            "maxTriangles": 400,
+            "maxSurfaceError": 0.001578
+          }
+        ],
+        "scaledError": "default bound multiplied by maximum XYZ scale",
+        "switchingOwner": "app",
+        "productionVerified": false
+      }
     },
     {
       "moduleId": "throw-pillow",

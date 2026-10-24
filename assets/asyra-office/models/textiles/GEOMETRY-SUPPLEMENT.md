@@ -14,6 +14,8 @@ Top colour is sage, except the 0.012 m binding band. Its inner boundary is the c
 
 ## Round rug
 
+Use the [round-rug construction specification](ROUND-RUG-SPEC.md) for the exact revolved edge, sampling and overrides. Both flat caps have radius 0.599 m; the 0.575 m inner boundary leaves 24 mm of flat binding, plus 1 mm of radial roundover. The 25 mm nominal binding is a surface region, not added geometry. Whole-unit nonuniform XY scaling intentionally produces an ellipse; the binding scales with it and the weave retains physical repeat size.
+
 A Z-axis cylinder radius 0.60 spans Z=0..0.008. Use 192 circumferential segments. Bevel top and bottom circular edges inward by 0.001 with three segments; do not increase diameter or thickness. The top is flat lavender. Its outer band begins at radius 0.575, so nominal binding width is 0.025. The top bevel and side faces use darker lavender binding. The flat bottom is tan backing inside radius 0.575 and binding outside it; bottom bevel uses binding. No additional concentric rings, woven spiral, scallops or fringes.
 
 The true top and bottom outlines are circles. Elliptical perspective in an oblique drawing does not change geometry. Front and right profiles are identical thin strips. Use geometry for edge curvature, never a dark outline texture to imitate thickness.
