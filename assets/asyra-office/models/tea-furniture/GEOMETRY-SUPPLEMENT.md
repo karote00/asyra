@@ -6,13 +6,23 @@ Metres, +Z up, -Y front; X/Y/Z dimensions. Origins are ground-level footprint ce
 
 ## Round tea table
 
-Top is a filled Z-axis cylinder radius 0.34, Z=0.545..0.580, with 128 radial segments. Bevel both circular edges by 0.006 with four segments. Top and underside are closed wood faces. No extra ring, inset disc or central hole.
+The [round tea table construction contract](ROUND-TEA-TABLE-SPEC.md) owns the
+revised connections, exact tangent leg profiles, hollow apron union, sizing,
+appearance regions and LOD rules. The tabletop remains radius .34 m,
+Z=0.545..0.580 m, with inward radius .006 m circular roundovers.
 
-The underside apron is a square frame of four rails. Front/back rails: size 0.39 x 0.025 x 0.06, centres (0,+/-0.1825,0.515). Side rails: size 0.025 x 0.34 x 0.06, centres (+/-0.1825,0,0.515). Their ends meet without gaps; bevel 0.002 with three segments. The apron top is flush with the tabletop underside at Z=0.545. Empty space remains between its rails; there is no solid slab filling the frame.
+Rail bottoms stay at .485 m and tops now reach .555 m, embedding 10 mm into
+the tabletop. Side rails are .35 m long, overlapping neighboring rails by 5 mm.
+Union the four rounded rails into one closed hollow frame, retaining their
+separate material regions and removing coplanar duplicate faces. Do not fill
+its central void. The top and four legs remain separate closed components.
 
-For each sign pair sx/sy in +/-1, one tapered leg joins bottom centre (sx*0.22,sy*0.22,0), radius 0.017, to top centre (sx*0.16,sy*0.16,0.545), radius 0.022. End rings stay parallel to the XY plane so the feet contact the floor evenly. This is a sheared frustum, not a rotated cone with an angled floor contact. With t=0..1, interpolate the centre and radius linearly; ring point is C(t)+(R(t)*cos(phi),R(t)*sin(phi),0). Use 48 circumference segments, close both caps and bevel end edges inward by 0.002 with three segments. The concealed leg/apron overlaps are intentional. Exactly four legs, no fifth support or exposed fasteners.
-
-Overall bounds X/Y +/-0.34, Z=0..0.58. This taller tea table is distinct from the low front-lounge coffee table. Do not attach mugs or decor to its geometry.
+Leg XY endpoints remain (+- .22,+- .22) at ground and (+- .16,+- .16) at the top.
+Upper Z is now .555 m for 10 mm embedment; nominal radii remain .017/.022 m.
+Use the exact tangent rim profile before shear, with horizontal end caps and
+.002 m fillets. Do not rotate a cone or infer fillet geometry from a generic
+modifier. Twenty attachment witnesses and all final union checks are specified
+in the construction contract. The overall size remains .68 x .68 x .58 m.
 
 ## Orange tea chair
 

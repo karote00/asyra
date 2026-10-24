@@ -1,13 +1,21 @@
 # Asyra Office - Group 4I - Tea Furniture
 
-Status: **The user approved these drawings and documents for commit. No models, app implementation or model verification.**
+Status: original references are approved for commit; the tea table document revision is approved by the user for commit. No models, app implementation or model verification.
 
-| One unit | Source in the central office | X x Y x Z (m) | Sheet |
-| --- | --- | --- | --- |
-| Round wooden tea table | Rear nook below the clock, beside the glasses-wearing agent | 0.68 x 0.68 x 0.58 | [Table](review/01-round-tea-table-v1.png) |
-| Orange tea chair | Orange chair at that same rear table | 0.44 x 0.46 x 0.65; seat top 0.33 | [Chair](review/02-tea-chair-v1.png) |
+| One unit               | Source in the central office                                | X x Y x Z (m)                     | Sheet                                     |
+| ---------------------- | ----------------------------------------------------------- | --------------------------------- | ----------------------------------------- |
+| Round wooden tea table | Rear nook below the clock, beside the glasses-wearing agent | 0.68 x 0.68 x 0.58                | [Table](review/01-round-tea-table-v1.png) |
+| Orange tea chair       | Orange chair at that same rear table                        | 0.44 x 0.46 x 0.65; seat top 0.33 | [Chair](review/02-tea-chair-v1.png)       |
 
 These are separate from the already documented low coffee table and lounge armchair at the front sofa. Each unit includes its structural supports; no tabletop contents, person, floor or preset furniture arrangement is included. Each sheet contains front, right, back, top and oblique views.
+
+## Current tea table document review
+
+The [round tea table specification](ROUND-TEA-TABLE-SPEC.md) is approved by the user
+for commit. It repairs flush-only structural joints while preserving the tabletop,
+foot locations, overall size and reference images. It defines a hollow unioned
+frame, tangent leg fillets, replaceable regions and unverified LOD targets.
+The orange tea chair remains unchanged. No model has been produced or verified.
 
 ## Handoff
 

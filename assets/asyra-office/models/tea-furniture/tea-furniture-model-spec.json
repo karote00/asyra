@@ -1,6 +1,6 @@
 {
   "specVersion": "1.0.0",
-  "status": "User approved drawings and documents for commit; no model verification",
+  "status": "Original drawings approved; round tea table document revision approved by the user for commit; no model verification",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -51,11 +51,7 @@
       "name": "Round tea table - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/01-round-tea-table-v1.png",
-      "overallSize": [
-        0.68,
-        0.68,
-        0.58
-      ],
+      "overallSize": [0.68, 0.68, 0.58],
       "components": [
         {
           "partId": "top",
@@ -72,22 +68,10 @@
         {
           "partId": "apron-front-back",
           "primitive": "two boxes",
-          "size": [
-            0.39,
-            0.025,
-            0.06
-          ],
+          "size": [0.39, 0.025, 0.07],
           "centres": [
-            [
-              0,
-              -0.1825,
-              0.515
-            ],
-            [
-              0,
-              0.1825,
-              0.515
-            ]
+            [0, -0.1825, 0.52],
+            [0, 0.1825, 0.52]
           ],
           "bevel": 0.002,
           "bevelSegments": 3,
@@ -96,22 +80,10 @@
         {
           "partId": "apron-sides",
           "primitive": "two boxes",
-          "size": [
-            0.025,
-            0.34,
-            0.06
-          ],
+          "size": [0.025, 0.35, 0.07],
           "centres": [
-            [
-              -0.1825,
-              0,
-              0.515
-            ],
-            [
-              0.1825,
-              0,
-              0.515
-            ]
+            [-0.1825, 0, 0.52],
+            [0.1825, 0, 0.52]
           ],
           "bevel": 0.002,
           "bevelSegments": 3,
@@ -121,31 +93,35 @@
           "partId": "legs",
           "primitive": "four sheared conical frusta with horizontal end rings",
           "signPairs": [
-            [
-              -1,
-              -1
-            ],
-            [
-              -1,
-              1
-            ],
-            [
-              1,
-              -1
-            ],
-            [
-              1,
-              1
-            ]
+            [-1, -1],
+            [-1, 1],
+            [1, -1],
+            [1, 1]
           ],
-          "bottomCentreFormula": "(sx*0.22,sy*0.22,0)",
-          "topCentreFormula": "(sx*0.16,sy*0.16,0.545)",
           "bottomRadius": 0.017,
           "topRadius": 0.022,
           "radialSegments": 48,
           "edgeBevel": 0.002,
-          "bevelSegments": 3,
-          "material": "dark-wood"
+          "bevelSegments": 4,
+          "material": "dark-wood",
+          "endCentres": [
+            {
+              "bottom": [-0.22, -0.22, 0],
+              "top": [-0.16, -0.16, 0.555]
+            },
+            {
+              "bottom": [-0.22, 0.22, 0],
+              "top": [-0.16, 0.16, 0.555]
+            },
+            {
+              "bottom": [0.22, -0.22, 0],
+              "top": [0.16, -0.16, 0.555]
+            },
+            {
+              "bottom": [0.22, 0.22, 0],
+              "top": [0.16, 0.16, 0.555]
+            }
+          ]
         }
       ],
       "authoredCompletions": [
@@ -161,47 +137,153 @@
         "chair",
         "floor",
         "metal fasteners"
-      ]
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "ROUND-TEA-TABLE-SPEC.md",
+        "productionRoute": "programmatic-rounded-top-tapered-legs-and-unioned-frame",
+        "logicalPartCount": 9,
+        "closedComponentCount": 6,
+        "apronUnionOrder": [
+          "apron-front-back[0]",
+          "apron-front-back[1]",
+          "apron-sides[0]",
+          "apron-sides[1]"
+        ],
+        "rule": "Union the four rounded rails into one hollow closed frame and remove covered/coincident faces. Keep top and four tapered legs as five other closed components. Preserve nine independently replaceable surface regions and twenty attachment witnesses."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ extents once to the complete default assembly at ground origin; scale joints, profiles and positions together. No independent refit, negative scaling or terrain conformity."
+      },
+      "appearance": {
+        "regions": [
+          {
+            "id": "top",
+            "part": "top",
+            "defaultMaterial": "oak"
+          },
+          {
+            "id": "apron-front-back-0",
+            "part": "apron-front-back",
+            "index": 0,
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "apron-front-back-1",
+            "part": "apron-front-back",
+            "index": 1,
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "apron-sides-0",
+            "part": "apron-sides",
+            "index": 0,
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "apron-sides-1",
+            "part": "apron-sides",
+            "index": 1,
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "legs-0",
+            "part": "legs",
+            "index": 0,
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "legs-1",
+            "part": "legs",
+            "index": 1,
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "legs-2",
+            "part": "legs",
+            "index": 2,
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "legs-3",
+            "part": "legs",
+            "index": 3,
+            "defaultMaterial": "dark-wood"
+          }
+        ],
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "overrideOrder": "Resolve material and colour independently from indexed component to part group to table to preset, then apply colour without changing other properties or instances.",
+        "defaultSurface": "Existing oak grain on top, dark wood frame and legs; replacement materials own mapping after whole-unit sizing."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "topRadialSegments": 128,
+            "legRadialSegments": 48,
+            "rimSegments": 4,
+            "railCornerSegments": 3,
+            "cornerTopology": "normalized-barycentric-grid",
+            "preUnionTriangles": 7024,
+            "maxTriangles": 9000,
+            "maxTopSurfaceError": 0.0003,
+            "maxLegSurfaceError": 0.00015,
+            "maxRailSurfaceError": 0.0003
+          },
+          {
+            "id": "lod1",
+            "topRadialSegments": 64,
+            "legRadialSegments": 32,
+            "rimSegments": 3,
+            "railCornerSegments": 2,
+            "cornerTopology": "normalized-barycentric-grid",
+            "preUnionTriangles": 3440,
+            "maxTriangles": 5000,
+            "maxTopSurfaceError": 0.0007,
+            "maxLegSurfaceError": 0.00035,
+            "maxRailSurfaceError": 0.0005
+          },
+          {
+            "id": "lod2",
+            "topRadialSegments": 32,
+            "legRadialSegments": 16,
+            "rimSegments": 2,
+            "railCornerSegments": 1,
+            "cornerTopology": "normalized-barycentric-grid",
+            "preUnionTriangles": 1328,
+            "maxTriangles": 2500,
+            "maxTopSurfaceError": 0.0025,
+            "maxLegSurfaceError": 0.0008,
+            "maxRailSurfaceError": 0.001
+          }
+        ],
+        "rule": "Closed inscribed primitive meshes, one unioned hollow frame, four flat feet, exact overall bounds, nine material regions and all attachment witnesses. Counts include caps and union-generated faces.",
+        "failurePolicy": "Reject lost joins, filled frame void, open union, error or triangle overflow. No patch geometry or per-LOD normalization."
+      }
     },
     {
       "moduleId": "tea-chair",
       "name": "Tea chair - single unit",
       "unitCount": 1,
       "reviewDrawing": "review/02-tea-chair-v1.png",
-      "nominalOverallSize": [
-        0.44,
-        0.46,
-        0.65
-      ],
+      "nominalOverallSize": [0.44, 0.46, 0.65],
       "nominalBounds": {
-        "min": [
-          -0.22,
-          -0.23,
-          0
-        ],
-        "max": [
-          0.22,
-          0.23,
-          0.65
-        ]
+        "min": [-0.22, -0.23, 0],
+        "max": [0.22, 0.23, 0.65]
       },
       "seatTop": 0.33,
       "components": [
         {
           "partId": "wraparound-shell",
           "primitive": "variable-height elliptical annular sector",
-          "thetaDegrees": [
-            -120,
-            120
-          ],
-          "outerRadiiXY": [
-            0.22,
-            0.23
-          ],
-          "innerRadiiXY": [
-            0.17,
-            0.18
-          ],
+          "thetaDegrees": [-120, 120],
+          "outerRadiiXY": [0.22, 0.23],
+          "innerRadiiXY": [0.17, 0.18],
           "xyFormula": "X=rx*sin(theta); Y=ry*cos(theta)",
           "bottomZ": 0.235,
           "topZFormula": "0.39+0.26*(1-(abs(thetaDegrees)/120)^1.6)",
@@ -215,10 +297,7 @@
           "primitive": "rounded-rectangle extrusion",
           "width": 0.36,
           "depth": 0.35,
-          "centreXY": [
-            0,
-            -0.015
-          ],
+          "centreXY": [0, -0.015],
           "zMin": 0.205,
           "zMax": 0.255,
           "planCornerRadius": 0.07,
@@ -231,10 +310,7 @@
           "primitive": "rounded-rectangle extrusion",
           "width": 0.36,
           "depth": 0.39,
-          "centreXY": [
-            0,
-            -0.035
-          ],
+          "centreXY": [0, -0.035],
           "zMin": 0.255,
           "zMax": 0.33,
           "planCornerRadius": 0.07,
@@ -247,52 +323,20 @@
           "primitive": "four sheared conical frusta with horizontal end rings",
           "endCentres": [
             {
-              "bottom": [
-                -0.175,
-                -0.18,
-                0
-              ],
-              "top": [
-                -0.12,
-                -0.12,
-                0.23
-              ]
+              "bottom": [-0.175, -0.18, 0],
+              "top": [-0.12, -0.12, 0.23]
             },
             {
-              "bottom": [
-                0.175,
-                -0.18,
-                0
-              ],
-              "top": [
-                0.12,
-                -0.12,
-                0.23
-              ]
+              "bottom": [0.175, -0.18, 0],
+              "top": [0.12, -0.12, 0.23]
             },
             {
-              "bottom": [
-                -0.175,
-                0.145,
-                0
-              ],
-              "top": [
-                -0.12,
-                0.105,
-                0.23
-              ]
+              "bottom": [-0.175, 0.145, 0],
+              "top": [-0.12, 0.105, 0.23]
             },
             {
-              "bottom": [
-                0.175,
-                0.145,
-                0
-              ],
-              "top": [
-                0.12,
-                0.105,
-                0.23
-              ]
+              "bottom": [0.175, 0.145, 0],
+              "top": [0.12, 0.105, 0.23]
             }
           ],
           "bottomRadius": 0.014,
