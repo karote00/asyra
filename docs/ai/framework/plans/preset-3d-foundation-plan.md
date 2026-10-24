@@ -4,17 +4,18 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1-9 complete within their bounded contracts. Task 8 activates the
+Status: Tasks 1-10 verification complete within their bounded contracts. Task 8 activates the
 official 3D provider and the approved generic lighting entry; Office uses that
 profile with its original presentation policy. Task 9 adds generic editing and
-restricted assets; stopped for inspection before Task 10. Task 7 includes the approved minimum activity scheduler correction.
+restricted assets; Task 10 verifies the integrated result and stops for user inspection. Task 7 includes the approved minimum activity scheduler correction.
 Task 1 produced the reviewed specification and full
 architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
 shared incremental projection/bounds with direct App preservation checks.
 Tasks 4-5 add App-directed shared Camera controls and typed spatial queries with
 shared picking. Task 6 adds opt-in mesh definitions, generalized instance/pose
 presentation, explicit lighting/shadows and physical-pixel detail controls.
-Task 10 remains unexecuted; whole-plan closeout remains pending.
+Task 10 records the final same-source review below. Formal archival follows the
+requested user inspection checkpoint.
 
 Planning base: local `main` at
 `eaddcdba2c1705dca6646a730cd87818ae214d56`.
@@ -1152,6 +1153,106 @@ passes on the integrated source. Review generated documentation and package
 entry/dependency boundaries. Report remaining unsupported capabilities honestly.
 Close the plan only through the existing closeout workflow after review; profile
 activation, a green generic CI job or one App's passing suite is insufficient.
+
+### Task 10 execution contract - 2026-10-24
+
+Base: `e952b9589408e81a758a5be9a9880f82df6affef`, with Tasks 1-9 integrated.
+Work remains in the original `codex/preset-3d-foundation-plan` worktree.
+Owner: `closeout` and flow-level `integration`; specification: verification
+cases and definition of done; failure owner: `closeout`.
+Inputs are the reviewed architecture, actual integrated source, owner evidence
+and the bounded final diff. Output is current same-source C01-C12 verification
+and an explicit inspection checkpoint. No missing, failed or stale evidence is
+bypassed. Existing tests, supervised profiles, real browser output and public
+entry/dependency/document checks contribute; new functionality, domain policies,
+cache, release, push and merge do not. Mutation is limited to this plan, its
+specification, PLANS index and current Flow document. Formal archival and decision
+history remain the subsequent review-derived closeout operation.
+
+Discovery is fixed to the existing C01-C12 test owners, Tasks 1-9 direct consumers,
+public exports and the exact gates below. This is not a new repository audit.
+No production/test repair is authorized by this closeout step. A failure needing
+another owner stops that affected claim rather than widening its allowlist.
+
+Gates: full Preset/Core/Render/Render Engine/Pixi tests and builds; Office full
+suite; Sim engine/render/viewport/storage/init/import suites and original-part
+preservation; FieldScope engine/camera/projection/bootstrap/scene-demand tests
+and six source/runtime profile files; all three App types/production builds;
+42 real WebGL cases and the actual Sim module Worker case; naming, dependency,
+consumer/placement, documentation and ESLint checks. Screenshots are inspected
+at ordinary and detail views after the formal data/history/source oracles.
+No solver or walking-kinematics algorithm is changed or newly claimed.
+
+### Task 10 result and inspection checkpoint
+
+Verified production source: `e952b9589408e81a758a5be9a9880f82df6affef`.
+No runtime, test, package, dependency or saved identity changed during Task 10.
+The integrated implementation preserves App camera/content/validation policy,
+one canonical state/history path and optional tree presentation. The final
+review covered C01-C12 owner handoffs, rejection/retirement, public subpath
+boundaries and direct App consumers; no new in-scope defect was found.
+
+Verification on that source:
+
+- Preset 352, Core 272, Render 273, Render Engine 11 and Pixi 49 tests pass;
+  all five package builds pass. Existing composition and import tests prove
+  2D/CUSTOM behavior, unsupported-default rejection before mutation, deferred
+  spatial loading, simultaneous runtime isolation and startup retirement.
+  Shared-channel tests cover ordinary canonical/replay delivery without echo.
+- Office 24, Sim 299 (39 files), FieldScope 60 (9 files) and FieldScope source/
+  runtime profiles 61 (6 files) pass: 1,401 product unit/integration/profile cases
+  in total, excluding supervisor and repository contract checks. Sim and
+  FieldScope supervisors and their process/resource guards remain enabled.
+  All three App typechecks and production builds pass. Existing large-chunk
+  build warnings are not a runtime correctness or performance claim.
+- All 42 real WebGL cases pass: Office 2; Sim navigation/workcell 12, original
+  admission/playback 5, source import/transform/history/reopen 5; FieldScope
+  greenhouse/crops/drains 10 and camera/history/responsiveness 8. The separate
+  actual Sim module Worker case passes without Core/GPU/external requests.
+- Naming, dependency validation, dependency-consumer/test-placement contracts,
+  public README/generated-doc checks and public link/API validation pass.
+  The monolithic ESLint command exhausted the default and then 8 GiB Node heap.
+  The same repository configuration was run against all 3,093 tracked JS/TS
+  files in bounded batches, without suppressing rules or findings. This is a
+  partitioned check, not a claim that the monolithic command succeeded.
+- The first FieldScope selection used a nonexistent surface-texture path;
+  its supervisor rejected it before execution. The corrected nine-file scope
+  passes. No product change, guard bypass or discarded regression resulted.
+
+Real browser metadata: Office `http://127.0.0.1:5194` and Sim
+`http://127.0.0.1:3020` use Chrome SwiftShader at DPR 1, 1440x960 desktop;
+FieldScope `http://127.0.0.1:5178` uses Chrome Metal at DPR 1, 1440x1100.
+Narrow/touch scenarios use their permanent spec viewports. Each origin comes
+from its existing App .env. Production previews serve the tested builds; only
+the Worker module case uses the ordinary Vite dev route. Browser scripts are
+unchanged, with temporary files retained inside the project.
+
+Screenshot review passed for Office desktop/narrow layout, FieldScope 10000%
+planted tomato detail, continuous clip wire and touch Camera, and Sim original
+part preview plus selected rotated/scaled detail after reopen. Test-authored
+camera states and source/pose/history assertions remain the semantic oracles;
+these screenshots do not establish hardware performance. Artifacts are in
+Office `test-results/office-{desktop,narrow}.png`, Sim
+`.artifacts/task10-{navigation,playback,sources,worker}` and FieldScope
+`.artifacts/task10-{model,interaction}`. Logs are repository-local
+`.artifacts/preset-3d-task10/*.log`.
+
+Reproduction uses existing package `test:local`/build scripts. Sim's supervised
+selection is `src/engine src/render-app src/ui/viewport src/storage src/init
+src/domain/__tests__/original-parts.test.ts src/ui/imports`. FieldScope uses the
+nine Task 9 engine/runtime/render files and six explicit profile files:
+`crop-models.source`, `crop-partitions.source`, `site-geometry.source`,
+`scene-demand.source`, `bootstrap` and `scene-demand-workspace`.
+The browser spec selections are unchanged from Task 9. Local CLI entrypoints
+run the declared tools; no installation or tool upgrade is required.
+
+Unsupported scope remains explicit: HYBRID, orthographic world cameras,
+multiview, full glTF/skins/animation, physics/pathfinding and new domain tools.
+The final Flow evidence binds this tested production commit and the reviewed
+contract; agent review is not user approval. This checkpoint leaves the active
+plan available for the requested inspection. The later review-derived archival
+operation must move this record and append decision history through the existing
+closeout workflow. No release, push, merge or publication is authorized here.
 
 ## Required product cases and verification
 

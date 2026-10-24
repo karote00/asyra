@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "preset-3d-foundation",
-  "revision": 247,
+  "revision": 298,
   "definition": {
     "title": "Preset 3D foundation and App migration",
     "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
@@ -3392,12 +3392,15 @@
         "kind": "manual",
         "status": "accepted",
         "actor": "codex-coordinator-self-review",
-        "binding": "99dfd35e4438b9e9aac2563a477dca627fe031faa6f8e63514ec06548e8d156f",
-        "at": "2026-10-24T08:56:31.333Z",
-        "summary": "Task 9 design and direct consumer handoffs reviewed.",
+        "binding": "f0caa696203c413a78c43c4b23bc6f948b864322d6b5e14e283dce702fab3c25",
+        "at": "2026-10-24T09:10:08.368Z",
+        "summary": "Task 10 bounded agent review accepted; user inspection remains separate.",
         "details": [
-          "Task 9 C09/C10, generic pose/plane/grid semantics and restricted-glb-v0 extraction reviewed against exact owner boundaries.",
-          "User approved the existing Sim placement Feature/preview as the rotation/scale consumer. App policy, canonical transaction and archive ownership remain unchanged; Task 10 is not selected."
+          "Agent self-review of C01-C12, owner handoffs, unchanged generic mechanisms and App policy completed. No architecture or runtime changes in Task 10. User inspection and formal plan archival remain separate.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/.",
+          "Inspected actual Office desktop/narrow, FieldScope tomato detail/clip wire/touch Camera and Sim transformed preview/reopened selected detail. No hardware performance claim."
         ]
       },
       {
@@ -3406,15 +3409,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "admit-editing-assets-preservation",
-        "binding": "8129233548ab6323146151d02cc926b6d4283076306861f6ebe3999d30aa8689",
-        "at": "2026-10-24T08:56:31.350Z",
-        "summary": "Task 9 admit behavior and preservation verified.",
+        "binding": "f049150df982de96988a8008699330887bb5aacdd8743ad1e92cb5a9bb985efd",
+        "at": "2026-10-24T09:10:08.404Z",
+        "summary": "Task 10 admit integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "admit-foundation-integrated"
       },
       {
         "nodeId": "engine",
@@ -3422,15 +3426,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "engine-editing-assets-preservation",
-        "binding": "b02cadcea190749a5472e9431266dd409f35305d121a654f8c2cf2080183bfdd",
-        "at": "2026-10-24T08:56:31.371Z",
-        "summary": "Task 9 engine behavior and preservation verified.",
+        "binding": "a0900ee3c979eb95ddae4002607e35c5aa3ef244fa056ffd9d5b441e0fad6334",
+        "at": "2026-10-24T09:10:08.443Z",
+        "summary": "Task 10 engine integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "engine-foundation-integrated"
       },
       {
         "nodeId": "project",
@@ -3438,15 +3443,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "project-editing-assets-preservation",
-        "binding": "000e5347fc6bec7d3d93791bc44e65e63971f0789af0ef92ce89cfdac5fc5c5a",
-        "at": "2026-10-24T08:56:31.434Z",
-        "summary": "Task 9 project behavior and preservation verified.",
+        "binding": "c287342d30e6ad7009f8f1712684924f07a2f2114c912d74545dca1f69a38c92",
+        "at": "2026-10-24T09:10:08.420Z",
+        "summary": "Task 10 project integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "project-projection-integrated"
       },
       {
         "nodeId": "render",
@@ -3454,15 +3460,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "render-editing-assets-preservation",
-        "binding": "8412eda56ca5bf35149b40c5f012d85a6bed80cbca14ec06ece896a2232889b3",
-        "at": "2026-10-24T08:56:31.465Z",
-        "summary": "Task 9 render behavior and preservation verified.",
+        "binding": "6d4006990d999aab098a7fcd34097f7aaf9508d58e7826f7ac7714f054c679d8",
+        "at": "2026-10-24T09:10:08.524Z",
+        "summary": "Task 10 render integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "render-projection-integrated"
       },
       {
         "nodeId": "camera",
@@ -3470,15 +3477,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "camera-editing-assets-preservation",
-        "binding": "77c6f886bf0ef5ca04d3f69e03c3a8abd02c7532c361542731934d156dc17619",
-        "at": "2026-10-24T08:56:31.441Z",
-        "summary": "Task 9 camera behavior and preservation verified.",
+        "binding": "673fd8a690234c70fa4e5344b83784690c58fc2bf6c15c1ea110a32b5c5a237e",
+        "at": "2026-10-24T09:10:08.428Z",
+        "summary": "Task 10 camera integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "camera-runtime-integrated"
       },
       {
         "nodeId": "queries",
@@ -3486,15 +3494,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "queries-editing-assets-preservation",
-        "binding": "0256000aeb4060a2557236993cfada9ed6ad6e13244a10000d8c2ce0ca34f7fe",
-        "at": "2026-10-24T08:56:31.475Z",
-        "summary": "Task 9 queries behavior and preservation verified.",
+        "binding": "b4fbfc04a3e2fb9c35042ecfd02f1d6b95c3aa9e04865694dd770f278302091c",
+        "at": "2026-10-24T09:10:08.532Z",
+        "summary": "Task 10 queries integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "queries-runtime-integrated"
       },
       {
         "nodeId": "interaction",
@@ -3502,15 +3511,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "interaction-editing-assets-preservation",
-        "binding": "8c7fbac7bddced3fb168b6e775587f07a8f4e6b83801821f993a1bba83449f57",
-        "at": "2026-10-24T08:56:31.483Z",
-        "summary": "Task 9 interaction behavior and preservation verified.",
+        "binding": "fcd3214cde331edffebe353cdf72865d9dd554a82a0386907df14b9450962c09",
+        "at": "2026-10-24T09:10:08.574Z",
+        "summary": "Task 10 interaction integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "interaction-runtime-integrated"
       },
       {
         "nodeId": "engine",
@@ -3518,15 +3528,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "engine-editing-assets-preservation",
-        "binding": "b02cadcea190749a5472e9431266dd409f35305d121a654f8c2cf2080183bfdd",
-        "at": "2026-10-24T08:56:31.379Z",
-        "summary": "Task 9 engine behavior and preservation verified.",
+        "binding": "a0900ee3c979eb95ddae4002607e35c5aa3ef244fa056ffd9d5b441e0fad6334",
+        "at": "2026-10-24T09:10:08.451Z",
+        "summary": "Task 10 engine integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "engine-content-integrated"
       },
       {
         "nodeId": "compose",
@@ -3534,15 +3545,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "compose-editing-assets-preservation",
-        "binding": "efc15e28b35c56689a0eff6274d8e11ce35c56045cee121bd09e8dbdc48e30bb",
-        "at": "2026-10-24T08:56:31.395Z",
-        "summary": "Task 9 compose behavior and preservation verified.",
+        "binding": "18552d451c1e5a7da884caec7d104c9ab8d358106dac83fe1280d60a33af8558",
+        "at": "2026-10-24T09:10:08.501Z",
+        "summary": "Task 10 compose integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "compose-content-integrated"
       },
       {
         "nodeId": "fieldscope",
@@ -3550,15 +3562,17 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "fieldscope-editing-assets-preservation",
-        "binding": "c8879cf0cc393f023d105737511efa1eed5468f46486715d4ccdeb84ae75a12f",
-        "at": "2026-10-24T08:56:31.514Z",
-        "summary": "Task 9 fieldscope behavior and preservation verified.",
+        "binding": "ec5414de3c5e8c538428e76a4eceb7ebc4bbfa05db75f6ce520a3361028371d8",
+        "at": "2026-10-24T09:10:08.605Z",
+        "summary": "Task 10 fieldscope integrated behavior verified on the tested source.",
         "details": [
-          "60 focused cases / 9 files plus 8 supervisor guards and production build pass.",
-          "18 real WebGL cases pass: model 10, camera/history/responsiveness 8. Continuous wire, scene/history and camera screenshots inspected. No FieldScope production changes."
-        ]
+          "60 owner tests and 61 supervised source/runtime profile tests passed; 18 real Metal WebGL cases passed. Camera, original source geometry, dense instances, update isolation and rendered history preserved.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "fieldscope-runtime-integrated"
       },
       {
         "nodeId": "sim",
@@ -3566,16 +3580,17 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "sim-editing-assets-preservation",
-        "binding": "5e2d91faa16ff3f833485a97184f3158d35f550eac52ff9edadfd2cd85ff933b",
-        "at": "2026-10-24T08:56:31.523Z",
-        "summary": "Task 9 sim behavior and preservation verified.",
+        "binding": "92a37ef071f65a259b58cc83a474c1e5cbfbcc014519d958175de29873371973",
+        "at": "2026-10-24T09:10:08.614Z",
+        "summary": "Task 10 sim integrated behavior verified on the tested source.",
         "details": [
-          "92 focused tests / 12 files and 13 supervisor guards pass; production build passes.",
-          "22 WebGL cases pass: navigation/workcell 12, original-part/playback 5, source import/history/reopen 5. Separate real asset Worker case also passes.",
-          "Shared absolute transform and restricted decoder preserve original bytes/digests, source bindings and App rigid/solid/analysis semantics. Final transformed preview/reopen/detail screenshots inspected."
-        ]
+          "299 supervised owner tests passed; 22 real SwiftShader WebGL cases and one actual module Worker case passed. Preview/accept/Undo/Redo/reopen preserves original bytes and App placement policy.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "sim-runtime-integrated"
       },
       {
         "nodeId": "office",
@@ -3583,15 +3598,17 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "office-editing-assets-preservation",
-        "binding": "1998d0b3ed48b0e9a28de9ad194a3e4e9c306c01df141da3bc37fe04ed5b34a7",
-        "at": "2026-10-24T08:56:31.538Z",
-        "summary": "Task 9 office behavior and preservation verified.",
+        "binding": "25a15519243331dd84d5411a188fe9c5a07eb014013bc9b729e350f131c021c9",
+        "at": "2026-10-24T09:10:08.623Z",
+        "summary": "Task 10 office integrated behavior verified on the tested source.",
         "details": [
-          "24 tests / 6 files and production build pass after final no-op metadata regression correction.",
-          "2 final ordinary official-3D WebGL cases pass; desktop/narrow screenshots inspected. Shared movement/resolve keeps room validation, revision, transaction, history, Camera and appearance App-owned."
-        ]
+          "24 tests and two real SwiftShader WebGL cases passed. Official provider lighting, half-unit edits, stale/no-op/rejected proposals, save acknowledgement, history and activity remain intact.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "office-runtime-integrated"
       },
       {
         "nodeId": "activity",
@@ -3599,15 +3616,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "activity-editing-assets-preservation",
-        "binding": "ba553748075e84d0c7470822f5bfc00e8308dbcaf334972ab096b2a38a7d975f",
-        "at": "2026-10-24T08:56:31.531Z",
-        "summary": "Task 9 activity behavior and preservation verified.",
+        "binding": "0d4860cb798ec0b892a737c5d826b73393b6caa5f28f117c124b78908e09715c",
+        "at": "2026-10-24T09:10:08.483Z",
+        "summary": "Task 10 activity integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "activity-runtime-integrated"
       },
       {
         "nodeId": "admit",
@@ -3615,15 +3633,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "admit-editing-assets-preservation",
-        "binding": "8129233548ab6323146151d02cc926b6d4283076306861f6ebe3999d30aa8689",
-        "at": "2026-10-24T08:56:31.342Z",
-        "summary": "Task 9 admit behavior and preservation verified.",
+        "binding": "f049150df982de96988a8008699330887bb5aacdd8743ad1e92cb5a9bb985efd",
+        "at": "2026-10-24T09:10:08.394Z",
+        "summary": "Task 10 admit integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "admit-runtime-integrated"
       },
       {
         "nodeId": "engine",
@@ -3631,15 +3650,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "engine-editing-assets-preservation",
-        "binding": "b02cadcea190749a5472e9431266dd409f35305d121a654f8c2cf2080183bfdd",
-        "at": "2026-10-24T08:56:31.362Z",
-        "summary": "Task 9 engine behavior and preservation verified.",
+        "binding": "a0900ee3c979eb95ddae4002607e35c5aa3ef244fa056ffd9d5b441e0fad6334",
+        "at": "2026-10-24T09:10:08.436Z",
+        "summary": "Task 10 engine integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "engine-runtime-integrated"
       },
       {
         "nodeId": "compose",
@@ -3647,15 +3667,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "compose-editing-assets-preservation",
-        "binding": "efc15e28b35c56689a0eff6274d8e11ce35c56045cee121bd09e8dbdc48e30bb",
-        "at": "2026-10-24T08:56:31.387Z",
-        "summary": "Task 9 compose behavior and preservation verified.",
+        "binding": "18552d451c1e5a7da884caec7d104c9ab8d358106dac83fe1280d60a33af8558",
+        "at": "2026-10-24T09:10:08.492Z",
+        "summary": "Task 10 compose integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "compose-runtime-integrated"
       },
       {
         "nodeId": "startup",
@@ -3663,15 +3684,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "startup-editing-assets-preservation",
-        "binding": "83d518ec83d6c0767abfbb2b4b344282f93ae69e4c2a994908e2d8de3d36af7b",
-        "at": "2026-10-24T08:56:31.404Z",
-        "summary": "Task 9 startup behavior and preservation verified.",
+        "binding": "67d896b9e571442f83aaac0e86a48b8262d58d5137d6c3b3f83a966f6e65a37a",
+        "at": "2026-10-24T09:10:08.508Z",
+        "summary": "Task 10 startup integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "startup-runtime-integrated"
       },
       {
         "nodeId": "canonical",
@@ -3679,15 +3701,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "canonical-editing-assets-preservation",
-        "binding": "1518446e18f0c16a0a9063d82fee2f9a39d15e3d1de81196acd729ead45a378c",
-        "at": "2026-10-24T08:56:31.411Z",
-        "summary": "Task 9 canonical behavior and preservation verified.",
+        "binding": "35aa34a5c42e6101e749249ebac18742c28dd622152e74fe02414aaabba710b1",
+        "at": "2026-10-24T09:10:08.378Z",
+        "summary": "Task 10 canonical integrated behavior verified on the tested source.",
         "details": [
-          "Core 272 and Office 24 pass: existing schema/transaction/replay owners retained, accepted edit one Undo, rejected/stale/cancelled preview no write, finite no-op preserves all admitted fields.",
-          "Sim original-part transform acceptance/Undo/Redo/reopen and FieldScope rendered history pass on final source."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "canonical-runtime-integrated"
       },
       {
         "nodeId": "domain",
@@ -3695,15 +3718,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "domain-editing-assets-preservation",
-        "binding": "3303fd2033bf71727ce314dc17172b51e48447992ae6f6978fca3426aa159cd9",
-        "at": "2026-10-24T08:56:31.419Z",
-        "summary": "Task 9 domain behavior and preservation verified.",
+        "binding": "27e3e4b00942cf7013cb96f31074cb8fdd05ef2c7482f01ff32d3ce91db985e8",
+        "at": "2026-10-24T09:10:08.386Z",
+        "summary": "Task 10 domain integrated behavior verified on the tested source.",
         "details": [
-          "Sim 92 and FieldScope 60 focused tests plus all three real App suites preserve domain output and original source meaning.",
-          "Only public decoder import paths changed in existing domain/projection consumers. No robot/crop/room generation, analysis or Camera policy moved into Preset."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "domain-runtime-integrated"
       },
       {
         "nodeId": "project",
@@ -3711,15 +3735,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "project-editing-assets-preservation",
-        "binding": "000e5347fc6bec7d3d93791bc44e65e63971f0789af0ef92ce89cfdac5fc5c5a",
-        "at": "2026-10-24T08:56:31.427Z",
-        "summary": "Task 9 project behavior and preservation verified.",
+        "binding": "c287342d30e6ad7009f8f1712684924f07a2f2114c912d74545dca1f69a38c92",
+        "at": "2026-10-24T09:10:08.412Z",
+        "summary": "Task 10 project integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "project-runtime-integrated"
       },
       {
         "nodeId": "render",
@@ -3727,15 +3752,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "render-editing-assets-preservation",
-        "binding": "8412eda56ca5bf35149b40c5f012d85a6bed80cbca14ec06ece896a2232889b3",
-        "at": "2026-10-24T08:56:31.449Z",
-        "summary": "Task 9 render behavior and preservation verified.",
+        "binding": "6d4006990d999aab098a7fcd34097f7aaf9508d58e7826f7ac7714f054c679d8",
+        "at": "2026-10-24T09:10:08.516Z",
+        "summary": "Task 10 render integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "render-runtime-integrated"
       },
       {
         "nodeId": "retire",
@@ -3743,15 +3769,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "retire-editing-assets-preservation",
-        "binding": "5c0a326245c6a959f40d7da17293b9c003679970a2a1590f8113619574ad03f0",
-        "at": "2026-10-24T08:56:31.505Z",
-        "summary": "Task 9 retire behavior and preservation verified.",
+        "binding": "b38b8d30341df986415069aa98b475cedc65ff5b4856e2325c6e6d803093c9e4",
+        "at": "2026-10-24T09:10:08.595Z",
+        "summary": "Task 10 retire integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "retire-runtime-integrated"
       },
       {
         "nodeId": "activate",
@@ -3759,15 +3786,16 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "activate-editing-assets-preservation",
-        "binding": "705c46dfe5e275a3e5a20e249d1fe2cce518e728f17e3612cfe52d6107580021",
-        "at": "2026-10-24T08:56:31.546Z",
-        "summary": "Task 9 activate behavior and preservation verified.",
+        "binding": "98aa3371598ae488aff712ab96424e6e3214e229592a563a404c77426434e271",
+        "at": "2026-10-24T09:10:08.636Z",
+        "summary": "Task 10 activate integrated behavior verified on the tested source.",
         "details": [
-          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
-          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
-        ]
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "activate-runtime-integrated"
       },
       {
         "nodeId": "edit",
@@ -3775,16 +3803,17 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "edit-editing-assets-preservation",
-        "binding": "13942209226cf2e8afed30a0cc644c79f5bfff64154139aa1fc1e6540d25d576",
-        "at": "2026-10-24T08:56:31.491Z",
-        "summary": "Task 9 edit behavior and preservation verified.",
+        "binding": "887db0664c901c7eb5176b4a1e5bcbecdb4afa1ec9017ad9de9a2273f4a1687a",
+        "at": "2026-10-24T09:10:08.586Z",
+        "summary": "Task 10 edit integrated behavior verified on the tested source.",
         "details": [
-          "12 shared editing cases pass: translate/plane/grid, explicit local/world rotation, positive scale/rigid rejection, immutable preview, stale/deleted target and neutral App constraint/no-op resolution.",
-          "Office 24 tests cover discarded preview without publication/history, one accepted commit, stale proposal, Undo/Redo/save and complete-value no-op metadata preservation. Sim 92 focused tests include rotation/scale acceptance and invalid scale before retention.",
-          "42 final real WebGL cases pass, including Sim transformed preview/accept/Undo/Redo/reopen and Office ordinary layout controls. App-owned sessions and transactions remain authoritative."
-        ]
+          "12 generic editing cases, Office transaction/revision cases and Sim original placement Feature/preview cases passed. Real transformed source preview/accept/replay/reopen passed; no second transaction/history owner.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "edit-runtime-integrated"
       },
       {
         "nodeId": "assets",
@@ -3792,15 +3821,66 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task9-local-2026-10-24",
-        "caseId": "assets-editing-assets-preservation",
-        "binding": "680059bc61f206f557a05f30d9d279e3034bfc7f1854abf6340ec1952a0e5e7d",
-        "at": "2026-10-24T08:56:31.498Z",
-        "summary": "Task 9 assets behavior and preservation verified.",
+        "binding": "f30e5e54023c1f59beb6a59660a146c2723ead3bd1bf0e409656b6d6c43ad446",
+        "at": "2026-10-24T09:10:08.467Z",
+        "summary": "Task 10 assets integrated behavior verified on the tested source.",
         "details": [
-          "Optional public entry 7 new cases pass; existing Sim decoder (16), Worker (7), archive/storage and UI cases retain all restricted profile limits and exact original bytes.",
-          "One real browser Worker case passes using the App bundled script and shared factory-injected request owner. Five final original-source browser cases pass, including cancelled/oversized/invalid sources and reopened transformed source.",
-          "No network, renderer, canonical write or App storage policy entered the shared decoder. Removed duplicate parser owners; public imports resolve through the package export."
+          "Preset asset contracts and existing Sim restricted decoder/Worker/archive tests passed, plus actual Worker browser case and five real source/import/history cases. Restricted format and source byte identity preserved.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "assets-runtime-integrated"
+      },
+      {
+        "nodeId": "closeout",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "931db40aab1545ef0acaf6633be136598f46c131129c0be5d082fe8ad9fe928b",
+        "at": "2026-10-24T09:10:08.656Z",
+        "summary": "Task 10 closeout integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "closeout-runtime-integrated"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "integrated",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "b33a5b19a86bcea2545c671f8cd6b86adda994168430303e37c61416d7ecddbf",
+        "at": "2026-10-24T09:10:08.673Z",
+        "summary": "Task 10 integration integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "integration-integrated-integrated"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "review",
+        "kind": "manual",
+        "status": "accepted",
+        "actor": "codex-coordinator-self-review",
+        "binding": "b05925e44c4f75ac0a9a3088f9eb1eb3fbb295ae4a79c845372d2dbe56a1ba24",
+        "at": "2026-10-24T09:10:08.683Z",
+        "summary": "Task 10 bounded agent review accepted; user inspection remains separate.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/.",
+          "Inspected actual Office desktop/narrow, FieldScope tomato detail/clip wire/touch Camera and Sim transformed preview/reopened selected detail. No hardware performance claim."
         ]
       }
     ],
@@ -3870,83 +3950,91 @@
     "sources": [
       {
         "nodeId": "design",
-        "revision": "task9-reviewed:70322877a3e6329008a7d581d1940ee598eb3a29790be9a7319f5343452c34a2"
+        "revision": "task10-reviewed:f2a88238638b7bc58087bbd74aeb0fa820c61b5c0f27f0f35ddd12d4616bb4a4"
       },
       {
         "nodeId": "admit",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "engine",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "project",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "render",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "camera",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "queries",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "interaction",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "compose",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "fieldscope",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "sim",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "office",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "activity",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "startup",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "canonical",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "domain",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "retire",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "activate",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "edit",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       },
       {
         "nodeId": "assets",
-        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "closeout",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "integration",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
       }
     ],
     "warnings": []

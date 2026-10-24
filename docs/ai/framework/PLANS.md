@@ -61,15 +61,12 @@ None.
 ## Preset 3D Foundation
 
 - [Preset 3D Foundation and App Migration](plans/preset-3d-foundation-plan.md)
-  - Tasks 1-9 complete: reviewed design, pure admission, engine resources, shared
-    projection/bounds, App-directed Camera controls, spatial queries/picking and
-    optional content/presentation and three-App integration verified. All 38
-    real-WebGL cases pass, including the approved Office activity scheduler
-    correction. Official 3D and generic lighting settings are enabled; Office
-    preserves its presentation through the official profile. All 38 WebGL cases
-    also pass on Task 8 source. Task 9 adds shared transform editing and restricted
-    GLB decoding with 42 WebGL cases and one real Worker case passing. Stopped
-    before Task 10; whole-plan closeout remains pending.
+  - Tasks 1-10 verification complete on one integrated source: shared spatial
+    mechanisms, three-App migrations, official 3D, generic editing and restricted
+    assets. Final gates pass: 1,401 product unit/integration/profile tests,
+    42 real WebGL cases and one real Worker case, package/App builds and bounded
+    quality checks. Agent visual review is complete; stopped for user inspection
+    before formal plan archival. No release or remote operation is implied.
   - One canonical 3D architecture for Sim, FieldScope and Office. Scene Tree
     presentation and camera angles/modes remain App-owned; shared controls and
     projection mechanisms are optional Preset foundations.

@@ -2,16 +2,16 @@
 
 ## Status and authority
 
-Target contract for [Preset 3D Foundation and App Migration](../plans/preset-3d-foundation-plan.md),
-Task 1. Reviewed against planning source
-`47302dcea86e525a23500f6344eb859631264952`. APIs and entries described as target
-surfaces below are not claims about currently exported capabilities.
+Implemented contract for [Preset 3D Foundation and App Migration](../plans/preset-3d-foundation-plan.md).
+Tasks 1-9 implement the reviewed boundaries; Task 10 verifies the integrated
+source `e952b9589408e81a758a5be9a9880f82df6affef` and records the user
+inspection checkpoint. The optional public boundaries below are implemented;
+unsupported behavior remains explicitly excluded.
 
 This specification owns behavior. The associated
 [flow document](../plans/preset-3d-foundation/preset-3d-foundation.flow.json)
 owns architecture, implementation boundaries, task dependencies and current
-evidence. Runtime criteria remain unverified until their implementation tests
-run. No production change is part of Task 1.
+source-bound evidence. Structural admission alone is not runtime proof.
 
 ## Single architecture and App policy
 
@@ -105,9 +105,9 @@ Catalog inspection and pure contract imports load no concrete renderer.
 | `@asyra/preset/spatial-assets`   | Restricted GLB decoding and detached asset output                                         | No rendering, network, canonical writes or storage policy        |
 | Core/Render facade               | Spatial queries by registered projection identity                                         | No public raw engine/SDK access or generic unchecked command bag |
 
-These subpaths are proposed additions/refinement of existing exports, not new
-packages/dependencies. Migrate current consumers together and remove superseded
-re-exports; this plan does not add legacy compatibility aliases. Existing
+These subpaths refine existing exports without new packages or dependencies.
+Current consumers use the public entries and superseded implementations/re-exports
+are removed; this plan does not add legacy compatibility aliases. Existing
 `spatialV0` data and App persisted/wire identifiers are not renamed merely to
 move code. Neutral capability constants have one Render Engine owner; existing
 App restrictions become explicit App admission, not a shared capability named
