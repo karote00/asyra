@@ -49,9 +49,15 @@ Use this skill when requests include:
 - Move/rename detailed plan to `plans/completed/`.
 - Ensure active plans list no longer points to non-completed location.
 - Keep completion date + final decision + implementation summary + exit criteria.
-- Preserve the reviewed plan text and append the concise closeout section from
+- Preserve the reviewed plan text, except mechanical link relocation, and append the concise closeout section from
   `task-context.md`, including the reviewed source SHA. Implementation or
   acceptance changes after that source require another review before closeout.
+- Search the repository for the old path and relative links resolving to it.
+  Update every maintained reference, including specifications, other plans,
+  Flow documents and tooling, in the same closeout. Rebase links inside the
+  moved plan to preserve their destinations and anchors. These necessary
+  path-only changes are already authorized by closeout; do not ask separately.
+  A matching reference never permits unrelated content or behavior changes.
 
 3. Append decision history entry:
 
@@ -78,6 +84,10 @@ Use this skill when requests include:
 - Completed plan file exists in `plans/completed/` and includes completion metadata.
 - Decision log has a new append-only entry with correct date and plan link.
 - File paths in references resolve.
+- No maintained reference retains the old plan destination. Historical source
+  identifiers and append-only decision history remain intact. Run the formal
+  closeout tests and affected Flow/reference validators; verify path changes
+  do not alter acceptance criteria or flow semantics.
 - Closeout creates no Changeset, version bump, tag, or publication side effect.
 
 ## Required Output Format

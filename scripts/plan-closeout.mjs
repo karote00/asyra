@@ -18,6 +18,55 @@ export function closeoutPaths(planPath) {
   }
 }
 
+// Preserve destinations when a document moves, and replace only exact local
+// references to the archived plan. External URLs and lookalike paths stay put.
+export function rewritePlanReferences(content, fromFile, toFile, paths) {
+  const relocate = (target) => {
+    if (!target || /^(?:[a-z][a-z\d+.-]*:|\/\/|#)/iu.test(target)) return target
+    const boundary = target.search(/[?#]/u)
+    const file = boundary < 0 ? target : target.slice(0, boundary)
+    const suffix = boundary < 0 ? '' : target.slice(boundary)
+    const rooted = file.startsWith('/') || file.startsWith('docs/')
+    const resolved = rooted
+      ? file.replace(/^\//u, '')
+      : path.posix.normalize(
+          path.posix.join(path.posix.dirname(fromFile), file)
+        )
+    if (fromFile === toFile && resolved !== paths.active) return target
+    const destination = resolved === paths.active ? paths.completed : resolved
+    if (rooted)
+      return `${file.startsWith('/') ? '/' : ''}${destination}${suffix}`
+    const relative = path.posix.relative(
+      path.posix.dirname(toFile),
+      destination
+    )
+    const prefix =
+      file.startsWith('./') && !relative.startsWith('.') ? './' : ''
+    return `${prefix}${relative}${suffix}`
+  }
+  const links = content
+    .replace(
+      /(\]\(<?)([^\s)>]+)(>?)/gu,
+      (_, start, target, end) => start + relocate(target) + end
+    )
+    .replace(
+      /^(\s*\[[^\]]+\]:\s*<?)([^\s>]+)(>?)/gmu,
+      (_, start, target, end) => start + relocate(target) + end
+    )
+    .replace(
+      /(\b(?:href|src)=["'])([^"']+)(["'])/gu,
+      (_, start, target, end) => start + relocate(target) + end
+    )
+  const escaped = paths.active.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  return links.replace(
+    new RegExp(
+      '(^|[\\s("\'`<>])(/?)' + escaped + '(?=$|[\\s)"\'`<>#?,;])',
+      'gm'
+    ),
+    (_, prefix, slash) => prefix + slash + paths.completed
+  )
+}
+
 // snapshot methods read immutable Git objects, never execute candidate code.
 // reviewedSha is supplied by the trusted review adapter, not by the PR body.
 export async function evaluateCloseout({
@@ -120,9 +169,16 @@ export async function evaluateCloseout({
   assertPlanSection(sourcePlan, context)
   const afterReview = await snapshot.changedPaths(reviewedSha, headSha)
   const allowed = new Set(Object.values(paths))
+  for (const file of afterReview.filter((file) => !allowed.has(file))) {
+    const before = await read(reviewedSha, file)
+    const after = await read(headSha, file)
+    if (typeof before !== 'string' || typeof after !== 'string') continue
+    const expected = rewritePlanReferences(before, file, file, paths)
+    if (expected !== before && after === expected) allowed.add(file)
+  }
   requireValue(
     afterReview.length > 0 && afterReview.every((file) => allowed.has(file)),
-    'Changes after review must be limited to this plan, completed record, index and decision history; review changed implementation again'
+    'Changes after review must be limited to closeout records and exact plan-reference updates; review changed implementation again'
   )
   requireValue(
     completedAdditions.every((file) => file === paths.completed),
@@ -141,11 +197,17 @@ export async function evaluateCloseout({
     'Completed target already exists; resolve ownership before closeout'
   )
   const completed = await read(headSha, paths.completed)
-  requireValue(
-    completed?.startsWith(sourcePlan.trimEnd()),
-    'Completed record must preserve the reviewed plan and append its outcome'
+  const preservedPlan = rewritePlanReferences(
+    sourcePlan.trimEnd(),
+    paths.active,
+    paths.completed,
+    paths
   )
-  const outcome = completed.slice(sourcePlan.trimEnd().length)
+  requireValue(
+    completed?.startsWith(preservedPlan),
+    'Completed record must preserve the reviewed plan except relocated links and append its outcome'
+  )
+  const outcome = completed.slice(preservedPlan.length)
   requireValue(
     outcome.includes(`Reviewed source: ${reviewedSha}`),
     'Completed record must identify the reviewed source'
