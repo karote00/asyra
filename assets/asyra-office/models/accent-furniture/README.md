@@ -1,6 +1,6 @@
 # Asyra Office - Group 4O - Stool and Pedestal Side Table
 
-Status: original references are approved for commit; the stool document revision is approved by the user for commit. No model verification.
+Status: original references are approved for commit; the stool revision is approved for commit and the side table revision is approved by the user for commit. No model verification.
 
 | One placeable unit                                  | X x Y x Z (m)      | Sheet                                              |
 | --------------------------------------------------- | ------------------ | -------------------------------------------------- |
@@ -16,7 +16,14 @@ Each image shows five views of a single independent unit. No cups, plants, cushi
 The [square low stool specification](SQUARE-LOW-STOOL-SPEC.md) is approved by the user
 for commit. It retains the original dimensions and five component volumes, and
 completes underside stitching, adjustable sizes, appearance regions and LOD
-rules. The side table and original drawings are unchanged. No model is verified.
+rules. That revision preserved the side table and original drawings. No model is verified.
+
+## Current side table document review
+
+The [pedestal side table contract](PEDESTAL-SIDE-TABLE-SPEC.md) is approved by the user
+for commit. It preserves all dimensions, synchronizes shared ring sampling, defines
+one closed exterior and three appearance regions, and adds sizing/LOD rules.
+The stool and both original drawings remain unchanged. No model is verified.
 
 ## Handoff
 

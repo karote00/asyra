@@ -14,9 +14,15 @@ above are defaults, not fixed constraints; mapping follows whole-unit sizing.
 
 ## Side table
 
-Wood base colour is #B9864E and grain colour #986B3D. In object-space metres, let f=0.5+0.5*sin(2*pi*(y/0.012+0.08*sin(2*pi*x/0.18))). Mix the two colours in linear colour space with grain weight 0.12*f. This produces restrained continuous grain along X, shared by top, chamfer, edge and underside. Do not bake the exact illustrative line strokes from the generated image.
+Wood base colour is #B9864E and grain colour #986B3D. In final resized object-local metres, let f=0.5+0.5*sin(2*pi*(y/0.012+0.08*sin(2*pi*x/0.18))). Mix the two colours in linear colour space with grain weight 0.12*f. This produces restrained continuous grain along X, shared by top, chamfer, edge and underside. Do not bake the exact illustrative line strokes from the generated image.
 
 Pedestal and base use uniform charcoal #383A38, metallic 0.15 and roughness 0.80. Bottom faces use the same material.
+
+The [side table contract](PEDESTAL-SIDE-TABLE-SPEC.md) preserves these defaults
+and defines independent top, pedestal and base surface regions. Resolve colour
+and material independently from part to table to preset, then apply base colour
+without changing other settings or instances. Replacement materials own their
+grain parameters and mapping; a plain-colour material may omit grain entirely.
 
 ## Lighting separation
 

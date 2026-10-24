@@ -1,6 +1,6 @@
 # Group 4O - Accent Furniture Review
 
-Status: original references are approved for commit; the stool document revision is approved by the user for commit. No model verification.
+Status: original references are approved for commit; the stool revision is approved for commit and the side table revision is approved by the user for commit. No model verification.
 
 ## Orange square low stool
 
@@ -20,3 +20,10 @@ The [stool construction specification](../SQUARE-LOW-STOOL-SPEC.md) is approved 
 for commit. The original five views are retained. Source sizes and leg positions
 remain unchanged; the document now fixes closed exterior assembly, material
 regions and LOD sampling. The side table is outside this revision.
+
+## Current side table document revision
+
+The [side table specification](../PEDESTAL-SIDE-TABLE-SPEC.md) is approved by the user
+for commit. Original source dimensions and images are preserved. Shared profile
+sampling and a closed exterior replace the incomplete mixed-ring handoff.
+No exported model or app rendering is claimed.

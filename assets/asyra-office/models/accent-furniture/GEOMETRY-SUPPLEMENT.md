@@ -25,13 +25,22 @@ illustrative; no model or rendered likeness has been verified.
 
 ## Pedestal side table
 
-Revolve the JSON tabletop profile around Z with 96 angular segments. Each pair is (radius,Z), in order. Close the profile back to its first point, collapse radius-zero rings to single centre vertices and join matching rings. The resulting disk has diameter 0.42, bottom Z=0.412, top Z=0.440 and 0.003 straight edge chamfers. Do not add a rim or slope to its central flat surface.
+The [pedestal side table contract](PEDESTAL-SIDE-TABLE-SPEC.md) defines the
+shared exposed union profile and LOD sampling. Original external dimensions
+remain: 420 mm top diameter, 440 mm height, 35 mm column diameter and 250 mm base
+diameter. The top has 3 mm straight chamfers; the base has 2 mm straight chamfers.
+The construction column embeds 3 mm into the base and 6 mm into the top.
 
-The pedestal is a closed cylinder radius 0.0175 from Z=0.015 to 0.418 with 64 perimeter segments. Revolve the base profile with 96 angular segments: maximum diameter 0.25, Z=0..0.018, edge chamfer 0.002. Join pedestal and base by solid union. At the wood contact, keep the material boundary at Z=0.412 and remove covered surfaces; no hidden upper plate or screws are needed. Both visible pedestal and base are dark metal.
+Revolve the complete exposed profile using identical ring angles and segment
+counts, including the column and both disk openings. LOD0 uses 96 segments
+throughout, superseding the original 64-segment column. Remove hidden column
+caps and covered disk centres. Retain one closed shell and independently
+replaceable top, column and base regions. No flange or additional support.
 
-The source does not fully resolve the base. A simple circular base is the explicitly selected completion, approved for this reference handoff. No tripod, cross feet, floor protector or underside recess.
-
-Top projection shows only the wooden circle; the smaller base and pedestal are fully hidden. Front/right/back have identical geometry. The wood grain direction distinguishes their surface appearance only.
+The plain circular base remains the selected completion of the partly hidden
+source. Front/right/back geometry is rotationally symmetric; TOP hides the base
+and column. The original image is unchanged. Future model verification remains
+required; analytic document checks do not certify rendered likeness.
 
 ## Future acceptance
 

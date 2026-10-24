@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "Original reference handoff approved; stool document revision approved by the user for commit; no model verification",
+  "status": "Original references and stool revision approved; pedestal side table document revision approved by the user for commit; no model verification",
   "units": "metres",
   "axes": {
     "up": "+Z",
@@ -192,7 +192,7 @@
           "radius": 0.0175,
           "zMin": 0.015,
           "zMax": 0.418,
-          "segments": 64,
+          "segments": 96,
           "material": "metal"
         },
         {
@@ -209,7 +209,100 @@
           "segments": 96,
           "material": "metal"
         }
-      ]
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "PEDESTAL-SIDE-TABLE-SPEC.md",
+        "productionRoute": "programmatic-shared-profile-revolution",
+        "logicalPartCount": 3,
+        "exteriorShellCount": 1,
+        "exteriorProfile": [
+          [0, 0],
+          [0.123, 0],
+          [0.125, 0.002],
+          [0.125, 0.016],
+          [0.123, 0.018],
+          [0.0175, 0.018],
+          [0.0175, 0.412],
+          [0.207, 0.412],
+          [0.21, 0.415],
+          [0.21, 0.437],
+          [0.207, 0.44],
+          [0, 0.44]
+        ],
+        "profileEdgeRegions": [
+          "base",
+          "base",
+          "base",
+          "base",
+          "base",
+          "pedestal",
+          "top",
+          "top",
+          "top",
+          "top",
+          "top"
+        ],
+        "rule": "Revolve the exposed union profile using shared ring angles. Preserve three surface regions; remove buried column caps and covered disk centres. No added flange or support plate."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Apply requested/default XYZ extents once to the complete assembled unit about its ground origin; all profiles, joints and region boundaries follow. No mirroring, independent fitting or terrain conformity."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "top",
+            "parts": ["top"],
+            "defaultMaterial": "wood"
+          },
+          {
+            "id": "pedestal",
+            "parts": ["pedestal"],
+            "defaultMaterial": "metal"
+          },
+          {
+            "id": "base",
+            "parts": ["base"],
+            "defaultMaterial": "metal"
+          }
+        ],
+        "overrideOrder": "Resolve material and colour independently from component to table to preset. Apply resolved colour to selected material while retaining other properties and isolating instances.",
+        "defaultSurface": "Wood top with the existing continuous grain recipe; charcoal pedestal and base. Replacement surfaces own mapping after overall sizing."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "radialSegments": 96,
+            "analyticTriangles": 1920,
+            "maxTriangles": 2000,
+            "maxSurfaceError": 0.00015
+          },
+          {
+            "id": "lod1",
+            "radialSegments": 48,
+            "analyticTriangles": 960,
+            "maxTriangles": 1050,
+            "maxSurfaceError": 0.0005
+          },
+          {
+            "id": "lod2",
+            "radialSegments": 24,
+            "analyticTriangles": 480,
+            "maxTriangles": 550,
+            "maxSurfaceError": 0.002
+          }
+        ],
+        "samplingRule": "Use theta=2*pi*i/N with identical N and phase for every ring, including the column and both disk openings. All N are divisible by four to retain cardinal support vertices.",
+        "rule": "Keep one closed outward exterior, three replaceable regions, both chamfers, exact bounds and a flat ground cap. Count all caps and hidden faces.",
+        "failurePolicy": "Reject open joins, nonmanifold edges, missing regions, bound drift or error/budget overflow. Do not add patches or normalize individual LODs."
+      }
     }
   ]
 }
