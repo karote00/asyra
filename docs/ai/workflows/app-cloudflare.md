@@ -1,5 +1,10 @@
 # Cloudflare App Delivery
 
+Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
+for pending impact notes, necessary integration guides and preservation checks.
+The document check covers development declarations; publisher enforcement remains
+a separate release integration.
+
 Task context: standalone continuation of Cloudflare static delivery. This contract
 covers App hosting, deployment verification and the later website entry update.
 It does not change App runtime, backend, AI or Inspector behavior.

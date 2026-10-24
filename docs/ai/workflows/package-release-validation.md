@@ -1,5 +1,10 @@
 # Package and Release Validation
 
+Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
+for pending impact notes, necessary integration guides and preservation checks.
+The document check covers development declarations; publisher enforcement remains
+a separate release integration.
+
 This workflow owns the repository automation contract between workspace
 manifests, Turbo, generated app templates, CI, and the explicit release
 command.

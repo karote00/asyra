@@ -124,6 +124,13 @@ jobs:
           CHANGESET_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: yarn changeset:pr:check
 
+      - name: Validate update guidance declarations
+        if: github.event_name == 'pull_request'
+        env:
+          UPDATE_GUIDANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          UPDATE_GUIDANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: yarn docs:updates:check
+
       - name: Audit high-severity dependencies
         id: security_audit
         if: ${{ fromJSON(needs.scope.outputs.execution_plan).checks.securityAudit.mode == 'full' }}

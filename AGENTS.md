@@ -41,6 +41,10 @@ These rules apply to every task without requiring additional document reads:
   directory, never inside `.git/`. Follow the worktree location and collision
   rules in `docs/ai/workflows/git-commit-push-policy.md`.
 - Do not overwrite unrelated user changes in a dirty worktree.
+- For App/Framework changes, follow
+  `docs/ai/framework/rules/release-update-guidance.md` for pending impact notes,
+  integration guides and consumer preservation. Run its scoped document check;
+  a passing note check does not establish release readiness.
 - Follow the project-wide no-unrequested-compatibility rule: implement the
   current contract and remove superseded behavior; add compatibility handling
   only when the owner is explicitly a compatibility/migration path or the task

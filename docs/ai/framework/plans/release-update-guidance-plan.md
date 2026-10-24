@@ -2,17 +2,18 @@
 
 ## Status and bounded contract
 
-PLANNED - revised 2026-10-24. This revision replaces the Changeset-centered
-proposal with the existing App and Framework release owners. Planning only;
-all four implementation tasks remain unstarted. Closeout owner: the release
-update guidance coordinating chat.
+IN PROGRESS - updated 2026-10-24. This revision replaces the Changeset-centered
+proposal with the existing App and Framework release owners. Task 1 is complete;
+Tasks 2-4 remain PLANNED. Closeout owner: the release update guidance coordinating
+chat.
 
 Inspected base: `5f6b0c51aa0dd3178e5a9de285b10141f4691e5e`.
-Planning branch: `codex/release-update-guidance-plan`. Repository paths below
-are root-relative. The present change touches only this plan and
-`docs/ai/framework/PLANS.md`; it does not establish an active rule or change a
-release command. Future workers must select a committed base containing this
-plan before starting an authorized task.
+Branch: `codex/release-update-guidance-plan`. Repository paths below are
+root-relative. The reviewed planning stage was committed as
+`92d25f4b7` before Task 1 implementation. Task 1 establishes the rule and
+development checks only; no release command or publisher is changed. Future
+workers must select a committed base containing this plan and their completed
+prerequisites before starting an authorized task.
 
 The completed `docs/ai/framework/plans/completed/app-cli-update-and-migration-plan.md`
 remains complete. Its first independent acceptance, existing-context reruns and
@@ -117,8 +118,8 @@ cache unless a measured need justifies one under existing computation rules.
 
 ## Permanent rule and workflow deliverables
 
-Task 1 will create one authoritative project rule under
-`docs/ai/framework/rules/` for release update guidance. It must define:
+Task 1 established the authoritative
+[release update guidance rule](../rules/release-update-guidance.md). It defines:
 
 - when a development change needs a pending note or detailed integration guide;
 - each release owner's responsibility to compare actual previous/target delivery,
@@ -171,7 +172,7 @@ deferred obligations, migration state and results for the next update.
 
 ## Task 1 - Establish the permanent rule and authoring entry
 
-Status: PLANNED. Requires a reviewed plan in the selected base.
+Status: DONE - 2026-10-24. Executed from the reviewed plan in `92d25f4b7`.
 Deliver the rule and entry references above, the minimal release-owned pending
 note format and the guide decision criteria. Route existing feature, API, App
 and bug-fix workflows to the same rule. Add scoped PR/document checks for required
@@ -182,6 +183,29 @@ Acceptance: a later contributor following the normal project entry finds the
 rule without this plan; optional features, behavioral patches, internal-only
 changes and App releases receive the appropriate notes/guides. Missing required
 information fails; ordinary documentation work keeps its existing exemptions.
+
+Task 1 completion: the permanent rule is linked from `AGENTS.md`, the normal
+agent entry, feature/API/App/bug-fix/refactor workflows and the three existing
+release workflow documents. Pending `update-note` declarations live in existing
+release notes; `yarn docs:updates:check` checks changed-file coverage and public
+guide references locally and in PR CI. Markdown-only changes remain exempt from
+new declarations, while added/revised declarations are validated. Changesets
+retain their separate versioning admission; they are not this check's input.
+
+Verification: 149 focused tests passed across release guidance (12 cases), agent
+eval machinery, task context, release records, Changeset admission, CI selection,
+App release/Cloudflare contracts and test placement. The new Git fixture proves
+that PR reads use the selected commit, not uncommitted notes, and that local
+checks include untracked changes. Entry/link checks need no plan/chat context;
+they are deterministic contract tests, not a new independent AI acceptance.
+Naming, scoped ESLint, public generation and public validation passed (46 pages,
+19 package guides, 314 local links, 160 API references). The generated source map
+changed only the root manifest hash. Existing Text guides, fixtures and original
+acceptance evidence were not modified.
+
+The new check enforces declared structure, not semantic completeness or release
+artifact admission. Publisher wiring, release history and preservation exercises
+remain Tasks 2-4. No publication, deployment or remote push occurred.
 
 ## Task 2 - Connect guidance to each existing release boundary
 
@@ -253,8 +277,9 @@ is not proof of registry availability or universal historical compatibility.
 
 ## Verification and completion
 
-For this planning edit: check only the plan/index diff, formatting and referenced
-existing paths. No release command, runtime test or external mutation is needed.
+For the original planning stage: check only the plan/index diff, formatting and
+referenced existing paths. Task 1 validation is recorded above; no release command
+or external mutation was needed.
 
 For authorized implementation: use failing regression cases for new admission/gate
 behavior, existing owner tests for release/artifact/provider handoffs, relevant

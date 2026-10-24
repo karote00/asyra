@@ -1,5 +1,10 @@
 # /framework-api-change Workflow
 
+Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
+for pending impact notes, necessary integration guides and preservation checks.
+The document check covers development declarations; publisher enforcement remains
+a separate release integration.
+
 ## Intent
 
 Change framework API surfaces or facade exports.

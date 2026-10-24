@@ -44,3 +44,27 @@ not included. See
 [`docs/ai/framework/RELEASE_SUPPORT.md`](docs/ai/framework/RELEASE_SUPPORT.md)
 for the exact package set, support matrix, migration/deprecation table,
 security boundaries, and reproducible readiness commands.
+
+## Pending update guidance
+
+These development notes are not published release summaries.
+
+```update-note
+{
+  "change": "release-guidance-authoring",
+  "owner": "Repository development tooling",
+  "summary": "Require pending impact notes and guide references through normal development entries and PR document checks.",
+  "sources": [
+    "scripts/docs/release-update-guidance.mjs",
+    "scripts/docs/__tests__/release-update-guidance.test.mjs",
+    "package.json",
+    ".github/workflows/main.yml",
+    "scripts/ci-relationships.json",
+    "scripts/__tests__/ci-scope.test.mjs",
+    "docs/public/generated/source-map.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Repository authoring checks only; App runtime, consumer data, package versions and publishers are unchanged."
+}
+```

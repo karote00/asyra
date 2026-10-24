@@ -47,12 +47,14 @@ or unsupported capability claims.
 ## Release Update Guidance
 
 - [Release Update Summaries and Consumer Integration Guidance](plans/release-update-guidance-plan.md)
-  - PLANNED. Use each App/Framework owner's actual release baseline and target
-    for update summaries and necessary guides. Deliver permanent project rules
-    and workflow entries, then verify skipped releases, partial adoption and
-    preservation of customization/data. Changesets are not the coverage authority.
-    Planning only; no implementation or publication is authorized. The prior
-    App update guidance plan remains complete.
+  - IN PROGRESS. Task 1 is complete: permanent rules, workflow entries and PR
+    document checks are implemented and locally verified. Tasks 2-4 remain
+    planned. Use each App/Framework owner's actual release baseline and target
+    for update summaries and necessary guides, then verify skipped releases,
+    partial adoption and preservation of customization/data. Changesets are not
+    the coverage authority.
+    No publisher change or publication occurred. The prior App update guidance
+    plan remains complete.
 
 ## Active Developer Agent Work
 

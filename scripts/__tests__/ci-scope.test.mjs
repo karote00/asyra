@@ -374,10 +374,11 @@ test('internal workflow documentation selects contract tests without public API 
       'scripts/__tests__/ci-scope.test.mjs'
     )
   )
-  assert.ok(
-    checks.repositoryScripts.tests.every(
-      (file) => !file.startsWith('scripts/docs/')
-    )
+  assert.deepEqual(
+    checks.repositoryScripts.tests.filter((file) =>
+      file.startsWith('scripts/docs/')
+    ),
+    ['scripts/docs/__tests__/release-update-guidance.test.mjs']
   )
   assert.equal(checks.frameworkDeclarations.mode, 'not-selected')
 })
