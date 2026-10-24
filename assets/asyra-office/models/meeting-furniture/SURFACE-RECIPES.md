@@ -11,3 +11,17 @@ Tabletop horizontal faces use u=X,v=Y; long edges and long rails use u=X,v=Z; sh
 Whiteboard horizontal frame members and tray use u=X,v=Z on vertical faces, u=X,v=Y on horizontal faces. Vertical frame members and backing use u=Z,v=X on front/back and u=Z,v=Y on depth faces. At frame corners, vertical members own the corner squares; the grain split creates no groove. No additional join lines or fasteners.
 
 No grain on the writing surface. No bump, normal, displacement, or occlusion maps. All hidden faces use their assigned material. Do not bake shadows, AO, highlights, gradients, reflections, handwriting, or marker dust. Sheet outlines are annotations, not texture artwork. Runtime scene lighting supplies shading.
+
+## Meeting table sizing and overrides
+
+The [meeting table contract](MEETING-TABLE-SPEC.md) defines nine independently
+replaceable regions, all defaulting to the honey wood above, with opacity 1 and
+zero emission, transmission and clearcoat. Resolve material and colour separately
+from region to group to table to preset, then apply supplied colour to the
+selected material without changing its other properties or other instances.
+
+For this table, evaluate the existing pigment recipe in final resized local
+metres before placement. On rounded tabletop side walls choose u=X,v=Z when
+abs(Ny)>=abs(Nx), otherwise u=Y,v=Z; cap mapping remains u=X,v=Y. This specifies
+corner ties without adding a seam groove. Replacement materials own their
+mapping and may omit grain. The whiteboard surface rules are unchanged.

@@ -8,18 +8,17 @@ The dimensions and hidden details are authored decisions. Do not infer them from
 
 ## Wooden meeting table
 
-Origin is the floor-footprint center. Overall size is 1.400 x 0.750 x 0.740.
+The [meeting table contract](MEETING-TABLE-SPEC.md) completes the exact contour,
+part placement, sixteen flush contacts, sizing, appearance regions and LOD rules.
+Every existing part dimension remains unchanged. Overall size is 1.400 x 0.750
+x 0.740 m. The top spans Z=0.700 to 0.740 with 25 mm XY corner radii and no vertical
+rounding. Four straight square legs and four apron rails remain sharp boxes.
 
-The tabletop is an XY rounded rectangle centered on the origin, width 1.400, depth 0.750, corner radius 0.025. Sample each quarter-circle corner with 16 segments and extrude from Z=0.700 to 0.740. Keep upper/lower faces planar and the vertical corner faces smoothly shaded. No rounding in the vertical direction.
-
-Four straight square legs have 0.055 x 0.055 cross-sections and centers at X=+/-0.580, Y=+/-0.255. They span Z=0 to 0.700. They are vertical, not splayed or tapered.
-
-Four apron rails meet the inner faces of the legs:
-- Long rails: X=-0.5525 to +0.5525, centered at Y=+/-0.255, thickness 0.022 in Y.
-- Short rails: Y=-0.2275 to +0.2275, centered at X=+/-0.580, thickness 0.022 in X.
-- All rails span Z=0.620 to 0.700.
-
-Legs and rails meet the top underside without gaps. No decorative joints, screws, underside plates, drawers, cable ports, cross braces, wheels, feet, or additional props. The apron layout is an authored completion of the obscured source structure.
+All legs/rails end at Z=.700; rail bottoms are at .620. Rail ends contact the
+inner leg faces, not additional corner blocks. These are exact positive-area
+flush interfaces, not required volume overlaps. Keep nine closed components;
+LOD changes only corner sampling. The original drawing remains unchanged.
+No model or rendered likeness has been verified.
 
 ## Blank whiteboard
 

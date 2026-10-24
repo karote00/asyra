@@ -1,6 +1,6 @@
 # Group 4X Review - Meeting Table and Whiteboard
 
-Status: user-approved reference sheets.
+Status: original reference sheets approved; meeting table document revision approved by the user for commit.
 
 ## Wooden meeting table
 
@@ -19,3 +19,11 @@ One wall-mounted assembly, 0.900 x 0.612 x 0.060 m including tray. The frame is 
 The table uses broad source-thumbnail cues; hidden construction is authored. The whiteboard is a supplementary design. Review silhouette, palette, proportions, and unit boundaries.
 
 [Geometry](../GEOMETRY-SUPPLEMENT.md), [numeric specification](../meeting-furniture-model-spec.json), and [surface recipes](../SURFACE-RECIPES.md) define the handoff. Drawings are illustrative; no model or app behavior is verified. No baked lighting. Approved for this reference handoff.
+
+## Current table construction review
+
+The [meeting table specification](../MEETING-TABLE-SPEC.md) retains this sheet
+and all original part dimensions. Nine closed components meet at sixteen flush
+contacts. Analytic checks cover bounds, joints, LOD and preservation; production
+geometry, visual similarity and runtime performance remain unverified. The
+whiteboard is unchanged. Document revision is approved by the user for commit.
