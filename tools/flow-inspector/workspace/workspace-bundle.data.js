@@ -170,6 +170,7 @@
               "artifact:prepared-review",
               "artifact:request-context",
               "registered capability definitions",
+              "optional caller-held Knowledge result contextKeys in the current session",
               "read-only effective native provider configuration",
               "artifact:inspection-evidence",
               "artifact:execution-receipt"
@@ -178,6 +179,7 @@
               "artifact:tool-program"
             ],
             "conditions": [
+              "Cross-query Knowledge reuse is explicit caller-held result input to the existing Runtime session. Retain full compositions and immutable wire responses in its existing bounded map. Only equal resolved target/source/replacedSource/text becomes retainedFrom in ordered documents; complete sources and new constraints remain. Opaque result identities isolate sessions. Recheck permission, generation, context and cancellation; missing/foreign/evicted references return read-only recovery without reuseFrom. Rehydrate restores full advice; ordinary reads stay complete. Page retries keep bytes stable, no extra calls, new store, inferred model receipt or write replay.",
               "Selected projected-face usage delivers explicit vertices and projected native ovals from the canonical schema/examples in the same acquisition. Preserve complete cross-field limits and recovery, and execute the actual returned example through the existing main workflow without new tools or preliminary discovery.",
               "Optional Knowledge ids scope metadata to registered roots and visible children through Runtime knowledge access; omit ids for the complete catalog. No name-prefix hierarchy, topic allowlist, eager bodies or new state. Hidden/missing roots never broaden. Selected cycles reject; unrelated graphs do not participate. Direct reads and required dependencies outside navigation remain valid. Local execution-flow validation runs existing Runtime and App consumer suites before the Inspector proof; any consumer failure blocks that local gate.",
               "Optional explicit main-workflow reviewChecks reuse review-owned capture selection and validate before writes. After successful automatic capture, compose delegates current-image binding to the existing review owner and delivers its context, exact next invocation and completion constraints. Absent selection preserves preview/defer and independent binding. No inferred scope, automatic judgment, new state, recapture or replay. Partial writes never bind later-part checks to earlier images; failed follow-ups retain receipts/images and review-only recovery. Preserve multiscale dependencies and local invalidation; reduce total selected delivery and model round trips.",
@@ -284,7 +286,8 @@
               "fixed subject or style classifier"
             ],
             "cacheDimensions": [
-              "request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse"
+              "request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse",
+              "existing request-local Knowledge session map: selected IDs, contexts, generation, context epoch and explicit reuse selection; immutable full/wire results, 64-query capacity, invalidation and disposal"
             ],
             "implementationBoundary": [
               "apps/asyra-design/server/__tests__/image-delivery.integration.test.ts",
@@ -395,6 +398,7 @@
               "apps/asyra-design/server/__tests__/local-information-delivery.test.ts",
               "apps/asyra-design/server/__tests__/information-delivery.integration.test.ts",
               "apps/asyra-design/server/__tests__/local-knowledge.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-dependency-reuse-20261024.json",
               "apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-topic-selection-20261021.json",
               "packages/ai-agent-runtime/src/knowledge.ts",
               "packages/ai-agent-runtime/src/knowledge-types.ts",
@@ -467,7 +471,8 @@
               "#shared-tool-contract",
               "#capability-discovery-and-composition",
               "#selected-operation-usage-guide",
-              "#selective-nested-knowledge-delivery"
+              "#selective-nested-knowledge-delivery",
+              "#cross-query-knowledge-dependency-delivery"
             ],
             "failureOwnerStepId": "compose"
           },

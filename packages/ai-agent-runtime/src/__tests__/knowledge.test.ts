@@ -578,7 +578,9 @@ it('preserves mixed module guidance and resolves target-specific nested override
       .retrieve({ ids: ['page'] }, signal())
   }
   const result = await resolve(entries)
-  expect(result).toEqual(await resolve([...entries].reverse()))
+  const reordered = await resolve([...entries].reverse())
+  expect(reordered.contextKey).not.toBe(result.contextKey)
+  expect({ ...reordered, contextKey: result.contextKey }).toEqual(result)
   expect(result.documents.find((doc) => doc.target === 'page')?.text).toBe(
     'Independent page'
   )
@@ -1025,4 +1027,242 @@ describe('selective Knowledge navigation', () => {
     ).toEqual(['a'])
     f.access.dispose()
   })
+})
+
+it('reuses caller-held dependency text across queries without losing ordered sources', async () => {
+  const state = fixture()
+  state.access.register(metadata('constraint'), admin)
+  state.access.register(
+    metadata('child', { references: ['constraint'] }),
+    admin
+  )
+  const session = state.access.openSession(reader, 'cross-query', {
+    retainResults: true
+  })
+  const first = await session.retrieve({ ids: ['constraint'] }, signal())
+  const full = await session.retrieve({ ids: ['child'] }, signal())
+  const query = { ids: ['child'], reuseFrom: [first.contextKey] }
+  const delta = await session.retrieve(query, signal())
+  expect(delta.documents[0]).toEqual({
+    target: 'constraint',
+    source: first.documents[0].source,
+    retainedFrom: first.contextKey
+  })
+  expect(delta.documents[1]).toEqual(full.documents[1])
+  expect(delta.sources).toEqual(full.sources)
+  const reads = state.reads()
+  expect(await session.retrieve(query, signal())).toBe(delta)
+  expect(state.reads()).toBe(reads)
+  state.access.dispose()
+})
+
+it('keeps concurrent same-query retained results addressable by one stable identity', async () => {
+  const state = fixture()
+  state.access.register(metadata('constraint'), admin)
+  state.access.register(
+    metadata('child', { references: ['constraint'] }),
+    admin
+  )
+  const session = state.access.openSession(reader, 'concurrent', {
+    retainResults: true
+  })
+  const [first, second] = await Promise.all([
+    session.retrieve({ ids: ['constraint'] }, signal()),
+    session.retrieve({ ids: ['constraint'] }, signal())
+  ])
+  expect(first).toBe(second)
+  for (const previous of [first, second])
+    expect(
+      (
+        await session.retrieve(
+          { ids: ['child'], reuseFrom: [previous.contextKey] },
+          signal()
+        )
+      ).documents[0].retainedFrom
+    ).toBe(previous.contextKey)
+  state.access.dispose()
+})
+
+it('does not reuse a different target override and preserves reference chains', async () => {
+  const state = fixture()
+  state.access.register(metadata('base'), admin)
+  state.access.register(
+    metadata('override', { overrides: [{ target: 'base', priority: 1 }] }),
+    admin
+  )
+  state.access.register(metadata('child', { references: ['base'] }), admin)
+  state.access.register(metadata('leaf', { references: ['child'] }), admin)
+  const session = state.access.openSession(reader, 'overrides', {
+    retainResults: true
+  })
+  const base = await session.retrieve({ ids: ['base'] }, signal())
+  const override = await session.retrieve(
+    { ids: ['override'], reuseFrom: [base.contextKey] },
+    signal()
+  )
+  expect(override.documents[0]).toMatchObject({
+    target: 'base',
+    text: 'override replaces base',
+    replacedSource: { id: 'base' }
+  })
+  const plain = await session.retrieve(
+    { ids: ['child'], reuseFrom: [override.contextKey] },
+    signal()
+  )
+  expect(plain.documents[0].text).toBe('base@1')
+  const child = await session.retrieve(
+    { ids: ['child'], reuseFrom: [base.contextKey] },
+    signal()
+  )
+  const leaf = await session.retrieve(
+    { ids: ['leaf'], reuseFrom: [child.contextKey] },
+    signal()
+  )
+  expect(leaf.documents.slice(0, 2).map((doc) => doc.retainedFrom)).toEqual([
+    child.contextKey,
+    child.contextKey
+  ])
+  expect(leaf.documents[2].text).toBe('leaf@1')
+  state.access.dispose()
+})
+
+it.each(['foreign', 'context', 'revision', 'evicted'] as const)(
+  'rejects %s held references and restores complete advice without replay',
+  async (kind) => {
+    const state = fixture()
+    state.access.register(metadata('base'), admin)
+    state.access.register(metadata('child', { references: ['base'] }), admin)
+    for (let i = 0; i < 65; i++)
+      state.access.register(metadata(`other-${i}`), admin)
+    const session = state.access.openSession(reader, 'current', {
+      retainResults: true
+    })
+    const previous = await session.retrieve({ ids: ['base'] }, signal())
+    const consumer =
+      kind === 'foreign'
+        ? state.access.openSession(reader, 'other', { retainResults: true })
+        : session
+    if (kind === 'foreign') await consumer.retrieve({ ids: ['base'] }, signal())
+    if (kind === 'context') session.invalidateContext()
+    if (kind === 'revision')
+      state.access.update(metadata('base', { revision: 2 }), 1, admin)
+    if (kind === 'evicted')
+      for (let i = 0; i < 65; i++)
+        await session.retrieve({ ids: [`other-${i}`] }, signal())
+    const query = { ids: ['child'], reuseFrom: [previous.contextKey] }
+    await expect(consumer.retrieve(query, signal())).rejects.toMatchObject({
+      code: 'KNOWLEDGE_REUSE_UNAVAILABLE'
+    })
+    const restored = await consumer.retrieve(
+      { ...query, rehydrate: true },
+      signal()
+    )
+    expect(
+      restored.documents.every(
+        (doc) => typeof doc.text === 'string' && !doc.retainedFrom
+      )
+    ).toBe(true)
+    expect(restored.documents.map((doc) => doc.target)).toEqual([
+      'base',
+      'child'
+    ])
+    state.access.dispose()
+  }
+)
+
+it('rechecks permission, cancellation, disposal and invalid reuse selectors before retention', async () => {
+  const state = fixture()
+  state.access.register(metadata('base'), admin)
+  const session = state.access.openSession(reader, 'checks', {
+    retainResults: true
+  })
+  const previous = await session.retrieve({ ids: ['base'] }, signal())
+  const query = { ids: ['base'], reuseFrom: [previous.contextKey] }
+  for (const reuseFrom of [
+    null,
+    'key',
+    [1],
+    [''],
+    Array(33).fill('key'),
+    ['key', 'key']
+  ])
+    await expect(
+      session.retrieve({ ids: ['base'], reuseFrom } as never, signal())
+    ).rejects.toMatchObject({ code: 'KNOWLEDGE_INVALID_QUERY' })
+  await expect(session.retrieve(query, AbortSignal.abort())).rejects.toThrow()
+  await session.retrieve(query, signal())
+  state.revoke()
+  await expect(session.retrieve(query, signal())).rejects.toThrow(
+    'KNOWLEDGE_UNAUTHORIZED'
+  )
+  session.dispose()
+  await expect(session.retrieve(query, signal())).rejects.toThrow(
+    'KNOWLEDGE_DISPOSED'
+  )
+  state.access.dispose()
+})
+
+it.each(['context', 'revision', 'permission', 'cancel', 'dispose'] as const)(
+  'rejects in-flight cross-query reuse on %s change',
+  async (kind) => {
+    let resume!: () => void
+    let allowed = true,
+      pause = false
+    const waiting = new Promise<void>((resolve) => {
+      resume = resolve
+    })
+    const access = createAiKnowledgeAccess({
+      tenantId: 'tenant',
+      scopeId: 'scope',
+      authorize: () => allowed,
+      read: async (entry) => {
+        if (pause && entry.id === 'child') await waiting
+        return { revision: entry.revision, text: entry.id }
+      }
+    })
+    access.register(metadata('base'), admin)
+    access.register(metadata('child', { references: ['base'] }), admin)
+    const session = access.openSession(reader, 'in-flight', {
+      retainResults: true
+    })
+    const previous = await session.retrieve({ ids: ['base'] }, signal())
+    const controller = new AbortController()
+    pause = true
+    const pending = session.retrieve(
+      { ids: ['child'], reuseFrom: [previous.contextKey] },
+      controller.signal
+    )
+    // Let the dependency read settle and the child provider become pending.
+    await Promise.resolve()
+    await Promise.resolve()
+    if (kind === 'context') session.invalidateContext()
+    if (kind === 'revision')
+      access.update(metadata('base', { revision: 2 }), 1, admin)
+    if (kind === 'permission') allowed = false
+    if (kind === 'cancel') controller.abort()
+    if (kind === 'dispose') session.dispose()
+    resume()
+    await expect(pending).rejects.toThrow()
+    access.dispose()
+  }
+)
+
+it('keeps direct child reads complete and non-retaining sessions explicit', async () => {
+  const state = fixture()
+  state.access.register(metadata('base'), admin)
+  state.access.register(metadata('child', { references: ['base'] }), admin)
+  const plain = state.access.openSession(reader, 'plain')
+  const first = await plain.retrieve({ ids: ['base'] }, signal())
+  await expect(
+    plain.retrieve({ ids: ['child'], reuseFrom: [first.contextKey] }, signal())
+  ).rejects.toThrow('KNOWLEDGE_REUSE_UNAVAILABLE')
+  expect(
+    (await plain.retrieve({ ids: ['child'] }, signal())).documents.map(
+      (doc) => doc.text
+    )
+  ).toEqual(['base@1', 'child@1'])
+  expect(
+    (await plain.retrieve({ ids: ['child'] }, signal())).alreadyDelivered
+  ).toBe(true)
+  state.access.dispose()
 })

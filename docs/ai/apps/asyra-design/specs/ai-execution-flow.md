@@ -1839,14 +1839,49 @@ reply within the existing budget. Common execution/recovery limits remain mandat
 detailed contract invocation examples and material parameter walkthroughs are
 optional discoverable children, not eager references. Selected representation
 limits cannot be postponed into an optional example. Explicit detailed or multi-topic
-reads may still paginate. A prior successful read never authorizes suppressing a
-necessary dependency from a later response.
+reads may still paginate. A prior successful read alone never authorizes suppressing a
+necessary dependency from a later response. Explicit caller-held reuse follows the
+cross-query contract below.
 
 DoD: actual catalog-to-invocation tests assert one reply per decision topic, necessary
 constraints and absent optional sibling bodies; optional examples still execute at
 their real owners. Execute the published forwarding example with the same-version
 offline native engine and compare the successor request exactly. Preserve paging,
 repeat/rehydrate, cancellation and stale-content recovery without write replay.
+
+### Cross-query Knowledge dependency delivery
+
+The existing read tool accepts optional `reuseFrom`, at most 32 unique opaque
+`contextKey` values from complete results whose advice the caller still holds.
+No extra discovery, acknowledgement, parent read or Knowledge prerequisite is needed.
+Without this opt-in the entire required dependency closure is returned as before.
+A result key is scoped to its retaining session; query equality cannot forge another
+session's key. Runtime owns validation and reuse in its existing bounded result map.
+
+Documents remain ordered with exact target/source/replacedSource metadata. Only an
+identical resolved document may replace `text` with `retainedFrom`, identifying the
+same target in a supplied earlier result. Keep complete source provenance and all
+new/changed advice. References can be resolved through retained prior results;
+complete fragment coverage alone does not establish possession of their dependencies.
+The App publishes an executable reuse call alongside the existing forwarding guidance.
+A retained result or a successful read is never proof of model receipt or adoption.
+
+Check current authorization, generation, context, cancellation and dependency closure
+before reuse. Missing, foreign or evicted references fail explicitly with recovery:
+repeat only this read without reuseFrom; use rehydrate after context loss. Rehydrate
+resets context and supplies full text even when old reuse references were supplied.
+Do not replay writes or captures. Permission failures remain failures, not full-content
+fallbacks. Same-query page retries retain identical wire bytes; changed content or
+context makes old continuation invalid. Ordinary no-reuse and refresh reads stay legal.
+No new store, model call, topic classifier or increased output budget is introduced.
+
+DoD: permanent real-catalog and generic regressions execute delivered examples and
+native tool invocation, prove exact full reconstruction (including overrides), lower
+aggregate input/output plus incremental guide bytes and no additional calls. Cover
+fresh direct reads, overlapping dependencies, invalid/foreign/evicted references,
+permissions, revisions, context loss, cancellation/concurrency/disposal, UTF-8 paging
+and no-replay recovery. Existing Runtime and App consumer suites precede Inspector
+proof. This establishes delivery correctness, not model adoption or latency savings.
 
 ### Bounded informational content delivery
 

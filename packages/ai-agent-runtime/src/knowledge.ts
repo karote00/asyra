@@ -189,7 +189,14 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
       if (sessions.size >= 32) return fail('KNOWLEDGE_LIMIT')
       const retainResults = delivery.retainResults === true
       const who = identity(principal, taskId)
-      const delivered = new Map<string, AiKnowledgeResult | undefined>()
+      const delivered = new Map<
+        string,
+        {
+          contextKey: string
+          full?: AiKnowledgeResult
+          response?: AiKnowledgeResult
+        }
+      >()
       let contextEpoch = 0
       let deliveryGeneration = generation
       let closed = false
@@ -268,6 +275,17 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               typeof query.rehydrate !== 'boolean'
             )
               return fail('KNOWLEDGE_INVALID_QUERY')
+            if (
+              query.reuseFrom !== undefined &&
+              (!Array.isArray(query.reuseFrom) ||
+                query.reuseFrom.length > 32 ||
+                query.reuseFrom.some((key) => !boundedText(key, 128)) ||
+                new Set(query.reuseFrom).size !== query.reuseFrom.length)
+            )
+              return fail('KNOWLEDGE_INVALID_QUERY')
+            const reuseFrom = query.rehydrate
+              ? []
+              : [...(query.reuseFrom ?? [])].sort()
             if (query.rehydrate) session.invalidateContext()
             const epoch = contextEpoch
             const version = generation
@@ -320,7 +338,13 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
                     priority: override.priority
                   })
               }
-            const key = JSON.stringify([ids, contexts, version, epoch])
+            const key = JSON.stringify([
+              ids,
+              contexts,
+              version,
+              epoch,
+              reuseFrom
+            ])
             const recheck = () => {
               assertSession()
               signal.throwIfAborted()
@@ -332,16 +356,24 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
             recheck()
             const sources = Object.freeze(ordered.map(source))
             const retained = delivered.get(key)
-            if (retainResults && retained) return retained
-            if (delivered.has(key))
+            if (retained?.response) return retained.response
+            if (retained)
               return Object.freeze({
                 trust: 'untrusted-advice',
                 generation: version,
-                contextKey: key,
+                contextKey: retained.contextKey,
                 alreadyDelivered: true,
                 documents: Object.freeze([]),
                 sources
               })
+            const held = reuseFrom.map((contextKey) => {
+              const previous = [...delivered.values()].find(
+                (value) => value.contextKey === contextKey
+              )
+              if (!retainResults || !previous?.full)
+                return fail('KNOWLEDGE_REUSE_UNAVAILABLE')
+              return previous.full
+            })
             let bytes = 0
             const texts = new Map<string, string>()
             const replacementTexts = new Map<string, Map<string, string>>()
@@ -400,17 +432,52 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
             )
               fail('KNOWLEDGE_LIMIT')
             recheck()
+            // Concurrent completions share the already published immutable identity.
+            const completed = delivered.get(key)?.response
+            if (completed) return completed
             if (delivered.size >= 64) delivered.clear()
             const result: AiKnowledgeResult = Object.freeze({
               trust: 'untrusted-advice',
               generation: version,
-              contextKey: key,
+              contextKey: globalThis.crypto.randomUUID(),
               alreadyDelivered: false,
               documents: Object.freeze(documents),
               sources
             })
-            delivered.set(key, retainResults ? result : undefined)
-            return result
+            const response: AiKnowledgeResult = held.length
+              ? Object.freeze({
+                  ...result,
+                  documents: Object.freeze(
+                    result.documents.map((document) => {
+                      const previous = held.find((value) =>
+                        value.documents.some(
+                          (prior) =>
+                            prior.target === document.target &&
+                            prior.text === document.text &&
+                            prior.source.id === document.source.id &&
+                            prior.source.revision ===
+                              document.source.revision &&
+                            prior.replacedSource?.id ===
+                              document.replacedSource?.id &&
+                            prior.replacedSource?.revision ===
+                              document.replacedSource?.revision
+                        )
+                      )
+                      if (!previous) return document
+                      const { text: _text, ...identity } = document
+                      return Object.freeze({
+                        ...identity,
+                        retainedFrom: previous.contextKey
+                      })
+                    })
+                  )
+                })
+              : result
+            delivered.set(key, {
+              contextKey: result.contextKey,
+              ...(retainResults ? { full: result, response } : {})
+            })
+            return response
           } finally {
             pendingReads -= 1
           }

@@ -697,3 +697,261 @@ it('forwards complete selected Knowledge topics through the published example in
     owner.dispose()
   }
 }, 60000)
+
+it('rehydrates paged reuse after lost context and executes only the returned read continuation', async () => {
+  const load = vi.fn(async () => [
+    {
+      id: 'base',
+      revision: 1,
+      markdown:
+        '---\n{"description":"Base","provenance":["Test"]}\n---\nBase constraint.'
+    },
+    {
+      id: 'child',
+      revision: 1,
+      markdown:
+        '---\n{"description":"Child","provenance":["Test"],"references":["base"]}\n---\n' +
+        'Constraint 🌲. '.repeat(3000)
+    }
+  ])
+  const owner = createLocalKnowledgeTools('paged-reuse', load)
+  const definition = owner.definitions.find(
+    (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
+  )
+
+  if (!definition) throw new Error('Missing Knowledge read definition')
+  const read = async (input: Record<string, unknown>) => {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      input,
+      new AbortController().signal
+    )
+    expect(reply.success, reply.text).toBe(true)
+    return JSON.parse(reply.text)
+  }
+  try {
+    const base = await read({ ids: ['base'] })
+    const first = await read({
+      ids: ['child'],
+      reuseFrom: [base.contextKey],
+      rehydrate: true
+    })
+    let current = first,
+      text = '',
+      pages = 0
+    while (current.contentDelivery) {
+      const page = current.contentDelivery
+      text += page.text
+      pages++
+      if (!page.next) break
+      expect(page.next.tool).toBe(AiDesignToolIds.READ_KNOWLEDGE)
+      expect(page.next.arguments.reuseFrom).toBeUndefined()
+      current = await read(page.next.arguments)
+      expect(pages).toBeLessThan(12)
+    }
+    expect(pages).toBeGreaterThan(1)
+    const restored = JSON.parse(text)
+    expect(
+      restored.documents.every(
+        (doc: { text?: string }) => typeof doc.text === 'string'
+      )
+    ).toBe(true)
+    expect(load).toHaveBeenCalledTimes(1)
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('recovers unavailable retained advice by executing the returned same-read example', async () => {
+  const owner = createLocalKnowledgeTools('recover-reuse', async () => files)
+  const definition = owner.definitions.find(
+    (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
+  )
+
+  if (!definition) throw new Error('Missing Knowledge read definition')
+  try {
+    const invalid = await invokeLocalTool(
+      owner,
+      definition,
+      { ids: ['test.advice'], reuseFrom: ['foreign-result'] },
+      new AbortController().signal
+    )
+    expect(invalid.success).toBe(false)
+    expect(JSON.parse(invalid.text)).toMatchObject({
+      code: 'KNOWLEDGE_REUSE_UNAVAILABLE',
+      settlement: 'not-started'
+    })
+    const expression = JSON.parse(invalid.text).message.match(
+      /`(read_knowledge\([^`]+\))`/
+    )?.[1]
+    expect(expression).toBeDefined()
+    let calls = 0
+    const invoke = async (input: Record<string, unknown>) => {
+      calls++
+      expect(input.reuseFrom).toBeUndefined()
+      return invokeLocalTool(
+        owner,
+        definition,
+        JSON.parse(JSON.stringify(input)),
+        new AbortController().signal
+      )
+    }
+    const restored = await new Function(
+      'read_knowledge',
+      'ids',
+      'contexts',
+      `return ${expression}`
+    )(invoke, ['test.advice'], undefined)
+    expect(restored.success).toBe(true)
+    expect(JSON.parse(restored.text).contentDelivery.startByte).toBe(0)
+    expect(calls).toBe(1)
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('keeps cross-query pages byte-stable and rejects stale continuation without writes', async () => {
+  const owner = createLocalKnowledgeTools('reuse-pages', async () => [
+    {
+      id: 'base',
+      revision: 1,
+      markdown:
+        '---\n{"description":"Base","provenance":["Test"]}\n---\n' +
+        'Base restriction. '.repeat(200)
+    },
+    {
+      id: 'child',
+      revision: 1,
+      markdown:
+        '---\n{"description":"Child","provenance":["Test"],"references":["base"]}\n---\n' +
+        'Child condition 🌲. '.repeat(2000)
+    }
+  ])
+  const definition = owner.definitions.find(
+    (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
+  )
+
+  if (!definition) throw new Error('Missing Knowledge read definition')
+  const read = (input: Record<string, unknown>) =>
+    invokeLocalTool(owner, definition, input, new AbortController().signal)
+  try {
+    const base = JSON.parse((await read({ ids: ['base'] })).text)
+    const input = { ids: ['child'], reuseFrom: [base.contextKey] }
+    let args: Record<string, unknown> = input,
+      joined = '',
+      firstPage: Record<string, unknown> | undefined
+    for (let count = 0; count < 10; count++) {
+      const a = await read(args),
+        b = await read(args)
+      expect(a.success, a.text).toBe(true)
+      expect(a.text).toBe(b.text)
+      expect(Buffer.byteLength(a.text)).toBeLessThanOrEqual(24000)
+      const page = JSON.parse(a.text).contentDelivery
+      firstPage ??= page.next.arguments
+      joined += page.text
+      if (page.lastPage) break
+      args = page.next.arguments
+    }
+    const complete = JSON.parse(joined)
+    expect(complete.documents[0]).toMatchObject({
+      retainedFrom: base.contextKey
+    })
+    expect(complete.documents[1].text).toBe('Child condition 🌲. '.repeat(2000))
+    owner.invalidateContext()
+    if (!firstPage) throw new Error('Missing expected continuation')
+    const stale = await read(firstPage)
+    expect(stale.success).toBe(false)
+    expect(stale.text).toContain('KNOWLEDGE_REUSE_UNAVAILABLE')
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('forwards cross-query held advice and the actual reuse example through native Code Mode', async () => {
+  const { default: recorded } =
+    await import('./fixtures/recorded-101/knowledge-dependency-reuse-20261024.json')
+  const nativeModule = new URL(
+    '../../test-data/knowledge-evaluation/native-delivery.mjs',
+    import.meta.url
+  ).href
+  const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
+  const owner = createLocalKnowledgeTools('native-cross-query')
+  const definition = owner.definitions.find(
+    (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
+  )
+
+  if (!definition) throw new Error('Missing Knowledge read definition')
+  const signal = new AbortController().signal
+  try {
+    const first = await invokeLocalTool(
+      owner,
+      definition,
+      recorded.reads[0],
+      signal
+    )
+    expect(first.success).toBe(true)
+    const previous = JSON.parse(first.text)
+    const expression = definition.description.match(
+      /`(read_knowledge\([^`]+\))`/
+    )?.[1]
+    expect(expression).toBeDefined()
+    const args = { ...recorded.reads[1], reuseFrom: [previous.contextKey] }
+    const second = await invokeLocalTool(owner, definition, args, signal)
+    expect(second.success, second.text).toBe(true)
+    const forward = advertisedExample(localToolResultInstructions)
+    const executions = [
+      {
+        input: recorded.reads[0],
+        reply: first.text,
+        expected: first.text,
+        code: `const deliveryKey = "prior-advice"; const result = await tools.design_knowledge__read_knowledge(${JSON.stringify(recorded.reads[0])});\n${forward}`
+      },
+      {
+        input: args,
+        reply: second.text,
+        expected: second.text,
+        code: `const previous = load("prior-advice").value; const ids = ${JSON.stringify(args.ids)}; const contexts = ${JSON.stringify(args.contexts)}; const read_knowledge = input => tools.design_knowledge__read_knowledge(input); const deliveryKey = "selected-advice"; const result = await ${expression};\n${forward}`
+      }
+    ]
+    const result = await runNativeDelivery({
+      mode: 'code',
+      executions,
+      fixture: {
+        tool: definition.name,
+        namespace: 'design_knowledge',
+        input: recorded.reads[0],
+        raw: first.text,
+        sha256: createHash('sha256').update(first.text).digest('hex'),
+        nativeVersion: 'codex-cli 0.160.0',
+        declaration: {
+          type: 'namespace',
+          name: 'design_knowledge',
+          description: 'Advisory Knowledge',
+          tools: [
+            {
+              type: 'function',
+              name: definition.name,
+              description: definition.description,
+              inputSchema: definition.inputSchema,
+              deferLoading: true
+            }
+          ]
+        }
+      }
+    })
+    expect(result.nativeReplies).toBe(2)
+    expect(result.comparisons).toHaveLength(2)
+    for (const comparison of result.comparisons) {
+      expect(comparison.exact, result.directory).toBe(true)
+      expect(comparison.truncationMarker).toBe(false)
+    }
+    expect(JSON.parse(second.text).documents[0]).toMatchObject({
+      retainedFrom: previous.contextKey
+    })
+    expect(result.cleanup.errors).toEqual([])
+    expect(result.receipt.status).toBe('saved')
+  } finally {
+    owner.dispose()
+  }
+}, 60000)

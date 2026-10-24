@@ -208,6 +208,7 @@
             "retryOf",
             "retryPolicy",
             "retryable",
+            "reuseFrom",
             "reviewTool",
             "revision",
             "run",
