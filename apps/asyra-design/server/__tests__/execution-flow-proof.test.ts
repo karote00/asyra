@@ -1,3 +1,5 @@
+import { deliverPreparedDesign } from '../../src/ai/prepared-design'
+import { admitPreparedDesignDelivery } from '../../src/ai/prepared-design-admission'
 import type { PreparedElementDescriptor } from '../../src/common-apis'
 import { invokeLocalTool } from '../local-tool-invocation'
 import {
@@ -46,7 +48,10 @@ import type {
   AiActionDescription,
   AiBatchReceipt
 } from '../../src/ai/action-batch-protocol'
-import type { PreparedDesign } from '../../src/ai/prepared-design'
+import type {
+  PreparedDesign,
+  PreparedDesignDelivery
+} from '../../src/ai/prepared-design'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { createLocalDesignTools } from '../local-design-tools'
 import { createLocalOperationTools as createOperationOwner } from '../local-operation-tools'
@@ -978,8 +983,9 @@ it('execution proof exports compound resources before cleanup', async () => {
             actionName: action.name,
             result: {
               status: 'complete',
-              compositionId: (action.arguments as { design: PreparedDesign })
-                .design.rootId
+              compositionId: (
+                action.arguments as { design: PreparedDesignDelivery }
+              ).design.rootId
             }
           }))
         })
@@ -1106,7 +1112,9 @@ it('execution proof composes preparation and canonical dispatch without repeated
   const execute = vi.fn(
     async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
       const action = batch.actions[0]
-      const { design } = action.arguments as { design: PreparedDesign }
+      const design = admitPreparedDesignDelivery(
+        (action.arguments as { design: unknown }).design
+      )
       return {
         context: { selection: [design.rootId] },
         actionResults: [
@@ -1181,7 +1189,12 @@ it('execution proof composes preparation and canonical dispatch without repeated
   expect(execute).toHaveBeenCalledTimes(1)
   const dispatched = execute.mock.calls[0][0].actions
   expect(dispatched).toHaveLength(1)
-  const { design } = dispatched[0].arguments as { design: PreparedDesign }
+  const { design } = dispatched[0].arguments as {
+    design: PreparedDesignDelivery
+  }
+  const admitted = admitPreparedDesignDelivery(design)
+  expect(design).not.toHaveProperty('keyToId')
+  expect(Array.isArray(design.entries[0].descriptor.props)).toBe(true)
   expect(design.entries).toHaveLength(2)
   expect(result).toMatchObject({
     available: true,
@@ -1191,7 +1204,7 @@ it('execution proof composes preparation and canonical dispatch without repeated
         result: {
           status: 'complete',
           compositionId: design.rootId,
-          appliedElementCount: Object.keys(design.keyToId).length
+          appliedElementCount: Object.keys(admitted.keyToId).length
         }
       }
     ]
@@ -7653,7 +7666,9 @@ it('execution proof delivers layered repetition before parameters with canonical
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
     actionResults: batch.actions.map((action) => {
-      const design = (action.arguments as { design: PreparedDesign }).design
+      const design = admitPreparedDesignDelivery(
+        (action.arguments as { design: unknown }).design
+      )
       applied.push(design)
       return {
         actionId: action.id,
@@ -7929,7 +7944,9 @@ it('execution proof delivers shared motifs through the main workflow without ext
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
     actionResults: batch.actions.map((action) => {
-      const design = (action.arguments as { design: PreparedDesign }).design
+      const design = admitPreparedDesignDelivery(
+        (action.arguments as { design: unknown }).design
+      )
       applied.push(design)
       return {
         actionId: action.id,
@@ -8017,7 +8034,9 @@ it('execution proof preserves shared motifs geometry budget lifetime and recover
   const execute = vi.fn(async (batch: AiActionBatch) => ({
     context: {},
     actionResults: batch.actions.map((action) => {
-      const design = (action.arguments as { design: PreparedDesign }).design
+      const design = admitPreparedDesignDelivery(
+        (action.arguments as { design: unknown }).design
+      )
       applied.push(design)
       return {
         actionId: action.id,
@@ -8222,7 +8241,10 @@ it('execution proof preserves interrupted owner results without replay', async (
             {
               id: 'apply',
               name: action.name,
-              arguments: { design, response: 'compact' },
+              arguments: {
+                design: deliverPreparedDesign(design),
+                response: 'compact'
+              },
               summary: 'Draw'
             }
           ]
@@ -8354,7 +8376,9 @@ it('execution proof projects compact diagnostics after owner evidence without re
   const execute = vi.fn(
     async (batch: AiActionBatch): Promise<AiBatchReceipt> => {
       const action = batch.actions[0]
-      const { design } = action.arguments as { design: PreparedDesign }
+      const design = admitPreparedDesignDelivery(
+        (action.arguments as { design: unknown }).design
+      )
       return {
         context: {},
         actionResults: [

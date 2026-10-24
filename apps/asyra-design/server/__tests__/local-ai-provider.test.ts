@@ -1,6 +1,8 @@
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
+import { admitPreparedDesignDelivery } from '../../src/ai/prepared-design-admission'
+import { PREPARED_DESIGN_DELIVERY_VERSION } from '../../src/ai/prepared-design'
 import type {} from '../../src/types'
 import recordedDiscoveryDelivery from './fixtures/recorded-101/discovery-delivery-20261020.json'
 import inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20261022.json'
@@ -3444,7 +3446,30 @@ describe('native semantic design handoff', () => {
       { environment }
     )
     expect(result.actions[0].arguments).toMatchObject({
-      design: { version: 1, entries: expect.any(Array) }
+      design: {
+        version: PREPARED_DESIGN_DELIVERY_VERSION,
+        entries: expect.any(Array)
+      }
+    })
+    const { design } = result.actions[0].arguments as { design: unknown }
+    expect(design).not.toHaveProperty('keyToId')
+    const admitted = admitPreparedDesignDelivery(
+      JSON.parse(JSON.stringify(design))
+    )
+    expect(admitted.entries).toHaveLength(2)
+    expect(admitted.entries[0].descriptor).toMatchObject({
+      type: draft.type,
+      name: draft.name,
+      width: draft.width,
+      height: draft.height
+    })
+    expect(admitted.entries[1]).toMatchObject({
+      key: 'heading',
+      parentId: admitted.rootId,
+      descriptor: {
+        id: admitted.keyToId.heading,
+        text: draft.children[0].text
+      }
     })
   })
 })

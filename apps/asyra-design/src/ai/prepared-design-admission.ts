@@ -6,6 +6,7 @@ import {
   DesignNodeTypes,
   isDesignContainerType,
   PREPARED_DESIGN_VERSION,
+  PREPARED_DESIGN_DELIVERY_VERSION,
   type PreparedDesign
 } from './prepared-design'
 
@@ -143,7 +144,60 @@ function validateVector(d: Record<string, unknown>): number {
   return pointKeys.length
 }
 
-/** Wire admission only: consumes prepared geometry without recomputing it. */
+/** Restore derivable identities, then validate the complete canonical artifact. */
+export function admitPreparedDesignDelivery(input: unknown): PreparedDesign {
+  check(
+    record(input) &&
+      keysOnly(input, [
+        'version',
+        'rootId',
+        'entries',
+        'findings',
+        'continuation'
+      ])
+  )
+  check(input.version === PREPARED_DESIGN_DELIVERY_VERSION)
+  check(
+    Array.isArray(input.entries) &&
+      input.entries.length > 0 &&
+      input.entries.length <= limits.expandedNodes
+  )
+  const keyToId: Record<string, string> = Object.create(null)
+  const entries = input.entries.map((entry: unknown) => {
+    check(
+      record(entry) &&
+        keysOnly(entry, ['key', 'parentId', 'descriptor']) &&
+        record(entry.descriptor)
+    )
+    const descriptor = entry.descriptor
+    check(typeof entry.key === 'string' && typeof descriptor.id === 'string')
+    const names = descriptor.props
+    check(
+      Array.isArray(names) &&
+        names.every((name) => typeof name === 'string') &&
+        new Set(names).size === names.length
+    )
+    check(!Object.hasOwn(keyToId, entry.key))
+    keyToId[entry.key] = descriptor.id
+    return {
+      ...entry,
+      descriptor: {
+        ...descriptor,
+        props: Object.fromEntries(
+          names.map((name) => [name, `${descriptor.id}-${name}`])
+        )
+      }
+    }
+  })
+  return admitPreparedDesign({
+    ...input,
+    version: PREPARED_DESIGN_VERSION,
+    entries,
+    keyToId
+  })
+}
+
+/** Canonical admission consumes prepared geometry without recomputing it. */
 export function admitPreparedDesign(input: unknown): PreparedDesign {
   check(
     record(input) &&

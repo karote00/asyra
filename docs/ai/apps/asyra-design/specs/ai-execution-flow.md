@@ -608,6 +608,26 @@ it does not maintain a list of parallel tool names. Internal access metadata is
 not exposed as a native tool schema field. A request owns one barrier queue and
 disposes it on Stop or settlement; no cross-request scheduling state is retained.
 
+### Prepared design delivery
+
+The existing resolver delivers owned prepared designs with property names instead
+of repeated property-ID values and without a duplicate key-to-ID map. Browser
+admission reconstructs those maps from the supplied names, keys and exact IDs,
+then runs the existing complete canonical validation before any write. The current
+compact delivery version is required; previous full-map wire input is rejected.
+Retained canonical artifacts and independent conversion formats are unchanged.
+
+Reconstruction cannot infer missing properties, repair malformed references, alter
+IDs, recompute geometry or share independent materials. Preserve complete geometry,
+material bindings, order, hierarchy, continuation evidence and budget protections.
+Explicit full receipts retain key/role mappings. Cancellation and partial recovery
+keep actual acknowledged results and never replay completed edits. Projection adds
+no model query or round trip and owns no cache. Formal tests must exercise the real
+resolver through browser admission and Core, prove saved-case payload reduction of
+at least 15%, unchanged canonical output/work counts, and affected history,
+collaboration and save/reload behavior. Timing measurements supplement deterministic
+work evidence; reduced bytes alone do not prove a first-frame latency improvement.
+
 Selected-owner Fill edits apply local overrides. Explicit shared-source edits,
 override reset and detachment are distinct intents. Delivered App advice must use
 these canonical operations and never require detachment for a local correction.

@@ -1,3 +1,4 @@
+import { deliverPreparedDesign } from '../prepared-design'
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
@@ -180,7 +181,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
               {
                 id: 'apply',
                 name: action.name,
-                arguments: { design },
+                arguments: { design: deliverPreparedDesign(design) },
                 summary: 'Build facade'
               }
             ]
@@ -279,7 +280,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
               {
                 id: 'retry',
                 name: action.name,
-                arguments: { design },
+                arguments: { design: deliverPreparedDesign(design) },
                 summary: 'Retry'
               }
             ]
@@ -436,7 +437,10 @@ it('continues only retained remaining parts after cancellation with real history
             {
               id: 'apply',
               name: action.name,
-              arguments: { design, response: 'compact' },
+              arguments: {
+                design: deliverPreparedDesign(design),
+                response: 'compact'
+              },
               summary: 'Apply retained part'
             }
           ]

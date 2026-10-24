@@ -24,7 +24,8 @@ import { AiDesignToolIds } from '../src/constants/ai-design'
 import {
   DesignPreparationLimits as limits,
   DesignContainerTypes,
-  DesignNodeTypes
+  DesignNodeTypes,
+  deliverPreparedDesign
 } from '../src/ai/prepared-design'
 import type {
   AiActionBatch,
@@ -757,7 +758,7 @@ export const createLocalDesignTools = (
           return {
             ...action,
             arguments: {
-              design,
+              design: deliverPreparedDesign(design),
               ...(materialElementIds.length ? { materialElementIds } : {}),
               response: args.response ?? 'compact',
               ...(args.parentId === undefined

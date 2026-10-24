@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 visual correction handoff is locally verified at Inspector revision 83 and approved for a convergence push; AI adoption remains unobserved. Scoped Knowledge discovery was pushed as c8fa19507. The next handoff investigation is read-only; no live model, 101 or CI inspection is authorized.**
+Status: **Task 3 compact prepared delivery has converged on formal local evidence at Inspector revision 86 and is approved for commit/push. AI adoption and live timing effects remain unobserved. The next issue is read-only evidence analysis; no implementation, model, 101 or CI inspection is authorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,9 +20,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: preserve individual unresolved visual checks through correction
-  discovery, existing edit owners and affected re-review. No guessed targets,
-  tool allowlist, new result state, model execution or CI inspection.
+- Current scope: remove derivable identity-map repetition at prepared-design delivery, preserving canonical admission, execution and recovery. WebMCP is design context only; no browser API integration is authorized.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -80,6 +78,126 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Compact prepared delivery - 2026-10-24
+
+Step Execution Card - apply / prepare-to-apply:
+- Objective: consume retained prepared artifacts without transmitting repeated
+  property-ID values and keyToId alongside the same entry keys and IDs.
+- Evidence: saved run 1792770001609, native 25-input, SHA-256
+  19df66cb35a03beafca9289b95b33ee20752de34bfd60e3263dd84c1c635d04a,
+  contains 4,114 entries / 17,380,806 bytes. A read-only reconstruction of property
+  IDs from property names and entry IDs plus keyToId from entries was identical
+  and reduced bytes by 15.98%. This is feasibility evidence, not completed tests
+  or proof of first-frame latency improvement.
+- Owner: existing App action resolver projects its retained canonical artifact at
+  delivery; browser admission restores derivable maps once and invokes unchanged
+  canonical admission before ordinary execution. Failure owner: apply.
+- Inputs: owned applicable canonical PreparedDesign, response mode, optional
+  parent/attachment evidence and material member IDs. Outputs: compact delivery,
+  then identical admitted canonical descriptors and actual execution receipts.
+- Conditions/bypasses: every apply_prepared_design browser call uses the new
+  delivery version; no full-map wire fallback. Canonical artifacts and their
+  existing internal validator remain valid independent APIs, not wire aliases.
+  Explicit full output still returns complete key/role mappings. Other prepared
+  drawing/conversion formats remain independent and unchanged.
+- Allowed: existing artifact resolution, action dispatch, admission and mutation
+  owners. Forbidden: topology/layout/material recompilation, guessed defaults,
+  changed IDs/order/geometry, new cache/state/registry, automatic replay, model calls.
+- Names: PreparedDesignDelivery and deliverPreparedDesign belong to existing
+  prepared-design.ts; admitPreparedDesignDelivery belongs to existing admission.
+  Delivery version 2 replaces the old full-map wire shape. The canonical in-memory
+  artifact version remains unchanged and is never accepted as browser delivery.
+- Work boundary: shallow per-entry projection, one reconstruction per actual
+  browser invocation and the existing canonical validation. Preserve geometry
+  object references until normal serialization; repeated resolution never rereads
+  caller draft or recompiles geometry. No new retained computation.
+- Implementation boundary: prepared-design.ts, prepared-design-admission.ts,
+  design-actions.ts and local-design-tools.ts; their direct tests, existing
+  interrupted-design integration, a permanent saved-input fixture and a formal
+  prepared-delivery integration suite registered in the existing server harness.
+  Update direct fixture callers to the real delivered format, never add runtime
+  compatibility to satisfy old tests. Active plan, ai-execution-flow specification,
+  Inspector/mapping/generated bundle and App package test entry are in scope.
+- Fixed discovery: saved 19/25 inputs and source snapshot, these owners and direct
+  consumers, existing preparation/application/interruption/material tests. No
+  repository-wide audit, new geometry feature, transport compression or budget change.
+- Fixed DoD: (1) complete canonical equivalence including shapes, text, curves,
+  containers and shared materials; (2) actual resolver/dispatcher/admission/Core
+  execution equivalence; (3) malformed/missing/duplicate/foreign references reject
+  before writes; (4) cancellation and partial-prefix recovery without replay,
+  Undo/Redo, save/reload and affected collaboration preserve references; (5) at
+  least 15% saved-case input reduction, measured encoding/decoding, no new geometry
+  recomputation, whole-draft resend or model round trip; (6) permanent fixture and
+  direct consumer tests run in existing gates, with no old wire branch.
+- Gates: naming baseline/closeout; task context; Inspector admission before test
+  edits; failing formal regression before production; focused preparation/delivery
+  and real-owner preservation; root test:design-execution-flow; production types;
+  scoped lint; generated Inspector tests; self-review of diff/direct consumers.
+- Stop on a required new state/owner, weakened DoD, or three failed implementation
+  iterations. Review plan and boundary before another attempt. No push or live run.
+
+Bounded consumer review revision:
+- The first complete local gate passed Runtime 433 and App 1,644 cases, but the
+  non-streaming final-batch consumer still expected wire version 1. Earlier
+  fixture failures similarly supplied canonical artifacts directly to the wire
+  boundary. Re-audit confirms the current spec requires delivery version 2 and
+  unchanged canonical validation; no production fallback is warranted.
+- Remaining work is limited to direct consumer tests: local-ai-provider.test.ts
+  (already in apply's boundary), local-design-tools.test.ts and the mapped
+  execution-flow proof. Replace stale wire types, exercise real admission from
+  the non-streaming result, and compare material delivery with the complete
+  retained canonical artifact rather than keys alone. Production owners remain
+  unchanged. Re-run these focused suites, refresh admission for the proof source,
+  then repeat the existing root gate and final types/lint/naming checks.
+- Self-review: this strengthens fixed DoD 1-3 and 6 without adding a route,
+  compatibility branch, model turn or new owner. The 14 new integration cases,
+  including real Core execution of all 4,114 saved entries, passed in that gate.
+
+Verification evidence:
+- The permanent saved-input regression first failed at 17,380,806 bytes against
+  the fixed 85% ceiling (tmp/prepared-delivery-red.log), before production edits.
+  Initial admission was accepted as
+  4b22863215eb433d04c08caa4dacebb26e2f5a4acb3aed9aaeb92ccef0f058dd.
+- Reviewed admission is fe17c126c6c24b467a8423c108427507a87b897d721de48c36af2161ae92a116.
+  Projection and admission preserve the complete saved canonical object; the
+  action input is 14,603,472 bytes, down 2,777,334 bytes (15.98%). Geometry retains
+  references until serialization; repeated resolution compiles once, admission
+  retains one existing structured clone, and actual dispatch remains one call.
+- The world-material consumer now compares complete canonical values both before
+  and after JSON transmission. Its first strengthened oracle exposed JSON's
+  existing negative-zero normalization; both sides now cross the same ordinary
+  JSON boundary, while the separate in-memory assertion preserves exact values.
+  No runtime tolerance or material change was introduced.
+- Bounded self-review covered the four production owners, their direct consumers,
+  current version rejection, malformed identities/topology/material references,
+  retained continuation and receipt paths. No geometry-specific exception, new
+  state, model query, replay or old-wire compatibility was added. The formal fixture
+  is project-owned; tests do not read ignored historical evidence.
+- Final root `yarn test:design-execution-flow` passed: Runtime public build and
+  433 tests; App 1,645 passed / 2 existing opt-in skips; Inspector 71 cases at
+  revision 86, attempt abd237f7-7034-405d-a085-8729db8a33c3, verification source
+  22cb37d19086da6f62872bf2653c16165fbb81c10c8a760c896e4c2e11a493c3.
+  The skipped native registration and large-checkpoint bootstrap cases are not
+  counted as passed and are outside this prepared-delivery boundary.
+- Browser action/interrupted integration: 53 passed, including real owner partial
+  results, no-replay recovery, history, collaboration publication and durable reload.
+  Focused preparation/material/motifs/discovery preservation: 171 passed. These
+  overlap the root harness where applicable; counts must not be added as unique cases.
+- Production types passed; naming 15/15; generated Inspector tests 25/25; scoped
+  lint has zero errors and three diagnostic-console warnings (one in the new
+  measurement test, two existing); final whitespace check passed.
+- Final timing sample in tmp/prepared-delivery-root-flow-final.log: baseline
+  encode 42.195 ms + parse/admission 151.611 ms; compact projection/encode
+  28.233 ms + parse/admission 165.949 ms. Combined cost is approximately unchanged
+  (193.806 vs 194.182 ms); this is one local diagnostic sample, not a performance
+  guarantee. Bytes and preserved owner work are the deterministic result.
+- No model, 101, CI, commit or push was run for this slice. AI behavior, network
+  latency and first-frame improvement remain unmeasured. WebMCP remains an
+  architectural reference, not an implemented integration.
+- Subsequent closeout authorization: commit and push this locally verified slice,
+  retain the live-observation limits, then inspect the latest saved run for one
+  unresolved handoff. Do not start the next implementation or inspect CI.
 
 ### Visual correction handoff - 2026-10-24
 

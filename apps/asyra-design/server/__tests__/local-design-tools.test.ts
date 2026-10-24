@@ -7,7 +7,10 @@ import { inspectDesignBudget } from '../design-budget'
 import { invokeLocalTool } from '../local-tool-invocation'
 import { designPreparationExamples } from '../design-preparation-examples'
 import { describe, expect, it, vi } from 'vitest'
-import { admitPreparedDesign } from '../../src/ai/prepared-design-admission'
+import {
+  admitPreparedDesign,
+  admitPreparedDesignDelivery
+} from '../../src/ai/prepared-design-admission'
 import { createLocalDesignTools as createOwner } from '../local-design-tools'
 import { withToolContractAssertions } from './tool-contract-assertions'
 const createLocalDesignTools = (...args: Parameters<typeof createOwner>) =>
@@ -20,7 +23,7 @@ import {
 import { createLocalImageTools } from '../local-image-tools'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { AiActionNames } from '../../src/constants/ai-actions'
-import type { PreparedDesign } from '../../src/ai/prepared-design'
+import type { PreparedDesignDelivery } from '../../src/ai/prepared-design'
 import type {
   AiActionBatch,
   AiBatchReceipt
@@ -174,9 +177,10 @@ describe('local semantic design tools', () => {
     )
     expect(prepared.available).toBe(true)
     const batch = tools.resolveBatch(request(prepared.artifactId))
-    const design = (batch.actions[0].arguments as { design: PreparedDesign })
-      .design
-    expect(design.keyToId.page).toBe(design.rootId)
+    const design = (
+      batch.actions[0].arguments as { design: PreparedDesignDelivery }
+    ).design
+    expect(admitPreparedDesignDelivery(design).keyToId.page).toBe(design.rootId)
     expect(design.rootId).not.toBe('page')
     const invalid = JSON.parse(
       await tools.call(
@@ -240,12 +244,15 @@ describe('local semantic design tools', () => {
     const first = tools.resolveBatch(request(receipt.artifactId))
     const second = tools.resolveBatch(request(receipt.artifactId))
     const firstDesign = (
-      first.actions[0].arguments as { design: PreparedDesign }
+      first.actions[0].arguments as { design: PreparedDesignDelivery }
     ).design
     const secondDesign = (
-      second.actions[0].arguments as { design: PreparedDesign }
+      second.actions[0].arguments as { design: PreparedDesignDelivery }
     ).design
-    expect(firstDesign).toBe(secondDesign)
+    expect(firstDesign).toEqual(secondDesign)
+    expect(firstDesign.entries[1].descriptor.fills).toBe(
+      secondDesign.entries[1].descriptor.fills
+    )
     expect(compile).toHaveBeenCalledTimes(1)
     expect(firstDesign.entries[1].descriptor.text).toBe('Keep exploring')
   })
@@ -357,7 +364,7 @@ describe('local semantic design tools', () => {
     )
     expect(execute).toHaveBeenCalledTimes(3)
     expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-      design: { version: 1, entries: expect.any(Array) }
+      design: { version: 2, entries: expect.any(Array) }
     })
     expect(execute.mock.calls[1][0].actions[0].name).toBe(
       AiActionNames.REVIEW_DESIGN
@@ -453,9 +460,10 @@ it('keeps brief evidence on the server receipt and sends the existing canonical 
     )
   )
   const batch = tools.resolveBatch(request(receipt.artifactId))
-  const design = (batch.actions[0].arguments as { design: PreparedDesign })
-    .design
-  expect(() => admitPreparedDesign(design)).not.toThrow()
+  const design = (
+    batch.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
+  expect(() => admitPreparedDesignDelivery(design)).not.toThrow()
   expect(design).not.toHaveProperty('review')
   expect(receipt.review.intent).toBe('Journal')
 })
@@ -475,8 +483,8 @@ it('compiles a ready repeated stage while whole-structure review remains pending
   expect(result.applicable).toBe(true)
   expect(compile).toHaveBeenCalledOnce()
   const prepared = tools.resolveBatch(request(result.artifactId)).actions[0]
-    .arguments as { design: PreparedDesign }
-  expect(() => admitPreparedDesign(prepared.design)).not.toThrow()
+    .arguments as { design: PreparedDesignDelivery }
+  expect(() => admitPreparedDesignDelivery(prepared.design)).not.toThrow()
 })
 
 it('releases only explicitly discarded preparation artifacts without affecting retained ones', async () => {
@@ -908,10 +916,11 @@ it('defaults application to compact receipts while retaining all prepared identi
   Object.assign(fullRequest.actions[0].arguments, { response: 'full' })
   const full = tools.resolveBatch(fullRequest)
   expect(full.actions[0].arguments).toMatchObject({ response: 'full' })
-  const design = (compact.actions[0].arguments as { design: PreparedDesign })
-    .design
+  const design = (
+    compact.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
   expect(tools.resolveTargets({ artifactId: prepared.artifactId })).toEqual(
-    Object.values(design.keyToId)
+    Object.values(admitPreparedDesignDelivery(design).keyToId)
   )
 })
 
@@ -1154,8 +1163,9 @@ it('uses the same vector discriminator in reusable templates without changing ex
   expect(receipt).toMatchObject({ available: true, elementCount: 449 })
   expect(compile).toHaveBeenCalledOnce()
   const explicit = tools.resolveBatch(request(receipt.artifactId))
-  const design = (explicit.actions[0].arguments as { design: PreparedDesign })
-    .design
+  const design = (
+    explicit.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
   expect(
     design.entries.filter((entry) => entry.descriptor.type === 'vector')
   ).toHaveLength(448)
@@ -1475,7 +1485,8 @@ it('blocks a contradicted reviewed artifact through both native and batch apply 
 })
 
 it('discovers and invokes world material preparation through current schemas and retained recovery', async () => {
-  const tools = createLocalDesignTools(actions)
+  const session = createDesignPreparationSession()
+  const tools = createLocalDesignTools(actions, session)
   const source = designPreparationExamples.find(
     (e) => 'linearFields' in e.draft && 'glass' in e.draft.linearFields
   )
@@ -1497,11 +1508,14 @@ it('discovers and invokes world material preparation through current schemas and
   )
   expect(success).toMatchObject({ available: true, applicable: true })
   const batch = tools.resolveBatch(request(success.artifactId))
-  const design = (batch.actions[0].arguments as { design: PreparedDesign })
-    .design
-  expect(admitPreparedDesign(JSON.parse(JSON.stringify(design)))).toEqual(
-    JSON.parse(JSON.stringify(design))
-  )
+  const design = (
+    batch.actions[0].arguments as { design: PreparedDesignDelivery }
+  ).design
+  const canonical = session.resolve(success.artifactId)
+  expect(admitPreparedDesignDelivery(design)).toEqual(canonical)
+  expect(
+    admitPreparedDesignDelivery(JSON.parse(JSON.stringify(design)))
+  ).toEqual(JSON.parse(JSON.stringify(canonical)))
   const invalid = { draft: structuredClone(source.draft) }
   if (!('glass' in invalid.draft.linearFields))
     throw new Error('Missing cloned field')

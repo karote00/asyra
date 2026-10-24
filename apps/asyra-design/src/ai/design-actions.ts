@@ -25,12 +25,12 @@ import {
 } from '../common-apis'
 import { AiActionNames } from '../constants'
 import core from '../contexts'
-import { admitPreparedDesign } from './prepared-design-admission'
+import { admitPreparedDesignDelivery } from './prepared-design-admission'
 import {
   preparedAttachmentEvidenceSchema,
   type PreparedAttachmentEvidence
 } from './inspection-evidence'
-import type { PreparedDesign } from './prepared-design'
+import type { PreparedDesignDelivery } from './prepared-design'
 import type { createPreparedMaterialApplication } from './prepared-material-action'
 import {
   PREPARED_DRAWING_SLICE_ELEMENT_BUDGET,
@@ -86,7 +86,7 @@ export const createPreparedDesignAction = (
     'capture'
   >
 ): AiActionDefinition<{
-  design: PreparedDesign
+  design: PreparedDesignDelivery
   parentId?: string
   response?: 'compact' | 'full'
   attachmentEvidence?: PreparedAttachmentEvidence
@@ -167,7 +167,7 @@ export const createPreparedDesignAction = (
     )
       throw new Error('Invalid design parent identity.')
     const startedAt = now()
-    const design = admitPreparedDesign(args.design)
+    const design = admitPreparedDesignDelivery(args.design)
     const materialIds = args.materialElementIds ?? []
     if (
       new Set(materialIds).size !== materialIds.length ||
