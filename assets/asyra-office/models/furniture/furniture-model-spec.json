@@ -618,14 +618,14 @@
           "partId": "base",
           "primitive": "rounded-box",
           "size": [
-            1.35,
-            0.65,
-            0.16
+            1.15,
+            0.55,
+            0.21
           ],
           "centre": [
             0,
-            0,
-            0.2
+            -0.05,
+            0.175
           ],
           "radius": 0.045,
           "material": "sage"
@@ -636,12 +636,12 @@
           "size": [
             1.21,
             0.135,
-            0.42
+            0.52
           ],
           "centre": [
             0,
             0.2575,
-            0.49
+            0.34
           ],
           "radius": 0.045,
           "material": "sage"
@@ -652,12 +652,12 @@
           "size": [
             0.12,
             0.63,
-            0.31
+            0.47
           ],
           "centre": [
             -0.615,
             0,
-            0.375
+            0.295
           ],
           "radius": 0.048,
           "material": "sage"
@@ -667,12 +667,12 @@
           "primitive": "rounded-box",
           "size": [
             0.545,
-            0.45,
+            0.5,
             0.09
           ],
           "centre": [
             -0.278,
-            -0.05,
+            -0.075,
             0.295
           ],
           "radius": 0.035,
@@ -684,12 +684,12 @@
           "size": [
             0.545,
             0.11,
-            0.325
+            0.385
           ],
           "centre": [
             -0.278,
             0.148,
-            0.525
+            0.5072120950006342
           ],
           "radius": 0.04,
           "material": "sage",
@@ -701,12 +701,12 @@
           "size": [
             0.12,
             0.63,
-            0.31
+            0.47
           ],
           "centre": [
             0.615,
             0,
-            0.375
+            0.295
           ],
           "radius": 0.048,
           "material": "sage"
@@ -716,12 +716,12 @@
           "primitive": "rounded-box",
           "size": [
             0.545,
-            0.45,
+            0.5,
             0.09
           ],
           "centre": [
             0.278,
-            -0.05,
+            -0.075,
             0.295
           ],
           "radius": 0.035,
@@ -733,12 +733,12 @@
           "size": [
             0.545,
             0.11,
-            0.325
+            0.385
           ],
           "centre": [
             0.278,
             0.148,
-            0.525
+            0.5072120950006342
           ],
           "radius": 0.04,
           "material": "sage",
@@ -748,14 +748,14 @@
           "partId": "foot-1",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            -0.55,
+            -0.615,
             -0.23,
             0
           ],
           "topCentre": [
-            -0.55,
+            -0.615,
             -0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -766,14 +766,14 @@
           "partId": "foot-2",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            0.55,
+            0.615,
             -0.23,
             0
           ],
           "topCentre": [
-            0.55,
+            0.615,
             -0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -784,14 +784,14 @@
           "partId": "foot-3",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            -0.55,
+            -0.615,
             0.23,
             0
           ],
           "topCentre": [
-            -0.55,
+            -0.615,
             0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -802,14 +802,14 @@
           "partId": "foot-4",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            0.55,
+            0.615,
             0.23,
             0
           ],
           "topCentre": [
-            0.55,
+            0.615,
             0.23,
-            0.14
+            0.08
           ],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
@@ -820,12 +820,12 @@
       "seatDatums": [
         [
           -0.278,
-          -0.05,
+          -0.075,
           0.34
         ],
         [
           0.278,
-          -0.05,
+          -0.075,
           0.34
         ]
       ],
@@ -838,7 +838,151 @@
       "excluded": [
         "yellow throw pillows"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "TWO-SEAT-SOFA-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "referenceRelationship": "Back cushions rise above rear shell and join seat cushions. Arms extend to short-foot level. Twelve solids form one connected assembly.",
+        "dimensionAuthority": "Overall size and seat height retained. Component revisions are explicit construction choices to satisfy the illustrated relationships, not calibrated image measurements."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Complete the default assembly including local back-cushion rotations, then apply requested/default XYZ ratios once to every part, joint gap and seat datum about the ground origin. Do not refit cushions, feet or radii after scaling."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "base",
+            "parts": [
+              "base"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "back-shell",
+            "parts": [
+              "back-shell"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "arm--1",
+            "parts": [
+              "arm--1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "seat-cushion--1",
+            "parts": [
+              "seat-cushion--1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "back-cushion--1",
+            "parts": [
+              "back-cushion--1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "arm-1",
+            "parts": [
+              "arm-1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "seat-cushion-1",
+            "parts": [
+              "seat-cushion-1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "back-cushion-1",
+            "parts": [
+              "back-cushion-1"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "foot-1",
+            "parts": [
+              "foot-1"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "foot-2",
+            "parts": [
+              "foot-2"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "foot-3",
+            "parts": [
+              "foot-3"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "foot-4",
+            "parts": [
+              "foot-4"
+            ],
+            "defaultMaterial": "dark-wood"
+          }
+        ],
+        "overrideOrder": "Part region material, otherwise sofa material, otherwise preset; then part region colour, otherwise sofa colour. Preserve remaining material properties and isolate instances.",
+        "mapping": "Solid defaults; replacement material owns mappings under the shared resized-local-space rule."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "bevelSegments": 8,
+            "cornerTopology": "normalized-barycentric-grid",
+            "footRadialSegments": 32,
+            "footBevelSegments": 3,
+            "maxTriangles": 8500,
+            "maxSurfaceError": 0.001,
+            "maxFootSurfaceError": 0.00025
+          },
+          {
+            "id": "lod1",
+            "bevelSegments": 5,
+            "cornerTopology": "normalized-barycentric-grid",
+            "footRadialSegments": 24,
+            "footBevelSegments": 2,
+            "maxTriangles": 4500,
+            "maxSurfaceError": 0.002,
+            "maxFootSurfaceError": 0.0005
+          },
+          {
+            "id": "lod2",
+            "bevelSegments": 3,
+            "cornerTopology": "centre-fan",
+            "footRadialSegments": 12,
+            "footBevelSegments": 1,
+            "maxTriangles": 1800,
+            "maxSurfaceError": 0.006,
+            "maxFootSurfaceError": 0.0015
+          }
+        ],
+        "rule": "Keep twelve closed parts, four flat foot contacts, all attachment overlaps, two seat/back divisions and common ideal bounds. Count caps and hidden faces. Include boundary-consistent support samples for rotated cushion extrema.",
+        "errorMetric": "Adaptive bidirectional distance per part against the ideal default placed surface. Subdivision bounds do not certify a produced mesh.",
+        "failurePolicy": "Reject a triangle or error budget failure; never hide gaps with patches or silently remove parts.",
+        "attachmentRule": "Every attachment witness must stay strictly inside both closed convex parts at each LOD. Its default-space interior margin must exceed the applicable part error bound. Feet have separate tighter bounds. All generated meshes still require signed-distance, topology and budget verification."
+      }
     },
     {
       "moduleId": "lounge-armchair",

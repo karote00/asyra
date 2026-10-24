@@ -28,6 +28,14 @@ seat bottom, matching the BACK connection rule; the former 56 mm hanging stubs
 were a specification error. The linked inspection crop enlarges original pixels
 without creating a replacement design. Actual model appearance remains unverified.
 
+## Two-seat sofa document review
+
+The [sofa specification](../TWO-SEAT-SOFA-SPEC.md) is approved for commit.
+The five-view image remains unchanged. Its RIGHT SIDE label 0.30 m is not the
+construction height; the agreed overall height is 0.70 m. The revised numeric
+assembly follows the reference's cushion-above-shell relationship and short
+feet, with documented contacts and no model acceptance claim.
+
 ## Lighting revision - 2026-10-04
 
 The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.

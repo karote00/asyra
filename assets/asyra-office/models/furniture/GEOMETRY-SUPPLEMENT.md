@@ -34,9 +34,27 @@ The original character obscures legs/posts. Four legs, no wheels, and no arms ar
 
 ## Green two-seat sofa
 
-One base, one rear shell, two arms, two seat cushions, two back cushions, and four short round wooden feet. Seat maximum Z=0.34, arms Z=0.53, rear shell Z=0.70. Left/right seat and back cushions have centres X=±0.278 and width 0.545, leaving a 0.011 gap; no black seam texture.
+The [sofa construction contract](TWO-SEAT-SOFA-SPEC.md) owns the revised numeric
+assembly, connections, sizing, appearance and LOD targets. These sofa-specific
+rules supersede the generic three-segment sampling default.
 
-Each back cushion leans back by X=-10°; other JSON parts remain unrotated. Rear shell is solid green; cushion undersides are closed in the same colour. The two yellow throw pillows are separate objects and excluded. Do not omit structural back cushions as though they were loose pillows. Internal structure is hidden in the base; do not model unseen springs or wooden slats.
+One base, one rear shell, two arms, two seat cushions, two back cushions and
+four short round wooden feet form twelve closed parts. Seat top Z=0.34, arm
+top Z=0.53, rear-shell top Z=0.60 and back-cushion top Z=0.70. Cushion centres
+X=+/-0.278 and width 0.545 leave an 0.011 m central gap; no black seam texture.
+
+Back cushions rotate -10 degrees about their own centres, with their corrected
+lower portions overlapping the seat cushions. Arms extend to Z=0.06; feet at
+X=+/-0.615, Y=+/-0.23 attach beneath the arms and extend to Z=0.08. The inset
+base overlaps arms and rear shell without coincident exterior side planes.
+Do not restore the former floating rear-shell/base contact or long exposed feet.
+The sheet's RIGHT SIDE height label 0.30 m is an annotation error; overall
+height is 0.70 m. The sheet is otherwise retained as the appearance reference.
+
+The rear is plain green and all undersides are closed. Structural cushions
+belong to the sofa; yellow throw pillows are excluded separate assets. Internal
+springs and wooden slats are not modeled. Full numeric tables and attachment
+witnesses are in the sofa contract; no actual model is verified.
 
 ## Orange lounge armchair
 

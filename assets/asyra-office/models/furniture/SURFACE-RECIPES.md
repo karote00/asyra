@@ -44,3 +44,13 @@ preset; then region colour, otherwise chair colour. Preserve other properties
 and independent instances. Solid defaults have no texture mapping; replacement
 materials own their mappings under the shared resized-local-space rule. The
 desk's wood-grain blend does not apply to chair cushions or supports.
+
+## Two-seat sofa replacement
+
+The [sofa contract](TWO-SEAT-SOFA-SPEC.md) declares one independently replaceable
+region per part. Sage (#78836A, roughness 0.93) and dark-wood (#584333, roughness
+0.82) are defaults. Use region material, otherwise sofa material, otherwise
+preset; then region colour, otherwise sofa colour, preserving other properties
+and isolating instances. Default fabric and feet are solid colours. Replacement
+materials own their mapping under the shared resized-local-space rules; no
+reference shading, painted seam gaps or compulsory wood/fabric texture.

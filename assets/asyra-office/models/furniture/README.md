@@ -29,6 +29,16 @@ post termination at the seat bottom, replacement regions and unverified LOD limi
 Only the post lower ends are shortened to match the sheet; other geometry inputs
 and reference pixels remain unchanged. No model is verified.
 
+## Two-seat sofa review
+
+The [revised sofa contract](TWO-SEAT-SOFA-SPEC.md) is approved for commit. It
+corrects rear-shell/cushion height ordering and attachment, extends the arms to
+short-foot level, and insets the base to avoid duplicate exterior surfaces.
+Default bounds and seat height remain 1.35 x 0.65 x 0.70 m and 0.34 m. Exact
+component revisions are construction choices, not measurements from pixels.
+The original sheet is preserved; its side-height label is explicitly corrected
+in the document. No model or app output is verified.
+
 ## Sources and modeling inputs
 
 - [Original approved image](../architecture/review/approved-office-reference.jpg): central office first.
