@@ -285,6 +285,132 @@
           ]
         ],
         "lineRadius": 0.0013
+      },
+      "review": {
+        "reference": "review/01-sleeping-orange-cat-v1.png",
+        "referenceSHA256": "e13a4e72ce73faf80080cbe60ea79d26bcb01d5bc45c72d198f866798896c4a2",
+        "imagePixels": [
+          1536,
+          1024
+        ],
+        "shapeStatus": "user-approved",
+        "documentStatus": "user-approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "SLEEPING-CAT-SPEC.md",
+        "limitations": "Source views are illustrative. Raw primitive inputs are authored construction coordinates, not measured final part sizes. Numeric checks do not certify a final mesh, pose deformation or rendered resemblance."
+      },
+      "sizing": {
+        "defaultBoundsSource": "complete-default-surface",
+        "normalizationStage": "Once on the complete extracted default surface before LOD generation; use the same transform for every component, landmark and appearance region.",
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "origin": "XY midpoint of default bounds; Z at lowest default surface",
+        "maskSpace": "Inverse instance transform, then inverse default normalization, to recover raw anatomical coordinates.",
+        "lodTransform": "All LODs inherit the default surface normalization; never independently recenter or normalize a reduced LOD."
+      },
+      "facialProjection": {
+        "invalidDomainPolicy": "reject",
+        "unionHit": "frontmost-head-owned",
+        "projectionAxis": "+Y",
+        "strokeDomain": "Check the complete stroke radius and nose ellipse, not only their control points.",
+        "surfaceOwnership": "Use the smallest pre-blend primitive field, with original numeric-list tie order. Reject an occluded or non-head-owned frontmost hit instead of painting a paw or tail.",
+        "duplicateBackProjection": false
+      },
+      "pawPads": {
+        "centralRadiiXY": [
+          0.014,
+          0.012
+        ],
+        "toeCentresXY": [
+          [
+            -0.012,
+            -0.02
+          ],
+          [
+            0,
+            -0.024
+          ],
+          [
+            0.012,
+            -0.02
+          ]
+        ],
+        "toeRadius": 0.0045,
+        "surfaceSelection": "paw-owned-downward-facing",
+        "defaultMaterial": "pink"
+      },
+      "appearance": {
+        "sharedPolicy": "../README.md#overall-size-and-appearance---2026-10-09",
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "orange-coat",
+            "defaultMaterial": "orange"
+          },
+          {
+            "id": "cream-coat",
+            "defaultMaterial": "cream"
+          },
+          {
+            "id": "ear-interiors",
+            "defaultMaterial": "pink"
+          },
+          {
+            "id": "nose",
+            "defaultMaterial": "pink"
+          },
+          {
+            "id": "paw-pads",
+            "defaultMaterial": "pink"
+          },
+          {
+            "id": "closed-eyes",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "mouth",
+            "defaultMaterial": "dark"
+          }
+        ],
+        "overrideOrder": [
+          "region material",
+          "animal material",
+          "preset material",
+          "region colour or animal colour"
+        ],
+        "regionPreservation": "Preserve named regions even when default colours match. Unioned geometry does not merge region identities. Store intrinsic masks independently of palette colours; a flattened default-colour atlas alone cannot implement region overrides."
+      },
+      "lod": {
+        "verified": false,
+        "referenceSurface": "Normalized complete default surface before mesh reduction",
+        "errorMetric": "Maximum bidirectional surface distance in default metres; retain closed surfaces and anatomical connectivity. During mesh review use an adaptive surface comparison, not only vertex probes.",
+        "tiers": [
+          {
+            "id": "lod0",
+            "maxTriangles": 12000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod1",
+            "maxTriangles": 6000,
+            "maxSurfaceError": 0.002
+          },
+          {
+            "id": "lod2",
+            "maxTriangles": 2000,
+            "maxSurfaceError": 0.004
+          }
+        ],
+        "preserve": [
+          "four paw lobes",
+          "two ears",
+          "tail root and continuous tail",
+          "sleeping silhouette",
+          "face placement",
+          "independent appearance regions"
+        ],
+        "failurePolicy": "Reject a mesh if either precision or whole-animal triangle budget fails; do not increase budgets or erase anatomical parts silently."
       }
     },
     {

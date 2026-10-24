@@ -1,5 +1,10 @@
 # Cat and Corgi - Geometry Supplement
 
+The sleeping cat uses [its reviewed construction contract](SLEEPING-CAT-SPEC.md)
+for default/instance scaling, valid facial projection, tail continuity, review
+cameras and LOD acceptance. Cat-specific clarifications there take precedence.
+The corgi retains the baseline recipe below and awaits its own review.
+
 ## Authority, axes and poses
 
 Use metres, +Z up, -Y front and +X right. Front looks along +Y, right along -X, back along -Y, top along -Z and bottom along +Z. Side-view page orientation may be rotated for readability; world axes in the numeric specification control construction.
@@ -22,7 +27,7 @@ Union primitives in numeric-list order: ellipsoids, left ear, right ear, tail sa
 h=max(k-abs(a-b),0)/k; smin(a,b)=min(a,b)-h*h*k/4, with k=0.004.
 Extract the zero isosurface on a 0.001 m grid aligned to raw coordinate multiples, padding analytic primitive bounds by 0.02 m on each side. Interpolate edge intersections linearly. Use outward normals derived from the field gradient. Do not add post-extraction smoothing, subdivision or fur.
 
-Add the corgi's nose ellipsoid after the body union as a separate intersecting dark component. The cat's nose is a surface graphic. No internal anatomy is needed. Paws remain four distinct visible lobes even where their roots blend into the body.
+Add the corgi's nose ellipsoid after the body union as a separate intersecting dark component. The cat's nose is a surface graphic. No internal anatomy is specified for these static poses; this does not certify suitability for other poses or animation. Paws remain four distinct visible lobes even where their roots blend into the body.
 
 After construction, compute bounds over the complete animal including the corgi nose. Let raw minimum/maximum be lo/hi. Normalize each coordinate using:
 X'=(X-(loX+hiX)/2)*targetX/(hiX-loX);
@@ -32,7 +37,11 @@ Use the target sizes in JSON. This final normalization is part of the recipe, no
 
 ## Faces
 
-Project graphic landmarks onto the front hemisphere of the head ellipsoid. For a landmark (x,z), its raw Y is cy-ry*sqrt(max(0,1-((x-cx)/rx)^2-((z-cz)/rz)^2)). Reproject along Y to the final union surface if blending displaced it. Graphics are flush intrinsic color, not raised wires or holes.
+For the cat, use the full-stroke valid-domain check and frontmost head-owned
+union hit in [the cat contract](SLEEPING-CAT-SPEC.md); invalid projection must
+fail, with no square-root clamping or rear-surface painting.
+
+The retained corgi baseline projects graphic landmarks onto the front hemisphere of the head ellipsoid. For a landmark (x,z), its raw Y is cy-ry*sqrt(max(0,1-((x-cx)/rx)^2-((z-cz)/rz)^2)). Reproject along Y to the final union surface if blending displaced it. Graphics are flush intrinsic color, not raised wires or holes.
 
 Cat eyes and mouth are quadratic Bezier curves through the listed XZ control triples, sampled at 32 intervals. Paint points whose projected XZ distance from a curve is within its lineRadius. The pink cat nose uses the given XZ ellipse. Corgi eyes use the listed XZ ellipses. All eyes are dark, with no glints, whites or lashes.
 

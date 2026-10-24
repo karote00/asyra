@@ -4,9 +4,15 @@ Status: user-approved reference sheets. Two complete independent animals.
 
 ## Sleeping orange cat
 
-The central-office pet, in a curled sleeping pose. Authored bounds: 0.38 x 0.50 x 0.26 m.
+The central-office pet, in a curled sleeping pose. Default final bounds: 0.38 x 0.50 x 0.26 m. The user reconfirmed this shape; the [updated cat construction document](../SLEEPING-CAT-SPEC.md) is approved for commit. The original sheet is unchanged.
 
 ![Sleeping orange cat - multiple views](01-sleeping-orange-cat-v1.png)
+
+## Document-only reconstruction illustration
+
+The [final illustration and provenance](document-only/README.md) are retained
+separately as a document-interpretation exercise. They do not replace the original
+six-view reference or verify a constructed model.
 
 ## Standing corgi
 
