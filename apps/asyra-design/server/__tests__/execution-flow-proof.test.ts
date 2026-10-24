@@ -7433,7 +7433,7 @@ it('execution proof separates bounded work from same-thread self-report without 
   expect(executeBatch).not.toHaveBeenCalled()
 })
 
-const proveBudgetRecovery = async (limit: number) => {
+const proveBudgetRecovery = async (limit: number, withBrief = false) => {
   const hadWindow = 'window' in globalThis
   if (!hadWindow) vi.stubGlobal('window', {})
   try {
@@ -7505,6 +7505,17 @@ const proveBudgetRecovery = async (limit: number) => {
             draft: {
               type: 'group',
               name: 'Repeated panels',
+              ...(withBrief
+                ? {
+                    brief: {
+                      intent: 'Repeat facade panels',
+                      viewpoint: 'Oblique',
+                      sources: ['User dimensions'],
+                      assumptions: ['Finish provisional'],
+                      checks: []
+                    }
+                  }
+                : {}),
               key: 'root',
               projection: {
                 azimuth: 30,
@@ -7579,6 +7590,9 @@ const proveBudgetRecovery = async (limit: number) => {
     if (!hadWindow) vi.unstubAllGlobals()
   }
 }
+
+it('execution proof preserves descriptive brief through safe capacity and one root', () =>
+  proveBudgetRecovery(10000, true))
 
 it('execution proof continues safe capacity through retained partitions in one invocation', () =>
   proveBudgetRecovery(10000))
@@ -8670,4 +8684,60 @@ it('execution proof preserves incremental UI publications without unrelated hier
     subscription?.unsubscribe()
     stop()
   }
+})
+
+it('execution proof retains failed image forwarding for display-only recovery', async () => {
+  const { runInNewContext } = await import('node:vm')
+  const {
+    localToolContent,
+    localToolResultExample,
+    localToolResultRecoveryExample,
+    localToolResultInstructions
+  } = await import('../local-operation-tools')
+  const imageBytes = await sharp({
+    create: { width: 2, height: 2, channels: 3, background: '#345678' }
+  })
+    .png()
+    .toBuffer()
+  const uri = 'data:image/png;base64,' + imageBytes.toString('base64')
+  const receipt = {
+    toolOutcome: { status: 'success', settlement: 'completed' },
+    actionResults: [
+      {
+        actionName: 'inspect_drawing',
+        result: {
+          available: true,
+          inspectionId: 'original-image',
+          image: { width: 2, height: 2, dataUrl: uri }
+        }
+      }
+    ]
+  }
+  const content = await localToolContent(JSON.stringify(receipt))
+  const result = content
+    .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
+    .join('\n')
+  const saved = new Map<string, unknown>()
+  const text = vi.fn()
+  const context = {
+    resultKey: 'receipt',
+    text,
+    store: (key: string, value: unknown) => saved.set(key, value),
+    load: (key: string) => saved.get(key)
+  }
+  expect(() =>
+    runInNewContext(localToolResultExample, {
+      ...context,
+      result,
+      image: () => {
+        throw new Error('Display failed')
+      }
+    })
+  ).toThrow('Display failed')
+  const image = vi.fn()
+  runInNewContext(localToolResultRecoveryExample, { ...context, image })
+  expect(image.mock.calls).toEqual([[uri]])
+  expect(text.mock.calls.at(-1)?.[0].toolOutcome).toEqual(receipt.toolOutcome)
+  expect(localToolResultInstructions).toContain(localToolResultRecoveryExample)
+  expect(localToolResultInstructions).toContain('bindChecks')
 })

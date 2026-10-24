@@ -4360,19 +4360,28 @@ export const createLocalOperationTools = (
   return deliveredOwner
 }
 
-// This recipe is tested against native Code Mode's actual dynamic-tool adapter.
-export const localToolResultExample = `const [receipt, ...images] = result.split("\\n");
+// Shared by first delivery and redisplay; verified through the native image helper.
+const localToolForwardingExample = `if (typeof result !== "string") throw new Error("Retained tool result is unavailable; do not replay writes.");
+const [receipt, ...images] = result.split("\\n");
 text(JSON.parse(receipt));
 for (const uri of images) image(uri);`
+
+export const localToolResultExample = `store(resultKey, result);
+${localToolForwardingExample}`
+
+export const localToolResultRecoveryExample = `const result = load(resultKey);
+${localToolForwardingExample}`
 
 export const localToolResultInstructions =
   informationDeliveryInstructions +
   informationDeliveryExampleInstructions +
   `
 App tool results in Code Mode are STRINGS, not MCP objects with a content array.
-For other receipts, the first line is JSON; any following lines are image data URLs. After const result = await tools.<discovered_tool>(input), forward the result in that SAME exec using the following receipt example. Informational discovery uses the bounded example above instead:
+For other receipts, the first line is JSON; any following lines are image data URLs. Choose a fresh resultKey for each invocation before const result = await tools.<discovered_tool>(input). Save and forward in that SAME exec using this receipt example. Informational discovery uses the bounded example above instead:
 ${localToolResultExample}
-Do not print a whole image-bearing result string: that prints base64 instead of showing images. Retain result with store if needed; redisplay that retained result with this recipe instead of importing again. Text-only receipts have no following image lines.`
+If display fails, use the same resultKey in a new exec without calling the tool again:
+${localToolResultRecoveryExample}
+Do not print the whole result: that exposes base64 instead of images. Text-only receipts have no image lines. Redisplay is not recapture, binding or visual approval. Bind retained inspectionIds with review_drawing bindChecks when criteria are ready; preserve current bindings. Never redraw or recapture merely to retry display. Release unneeded retained results with store(resultKey, null).`
 
 /** Separate validated original reference rasters and bounded canvas snapshots from text. */
 export const localToolContent = async (

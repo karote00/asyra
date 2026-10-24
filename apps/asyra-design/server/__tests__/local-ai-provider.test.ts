@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
+import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { admitPreparedDesignDelivery } from '../../src/ai/prepared-design-admission'
 import { PREPARED_DESIGN_DELIVERY_VERSION } from '../../src/ai/prepared-design'
@@ -1462,6 +1463,12 @@ describe('local subscription AI backend', () => {
         )
     }
     const instructions = thread?.developerInstructions as string
+    const { localToolResultExample, localToolResultRecoveryExample } =
+      await import('../local-operation-tools')
+    expect(instructions).toContain(localToolResultExample)
+    expect(instructions).toContain(localToolResultRecoveryExample)
+    expect(instructions).toContain('fresh resultKey')
+    expect(instructions).toContain('without calling the tool again')
     const base = String(thread?.baseInstructions)
     process.stdout.write(
       JSON.stringify({
@@ -7056,98 +7063,144 @@ it('delivers the request-local evaluation budget through actual native discovery
   }
 })
 
-it('continues capacity in one native call and preserves retained source ownership for later reads', async () => {
-  vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  let sourceId: unknown
-  let firstReply: unknown
-  const server = fakeServer({
-    toolCall: true,
-    toolName: 'prepare_and_apply_design',
-    toolArguments: capacityFixture.input,
-    followupTool: (reply) => {
-      firstReply = reply
-      sourceId = (
-        reply.parts as { preparationInput?: { draftId?: string } }[] | undefined
-      )?.[0]?.preparationInput?.draftId
-      return {
-        name: 'prepare_design',
-        args: { repair: { draftId: sourceId, partition: 0 } }
+it.each([
+  {
+    label: 'source-only original capabilities',
+    arguments: capacityFixture.input,
+    count: 9418,
+    captureUnavailable: false
+  },
+  {
+    label: 'saved brief and immediate inspection',
+    arguments: briefFixture.input,
+    count: 9857,
+    captureUnavailable: true
+  }
+])(
+  'continues capacity in one native call and preserves retained source ownership for later reads: $label',
+  async (scenario) => {
+    vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    let sourceId: unknown
+    let firstReply: unknown
+    const server = fakeServer({
+      toolCall: true,
+      toolName: 'prepare_and_apply_design',
+      toolArguments: scenario.arguments,
+      followupTool: (reply) => {
+        firstReply = reply
+        sourceId = (
+          reply.parts as
+            { preparationInput?: { draftId?: string } }[] | undefined
+        )?.[0]?.preparationInput?.draftId
+        return {
+          name: 'prepare_design',
+          args: { repair: { draftId: sourceId, partition: 0 } }
+        }
       }
-    }
-  })
-  spawn.mockReturnValue(server.child)
-  const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
-    context: {},
-    actionResults: batch.actions.map(
-      (action): AiBatchReceipt['actionResults'][number] => {
-        if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
-          const { design } = action.arguments as {
-            design: { entries: { descriptor: { id: string } }[] }
+    })
+    spawn.mockReturnValue(server.child)
+    const executeBatch = vi.fn(async (batch: AiActionBatch) => ({
+      context: {},
+      actionResults: batch.actions.map(
+        (action): AiBatchReceipt['actionResults'][number] => {
+          if (action.name === AiActionNames.APPLY_PREPARED_DESIGN) {
+            const { design } = action.arguments as {
+              design: { entries: { descriptor: { id: string } }[] }
+            }
+            return {
+              actionId: action.id,
+              actionName: action.name,
+              result: {
+                status: 'complete' as const,
+                compositionId: design.entries[0].descriptor.id,
+                appliedElementIds: design.entries.map(
+                  (entry) => entry.descriptor.id
+                )
+              }
+            }
           }
           return {
             actionId: action.id,
             actionName: action.name,
             result: {
-              status: 'complete' as const,
-              compositionId: design.entries[0].descriptor.id,
-              appliedElementIds: design.entries.map(
-                (entry) => entry.descriptor.id
-              )
+              complete: true,
+              findings: [],
+              measuredTextIds: [],
+              evidence: { sessionId: 'capacity-native', revision: 1 }
             }
           }
         }
-        return {
-          actionId: action.id,
-          actionName: action.name,
-          result: {
-            complete: true,
-            findings: [],
-            measuredTextIds: [],
-            evidence: { sessionId: 'capacity-native', revision: 1 }
+      )
+    }))
+    await requestConfiguredAiActionBatch(
+      {
+        ...input,
+        actions: [
+          ...(scenario.captureUnavailable
+            ? [
+                {
+                  name: AiActionNames.INSPECT_DRAWING,
+                  description: 'Inspect',
+                  inputSchema: {}
+                }
+              ]
+            : []),
+          {
+            name: AiActionNames.APPLY_PREPARED_DESIGN,
+            description: 'Apply',
+            inputSchema: {}
+          },
+          {
+            name: AiActionNames.REVIEW_DESIGN,
+            description: 'Review',
+            inputSchema: {}
           }
-        }
-      }
+        ]
+      },
+      { environment, executeBatch }
     )
-  }))
-  await requestConfiguredAiActionBatch(
-    {
-      ...input,
-      actions: [
-        {
-          name: AiActionNames.APPLY_PREPARED_DESIGN,
-          description: 'Apply',
-          inputSchema: {}
-        },
-        {
-          name: AiActionNames.REVIEW_DESIGN,
-          description: 'Review',
-          inputSchema: {}
-        }
-      ]
-    },
-    { environment, executeBatch }
-  )
-  const packet = server.packets.find(
-    (packet) => packet.id === 100
-  ) as unknown as {
-    result: { success: boolean; contentItems: { text: string }[] }
+    const packet = server.packets.find(
+      (packet) => packet.id === 100
+    ) as unknown as {
+      result: { success: boolean; contentItems: { text: string }[] }
+    }
+    expect(firstReply, JSON.stringify(firstReply)).toMatchObject({
+      status: scenario.captureUnavailable ? 'partial' : 'complete',
+      toolOutcome: {
+        status: scenario.captureUnavailable ? 'partial' : 'success',
+        settlement: 'completed'
+      },
+      ...(scenario.captureUnavailable
+        ? {
+            inspectionIssues: [
+              { message: expect.stringContaining('Capture is unavailable') }
+            ]
+          }
+        : {})
+    })
+    // This native transport fixture has no browser pixels. Preserve its truthful
+    // capture failure after both writes; capacity is not a failed preparation.
+    expect(
+      (firstReply as { parts: { toolOutcome: unknown }[] }).parts.map(
+        (part) => part.toolOutcome
+      )
+    ).toEqual([
+      expect.objectContaining({ status: 'success', settlement: 'completed' }),
+      expect.objectContaining({ status: 'success', settlement: 'completed' })
+    ])
+    expect(sourceId).toEqual(expect.any(String))
+    expect(packet.result.success, JSON.stringify(packet.result)).toBe(true)
+    const prepared = JSON.parse(packet.result.contentItems[0].text)
+    expect(prepared.preparationInput.draftId).toBe(sourceId)
+    expect(prepared.elementCount).toBe(scenario.count)
+    expect(prepared.applicable).toBe(true)
+    expect(
+      executeBatch.mock.calls
+        .flatMap(([batch]) => batch.actions)
+        .filter((action) => action.name === AiActionNames.APPLY_PREPARED_DESIGN)
+    ).toHaveLength(2)
   }
-  expect(firstReply, JSON.stringify(firstReply)).toMatchObject({
-    status: 'complete',
-    toolOutcome: { status: 'success', settlement: 'completed' }
-  })
-  expect(sourceId).toEqual(expect.any(String))
-  expect(packet.result.success, JSON.stringify(packet.result)).toBe(true)
-  const prepared = JSON.parse(packet.result.contentItems[0].text)
-  expect(prepared.preparationInput.draftId).toBe(sourceId)
-  expect(prepared.elementCount).toBe(9418)
-  expect(prepared.applicable).toBe(true)
-  expect(
-    executeBatch.mock.calls
-      .flatMap(([batch]) => batch.actions)
-      .filter((action) => action.name === AiActionNames.APPLY_PREPARED_DESIGN)
-  ).toHaveLength(2)
-})
+)
 
 it.each([1, 40])(
   'delivers %i settled interrupted owner receipts to the bounded report without restarting tools',

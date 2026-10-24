@@ -128,7 +128,7 @@
           'Deliver bounded model-authored current-work messages through existing progress without replacing them with tool labels or introducing an extra model request; messages are intent, never success evidence',
           'Return admission, execution, decoding and delivery failures to the model without aborting the turn; preserve acknowledged work and unknown settlement explicitly; Stop and broken transport or provider protocol remain terminal',
           'Document completion confirms the existing captured durable publication target, never calls a full serializer to imply persistence. Explicit export exposes a browser-owned downloadable immutable artifact and typed bounded metadata; remove raw document serializer AI routes without changing Framework APIs or retaining aliases.',
-          'Deliver original PNG, JPEG and WebP reference bytes at admitted dimensions; advertise and verify the actual Code Mode string-result forwarding contract without MCP content-array assumptions or base64 text output; verify actual model image visibility independently of acquisition; keep canvas snapshot limits scoped to inspection',
+          'Deliver admitted original pixels through the native image helper using the published string-result recipe. Save under a fresh caller-selected Code Mode key before display; recovery loads that result without producer calls. Verify actual native successor image bytes/order and separate receipt success, native delivery, unavailable live visibility and visual verdict. Reuse existing bindChecks after criteria definition; no redraw, recapture, new retention owner or automatic retry.',
           'Distinguish usable output, unavailable preparation and partial receipts from transport completion',
           'Resolve exact semantic operation identities and categories against current admitted schemas; never infer an adapter from lexical similarity',
           'Batch schema, admission and discovery use the same admitted action set. Explicit review/capture advertises the actual native wrapper and input wrapping; ambiguous or missing registration is unavailable. All lookup/recovery views preserve this route. Compact lexical menus include native/saved capabilities without consuming full schema delivery; explicit usage/full views work with every selector and preserve page/revision boundaries; schema fragments require exact identities; reference research stays separate and no query automatically dispatches another tool.',
@@ -187,6 +187,10 @@
           'request-local admitted action identity and exact definition revision; explicit refresh bypasses delivery reuse'
         ],
         implementationBoundary: [
+          'apps/asyra-design/server/__tests__/image-delivery.integration.test.ts',
+          'apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery/inspection.png',
+          'apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery/inspection.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/compact-receipt-20261024.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/context-discovery-20261023.json',
           'apps/asyra-design/server/__tests__/shared-motifs.test.ts',
@@ -343,6 +347,7 @@
           'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts'
         ],
         specRefs: [
+          '#image-result-delivery-and-recovery',
           '#main-workflow-visual-judgment-handoff',
           '#compact-workflow-delivery',
           '#shared-normalized-motifs',
@@ -351,7 +356,8 @@
           '#composition-examples-within-selected-usage',
           '#component-selection-and-bounded-repetition',
           '#translated-mixed-components',
-          '#expansion-budget-selection', '#source-referenced-expansion-recovery',
+          '#expansion-budget-selection',
+          '#source-referenced-expansion-recovery',
           '#bounded-evaluation-work-and-self-report',
           '#exact-name-query-selection',
           '#next-part-operation-selection',
@@ -378,7 +384,10 @@
           'validated semantic parameters',
           'request-local immutable handles'
         ],
-        outputs: ['artifact:prepared-artifact', 'artifact:retained-capacity-plan'],
+        outputs: [
+          'artifact:prepared-artifact',
+          'artifact:retained-capacity-plan'
+        ],
         conditions: [
           'Budget admission precedes immutable source snapshot and compilation. Pattern face admission reads each vertex collection once to derive aggregate and largest primitive counts, independently of instance count; snapshot and template projection retain separate owners. Rejected budgets do not clone or compile. Artifact lookup does not reread caller input; preserve cancellation, isolation, release and current recovery without new cache or skipped validation.',
           'An explicit evaluation window may lower the request-local expanded-object limit to 2000; absence retains 10000 and other values reject. Existing budget inspection, preparation session and retained-source partition planning share that effective limit with delivered usage. No mutable global policy, geometry change, new store or model-controlled override; compiler/browser production ceilings and other guards remain unchanged.',
@@ -386,6 +395,7 @@
           'Material revision consumes an owned immutable source and explicit existing world field; the same compiler produces selected material patches with original creation identities and field membership. Preserve geometry and unrelated fields; publish a separate immutable revision with real cleanup, never permit that revision as creation, and allow explicit future drafts to reuse its fields without inline conflicts. Missing source and invalid fields publish nothing; no visual approval or canonical writes occur in preparation.',
           'Prepared assessment identity uses semantic attachment content and document session, not a fresh receipt UUID or global observation revision. Every fresh receipt is still validated before publishing/reusing a pass and retained for apply admission; new session, changed basis/bounds/parent/source or failed currency cannot inherit a valid result. Equivalent receipt renewal preserves same-source conflict evidence.',
           'Use existing preparation owners and retain original resolution',
+          'Budget eligibility preserves a schema-valid descriptive root brief with empty checks in retained partitions and prepared reviews. Nonempty whole-design numeric checks and malformed briefs produce explicit no-write limitations with unchanged retained source; never drop checks or treat partial bounds as whole-design acceptance. Ordinary single-artifact checks remain valid. Existing repair retention owns partition limitation diagnostics; compose consumes safe parts without a model resubmission or a second root.',
           'Source partition recovery requires disjoint source key families. Duplicate keys and overlapping generated prefixes remain unsupported without renaming or bypassing global uniqueness; ordinary independent parts remain legal.',
           'Publish immutable prepared handles with real cleanup and freshness hooks; target sets alias their backing artifact. Failed publication removes only new local state, alias admission is atomic, and explicit release cannot invalidate borrowed artifacts.',
           'Admit bounded signed projected and draft offsets before existing Group bounds normalization; final Group-relative child offsets are nonnegative and world geometry is unchanged; preserve positive dimensions, vector-local geometry and explicit Frame overflow findings',
@@ -449,6 +459,7 @@
           'apps/asyra-design/server/design-draft-repair.ts',
           'apps/asyra-design/server/__tests__/design-target-index.test.ts',
           'apps/asyra-design/server/__tests__/design-draft-repair.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101',
           'apps/asyra-design/src/ai/prepared-design.ts',
           'apps/asyra-design/src/ai/design-fill.ts',
           'apps/asyra-design/server/design-budget.ts',
@@ -477,7 +488,10 @@
           'apps/asyra-design/server/__tests__/local-design-tools.test.ts',
           'apps/asyra-design/server/__tests__/design-preparation.test.ts'
         ],
-        specRefs: ['#shared-normalized-motifs', '#preparation-source-reads-and-immutable-lifetime', '#source-referenced-expansion-recovery',
+        specRefs: [
+          '#shared-normalized-motifs',
+          '#preparation-source-reads-and-immutable-lifetime',
+          '#source-referenced-expansion-recovery',
           '#translated-mixed-components',
           '#preparation-and-execution'
         ],
@@ -762,7 +776,8 @@
         ],
         specRefs: [
           '#creation-batch-ui-projection',
-          '#prepared-design-delivery','#source-referenced-expansion-recovery',
+          '#prepared-design-delivery',
+          '#source-referenced-expansion-recovery',
           '#bounded-evaluation-work-and-self-report',
           '#owner-results-and-workflow-outcomes',
           '#core-owner-result-contracts',
@@ -1230,7 +1245,8 @@
         terminal: false,
         title: 'Retained capacity plan',
         channel: 'App execution',
-        description: 'Existing immutable source and bounded partition references; successful preparation, never compiled geometry or a canvas receipt.'
+        description:
+          'Existing immutable source and bounded partition references; successful preparation, never compiled geometry or a canvas receipt.'
       },
       {
         id: 'artifact:prepared-review',
@@ -1320,7 +1336,8 @@
         to: 'compose',
         kind: 'feedback',
         producedArtifacts: ['artifact:retained-capacity-plan'],
-        predicate: 'A retained safe-capacity plan returns to the existing ordered parts executor in the same invocation; each part must independently prepare and receive canonical application acknowledgement.'
+        predicate:
+          'A retained safe-capacity plan returns to the existing ordered parts executor in the same invocation; each part must independently prepare and receive canonical application acknowledgement.'
       },
       {
         id: 'prepare-to-inspect',

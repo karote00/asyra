@@ -4636,7 +4636,13 @@ it('executes the advertised Code Mode recipe for image, multi-image and text-onl
       .join('\n')
     const text = vi.fn()
     const image = vi.fn()
-    runInNewContext(localToolResultExample, { result, text, image })
+    runInNewContext(localToolResultExample, {
+      resultKey: 'test-receipt',
+      store: vi.fn(),
+      result,
+      text,
+      image
+    })
     expect(text).toHaveBeenCalledOnce()
     expect(JSON.stringify(text.mock.calls)).not.toContain('base64')
     expect(image).toHaveBeenCalledTimes(count)

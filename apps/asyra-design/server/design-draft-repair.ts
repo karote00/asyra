@@ -1,7 +1,7 @@
 import {
   partitionDesignBudget,
   selectDesignSource,
-  type DesignBudgetPartition
+  type DesignPartitionPlan
 } from './design-budget'
 import { randomUUID } from 'node:crypto'
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
@@ -15,7 +15,7 @@ export const createDesignDraftRepairStore = (
 ) => {
   const drafts = new Map<
     string,
-    { source: string; bytes: number; partitions?: DesignBudgetPartition[] }
+    { source: string; bytes: number; plan: DesignPartitionPlan }
   >()
   let retainedBytes = 0
   const remove = (id: string) => {
@@ -27,10 +27,10 @@ export const createDesignDraftRepairStore = (
     retain(input: unknown): string | undefined {
       const source = JSON.stringify(input)
       if (source === undefined) return
-      const partitions = partitionDesignBudget(input, expandedNodeLimit)
+      const plan = partitionDesignBudget(input, expandedNodeLimit)
       const bytes =
         Buffer.byteLength(source, 'utf8') +
-        Buffer.byteLength(JSON.stringify(partitions ?? []), 'utf8')
+        Buffer.byteLength(JSON.stringify(plan), 'utf8')
       if (bytes > limits.retainedDraftBytes) return
       if (
         drafts.size >= limits.retainedDrafts ||
@@ -38,7 +38,7 @@ export const createDesignDraftRepairStore = (
       )
         return
       const id = randomUUID()
-      drafts.set(id, { source, bytes, partitions })
+      drafts.set(id, { source, bytes, plan })
       retainedBytes += bytes
       return id
     },
@@ -49,8 +49,11 @@ export const createDesignDraftRepairStore = (
             draftId,
             revision: draftId,
             sourceBytes: Buffer.byteLength(draft.source),
-            ...(draft.partitions
-              ? { partitions: structuredClone(draft.partitions) }
+            ...(draft.plan.partitions
+              ? { partitions: structuredClone(draft.plan.partitions) }
+              : {}),
+            ...(draft.plan.limitation
+              ? { partitionLimitation: { ...draft.plan.limitation } }
               : {})
           }
         : undefined
@@ -88,7 +91,7 @@ export const createDesignDraftRepairStore = (
               !value.continueFromArtifact))
         )
           throw new Error('Invalid retained partition reference.')
-        const partition = draft.partitions?.[Number(value.partition)]
+        const partition = draft.plan.partitions?.[Number(value.partition)]
         if (!partition) throw new Error('Retained partition is unavailable.')
         return selectDesignSource(result, partition.selections)
       }

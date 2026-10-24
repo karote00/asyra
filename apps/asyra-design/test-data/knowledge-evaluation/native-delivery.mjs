@@ -55,7 +55,11 @@ export function inspectSuccessor(request, callId, raw) {
     typeof output !== 'string' &&
     (!Array.isArray(output) ||
       output.some(
-        (item) => item.type !== 'input_text' || typeof item.text !== 'string'
+        (item) =>
+          !(
+            (item.type === 'input_text' && typeof item.text === 'string') ||
+            (item.type === 'input_image' && typeof item.image_url === 'string')
+          )
       ))
   )
     throw new Error('Unsupported successor output')
@@ -63,7 +67,27 @@ export function inspectSuccessor(request, callId, raw) {
   const blocks =
     typeof output === 'string'
       ? [output]
-      : output.map((item) => item.text || '')
+      : output
+          .filter((item) => item.type === 'input_text')
+          .map((item) => item.text)
+  const images =
+    typeof output === 'string'
+      ? []
+      : output
+          .filter((item) => item.type === 'input_image')
+          .map((item) => {
+            const match =
+              /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+                item.image_url
+              )
+            if (!match) throw new Error('Unsupported successor image')
+            const bytes = Buffer.from(match[2], 'base64')
+            return {
+              mediaType: match[1],
+              bytes: bytes.length,
+              sha256: digest(bytes)
+            }
+          })
   const payload = blocks.find((block) => block.includes(raw.slice(0, 64))) || ''
   const content = payload.slice(payload.indexOf(raw.slice(0, 64)))
   const exact = blocks.includes(raw)
@@ -92,6 +116,8 @@ export function inspectSuccessor(request, callId, raw) {
     sourceSHA256: digest(raw),
     outputSHA256: digest(text),
     containsSource: blocks.some((block) => block.includes(raw)),
+    images,
+    imageBytesInText: blocks.some((block) => block.includes('data:image/')),
     truncationMarker: Boolean(marker),
     omission
   }
@@ -226,6 +252,7 @@ export async function runNativeDelivery({
       'apps/asyra-design/server/local-operation-tools.ts',
       'apps/asyra-design/server/local-tool-invocation.ts',
       'apps/asyra-design/server/__tests__/information-delivery.integration.test.ts',
+      'apps/asyra-design/server/__tests__/image-delivery.integration.test.ts',
       'packages/ai-agent-runtime/src/knowledge.ts',
       'apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-delivery.test.mjs',
       'apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery',
@@ -527,16 +554,24 @@ export async function runNativeDelivery({
             event.params.arguments,
             selected?.input ?? fixture.input
           )
-          if (executions && typeof selected?.reply !== 'string')
+          if (
+            executions &&
+            typeof selected?.reply !== 'string' &&
+            !Array.isArray(selected?.reply)
+          )
             throw new Error('Unexpected scripted tool invocation')
           const reply = selected?.reply ?? fixture.raw
-          nativeReplies.push(reply)
-          save('submitted-reply', { callId: event.params.callId, text: reply })
+          const contentItems =
+            typeof reply === 'string'
+              ? [{ type: 'inputText', text: reply }]
+              : reply
+          nativeReplies.push(contentItems)
+          save('submitted-reply', { callId: event.params.callId, contentItems })
           send({
             id: event.id,
             result: {
               success: true,
-              contentItems: [{ type: 'inputText', text: reply }]
+              contentItems
             }
           })
         } else {
@@ -597,7 +632,8 @@ export async function runNativeDelivery({
         notifications.some(
           (event) =>
             event.method === 'item/completed' &&
-            event.params.item?.contentItems?.some((item) => item.text === reply)
+            JSON.stringify(event.params.item?.contentItems) ===
+              JSON.stringify(reply)
         ),
         'Missing exact native completion'
       )

@@ -1,3 +1,4 @@
+import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import {
   createDesignPreparationSession,
   prepareDesign
@@ -208,16 +209,19 @@ it('preserves sparse original instance ranges and rejects indivisible or relatio
   expect(store.describe(indivisible)?.partitions).toBeUndefined()
 })
 
-it.each([10000, 2000])(
+it.each([
+  [10000, recoveryFixture.input.draft],
+  [2000, recoveryFixture.input.draft],
+  [10000, briefFixture.input.draft]
+] as const)(
   'preserves every prepared coordinate, path, fill and source order across retained partitions at %i',
-  async (limit) => {
+  async (limit, source) => {
     const session = createDesignPreparationSession(
       undefined,
       undefined,
       undefined,
       limit
     )
-    const source = recoveryFixture.input.draft
     const draftId = session.retainRejectedDraft(source)
     if (!draftId) throw new Error('Missing source')
     const signal = new AbortController().signal
@@ -333,7 +337,7 @@ it('counts each source component without repeatedly scanning an accumulating par
       }
     ]
   }
-  const partitions = partitionDesignBudget(source)
+  const partitions = partitionDesignBudget(source).partitions
   expect(partitions).toHaveLength(2)
   expect(reads).toBeLessThanOrEqual(250 * 10)
 })
@@ -360,15 +364,15 @@ it('bounds recovery metadata and keeps exact object and path limits', () => {
       }
     ]
   })
-  expect(partitionDesignBudget(draft(9999))).toBeUndefined()
+  expect(partitionDesignBudget(draft(9999)).partitions).toBeUndefined()
   expect(
-    partitionDesignBudget(draft(10000))?.map((p) => p.expandedNodes)
+    partitionDesignBudget(draft(10000)).partitions?.map((p) => p.expandedNodes)
   ).toEqual([10000, 2])
   expect(
-    partitionDesignBudget(draft(9999 * limits.recoveryParts))
+    partitionDesignBudget(draft(9999 * limits.recoveryParts)).partitions
   ).toHaveLength(limits.recoveryParts)
   expect(
-    partitionDesignBudget(draft(9999 * limits.recoveryParts + 1))
+    partitionDesignBudget(draft(9999 * limits.recoveryParts + 1)).partitions
   ).toBeUndefined()
   const paths = {
     ...face,
@@ -378,7 +382,7 @@ it('bounds recovery metadata and keeps exact object and path limits', () => {
     ...draft(2001),
     children: [{ ...draft(2001).children[0], members: [paths] }]
   }
-  const partitions = partitionDesignBudget(source)
+  const partitions = partitionDesignBudget(source).partitions
   expect(partitions?.map((p) => p.expandedPathCommands)).toEqual([200000, 100])
   expect(partitions?.map((p) => p.expandedNodes)).toEqual([2001, 2])
 })
@@ -434,8 +438,74 @@ it('keeps world material revisions targeted at each partition actual members', a
 it('does not partition conflicting semantic keys into separately accepted artifacts', () => {
   const draft = structuredClone(recoveryFixture.input.draft)
   draft.children[draft.children.length - 1].key = draft.children[0].key
-  expect(partitionDesignBudget(draft)).toBeUndefined()
+  expect(partitionDesignBudget(draft).partitions).toBeUndefined()
   draft.children[draft.children.length - 1].key =
     `${draft.children[5].key}-0-upper-left`
-  expect(partitionDesignBudget(draft)).toBeUndefined()
+  expect(partitionDesignBudget(draft).partitions).toBeUndefined()
 })
+
+const descriptiveBrief = {
+  intent: 'Repeat independent facade panels',
+  viewpoint: 'Oblique',
+  sources: ['User supplied dimensions'],
+  assumptions: ['Unspecified finish remains provisional'],
+  checks: []
+}
+
+it.each([
+  ['saved source', briefFixture.input.draft],
+  [
+    'generic source',
+    { ...recoveryFixture.input.draft, brief: descriptiveBrief }
+  ]
+])(
+  'preserves descriptive brief through safe retained capacity: %s',
+  (_, source) => {
+    const store = createDesignDraftRepairStore()
+    const draftId = store.retain(source)
+    if (!draftId) throw new Error('Missing source')
+    const partitions = store.describe(draftId)?.partitions
+    expect(partitions).toHaveLength(2)
+    if (!partitions) throw new Error('Missing retained partitions')
+    const before = structuredClone(source)
+    for (let partition = 0; partition < partitions.length; partition++) {
+      const selected = store.repair({ draftId, partition }) as typeof source
+      expect(selected.brief).toEqual(source.brief)
+      expect(inspectDesignBudget(selected)).toBeUndefined()
+      const compiled = prepareDesign(selected, `brief-part-${partition}`)
+      expect(compiled.review).toMatchObject(source.brief)
+      expect(compiled.findings).toEqual([])
+    }
+    expect(source).toEqual(before)
+  }
+)
+
+it.each([
+  [
+    'whole-design-checks',
+    {
+      ...descriptiveBrief,
+      checks: [{ key: 'root', property: 'width', expected: 200, tolerance: 1 }]
+    }
+  ],
+  ['invalid-brief', { ...descriptiveBrief, checks: 'invalid' }]
+])(
+  'retains original brief and explains unsafe partition semantics: %s',
+  (code, brief) => {
+    const source = { ...recoveryFixture.input.draft, key: 'root', brief }
+    const store = createDesignDraftRepairStore()
+    const draftId = store.retain(source)
+    if (!draftId) throw new Error('Missing source')
+    expect(store.describe(draftId)).toMatchObject({
+      partitionLimitation: { code, message: expect.any(String) }
+    })
+    expect(store.describe(draftId)?.partitions).toBeUndefined()
+    expect(
+      store.repair({
+        draftId,
+        replacements: [{ path: '/name', value: source.name }]
+      })
+    ).toEqual(source)
+    expect(() => store.repair({ draftId, partition: 0 })).toThrow(/unavailable/)
+  }
+)

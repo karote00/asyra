@@ -1,3 +1,8 @@
+import { createDesignReviewAction } from '../review-action'
+import { createLocalDesignWorkflow } from '../../../server/local-design-workflow'
+import { createLocalDesignTools } from '../../../server/local-design-tools'
+import { createLocalOperationTools } from '../../../server/local-operation-tools'
+import { invokeLocalTool } from '../../../server/local-tool-invocation'
 import { deliverPreparedDesign } from '../prepared-design'
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
@@ -398,6 +403,13 @@ it('continues only retained remaining parts after cancellation with real history
   const draftId = session.retainRejectedDraft({
     type: 'group',
     name: 'Facade',
+    brief: {
+      intent: 'Repeat facade panels',
+      viewpoint: 'Oblique',
+      sources: ['User dimensions'],
+      assumptions: ['Finish provisional'],
+      checks: []
+    },
     projection: {
       azimuth: 30,
       elevation: 25,
@@ -427,6 +439,10 @@ it('continues only retained remaining parts after cancellation with real history
     firstRepair
   )
   const firstDesign = session.resolve(first.artifactId)
+  expect(first.review).toMatchObject({
+    intent: 'Repeat facade panels',
+    checks: []
+  })
   const controller = new AbortController()
   const create = vi.spyOn(elementApis, 'createElementsInParent')
   const publications: SharedPublication[] = []
@@ -514,6 +530,7 @@ it('continues only retained remaining parts after cancellation with real history
       repair
     )
     const remaining = session.resolve(next.artifactId)
+    expect(next.review).toEqual(first.review)
     const callsBeforeRecovery = create.mock.calls.length
     const recovered = await execute(remaining, freshSignal())
     expect(recovered, JSON.stringify(recovered)).toMatchObject({
@@ -586,3 +603,140 @@ it('continues only retained remaining parts after cancellation with real history
     core.load(initial)
   }
 }, 30000)
+
+it('applies descriptive brief capacity through the main dispatcher into one real Core root', async () => {
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          name: 'Workspace',
+          type: 'workspace',
+          parentId: '',
+          visible: true,
+          lock: false,
+          children: []
+        }
+      }
+    }
+  })
+  const action = observeAiAction(
+    createPreparedDesignAction(undefined, async () => undefined)
+  )
+  const review = observeAiAction(createDesignReviewAction())
+  const actions = JSON.parse(JSON.stringify([action, review]))
+  const session = createDesignPreparationSession(
+    undefined,
+    undefined,
+    undefined,
+    2000
+  )
+  const designs = createLocalDesignTools(actions, session)
+  const batches: string[][] = []
+  const operations = createLocalOperationTools(
+    actions,
+    designs,
+    async (batch) => {
+      batches.push(batch.actions.map((action) => action.name))
+      const runtime = createAiAgentRuntime({
+        provider: { requestActionBatch: async () => batch },
+        actionDefinitions: [action, review],
+        contextProvider: { getContext: async () => ({}) },
+        permissionPolicy: { evaluate: () => 'allow' },
+        confirmationHandler: { confirm: async () => true },
+        transactionRunner: createAiTransactionRunner()
+      })
+      try {
+        const receipt = await runtime.run({
+          intent: 'Apply independent panels',
+          signal: new AbortController().signal
+        })
+        expect(receipt.status).toBe('executed')
+        return { context: {}, actionResults: receipt.actionResults ?? [] }
+      } finally {
+        await runtime.dispose()
+      }
+    }
+  )
+  const main = createLocalDesignWorkflow(designs, operations)
+  const reply = await invokeLocalTool(
+    main,
+    main.definitions[0],
+    {
+      draft: {
+        type: 'group',
+        name: 'Independent panels',
+        key: 'root',
+        brief: {
+          intent: 'Repeat facade panels',
+          viewpoint: 'Oblique',
+          sources: ['User dimensions'],
+          assumptions: ['Finish provisional'],
+          checks: []
+        },
+        projection: {
+          azimuth: 30,
+          elevation: 25,
+          scale: 1,
+          originX: 0,
+          originY: 0
+        },
+        children: [
+          {
+            type: 'pattern',
+            key: 'panels',
+            name: 'Panels',
+            origin: { x: 0, y: 0, z: 0 },
+            axes: [{ count: 2000, step: { x: 2, y: 0, z: 0 } }],
+            members: [
+              {
+                type: 'projected-face',
+                key: 'face',
+                name: 'Panel',
+                fill: '#80a0b0',
+                vertices: [
+                  { x: 0, y: 0, z: 0 },
+                  { x: 1, y: 0, z: 0 },
+                  { x: 1, y: 0, z: 2 }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      inspection: 'defer',
+      response: 'compact'
+    },
+    new AbortController().signal
+  )
+  const result = JSON.parse(reply.text)
+  // The headless Core fixture has no App inspection-evidence session. Both
+  // writes complete; retain the real unverified follow-up instead of inventing it.
+  expect(
+    result.parts.map((part: { toolOutcome: unknown }) => part.toolOutcome)
+  ).toEqual([
+    expect.objectContaining({ status: 'success', settlement: 'completed' }),
+    expect.objectContaining({ status: 'success', settlement: 'completed' })
+  ])
+  expect(result.measurementIssues).toHaveLength(1)
+  expect(result.toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(result.parts).toHaveLength(2)
+  expect(batches.flat().filter((name) => name === action.name)).toHaveLength(2)
+  expect(batches.flat().filter((name) => name === review.name)).toHaveLength(1)
+  const saved = projectedSnapshot()
+  expect(Object.keys(saved.sceneTree.elements)).toHaveLength(2002)
+  expect(saved.sceneTree.elements.workspace.children).toHaveLength(1)
+  const rootId = saved.sceneTree.elements.workspace.children[0]
+  expect(saved.sceneTree.elements[rootId].children).toHaveLength(2000)
+  expect(new Set(saved.sceneTree.elements[rootId].children).size).toBe(2000)
+  expect(factory.getUndoHistoryDepth()).toBe(2)
+  core.load(saved)
+  expect(projectedSnapshot()).toEqual(saved)
+})
