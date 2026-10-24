@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 workspace overview and inspection receipt handoff is converged on formal local tests and the authorized live observation. Projected oval work remains converged. The convergence push is authorized; the next issue is read-only analysis, with no further model run or CI inspection.**
+Status: **Task 3 cross-query Knowledge dependency delivery is locally complete against the fixed DoD. Workspace overview and oval remain converged. AI adoption and latency effects remain unobserved; no model run, 101, CI inspection or push was performed for this slice.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -95,6 +95,123 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Cross-query Knowledge dependency delivery - 2026-10-24
+
+Status: locally complete after admission, formal fail-first regressions and bounded self-review.
+
+Evidence: run 1792853203510 reads the architectural entry at 11.262 seconds
+(2,671 output bytes), then its material-method child at 18.101 seconds
+(22,742 bytes). The latter repeats the same 1,964-byte entry body (2,241 bytes
+including its document envelope). Raw payload hashes and snapshot sources were
+checked. This proves redundant delivery, not its contribution to first-frame time.
+
+Bounded design and Step Execution Card - compose:
+- Authority: ai-execution-flow.md, Cross-query Knowledge dependency delivery;
+  Inspector compose inputs, conditions, cache dimensions and implementation boundary.
+- Owner: existing Runtime Knowledge session composes and retains advice; App owns
+  read-tool admission, serialized delivery and recovery. The existing Code Mode
+  forwarding example retains received results; neither owner certifies model receipt.
+- Inputs: selected IDs/contexts and optional reuseFrom containing opaque contextKeys
+  of complete advice the caller still holds. No preliminary acknowledgement call.
+- Outputs: the same ordered documents and complete sources; an exactly matching
+  document may replace text with retainedFrom pointing to that earlier result's
+  same target. Ordinary reads deliver full text. New or changed overrides deliver text.
+- Retention: use only the bounded existing session result map, retaining the full
+  composition and its immutable wire response together. Query identity includes
+  reuse selection. Result contextKeys are opaque per-result identities, not predictable
+  query signatures. No parallel receipt registry or raw-content cache.
+- Conditions/failure owner: validate inputs, permissions, context epoch, generation,
+  cancellation and current dependency closure before reuse. Missing/foreign/evicted
+  receipts fail explicitly at the read owner with same-read recovery without reuseFrom.
+  Rehydrate clears context and returns full text even if old references were supplied.
+  Page retries reuse the immutable wire result; stale continuations still reject.
+- Allowed contributors: registered metadata/content, held result references and
+  existing read/forwarding owners. Forbidden: topic-specific rules, model-receipt
+  inference, automatic parent reads, new stores, rendering or mutation replay.
+- Files: knowledge.ts, knowledge-types.ts and their existing tests; local-knowledge.ts,
+  local-knowledge tests, execution-flow-proof and information-delivery integration
+  tests; permanent recorded-input fixture. Update only associated active contracts,
+  generated documentation/Inspector output and release metadata.
+- Work boundary: preserve existing authoritative composition/validation reads; this
+  slice reduces serialized body delivery, not provider file-I/O latency. Repeated
+  identical reads and page continuations must not rerun provider reads.
+
+Fixed DoD (unchanged outcome from the approved proposal):
+D1. A permanent recorded-input regression fails on parent-to-child body duplication,
+without ignored tmp inputs. Include generic synthetic graphs beyond architecture.
+D2. Reconstruct from retained originals and delta references to obtain exactly the
+full ordered composition, sources, necessary constraints and override semantics.
+D3. Execute the actually delivered usage/forwarding example through real tool
+invocation. Duplicate body bytes become zero; total serialized inputs and outputs,
+including the incremental guide cost and reference overhead, decrease with no added
+calls. No unrelated sibling content is read.
+D4. Fresh-session direct child reads remain complete without a parent read or opt-in.
+D5. Cover lost/foreign/evicted references, changed revision/context, permissions,
+invalid input, concurrent reads, cancellation and disposal; never silently omit text.
+D6. Preserve byte-stable pagination/retries, refresh/rehydrate, reconstructable saved
+I/O and read-only recovery. No repeated drawing, recapture, transaction or state writes.
+
+Gates: focused Runtime/App regressions first, then existing Runtime local suite,
+App server-response harness, Knowledge direct consumers, native-interface offline
+informational forwarding tests, production Runtime/App types, touched lint, naming,
+public documentation generation/check and source-bound Inspector verification.
+No model, 101, browser drawing, CI, unrelated cleanup or plan closeout. Stop for an
+unresolved owner/contract mismatch or scope expansion; repair only this handoff.
+
+Design review: prior App return alone is insufficient to omit advice. Explicit
+caller-held references preserve that protection. Full internal compositions permit
+exact override/source comparisons; immutable wire responses preserve paging without
+querying a second store. Distinct result identities enforce session isolation.
+Retaining full ordinary responses is intentional recovery, not obsolete behavior.
+
+
+Implementation and bounded review - 2026-10-25:
+- Admission accepted at revision 103: candidate a8aba90f-dadf-474e-b05d-1c531c4275cb,
+  review 897854f3e187476dc20c4e9ae4226bead06f83c6c259feed36fef542c808a827.
+- Runtime and App regression tests failed before implementation. Reuse is now an
+  optional read selector; ordinary full reads remain necessary recovery, not an
+  obsolete compatibility path. Tool revision 3 publishes the changed selector.
+- Public reuseFrom/retainedFrom belong to the Knowledge read contract. contextKey
+  is an ephemeral result identity, not a persisted document ID. No document migration,
+  compatibility alias or additional store was introduced.
+- Bounded review found and tested concurrent completion identity replacement and
+  stale reuse arguments in rehydrate continuations. Concurrent completions now reuse
+  the published identity; full-content rehydrate continuations omit retired references.
+  The direct consumer contract version is set after shared semantics so it is not
+  overwritten. Registration-order tests compare all content while requiring distinct
+  identities for independent sessions.
+- The actual published reuse and recovery expressions execute through invokeLocalTool.
+  The unchanged forwarding example executes in native Codex 0.160.0 Code Mode
+  against the offline fixture endpoint: both original advice and reference response
+  reach successor requests byte-for-byte. No real model is called.
+- Controlled recorded-input comparison: baseline 25,501 bytes; candidate 24,073
+  bytes, including 484 bytes of incremental declaration/guidance. Both use two
+  actual read calls. Net reduction 1,428 bytes (5.60%); duplicated entry body becomes
+  zero, with exact ordered document/source reconstruction and no sibling reads.
+- Gates: Runtime 447 passed; existing Preset direct-consumer gate 37 passed; App
+  server harness 1,686 passed with two existing opt-in skips; focused informational
+  integration 39 passed; Knowledge handoff 15 passed; runtime-input 21 passed.
+  The two unrelated opt-ins are installed native registration without inference and
+  saved large-checkpoint bootstrap benchmarking. The current native Code Mode
+  delivery path is exercised directly by the focused suite; skips are not successes.
+- Runtime build, App production types, naming (15), touched lint (zero errors, two
+  existing console warnings), public documentation generation/check and diff checks
+  passed. The unchanged Inspector architecture contract suite passed both tests after
+  clarifying the existing App request-local session lifetime; that clarification was
+  admitted at revision 104 (review
+  b645a73ddcf3ef6ee9b7a6734963cb584f38d938cf3b3a7c61a0d8c9a6a5b198).
+  Source-bound Inspector verification 092127aa-ec59-42e8-a8bb-8617e6ef92fe passed
+  at revision 104 against source
+  21ce72beaf10e58a066ceb26f3d6785bcf78d21e38e9f72b96037e36d23a634c.
+  Detailed logs remain in tmp/knowledge-reuse-*.log; formal tests use tracked fixtures.
+- A direct handoff test invocation initially used jsdom for Node file-URL consumers;
+  running the existing owner suite in its Node environment passed without product
+  changes. Mac restart preserved the source and completed evidence; remaining gates
+  were resumed. No browser/document/Undo/Redo/collaboration owner changed.
+- D1-D6 are satisfied locally. No model-adoption, first-frame improvement or model
+  context-retention guarantee is inferred. Original run evidence remains immutable.
+
 
 ### Workspace overview and inspection receipts - 2026-10-24
 

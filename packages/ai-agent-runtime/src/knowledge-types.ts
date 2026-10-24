@@ -37,6 +37,8 @@ export interface AiKnowledgeContent {
 export interface AiKnowledgeQuery {
   /** Re-read advice after earlier results are absent from effective context. */
   readonly rehydrate?: boolean
+  /** Complete earlier results explicitly still held by this caller. */
+  readonly reuseFrom?: readonly string[]
   readonly ids: readonly string[]
   readonly contexts?: readonly string[]
 }
@@ -52,12 +54,14 @@ export interface AiKnowledgeResult {
   readonly generation: number
   readonly contextKey: string
   readonly alreadyDelivered: boolean
-  readonly documents: readonly {
+  readonly documents: readonly ({
     readonly target: string
     readonly source: AiKnowledgeSource
     readonly replacedSource?: AiKnowledgeSource
-    readonly text: string
-  }[]
+  } & (
+    | { readonly text: string; readonly retainedFrom?: never }
+    | { readonly text?: never; readonly retainedFrom: string }
+  ))[]
   readonly sources: readonly AiKnowledgeSource[]
 }
 

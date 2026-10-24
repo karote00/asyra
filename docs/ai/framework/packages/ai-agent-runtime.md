@@ -514,7 +514,7 @@ and delivery reuse unchanged. The controller binds one tenant and
 scope. A host creates `openSession(principal, taskId)` from trusted request context;
 never obtain these identities from model tool arguments.
 
-Sessions expose `discover(contexts?, ids?)`, `retrieve({ ids, contexts, rehydrate? }, signal)`,
+Sessions expose `discover(contexts?, ids?)`, `retrieve({ ids, contexts, rehydrate?, reuseFrom? }, signal)`,
 `invalidateContext()` and `dispose()`. Context invalidation only clears delivery
 receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Optional `children` lists navigation IDs,
 filtered to entries discoverable in the same contexts; missing children are omitted
@@ -573,3 +573,24 @@ generation and context checks; it does not assert that a model read it. Context
 invalidation, revision change and disposal clear the same owner state. Ordinary
 sessions retain their reference-only duplicate behavior. No App tool names or
 provider limits enter the Knowledge content contract.
+
+
+### Cross-query retained Knowledge references
+
+A retained-result session accepts `reuseFrom`, up to 32 unique opaque result
+contextKeys explicitly asserted still held by its caller. Keys identify results in
+that session, not predictable query signatures. The existing bounded session map
+retains full compositions and immutable wire responses; no additional registry exists.
+Without opt-in, existing full-content and ordinary reference-only repeat semantics
+remain. Non-retaining sessions reject reuse requests because no full result is held.
+
+Ordered documents may replace text with retainedFrom pointing to the same target in
+a supplied result only when resolved text and target/source/replacedSource match.
+Sources remain complete. Different overrides are not equivalent merely because they
+share a target. Callers retain referenced advice; Runtime does not assert model receipt.
+Missing/foreign/evicted references reject with KNOWLEDGE_REUSE_UNAVAILABLE. Recover
+with an ordinary read without reuseFrom. Rehydrate clears prior receipts and returns
+full advice, ignoring otherwise well-formed old reuse references. Permissions,
+revisions, epoch, cancellation and disposal are rechecked. Stable retries reuse the
+same response; invalidation retires both full and wire content. No raw provider cache
+or change to content limits, dependency traversal or mutation authority is introduced.

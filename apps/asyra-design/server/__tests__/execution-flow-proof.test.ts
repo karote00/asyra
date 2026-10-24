@@ -6924,6 +6924,34 @@ it('execution proof selects nested Knowledge without reading sibling bodies', as
     expect(JSON.stringify(read)).not.toContain(
       '## Represent a repeated multi-face component once'
     )
+    const entry = JSON.parse(
+      await tools.call(
+        'read_knowledge',
+        { ids: [root.id], contexts },
+        abortSignal
+      )
+    )
+    const delta = JSON.parse(
+      await readCompleteInformation(
+        (input) => tools.call('read_knowledge', input, abortSignal),
+        { ids: [id], contexts, reuseFrom: [entry.contextKey] }
+      )
+    )
+    expect(delta.documents[0]).toMatchObject({
+      target: root.id,
+      retainedFrom: entry.contextKey
+    })
+    expect(delta.documents[0].text).toBeUndefined()
+    expect(
+      delta.documents.map((doc: { retainedFrom?: string; target: string }) =>
+        doc.retainedFrom
+          ? entry.documents.find(
+              (prior: { target: string }) => prior.target === doc.target
+            )
+          : doc
+      )
+    ).toEqual(read.documents)
+    expect(delta.sources).toEqual(read.sources)
   } finally {
     tools.dispose()
   }

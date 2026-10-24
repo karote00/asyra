@@ -1067,3 +1067,115 @@ it('selects optional Knowledge walkthroughs explicitly and deduplicates their ma
     owner.dispose()
   }
 })
+
+it('reduces recorded cross-query dependency bytes through the actual read contract', async () => {
+  const { default: recorded } =
+    await import('./fixtures/recorded-101/knowledge-dependency-reuse-20261024.json')
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const bytes = (value: unknown) =>
+    Buffer.byteLength(typeof value === 'string' ? value : JSON.stringify(value))
+  const createReader = (id: string) => {
+    const owner = createLocalKnowledgeTools(id)
+    const definition = owner.definitions.find(
+      (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
+    )
+
+    if (!definition) throw new Error('Missing Knowledge read definition')
+    const exchanges: { input: Record<string, unknown>; reply: string }[] = []
+    return {
+      owner,
+      definition,
+      exchanges,
+      read: async (input: Record<string, unknown>) => {
+        const reply = await invokeLocalTool(owner, definition, input, signal())
+        expect(reply.success, reply.text).toBe(true)
+        exchanges.push({ input, reply: reply.text })
+        return reply.text
+      }
+    }
+  }
+  const baseline = createReader('full-composition'),
+    candidate = createReader('held-composition')
+  try {
+    expect(candidate.definition.revision).toBeGreaterThan(2)
+    await baseline.read(recorded.reads[0])
+    const full = JSON.parse(await baseline.read(recorded.reads[1]))
+    const first = JSON.parse(await candidate.read(recorded.reads[0]))
+    const expression = candidate.definition.description.match(
+      /`(read_knowledge\([^`]+\))`/
+    )?.[1]
+    expect(expression).toBeDefined()
+    const delta = JSON.parse(
+      await new Function(
+        'read_knowledge',
+        'ids',
+        'contexts',
+        'previous',
+        `return ${expression}`
+      )(
+        candidate.read,
+        recorded.reads[1].ids,
+        recorded.reads[1].contexts,
+        first
+      )
+    )
+    expect(candidate.exchanges).toHaveLength(baseline.exchanges.length)
+    expect(candidate.exchanges).toHaveLength(recorded.reads.length)
+    expect(delta.documents[0]).toMatchObject({
+      target: recorded.duplicateTarget,
+      retainedFrom: first.contextKey
+    })
+    expect(delta.documents[0].text).toBeUndefined()
+    expect(
+      delta.documents.map((doc: { retainedFrom?: string; target: string }) =>
+        doc.retainedFrom
+          ? first.documents.find(
+              (prior: { target: string }) => prior.target === doc.target
+            )
+          : doc
+      )
+    ).toEqual(full.documents)
+    expect(delta.sources).toEqual(full.sources)
+    const description = candidate.definition.description
+    const guide = description.slice(
+      description.indexOf('For complete advice'),
+      description.indexOf('Large replies')
+    )
+    const inputSchema = candidate.definition.inputSchema as {
+      properties: Record<string, unknown>
+    }
+    const { reuseFrom: _reuseFrom, ...priorProperties } = inputSchema.properties
+    const guideBytes =
+      bytes({ description, inputSchema }) -
+      bytes({
+        description: description.replace(guide, ''),
+        inputSchema: { ...inputSchema, properties: priorProperties }
+      })
+    const total = (exchanges: typeof candidate.exchanges) =>
+      exchanges.reduce(
+        (sum, item) => sum + bytes(item.input) + bytes(item.reply),
+        0
+      )
+    const before = total(baseline.exchanges),
+      after = total(candidate.exchanges) + guideBytes
+    expect(after).toBeLessThan(before)
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'cross-query-advice',
+        before,
+        after,
+        guideBytes,
+        calls: candidate.exchanges.length,
+        duplicatedBodyBytes: bytes(delta.documents[0].text ?? '')
+      }) + '\n'
+    )
+    const refreshed = JSON.parse(
+      await candidate.read({ ...candidate.exchanges[1].input, rehydrate: true })
+    )
+    expect(refreshed.documents).toEqual(full.documents)
+    expect(refreshed.contextKey).not.toBe(delta.contextKey)
+  } finally {
+    baseline.owner.dispose()
+    candidate.owner.dispose()
+  }
+})
