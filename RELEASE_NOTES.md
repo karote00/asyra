@@ -47,6 +47,130 @@ security boundaries, and reproducible readiness commands.
 
 ## Pending update guidance
 
+Pending branch handoff notes below were added after integrating the release-guidance rule.
+They describe source changes, not published availability.
+
+```update-note
+{
+  "change": "canonical-property-and-ai-handoffs",
+  "owner": "Framework packages",
+  "summary": "Canonical property receipts, retained Knowledge dependency delivery, interrupted results and shared geometry/projection contracts.",
+  "sources": [
+    "packages/ai-agent-runtime/src/__tests__/execution.test.ts",
+    "packages/ai-agent-runtime/src/__tests__/interrupted-results.test.ts",
+    "packages/ai-agent-runtime/src/__tests__/knowledge.test.ts",
+    "packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts",
+    "packages/ai-agent-runtime/src/__tests__/progress.test.ts",
+    "packages/ai-agent-runtime/src/knowledge-types.ts",
+    "packages/ai-agent-runtime/src/knowledge.ts",
+    "packages/ai-agent-runtime/src/profiler/__tests__/records.test.ts",
+    "packages/ai-agent-runtime/src/profiler/recorder.ts",
+    "packages/ai-agent-runtime/src/provider.ts",
+    "packages/ai-agent-runtime/src/runtime.ts",
+    "packages/core/src/__tests__/canonical-owner-coordination.test.ts",
+    "packages/core/src/__tests__/element-property-api.test.ts",
+    "packages/core/src/__tests__/hierarchy-transaction.test.ts",
+    "packages/core/src/__tests__/property-intent-coordination.test.ts",
+    "packages/core/src/__tests__/property-intent-history.test.ts",
+    "packages/core/src/apis/__tests__/scene-bounds.test.ts",
+    "packages/core/src/apis/create-apis.ts",
+    "packages/core/src/apis/element-properties.ts",
+    "packages/core/src/apis/property-intents.ts",
+    "packages/core/src/apis/props.ts",
+    "packages/core/src/apis/scene-bounds.ts",
+    "packages/core/src/core.ts",
+    "packages/core/src/index.ts",
+    "packages/core/src/types/canonical-changes.ts",
+    "packages/core/src/types/element-properties.ts",
+    "packages/core/src/types/property-intents.ts",
+    "packages/core/src/types/property-mutation-receipt.ts",
+    "packages/core/src/types/props.ts",
+    "packages/factory/src/__tests__/data-transact.test.ts",
+    "packages/factory/src/data-transact.ts",
+    "packages/preset/src/__tests__/children-map-property-component.test.ts",
+    "packages/preset/src/__tests__/group-bounds.test.ts",
+    "packages/preset/src/__tests__/group-operations.test.ts",
+    "packages/preset/src/__tests__/oval-render-strategy.test.ts",
+    "packages/preset/src/__tests__/selection-subscriptions.test.ts",
+    "packages/preset/src/components/group.ts",
+    "packages/preset/src/components/oval.ts",
+    "packages/preset/src/group-bounds.ts",
+    "packages/preset/src/subscriptions/data-channel.ts",
+    "packages/props-manager/src/__tests__/property-inheritance.test.ts",
+    "packages/props-manager/src/__tests__/props-manager.test.ts",
+    "packages/props-manager/src/index.ts",
+    "packages/props-manager/src/manager/component-accessor.ts",
+    "packages/props-manager/src/manager/property-intents.ts",
+    "packages/props-manager/src/manager/props-manager.ts",
+    "packages/props-manager/src/manager/subscribes.ts",
+    "packages/props-manager/src/registries/declarative-property-type.ts",
+    "packages/props-manager/src/registries/property-inheritance.ts",
+    "packages/props-manager/src/registries/property-value-kind.ts",
+    "packages/reactive-events/src/scene-tree/events.ts",
+    "packages/reactive-events/src/scene-tree/publish.ts",
+    "packages/reactive-events/src/scene-tree/subscribes.ts",
+    "packages/reactive-events/src/types.ts",
+    "packages/render/src/__tests__/render.test.ts",
+    "packages/render/src/__tests__/scene-tree-store.test.ts",
+    "packages/render/src/layers/viewport/viewport-layer.ts",
+    "packages/render/src/render.ts",
+    "packages/render/src/stores/scene-tree.ts",
+    "packages/scene-tree/src/__tests__/element-property-bindings.test.ts",
+    "packages/scene-tree/src/__tests__/element-property-targets.test.ts",
+    "packages/scene-tree/src/components/props.ts",
+    "packages/scene-tree/src/create-dynamic-props.ts",
+    "packages/scene-tree/src/element-mutation.ts",
+    "packages/scene-tree/src/sceneTree.ts",
+    "packages/scene-tree/src/subscribes.ts",
+    "packages/utils/src/constants/scene-tree.ts",
+    "packages/utils/src/propsManager/rawDataTypes.ts",
+    "packages/utils/src/render/__tests__/geometry-bounds.test.ts",
+    "packages/utils/src/render/geometry-bounds.ts",
+    "packages/utils/src/sceneTree/instanceTypes.ts",
+    "packages/utils/src/types/props-manager.ts",
+    "packages/utils/src/types/scene-tree.ts"
+  ],
+  "impact": "integration",
+  "guides": [
+    "docs/public/updates/design-owner-handoffs-r1.md"
+  ],
+  "reason": "Custom Framework consumers must reconcile target ownership, retained-result availability, interruption and geometry/subscription assumptions using the candidate guide; no public release is claimed."
+}
+```
+
+
+
+```update-note
+{
+  "change": "design-handoff-validation-and-documents",
+  "owner": "Repository development tooling",
+  "summary": "Keep direct consumer tests, Inspector mapping, task context and generated public references aligned.",
+  "sources": [
+    "apps/asyra-framework-site/public/llms.txt",
+    "docs/public/content-manifest.json",
+    "docs/public/generated/api-index.json",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/package-reference.json",
+    "docs/public/generated/source-map.json",
+    "docs/public/llms.txt",
+    "package.json",
+    "scripts/__tests__/domain-knowledge.test.mjs",
+    "scripts/__tests__/local-validation.test.mjs",
+    "scripts/__tests__/task-context.test.mjs",
+    "scripts/task-context.mjs",
+    "tools/flow-inspector/inspectors/__tests__/canonical-projection-and-collaboration-contract-flow-inspector.contract.test.cjs",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/design-functional-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Repository-only validation and generated documentation changes require no downstream runtime integration and do not authorize publication."
+}
+```
+
+
 These development notes are not published release summaries.
 
 ```update-note

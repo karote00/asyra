@@ -3074,6 +3074,43 @@
       "section": "Start",
       "title": "Asyra Design as a complete product implementation",
       "wordCount": 1305
+    },
+    {
+      "contentSha256": "26c0dfb64437364fde92124c1609db037efcc35c8ef3d67cdde1ae439e54e726",
+      "description": "Pending source-bound integration guidance for property receipts, retained Knowledge, interruption and shared geometry consumers.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt canonical property and AI handoffs"
+        },
+        {
+          "depth": 2,
+          "title": "Scope and evidence"
+        },
+        {
+          "depth": 2,
+          "title": "Applicability and decisions"
+        },
+        {
+          "depth": 2,
+          "title": "Verification and recovery"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/design-owner-handoffs-r1",
+      "markdownPath": "docs/public/updates/design-owner-handoffs-r1.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/ai-agent-runtime",
+        "@asyra/utils"
+      ],
+      "path": "updates/design-owner-handoffs-r1.md",
+      "section": "Extend",
+      "title": "Adopt canonical property and AI handoffs",
+      "wordCount": 694
     }
   ],
   "releaseHistory": [
@@ -3268,7 +3305,8 @@
         "updates/text-official-fields-example-1-r2",
         "updates/text-official-fields-example-1-r3",
         "updates/text-spacing-example-2-r1",
-        "updates/text-spacing-example-2-r2"
+        "updates/text-spacing-example-2-r2",
+        "updates/design-owner-handoffs-r1"
       ]
     },
     {

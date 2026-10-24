@@ -669,6 +669,20 @@
         "@asyra/collaboration",
         "@asyra/persistence"
       ]
+    },
+    {
+      "id": "updates/design-owner-handoffs-r1",
+      "path": "updates/design-owner-handoffs-r1.md",
+      "section": "Extend",
+      "title": "Adopt canonical property and AI handoffs",
+      "description": "Pending source-bound integration guidance for property receipts, retained Knowledge, interruption and shared geometry consumers.",
+      "sources": [
+        "packages/core/src/types/property-intents.ts",
+        "packages/ai-agent-runtime/src/knowledge-types.ts",
+        "packages/ai-agent-runtime/src/provider.ts",
+        "packages/utils/src/render/geometry-bounds.ts"
+      ],
+      "packages": ["@asyra/core", "@asyra/ai-agent-runtime", "@asyra/utils"]
     }
   ]
 }
