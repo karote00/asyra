@@ -1,50 +1,20 @@
-import { readSpatialSurface, type SpatialSurface } from './surface-textures.js'
+import { readSpatialSurface } from './surface-contract.js'
+import type {
+  SpatialDescriptor,
+  SpatialShape,
+  SpatialInstance,
+  SpatialQuaternion,
+  SpatialVector
+} from '@asyra/render-engine'
+export type {
+  SpatialDescriptor,
+  SpatialShape,
+  SpatialInstance,
+  SpatialVector,
+  SpatialQuaternion,
+  SpatialSurface
+} from '@asyra/render-engine'
 export const SPATIAL_PROPERTY = 'spatialV0'
-export const SPATIAL_CAPABILITY = 'spatial.v0'
-
-export type SpatialVector = readonly [number, number, number]
-export type SpatialQuaternion = readonly [number, number, number, number]
-export type SpatialShape =
-  | { kind: 'box'; size: SpatialVector }
-  | { kind: 'sphere'; radius: number }
-  | { kind: 'capsule'; radius: number; length: number }
-  | {
-      kind: 'triangles'
-      positions: readonly number[]
-      colors?: readonly number[]
-      uvs?: readonly number[]
-      indices: readonly number[]
-    }
-
-export interface SpatialInstance {
-  position: SpatialVector
-  yaw: number
-}
-
-export type SpatialDescriptor =
-  | {
-      kind: 'camera'
-      position: SpatialVector
-      target: SpatialVector
-      fov: number
-      near: number
-      far: number
-    }
-  | {
-      kind: 'mesh'
-      position: SpatialVector
-      rotation: SpatialQuaternion
-      shape: SpatialShape
-      instances?: readonly SpatialInstance[]
-      distant?: { shape: SpatialShape; maxError: number }
-      surface?: SpatialSurface
-      roughness?: number
-      metalness?: number
-      color: number
-      opacity: number
-      wireframe: boolean
-      selectable: boolean
-    }
 
 // Weak admission receipts, not caller-identity caches. Only detached, deeply
 // frozen products created below enter these sets; caller freezing proves nothing.
@@ -197,17 +167,32 @@ export function readSpatialInstances(
     !snapshot.every(
       (item) =>
         record(item) &&
+        typeof item.id === 'string' &&
+        item.id.length > 0 &&
         finiteTuple(item.position, 3) &&
-        typeof item.yaw === 'number' &&
-        Number.isFinite(item.yaw)
+        finiteTuple(item.rotation, 4) &&
+        Math.abs(Math.hypot(...item.rotation) - 1) <= 1e-8 &&
+        item.yaw === undefined &&
+        item.shear === undefined &&
+        (item.scale === undefined ||
+          (finiteTuple(item.scale, 3) && item.scale.every(positive)))
     )
   )
     throw new Error('Invalid spatial instances')
+  const ids = snapshot
+    .filter((item) => item.id !== undefined)
+    .map((item) => item.id)
+  if (new Set(ids).size !== ids.length)
+    throw new Error('Duplicate spatial instance identity')
   const instances = Object.freeze(
     snapshot.map((item) =>
       Object.freeze({
+        id: item.id as string,
         position: Object.freeze([...item.position]) as SpatialVector,
-        yaw: item.yaw as number
+        rotation: Object.freeze([...item.rotation]) as SpatialQuaternion,
+        ...(item.scale === undefined
+          ? {}
+          : { scale: Object.freeze([...item.scale]) as SpatialVector })
       })
     )
   )
@@ -220,7 +205,7 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
     return value as SpatialDescriptor
   if (record(value)) {
     const snapshot = { ...value }
-    for (const key of ['position', 'target', 'rotation']) {
+    for (const key of ['position', 'target', 'rotation', 'scale']) {
       if (Array.isArray(snapshot[key])) snapshot[key] = [...snapshot[key]]
     }
     if (record(snapshot.distant)) snapshot.distant = { ...snapshot.distant }
@@ -248,6 +233,16 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
     }
   } else if (value.kind === 'mesh') {
     if (
+      value.shear !== undefined ||
+      value.yaw !== undefined ||
+      (value.scale !== undefined &&
+        (!finiteTuple(value.scale, 3) || !value.scale.every(positive))) ||
+      ['castShadow', 'receiveShadow'].some(
+        (key) => value[key] !== undefined && typeof value[key] !== 'boolean'
+      )
+    )
+      throw new Error('Invalid spatial pose or shadow policy')
+    if (
       !finiteTuple(value.rotation, 4) ||
       Math.abs(Math.hypot(...value.rotation) - 1) > 1e-8 ||
       !Number.isInteger(value.color) ||
@@ -266,6 +261,16 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
     throw new Error('Unsupported spatial descriptor kind')
   }
   if (value.kind === 'mesh') {
+    if (
+      value.shear !== undefined ||
+      value.yaw !== undefined ||
+      (value.scale !== undefined &&
+        (!finiteTuple(value.scale, 3) || !value.scale.every(positive))) ||
+      ['castShadow', 'receiveShadow'].some(
+        (key) => value[key] !== undefined && typeof value[key] !== 'boolean'
+      )
+    )
+      throw new Error('Invalid spatial pose or shadow policy')
     if (
       value.surface !== undefined &&
       (!record(value.shape) ||
@@ -287,6 +292,8 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
       value.distant !== undefined &&
       (!record(value.distant) ||
         !positive(value.distant.maxError) ||
+        (value.distant.pixelError !== undefined &&
+          !positive(value.distant.pixelError)) ||
         !value.instances)
     )
       throw new Error('Invalid distant representation')
@@ -306,6 +313,11 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
           kind: 'mesh',
           position,
           rotation: Object.freeze([...(value.rotation as number[])]),
+          ...(value.scale === undefined
+            ? {}
+            : { scale: Object.freeze([...(value.scale as number[])]) }),
+          castShadow: value.castShadow ?? false,
+          receiveShadow: value.receiveShadow ?? false,
           shape: readSpatialShape(value.shape),
           ...(value.instances === undefined
             ? {}
@@ -314,7 +326,8 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
             ? {
                 distant: Object.freeze({
                   shape: readSpatialShape(value.distant.shape),
-                  maxError: value.distant.maxError
+                  maxError: value.distant.maxError,
+                  pixelError: value.distant.pixelError ?? 2
                 })
               }
             : {}),

@@ -269,7 +269,7 @@
       "wordCount": 3121
     },
     {
-      "contentSha256": "556962323fbe71309c0e639fe71489fa926334c223c845d42642790749ea50cc",
+      "contentSha256": "e582dd2cd484cf36947110632b64120d58051a657ce940acd5a052dab890631c",
       "description": "Apply the optional official Preset before Core starts, then keep app-domain choices outside the Framework.",
       "headings": [
         {
@@ -306,6 +306,10 @@
         },
         {
           "depth": 2,
+          "title": "Use the official 3D provider"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources"
         },
         {
@@ -322,7 +326,7 @@
       "path": "start/preset-2d.md",
       "section": "Start",
       "title": "Compose the official 2D baseline",
-      "wordCount": 476
+      "wordCount": 556
     },
     {
       "contentSha256": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
@@ -1409,7 +1413,7 @@
       "wordCount": 399
     },
     {
-      "contentSha256": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
+      "contentSha256": "e2ddd1a4890f404a6e3717d4b7977e5925a2880c073fa60db037f13ac0b3452e",
       "description": "The strict composition facade for Framework capabilities and lifecycle.",
       "headings": [
         {
@@ -1459,6 +1463,10 @@
         {
           "depth": 2,
           "title": "Canonical sources and release inventory"
+        },
+        {
+          "depth": 2,
+          "title": "Spatial queries"
         }
       ],
       "id": "reference/packages/core",
@@ -1469,7 +1477,7 @@
       "path": "reference/packages/core.md",
       "section": "Reference",
       "title": "@asyra/core",
-      "wordCount": 726
+      "wordCount": 770
     },
     {
       "contentSha256": "c2bc81415b3770b776ecd0b282c3889325c76a75a26bdb2d50be5a85b84b042d",
@@ -1767,7 +1775,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
+      "contentSha256": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -1813,6 +1821,14 @@
         {
           "depth": 2,
           "title": "Canonical sources and release inventory"
+        },
+        {
+          "depth": 2,
+          "title": "Optional spatial picking"
+        },
+        {
+          "depth": 2,
+          "title": "Opt-in mesh definitions and pose presentation"
         }
       ],
       "id": "reference/packages/preset",
@@ -1823,7 +1839,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 468
+      "wordCount": 818
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
@@ -1944,7 +1960,7 @@
       "wordCount": 381
     },
     {
-      "contentSha256": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
+      "contentSha256": "4365de7999d88314d240e8240083c3636217fdad4443b515ad7bab85b57c8baf",
       "description": "Projection, render-layer registration, interaction bridges, and renderer orchestration.",
       "headings": [
         {
@@ -1994,6 +2010,10 @@
         {
           "depth": 2,
           "title": "Canonical sources and release inventory"
+        },
+        {
+          "depth": 2,
+          "title": "Spatial queries"
         }
       ],
       "id": "reference/packages/render",
@@ -2004,10 +2024,10 @@
       "path": "reference/packages/render.md",
       "section": "Reference",
       "title": "@asyra/render",
-      "wordCount": 529
+      "wordCount": 609
     },
     {
-      "contentSha256": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
+      "contentSha256": "246eafa4d7dbd2750ec25680fbe42424a78fb392b71f0d4c7334b1980a16a713",
       "description": "Public engine-provider contract that keeps renderer implementations replaceable.",
       "headings": [
         {
@@ -2057,6 +2077,10 @@
         {
           "depth": 2,
           "title": "Canonical sources and release inventory"
+        },
+        {
+          "depth": 2,
+          "title": "Optional spatial queries"
         }
       ],
       "id": "reference/packages/render-engine",
@@ -2067,7 +2091,7 @@
       "path": "reference/packages/render-engine.md",
       "section": "Reference",
       "title": "@asyra/render-engine",
-      "wordCount": 460
+      "wordCount": 570
     },
     {
       "contentSha256": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",
@@ -2428,7 +2452,7 @@
       "wordCount": 450
     },
     {
-      "contentSha256": "b4660429ab396323249d15af3f96b16c5c9a600f7576af231dae4e04e8a5766c",
+      "contentSha256": "79888ae4681529bb11ffa09ec7dec3850cff48d14945b8fe21de12d364df1caa",
       "description": "Current runtime support, candidate status, security reporting, license, migration, and publication boundaries.",
       "headings": [
         {
@@ -2474,7 +2498,7 @@
       "path": "reference/support-release.md",
       "section": "Reference",
       "title": "Support, security, and release boundaries",
-      "wordCount": 520
+      "wordCount": 530
     },
     {
       "contentSha256": "9e1954d8a150bfbb3317ad101032170dc9f9fb01ed01b64a08cf783ab38da1d4",

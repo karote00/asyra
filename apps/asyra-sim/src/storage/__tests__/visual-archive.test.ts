@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { afterEach, expect, it, vi } from 'vitest'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { encodeGlb, triangleFixture } from '../../engine/glb/__tests__/fixtures'
 import { VisualAssetArchive } from '../visual-archive'
 import { validateVisualSources, visualSourceBytes } from '../visual-source'

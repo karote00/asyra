@@ -28,6 +28,28 @@ test('real greenhouse route exposes the structure, section, inner aisle and resp
   await page.goto('/')
   await expect(page.getByText('空間模型已就緒')).toBeVisible()
   await expect(page.locator('canvas')).toHaveCount(1)
+  const graphics = await page.locator('canvas').evaluate((canvas) => {
+    const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
+    if (!gl || gl.isContextLost())
+      throw new Error('Missing live WebGL2 context')
+    const info = gl.getExtension('WEBGL_debug_renderer_info')
+    return {
+      version: gl.getParameter(gl.VERSION),
+      renderer: info
+        ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL)
+        : gl.getParameter(gl.RENDERER),
+      width: gl.drawingBufferWidth,
+      height: gl.drawingBufferHeight,
+      deviceScaleFactor: devicePixelRatio
+    }
+  })
+  expect(graphics.version).toContain('WebGL 2')
+  expect(graphics.width).toBeGreaterThan(0)
+  expect(graphics.height).toBeGreaterThan(0)
+  await testInfo.attach('live-webgl-context', {
+    body: JSON.stringify(graphics),
+    contentType: 'application/json'
+  })
   await page.evaluate(
     () =>
       new Promise<void>((resolve) =>

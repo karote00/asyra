@@ -611,21 +611,11 @@ export async function bootstrap(
       },
       pick: (x: number, y: number) => {
         if (disposed) return null
-        const bounds = core.getCanvasBounds()
-        if (
-          !bounds ||
-          bounds.width <= 0 ||
-          bounds.height <= 0 ||
-          x < bounds.left ||
-          x >= bounds.right ||
-          y < bounds.top ||
-          y >= bounds.bottom
-        )
-          return null
-        return core.getElementIdAtClientPos({
-          x: ((x - bounds.left) * width) / bounds.width,
-          y: ((y - bounds.top) * height) / bounds.height
-        })
+        const result = core.pickSpatialAtClientPoint({ x, y })
+        if (!result) return null
+        return result.kind === 'overlay'
+          ? result.elementId
+          : (result.hit.elementId ?? result.hit.visualId)
       },
       save,
       load: (data: unknown) => {

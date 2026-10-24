@@ -1,3 +1,9 @@
+import { SpatialQueries } from './queries/spatial-query.js'
+import type {
+  SpatialVector,
+  SpatialRay,
+  RenderEnginePoint
+} from '@asyra/render-engine'
 import {
   RenderEngineCapabilities,
   assertRenderEngineCapabilities,
@@ -73,6 +79,7 @@ export interface RenderContentMeasurement {
 
 class Render {
   app: RenderApplication | null = null
+  private spatialSurfaceSize = { width: 0, height: 0 }
   viewport: ViewportLayer
   private customLayerContainers: RenderContainer[] = []
   private attachedCustomLayers = new Set<RenderContainer>()
@@ -462,6 +469,7 @@ class Render {
         backgroundColor
       })
       this.engine = engine
+      this.spatialSurfaceSize = { width, height }
       this.runtime = new RenderObjectRuntime(
         engine,
         initialized.root,
@@ -666,6 +674,76 @@ class Render {
     }
   }
 
+  private spatialQueries(): SpatialQueries {
+    const engine = this.requireEngine()
+    const nodes = () => {
+      const result = new Set<import('./types/render-object.js').RenderNode>()
+      const visit = (node: import('./types/render-object.js').RenderNode) => {
+        if (result.has(node)) return
+        result.add(node)
+        node.children.forEach(visit)
+      }
+      visit(this.viewport.view)
+      this.attachedCustomLayers.forEach(visit)
+      return [...result]
+    }
+    return new SpatialQueries(
+      engine,
+      nodes,
+      (handle) => this.runtime?.getObject(handle) ?? null,
+      (point) => {
+        if (![point.x, point.y].every(Number.isFinite))
+          throw new Error('Invalid client point')
+        const bounds = this.app?.canvas?.getBoundingClientRect()
+        if (
+          !bounds ||
+          bounds.width <= 0 ||
+          bounds.height <= 0 ||
+          point.x < bounds.left ||
+          point.y < bounds.top ||
+          point.x >= bounds.left + bounds.width ||
+          point.y >= bounds.top + bounds.height
+        )
+          return null
+        return {
+          x:
+            ((point.x - bounds.left) * this.spatialSurfaceSize.width) /
+            bounds.width,
+          y:
+            ((point.y - bounds.top) * this.spatialSurfaceSize.height) /
+            bounds.height
+        }
+      }
+    )
+  }
+  projectSpatialPoint(point: SpatialVector) {
+    return this.spatialQueries().project(point)
+  }
+  getSpatialRayAtClientPoint(point: RenderEnginePoint) {
+    return this.spatialQueries().ray(point)
+  }
+  raycastSpatial(ray: SpatialRay) {
+    return this.spatialQueries().raycast(ray)
+  }
+  convertSpatialPoint(
+    visualId: string,
+    point: SpatialVector,
+    to: 'local' | 'world',
+    instanceIndex?: number
+  ) {
+    return this.spatialQueries().convert(visualId, point, to, instanceIndex)
+  }
+  getSpatialBounds(
+    visualId: string,
+    space: 'local' | 'world',
+    instanceIndex?: number
+  ) {
+    return this.spatialQueries().bounds(visualId, space, instanceIndex)
+  }
+  pickSpatialAtClientPoint(point: RenderEnginePoint) {
+    return this.spatialQueries().pick(point)
+  }
+
   getElementIdAtClientPos(clientPos: { x: number; y: number }): string | null {
     if (!this.engine || !this.runtime) {
       return null
@@ -675,10 +753,10 @@ class Render {
       return null
     }
     let target = this.runtime.getObject(result.target)
-    while (target && !target.label && target.parent) {
+    while (target && !target.interactionIdentity && target.parent) {
       target = target.parent
     }
-    return target?.label || null
+    return target?.interactionIdentity || null
   }
 
   getElementById(elementId: string) {
@@ -755,6 +833,7 @@ class Render {
     const command = { type: 'resize', width, height } as const
     this.publishEngineHandoff(command)
     this.requireEngine().execute(command)
+    this.spatialSurfaceSize = { width, height }
     this.requestRender()
   }
 
@@ -829,10 +908,10 @@ class Render {
       kind: CanvasPipelineEvidenceKinds.ENGINE_HANDOFF,
       frameId: this.renderFrameId,
       command: snapshotCanvasPipelineCommand(command, {
-        elementId: node?.label || null,
+        elementId: node?.interactionIdentity || null,
         objectType: node?.objectType,
         renderRole: node === this.viewport.view ? 'viewport' : undefined,
-        relatedElementId: relatedNode?.label || null,
+        relatedElementId: relatedNode?.interactionIdentity || null,
         relatedObjectType: relatedNode?.objectType,
         projection: node
           ? {
@@ -1064,10 +1143,10 @@ class Render {
     handle: RenderEngineObjectHandle | null
   ): string | null {
     let target = this.runtime?.getObject(handle) ?? null
-    while (target && !target.label && target.parent) {
+    while (target && !target.interactionIdentity && target.parent) {
       target = target.parent
     }
-    return target?.label || null
+    return target?.interactionIdentity || null
   }
 
   private resolveEngine(): RenderEngine {

@@ -21,15 +21,16 @@ and package-private `src` imports are not public contracts.
 - public ESM entrypoints with TypeScript declarations
 - React 19 for Asyra Design and `@asyra/design-system`
 - Chromium through the current Playwright browser verification
-- official `2D` and engine-neutral `CUSTOM` composition
+- official `2D`, explicit `3D` and engine-neutral `CUSTOM` composition
 
 Input System and default Core entries import without eager DOM access in the
 supported Node runtime. That proves import safety, not a public Headless Core,
 Core Kernel, server/worker lifecycle, no-Render dependency, or multi-runtime
 isolation.
 
-Production `3D`, `HYBRID`, auto layout, and unit-aware aggregation are not in
-this candidate.
+Official `3D` requires explicit empty/INPUT defaults; omitted or incompatible
+defaults reject before mutation. `HYBRID`, auto layout and unit-aware aggregation
+remain unavailable.
 
 ## Optional systems
 

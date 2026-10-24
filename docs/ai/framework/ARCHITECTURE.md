@@ -68,7 +68,7 @@ Dependency direction is strict:
 - `@asyra/render-engine-pixi` depends on `@asyra/render-engine`, never on
   `@asyra/render`;
 - `@asyra/preset` installs the selected official default dependency closure and
-  binds the preset-owned Pixi provider only for profile `2D`; custom providers
+  binds Pixi for `2D` or the deferred spatial provider for `3D`; custom providers
   bind through Core when profile is `CUSTOM`;
 - Core owns the default `RenderAdapter`, provider facade, exact missing-provider
   no-canvas compatibility normalization, startup, and renderer teardown. This
@@ -229,7 +229,7 @@ The normal app route is:
 applyPreset(core, { profile?, defaults? })
 -> strict profile/default resolution
 -> selected official defaults in catalog order
--> profile-owned provider when profile is 2D
+-> profile-owned provider when profile is 2D or 3D
 -> frozen preset apply result
 -> remove old relation(s)
 -> define new relation(s) or registrations
@@ -388,8 +388,9 @@ The first public framework release is gated, in order, by:
    (completed July 25, 2026);
 5. framework release-readiness audit and closeout.
 
-Auto-layout, its unit/UI aggregation family, and production `3D`/`HYBRID`
-remain post-release Roadmap capabilities. Detailed scope and status are owned by
+Auto-layout, its unit/UI aggregation family, and `HYBRID` remain Roadmap
+capabilities. Official `3D` supports explicit empty/INPUT defaults and neutral
+lighting; generic editing/assets remain separately scoped. Detailed scope and status are owned by
 `PLANS.md`.
 
 ## Package Deep Dives

@@ -105,7 +105,7 @@ Use these matrices for deterministic ownership and flow decisions.
 
 - preset author
 
-  - can: maintain the fixed official default catalog, module installers, private prerequisites, and preset-owned `2D` provider policy
+  - can: maintain the fixed official default catalog, module installers, private prerequisites, and preset-owned `2D`/`3D` provider policy
   - must: keep defaults independently selectable and profile-independent
   - must not: own engine instances/resources or add implicit singleton fallback
   - must not: make app-domain behavior a hidden framework dependency

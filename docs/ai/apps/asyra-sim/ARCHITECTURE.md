@@ -327,6 +327,13 @@ subscribers. Playback updates the viewport surface and time caption without
 recreating the viewport options or workbench layout. Removed entities release
 their subscriptions on unmount; replacement creates fresh editor lifetimes.
 
+Viewport navigation uses the optional Preset spatial camera controls for pan,
+orbit, target-centered dolly and point framing. Sim retains gesture bindings,
+wheel normalization, sensitivity and polar limits, 32px fit padding, selectable
+mesh filtering and indexed source-point traversal. Those points stream into the
+shared framing mechanism without allocating another geometry buffer. Camera
+updates stay presentation-only and do not create history or mesh submissions.
+
 The exact navigation and admission contracts remain in
 [editing-v0.md](specs/editing-v0.md) and
 [custom-engine-v0.md](specs/custom-engine-v0.md). Formal work-count, equivalence,
@@ -423,3 +430,20 @@ authorize Framework publication, merging, tagging, or deployment.
   silently during project load.
 - Replacing error handling, numerical validation, or user support with a
   disclaimer.
+
+### Shared spatial picking
+
+The runtime picks through `Core.pickSpatialAtClientPoint`. Render performs one
+DOM client-to-logical-surface conversion and resolves registered visual identity;
+the App no longer duplicates scaling or bounds checks. The runtime returns the
+overlay entity or spatial entity/visual ID to the existing viewport selection
+Feature. Pointer capture, modifiers and cancellation remain App policy. Picks,
+bounds and camera queries do not write canonical state or undo history.
+
+### Spatial content policy
+
+Shared neutral scale support does not broaden rigid-part admission: Sim rejects
+explicit scale before projection. Its adapter supplies the existing solid,
+selectable, non-wireframe caster policy and non-wireframe receiver policy as
+independent neutral fields. Workcell light colors/intensities remain explicit
+App composition. No geometry, solver, source or playback policy changes.

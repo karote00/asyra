@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { encodeGlb, triangleFixture } from '../../engine/glb/__tests__/fixtures'
 import { createSyntheticExample } from '../../../samples/synthetic-workcell'
 import { IDENTITY_POSE } from '../../domain/math'

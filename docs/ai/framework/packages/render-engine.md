@@ -39,7 +39,16 @@ custom engine implementations.
   `RenderEngineDestroyResult`;
 - `RenderEngineInteractionEvent`, `RenderEngineInteractionListener`;
 - `RenderEngineCapabilities`, `assertRenderEngineCapabilities(...)`;
-- `UnsupportedRenderEngineCapabilityError`.
+- `UnsupportedRenderEngineCapabilityError`;
+- `SpatialVector`, `SpatialQuaternion`, `SpatialShape`, `SpatialInstance`,
+  `SpatialSurface`, `SpatialDescriptor` and `RenderEngineCapabilities.SPATIAL`.
+
+Spatial data types are SDK-independent. Preset owns structural admission and
+immutable receipts; App admission may retain a narrower product subset. The
+current instance representation requires a nonempty unique `id`, local position
+and normalized quaternion, with optional positive scale. Meshes also accept
+positive scale and explicit independent shadow flags. App placement adapters own
+conversion from narrower domain formats.
 
 `initialize(...)` may be asynchronous. `execute(...)`, `query(...)`, and
 `destroy()` are synchronous so render orchestration observes deterministic
@@ -125,3 +134,21 @@ Text draw operations accept an optional `wordWrap` flag (true when omitted).
 The Pixi adapter shares the typography/wrapping style between measurement and
 native Text construction. Recording and spatial engines reject measurement
 explicitly; consumers must check capability support through the Render/Core facade.
+
+## Optional spatial queries
+
+`RenderEngineCapabilities.SPATIAL_QUERIES` (`spatial-queries.v0`) is separate
+from spatial descriptor rendering. `RenderEngineSpatialQuery` and
+`RenderEngineSpatialResult` join the existing query/result unions. Operations are
+`spatial-project`, `spatial-ray`, `spatial-convert`, `spatial-bounds`,
+`spatial-raycast` and `spatial-pick`. `SpatialVector`, `SpatialRay`, `SpatialBox`
+and `RenderEngineSpatialHit` remain SDK-independent. Engines return opaque
+handles; Render maps them to explicit visual/entity identity.
+
+Surface points use logical CSS coordinates. Projection returns NDC depth and
+frustum visibility, with null point/depth at the eye plane. Outside half-open
+surface bounds yields no ray/pick; invalid finite-vector or instance inputs
+reject. Bounds are full-shape local/world AABBs; conversion applies the mesh and
+optional source-instance pose once. Hits retain source index and optional ID,
+never a compacted rendering slot. Recording and Pixi reject these queries with
+`UnsupportedRenderEngineCapabilityError`. Existing 2D queries retain their meanings.

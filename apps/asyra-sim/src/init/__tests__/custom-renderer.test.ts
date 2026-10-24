@@ -7,6 +7,17 @@ import type { SpatialFrame } from '../../render-app/spatial-layer'
 
 it('uses normal Core startup, registered projection, demand frames, public picking and teardown', async () => {
   const canvas = document.createElement('canvas')
+  canvas.getBoundingClientRect = () => ({
+    left: 100,
+    top: 50,
+    width: 320,
+    height: 240,
+    right: 420,
+    bottom: 290,
+    x: 100,
+    y: 50,
+    toJSON: () => ({})
+  })
   const driver: GraphicsDriver = {
     domElement: canvas,
     autoClear: true,
@@ -66,8 +77,18 @@ it('uses normal Core startup, registered projection, demand frames, public picki
   expect(provider).toHaveBeenCalledOnce()
   expect(core.getCanvas()).toBe(canvas)
   expect(host.firstElementChild).toBe(canvas)
-  expect(core.getElementIdAtClientPos({ x: 320, y: 240 })).toBe('proof-body')
   const before = core.getUndoHistoryDepth()
+  expect(core.getElementIdAtClientPos({ x: 320, y: 240 })).toBe('proof-body')
+  expect(core.pickSpatialAtClientPoint({ x: 260, y: 170 })).toMatchObject({
+    kind: 'spatial',
+    hit: { visualId: 'proof-body' }
+  })
+  expect(core.pickSpatialAtClientPoint({ x: 420, y: 170 })).toBeNull()
+  expect(core.getSpatialBounds('proof-body', 'world')).toEqual({
+    min: [-0.5, -0.5, -0.5],
+    max: [0.5, 0.5, 0.5]
+  })
+  expect(core.getUndoHistoryDepth()).toBe(before)
   layer.submit({ ...frame, meshes: [] })
   expect(callback).toBeTypeOf('function')
   callback?.(1)

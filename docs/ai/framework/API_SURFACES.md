@@ -755,8 +755,8 @@ See `packages/collaboration.md` and
 
 `@asyra/preset`
 
-- `PresetProfiles`: stable `2D`, `3D`, `HYBRID`, and `CUSTOM` ids; only `2D`
-  and `CUSTOM` are currently available
+- `PresetProfiles`: stable `2D`, `3D`, `HYBRID`, and `CUSTOM` ids; `2D`, `3D`
+  and `CUSTOM` are available; `HYBRID` remains unavailable
 - optional canonical text exports: `TEXT_COMPONENT_TYPE`, `TEXT_COMPONENT_DEFINITION`,
   `TEXT_PROPERTY_TYPE`, `TEXT_PROPERTY_DEFINITION`, `TEXT_PROPERTY_SCHEMA`,
   `DEFAULT_TEXT_DATA`, `TextSizing` and `TEXT_RENDER_STRATEGY`; install explicitly without changing
@@ -768,8 +768,11 @@ See `packages/collaboration.md` and
   the typed contract for official Preset-managed property keys
 - deeply frozen `PresetCatalog` with separate profile/default availability and
   public dependency metadata
-- `applyPreset(core, { profile?, defaults? })`; omitted options mean `2D` plus
+- `applyPreset(core, { profile?, defaults?, spatial? })`; omitted options mean `2D` plus
   all defaults, omitted defaults mean all, and `defaults: []` means none
+- `3D` accepts explicit empty/INPUT defaults; omitted or incompatible defaults
+  reject before mutation. Optional 3D-only `spatial` lighting/shadow settings
+  are validated and captured before deferred engine startup.
 - explicit defaults are canonicalized as a set, expanded by public dependencies,
   and installed in catalog order independently of profile
 - `PresetApplyResult` is detached and deeply frozen, with `profile`,

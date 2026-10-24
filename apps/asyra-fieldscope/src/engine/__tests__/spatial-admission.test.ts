@@ -135,3 +135,38 @@ it('admits flat triangle buffers without general object-graph cloning', () => {
     clone.mockRestore()
   }
 })
+
+it('keeps domain yaw while reusing the neutral projection receipt across consumers', async () => {
+  const { toSpatialProjection } = await import('../spatial-contract')
+  const source = [{ position: [1, 0, 2], yaw: Math.PI / 2 }]
+  const domain = readSpatialDescriptor({ ...input(), instances: source })
+  const neutral = toSpatialProjection(domain)
+  if (domain.kind !== 'mesh' || neutral.kind !== 'mesh')
+    throw new Error('Expected mesh')
+  expect(domain.instances?.[0].yaw).toBe(Math.PI / 2)
+  expect(neutral.instances?.[0]).toMatchObject({
+    rotation: [0, expect.closeTo(Math.SQRT1_2), 0, expect.closeTo(Math.SQRT1_2)]
+  })
+  const clone = vi.spyOn(globalThis, 'structuredClone')
+  try {
+    for (let i = 0; i < 20; i++)
+      expect(toSpatialProjection(domain)).toBe(neutral)
+    expect(clone).not.toHaveBeenCalled()
+  } finally {
+    clone.mockRestore()
+  }
+  source[0].position[0] = 99
+  expect(neutral.instances?.[0].position[0]).toBe(1)
+})
+
+it('does not broaden domain rigid placements when the neutral renderer supports scale', () => {
+  expect(() => readSpatialDescriptor({ ...input(), scale: [2, 2, 2] })).toThrow(
+    /rigid/
+  )
+  expect(() =>
+    readSpatialDescriptor({
+      ...input(),
+      instances: [{ position: [0, 0, 0], yaw: 0, scale: [2, 2, 2] }]
+    })
+  ).toThrow()
+})

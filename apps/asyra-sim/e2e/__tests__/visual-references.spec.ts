@@ -366,3 +366,80 @@ test('keeps a historical-only visual source available for replay after portable 
   })
   expect(errors).toEqual([])
 })
+
+test('shared transform preview rotates and scales an original part without history until acceptance', async ({
+  page
+}, info) => {
+  await page.goto('/')
+  await expect(page.getByRole('status')).toHaveText('Local runtime ready')
+  const depth = await readHistoryDepth(page)
+  await chooseVisual(page)
+  const preview = page.locator('.glb-preview')
+  const scale = preview.getByLabel('Visual scale X', { exact: true })
+  await scale.fill('2')
+  await scale.press('Enter')
+  await preview.getByText('Visual rotation', { exact: true }).click()
+  const angle = preview.getByLabel('Visual rotation (deg)', { exact: true })
+  await angle.fill('45')
+  await angle.press('Enter')
+  await preview
+    .getByRole('button', { name: 'Preview placement in 3D', exact: true })
+    .click()
+  await expect.poll(() => readHistoryDepth(page)).toBe(depth)
+  await page
+    .getByTestId('workcell-canvas')
+    .locator('canvas')
+    .screenshot({ path: info.outputPath('rotated-scaled-preview.png') })
+  await preview
+    .getByRole('button', { name: 'Accept original part', exact: true })
+    .click()
+  await expect(preview).toContainText('one Undo action')
+  await expect.poll(() => readHistoryDepth(page)).toBe(depth + 1)
+  const payload = await exportProject(page)
+  const source = payload.visualSources.find(
+    (item: { assetId: string }) => item.assetId === digest
+  )
+  expect(Buffer.from(source.base64, 'base64')).toEqual(bytes)
+  await page
+    .getByRole('button', { name: 'Close projects', exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await expect.poll(() => readHistoryDepth(page)).toBe(depth)
+  await page.getByRole('button', { name: 'Redo', exact: true }).click()
+  await expect.poll(() => readHistoryDepth(page)).toBe(depth + 1)
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  await importProject(page, payload)
+  await expect(
+    page.getByRole('dialog', { name: 'Local projects' })
+  ).toHaveCount(0)
+  await page
+    .getByRole('treeitem', { name: '◇ fixture post', exact: true })
+    .click()
+  await page.locator('.visual-bindings > summary').click()
+  const binding = page.getByRole('group', {
+    name: 'Original part 2',
+    exact: true
+  })
+  await expect(
+    binding.getByLabel('Visual scale X', { exact: true })
+  ).toHaveValue('2')
+  await binding.getByText('Visual rotation', { exact: true }).click()
+  await expect(
+    binding.getByLabel('Visual rotation (deg)', { exact: true })
+  ).toHaveValue('45')
+  await page.screenshot({
+    path: info.outputPath('rotated-scaled-reopened.png')
+  })
+  const surface = page.getByTestId('workcell-canvas').locator('canvas')
+  await surface.hover({ position: { x: 240, y: 440 } })
+  await page.mouse.wheel(0, -450)
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      )
+  )
+  await surface.screenshot({
+    path: info.outputPath('rotated-scaled-detail.png')
+  })
+})

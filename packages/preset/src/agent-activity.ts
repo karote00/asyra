@@ -90,7 +90,8 @@ export class ActivityProjection {
   private queue: Promise<void> = Promise.resolve()
   constructor(
     private readonly archive: ActivityArchive,
-    private readonly schedule: (flush: () => void) => void = queueMicrotask
+    private readonly schedule: (flush: () => void) => void = (flush) =>
+      queueMicrotask(flush)
   ) {}
   connect(connection: ActivityConnection): void {
     if (this.closed) throw new Error('Activity projection is closed')

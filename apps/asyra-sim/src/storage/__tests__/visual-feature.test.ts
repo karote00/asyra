@@ -6,7 +6,7 @@ import { installEditingFeatures } from '../../features/edit-workcell'
 import { installModelComponents } from '../../init/components'
 import { readWorkcell } from '../../common-apis/workcell'
 import { IDENTITY_POSE } from '../../domain/math'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { encodeGlb, triangleFixture } from '../../engine/glb/__tests__/fixtures'
 import { VisualAssetArchive, type VisualDecoder } from '../visual-archive'
 
@@ -70,13 +70,23 @@ it('prepares without history and accepts only after explicit intent as one canon
   await api.retain(receipt, candidate, 'body', {
     version: 1,
     id: 'visual',
-    pose: IDENTITY_POSE,
-    scale: [1, 1, 1]
+    pose: {
+      position: [0.5, 0, 0],
+      rotation: [0, Math.SQRT1_2, 0, Math.SQRT1_2]
+    },
+    scale: [2, 3, 4]
   })
   expect(core.getUndoHistoryDepth()).toBe(before + 1)
   expect(readWorkcell(core, candidate).bodies[0].visuals?.[0].assetId).toBe(
     receipt.source.assetId
   )
+  expect(readWorkcell(core, candidate).bodies[0].visuals?.[0]).toMatchObject({
+    pose: {
+      position: [0.5, 0, 0],
+      rotation: [0, Math.SQRT1_2, 0, Math.SQRT1_2]
+    },
+    scale: [2, 3, 4]
+  })
   await editing.history.undo()
   expect(readWorkcell(core, candidate).bodies[0].visuals).toBeUndefined()
   expect(archive.get(receipt.source.assetId)).toBeDefined()
@@ -125,4 +135,26 @@ it('uses a Feature-owned signal, rejects overlap and cancels the owned preparati
   expect(api.cancel()).toBe(true)
   await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
   expect(core.getUndoHistoryDepth()).toBe(before)
+})
+
+it('rejects invalid transform input before retaining a prepared source or writing history', async () => {
+  const { json, binary } = triangleFixture()
+  const bytes = encodeGlb(
+    { ...json, nodes: [{ mesh: 0, name: 'Rejected source' }] },
+    binary
+  )
+  const prepared = await api.prepare(bytes, 'invalid-scale.glb')
+  expect(archive.get(prepared.source.assetId)).toBeUndefined()
+  const before = core.getUndoHistoryDepth()
+  await expect(
+    api.retain(prepared, 'candidate', 'body', {
+      version: 1,
+      id: 'part',
+      pose: IDENTITY_POSE,
+      scale: [0, 1, 1]
+    })
+  ).rejects.toThrow()
+  expect(archive.get(prepared.source.assetId)).toBeUndefined()
+  expect(core.getUndoHistoryDepth()).toBe(before)
+  api.discard(prepared)
 })

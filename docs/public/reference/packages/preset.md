@@ -71,8 +71,10 @@ or provider policy is installed.
 
 ## Support, migration, and deprecation
 
-The current production profile is `2D`. `3D` and `HYBRID` are unavailable and
-must not be inferred from ids. Migration from all-defaults to selective defaults
+Official `2D` and `3D` providers are available; `HYBRID` remains unavailable.
+`3D` requires explicit empty/INPUT defaults and optionally admits neutral
+`spatial` light/shadow settings. Omitted or incompatible defaults reject before
+mutation. Migration from all-defaults to selective defaults
 must name the desired catalog entries and respect dependency expansion.
 
 ## Canonical sources and release inventory
@@ -83,3 +85,47 @@ must name the desired catalog entries and respect dependency expansion.
 
 The root entrypoint, version, catalog dependencies, and package relationships
 are release-checked; version metadata remains generated from the manifest.
+
+## Optional spatial picking
+
+The optional spatial engine supports full-shape queries through Render/Core.
+Picking retains source instance index and stable ID across LoD/culling;
+hidden/nonselectable objects are excluded, while transparent selectable geometry
+remains eligible. Screen overlays take precedence. Queries reuse owned geometry
+and do not create GPU resources or solver evidence. Apps keep camera modes,
+angles, input actions and selection policy. Queries work through official `3D` and compatible CUSTOM providers.
+
+## Opt-in mesh definitions and pose presentation
+
+Import `registerSpatialMesh` from `@asyra/preset/spatial` and call it with Core
+before startup to register a generic mesh property, schema, component and Render
+strategy. Compose the ordinary Core state/projection channels separately, as in
+[custom composition](../../start/custom-composition.md). No catalog default,
+Camera, navigation mode or tree UI is added. Exported definitions support normal
+Core customization; failed registration cleans up in reverse. The returned
+cleanup is for open composition; Core `resetRuntime` retires successful runtime
+registrations. Schema-invalid runtime writes reject; invalid loads use defaults.
+
+Instances require stable IDs and quaternion poses; meshes and instances accept
+positive scale. Explicit `castShadow`/`receiveShadow` are independent of
+selection. Apps configure lights and supply full/distant shapes plus geometric
+error and optional `pixelError` (2 physical pixels by default). Pose, material
+and placement-count updates retain unchanged geometry/material resources.
+
+Use `SpatialPosePresentation.retarget`, `advance`, `cancel` and `dispose` for
+optional pose transitions. The caller supplies progress, tolerance and reduced
+motion and chooses targets; the mechanism has no clock or document writes.
+
+For transient transform editing, use `transformSpatialPose` or capture an
+App-authorized target/revision with `previewSpatialEdit`, then call
+`resolveSpatialEdit` inside the App Feature immediately before its transaction.
+The shared mechanism supports translation, explicit local/world axis rotation,
+positive scale capability, absolute poses and optional plane/grid snapping.
+Apps discard previews on cancel and own domain validity, feedback and history.
+
+Use the explicit `@asyra/preset/spatial-assets` entry for restricted static,
+self-contained GLB decoding. `decodeRestrictedGlb` returns detached immutable
+triangles/bounds/source digest; `RestrictedGlbPreviewWorker` takes your bundled
+Worker factory and handles bounded request lifetime/cancellation. This is the
+existing `restricted-glb-v0` profile, not full glTF. Apps retain original bytes,
+source binding, canonical acceptance and storage; decoding never edits a scene.

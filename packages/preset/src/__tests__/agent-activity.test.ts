@@ -36,6 +36,45 @@ const setup = () => {
   }
 }
 describe('Activity projection', () => {
+  it('invokes the default browser microtask scheduler without a foreign receiver', async () => {
+    const pending: VoidFunction[] = []
+    vi.stubGlobal(
+      'queueMicrotask',
+      function (this: unknown, callback: VoidFunction) {
+        if (this !== undefined && this !== globalThis)
+          throw new TypeError('Illegal invocation')
+        pending.push(callback)
+      }
+    )
+    const append = vi.fn(async () => {
+      // Acknowledge persistence before allowing projection publication.
+    })
+    const projection = new ActivityProjection({ append })
+    projection.connect({ id: 'sample', label: 'Sample', fidelity: 'synthetic' })
+    const changed = vi.fn()
+    projection.subscribeAgent(projection.key('sample', 'a'), changed)
+    try {
+      await projection.ingest([event(1)])
+      await projection.ingest([event(2, { status: 'completed' })])
+      expect(append).toHaveBeenCalledTimes(2)
+      expect(projection.eventCount).toBe(2)
+      expect(changed).not.toHaveBeenCalled()
+      expect(pending).toHaveLength(1)
+      pending.shift()?.()
+      expect(changed).toHaveBeenCalledTimes(1)
+      expect(projection.getAgent(projection.key('sample', 'a'))?.status).toBe(
+        'completed'
+      )
+      await projection.ingest([event(3, { attempt: 2, taskId: 'task-2' })])
+      projection.dispose()
+      pending.shift()?.()
+      expect(changed).toHaveBeenCalledTimes(1)
+    } finally {
+      projection.dispose()
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('retains every accepted event but coalesces entity updates without touching unrelated agents', async () => {
     const { projection, append, flush } = setup()
     await projection.ingest([event(1), event(2, { agentId: 'b' })])

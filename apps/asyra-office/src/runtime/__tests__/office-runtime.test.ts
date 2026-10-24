@@ -1,5 +1,7 @@
+import currentCore from '@asyra/core'
+import * as preset from '@asyra/preset'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ThreeEngine, type GraphicsDriver } from '@asyra/preset/spatial'
+import { ThreeEngine, type GraphicsDriver } from '@asyra/preset/spatial-engine'
 import { createOfficeRuntime, type OfficeRuntime } from '../office-runtime'
 import type { OfficeStorage } from '../layout-controller'
 class MemoryStorage implements OfficeStorage {
@@ -80,6 +82,115 @@ async function start(storage = new MemoryStorage()) {
   return { runtime, storage }
 }
 describe('Office canonical interaction path', () => {
+  it('previews snapped movement without writes, discards it, and commits once with stale and no-op protection', async () => {
+    const { runtime } = await start()
+    const initial = runtime.layout.getSnapshot()
+    const depth = runtime.core.getUndoHistoryDepth()
+    const publication = vi.fn()
+    const unsubscribe = runtime.core.subscribeToSharedPublication(publication)
+    const proposal = runtime.layout.previewMove('desk', [0.74, 12, 0], 'Human')
+    expect(proposal.layout.furniture[0].x).toBe(-1)
+    expect(runtime.layout.getSnapshot()).toBe(initial)
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth)
+    expect(publication).not.toHaveBeenCalled()
+    // Discarding a preview requires no canonical action.
+    runtime.layout.previewMove('desk', [-0.5, 0, 0], 'Human')
+    expect(runtime.layout.getSnapshot()).toBe(initial)
+    await runtime.layout.apply(proposal)
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth + 1)
+    expect(publication).toHaveBeenCalledOnce()
+    await expect(runtime.layout.apply(proposal)).rejects.toThrow(
+      'changed since preview'
+    )
+    const same = runtime.layout.getSnapshot()
+    await runtime.layout.apply(runtime.layout.propose(same.layout, 'Human'))
+    expect(runtime.layout.getSnapshot()).toBe(same)
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth + 1)
+    await runtime.layout.undo()
+    expect(runtime.layout.getSnapshot().layout).toEqual(initial.layout)
+    await runtime.layout.redo()
+    expect(runtime.layout.getSnapshot().layout).toEqual(proposal.layout)
+    expect(() =>
+      runtime.layout.previewMove('desk', [100, 0, 0], 'Human')
+    ).toThrow('Invalid layout')
+    expect(() =>
+      runtime.layout.previewMove('missing', [1, 0, 0], 'Human')
+    ).toThrow()
+    unsubscribe()
+  })
+
+  it('does not discard admitted additional layout fields as a transform no-op', async () => {
+    const { runtime } = await start()
+    const initial = runtime.layout.getSnapshot().layout
+    const depth = runtime.core.getUndoHistoryDepth()
+    const extended = { ...initial, note: 'Retained authored metadata' }
+    await runtime.layout.apply(runtime.layout.propose(extended, 'Human'))
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth + 1)
+    expect(runtime.layout.getSnapshot().layout).toMatchObject({
+      note: extended.note
+    })
+    await runtime.layout.undo()
+    expect(runtime.layout.getSnapshot().layout).toEqual(initial)
+  })
+
+  it('requests the official 3D profile with unchanged App lighting before ordinary startup', async () => {
+    const core = currentCore
+    const apply = vi.spyOn(preset, 'applyPreset')
+    const failure = new Error('Stop at the startup boundary')
+    const startup = vi.spyOn(core, 'start').mockRejectedValue(failure)
+    try {
+      await expect(
+        createOfficeRuntime(document.createElement('div'), new MemoryStorage())
+      ).rejects.toThrow(failure)
+      expect(apply).toHaveBeenCalledWith(core, {
+        profile: preset.PresetProfiles['3D'],
+        defaults: [],
+        spatial: {
+          softwareShadowFallback: true,
+          lighting: {
+            hemisphere: [0xe6eedf, 0xb4bea5, 2],
+            keyPosition: [-15, 35, -20],
+            fillPosition: [25, 20, 20],
+            shadowExtent: 40,
+            shadowFar: 110,
+            keyColor: 0xfff3e5,
+            keyIntensity: 2.6,
+            fillColor: 0xb6d5f5,
+            fillIntensity: 1.2
+          }
+        }
+      })
+      expect(currentCore).not.toBe(core)
+      expect(currentCore.hasRenderEngineProvider()).toBe(false)
+    } finally {
+      apply.mockRestore()
+      startup.mockRestore()
+    }
+  })
+
+  it('publishes task activity with the browser microtask receiver contract', async () => {
+    const enqueue = globalThis.queueMicrotask.bind(globalThis)
+    vi.stubGlobal(
+      'queueMicrotask',
+      function (this: unknown, callback: VoidFunction) {
+        if (this !== undefined && this !== globalThis)
+          throw new TypeError('Illegal invocation')
+        enqueue(callback)
+      }
+    )
+    const { runtime } = await start()
+    const changed = vi.fn()
+    const unsubscribe = runtime.activity.subscribeAgent(runtime.key, changed)
+    try {
+      await runtime.send('working')
+      await new Promise<void>((resolve) => enqueue(resolve))
+      expect(changed).toHaveBeenCalledTimes(1)
+      expect(runtime.activity.getAgent(runtime.key)?.status).toBe('working')
+    } finally {
+      unsubscribe()
+    }
+  })
+
   it('keeps the bootstrap room when Undo is requested before any user edit', async () => {
     const { runtime } = await start()
     const layout = runtime.layout.getSnapshot().layout

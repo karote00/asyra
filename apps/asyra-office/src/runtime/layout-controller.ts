@@ -1,4 +1,9 @@
 import {
+  previewSpatialEdit,
+  resolveSpatialEdit,
+  type SpatialEditTarget
+} from '@asyra/preset/spatial'
+import {
   runTransaction,
   getSessionManager,
   undoWithRenderPolicy,
@@ -11,6 +16,8 @@ import {
   readLayout,
   validLayout,
   type OfficeLayout,
+  type Furniture,
+  type Point3,
   type LayoutProposal
 } from '../domain/layout'
 export interface OfficeStorage {
@@ -88,6 +95,12 @@ export function installLayout(core: Core, storage: OfficeStorage) {
       operation,
       'office.layout'
     )
+  const target = (item: Furniture): SpatialEditTarget => ({
+    id: item.id,
+    revision,
+    allowScale: false,
+    pose: { position: [item.x, 0, item.z], rotation: [0, 0, 0, 1] }
+  })
   const apply = (proposal: LayoutProposal) => {
     assertLive()
     const layout = readLayout(proposal.layout)
@@ -95,6 +108,35 @@ export function installLayout(core: Core, storage: OfficeStorage) {
       throw new Error('Proposal attribution is required')
     if (proposal.expectedRevision !== revision)
       throw new Error('Layout changed since preview; create a new proposal')
+    const current = snapshot.layout
+    let unchanged =
+      current.width === layout.width &&
+      current.depth === layout.depth &&
+      current.wall === layout.wall &&
+      current.furniture.length === layout.furniture.length
+    for (const [index, item] of layout.furniture.entries()) {
+      const existing = current.furniture[index]
+      if (!existing || existing.id !== item.id || existing.kind !== item.kind) {
+        unchanged = false
+        continue
+      }
+      // The complete App layout was admitted above; shared resolution owns pose/revision semantics only.
+      const result = resolveSpatialEdit(
+        {
+          id: item.id,
+          revision: proposal.expectedRevision,
+          pose: target(item).pose
+        },
+        target(existing),
+        () => true
+      )
+      if (result.status === 'rejected')
+        throw new Error('Layout changed since preview; create a new proposal')
+      unchanged = unchanged && result.status === 'unchanged'
+    }
+    // This finite proposal may retain admitted metadata beyond the transform fields.
+    // Compare its complete value once, never on a frame or subscription path.
+    if (unchanged && JSON.stringify(current) === JSON.stringify(layout)) return
     runTransaction(() =>
       core.updateElementProperties([{ elementId: roomId, values: { layout } }])
     )
@@ -136,6 +178,39 @@ export function installLayout(core: Core, storage: OfficeStorage) {
       return () => {
         listeners.delete(listener)
       }
+    },
+    previewMove(id: string, delta: Point3, author: string): LayoutProposal {
+      assertLive()
+      const current = snapshot.layout
+      const item = current.furniture.find((value) => value.id === id)
+      if (!item) throw new Error('Furniture target is unavailable')
+      const preview = previewSpatialEdit(target(item), {
+        kind: 'translate',
+        delta,
+        plane: {
+          origin: [0, 0, 0],
+          u: [1, 0, 0],
+          v: [0, 0, 1],
+          spacing: [0.5, 0.5]
+        }
+      })
+      const layout = readLayout({
+        ...current,
+        furniture: current.furniture.map((value) =>
+          value.id === id
+            ? {
+                ...value,
+                x: preview.pose.position[0],
+                z: preview.pose.position[2]
+              }
+            : value
+        )
+      })
+      return Object.freeze({
+        expectedRevision: preview.revision,
+        author,
+        layout
+      })
     },
     propose(layout: OfficeLayout, author: string): LayoutProposal {
       return Object.freeze({

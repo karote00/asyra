@@ -46,8 +46,7 @@ or unsupported capability claims.
 
 ## Active Developer Agent Work
 
-- [Asyra Developer Agent Distribution and Maintenance](
-  plans/asyra-developer-agent-plan.md)
+- [Asyra Developer Agent Distribution and Maintenance](plans/asyra-developer-agent-plan.md)
   - Codex 0.1.1 local candidate includes the complete Starter App standard;
     packaging and scoped validation pass. CLI installation and desktop Skill
     loading were confirmed for 0.1.0; 0.1.1 update and fresh product-task
@@ -58,6 +57,24 @@ or unsupported capability claims.
 ## Active Pre-Release Blockers
 
 None.
+
+## Preset 3D Foundation
+
+- [Preset 3D Foundation and App Migration](plans/preset-3d-foundation-plan.md)
+  - Tasks 1-10 verification complete on one integrated source: shared spatial
+    mechanisms, three-App migrations, official 3D, generic editing and restricted
+    assets. Final gates pass: 1,401 product unit/integration/profile tests,
+    42 real WebGL cases and one real Worker case, package/App builds and bounded
+    quality checks. Agent visual review is complete; stopped for user inspection
+    before formal plan archival. No release or remote operation is implied.
+  - One canonical 3D architecture for Sim, FieldScope and Office. Scene Tree
+    presentation and camera angles/modes remain App-owned; shared controls and
+    projection mechanisms are optional Preset foundations.
+  - Includes incremental projection, neutral spatial queries, resource/control
+    mechanisms, App migrations, generic editing/restricted assets and gated
+    official `3D` activation. Task 1 preserves defaults resolution through
+    explicit spatial composition and pre-mutation combination admission.
+    `HYBRID` remains deferred.
 
 ## Transaction History Groups
 
@@ -196,10 +213,13 @@ Preview `READY` evidence on 2026-08-05. The retained records are:
 - Publish a render-mode profile only after its concrete engine and canonical
   feature/property/schema/render/input default modules exist and pass the engine
   boundary contract.
-- `3d` requires a supported 3D engine; `hybrid` additionally requires an
+- `3D` requires a supported 3D engine; `HYBRID` additionally requires an
   explicit multi-engine composition and interaction contract.
 - Do not expose empty, placeholder, or capability-incomplete profiles.
 - Reference: `docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md`
+- The active [Preset 3D foundation plan](plans/preset-3d-foundation-plan.md)
+  owns the consumer migration and evidence for activated `3D`; `HYBRID` remains
+  unavailable.
 
 3. Auto-layout behavior engine (lowest-priority roadmap family)
 

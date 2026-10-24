@@ -78,6 +78,10 @@ test('story layout reflows with its artwork instead of retaining empty space', a
   expect(tabletArt.x).toBeGreaterThanOrEqual(tabletCopy.x + tabletCopy.width)
   expect(Math.abs(tabletArt.y - tabletCopy.y)).toBeLessThan(100)
   await page.setViewportSize({ width: 1024, height: 1000 })
+  await expect(page.locator('.spatial-story-shell')).toHaveAttribute(
+    'data-motion',
+    'on'
+  )
   const shared = await page.locator('[data-shared-scene]').boundingBox()
   if (!shared) throw new Error('Shared scene is missing')
   expect(shared.height).toBeLessThan(700)

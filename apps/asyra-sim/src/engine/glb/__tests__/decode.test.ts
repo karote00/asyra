@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { afterEach, expect, it, vi } from 'vitest'
-import { decodeRestrictedGlb } from '../decode'
-import { GLB_LIMITS } from '../schema'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
+import { GLB_LIMITS } from '@asyra/preset/spatial-assets'
 import { encodeGlb, triangleFixture } from './fixtures'
 
 afterEach(() => vi.unstubAllGlobals())

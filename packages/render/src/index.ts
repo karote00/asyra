@@ -95,3 +95,5 @@ export default render
 export { Render }
 
 export type { RenderContentMeasurement } from './render.js'
+
+export type { SpatialHit, SpatialPick } from './queries/spatial-query.js'

@@ -71,8 +71,8 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965",
-        "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
+        "contract": "ec1de2a7849e7312496dddd22f8a01e3af92d3879c78a1caa046fe760326a672",
+        "guide": "e2ddd1a4890f404a6e3717d4b7977e5925a2880c073fa60db037f13ac0b3452e",
         "manifest": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
       },
       "version": "0.5.7"
@@ -192,6 +192,7 @@
       "frameworkDependencies": [
         "@asyra/core",
         "@asyra/reactive-events",
+        "@asyra/render",
         "@asyra/render-engine",
         "@asyra/render-engine-pixi",
         "@asyra/ui-context",
@@ -206,12 +207,15 @@
         ".",
         "./agent-activity",
         "./group-bounds",
-        "./spatial"
+        "./spatial",
+        "./spatial-assets",
+        "./spatial-contract",
+        "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "866f3693cb51f85319a2d2552b5c6431422091eaaeb808d9b796cc3dd57de32c",
-        "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
-        "manifest": "d44d3f8ecec5b395e06e618157873fdc7688148b3b221d7ebd388f4cc01adbd3"
+        "contract": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004",
+        "guide": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
+        "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },
       "version": "0.5.8"
     },
@@ -280,8 +284,8 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "8abb01d6c6209183e49cf6808521215edcdc64a2474bb85c4309a6b8565064a5",
-        "guide": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
+        "contract": "f9b362b1d98fae39e808c1e402505f0577b31c6a91d7a09a2679f80ffa63254b",
+        "guide": "4365de7999d88314d240e8240083c3636217fdad4443b515ad7bab85b57c8baf",
         "manifest": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
       },
       "version": "0.5.7"
@@ -300,8 +304,8 @@
         "./testing"
       ],
       "sourceDigests": {
-        "contract": "5311827ccfeac8bba3500fe8f9671169f1bd90c53ee930741e815e14289679ca",
-        "guide": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
+        "contract": "7962e836bcf6e5853c60cf805c5ef59c7931a444bead5572d7f18d6a62b0fd12",
+        "guide": "246eafa4d7dbd2750ec25680fbe42424a78fb392b71f0d4c7334b1980a16a713",
         "manifest": "2ffcd587c6076b001aeddbf11d2afbc95e3f8531cef35590e2ff804d59bf31f8"
       },
       "version": "0.5.1"

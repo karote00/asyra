@@ -134,3 +134,14 @@ Without a separate profile runner, profile-named tests remain in that owner's
 supervised selection.
 Grouped browser runners must consume the exact selected files, reject duplicate
 or unknown paths, and retain their process isolation and result checks.
+
+### Plan Flow documents
+
+Plan-owned `docs/ai/**/plans/**.flow.json` inputs select the permanent plan Flow
+admission test through the shared repository-script relationship map. The test
+groups current files by project directory and calls Flow Inspector's public
+`admitProject` API, preserving cross-file identity and dependency validation.
+It does not accept ordinary JSON as documentation, execute configured actions,
+claim product completion, or select the legacy control-plane proof workflow.
+Local and CI runners consume the same selected test; the full script suite also
+retains this validation.

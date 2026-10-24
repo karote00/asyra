@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import { ComponentTypes, PropertyFields, PropertyNames } from '../../constants'
 import { IDENTITY_POSE } from '../../domain/math'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { encodeGlb, triangleFixture } from '../../engine/glb/__tests__/fixtures'
 import { createSyntheticExample } from '../../../samples/synthetic-workcell'
 import { createSyntheticExperimentDraft } from '../../../samples/synthetic-experiment'

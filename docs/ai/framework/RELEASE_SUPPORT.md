@@ -43,12 +43,12 @@ dependency hoisting are not part of the public contract.
 | Surface            | Release contract                                                        |
 | ------------------ | ----------------------------------------------------------------------- |
 | Node.js            | Node.js 24.x                                                            |
-| Package manager    | Yarn 4.3.1 for repository release gates                                  |
+| Package manager    | Yarn 4.3.1 for repository release gates                                 |
 | TypeScript         | Declared `^5.7.2`; artifact declarations verified with TypeScript 5.8.3 |
 | React              | React 19 for `@asyra/design-system` and Asyra Design                    |
 | Module format      | ESM package entrypoints and declarations                                |
 | Browser evidence   | Current Playwright Chromium from `@playwright/test` 1.57                |
-| Framework profiles | 2D and engine-neutral CUSTOM composition                                |
+| Framework profiles | 2D, explicit 3D and engine-neutral CUSTOM composition                   |
 
 The formal artifact gates run on Node.js 24.x. A run on another Node version is
 diagnostic evidence only and cannot produce the final `READY` decision.
@@ -64,8 +64,9 @@ multi-runtime isolation claim. Those remain unscheduled roadmap research.
 The official 2D path uses `@asyra/preset` with
 `@asyra/render-engine-pixi`. CUSTOM composition is supported through the
 engine-neutral public render contracts; the adopting app owns its renderer and
-product behavior. Production 3D and HYBRID profiles are unavailable in this
-release. Auto-layout and unit-aware aggregation are also post-release roadmap
+product behavior. Official 3D accepts explicit empty/INPUT defaults and optional neutral
+light/shadow settings; the concrete SDK loads at initialization. HYBRID remains
+unavailable. Auto-layout and unit-aware aggregation are also post-release roadmap
 items, not hidden or partial release features.
 
 ## Public composition and side-effect boundaries

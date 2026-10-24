@@ -1,7 +1,19 @@
+import {
+  DEFAULT_SPATIAL_LIGHTING,
+  readSpatialLighting,
+  type SpatialPresentationOptions
+} from './lighting.js'
+import { SPATIAL_ENGINE_CAPABILITIES } from './lazy-engine.js'
 import { SurfaceTextureStore } from './surface-textures.js'
 import * as THREE from 'three'
 import {
   RenderEngineCapabilities,
+  isSpatialQuery,
+  type RenderEngineSpatialQuery,
+  type RenderEngineSpatialResult,
+  type RenderEngineSpatialHit,
+  type SpatialVector,
+  type SpatialRay,
   UnsupportedRenderEngineCapabilityError
 } from '@asyra/render-engine'
 import type {
@@ -25,7 +37,6 @@ import type {
 import {
   readSpatialDescriptor,
   sameSpatialShape,
-  SPATIAL_CAPABILITY,
   SPATIAL_PROPERTY,
   type SpatialDescriptor,
   type SpatialShape
@@ -74,26 +85,9 @@ const createDefaultDriver = (): GraphicsDriver => {
   return driver
 }
 
-export interface SpatialLighting {
-  hemisphere: readonly [number, number, number]
-  keyPosition: readonly [number, number, number]
-  fillPosition: readonly [number, number, number]
-  shadowExtent: number
-  shadowFar: number
-}
-export interface SpatialEngineOptions {
-  capability?: string
-  softwareShadowFallback?: boolean
+export type { SpatialLighting } from './lighting.js'
+export interface SpatialEngineOptions extends SpatialPresentationOptions {
   readDescriptor?: (value: unknown) => SpatialDescriptor
-  sameShape?: (a: SpatialShape, b: SpatialShape) => boolean
-  lighting?: SpatialLighting
-}
-const DEFAULT_SPATIAL_LIGHTING: SpatialLighting = {
-  hemisphere: [0xe6eedf, 0xb4bea5, 2],
-  keyPosition: [-15, 35, -20],
-  fillPosition: [25, 20, 20],
-  shadowExtent: 40,
-  shadowFar: 110
 }
 
 interface ObjectRecord {
@@ -191,18 +185,14 @@ export class ThreeEngine implements RenderEngine {
       geometry: THREE.BufferGeometry
       height: number
       error: number
+      pixelRatio: number
+      pixelError: number
     }
   >()
   private readonly surfaceTextures = new SurfaceTextureStore()
 
   readonly name = 'Preset CUSTOM Three.js 0.185.1'
-  readonly capabilities = new Set([
-    RenderEngineCapabilities.OBJECTS,
-    RenderEngineCapabilities.GRAPHICS,
-    RenderEngineCapabilities.INTERACTION,
-    RenderEngineCapabilities.RESOURCES,
-    SPATIAL_CAPABILITY
-  ])
+  readonly capabilities = new Set<string>(SPATIAL_ENGINE_CAPABILITIES)
   private readonly objects = new Map<RenderEngineObjectHandle, ObjectRecord>()
   private readonly resources = new Map<
     RenderEngineResourceHandle,
@@ -234,10 +224,6 @@ export class ThreeEngine implements RenderEngine {
     private readonly platform: EnginePlatform = {},
     private readonly options: SpatialEngineOptions = {}
   ) {
-    if (options.capability) {
-      this.capabilities.delete(SPATIAL_CAPABILITY)
-      this.capabilities.add(options.capability)
-    }
     this.camera.position.set(3, 2, 3)
     this.camera.lookAt(0, 0, 0)
     this.screenCamera.position.z = 100
@@ -249,6 +235,9 @@ export class ThreeEngine implements RenderEngine {
     if (this.destroyed || this.driver)
       throw new Error('Engine is not available for initialization')
     this.validateSize(options.width, options.height)
+    const lighting = readSpatialLighting(
+      this.options.lighting ?? DEFAULT_SPATIAL_LIGHTING
+    )
     try {
       this.driver = this.platform.createDriver?.() ?? createDefaultDriver()
       this.driver.autoClear = false
@@ -265,11 +254,13 @@ export class ThreeEngine implements RenderEngine {
       this.driver.setClearColor(options.backgroundColor ?? 0x101b29, 1)
       this.resize(options.width, options.height)
       this.root = this.create('container', {})
-      const lighting = this.options.lighting ?? DEFAULT_SPATIAL_LIGHTING
       this.scene.add(new THREE.HemisphereLight(...lighting.hemisphere))
-      const key = new THREE.DirectionalLight(0xfff3e5, 2.6)
+      const key = new THREE.DirectionalLight(
+        lighting.keyColor ?? 0xffffff,
+        lighting.keyIntensity ?? 2.6
+      )
       key.position.set(...lighting.keyPosition)
-      key.castShadow = !softwareRenderer
+      key.castShadow = !softwareRenderer && (lighting.castShadows ?? true)
       key.shadow.mapSize.set(1024, 1024)
       Object.assign(key.shadow.camera, {
         left: -lighting.shadowExtent,
@@ -281,7 +272,10 @@ export class ThreeEngine implements RenderEngine {
       })
       key.shadow.normalBias = 0.005
       this.scene.add(key)
-      const fill = new THREE.DirectionalLight(0xb6d5f5, 1.2)
+      const fill = new THREE.DirectionalLight(
+        lighting.fillColor ?? 0xffffff,
+        lighting.fillIntensity ?? 1.2
+      )
       fill.position.set(...lighting.fillPosition)
       this.scene.add(fill)
       this.attachPointerListeners(this.driver.domElement)
@@ -419,6 +413,7 @@ export class ThreeEngine implements RenderEngine {
         RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
       ])
     this.syncProjection()
+    if (isSpatialQuery(query)) return this.spatialQuery(query)
     if (query.type === 'hit-test')
       return { type: 'hit', target: this.pick(query.point), point: query.point }
     const record = this.owned(query.object)
@@ -599,27 +594,59 @@ export class ThreeEngine implements RenderEngine {
     const rotation = numberProperty(properties, 'rotation', 0)
     const order = numberProperty(properties, 'zIndex', 0)
     let content: THREE.Object3D | null = null
+    const previous = record.spatial
+    const reusable =
+      spatial?.kind === 'mesh' &&
+      previous?.kind === 'mesh' &&
+      record.content instanceof THREE.Mesh &&
+      sameSpatialShape(previous.shape, spatial.shape) &&
+      previous.surface === spatial.surface &&
+      Boolean(previous.distant) === Boolean(spatial.distant) &&
+      (!previous.distant ||
+        !spatial.distant ||
+        sameSpatialShape(previous.distant.shape, spatial.distant.shape))
     if (
+      reusable &&
+      spatial?.kind === 'mesh' &&
+      previous?.kind === 'mesh' &&
+      record.content instanceof THREE.Mesh &&
+      (Boolean(previous.instances) !== Boolean(spatial.instances) ||
+        previous.instances?.length !== spatial.instances?.length)
+    ) {
+      const old = record.content
+      content = spatial.instances
+        ? new THREE.InstancedMesh(
+            old.geometry,
+            old.material,
+            spatial.instances.length
+          )
+        : new THREE.Mesh(old.geometry, old.material)
+      if (spatial.distant && spatial.instances) {
+        const source = old.children[0]
+        if (!(source instanceof THREE.InstancedMesh))
+          throw new Error('Missing instance detail geometry')
+        const distant = new THREE.InstancedMesh(
+          source.geometry,
+          source.material,
+          spatial.instances.length
+        )
+        content.frustumCulled = false
+        distant.frustumCulled = false
+        content.add(distant)
+      }
+      // Geometry/material ownership transfers; retire only superseded instance buffers.
+      old.traverse((child) => {
+        if (child instanceof THREE.InstancedMesh) child.dispose()
+      })
+      old.clear()
+      old.removeFromParent()
+      record.content = null
+    }
+    if (
+      !content &&
       spatial?.kind === 'mesh' &&
       Object.prototype.hasOwnProperty.call(patch, SPATIAL_PROPERTY) &&
-      !(
-        record.spatial?.kind === 'mesh' &&
-        record.content instanceof THREE.Mesh &&
-        (this.options.sameShape ?? sameSpatialShape)(
-          record.spatial.shape,
-          spatial.shape
-        ) &&
-        record.spatial.surface === spatial.surface &&
-        Boolean(record.spatial.distant) === Boolean(spatial.distant) &&
-        (!record.spatial.distant ||
-          !spatial.distant ||
-          sameSpatialShape(
-            record.spatial.distant.shape,
-            spatial.distant.shape
-          )) &&
-        Boolean(record.spatial.instances) === Boolean(spatial.instances) &&
-        record.spatial.instances?.length === spatial.instances?.length
-      )
+      !reusable
     ) {
       const geometry = makeGeometry(spatial.shape)
       const material = new THREE.MeshStandardMaterial({
@@ -665,13 +692,12 @@ export class ThreeEngine implements RenderEngine {
         const matrix = new THREE.Matrix4()
         const translation = new THREE.Vector3()
         const rotation = new THREE.Quaternion()
-        const up = new THREE.Vector3(0, 1, 0)
         const scale = new THREE.Vector3(1, 1, 1)
         spatial.instances.forEach((instance, index) => {
           matrix.compose(
             translation.fromArray(instance.position),
-            rotation.setFromAxisAngle(up, instance.yaw),
-            scale
+            rotation.fromArray(instance.rotation),
+            scale.fromArray(instance.scale ?? [1, 1, 1])
           )
           ;(record.content as THREE.InstancedMesh).setMatrixAt(index, matrix)
         })
@@ -680,9 +706,8 @@ export class ThreeEngine implements RenderEngine {
         record.content.computeBoundingSphere()
       }
       if (record.content instanceof THREE.Mesh) {
-        record.content.castShadow =
-          spatial.selectable && spatial.opacity === 1 && !spatial.wireframe
-        record.content.receiveShadow = !spatial.wireframe
+        record.content.castShadow = spatial.castShadow ?? false
+        record.content.receiveShadow = spatial.receiveShadow ?? false
         const material = record.content.material as THREE.MeshStandardMaterial
         const transparent = spatial.opacity < 1
         if (
@@ -701,11 +726,12 @@ export class ThreeEngine implements RenderEngine {
           if (child instanceof THREE.InstancedMesh) {
             ;(child.material as THREE.MeshStandardMaterial).copy(material)
             child.receiveShadow = record.content.receiveShadow
+            child.castShadow = record.content.castShadow
           }
       }
       record.visual.position.fromArray(spatial.position)
       record.visual.quaternion.fromArray(spatial.rotation)
-      record.visual.scale.set(1, 1, 1)
+      record.visual.scale.fromArray(spatial.scale ?? [1, 1, 1])
     } else {
       record.visual.position.set(x, y, 0)
       record.visual.rotation.set(0, 0, rotation)
@@ -755,6 +781,8 @@ export class ThreeEngine implements RenderEngine {
         previous.instances === spatial.instances &&
         previous.geometry === full.geometry &&
         previous.height === this.height &&
+        previous.pixelRatio === this.pixelRatio &&
+        previous.pixelError === (spatial.distant.pixelError ?? 2) &&
         previous.error === spatial.distant.maxError &&
         previous.world.equals(record.visual.matrixWorld) &&
         previous.view.equals(this.camera.matrixWorldInverse) &&
@@ -764,7 +792,11 @@ export class ThreeEngine implements RenderEngine {
       let fullCount = 0,
         distantCount = 0
       for (const instance of spatial.instances) {
-        matrix.makeRotationY(instance.yaw).setPosition(...instance.position)
+        matrix.compose(
+          new THREE.Vector3(...instance.position),
+          new THREE.Quaternion(...instance.rotation),
+          new THREE.Vector3(...(instance.scale ?? [1, 1, 1]))
+        )
         world.multiplyMatrices(record.visual.matrixWorld, matrix)
         sphere.copy(full.geometry.boundingSphere).applyMatrix4(world)
         if (!frustum.intersectsSphere(sphere)) continue
@@ -775,7 +807,8 @@ export class ThreeEngine implements RenderEngine {
             world.getMaxScaleOnAxis() *
             pixelsPerUnit) /
           nearestDepth
-        if (errorPixels <= 2) distant.setMatrixAt(distantCount++, matrix)
+        if (errorPixels <= (spatial.distant.pixelError ?? 2))
+          distant.setMatrixAt(distantCount++, matrix)
         else full.setMatrixAt(fullCount++, matrix)
       }
       full.count = fullCount
@@ -786,6 +819,8 @@ export class ThreeEngine implements RenderEngine {
         instances: spatial.instances,
         geometry: full.geometry,
         height: this.height,
+        pixelRatio: this.pixelRatio,
+        pixelError: spatial.distant.pixelError ?? 2,
         error: spatial.distant.maxError,
         world: record.visual.matrixWorld.clone(),
         view: this.camera.matrixWorldInverse.clone(),
@@ -872,9 +907,18 @@ export class ThreeEngine implements RenderEngine {
     this.camera.updateMatrixWorld(true)
     this.screenCamera.updateMatrixWorld(true)
   }
-  private pick(point: RenderEnginePoint): RenderEngineObjectHandle | null {
+  private pickScreen(
+    point: RenderEnginePoint
+  ): RenderEngineObjectHandle | null {
     if (!Number.isFinite(point.x) || !Number.isFinite(point.y))
       throw new Error('Invalid screen point')
+    if (
+      point.x < 0 ||
+      point.y < 0 ||
+      point.x >= this.width ||
+      point.y >= this.height
+    )
+      return null
     const ray = new THREE.Raycaster()
     const screenPoint = new THREE.Vector2(
       (point.x / this.width) * 2 - 1,
@@ -903,24 +947,231 @@ export class ThreeEngine implements RenderEngine {
         if (record) return record.handle
       }
     }
-    ray.setFromCamera(screenPoint, this.camera)
-    const eligible = [...this.objects.values()].filter(
-      (record) =>
-        record.spatial?.kind === 'mesh' &&
-        record.spatial.selectable &&
-        record.visual.visible &&
-        record.visual.parent === this.scene
-    )
-    const hits = ray.intersectObjects(
-      eligible.map((record) => record.visual),
-      true
-    )
-    for (const hit of hits) {
-      const record = eligible.find((item) => item.visual === hit.object.parent)
-      if (record) return record.handle
-    }
     return null
   }
+  private pick(point: RenderEnginePoint): RenderEngineObjectHandle | null {
+    const result = this.spatialQuery({ type: 'spatial-pick', point })
+    if (result.type !== 'spatial-pick')
+      throw new Error('Invalid picking result')
+    return result.overlay ?? result.hit?.object ?? null
+  }
+
+  private vector(value: THREE.Vector3): SpatialVector {
+    return [value.x, value.y, value.z]
+  }
+  private point(value: SpatialVector): THREE.Vector3 {
+    if (
+      !Array.isArray(value) ||
+      value.length !== 3 ||
+      !value.every(Number.isFinite)
+    )
+      throw new Error('Invalid spatial point')
+    return new THREE.Vector3(...value)
+  }
+  private spatialRecords(): ObjectRecord[] {
+    const records: ObjectRecord[] = []
+    const visit = (record: ObjectRecord) => {
+      records.push(record)
+      record.children.forEach(visit)
+    }
+    if (this.root) visit(this.root)
+    return records
+  }
+  private spatialObject(handle: RenderEngineObjectHandle): ObjectRecord {
+    const record = this.owned(handle)
+    if (!this.spatialRecords().includes(record))
+      throw new Error('Detached spatial object')
+    return record
+  }
+  private spatialMatrix(
+    record: ObjectRecord,
+    index: number | undefined,
+    world: boolean
+  ): THREE.Matrix4 {
+    const matrix = world
+      ? record.visual.matrixWorld.clone()
+      : new THREE.Matrix4()
+    if (index !== undefined) {
+      const instances =
+        record.spatial?.kind === 'mesh' ? record.spatial.instances : undefined
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        !instances ||
+        index >= instances.length
+      )
+        throw new Error('Invalid source instance index')
+      const instance = instances[index]
+      matrix.multiply(
+        new THREE.Matrix4().compose(
+          new THREE.Vector3(...instance.position),
+          new THREE.Quaternion(...instance.rotation),
+          new THREE.Vector3(...(instance.scale ?? [1, 1, 1]))
+        )
+      )
+    }
+    return matrix
+  }
+  private spatialQuery(
+    query: RenderEngineSpatialQuery
+  ): RenderEngineSpatialResult {
+    if (query.type === 'spatial-pick') {
+      const ray = this.spatialQuery({ type: 'spatial-ray', point: query.point })
+      if (ray.type !== 'spatial-ray')
+        throw new Error('Invalid screen ray result')
+      if (!ray.ray) return { type: 'spatial-pick', overlay: null, hit: null }
+      const overlay = this.pickScreen(query.point)
+      return {
+        type: 'spatial-pick',
+        overlay,
+        hit: overlay ? null : (this.spatialHits(ray.ray)[0] ?? null)
+      }
+    }
+    if (query.type === 'spatial-project') {
+      const point = this.point(query.point)
+      const clip = new THREE.Vector4(point.x, point.y, point.z, 1)
+        .applyMatrix4(this.camera.matrixWorldInverse)
+        .applyMatrix4(this.camera.projectionMatrix)
+      if (clip.w === 0)
+        return {
+          type: 'spatial-projection',
+          point: null,
+          depth: null,
+          inFrustum: false
+        }
+      const x = clip.x / clip.w,
+        y = clip.y / clip.w,
+        z = clip.z / clip.w
+      if (![x, y, z].every(Number.isFinite))
+        throw new Error('Nonfinite spatial projection')
+      return {
+        type: 'spatial-projection',
+        point: {
+          x: ((x + 1) * this.width) / 2,
+          y: ((1 - y) * this.height) / 2
+        },
+        depth: z,
+        inFrustum:
+          clip.w > 0 && Math.abs(x) <= 1 && Math.abs(y) <= 1 && Math.abs(z) <= 1
+      }
+    }
+    if (query.type === 'spatial-ray') {
+      const { x, y } = query.point
+      if (![x, y].every(Number.isFinite))
+        throw new Error('Invalid surface point')
+      if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+        return { type: 'spatial-ray', ray: null }
+      const ray = new THREE.Raycaster()
+      ray.setFromCamera(
+        new THREE.Vector2((x / this.width) * 2 - 1, 1 - (y / this.height) * 2),
+        this.camera
+      )
+      return {
+        type: 'spatial-ray',
+        ray: {
+          origin: this.vector(ray.ray.origin),
+          direction: this.vector(ray.ray.direction)
+        }
+      }
+    }
+    if (query.type === 'spatial-raycast')
+      return { type: 'spatial-hits', hits: this.spatialHits(query.ray) }
+    const record = this.spatialObject(query.object)
+    if (query.type === 'spatial-convert') {
+      if (
+        record.spatial?.kind !== 'mesh' ||
+        !['local', 'world'].includes(query.to)
+      )
+        throw new Error('Invalid spatial conversion')
+      const matrix = this.spatialMatrix(record, query.instanceIndex, true)
+      if (query.to === 'local') matrix.invert()
+      return {
+        type: 'spatial-point',
+        point: this.vector(this.point(query.point).applyMatrix4(matrix))
+      }
+    }
+    if (!['local', 'world'].includes(query.space))
+      throw new Error('Invalid bounds space')
+    if (query.instanceIndex !== undefined)
+      this.spatialMatrix(record, query.instanceIndex, false)
+    if (
+      record.spatial?.kind !== 'mesh' ||
+      !(record.content instanceof THREE.Mesh)
+    )
+      return { type: 'spatial-bounds', bounds: null }
+    const geometry = record.content.geometry
+    if (!geometry.boundingBox) geometry.computeBoundingBox()
+    const local = geometry.boundingBox
+    if (!local || local.isEmpty())
+      return { type: 'spatial-bounds', bounds: null }
+    const result = new THREE.Box3()
+    let indices: (number | undefined)[] = [undefined]
+    if (query.instanceIndex !== undefined) indices = [query.instanceIndex]
+    else if (record.spatial.instances)
+      indices = record.spatial.instances.map((_, index) => index)
+    for (const index of indices)
+      result.union(
+        local
+          .clone()
+          .applyMatrix4(
+            this.spatialMatrix(record, index, query.space === 'world')
+          )
+      )
+    return {
+      type: 'spatial-bounds',
+      bounds: { min: this.vector(result.min), max: this.vector(result.max) }
+    }
+  }
+  private spatialHits(input: SpatialRay): RenderEngineSpatialHit[] {
+    const origin = this.point(input.origin),
+      direction = this.point(input.direction)
+    const length = direction.length()
+    if (!Number.isFinite(length) || length === 0)
+      throw new Error('Invalid spatial ray direction')
+    direction.divideScalar(length)
+    const ray = new THREE.Raycaster(origin, direction),
+      hits: RenderEngineSpatialHit[] = []
+    for (const record of this.spatialRecords()) {
+      const spatial = record.spatial,
+        content = record.content
+      if (
+        spatial?.kind !== 'mesh' ||
+        !spatial.selectable ||
+        !record.visual.visible ||
+        record.visual.parent !== this.scene ||
+        !(content instanceof THREE.Mesh)
+      )
+        continue
+      // Borrow the owned full geometry/material. No GPU resource or LoD slot is created.
+      const mesh = new THREE.Mesh(content.geometry, content.material)
+      const indices = spatial.instances
+        ? spatial.instances.map((_, index) => index)
+        : [undefined]
+      for (const index of indices) {
+        mesh.matrixWorld.copy(this.spatialMatrix(record, index, true))
+        const intersections: THREE.Intersection[] = []
+        mesh.raycast(ray, intersections)
+        intersections.sort((a, b) => a.distance - b.distance)
+        const hit = intersections[0]
+        if (!hit) continue
+        hits.push({
+          object: record.handle,
+          ...(index === undefined
+            ? {}
+            : {
+                instanceIndex: index,
+                ...(spatial.instances?.[index].id === undefined
+                  ? {}
+                  : { instanceId: spatial.instances[index].id })
+              }),
+          distance: hit.distance,
+          point: this.vector(hit.point)
+        })
+      }
+    }
+    return hits.sort((a, b) => a.distance - b.distance)
+  }
+
   private paint(paint: RenderEnginePaint): {
     color: number | string
     alpha: number

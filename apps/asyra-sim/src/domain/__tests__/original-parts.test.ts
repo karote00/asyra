@@ -3,7 +3,7 @@ import { validGeometry, validBodyParameters } from '../workcell'
 import { resolvePart, resolvePartWorkcell } from '../part-geometry'
 import { inspectMeshTopology } from '../mesh-topology'
 import { IDENTITY_POSE } from '../math'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { createMechanicalVisuals } from '../../../samples/mechanical-visuals'
 import { createSyntheticExample } from '../../../samples/synthetic-workcell'
 

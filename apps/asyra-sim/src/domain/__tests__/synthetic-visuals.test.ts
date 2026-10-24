@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { createMechanicalVisuals } from '../../../samples/mechanical-visuals'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 
 it('authors deterministic, bounded mechanical bodies as ordinary portable GLB sources', async () => {
   const sources = createMechanicalVisuals()

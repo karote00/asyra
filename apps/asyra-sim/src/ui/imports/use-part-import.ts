@@ -1,3 +1,4 @@
+import { transformSpatialPose } from '@asyra/preset/spatial'
 import { useEffect, useRef, useState } from 'react'
 import { IDENTITY_POSE } from '../../domain/math'
 import type { Workcell } from '../../domain/workcell'
@@ -180,6 +181,16 @@ export function usePartImport({
       if (!workcell.bodies.some((body) => body.id === targetId))
         throw new Error('Choose an available target body')
 
+      const pose = transformSpatialPose(
+        IDENTITY_POSE,
+        { kind: 'set', pose: { ...placement.pose, scale: placement.scale } },
+        true
+      )
+      const captured = {
+        ...placement,
+        pose: { position: pose.position, rotation: pose.rotation },
+        scale: pose.scale ?? ([1, 1, 1] as const)
+      }
       const derived: Workcell = {
         ...workcell,
         bodies: workcell.bodies.map((body) =>
@@ -188,7 +199,7 @@ export function usePartImport({
                 ...body,
                 visuals: [
                   ...(body.visuals ?? []),
-                  { ...placement, assetId: prepared.source.assetId }
+                  { ...captured, assetId: prepared.source.assetId }
                 ]
               }
             : body

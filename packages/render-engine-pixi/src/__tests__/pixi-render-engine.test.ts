@@ -537,6 +537,18 @@ const getLastApplication = (): MockApplicationRecord => {
 }
 
 describe('PixiRenderEngine', () => {
+  it('rejects spatial queries explicitly without changing legacy screen queries', async () => {
+    const engine = new PixiRenderEngine()
+    await engine.initialize({ host: {}, width: 100, height: 100 })
+    expect(() =>
+      engine.query({ type: 'spatial-project', point: [0, 0, 0] })
+    ).toThrow(/spatial-queries/)
+    expect(engine.query({ type: 'hit-test', point: { x: 0, y: 0 } }).type).toBe(
+      'hit'
+    )
+    engine.destroy()
+  })
+
   it('shares equivalent gradient resources only for the lifetime of their handles', async () => {
     const engine = new PixiRenderEngine()
     await engine.initialize({ host: {}, width: 100, height: 100 })

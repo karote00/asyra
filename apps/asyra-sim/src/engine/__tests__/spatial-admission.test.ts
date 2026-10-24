@@ -81,3 +81,36 @@ it('validates the detached values it will retain rather than earlier accessor re
   ).toBe(true)
   expect(reads).toBe(1)
 })
+
+it('keeps the rigid-part whitelist while sharing neutral admission receipts', async () => {
+  const neutral = await import('@asyra/preset/spatial-contract')
+  const source = input()
+  if (source.kind !== 'mesh') throw new Error('Expected mesh')
+  const accepted = readSpatialDescriptor({
+    ...source,
+    shape: { ...source.shape, colors: [NaN], uvs: [NaN] },
+    instances: [],
+    surface: {},
+    distant: {},
+    roughness: NaN,
+    metalness: NaN
+  })
+  if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
+  expect(accepted).not.toHaveProperty('instances')
+  expect(accepted).not.toHaveProperty('surface')
+  expect(accepted.shape).not.toHaveProperty('colors')
+  expect(accepted.shape).not.toHaveProperty('uvs')
+  expect(neutral.readSpatialShape(accepted.shape)).toBe(accepted.shape)
+  expect(neutral.readSpatialDescriptor(accepted)).toBe(accepted)
+  expect(readSpatialDescriptor(accepted)).toBe(accepted)
+})
+
+it('keeps rigid-part admission independent of neutral scale support', () => {
+  expect(() => readSpatialDescriptor({ ...input(), scale: [2, 2, 2] })).toThrow(
+    /rigid/
+  )
+  expect(readSpatialDescriptor(input())).toMatchObject({
+    castShadow: true,
+    receiveShadow: true
+  })
+})

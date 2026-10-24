@@ -67,8 +67,8 @@ describe('Preset request resolution', () => {
       },
       {
         id: PresetProfiles['3D'],
-        available: false,
-        presetEngineId: null
+        available: true,
+        presetEngineId: '@asyra/preset/spatial-engine'
       },
       {
         id: PresetProfiles.HYBRID,
@@ -205,7 +205,7 @@ describe('Preset request resolution', () => {
         }),
       PRESET_APPLY_ERROR_CODES.UNKNOWN_PROFILE
     )
-    ;[PresetProfiles['3D'], PresetProfiles.HYBRID].forEach((profile) => {
+    ;[PresetProfiles.HYBRID].forEach((profile) => {
       expectApplyError(
         () => resolvePresetRequest(createCoreState().core, { profile }),
         PRESET_APPLY_ERROR_CODES.UNAVAILABLE_PROFILE

@@ -1,5 +1,9 @@
 import { PresetCatalog } from '../catalog.js'
-import { PRESET_APPLY_ERROR_CODES, PresetProfiles } from '../constants.js'
+import {
+  PRESET_APPLY_ERROR_CODES,
+  PresetDefaults,
+  PresetProfiles
+} from '../constants.js'
 import type {
   ApplyPresetOptions,
   PresetCoreAPIs,
@@ -7,6 +11,10 @@ import type {
   PresetProfile
 } from '../types.js'
 import { PresetApplyError } from './error.js'
+import {
+  readSpatialPresentationOptions,
+  type SpatialPresentationOptions
+} from '../spatial/lighting.js'
 
 export interface PresetRequestResolutionState {
   readonly alreadyApplied?: boolean
@@ -16,11 +24,13 @@ export interface ResolvedPresetRequest {
   readonly profile: PresetProfile
   readonly selectedDefaults: readonly PresetDefaultId[]
   readonly appliedDefaults: readonly PresetDefaultId[]
+  readonly spatial?: SpatialPresentationOptions
 }
 
 const allowedOptionKeys = new Set<keyof ApplyPresetOptions>([
   'profile',
-  'defaults'
+  'defaults',
+  'spatial'
 ])
 
 const fail = (code: PresetApplyError['code'], message: string): never => {
@@ -139,6 +149,35 @@ export const resolvePresetRequest = (
   const profile = resolveProfile(options.profile)
   const selectedDefaults = resolveSelectedDefaults(options.defaults)
   const appliedDefaults = expandDefaults(selectedDefaults)
+  let spatial: SpatialPresentationOptions | undefined
+  if (options.spatial !== undefined) {
+    if (profile !== PresetProfiles['3D'])
+      return fail(
+        PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
+        'Spatial presentation settings require profile 3D'
+      )
+    try {
+      spatial = readSpatialPresentationOptions(options.spatial)
+    } catch (cause) {
+      throw new PresetApplyError(
+        PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
+        'Invalid spatial presentation settings',
+        { cause }
+      )
+    }
+  }
+
+  if (profile === PresetProfiles['3D']) {
+    const incompatible = (ids: readonly PresetDefaultId[]) =>
+      ids.filter((id) => id !== PresetDefaults.INPUT)
+    const unsupported = incompatible(appliedDefaults)
+    if (unsupported.length > 0) {
+      return fail(
+        PRESET_APPLY_ERROR_CODES.INVALID_OPTIONS,
+        `Profile 3D does not support selected defaults [${incompatible(selectedDefaults).join(', ')}] or applied defaults [${unsupported.join(', ')}]`
+      )
+    }
+  }
 
   if (!core.isCompositionOpen()) {
     return fail(
@@ -152,15 +191,16 @@ export const resolvePresetRequest = (
       'Preset has already been applied to this Core composition'
     )
   }
-  if (profile === PresetProfiles['2D'] && core.hasRenderEngineProvider()) {
+  if (profile !== PresetProfiles.CUSTOM && core.hasRenderEngineProvider()) {
     return fail(
       PRESET_APPLY_ERROR_CODES.ENGINE_PROVIDER_CONFLICT,
-      'Profile 2D cannot replace an existing Core render engine provider'
+      `Profile ${profile} cannot replace an existing Core render engine provider`
     )
   }
 
   return Object.freeze({
     profile,
+    ...(spatial ? { spatial } : {}),
     selectedDefaults: Object.freeze([...selectedDefaults]),
     appliedDefaults: Object.freeze([...appliedDefaults])
   })

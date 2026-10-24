@@ -110,6 +110,11 @@ test:e2e:balanced-ai-correctness` runs that heavy case explicitly with one
   the suite matching the changed E2E spec; shared workflow/setup inputs select
   every suite. The final aggregate requires one successful result for each
   selected suite and a skipped result for each unselected suite.
+- PR CI uses one concurrency group per PR. A new push cancels the previous
+  run before the replacement obtains that group. Job-level status gates use
+  `!cancelled()` so obsolete runs can stop, including reusable-workflow callers
+  and result aggregates. Aggregates still run after ordinary failures or skips;
+  step-level `always()` remains reserved for evidence collection and cleanup.
 - `E2E_SUITE=render-contracts` and `E2E_SUITE=functional` select the bounded
   slice in `scripts/run-e2e.sh`; the default `all` keeps local full-suite behavior. All
   slices preserve PID-owned service startup, readiness, fail-fast and cleanup.

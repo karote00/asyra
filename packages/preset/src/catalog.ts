@@ -13,8 +13,8 @@ const profiles: readonly PresetProfileCatalogEntry[] = [
   },
   {
     id: PresetProfiles['3D'],
-    available: false,
-    presetEngineId: null
+    available: true,
+    presetEngineId: '@asyra/preset/spatial-engine'
   },
   {
     id: PresetProfiles.HYBRID,

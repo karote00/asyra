@@ -36,6 +36,28 @@ test('normal CUSTOM workbench renders, edits, undoes, resizes, and picks canonic
   await expect(page.getByRole('treeitem')).toHaveCount(11)
   const canvas = page.getByTestId('workcell-canvas').locator('canvas')
   await expect(canvas).toBeVisible()
+  const graphics = await canvas.evaluate((canvas) => {
+    const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
+    if (!gl || gl.isContextLost())
+      throw new Error('Missing live WebGL2 context')
+    const info = gl.getExtension('WEBGL_debug_renderer_info')
+    return {
+      version: gl.getParameter(gl.VERSION),
+      renderer: info
+        ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL)
+        : gl.getParameter(gl.RENDERER),
+      width: gl.drawingBufferWidth,
+      height: gl.drawingBufferHeight,
+      deviceScaleFactor: devicePixelRatio
+    }
+  })
+  expect(graphics.version).toContain('WebGL 2')
+  expect(graphics.width).toBeGreaterThan(0)
+  expect(graphics.height).toBeGreaterThan(0)
+  await testInfo.attach('live-webgl-context', {
+    body: JSON.stringify(graphics),
+    contentType: 'application/json'
+  })
   await page.screenshot({ path: testInfo.outputPath('workcell-overview.png') })
   await page.getByRole('treeitem', { name: '◇ fixture post' }).click()
   await expect(page.getByLabel('Object name')).toHaveValue('fixture post')

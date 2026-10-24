@@ -14,7 +14,7 @@ per-evaluation admitted-identity reuse, and this API grants no material relation
 - `createSupportAssembly` and `createPlantingNet` own poles, crossing joints, rails, mesh strands, and cable ties.
 - Crop domain APIs own reusable cultivar variants and deterministic planting positions; see the water/crop specification.
 - `buildSiteMeshes` returns the configuration's complete engine-neutral scene. View projection only changes visibility and presentation.
-- `spatialV0` and capability `farm.spatial.v0` are app-owned render contracts, not a public framework or persistence format. Mesh data must pass `readSpatialDescriptor` before rendering.
+- `spatialV0` retains its existing render property identity. Mesh data passes shared `readSpatialDescriptor` from `@asyra/preset/spatial-contract`; all spatial adapters advertise `RenderEngineCapabilities.SPATIAL`. Domain validation and persisted App data remain App-owned.
 - Runtime configuration methods are the only UI write route into Core history. Camera and view operations do not add history entries.
 
 Cross-package imports use public `@asyra/*` facades. Do not import another app's runtime or renderer.

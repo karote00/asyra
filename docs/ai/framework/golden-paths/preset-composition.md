@@ -115,5 +115,7 @@ retried before the next apply; successful apply exposes no disposer.
 - Do not pass installers, dependency objects, engine ids, providers, or cleanup
   callbacks through preset.
 - Do not infer defaults from profile or engine capabilities.
-- `3D` and `HYBRID` are unavailable until a future plan marks them available;
-  they import no placeholder runtime today.
+- `3D` uses the deferred official spatial engine with explicit empty/INPUT
+  defaults; optional `spatial` settings configure neutral lighting/shadows only.
+  Omitted or incompatible defaults reject before mutation. `HYBRID` remains
+  unavailable. See the [public composition example](../../../public/start/preset-2d.md#use-the-official-3d-provider).

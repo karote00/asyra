@@ -1,4 +1,4 @@
-import type { VisualAsset } from '../engine/glb/decode'
+import type { VisualAsset } from '@asyra/preset/spatial-assets'
 import {
   validateWorkcell,
   validVisualBinding,

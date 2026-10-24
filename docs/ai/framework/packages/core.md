@@ -475,7 +475,6 @@ stay with their owners for Undo/Redo and collaboration; callers supply no old
 values. `removeSubtree` remains the compatible scalar UI/facade path. Design AI
 uses the registered `api_element_deleteElements` batch action.
 
-
 ### Property owner lookup
 
 `core.getPropertyOwnerElementIds(propertyIds)` returns unique current element IDs
@@ -493,3 +492,12 @@ public facade rather than guessing owners from the initiating tool target.
 `core.isInUndoRedo()` reads the composed Factory replay state directly, including
 its outer transaction lifetime. It reserves nothing and retains no second busy
 state. Input policies can reject new history commands before queueing.
+
+## Spatial query delegation
+
+Core exposes Render's typed `projectSpatialPoint`, `getSpatialRayAtClientPoint`,
+`raycastSpatial`, `convertSpatialPoint`, `getSpatialBounds` and
+`pickSpatialAtClientPoint` methods. Render owns capability checking, one DOM
+client conversion and explicit visual/entity mapping. Core neither reads SDK
+objects nor changes canonical state for these queries. See
+[Render spatial queries](render.md#spatial-query-facade).

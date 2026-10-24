@@ -7,6 +7,10 @@ export {
 } from './constants.js'
 export { PresetApplyError } from './composition/error.js'
 export type {
+  SpatialLighting,
+  SpatialPresentationOptions
+} from './spatial/lighting.js'
+export type {
   ApplyPresetOptions,
   PresetApplyErrorCode,
   PresetApplyResult,

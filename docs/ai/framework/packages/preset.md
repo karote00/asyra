@@ -70,10 +70,20 @@ const result = applyPreset(core, {
   `selectedDefaults`, and `appliedDefaults`. It and its arrays are detached and
   deeply frozen; it is not a lifecycle handle and exposes no disposer.
 
-`PresetProfiles` contains `2D`, `3D`, `HYBRID`, and `CUSTOM`. `2D` and `CUSTOM`
-are available. `3D` and `HYBRID` are reserved but unavailable and fail before
-mutation. `2D` registers the preset-owned Pixi provider; `CUSTOM` registers no
-provider.
+`PresetProfiles` contains `2D`, `3D`, `HYBRID`, and `CUSTOM`. `2D`, `3D` and `CUSTOM`
+are available. `HYBRID` remains unavailable and fails before mutation. `2D`
+registers the Pixi provider; `3D` registers the deferred spatial provider;
+`CUSTOM` registers no provider. Official profiles reject an existing provider.
+
+For `3D`, pass explicit `defaults: []` or `[PresetDefaults.INPUT]`. Omitted
+defaults still resolve to all eight and reject with `INVALID_OPTIONS`; unsupported
+selected/applied defaults are identified before mutation, never filtered.
+Optional `spatial: { lighting?, softwareShadowFallback? }` settings are 3D-only,
+validated and detached before installation. `SpatialLighting` and
+`SpatialPresentationOptions` are neutral types. Apps retain light values, Camera
+angles/modes and scene policy; provider/platform callbacks remain CUSTOM-only.
+The spatial SDK loads only during asynchronous engine initialization, with no
+fallback after import/WebGL failure. Separate runtimes own separate engines.
 
 `PresetDefaults` contains, in canonical order:
 
@@ -106,7 +116,7 @@ parallel string constants. App-only properties remain app-owned.
 ```text
 resolve and validate strict request
 -> install selected default dependency closure in catalog order
--> bind the profile-owned provider when profile is 2D
+-> bind the profile-owned provider when profile is 2D or 3D
 -> publish frozen PresetApplyResult
 -> app uses ordinary Core APIs for optional customization
 -> core.start()
@@ -303,14 +313,58 @@ it does not apply transactions, normalize hierarchy or register components.
 
 ## Optional shared spatial foundation
 
-Preset also owns intentionally shared App defaults/foundations through the
-side-effect-free `@asyra/preset/spatial` entry: the concrete Three.js adapter,
-spatial descriptor admission, graphics/resource lifecycle and common instancing
-mechanisms extracted from Sim and Asyra FieldScope. CUSTOM composition selects this
-provider explicitly; default 2D composition remains unchanged. Apps own scene
-contents, lighting choices, domain validation, movement and interaction policy.
-This shared warehouse boundary does not transfer canonical runtime ownership
-from Core or introduce Office domain semantics into Framework.
+Spatial data types and `RenderEngineCapabilities.SPATIAL` belong to
+`@asyra/render-engine`. `@asyra/preset/spatial-contract` exposes detached,
+immutable descriptor/shape/instance/surface admission and shape equality without
+loading Core, Render, DOM or Three.js. The `spatialV0` property identity is
+unchanged. Only owner-issued receipts bypass repeat numeric scans.
+
+`@asyra/preset/spatial-engine` exposes `ThreeEngine`, `createSpatialRenderEngine`,
+its explicit platform/options seam, graphics helpers and texture resource store.
+This concrete entry may load Three.js. The factory returns synchronously and
+initializes asynchronously; its pure internal adapter loads the concrete engine
+only during initialization. Retirement during loading rejects startup after
+settlement and disposes the late delegate without publishing a surface. Import,
+capability and initialization failures remain explicit; no fallback is installed.
+
+`@asyra/preset/spatial` exports `SpatialLayer`, `SpatialBoundsOwner` and neutral
+projection types, without importing a concrete SDK. `SpatialLayer` atomically
+admits ordered visual records, coalesces model/camera submissions, retains mesh
+identity and skips unchanged descriptors. Explicit visual/entity identity is
+independent of display labels. Camera-only submissions never rewrite meshes.
+`SpatialBoundsOwner` retains local shape extrema only for admitted immutable
+shape receipts within its lifetime. It transforms eight local-bound corners per
+instance and mesh pose on every query; empty input returns `null`. These are
+conservative presentation AABBs, not collision geometry. Disposal clears retained
+state and rejects later use. Apps choose visible inputs, camera policies and
+canonical data; root/2D and pure contract imports do not load the spatial SDK.
+CUSTOM composition explicitly selects its provider; official 3D remains
+unavailable. Apps retain scene composition, stricter validation, lighting,
+camera choices and interaction policy. Generic lifecycle conformance belongs to
+Preset; App tests retain their rendering and product preservation obligations.
+
+### App-directed spatial camera controls
+
+The optional spatial entry supplies pure perspective mechanisms:
+`moveSpatialCamera`, `panSpatialCamera`, `orbitSpatialCamera`,
+`lookSpatialCamera`, `dollySpatialCamera`, `zoomSpatialCamera`,
+`projectSpatialCamera`, `fitSpatialCameraBounds` and `frameSpatialCameraPoints`.
+`readSpatialCamera` reuses shared admission and `spatialCameraDistance` measures
+an accepted view. Inputs and results use neutral spatial types; there is no SDK
+or browser dependency in the control implementation. Invalid operations throw
+before publication. Only perspective projection is supported.
+
+Apps supply numeric deltas, polar limits, FOV/aspect policy, logical CSS viewport,
+selected bounds/points, padding and clipping margins. Point framing uses an
+oriented view-space prism; bounds framing uses corner constraints. Empty valid
+fit input preserves the Camera. These helpers choose neither App mode nor angle.
+
+`SpatialCameraPresentation` holds one admitted target. `retarget` replaces it;
+`advance` consumes the current Camera plus explicit progress and App tolerance /
+reduced-motion policy. `cancel` retires the target; `dispose` clears it and
+rejects future work. Invalid retarget/advance preserves the accepted target.
+Follow supplies the current target pose through this same contract. The owner
+has no clock, timer, document reads/writes, history or mesh publication.
 
 ## Shared agent activity contract
 
@@ -333,3 +387,82 @@ interiors are emitted once. The default remains `nonzero` for existing compound
 callers. Preparation preserves source anchors/controls; empty contours produce
 empty coverage. GPU material integration must preserve these same coverage
 semantics and must not select topology from the gradient mode or opacity.
+
+## Full-shape spatial queries
+
+The optional concrete spatial engine implements the separate spatial-query
+capability. Ray hits use admitted full geometry and source instance transforms,
+independent of distant-detail geometry or compacted visible slots. Queries borrow
+owned geometry/material resources and create no GPU resources. Nearest hits are
+ordered by distance, then current submitted visual/source-instance order.
+Hidden/nonselectable visuals are excluded; opacity alone does not exclude a hit.
+Interactive screen graphics precede scene hits. Bounds reuse owned local geometry
+bounds and apply source-instance/world poses; no input or solver policy is inferred.
+Apps consume the named Render/Core facade and retain action, capture and cancel
+policy. These mechanisms do not activate the reserved `3D` profile.
+
+## Optional spatial content and presentation
+
+`registerSpatialMesh(core)` explicitly registers `SPATIAL_MESH_SCHEMA`,
+`SPATIAL_MESH_PROPERTY_DEFINITION`, `SPATIAL_MESH_COMPONENT_DEFINITION` and
+`SPATIAL_MESH_RENDER_STRATEGY` before startup. The exported definitions remain
+customizable through ordinary Core registration. They do not join the Preset
+catalog or install projection channels, a camera, navigation, or a tree UI.
+Compose the normal Core state/projection channels for a canonical document App;
+domain Apps can continue supplying completed `SpatialLayer` submissions.
+
+The `spatial-mesh-data` property contains schema-backed `descriptor` and `visible`
+values. The `spatial-mesh` component exposes them to a strategy retaining one
+mesh child with explicit element/visual identity. Runtime invalid values reject;
+load validation uses declared defaults. Installation failures reverse completed
+registrations and report cleanup failures. The returned cleanup is for open
+composition; Core `resetRuntime` owns successful runtime retirement. No second
+registration or editing runtime is installed.
+
+Neutral instances require unique stable IDs, normalized local quaternions and
+optional positive scale; mesh scale is applied once after each instance pose.
+`castShadow` and `receiveShadow` default to false independently of selectability.
+Apps supply explicit lighting colors, intensities, positions, shadow range and
+software-renderer policy. Invalid lighting rejects before driver allocation.
+The shared default lighting is neutral; each existing App supplies its own style.
+
+Distant geometry has `maxError` and optional `pixelError` (default 2 physical
+pixels). Retained detail depends on current world pose, placements, full geometry,
+view/projection, height, DPR and both error values. Hidden meshes resume with
+current inputs. Material/pose/instance-count changes retain unchanged geometry
+and material ownership; capacity changes retire only old instance buffers.
+Full-shape bounds and queries remain independent of detail selection.
+
+`SpatialPosePresentation` interpolates one admitted position/quaternion/scale
+target from caller-provided progress and tolerance/reduced-motion policy.
+Retarget replaces, cancel drops and dispose retires the target. It owns no time,
+canonical state, geometry or scheduling. Camera choices remain App-owned.
+
+## Generic spatial editing and restricted assets
+
+`@asyra/preset/spatial` exports `transformSpatialPose`, `previewSpatialEdit` and
+`resolveSpatialEdit`. Commands translate in world space, rotate about an explicit
+axis in local/world space, apply positive scale where permitted, or admit an
+absolute pose. Translation can project onto supplied orthogonal plane axes and
+snap relative to a supplied origin/positive two-axis spacing; half-grid ties use
+JavaScript rounding toward positive infinity. Preview values are detached and
+immutable. They contain target ID/revision, never a canonical document copy.
+
+Apps own target authorization, revision, preview lifetime/cancel, validation and
+Feature routing. Resolve immediately before the existing finite transaction:
+stale/deleted targets, revoked scale capability or rejected App constraints return
+neutral rejection; an equivalent pose returns `unchanged`. No helper owns a
+transaction, session, clock, history or persistence. Office uses these mechanisms
+for its existing half-unit placement/proposals. Sim uses absolute transforms for
+original-part preview/acceptance, retaining its stricter placement validation.
+
+`@asyra/preset/spatial-assets` exports `decodeRestrictedGlb`, `GLB_LIMITS`,
+`VisualAsset` and `RestrictedGlbPreviewWorker`. This optional entry preserves the
+existing `restricted-glb-v0` subset, baked complete triangles, bounds, appearance
+and SHA-256 source identity. Unsupported external resources, compression,
+textures, animation and skins reject; there is no network fetch or GPU startup.
+Root/2D imports do not import this entry. The Worker owner requires an App-supplied
+Worker factory; Sim retains its bundled worker script. It owns request IDs,
+result admission, cancellation, five-second deadline and termination. Source
+bytes, archive receipts, domain/solid analysis, canonical acceptance and storage
+acknowledgement remain App-owned. No transaction spans decoding.

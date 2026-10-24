@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { VisualAsset } from '../decode'
+import type { VisualAsset } from '@asyra/preset/spatial-assets'
 import { RestrictedGlbPreviewWorker } from '../preview-worker'
-import { GLB_LIMITS } from '../schema'
+import { GLB_LIMITS } from '@asyra/preset/spatial-assets'
 
 const asset: VisualAsset = {
   format: 'restricted-glb-v0',

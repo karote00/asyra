@@ -4,7 +4,7 @@ import type { SimRuntime } from '../bootstrap'
 import { RuntimeController } from '../runtime-controller'
 import { VisualAssetArchive } from '../../storage/visual-archive'
 import { prepareProjectVisuals } from '../../storage/project-visuals'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 
 const snapshot = () => ({
   document: {

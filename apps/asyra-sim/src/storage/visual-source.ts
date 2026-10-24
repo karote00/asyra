@@ -1,6 +1,6 @@
 import { hasExactOwnKeys } from '../domain/records'
 import { validAssetId } from '../domain/workcell'
-import { GLB_LIMITS } from '../engine/glb/schema'
+import { GLB_LIMITS } from '@asyra/preset/spatial-assets'
 
 export const VISUAL_SOURCE_PROFILE = Object.freeze({
   maxSources: 256,

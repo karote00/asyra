@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
-import { runRenderEngineContract } from '@asyra/render-engine/testing'
 import type {
   RenderEngineCommand,
   RenderEngineObjectHandle
@@ -264,40 +263,6 @@ describe('CUSTOM Three engine', () => {
     expect(hit(engine, 110, 110)).toBe(object)
     engine.destroy()
   })
-  it('passes the shared engine lifecycle and opaque-handle contract', async () => {
-    const fixture = setup()
-    fixture.engine.destroy()
-    const operations: string[] = []
-    const report = await runRenderEngineContract({
-      createEngine: () => {
-        const engine = new ThreeEngine({ createDriver: () => fixture.driver })
-        const execute = engine.execute.bind(engine)
-        engine.execute = (command) => {
-          operations.push(command.type)
-          return execute(command)
-        }
-        return engine
-      },
-      emitInteraction: (engine, event) => engine.dispatchInteraction(event),
-      getOperationTypes: () => operations
-    })
-    expect(report.interactions).toHaveLength(1)
-    expect(report.operationTypes).toEqual([
-      'create-resource',
-      'create-object',
-      'create-object',
-      'append-child',
-      'append-child',
-      'draw',
-      'update-object',
-      'resize',
-      'flush',
-      'destroy-resource'
-    ])
-    expect(report.destroyResult.alreadyDestroyed).toBe(false)
-    expect(report.engine.destroy().alreadyDestroyed).toBe(true)
-  })
-
   it('uses perspective depth for selection and reflects complete pose updates', () => {
     const { engine, add } = setup()
     add(camera)

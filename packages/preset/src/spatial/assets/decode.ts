@@ -1,7 +1,7 @@
 import { Vector3 } from 'three'
-import { BinaryAccess, readContainer } from './binary'
-import { appearance, sceneNodes } from './scene'
-import { GLB_LIMITS, integer, list, name, record } from './schema'
+import { BinaryAccess, readContainer } from './binary.js'
+import { appearance, sceneNodes } from './scene.js'
+import { GLB_LIMITS, integer, list, name, record } from './schema.js'
 
 export interface VisualAsset {
   readonly format: 'restricted-glb-v0'

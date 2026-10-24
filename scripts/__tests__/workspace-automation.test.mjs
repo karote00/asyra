@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
+import { runInNewContext } from 'node:vm'
 import yaml from 'js-yaml'
 import { fileURLToPath } from 'node:url'
 
@@ -756,6 +757,72 @@ test('CI validates the active Framework package release from packed artifacts on
     releaseJob,
     /--allow-unsupported-node|changeset publish|npm publish/
   )
+})
+
+test('PR CI serializes revisions and cancels every obsolete job', () => {
+  const workflow = yaml.load(readText('.github/workflows/main.yml'))
+  assert.equal(
+    workflow.concurrency.group,
+    'ci-${{ github.event.pull_request.number || github.ref }}'
+  )
+  assert.equal(
+    workflow.concurrency['cancel-in-progress'],
+    "${{ github.event_name == 'pull_request' }}"
+  )
+  const visit = (workflowPath) => {
+    const current = yaml.load(readText(workflowPath))
+    for (const [name, job] of Object.entries(current.jobs)) {
+      const condition = job.if ?? ''
+      // Without an explicit status function GitHub applies success(), which
+      // becomes false on cancellation. Explicit status gates must opt out too.
+      if (/\b(?:always|success|failure|cancelled)\(/u.test(condition)) {
+        assert.doesNotMatch(
+          condition,
+          /\balways\(/u,
+          `${workflowPath}: ${name}`
+        )
+        assert.match(condition, /!cancelled\(\)/u, `${workflowPath}: ${name}`)
+      }
+      if (job.uses?.startsWith('./.github/workflows/')) {
+        visit(job.uses.slice(2))
+      }
+    }
+  }
+  visit('.github/workflows/main.yml')
+})
+
+test('CI aggregates still report failed or skipped dependencies but stop on cancellation', () => {
+  const workflow = yaml.load(readText('.github/workflows/main.yml'))
+  for (const name of [
+    'production-artifact-tests',
+    'e2e-tests',
+    'collaboration-e2e-tests',
+    'validate'
+  ]) {
+    const expression = workflow.jobs[name].if.replace(
+      /^\$\{\{\s*|\s*\}\}$/gu,
+      ''
+    )
+    for (const dependencyResult of ['success', 'failure', 'skipped']) {
+      for (const cancelled of [false, true]) {
+        const result = runInNewContext(expression, {
+          github: {
+            event_name: 'pull_request',
+            event: { pull_request: { draft: false } }
+          },
+          always: () => true,
+          success: () => !cancelled && dependencyResult === 'success',
+          failure: () => dependencyResult === 'failure',
+          cancelled: () => cancelled
+        })
+        assert.equal(
+          result,
+          !cancelled,
+          `${name}: ${dependencyResult}, cancelled=${cancelled}`
+        )
+      }
+    }
+  }
 })
 
 test('E2E automation cancels superseded runs and uses runner Chrome', () => {

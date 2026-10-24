@@ -4,7 +4,18 @@ The unchanged [product plan](asyra-office-product-plan.md) remains the whole-pro
 
 ## Foundation
 
-Preset owns the optional shared Three.js adapter, spatial descriptors, geometry, resource disposal and instancing/LoD mechanisms. Sim and Asyra FieldScope retain their capability identities, scene composition, lighting and product behavior. The entry is `@asyra/preset/spatial`, explicitly selected under CUSTOM; 2D composition must not load Three.js. No new SDK/version is introduced. Existing Sim and Asyra FieldScope engine/descriptor suites are preservation gates.
+Preset owns the optional shared Three.js adapter, spatial descriptors, geometry, resource disposal and instancing/LoD mechanisms. All spatial adapters share the neutral Render Engine spatial capability; Sim and Asyra FieldScope retain scene composition, lighting, narrower admission and product behavior. Pure admission uses `@asyra/preset/spatial-contract`; the concrete entry is `@asyra/preset/spatial-engine`. Office selects the official
+`3D` profile with `defaults: []` and its unchanged neutral `spatial` light/shadow
+settings; explicit injected providers select CUSTOM; 2D composition must not load Three.js. No new SDK/version is introduced. Existing Sim and Asyra FieldScope engine/descriptor suites are preservation gates.
+
+OfficeScene submits stable derived records through `@asyra/preset/spatial`.
+Preset owns reconciliation and resource-facing updates; Office retains furniture
+construction, actor/companion offsets, motion scheduling, lighting and Camera
+angles. The shared SpatialCameraPresentation retains only the current focus or
+follow target; the App supplies its existing 0.12 per-frame interpolation, 0.005
+settlement tolerance and reduced-motion setting. The App clock remains the only
+scheduler. Camera-only frames submit no mesh changes. Furniture IDs retain visual
+identity across layout reorder; disposal closes both animation and projection.
 
 ## Integration and projections
 
@@ -26,6 +37,34 @@ Permanent cases cover renderer lifecycle/resource preservation; duplicate/invali
 
 ## Review and remaining obligations
 
-Design review against current public APIs: the existing CUSTOM render provider accepts a shared engine; the two existing adapters share object lifecycle and graphics operations while app lighting/capability identities differ. Core provides property schemas, Features, transactions, Undo/Redo and explicit serialization. Renderer-local transforms can therefore remain outside canonical storage. Provider sequence and attempt checks belong before entity projection, not in React or geometry. Proposal revision checks belong before transaction entry. No step requires a provider credential to prove these boundaries.
+Design review against current public APIs: the official deferred 3D provider and explicit CUSTOM providers use the same shared engine; the two existing adapters share object lifecycle and graphics operations while App lighting and admission policies differ. Core provides property schemas, Features, transactions, Undo/Redo and explicit serialization. Renderer-local transforms can therefore remain outside canonical storage. Provider sequence and attempt checks belong before entity projection, not in React or geometry. Proposal revision checks belong before transaction entry. No step requires a provider credential to prove these boundaries.
 
 Flow Inspector owns the accompanying architecture representation. The static map has owner/handoff structural tests. Dynamic admission remains blocked because the current proof service requires Factory-specific negative scenarios; no Office target or accepted baseline has been admitted. Office tests provide runtime evidence and must not be represented as an accepted whole-target baseline. Live provider permission/fidelity comparisons, durable provider replay, general building/floor construction, full decorating, progression/rewards and target-device profiling remain original-plan obligations until separately implemented and verified.
+
+## Shared spatial content policy
+
+Office explicitly supplies its existing lighting palette, intensities, positions,
+shadow range and software-renderer policy to the shared engine. Scene descriptors
+remain nonselectable and do not cast shadows; their receiver flag is explicit.
+Common scale/instance/pose mechanisms add no Office layout, task, focus or follow
+policy and do not change proposal/history/save acknowledgement behavior.
+
+## Local browser verification
+
+Set `APP_URL` in the App's local `.env` from `.env.example`; Vite and Playwright
+resolve the same explicit local origin through `app-environment.ts`. Static
+builds do not require a server origin. The default local URL remains
+`http://127.0.0.1:5194`. Browser checks exercise ordinary official 3D startup using installed Chrome with SwiftShader
+WebGL2, or an explicitly configured `PLAYWRIGHT_CHROMIUM_EXECUTABLE`; no mock
+graphics driver is used. Runtime contract tests separately verify canonical
+reads/publications, stale proposals, save acknowledgement and resource cleanup.
+
+## Shared transform editing
+
+Existing desk controls call the layout controller's `previewMove`: Preset derives
+a detached pose on the App's X/Z half-unit grid. The App validates the complete
+room and returns its existing attributed revision-bound proposal. Feature apply
+resolves shared pose/revision semantics and commits through the existing Core
+transaction. Discarded previews do not write; no-op proposals do not refresh or
+create history. Room constraints, schema, camera, UI wording and save semantics
+remain Office-owned. No new decorating tool or overlay is implied.

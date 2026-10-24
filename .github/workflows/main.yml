@@ -16,6 +16,7 @@ on:
 permissions:
   contents: read
 
+# Keep one PR revision active; job status gates must also permit cancellation.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -73,7 +74,7 @@ jobs:
           if-no-files-found: error
 
   shared-validation:
-    if: ${{ always() && needs.scope.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && needs.scope.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: scope
     runs-on: ubuntu-latest
     outputs:
@@ -188,7 +189,7 @@ jobs:
   workspace-validation:
     name: ${{ matrix.workspace.directory }}
     needs: scope
-    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.workspace_matrix != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && needs.scope.result == 'success' && needs.scope.outputs.workspace_matrix != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     # Engineering envelope, not an app SLA. Calibrate from complete job receipts.
     timeout-minutes: ${{ fromJSON(vars.TEST_JOB_MINUTES || '30') }}
@@ -260,7 +261,7 @@ jobs:
 
   flow-inspector-validation:
     needs: [scope, workspace-validation]
-    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.flow_inspector_validation_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && needs.scope.result == 'success' && needs.scope.outputs.flow_inspector_validation_required == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -312,7 +313,7 @@ jobs:
       files: ${{ toJSON(fromJSON(needs.scope.outputs.fieldscope_profile_groups).remaining) }}
 
   framework-release-readiness:
-    if: ${{ always() && needs.scope.outputs.framework_release_required == 'true' && needs.shared-validation.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && needs.scope.outputs.framework_release_required == 'true' && needs.shared-validation.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: [scope, shared-validation]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -356,7 +357,7 @@ jobs:
   # Branch rules require this exact check name; the reusable producer has a prefix.
   production-artifact-tests:
     needs: [scope, production-artifacts]
-    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     env:
@@ -370,7 +371,7 @@ jobs:
           if [ "$PRODUCTION_APPS" = '[]' ]; then test "$PRODUCER_RESULT" = skipped; else test "$PRODUCER_RESULT" = success; fi
 
   design-e2e:
-    if: ${{ always() && needs.scope.result == 'success' && needs.scope.outputs.e2e_suites != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && needs.scope.result == 'success' && needs.scope.outputs.e2e_suites != '[]' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     needs: scope
     uses: ./.github/workflows/e2e.yml
     with:
@@ -379,7 +380,7 @@ jobs:
 
   e2e-tests:
     needs: [scope, design-e2e]
-    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     env:
@@ -393,7 +394,7 @@ jobs:
 
   collaboration-e2e-tests:
     needs: [scope, design-e2e]
-    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     env:
@@ -421,7 +422,7 @@ jobs:
         e2e-tests,
         collaboration-e2e-tests
       ]
-    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

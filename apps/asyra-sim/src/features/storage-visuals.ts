@@ -1,3 +1,4 @@
+import { transformSpatialPose } from '@asyra/preset/spatial'
 import { cancelFeatureTask, invokeFeatureTask, type Core } from '@asyra/core'
 import { FeatureNames } from '../constants'
 import { isPlainRecord } from '../domain/records'
@@ -55,6 +56,13 @@ export function installVisualStorageFeatures(
     discard: (prepared) => archive.discard(prepared),
     retain: async (prepared, candidateId, bodyId, placement) => {
       const input = structuredClone(placement)
+      const pose = transformSpatialPose(
+        input.pose,
+        { kind: 'set', pose: { ...input.pose, scale: input.scale } },
+        true
+      )
+      input.pose = { position: pose.position, rotation: pose.rotation }
+      input.scale = pose.scale ?? [1, 1, 1]
       const source = archive.accept(prepared)
       await upsertVisual(candidateId, bodyId, {
         ...input,

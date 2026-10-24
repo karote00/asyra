@@ -654,6 +654,10 @@ export class RenderNode {
   private _renderable = true
   private presentationSuspensions = 0
   private _label = ''
+  private _projectionIdentity: Readonly<{
+    visualId: string
+    elementId?: string
+  }> | null = null
   private _eventMode = 'auto'
   private _cursor = 'default'
   private _alpha = 1
@@ -792,6 +796,38 @@ export class RenderNode {
       renderable: this.renderable,
       visible: this.visible
     })
+  }
+
+  /** Explicit derived-output identity; labels remain presentation metadata. */
+  get projectionIdentity(): Readonly<{
+    visualId: string
+    elementId?: string
+  }> | null {
+    return this._projectionIdentity
+  }
+
+  set projectionIdentity(
+    value: Readonly<{ visualId: string; elementId?: string }> | null
+  ) {
+    if (value === null) {
+      this._projectionIdentity = null
+      return
+    }
+    const { visualId, elementId } = value
+    if (
+      typeof visualId !== 'string' ||
+      !visualId ||
+      (elementId !== undefined && (typeof elementId !== 'string' || !elementId))
+    )
+      throw new Error('Invalid projection identity')
+    this._projectionIdentity = Object.freeze({ visualId, elementId })
+  }
+
+  get interactionIdentity(): string | null {
+    return this._projectionIdentity
+      ? (this._projectionIdentity.elementId ??
+          this._projectionIdentity.visualId)
+      : this.label || null
   }
 
   get label(): string {

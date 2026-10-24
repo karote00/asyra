@@ -7,8 +7,8 @@ import {
   encodeGlb,
   triangleFixture
 } from '../../../engine/glb/__tests__/fixtures'
-import { decodeRestrictedGlb } from '../../../engine/glb/decode'
-import { GLB_LIMITS } from '../../../engine/glb/schema'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
+import { GLB_LIMITS } from '@asyra/preset/spatial-assets'
 import type { SimRuntime } from '../../../init/bootstrap'
 import type { PreparedVisualImport } from '../../../storage/visual-archive'
 import { GlbPreview } from '../glb-preview'

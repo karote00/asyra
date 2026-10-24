@@ -38,6 +38,21 @@
       "types": "./dist/agent-activity.d.ts",
       "import": "./dist/agent-activity.js",
       "default": "./dist/agent-activity.js"
+    },
+    "./spatial-contract": {
+      "types": "./dist/spatial-contract.d.ts",
+      "import": "./dist/spatial-contract.js",
+      "default": "./dist/spatial-contract.js"
+    },
+    "./spatial-engine": {
+      "types": "./dist/spatial-engine.d.ts",
+      "import": "./dist/spatial-engine.js",
+      "default": "./dist/spatial-engine.js"
+    },
+    "./spatial-assets": {
+      "types": "./dist/spatial-assets.d.ts",
+      "import": "./dist/spatial-assets.js",
+      "default": "./dist/spatial-assets.js"
     }
   },
   "files": [
@@ -57,7 +72,6 @@
     "test:ci": "yarn has:test && vitest run --coverage --reporter=default --reporter=junit"
   },
   "devDependencies": {
-    "@asyra/render": "workspace:*",
     "@types/three": "0.185.4",
     "@vitest/coverage-v8": "^3.2.6",
     "typescript": "^5.7.2",
@@ -66,6 +80,7 @@
   "dependencies": {
     "@asyra/core": "workspace:*",
     "@asyra/reactive-events": "workspace:*",
+    "@asyra/render": "workspace:*",
     "@asyra/render-engine": "workspace:*",
     "@asyra/render-engine-pixi": "workspace:*",
     "@asyra/ui-context": "workspace:*",

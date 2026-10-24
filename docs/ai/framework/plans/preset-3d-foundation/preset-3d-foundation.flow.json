@@ -1,0 +1,4042 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra",
+  "flowId": "preset-3d-foundation",
+  "revision": 298,
+  "definition": {
+    "title": "Preset 3D foundation and App migration",
+    "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
+    "nodes": [
+      {
+        "id": "design",
+        "title": "Review complete spatial design",
+        "objective": "Task 1: review every owner, handoff, failure path and C01-C12 preservation obligation without production edits.",
+        "owner": "coordinator",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "reviewed",
+            "title": "Specification, complete flow and source-backed feasibility review accepted",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#status-and-authority"
+        ],
+        "implementationRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/plans/preset-3d-foundation/preset-3d-foundation.flow.json",
+          "docs/ai/framework/PLANS.md",
+          "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Review design",
+            "kind": "external",
+            "instructions": "Read the Task 1 review in the plan and validate this flow with the source CLI. Record only the design review, not runtime completion.",
+            "criterionIds": [
+              "reviewed"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "compose",
+        "title": "Resolve independent profile and defaults",
+        "objective": "Resolve existing defaults unchanged, reject unsupported official 3D combinations before mutation, install explicit optional definitions through Core.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "admit"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "engine"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C01 composition - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/compose/runtime"
+            }
+          },
+          {
+            "id": "content",
+            "title": "C01 optional mesh registration - explicit install, canonical save and ordinary cleanup",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/compose/content"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#composition"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/composition/**",
+          "packages/preset/src/defaults/**",
+          "packages/preset/src/catalog.ts",
+          "packages/preset/src/constants.ts",
+          "packages/preset/src/preset.ts",
+          "packages/preset/src/types.ts",
+          "packages/preset/src/__tests__/**",
+          "packages/preset/src/spatial/components.ts",
+          "packages/preset/src/spatial/registration.ts",
+          "packages/preset/src/__tests__/spatial-registration.test.ts",
+          "packages/preset/src/index.ts",
+          "packages/preset/src/spatial/lighting.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/compose/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          },
+          {
+            "id": "verify-content",
+            "label": "Verify optional content slice",
+            "kind": "external",
+            "instructions": "Run the permanent Task 6 owner and App preservation tests from the plan. This bounded evidence does not accept profile activation or real-WebGL integration.",
+            "criterionIds": [
+              "content"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "startup",
+        "title": "Initialize one owned render runtime",
+        "objective": "Coordinate deferred provider initialization and settle failed/retired startup before successor activation.",
+        "owner": "@asyra/core",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "compose"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "engine"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C02 lazy lifetime - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/startup/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#composition"
+        ],
+        "implementationRefs": [
+          "packages/core/src/index.ts",
+          "packages/core/src/apis/render.ts",
+          "packages/core/src/types/render.ts",
+          "packages/core/src/__tests__/core-start-render.test.ts",
+          "packages/core/src/__tests__/render-engine-provider.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/startup/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "canonical",
+        "title": "Apply canonical edits and replay",
+        "objective": "Use existing Core API orchestration into Scene Tree, Props and Factory; preserve their separate state/journal ownership.",
+        "owner": "@asyra/core",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "design"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C09 C11 canonical preservation - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/canonical/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#single-architecture-and-app-policy"
+        ],
+        "implementationRefs": [
+          "packages/core/src/__tests__/**",
+          "apps/asyra-office/src/runtime/layout-controller.ts",
+          "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+          "apps/asyra-sim/src/common-apis/**",
+          "apps/asyra-fieldscope/src/runtime/bootstrap.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/canonical/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain",
+        "title": "Project existing App source semantics",
+        "objective": "Consume current canonical App owners to produce completed source shapes and poses without migrating domain algorithms.",
+        "owner": "App domain projection",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "canonical"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C11 App source preservation - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/domain/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#spatial-data-and-admission"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/render-app/workcell-frame.ts",
+          "apps/asyra-fieldscope/src/render-app/site-projection.ts",
+          "apps/asyra-fieldscope/src/render-app/robot-projection.ts",
+          "apps/asyra-fieldscope/src/render-app/walking-robot-projection.ts",
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "apps/asyra-sim/src/render-app/__tests__/**",
+          "apps/asyra-fieldscope/src/render-app/__tests__/**",
+          "apps/asyra-office/src/runtime/__tests__/**"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/domain/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "admit",
+        "title": "Admit neutral immutable spatial data",
+        "objective": "Validate captured descriptors, shapes, surfaces and stable instances once per untrusted input lifetime.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "design"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C03 admission - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/admit/runtime"
+            }
+          },
+          {
+            "id": "foundation",
+            "title": "Task 2 - existing admission and initialization/resource contract",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/admit/foundation"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#spatial-data-and-admission"
+        ],
+        "implementationRefs": [
+          "packages/render-engine/src/spatial.ts",
+          "packages/render-engine/src/capabilities.ts",
+          "packages/render-engine/src/types.ts",
+          "packages/render-engine/src/index.ts",
+          "packages/preset/src/spatial-contract.ts",
+          "packages/preset/src/spatial/spatial-contract.ts",
+          "packages/preset/src/spatial/surface-contract.ts",
+          "packages/preset/package.json",
+          "packages/preset/src/__tests__/spatial-admission.test.ts",
+          "apps/asyra-sim/src/engine/spatial-contract.ts",
+          "apps/asyra-fieldscope/src/engine/spatial-contract.ts",
+          "apps/asyra-sim/src/engine/__tests__/spatial-admission.test.ts",
+          "apps/asyra-fieldscope/src/engine/__tests__/spatial-admission.test.ts",
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+          "apps/asyra-fieldscope/src/render-app/camera-navigation.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/admit/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "project",
+        "title": "Reconcile spatial output and bounds",
+        "objective": "Retain stable derived visual identity, valid submission ordering and correct instance-aware bounds without a second editable graph.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "admit"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C04 C05 projection and bounds - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/project/runtime"
+            }
+          },
+          {
+            "id": "projection",
+            "title": "Task 3 - incremental projection and bounds preservation",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/project/projection"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/spatial.ts",
+          "packages/preset/src/spatial/spatial-layer.ts",
+          "packages/preset/src/spatial/bounds.ts",
+          "packages/preset/src/__tests__/spatial-layer.test.ts",
+          "packages/preset/src/__tests__/spatial-bounds.test.ts",
+          "apps/asyra-sim/src/render-app/spatial-layer.ts",
+          "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+          "packages/preset/package.json",
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+          "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+          "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+          "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts",
+          "apps/asyra-sim/src/render-app/__tests__/spatial-layer.test.ts",
+          "packages/preset/src/spatial/pose.ts",
+          "packages/preset/src/__tests__/spatial-pose.test.ts",
+          "packages/preset/src/__tests__/spatial-query.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/project/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "camera",
+        "title": "Compute App-directed camera presentation",
+        "objective": "Return camera changes from explicit values/deltas/bounds and consume one current transition/follow target.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "project"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C06 camera controls - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/camera/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#camera-control"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/spatial/camera-controls.ts",
+          "packages/preset/src/spatial/presentation.ts",
+          "packages/preset/src/__tests__/spatial-camera.test.ts",
+          "apps/asyra-sim/src/ui/viewport/viewport-camera.ts",
+          "apps/asyra-sim/src/ui/viewport/use-viewport-navigation.ts",
+          "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+          "apps/asyra-fieldscope/src/render-app/camera-flight.ts",
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "packages/preset/src/spatial.ts",
+          "apps/asyra-fieldscope/src/render-app/site-projection.ts",
+          "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+          "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+          "apps/asyra-sim/src/ui/viewport/__tests__/viewport-camera.test.ts",
+          "apps/asyra-fieldscope/src/render-app/__tests__/camera-flight.test.ts",
+          "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/camera/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "render",
+        "title": "Schedule and map abstract spatial commands",
+        "objective": "Map registered visual/entity/instance identities and project layers through the abstract engine boundary.",
+        "owner": "@asyra/render",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "project"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "engine"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C04 C07 Render handoff - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/render/runtime"
+            }
+          },
+          {
+            "id": "projection",
+            "title": "Task 3 - incremental projection and bounds preservation",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/render/projection"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources"
+        ],
+        "implementationRefs": [
+          "packages/render/src/render.ts",
+          "packages/render/src/renderer.ts",
+          "packages/render/src/types/render-object.ts",
+          "packages/render/src/types/render-interaction.ts",
+          "packages/render/src/registries/interaction-target.ts",
+          "packages/render/src/interaction/engine-interaction-bridge.ts",
+          "packages/render/src/__tests__/render-engine-adapter.test.ts",
+          "packages/render/src/__tests__/interaction-target-registry.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/render/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "engine",
+        "title": "Execute concrete spatial resources",
+        "objective": "Own deferred SDK initialization, geometry/material/light resources, current instance detail and concrete queries.",
+        "owner": "@asyra/preset/spatial-engine",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "admit"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C02 C07 C08 engine lifecycle - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/engine/runtime"
+            }
+          },
+          {
+            "id": "foundation",
+            "title": "Task 2 - existing admission and initialization/resource contract",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/engine/foundation"
+            }
+          },
+          {
+            "id": "content",
+            "title": "C05/C08 optional presentation - transforms, detail invalidation and retained resources",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/engine/content"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#presentation-and-editing"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/spatial-engine.ts",
+          "packages/preset/src/spatial/lazy-engine.ts",
+          "packages/preset/src/spatial/three-engine.ts",
+          "packages/preset/src/spatial/graphics.ts",
+          "packages/preset/src/spatial/surface-textures.ts",
+          "packages/preset/src/__tests__/spatial-engine.test.ts",
+          "packages/preset/src/__tests__/spatial-resources.test.ts",
+          "packages/preset/src/spatial.ts",
+          "packages/preset/package.json",
+          "packages/preset/src/__tests__/spatial-entries.test.ts",
+          "apps/asyra-sim/src/engine/three-engine.ts",
+          "apps/asyra-sim/src/engine/graphics.ts",
+          "apps/asyra-fieldscope/src/engine/three-engine.ts",
+          "apps/asyra-fieldscope/src/engine/graphics.ts",
+          "apps/asyra-fieldscope/src/engine/surface-textures.ts",
+          "apps/asyra-office/src/runtime/office-runtime.ts",
+          "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+          "apps/asyra-office/src/ui/__tests__/OfficeApp.test.tsx",
+          "apps/asyra-sim/src/engine/__tests__/three-engine.test.ts",
+          "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts",
+          "packages/preset/src/__tests__/spatial-query.test.ts",
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "packages/preset/src/spatial/lighting.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/engine/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          },
+          {
+            "id": "verify-content",
+            "label": "Verify optional content slice",
+            "kind": "external",
+            "instructions": "Run the permanent Task 6 owner and App preservation tests from the plan. This bounded evidence does not accept profile activation or real-WebGL integration.",
+            "criterionIds": [
+              "content"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "queries",
+        "title": "Expose typed spatial queries",
+        "objective": "Resolve public visual identities into opaque handles and return typed world/screen/local results through Core.",
+        "owner": "@asyra/render",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "render"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "engine"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C05 C07 typed queries - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/queries/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#spatial-queries-and-input"
+        ],
+        "implementationRefs": [
+          "packages/render-engine/src/types.ts",
+          "packages/render-engine/src/spatial.ts",
+          "packages/render-engine/src/capabilities.ts",
+          "packages/render/src/render.ts",
+          "packages/render/src/queries/spatial-query.ts",
+          "packages/render/src/__tests__/spatial-query.test.ts",
+          "packages/core/src/apis/render.ts",
+          "packages/core/src/types/render.ts",
+          "packages/core/src/index.ts",
+          "packages/core/src/__tests__/spatial-query.test.ts",
+          "packages/render-engine/src/testing/recording-render-engine.ts",
+          "packages/render-engine-pixi/src/pixi-render-engine.ts",
+          "packages/render/src/index.ts",
+          "packages/core/src/core.ts",
+          "packages/render-engine/src/__tests__/spatial-query.test.ts",
+          "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/queries/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "interaction",
+        "title": "Route App intent through Features",
+        "objective": "Coordinate App-selected actions, selection and cancellation using existing Feature sessions.",
+        "owner": "@asyra/feature-system",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "queries"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "camera"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C06 C07 interaction - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/interaction/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#single-architecture-and-app-policy"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/ui/viewport/use-viewport-navigation.ts",
+          "apps/asyra-sim/src/init/bootstrap.ts",
+          "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+          "apps/asyra-office/src/runtime/office-runtime.ts",
+          "packages/preset/src/spatial/input.ts",
+          "packages/preset/src/__tests__/spatial-input.test.ts",
+          "apps/asyra-sim/src/ui/viewport/__tests__/viewport-controls.test.ts",
+          "apps/asyra-sim/src/init/__tests__/custom-renderer.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/interaction/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "edit",
+        "title": "Preview and commit generic transform edits",
+        "objective": "Derive deterministic transform previews and delegate one accepted edit to App/Core APIs.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "interaction"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "canonical"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C09 editing - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/edit/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#presentation-and-editing"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/spatial/editing.ts",
+          "packages/preset/src/spatial/overlays.ts",
+          "packages/preset/src/__tests__/spatial-editing.integration.test.ts",
+          "apps/asyra-office/src/runtime/layout-controller.ts",
+          "apps/asyra-office/src/runtime/office-runtime.ts",
+          "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+          "packages/preset/src/spatial.ts",
+          "packages/preset/src/spatial/pose.ts",
+          "apps/asyra-office/src/ui/OfficeApp.tsx",
+          "apps/asyra-office/e2e/**",
+          "apps/asyra-sim/src/ui/imports/use-part-import.ts",
+          "apps/asyra-sim/src/ui/objects/visual-placement-fields.tsx",
+          "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts",
+          "apps/asyra-sim/src/features/storage-visuals.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-feature.test.ts",
+          "apps/asyra-sim/e2e/__tests__/visual-references.spec.ts",
+          "docs/ai/apps/asyra-office/implementation.md",
+          "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+          "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+          "docs/ai/framework/packages/preset.md",
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/public/generated/api-index.json",
+          "docs/public/generated/content-index.json",
+          "docs/public/generated/package-reference.json",
+          "docs/public/generated/source-map.json",
+          "docs/public/reference/packages/preset.md",
+          "docs/ai/framework/PLANS.md",
+          "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/edit/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assets",
+        "title": "Decode restricted detached asset input",
+        "objective": "Decode only the existing restricted GLB subset and return immutable source-identified meshes.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "admit"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C10 assets - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/assets/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#restricted-assets-and-persistence"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/spatial-assets.ts",
+          "packages/preset/src/spatial/assets/**",
+          "packages/preset/src/__tests__/spatial-assets.test.ts",
+          "apps/asyra-sim/src/engine/glb/**",
+          "apps/asyra-sim/src/ui/imports/glb-preview.tsx",
+          "packages/preset/package.json",
+          "packages/preset/src/__tests__/spatial-assets-fixture.ts",
+          "docs/ai/apps/asyra-office/implementation.md",
+          "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+          "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+          "docs/ai/framework/packages/preset.md",
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/public/generated/api-index.json",
+          "docs/public/generated/content-index.json",
+          "docs/public/generated/package-reference.json",
+          "docs/public/generated/source-map.json",
+          "docs/public/reference/packages/preset.md",
+          "apps/asyra-sim/src/analysis/__tests__/original-part-admission.test.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/original-mesh.test.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/original-motion.test.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/representative-fixture.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/workcell-fixture.ts",
+          "apps/asyra-sim/src/domain/__tests__/collision-starter-fixture.ts",
+          "apps/asyra-sim/src/domain/__tests__/original-parts.test.ts",
+          "apps/asyra-sim/src/domain/__tests__/synthetic-visuals.test.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/decode-proof.worker.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/decode.test.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/preview-worker.test.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/runtime.browser.spec.ts",
+          "apps/asyra-sim/src/engine/glb/binary.ts",
+          "apps/asyra-sim/src/engine/glb/decode.ts",
+          "apps/asyra-sim/src/engine/glb/preview-worker.ts",
+          "apps/asyra-sim/src/engine/glb/preview.worker.ts",
+          "apps/asyra-sim/src/engine/glb/scene.ts",
+          "apps/asyra-sim/src/engine/glb/schema.ts",
+          "apps/asyra-sim/src/init/__tests__/bootstrap-lifecycle.test.ts",
+          "apps/asyra-sim/src/init/__tests__/bootstrap.test.ts",
+          "apps/asyra-sim/src/init/__tests__/runtime-controller.test.ts",
+          "apps/asyra-sim/src/render-app/__tests__/visual-frame.test.ts",
+          "apps/asyra-sim/src/render-app/workcell-frame.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-archive-resources.test.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-archive.test.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-project.test.ts",
+          "apps/asyra-sim/src/storage/visual-archive.ts",
+          "apps/asyra-sim/src/storage/visual-source.ts",
+          "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/assets/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "retire",
+        "title": "Retire the owning runtime",
+        "objective": "Coordinate admission closure, cancellation/settlement and reverse owner cleanup without restarting a retired runtime.",
+        "owner": "@asyra/core",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "render"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "engine"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C02 C08 C12 retirement - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/retire/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources"
+        ],
+        "implementationRefs": [
+          "packages/core/src/__tests__/core-start-render.test.ts",
+          "packages/render/src/runtime-lifecycle.ts",
+          "packages/render/src/__tests__/runtime-reset.test.ts",
+          "packages/preset/src/preset.ts",
+          "packages/preset/src/spatial/lazy-engine.ts",
+          "packages/preset/src/spatial/spatial-layer.ts",
+          "packages/preset/src/__tests__/preset-runtime-lifecycle.integration.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/retire/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "fieldscope",
+        "title": "Preserve FieldScope through migration",
+        "objective": "Migrate shared mechanisms while preserving canonical configuration/source/update boundaries.",
+        "owner": "App FieldScope",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "compose"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "camera"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "interaction"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "engine"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "retire"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "domain"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C03-C08 C11-C12 FieldScope - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/fieldscope/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
+        ],
+        "implementationRefs": [
+          "apps/asyra-fieldscope/src/engine/**",
+          "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+          "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+          "apps/asyra-fieldscope/src/render-app/camera-flight.ts",
+          "apps/asyra-fieldscope/src/render-app/__tests__/**",
+          "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+          "apps/asyra-fieldscope/src/runtime/__tests__/bootstrap*",
+          "apps/asyra-fieldscope/e2e/**",
+          "docs/ai/apps/asyra-fieldscope/ARCHITECTURE.md",
+          "docs/ai/apps/asyra-fieldscope/modules/rendering.md"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/fieldscope/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "sim",
+        "title": "Preserve Sim through migration",
+        "objective": "Migrate shared mechanisms without widening strict input or changing original geometry/evidence meaning.",
+        "owner": "App Sim",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "fieldscope"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "domain"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C03-C08 C11-C12 Sim - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/sim/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
+        ],
+        "implementationRefs": [
+          "apps/asyra-sim/src/engine/three-engine.ts",
+          "apps/asyra-sim/src/engine/spatial-contract.ts",
+          "apps/asyra-sim/src/engine/graphics.ts",
+          "apps/asyra-sim/src/engine/__tests__/**",
+          "apps/asyra-sim/src/render-app/spatial-layer.ts",
+          "apps/asyra-sim/src/render-app/__tests__/**",
+          "apps/asyra-sim/src/init/**",
+          "apps/asyra-sim/src/ui/viewport/**",
+          "apps/asyra-sim/e2e/**",
+          "docs/ai/apps/asyra-sim/ARCHITECTURE.md",
+          "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/sim/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "activity",
+        "title": "Preserve browser activity delivery",
+        "objective": "Preserve acknowledged activity notifications with a valid native microtask invocation.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "design"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "Browser scheduler binding preserves ordinary activity semantics",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/activity/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/agent-activity.ts",
+          "packages/preset/src/__tests__/agent-activity.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Verify activity scheduler",
+            "kind": "external",
+            "instructions": "Run the permanent ActivityProjection receiver regression and Office integration regression, followed by Office WebGL preservation.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "office",
+        "title": "Preserve Office through migration",
+        "objective": "Use shared scene/control mechanisms without changing task, movement, layout or persistence semantics.",
+        "owner": "App Office",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "sim"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "domain"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "activity"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C06 C08-C09 C11-C12 Office - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/office/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
+        ],
+        "implementationRefs": [
+          "apps/asyra-office/src/scene/office-scene.ts",
+          "apps/asyra-office/src/runtime/office-runtime.ts",
+          "apps/asyra-office/src/runtime/layout-controller.ts",
+          "apps/asyra-office/src/runtime/__tests__/**",
+          "apps/asyra-office/src/ui/__tests__/**",
+          "apps/asyra-office/e2e/**",
+          "docs/ai/apps/asyra-office/implementation.md",
+          "apps/asyra-office/app-environment.ts",
+          "apps/asyra-office/.env.example",
+          "apps/asyra-office/vite.config.ts",
+          "apps/asyra-office/playwright.config.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/office/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "activate",
+        "title": "Enable production 3D profile",
+        "objective": "Activate only after production foundation and three consumer preservation gates pass.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "compose"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "startup"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "queries"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "retire"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "fieldscope"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "sim"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "office"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C01 C02 C12 activation - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/activate/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#composition"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/catalog.ts",
+          "packages/preset/src/composition/**",
+          "packages/preset/src/__tests__/profile-provider.test.ts",
+          "packages/preset/src/__tests__/apply-preset.test.ts",
+          "docs/ai/framework/packages/preset.md",
+          "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md",
+          "packages/preset/src/types.ts",
+          "packages/preset/src/index.ts",
+          "docs/ai/apps/asyra-office/implementation.md",
+          "docs/ai/framework/API_SURFACES.md",
+          "docs/ai/framework/ARCHITECTURE.md",
+          "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
+          "docs/ai/framework/PLANS.md",
+          "docs/ai/framework/RELEASE_SUPPORT.md",
+          "docs/ai/framework/RUNTIME_MATRICES.md",
+          "docs/ai/framework/WORKFLOW.md",
+          "docs/ai/framework/golden-paths/preset-composition.md",
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/public/generated/api-index.json",
+          "docs/public/generated/content-index.json",
+          "docs/public/generated/package-reference.json",
+          "docs/public/generated/source-map.json",
+          "docs/public/reference/packages/preset.md",
+          "docs/public/reference/support-release.md",
+          "docs/public/start/preset-2d.md",
+          "packages/preset/README.md",
+          "scripts/docs/public-package-readmes.mjs"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/activate/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "closeout",
+        "title": "Review integrated outcome",
+        "objective": "Verify all required owners, App preservation, generic extensions and same-source integrated acceptance.",
+        "owner": "coordinator",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "activate"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "edit"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "assets"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "canonical"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "domain"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "C01-C12 integrated closeout - actual behavior and preservation evidence",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/closeout/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/framework/specs/preset-3d-foundation.md#definition-of-done"
+        ],
+        "implementationRefs": [
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/PLANS.md",
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/ai/framework/plans/preset-3d-foundation/preset-3d-foundation.flow.json"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Run bounded owner verification",
+            "kind": "external",
+            "instructions": "Use the matching Step Execution Card and docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates. Run actual permanent owner tests through existing project scripts, including affected App supervisors. Publish source-bound custom evidence for preset-3d-foundation/closeout/runtime only after all named cases pass; missing assertions remain incomplete. No test runner is started by reading this flow.",
+            "criterionIds": [
+              "runtime"
+            ]
+          }
+        ]
+      }
+    ],
+    "criteria": [
+      {
+        "id": "integrated",
+        "title": "All C01-C12 integrated behavior and accepted App preservation verified on one source",
+        "kind": "automated",
+        "selector": {
+          "producer": "custom",
+          "identity": "preset-3d-foundation/integration/runtime"
+        }
+      },
+      {
+        "id": "review",
+        "title": "Final bounded product and visual review accepted",
+        "kind": "manual"
+      }
+    ],
+    "architecture": {
+      "schema": {
+        "id": "flow-inspector",
+        "version": 2
+      },
+      "target": {
+        "id": "preset-3d-foundation",
+        "kind": "framework",
+        "title": "Preset 3D foundation",
+        "subtitle": "Single architecture with App-owned tree UI and camera policy"
+      },
+      "authority": {
+        "specPath": "docs/ai/framework/specs/preset-3d-foundation.md",
+        "inspectorPath": "docs/ai/framework/plans/preset-3d-foundation/preset-3d-foundation.flow.json",
+        "semanticOwner": "Framework product contract and App domain owners",
+        "inspectorOwner": "Preset 3D coordinating owner"
+      },
+      "links": [
+        {
+          "id": "plan",
+          "kind": "plan",
+          "label": "Implementation plan",
+          "href": "docs/ai/framework/plans/preset-3d-foundation-plan.md"
+        },
+        {
+          "id": "spec",
+          "kind": "spec",
+          "label": "Product contract",
+          "href": "docs/ai/framework/specs/preset-3d-foundation.md"
+        }
+      ],
+      "lanes": [
+        {
+          "id": "review",
+          "title": "Review",
+          "order": 1
+        },
+        {
+          "id": "app",
+          "title": "App policy and preservation",
+          "order": 2
+        },
+        {
+          "id": "framework",
+          "title": "Framework and Preset owners",
+          "order": 3
+        }
+      ],
+      "steps": [
+        {
+          "id": "design",
+          "laneId": "review",
+          "title": "Review complete spatial design",
+          "ownerPackage": "coordinator",
+          "purpose": "Task 1: review every owner, handoff, failure path and C01-C12 preservation obligation without production edits.",
+          "failureOwnerStepId": "design",
+          "order": 1,
+          "inputs": [
+            "Plan scope and current public APIs"
+          ],
+          "outputs": [
+            "artifact:reviewed-design"
+          ],
+          "conditions": [
+            "No production writes or borrowed runtime evidence."
+          ],
+          "bypasses": [
+            "No bypass: implementation requires accepted design."
+          ],
+          "allowedContributors": [
+            "Current source, public contracts and user-approved ownership corrections"
+          ],
+          "forbiddenContributors": [
+            "Production implementation, new dependencies, fabricated runtime acceptance"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/plans/preset-3d-foundation/preset-3d-foundation.flow.json",
+            "docs/ai/framework/PLANS.md",
+            "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#status-and-authority"
+          ]
+        },
+        {
+          "id": "compose",
+          "laneId": "framework",
+          "title": "Resolve independent profile and defaults",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Resolve existing defaults unchanged, reject unsupported official 3D combinations before mutation, install explicit optional definitions through Core.",
+          "failureOwnerStepId": "compose",
+          "order": 2,
+          "inputs": [
+            "App profile/default request; composition-open Core",
+            "artifact:reviewed-design",
+            "Optional 3D-only neutral lighting and software-shadow settings"
+          ],
+          "outputs": [
+            "artifact:composition"
+          ],
+          "conditions": [
+            "3D supports [] or explicit INPUT only; omitted defaults resolve all then reject INVALID_OPTIONS.",
+            "2D/CUSTOM resolution unchanged; provider conflicts rejected before install.",
+            "Optional spatial definitions use ordinary pre-start Core registration with atomic cleanup; no new selectable catalog IDs.",
+            "Validate, detach and freeze presentation settings before mutation; reject unknown fields and non-3D use. No callbacks or SDK types."
+          ],
+          "bypasses": [
+            "CUSTOM binds no preset provider; empty defaults acquire no catalog modules."
+          ],
+          "allowedContributors": [
+            "Core public registration and lifecycle facade"
+          ],
+          "forbiddenContributors": [
+            "Profile-dependent filtering, app installers, SDK construction"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/preset/src/composition/**",
+            "packages/preset/src/defaults/**",
+            "packages/preset/src/catalog.ts",
+            "packages/preset/src/constants.ts",
+            "packages/preset/src/preset.ts",
+            "packages/preset/src/types.ts",
+            "packages/preset/src/__tests__/**",
+            "packages/preset/src/spatial/components.ts",
+            "packages/preset/src/spatial/registration.ts",
+            "packages/preset/src/__tests__/spatial-registration.test.ts",
+            "packages/preset/src/index.ts",
+            "packages/preset/src/spatial/lighting.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#composition"
+          ]
+        },
+        {
+          "id": "startup",
+          "laneId": "framework",
+          "title": "Initialize one owned render runtime",
+          "ownerPackage": "@asyra/core",
+          "purpose": "Coordinate deferred provider initialization and settle failed/retired startup before successor activation.",
+          "failureOwnerStepId": "startup",
+          "order": 3,
+          "inputs": [
+            "Host surface dimensions; current lifecycle generation",
+            "artifact:reviewed-design",
+            "artifact:composition",
+            "artifact:initialized-surface"
+          ],
+          "outputs": [
+            "artifact:ready-runtime",
+            "artifact:initialization-request"
+          ],
+          "conditions": [
+            "Provider stays synchronous; engine initialization may be asynchronous.",
+            "No successor before startup settlement and teardown.",
+            "Initialization request precedes initialized-surface; only then publish ready-runtime. Errors enter retirement without producing readiness."
+          ],
+          "bypasses": [
+            "No spatial startup for nonspatial composition."
+          ],
+          "allowedContributors": [
+            "Render lifecycle facade and existing Core reset owner"
+          ],
+          "forbiddenContributors": [
+            "SDK type tests, asynchronous provider contract, placeholder surface"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/core/src/index.ts",
+            "packages/core/src/apis/render.ts",
+            "packages/core/src/types/render.ts",
+            "packages/core/src/__tests__/core-start-render.test.ts",
+            "packages/core/src/__tests__/render-engine-provider.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#composition"
+          ]
+        },
+        {
+          "id": "canonical",
+          "laneId": "framework",
+          "title": "Apply canonical edits and replay",
+          "ownerPackage": "@asyra/core",
+          "purpose": "Use existing Core API orchestration into Scene Tree, Props and Factory; preserve their separate state/journal ownership.",
+          "failureOwnerStepId": "canonical",
+          "order": 4,
+          "inputs": [
+            "Accepted App mutation or validated load/replay/shared input",
+            "artifact:reviewed-design",
+            "artifact:accepted-intent",
+            "artifact:validated-edit"
+          ],
+          "outputs": [
+            "artifact:canonical-change"
+          ],
+          "conditions": [
+            "Finite mutation validates before one transaction; state-apply does not re-execute Feature decisions.",
+            "Factory owns rollback/history; Scene Tree owns membership; Props owns values."
+          ],
+          "bypasses": [
+            "Presentation-only intention makes no canonical write."
+          ],
+          "allowedContributors": [
+            "Existing public canonical APIs and App revision/domain validators"
+          ],
+          "forbiddenContributors": [
+            "New state store, history implementation, transaction across asset decoding"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/core/src/__tests__/**",
+            "apps/asyra-office/src/runtime/layout-controller.ts",
+            "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+            "apps/asyra-sim/src/common-apis/**",
+            "apps/asyra-fieldscope/src/runtime/bootstrap.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#single-architecture-and-app-policy"
+          ]
+        },
+        {
+          "id": "domain",
+          "laneId": "app",
+          "title": "Project existing App source semantics",
+          "ownerPackage": "App domain projection",
+          "purpose": "Consume current canonical App owners to produce completed source shapes and poses without migrating domain algorithms.",
+          "failureOwnerStepId": "domain",
+          "order": 5,
+          "inputs": [
+            "Current canonical source revision and App-owned source assets",
+            "artifact:reviewed-design",
+            "artifact:canonical-change"
+          ],
+          "outputs": [
+            "artifact:source-projection"
+          ],
+          "conditions": [
+            "Preserve original geometry and App kinematics; tree-panel visibility does not change canonical granularity."
+          ],
+          "bypasses": [
+            "Camera or UI-only changes reuse completed source outputs."
+          ],
+          "allowedContributors": [
+            "Existing App geometry/pose producers as read-only authorities"
+          ],
+          "forbiddenContributors": [
+            "Editing robot/crop/office algorithms, renderer-generated model truth"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-sim/src/render-app/workcell-frame.ts",
+            "apps/asyra-fieldscope/src/render-app/site-projection.ts",
+            "apps/asyra-fieldscope/src/render-app/robot-projection.ts",
+            "apps/asyra-fieldscope/src/render-app/walking-robot-projection.ts",
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "apps/asyra-sim/src/render-app/__tests__/**",
+            "apps/asyra-fieldscope/src/render-app/__tests__/**",
+            "apps/asyra-office/src/runtime/__tests__/**"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#spatial-data-and-admission"
+          ]
+        },
+        {
+          "id": "admit",
+          "laneId": "framework",
+          "title": "Admit neutral immutable spatial data",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Validate captured descriptors, shapes, surfaces and stable instances once per untrusted input lifetime.",
+          "failureOwnerStepId": "admit",
+          "order": 6,
+          "inputs": [
+            "Untrusted numeric descriptors; App-specific stricter validation",
+            "artifact:reviewed-design",
+            "artifact:source-projection"
+          ],
+          "outputs": [
+            "artifact:admitted-spatial"
+          ],
+          "conditions": [
+            "Detached immutable receipts only; stable instance IDs; world pose applied once; preserve spatialV0 saved identity."
+          ],
+          "bypasses": [
+            "Only exact owner-admitted immutable values bypass repeat scans."
+          ],
+          "allowedContributors": [
+            "Pure neutral engine types and App input admission"
+          ],
+          "forbiddenContributors": [
+            "SDK imports, caller freezing as proof, fallback geometry, broadened Sim admission"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/render-engine/src/spatial.ts",
+            "packages/render-engine/src/capabilities.ts",
+            "packages/render-engine/src/types.ts",
+            "packages/render-engine/src/index.ts",
+            "packages/preset/src/spatial-contract.ts",
+            "packages/preset/src/spatial/spatial-contract.ts",
+            "packages/preset/src/spatial/surface-contract.ts",
+            "packages/preset/package.json",
+            "packages/preset/src/__tests__/spatial-admission.test.ts",
+            "apps/asyra-sim/src/engine/spatial-contract.ts",
+            "apps/asyra-fieldscope/src/engine/spatial-contract.ts",
+            "apps/asyra-sim/src/engine/__tests__/spatial-admission.test.ts",
+            "apps/asyra-fieldscope/src/engine/__tests__/spatial-admission.test.ts",
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+            "apps/asyra-fieldscope/src/render-app/camera-navigation.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#task-2-delivery-boundary",
+            "docs/ai/framework/specs/preset-3d-foundation.md#spatial-data-and-admission"
+          ]
+        },
+        {
+          "id": "project",
+          "laneId": "framework",
+          "title": "Reconcile spatial output and bounds",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Retain stable derived visual identity, valid submission ordering and correct instance-aware bounds without a second editable graph.",
+          "failureOwnerStepId": "project",
+          "order": 7,
+          "inputs": [
+            "Accepted ordered scene/camera submissions",
+            "artifact:reviewed-design",
+            "artifact:admitted-spatial",
+            "artifact:camera-update",
+            "artifact:retirement",
+            "Explicit pose target, current pose, progress and App tolerance/reduced-motion policy"
+          ],
+          "outputs": [
+            "artifact:projection-command",
+            "artifact:scene-bounds"
+          ],
+          "conditions": [
+            "Validate full submissions before replacing pending values; scene/camera order preserved.",
+            "Camera-only work does not resend meshes; current instance transforms affect bounds.",
+            "Pose presentation owns at most one target; no clock, canonical writes or geometry generation."
+          ],
+          "bypasses": [
+            "Unchanged descriptors skip updates; empty scene removes output and has null bounds."
+          ],
+          "allowedContributors": [
+            "Public Render containers/meshes and registration facade"
+          ],
+          "forbiddenContributors": [
+            "Domain geometry regeneration, label-based identity, per-instance vertex expansion"
+          ],
+          "cacheDimensions": [
+            "Existing immutable local shape bounds: exact owner-admitted shape identity; current transforms never cached as local bounds."
+          ],
+          "implementationBoundary": [
+            "packages/preset/src/spatial.ts",
+            "packages/preset/src/spatial/spatial-layer.ts",
+            "packages/preset/src/spatial/bounds.ts",
+            "packages/preset/src/__tests__/spatial-layer.test.ts",
+            "packages/preset/src/__tests__/spatial-bounds.test.ts",
+            "apps/asyra-sim/src/render-app/spatial-layer.ts",
+            "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+            "packages/preset/package.json",
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+            "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+            "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+            "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts",
+            "apps/asyra-sim/src/render-app/__tests__/spatial-layer.test.ts",
+            "packages/preset/src/spatial/pose.ts",
+            "packages/preset/src/__tests__/spatial-pose.test.ts",
+            "packages/preset/src/__tests__/spatial-query.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources",
+            "docs/ai/framework/specs/preset-3d-foundation.md#task-3-delivery-boundary"
+          ],
+          "cacheEvidence": {
+            "scope": "Preserve current FieldScope immutable bounds preparation during extraction; no new retention family.",
+            "source": "apps/asyra-fieldscope/src/render-app/camera-navigation.ts#measureScene",
+            "contract": "docs/ai/apps/asyra-fieldscope/modules/rendering.md",
+            "requiredProof": "C05 work-count and output equivalence after current pose/instance changes and retirement."
+          }
+        },
+        {
+          "id": "camera",
+          "laneId": "framework",
+          "title": "Compute App-directed camera presentation",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Return camera changes from explicit values/deltas/bounds and consume one current transition/follow target.",
+          "failureOwnerStepId": "camera",
+          "order": 8,
+          "inputs": [
+            "App mode/angle/target/limits, explicit time or normalized interpolation progress, logical viewport and current target pose",
+            "artifact:reviewed-design",
+            "artifact:accepted-intent",
+            "artifact:retirement",
+            "artifact:scene-bounds"
+          ],
+          "outputs": [
+            "artifact:camera-update"
+          ],
+          "conditions": [
+            "Single perspective camera; App controls all mode/policy choices; no target queue."
+          ],
+          "bypasses": [
+            "Empty fit preserves camera; reduced motion settles immediately; cancel retires transition."
+          ],
+          "allowedContributors": [
+            "App Features and pure camera/bounds contracts"
+          ],
+          "forbiddenContributors": [
+            "Task reads per frame, document writes, mode selection by App name, independent draw loop"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/preset/src/spatial/camera-controls.ts",
+            "packages/preset/src/spatial/presentation.ts",
+            "packages/preset/src/__tests__/spatial-camera.test.ts",
+            "apps/asyra-sim/src/ui/viewport/viewport-camera.ts",
+            "apps/asyra-sim/src/ui/viewport/use-viewport-navigation.ts",
+            "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+            "apps/asyra-fieldscope/src/render-app/camera-flight.ts",
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "packages/preset/src/spatial.ts",
+            "apps/asyra-fieldscope/src/render-app/site-projection.ts",
+            "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+            "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+            "apps/asyra-sim/src/ui/viewport/__tests__/viewport-camera.test.ts",
+            "apps/asyra-fieldscope/src/render-app/__tests__/camera-flight.test.ts",
+            "apps/asyra-fieldscope/src/render-app/__tests__/camera-navigation.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#camera-control"
+          ]
+        },
+        {
+          "id": "render",
+          "laneId": "framework",
+          "title": "Schedule and map abstract spatial commands",
+          "ownerPackage": "@asyra/render",
+          "purpose": "Map registered visual/entity/instance identities and project layers through the abstract engine boundary.",
+          "failureOwnerStepId": "render",
+          "order": 9,
+          "inputs": [
+            "Current frame invalidation and registered projection targets",
+            "artifact:reviewed-design",
+            "artifact:ready-runtime",
+            "artifact:projection-command",
+            "artifact:retirement"
+          ],
+          "outputs": [
+            "artifact:engine-command"
+          ],
+          "conditions": [
+            "One-shot scheduling; only explicit flush draws; identity mapping separate from display labels."
+          ],
+          "bypasses": [
+            "No dirty output means no new draw request."
+          ],
+          "allowedContributors": [
+            "Abstract engine contract and registered render layers"
+          ],
+          "forbiddenContributors": [
+            "Three.js imports, domain policy, duplicate permanent frame loop"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/render/src/render.ts",
+            "packages/render/src/renderer.ts",
+            "packages/render/src/types/render-object.ts",
+            "packages/render/src/types/render-interaction.ts",
+            "packages/render/src/registries/interaction-target.ts",
+            "packages/render/src/interaction/engine-interaction-bridge.ts",
+            "packages/render/src/__tests__/render-engine-adapter.test.ts",
+            "packages/render/src/__tests__/interaction-target-registry.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources",
+            "docs/ai/framework/specs/preset-3d-foundation.md#task-3-delivery-boundary"
+          ]
+        },
+        {
+          "id": "engine",
+          "laneId": "framework",
+          "title": "Execute concrete spatial resources",
+          "ownerPackage": "@asyra/preset/spatial-engine",
+          "purpose": "Own deferred SDK initialization, geometry/material/light resources, current instance detail and concrete queries.",
+          "failureOwnerStepId": "engine",
+          "order": 10,
+          "inputs": [
+            "Abstract commands, App light/detail policy, surface parameters",
+            "artifact:reviewed-design",
+            "artifact:admitted-spatial",
+            "artifact:engine-command",
+            "artifact:retirement",
+            "artifact:initialization-request",
+            "artifact:spatial-query-request",
+            "Admitted neutral lighting and software-shadow settings captured by the synchronous provider"
+          ],
+          "outputs": [
+            "artifact:engine-result",
+            "artifact:initialized-surface"
+          ],
+          "conditions": [
+            "No draw from requestFrame; explicit shadow flags independent of selection; actual detail inputs include viewport/DPR.",
+            "Full admitted shape owns selectable-instance picking independent of LoD slots."
+          ],
+          "bypasses": [
+            "No geometry replacement on pose/material-only update; hidden objects not drawn."
+          ],
+          "allowedContributors": [
+            "Three.js confined to this boundary; pure descriptors"
+          ],
+          "forbiddenContributors": [
+            "Canonical writes, collision verdicts, full glTF claim, invented geometry"
+          ],
+          "cacheDimensions": [
+            "Existing instance detail: admitted instances, full/distant geometry, maxError, pixelError, world transform, view matrix, projection matrix, viewport height and DPR; retain only while every actual input matches."
+          ],
+          "implementationBoundary": [
+            "packages/preset/src/spatial-engine.ts",
+            "packages/preset/src/spatial/lazy-engine.ts",
+            "packages/preset/src/spatial/three-engine.ts",
+            "packages/preset/src/spatial/graphics.ts",
+            "packages/preset/src/spatial/surface-textures.ts",
+            "packages/preset/src/__tests__/spatial-engine.test.ts",
+            "packages/preset/src/__tests__/spatial-resources.test.ts",
+            "packages/preset/src/spatial.ts",
+            "packages/preset/package.json",
+            "packages/preset/src/__tests__/spatial-entries.test.ts",
+            "apps/asyra-sim/src/engine/three-engine.ts",
+            "apps/asyra-sim/src/engine/graphics.ts",
+            "apps/asyra-fieldscope/src/engine/three-engine.ts",
+            "apps/asyra-fieldscope/src/engine/graphics.ts",
+            "apps/asyra-fieldscope/src/engine/surface-textures.ts",
+            "apps/asyra-office/src/runtime/office-runtime.ts",
+            "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+            "apps/asyra-office/src/ui/__tests__/OfficeApp.test.tsx",
+            "apps/asyra-sim/src/engine/__tests__/three-engine.test.ts",
+            "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts",
+            "packages/preset/src/__tests__/spatial-query.test.ts",
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "packages/preset/src/spatial/lighting.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#task-2-delivery-boundary",
+            "docs/ai/framework/specs/preset-3d-foundation.md#presentation-and-editing"
+          ],
+          "cacheEvidence": {
+            "scope": "Preserve existing retained instance-detail product; no new cache family.",
+            "source": "packages/preset/src/spatial/three-engine.ts#updateInstanceDetail",
+            "contract": "docs/ai/apps/asyra-fieldscope/modules/rendering.md",
+            "requiredProof": "C08 unchanged reuse and invalidation on every actual dependency, including DPR, visibility, geometry and instance replacement; no performance pass claimed in Task 1."
+          }
+        },
+        {
+          "id": "queries",
+          "laneId": "framework",
+          "title": "Expose typed spatial queries",
+          "ownerPackage": "@asyra/render",
+          "purpose": "Resolve public visual identities into opaque handles and return typed world/screen/local results through Core.",
+          "failureOwnerStepId": "queries",
+          "order": 11,
+          "inputs": [
+            "App query: registered visual/instance, point/ray/space",
+            "artifact:reviewed-design",
+            "artifact:engine-result"
+          ],
+          "outputs": [
+            "artifact:mapped-hit",
+            "artifact:spatial-query-request"
+          ],
+          "conditions": [
+            "Spatial bounds distinct from old 2D queries; foreign/retired IDs reject; no hit is explicit empty.",
+            "A query request precedes its result; the request never requires a previous hit result."
+          ],
+          "bypasses": [
+            "Outside surface has no ray/hit; unsupported capability rejects before engine work."
+          ],
+          "allowedContributors": [
+            "Public Core facade and abstract engine query results"
+          ],
+          "forbiddenContributors": [
+            "Generic unchecked command escape hatch, SDK runtime extraction, double DOM conversion"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/render-engine/src/types.ts",
+            "packages/render-engine/src/spatial.ts",
+            "packages/render-engine/src/capabilities.ts",
+            "packages/render/src/render.ts",
+            "packages/render/src/queries/spatial-query.ts",
+            "packages/render/src/__tests__/spatial-query.test.ts",
+            "packages/core/src/apis/render.ts",
+            "packages/core/src/types/render.ts",
+            "packages/core/src/index.ts",
+            "packages/core/src/__tests__/spatial-query.test.ts",
+            "packages/render-engine/src/testing/recording-render-engine.ts",
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/render/src/index.ts",
+            "packages/core/src/core.ts",
+            "packages/render-engine/src/__tests__/spatial-query.test.ts",
+            "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#spatial-queries-and-input"
+          ]
+        },
+        {
+          "id": "interaction",
+          "laneId": "framework",
+          "title": "Route App intent through Features",
+          "ownerPackage": "@asyra/feature-system",
+          "purpose": "Coordinate App-selected actions, selection and cancellation using existing Feature sessions.",
+          "failureOwnerStepId": "interaction",
+          "order": 12,
+          "inputs": [
+            "Normalized pointer/modifiers or explicit App command; App action policy",
+            "artifact:reviewed-design",
+            "artifact:mapped-hit",
+            "artifact:decoded-asset"
+          ],
+          "outputs": [
+            "artifact:accepted-intent"
+          ],
+          "conditions": [
+            "App decides action/selection/camera mode; capture loss follows declared cancellation; existing selection channels."
+          ],
+          "bypasses": [
+            "Programmatic commands bypass hit queries, not Feature intent execution."
+          ],
+          "allowedContributors": [
+            "Existing Feature/Input/Selection public APIs"
+          ],
+          "forbiddenContributors": [
+            "Second session runtime, automatic 2D overlay, persisted camera transit"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-sim/src/ui/viewport/use-viewport-navigation.ts",
+            "apps/asyra-sim/src/init/bootstrap.ts",
+            "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+            "apps/asyra-office/src/runtime/office-runtime.ts",
+            "packages/preset/src/spatial/input.ts",
+            "packages/preset/src/__tests__/spatial-input.test.ts",
+            "apps/asyra-sim/src/ui/viewport/__tests__/viewport-controls.test.ts",
+            "apps/asyra-sim/src/init/__tests__/custom-renderer.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#single-architecture-and-app-policy"
+          ]
+        },
+        {
+          "id": "edit",
+          "laneId": "framework",
+          "title": "Preview and commit generic transform edits",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Derive deterministic transform previews and delegate one accepted edit to App/Core APIs.",
+          "failureOwnerStepId": "edit",
+          "order": 13,
+          "inputs": [
+            "Authorized target IDs, current revision, axes/plane/grid and App constraints",
+            "artifact:reviewed-design",
+            "artifact:accepted-intent",
+            "App-authored absolute draft pose; target authorization and acceptance remain App-owned."
+          ],
+          "outputs": [
+            "artifact:validated-edit"
+          ],
+          "conditions": [
+            "Preview remains transient; commit revalidates revision; one finite transaction; rigid targets reject scale."
+          ],
+          "bypasses": [
+            "Cancel discards preview; no-op creates no history; invalid placement rejects."
+          ],
+          "allowedContributors": [
+            "App validator and existing Feature transaction/session APIs"
+          ],
+          "forbiddenContributors": [
+            "Room validity in Preset, second history stack, writes during incomplete preview"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/preset/src/spatial/editing.ts",
+            "packages/preset/src/spatial/overlays.ts",
+            "packages/preset/src/__tests__/spatial-editing.integration.test.ts",
+            "apps/asyra-office/src/runtime/layout-controller.ts",
+            "apps/asyra-office/src/runtime/office-runtime.ts",
+            "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+            "packages/preset/src/spatial.ts",
+            "packages/preset/src/spatial/pose.ts",
+            "apps/asyra-office/src/ui/OfficeApp.tsx",
+            "apps/asyra-office/e2e/**",
+            "apps/asyra-sim/src/ui/imports/use-part-import.ts",
+            "apps/asyra-sim/src/ui/objects/visual-placement-fields.tsx",
+            "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts",
+            "apps/asyra-sim/src/features/storage-visuals.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-feature.test.ts",
+            "apps/asyra-sim/e2e/__tests__/visual-references.spec.ts",
+            "docs/ai/apps/asyra-office/implementation.md",
+            "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+            "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+            "docs/ai/framework/packages/preset.md",
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/public/generated/api-index.json",
+            "docs/public/generated/content-index.json",
+            "docs/public/generated/package-reference.json",
+            "docs/public/generated/source-map.json",
+            "docs/public/reference/packages/preset.md",
+            "docs/ai/framework/PLANS.md",
+            "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#presentation-and-editing"
+          ]
+        },
+        {
+          "id": "assets",
+          "laneId": "framework",
+          "title": "Decode restricted detached asset input",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Decode only the existing restricted GLB subset and return immutable source-identified meshes.",
+          "failureOwnerStepId": "assets",
+          "order": 14,
+          "inputs": [
+            "Supplied bytes, cancellation/lifetime and source request identity",
+            "artifact:reviewed-design",
+            "Pure neutral spatial contract and restricted format limits; no pre-existing decoded receipt"
+          ],
+          "outputs": [
+            "artifact:decoded-asset"
+          ],
+          "conditions": [
+            "Preserve restricted-glb-v0 limits and meanings; no canonical transaction during decode."
+          ],
+          "bypasses": [
+            "Absent asset uses no decoder; cancellation/stale result is discarded before App acceptance."
+          ],
+          "allowedContributors": [
+            "Existing restricted decoder and App source/archive acceptance"
+          ],
+          "forbiddenContributors": [
+            "Network fetches, broader format support, canonical writes, storage policy"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/preset/src/spatial-assets.ts",
+            "packages/preset/src/spatial/assets/**",
+            "packages/preset/src/__tests__/spatial-assets.test.ts",
+            "apps/asyra-sim/src/engine/glb/**",
+            "apps/asyra-sim/src/ui/imports/glb-preview.tsx",
+            "packages/preset/package.json",
+            "packages/preset/src/__tests__/spatial-assets-fixture.ts",
+            "docs/ai/apps/asyra-office/implementation.md",
+            "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+            "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+            "docs/ai/framework/packages/preset.md",
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/public/generated/api-index.json",
+            "docs/public/generated/content-index.json",
+            "docs/public/generated/package-reference.json",
+            "docs/public/generated/source-map.json",
+            "docs/public/reference/packages/preset.md",
+            "apps/asyra-sim/src/analysis/__tests__/original-part-admission.test.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/original-mesh.test.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/original-motion.test.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/representative-fixture.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/workcell-fixture.ts",
+            "apps/asyra-sim/src/domain/__tests__/collision-starter-fixture.ts",
+            "apps/asyra-sim/src/domain/__tests__/original-parts.test.ts",
+            "apps/asyra-sim/src/domain/__tests__/synthetic-visuals.test.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/decode-proof.worker.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/decode.test.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/preview-worker.test.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/runtime.browser.spec.ts",
+            "apps/asyra-sim/src/engine/glb/binary.ts",
+            "apps/asyra-sim/src/engine/glb/decode.ts",
+            "apps/asyra-sim/src/engine/glb/preview-worker.ts",
+            "apps/asyra-sim/src/engine/glb/preview.worker.ts",
+            "apps/asyra-sim/src/engine/glb/scene.ts",
+            "apps/asyra-sim/src/engine/glb/schema.ts",
+            "apps/asyra-sim/src/init/__tests__/bootstrap-lifecycle.test.ts",
+            "apps/asyra-sim/src/init/__tests__/bootstrap.test.ts",
+            "apps/asyra-sim/src/init/__tests__/runtime-controller.test.ts",
+            "apps/asyra-sim/src/render-app/__tests__/visual-frame.test.ts",
+            "apps/asyra-sim/src/render-app/workcell-frame.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-archive-resources.test.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-archive.test.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-project.test.ts",
+            "apps/asyra-sim/src/storage/visual-archive.ts",
+            "apps/asyra-sim/src/storage/visual-source.ts",
+            "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#restricted-assets-and-persistence"
+          ]
+        },
+        {
+          "id": "retire",
+          "laneId": "framework",
+          "title": "Retire the owning runtime",
+          "ownerPackage": "@asyra/core",
+          "purpose": "Coordinate admission closure, cancellation/settlement and reverse owner cleanup without restarting a retired runtime.",
+          "failureOwnerStepId": "retire",
+          "order": 15,
+          "inputs": [
+            "Dispose/reset or failed-start request for exact generation",
+            "artifact:reviewed-design",
+            "artifact:initialization-request"
+          ],
+          "outputs": [
+            "artifact:retirement"
+          ],
+          "conditions": [
+            "Await existing lifecycle settlement; release every acquired resource; report cleanup errors.",
+            "Partial startup cleanup does not require a ready-runtime artifact; initialization failure remains the startup owner error."
+          ],
+          "bypasses": [
+            "Repeated retirement is idempotent; completed cleanup is not repeated."
+          ],
+          "allowedContributors": [
+            "Existing Core lifecycle, Render teardown and Preset registered cleanup"
+          ],
+          "forbiddenContributors": [
+            "Timeout as settlement, swallowed cleanup failure, old callback entering successor"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/core/src/__tests__/core-start-render.test.ts",
+            "packages/render/src/runtime-lifecycle.ts",
+            "packages/render/src/__tests__/runtime-reset.test.ts",
+            "packages/preset/src/preset.ts",
+            "packages/preset/src/spatial/lazy-engine.ts",
+            "packages/preset/src/spatial/spatial-layer.ts",
+            "packages/preset/src/__tests__/preset-runtime-lifecycle.integration.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#projection-and-resources"
+          ]
+        },
+        {
+          "id": "fieldscope",
+          "laneId": "app",
+          "title": "Preserve FieldScope through migration",
+          "ownerPackage": "App FieldScope",
+          "purpose": "Migrate shared mechanisms while preserving canonical configuration/source/update boundaries.",
+          "failureOwnerStepId": "fieldscope",
+          "order": 16,
+          "inputs": [
+            "Integrated shared foundation and unchanged domain outputs",
+            "artifact:reviewed-design"
+          ],
+          "outputs": [
+            "artifact:fieldscope-preserved"
+          ],
+          "conditions": [
+            "Only adapter/control/projection changes; domain geometry and simulations remain authoritative."
+          ],
+          "bypasses": [
+            "No bypass: affected unit/profile and real-WebGL cases required."
+          ],
+          "allowedContributors": [
+            "Existing App supervisors and formal source oracles"
+          ],
+          "forbiddenContributors": [
+            "Crop/robot algorithm changes, UI-only performance proof"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-fieldscope/src/engine/**",
+            "apps/asyra-fieldscope/src/render-app/spatial-layer.ts",
+            "apps/asyra-fieldscope/src/render-app/camera-navigation.ts",
+            "apps/asyra-fieldscope/src/render-app/camera-flight.ts",
+            "apps/asyra-fieldscope/src/render-app/__tests__/**",
+            "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
+            "apps/asyra-fieldscope/src/runtime/__tests__/bootstrap*",
+            "apps/asyra-fieldscope/e2e/**",
+            "docs/ai/apps/asyra-fieldscope/ARCHITECTURE.md",
+            "docs/ai/apps/asyra-fieldscope/modules/rendering.md"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
+          ]
+        },
+        {
+          "id": "sim",
+          "laneId": "app",
+          "title": "Preserve Sim through migration",
+          "ownerPackage": "App Sim",
+          "purpose": "Migrate shared mechanisms without widening strict input or changing original geometry/evidence meaning.",
+          "failureOwnerStepId": "sim",
+          "order": 17,
+          "inputs": [
+            "Integrated shared foundation and strict App source/admission",
+            "artifact:reviewed-design"
+          ],
+          "outputs": [
+            "artifact:sim-preserved"
+          ],
+          "conditions": [
+            "Preserve source topology, rigid poses, lighting and analysis/playback boundaries."
+          ],
+          "bypasses": [
+            "No bypass: affected source, runtime and real-WebGL cases required."
+          ],
+          "allowedContributors": [
+            "Existing App tests and supervisors"
+          ],
+          "forbiddenContributors": [
+            "Solver modifications, visual hits as physical proof, silent admission widening"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-sim/src/engine/three-engine.ts",
+            "apps/asyra-sim/src/engine/spatial-contract.ts",
+            "apps/asyra-sim/src/engine/graphics.ts",
+            "apps/asyra-sim/src/engine/__tests__/**",
+            "apps/asyra-sim/src/render-app/spatial-layer.ts",
+            "apps/asyra-sim/src/render-app/__tests__/**",
+            "apps/asyra-sim/src/init/**",
+            "apps/asyra-sim/src/ui/viewport/**",
+            "apps/asyra-sim/e2e/**",
+            "docs/ai/apps/asyra-sim/ARCHITECTURE.md",
+            "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
+          ]
+        },
+        {
+          "id": "office",
+          "laneId": "app",
+          "title": "Preserve Office through migration",
+          "ownerPackage": "App Office",
+          "purpose": "Use shared scene/control mechanisms without changing task, movement, layout or persistence semantics.",
+          "failureOwnerStepId": "office",
+          "order": 18,
+          "inputs": [
+            "Integrated shared foundation and existing layout/activity projection",
+            "artifact:reviewed-design",
+            "App-configured local origin shared by server and browser verification",
+            "artifact:activity-notification"
+          ],
+          "outputs": [
+            "artifact:office-preserved"
+          ],
+          "conditions": [
+            "App still chooses camera mode/angle and movement destinations; canonical edits separated from transient pose.",
+            "Browser evidence uses the same configured App origin; build does not require a local server origin.",
+            "Ordinary Office startup uses the official 3D profile with unchanged App-owned light values; explicitly injected custom providers retain CUSTOM."
+          ],
+          "bypasses": [
+            "No bypass: layout/Undo/save/stale-proposal and real-WebGL cases required."
+          ],
+          "allowedContributors": [
+            "Existing App schema, layout validator, semantic activity projection"
+          ],
+          "forbiddenContributors": [
+            "Task decisions in Preset, new rewards/floor-building product scope"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "apps/asyra-office/src/scene/office-scene.ts",
+            "apps/asyra-office/src/runtime/office-runtime.ts",
+            "apps/asyra-office/src/runtime/layout-controller.ts",
+            "apps/asyra-office/src/runtime/__tests__/**",
+            "apps/asyra-office/src/ui/__tests__/**",
+            "apps/asyra-office/e2e/**",
+            "docs/ai/apps/asyra-office/implementation.md",
+            "apps/asyra-office/app-environment.ts",
+            "apps/asyra-office/.env.example",
+            "apps/asyra-office/vite.config.ts",
+            "apps/asyra-office/playwright.config.ts"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
+          ]
+        },
+        {
+          "id": "activate",
+          "laneId": "framework",
+          "title": "Enable production 3D profile",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Activate only after production foundation and three consumer preservation gates pass.",
+          "failureOwnerStepId": "activate",
+          "order": 19,
+          "inputs": [
+            "Same-source foundation, lifecycle and App preservation evidence",
+            "artifact:reviewed-design",
+            "artifact:fieldscope-preserved",
+            "artifact:sim-preserved",
+            "artifact:office-preserved"
+          ],
+          "outputs": [
+            "artifact:official-profile"
+          ],
+          "conditions": [
+            "C01-C08 C11-C12 complete; profile/default independence preserved; no placeholder provider."
+          ],
+          "bypasses": [
+            "Unmet prerequisites keep 3D unavailable; HYBRID always remains unavailable here."
+          ],
+          "allowedContributors": [
+            "Reviewed provider capability declaration and actual App evidence"
+          ],
+          "forbiddenContributors": [
+            "Catalog flag as proof, dependency/profile filtering, fake WebGL evidence"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/preset/src/catalog.ts",
+            "packages/preset/src/composition/**",
+            "packages/preset/src/__tests__/profile-provider.test.ts",
+            "packages/preset/src/__tests__/apply-preset.test.ts",
+            "docs/ai/framework/packages/preset.md",
+            "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md",
+            "packages/preset/src/types.ts",
+            "packages/preset/src/index.ts",
+            "docs/ai/apps/asyra-office/implementation.md",
+            "docs/ai/framework/API_SURFACES.md",
+            "docs/ai/framework/ARCHITECTURE.md",
+            "docs/ai/framework/FRAMEWORK_ESSENTIALS.md",
+            "docs/ai/framework/PLANS.md",
+            "docs/ai/framework/RELEASE_SUPPORT.md",
+            "docs/ai/framework/RUNTIME_MATRICES.md",
+            "docs/ai/framework/WORKFLOW.md",
+            "docs/ai/framework/golden-paths/preset-composition.md",
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/public/generated/api-index.json",
+            "docs/public/generated/content-index.json",
+            "docs/public/generated/package-reference.json",
+            "docs/public/generated/source-map.json",
+            "docs/public/reference/packages/preset.md",
+            "docs/public/reference/support-release.md",
+            "docs/public/start/preset-2d.md",
+            "packages/preset/README.md",
+            "scripts/docs/public-package-readmes.mjs"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#composition"
+          ]
+        },
+        {
+          "id": "closeout",
+          "laneId": "review",
+          "title": "Review integrated outcome",
+          "ownerPackage": "coordinator",
+          "purpose": "Verify all required owners, App preservation, generic extensions and same-source integrated acceptance.",
+          "failureOwnerStepId": "closeout",
+          "order": 20,
+          "inputs": [
+            "Actual source-bound implementation evidence and bounded final diff",
+            "artifact:reviewed-design",
+            "artifact:fieldscope-preserved",
+            "artifact:sim-preserved",
+            "artifact:office-preserved",
+            "artifact:official-profile"
+          ],
+          "outputs": [
+            "artifact:complete-target"
+          ],
+          "conditions": [
+            "Task 9 edits/assets and full integration required in addition to activation."
+          ],
+          "bypasses": [
+            "No bypass for missing, stale or failed required evidence."
+          ],
+          "allowedContributors": [
+            "Existing plan closeout workflow and actual tests/visual evidence"
+          ],
+          "forbiddenContributors": [
+            "Claiming design admission is runtime success, publishing or merging without authorization"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/PLANS.md",
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/ai/framework/plans/preset-3d-foundation/preset-3d-foundation.flow.json"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#definition-of-done"
+          ]
+        },
+        {
+          "id": "activity",
+          "laneId": "framework",
+          "title": "Preserve browser activity delivery",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Publish acknowledged read-only activity updates through the existing default microtask scheduler.",
+          "failureOwnerStepId": "activity",
+          "order": 21,
+          "inputs": [
+            "Validated activity batches, archive acknowledgement and default microtask scheduler",
+            "artifact:reviewed-design"
+          ],
+          "outputs": [
+            "artifact:activity-notification"
+          ],
+          "conditions": [
+            "Preserve archive acknowledgement, coalescing, per-agent notification and injected scheduler behavior. Native callbacks receive a valid invocation receiver."
+          ],
+          "bypasses": [
+            "Closed or replayed inputs retain existing no-notification behavior."
+          ],
+          "allowedContributors": [
+            "ActivityProjection and the native microtask scheduler"
+          ],
+          "forbiddenContributors": [
+            "App-specific workaround, task decisions, canonical writes, new clocks or swallowed errors"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/preset/src/agent-activity.ts",
+            "packages/preset/src/__tests__/agent-activity.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "design-compose-reviewed-design",
+          "to": "compose",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-startup-reviewed-design",
+          "to": "startup",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-canonical-reviewed-design",
+          "to": "canonical",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-domain-reviewed-design",
+          "to": "domain",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-admit-reviewed-design",
+          "to": "admit",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-project-reviewed-design",
+          "to": "project",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-camera-reviewed-design",
+          "to": "camera",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-render-reviewed-design",
+          "to": "render",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-engine-reviewed-design",
+          "to": "engine",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-queries-reviewed-design",
+          "to": "queries",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-interaction-reviewed-design",
+          "to": "interaction",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-edit-reviewed-design",
+          "to": "edit",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-assets-reviewed-design",
+          "to": "assets",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-retire-reviewed-design",
+          "to": "retire",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-fieldscope-reviewed-design",
+          "to": "fieldscope",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-sim-reviewed-design",
+          "to": "sim",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-office-reviewed-design",
+          "to": "office",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-activate-reviewed-design",
+          "to": "activate",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "design-closeout-reviewed-design",
+          "to": "closeout",
+          "kind": "handoff",
+          "predicate": "Design review accepted; later definition/source changes invalidate acceptance.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ],
+          "from": "design"
+        },
+        {
+          "id": "compose-startup-composition",
+          "to": "startup",
+          "kind": "handoff",
+          "predicate": "Request supported and composition open; otherwise fail before mutation.",
+          "producedArtifacts": [
+            "artifact:composition"
+          ],
+          "from": "compose"
+        },
+        {
+          "id": "startup-render-ready-runtime",
+          "to": "render",
+          "kind": "handoff",
+          "predicate": "Initialization settles successfully; partial failure routes to retirement.",
+          "producedArtifacts": [
+            "artifact:ready-runtime"
+          ],
+          "from": "startup"
+        },
+        {
+          "id": "canonical-domain-canonical-change",
+          "to": "domain",
+          "kind": "handoff",
+          "predicate": "Existing owner accepts the mutation/apply; no camera-only publication.",
+          "producedArtifacts": [
+            "artifact:canonical-change"
+          ],
+          "from": "canonical"
+        },
+        {
+          "id": "domain-admit-source-projection",
+          "to": "admit",
+          "kind": "handoff",
+          "predicate": "Source revision changed; unchanged App preparation is reused.",
+          "producedArtifacts": [
+            "artifact:source-projection"
+          ],
+          "from": "domain"
+        },
+        {
+          "id": "admit-project-admitted-spatial",
+          "to": "project",
+          "kind": "handoff",
+          "predicate": "Admission succeeds; invalid input retains accepted output.",
+          "producedArtifacts": [
+            "artifact:admitted-spatial"
+          ],
+          "from": "admit"
+        },
+        {
+          "id": "admit-engine-admitted-spatial",
+          "to": "engine",
+          "kind": "handoff",
+          "predicate": "Admission succeeds; invalid input retains accepted output.",
+          "producedArtifacts": [
+            "artifact:admitted-spatial"
+          ],
+          "from": "admit"
+        },
+        {
+          "id": "camera-project-camera-update",
+          "to": "project",
+          "kind": "handoff",
+          "predicate": "Current target/time; cancellation prevents retired target publication.",
+          "producedArtifacts": [
+            "artifact:camera-update"
+          ],
+          "from": "camera"
+        },
+        {
+          "id": "project-render-projection-command",
+          "to": "render",
+          "kind": "handoff",
+          "predicate": "Accepted scene/camera ordering; unchanged meshes produce no mesh command.",
+          "producedArtifacts": [
+            "artifact:projection-command"
+          ],
+          "from": "project"
+        },
+        {
+          "id": "render-engine-engine-command",
+          "to": "engine",
+          "kind": "handoff",
+          "predicate": "Current runtime ready; one-shot frame invalidation consumed.",
+          "producedArtifacts": [
+            "artifact:engine-command"
+          ],
+          "from": "render"
+        },
+        {
+          "id": "engine-queries-engine-result",
+          "to": "queries",
+          "kind": "handoff",
+          "predicate": "Supported query, owned handle, current projection; empty hit is explicit.",
+          "producedArtifacts": [
+            "artifact:engine-result"
+          ],
+          "from": "engine"
+        },
+        {
+          "id": "queries-interaction-mapped-hit",
+          "to": "interaction",
+          "kind": "handoff",
+          "predicate": "Valid surface query; no-hit or unsupported outcome is explicit.",
+          "producedArtifacts": [
+            "artifact:mapped-hit"
+          ],
+          "from": "queries"
+        },
+        {
+          "id": "interaction-camera-accepted-intent",
+          "to": "camera",
+          "kind": "handoff",
+          "predicate": "Input eligible; direct commands bypass hit acquisition but not Feature ownership.",
+          "producedArtifacts": [
+            "artifact:accepted-intent"
+          ],
+          "from": "interaction"
+        },
+        {
+          "id": "interaction-edit-accepted-intent",
+          "to": "edit",
+          "kind": "handoff",
+          "predicate": "Input eligible; direct commands bypass hit acquisition but not Feature ownership.",
+          "producedArtifacts": [
+            "artifact:accepted-intent"
+          ],
+          "from": "interaction"
+        },
+        {
+          "id": "interaction-canonical-accepted-intent",
+          "to": "canonical",
+          "kind": "handoff",
+          "predicate": "Input eligible; direct commands bypass hit acquisition but not Feature ownership.",
+          "producedArtifacts": [
+            "artifact:accepted-intent"
+          ],
+          "from": "interaction"
+        },
+        {
+          "id": "edit-canonical-validated-edit",
+          "to": "canonical",
+          "kind": "handoff",
+          "predicate": "Commit accepted by App validator; cancel/no-op emits no mutation.",
+          "producedArtifacts": [
+            "artifact:validated-edit"
+          ],
+          "from": "edit"
+        },
+        {
+          "id": "assets-interaction-decoded-asset",
+          "to": "interaction",
+          "kind": "handoff",
+          "predicate": "Current noncancelled decode succeeds; App revalidates before commit.",
+          "producedArtifacts": [
+            "artifact:decoded-asset"
+          ],
+          "from": "assets"
+        },
+        {
+          "id": "retire-render-retirement",
+          "to": "render",
+          "kind": "handoff",
+          "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
+          "from": "retire"
+        },
+        {
+          "id": "retire-engine-retirement",
+          "to": "engine",
+          "kind": "handoff",
+          "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
+          "from": "retire"
+        },
+        {
+          "id": "retire-project-retirement",
+          "to": "project",
+          "kind": "handoff",
+          "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
+          "from": "retire"
+        },
+        {
+          "id": "retire-camera-retirement",
+          "to": "camera",
+          "kind": "handoff",
+          "predicate": "Failure/reset/dispose; late callbacks cannot mutate successor.",
+          "producedArtifacts": [
+            "artifact:retirement"
+          ],
+          "from": "retire"
+        },
+        {
+          "id": "fieldscope-activate-fieldscope-preserved",
+          "to": "activate",
+          "kind": "handoff",
+          "predicate": "All affected FieldScope preservation obligations verified.",
+          "producedArtifacts": [
+            "artifact:fieldscope-preserved"
+          ],
+          "from": "fieldscope"
+        },
+        {
+          "id": "fieldscope-closeout-fieldscope-preserved",
+          "to": "closeout",
+          "kind": "handoff",
+          "predicate": "All affected FieldScope preservation obligations verified.",
+          "producedArtifacts": [
+            "artifact:fieldscope-preserved"
+          ],
+          "from": "fieldscope"
+        },
+        {
+          "id": "sim-activate-sim-preserved",
+          "to": "activate",
+          "kind": "handoff",
+          "predicate": "All affected Sim preservation obligations verified.",
+          "producedArtifacts": [
+            "artifact:sim-preserved"
+          ],
+          "from": "sim"
+        },
+        {
+          "id": "sim-closeout-sim-preserved",
+          "to": "closeout",
+          "kind": "handoff",
+          "predicate": "All affected Sim preservation obligations verified.",
+          "producedArtifacts": [
+            "artifact:sim-preserved"
+          ],
+          "from": "sim"
+        },
+        {
+          "id": "office-activate-office-preserved",
+          "to": "activate",
+          "kind": "handoff",
+          "predicate": "All affected Office preservation obligations verified.",
+          "producedArtifacts": [
+            "artifact:office-preserved"
+          ],
+          "from": "office"
+        },
+        {
+          "id": "office-closeout-office-preserved",
+          "to": "closeout",
+          "kind": "handoff",
+          "predicate": "All affected Office preservation obligations verified.",
+          "producedArtifacts": [
+            "artifact:office-preserved"
+          ],
+          "from": "office"
+        },
+        {
+          "id": "activate-closeout-official-profile",
+          "to": "closeout",
+          "kind": "handoff",
+          "predicate": "All activation requirements pass on integrated source.",
+          "producedArtifacts": [
+            "artifact:official-profile"
+          ],
+          "from": "activate"
+        },
+        {
+          "id": "startup-engine-initialization-request",
+          "from": "startup",
+          "to": "engine",
+          "kind": "handoff",
+          "predicate": "Core starts the bound provider; no ready-runtime token is required.",
+          "producedArtifacts": [
+            "artifact:initialization-request"
+          ]
+        },
+        {
+          "id": "engine-startup-initialized-surface",
+          "from": "engine",
+          "to": "startup",
+          "kind": "handoff",
+          "predicate": "Initialization settled; retired delegate is destroyed and never becomes ready.",
+          "producedArtifacts": [
+            "artifact:initialized-surface"
+          ]
+        },
+        {
+          "id": "queries-engine-spatial-query-request",
+          "from": "queries",
+          "to": "engine",
+          "kind": "handoff",
+          "predicate": "Capability and identity checks succeed; independent of a previous query result.",
+          "producedArtifacts": [
+            "artifact:spatial-query-request"
+          ]
+        },
+        {
+          "id": "project-camera-scene-bounds",
+          "from": "project",
+          "to": "camera",
+          "kind": "handoff",
+          "predicate": "App asks fit/focus; empty bounds preserve camera.",
+          "producedArtifacts": [
+            "artifact:scene-bounds"
+          ]
+        },
+        {
+          "id": "startup-retire-partial-acquisition",
+          "from": "startup",
+          "to": "retire",
+          "kind": "failure-or-retirement",
+          "predicate": "Failure or retirement may occur before readiness; cleanup receives the generation and partial acquisition.",
+          "producedArtifacts": [
+            "artifact:initialization-request"
+          ]
+        },
+        {
+          "id": "activity-office-notification",
+          "from": "activity",
+          "to": "office",
+          "kind": "handoff",
+          "predicate": "An admitted, acknowledged batch changes the existing read-only activity projection.",
+          "producedArtifacts": [
+            "artifact:activity-notification"
+          ]
+        },
+        {
+          "id": "design-activity-reviewed",
+          "from": "design",
+          "to": "activity",
+          "kind": "handoff",
+          "predicate": "The bounded scheduler correction is reviewed and authorized.",
+          "producedArtifacts": [
+            "artifact:reviewed-design"
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "artifact:reviewed-design",
+          "ownerStepId": "design",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "compose",
+            "startup",
+            "canonical",
+            "domain",
+            "admit",
+            "project",
+            "camera",
+            "render",
+            "engine",
+            "queries",
+            "interaction",
+            "edit",
+            "assets",
+            "retire",
+            "fieldscope",
+            "sim",
+            "office",
+            "activate",
+            "closeout",
+            "activity"
+          ],
+          "title": "reviewed design",
+          "description": "Reviewed target semantics and explicit implementation boundaries, not runtime success.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:composition",
+          "ownerStepId": "compose",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "startup"
+          ],
+          "title": "composition",
+          "description": "Validated explicit defaults and provider binding through Core.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:ready-runtime",
+          "ownerStepId": "startup",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "render"
+          ],
+          "title": "ready runtime",
+          "description": "Owned ready generation and validated surface dimensions.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:canonical-change",
+          "ownerStepId": "canonical",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "domain"
+          ],
+          "title": "canonical change",
+          "description": "Validated committed/load/replay state-owner publication.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:source-projection",
+          "ownerStepId": "domain",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "admit"
+          ],
+          "title": "source projection",
+          "description": "Completed original neutral shape/pose values with App source identity.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:admitted-spatial",
+          "ownerStepId": "admit",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "project",
+            "engine"
+          ],
+          "title": "admitted spatial",
+          "description": "Detached immutable accepted descriptor/shape contracts and receipts.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:camera-update",
+          "ownerStepId": "camera",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "project"
+          ],
+          "title": "camera update",
+          "description": "App-selected validated camera/transition result.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:projection-command",
+          "ownerStepId": "project",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "render"
+          ],
+          "title": "projection command",
+          "description": "Incremental visual identities, geometry/pose/material/visibility and current camera.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:engine-command",
+          "ownerStepId": "render",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "engine"
+          ],
+          "title": "engine command",
+          "description": "Opaque-handle commands and explicit flush through neutral engine contract.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:engine-result",
+          "ownerStepId": "engine",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "queries"
+          ],
+          "title": "engine result",
+          "description": "Typed spatial query result, opaque handle and stable instance identity.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:mapped-hit",
+          "ownerStepId": "queries",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "interaction"
+          ],
+          "title": "mapped hit",
+          "description": "Public visual/entity/instance result with surface/world coordinate meaning.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:accepted-intent",
+          "ownerStepId": "interaction",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "camera",
+            "edit",
+            "canonical"
+          ],
+          "title": "accepted intent",
+          "description": "App-selected bounded Feature intention or nonmutating presentation request.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:validated-edit",
+          "ownerStepId": "edit",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "canonical"
+          ],
+          "title": "validated edit",
+          "description": "Revision-checked finite mutation intent; preview never canonical.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:decoded-asset",
+          "ownerStepId": "assets",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "interaction"
+          ],
+          "title": "decoded asset",
+          "description": "Restricted immutable mesh/source result for App acceptance.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:retirement",
+          "ownerStepId": "retire",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "render",
+            "engine",
+            "project",
+            "camera"
+          ],
+          "title": "retirement",
+          "description": "Exact generation retirement and cleanup request.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:fieldscope-preserved",
+          "ownerStepId": "fieldscope",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "activate",
+            "closeout"
+          ],
+          "title": "fieldscope preserved",
+          "description": "Actual same-source affected source/runtime/profile/WebGL evidence.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:sim-preserved",
+          "ownerStepId": "sim",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "activate",
+            "closeout"
+          ],
+          "title": "sim preserved",
+          "description": "Actual same-source strict geometry/runtime/WebGL evidence.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:office-preserved",
+          "ownerStepId": "office",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "activate",
+            "closeout"
+          ],
+          "title": "office preserved",
+          "description": "Actual same-source layout/history/camera/WebGL evidence.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:official-profile",
+          "ownerStepId": "activate",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "closeout"
+          ],
+          "title": "official profile",
+          "description": "Verified available 3D provider with explicit defaults behavior.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:complete-target",
+          "ownerStepId": "closeout",
+          "channel": "typed handoff",
+          "consumerStepIds": [],
+          "title": "complete target",
+          "description": "Whole-plan reviewed outcome, with extensions and upstream preservation.",
+          "terminal": true
+        },
+        {
+          "id": "artifact:initialization-request",
+          "ownerStepId": "startup",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "engine",
+            "retire"
+          ],
+          "title": "initialization request",
+          "description": "Validated host/options and generation token, issued before engine readiness.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:initialized-surface",
+          "ownerStepId": "engine",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "startup"
+          ],
+          "title": "initialized surface",
+          "description": "Discriminated initialization outcome: ready owned surface/root/runtime, or explicit error with no ready surface.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:spatial-query-request",
+          "ownerStepId": "queries",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "engine"
+          ],
+          "title": "spatial query request",
+          "description": "Typed query with opaque owned handle and explicit coordinate space.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:scene-bounds",
+          "ownerStepId": "project",
+          "channel": "typed handoff",
+          "consumerStepIds": [
+            "camera"
+          ],
+          "title": "scene bounds",
+          "description": "Completed current visible/selected world bounds or null.",
+          "terminal": false
+        },
+        {
+          "id": "artifact:activity-notification",
+          "ownerStepId": "activity",
+          "channel": "read-only notification",
+          "consumerStepIds": [
+            "office"
+          ],
+          "title": "acknowledged activity notification",
+          "description": "Existing per-agent/list/log notification after archive acknowledgement; no canonical or renderer state.",
+          "terminal": false
+        }
+      ],
+      "invariants": [
+        {
+          "id": "single-architecture",
+          "statement": "Tree visibility changes no canonical or projection owner; camera modes/angles/targets stay App-owned.",
+          "stepIds": [
+            "canonical",
+            "domain",
+            "camera",
+            "interaction",
+            "project"
+          ],
+          "artifactIds": [
+            "artifact:canonical-change",
+            "artifact:camera-update"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#single-architecture-and-app-policy"
+          ]
+        },
+        {
+          "id": "engine-boundary",
+          "statement": "Render and concrete SDK execution meet only through neutral contracts; output never mutates canonical state.",
+          "stepIds": [
+            "render",
+            "engine",
+            "queries"
+          ],
+          "artifactIds": [
+            "artifact:engine-command",
+            "artifact:engine-result"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#target-public-boundaries"
+          ]
+        },
+        {
+          "id": "independent-composition",
+          "statement": "Do not filter defaults by profile; reject unsupported official 3D combinations before mutation.",
+          "stepIds": [
+            "compose",
+            "activate"
+          ],
+          "artifactIds": [
+            "artifact:composition"
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#composition"
+          ]
+        }
+      ],
+      "acceptanceContracts": [
+        {
+          "id": "cases",
+          "title": "C01-C12 required behavior and preservation",
+          "stepIds": [
+            "compose",
+            "startup",
+            "canonical",
+            "domain",
+            "admit",
+            "project",
+            "camera",
+            "render",
+            "engine",
+            "queries",
+            "interaction",
+            "edit",
+            "assets",
+            "retire",
+            "fieldscope",
+            "sim",
+            "office",
+            "activate",
+            "closeout"
+          ],
+          "assertions": [
+            "All C01-C12 cases pass on the integrated source before closeout.",
+            "Design review and schema admission never satisfy runtime criteria.",
+            "No App policy moves into shared controls; existing App constraints and replay survive."
+          ],
+          "specRefs": [
+            "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
+          ]
+        }
+      ]
+    }
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "design",
+        "criterionId": "reviewed",
+        "kind": "manual",
+        "status": "accepted",
+        "actor": "codex-coordinator-self-review",
+        "binding": "f0caa696203c413a78c43c4b23bc6f948b864322d6b5e14e283dce702fab3c25",
+        "at": "2026-10-24T09:10:08.368Z",
+        "summary": "Task 10 bounded agent review accepted; user inspection remains separate.",
+        "details": [
+          "Agent self-review of C01-C12, owner handoffs, unchanged generic mechanisms and App policy completed. No architecture or runtime changes in Task 10. User inspection and formal plan archival remain separate.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/.",
+          "Inspected actual Office desktop/narrow, FieldScope tomato detail/clip wire/touch Camera and Sim transformed preview/reopened selected detail. No hardware performance claim."
+        ]
+      },
+      {
+        "nodeId": "admit",
+        "criterionId": "foundation",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "f049150df982de96988a8008699330887bb5aacdd8743ad1e92cb5a9bb985efd",
+        "at": "2026-10-24T09:10:08.404Z",
+        "summary": "Task 10 admit integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "admit-foundation-integrated"
+      },
+      {
+        "nodeId": "engine",
+        "criterionId": "foundation",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "a0900ee3c979eb95ddae4002607e35c5aa3ef244fa056ffd9d5b441e0fad6334",
+        "at": "2026-10-24T09:10:08.443Z",
+        "summary": "Task 10 engine integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "engine-foundation-integrated"
+      },
+      {
+        "nodeId": "project",
+        "criterionId": "projection",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "c287342d30e6ad7009f8f1712684924f07a2f2114c912d74545dca1f69a38c92",
+        "at": "2026-10-24T09:10:08.420Z",
+        "summary": "Task 10 project integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "project-projection-integrated"
+      },
+      {
+        "nodeId": "render",
+        "criterionId": "projection",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "6d4006990d999aab098a7fcd34097f7aaf9508d58e7826f7ac7714f054c679d8",
+        "at": "2026-10-24T09:10:08.524Z",
+        "summary": "Task 10 render integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "render-projection-integrated"
+      },
+      {
+        "nodeId": "camera",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "673fd8a690234c70fa4e5344b83784690c58fc2bf6c15c1ea110a32b5c5a237e",
+        "at": "2026-10-24T09:10:08.428Z",
+        "summary": "Task 10 camera integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "camera-runtime-integrated"
+      },
+      {
+        "nodeId": "queries",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "b4fbfc04a3e2fb9c35042ecfd02f1d6b95c3aa9e04865694dd770f278302091c",
+        "at": "2026-10-24T09:10:08.532Z",
+        "summary": "Task 10 queries integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "queries-runtime-integrated"
+      },
+      {
+        "nodeId": "interaction",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "fcd3214cde331edffebe353cdf72865d9dd554a82a0386907df14b9450962c09",
+        "at": "2026-10-24T09:10:08.574Z",
+        "summary": "Task 10 interaction integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "interaction-runtime-integrated"
+      },
+      {
+        "nodeId": "engine",
+        "criterionId": "content",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "a0900ee3c979eb95ddae4002607e35c5aa3ef244fa056ffd9d5b441e0fad6334",
+        "at": "2026-10-24T09:10:08.451Z",
+        "summary": "Task 10 engine integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "engine-content-integrated"
+      },
+      {
+        "nodeId": "compose",
+        "criterionId": "content",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "18552d451c1e5a7da884caec7d104c9ab8d358106dac83fe1280d60a33af8558",
+        "at": "2026-10-24T09:10:08.501Z",
+        "summary": "Task 10 compose integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "compose-content-integrated"
+      },
+      {
+        "nodeId": "fieldscope",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "ec5414de3c5e8c538428e76a4eceb7ebc4bbfa05db75f6ce520a3361028371d8",
+        "at": "2026-10-24T09:10:08.605Z",
+        "summary": "Task 10 fieldscope integrated behavior verified on the tested source.",
+        "details": [
+          "60 owner tests and 61 supervised source/runtime profile tests passed; 18 real Metal WebGL cases passed. Camera, original source geometry, dense instances, update isolation and rendered history preserved.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "fieldscope-runtime-integrated"
+      },
+      {
+        "nodeId": "sim",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "92a37ef071f65a259b58cc83a474c1e5cbfbcc014519d958175de29873371973",
+        "at": "2026-10-24T09:10:08.614Z",
+        "summary": "Task 10 sim integrated behavior verified on the tested source.",
+        "details": [
+          "299 supervised owner tests passed; 22 real SwiftShader WebGL cases and one actual module Worker case passed. Preview/accept/Undo/Redo/reopen preserves original bytes and App placement policy.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "sim-runtime-integrated"
+      },
+      {
+        "nodeId": "office",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "25a15519243331dd84d5411a188fe9c5a07eb014013bc9b729e350f131c021c9",
+        "at": "2026-10-24T09:10:08.623Z",
+        "summary": "Task 10 office integrated behavior verified on the tested source.",
+        "details": [
+          "24 tests and two real SwiftShader WebGL cases passed. Official provider lighting, half-unit edits, stale/no-op/rejected proposals, save acknowledgement, history and activity remain intact.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "office-runtime-integrated"
+      },
+      {
+        "nodeId": "activity",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "0d4860cb798ec0b892a737c5d826b73393b6caa5f28f117c124b78908e09715c",
+        "at": "2026-10-24T09:10:08.483Z",
+        "summary": "Task 10 activity integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "activity-runtime-integrated"
+      },
+      {
+        "nodeId": "admit",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "f049150df982de96988a8008699330887bb5aacdd8743ad1e92cb5a9bb985efd",
+        "at": "2026-10-24T09:10:08.394Z",
+        "summary": "Task 10 admit integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "admit-runtime-integrated"
+      },
+      {
+        "nodeId": "engine",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "a0900ee3c979eb95ddae4002607e35c5aa3ef244fa056ffd9d5b441e0fad6334",
+        "at": "2026-10-24T09:10:08.436Z",
+        "summary": "Task 10 engine integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "engine-runtime-integrated"
+      },
+      {
+        "nodeId": "compose",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "18552d451c1e5a7da884caec7d104c9ab8d358106dac83fe1280d60a33af8558",
+        "at": "2026-10-24T09:10:08.492Z",
+        "summary": "Task 10 compose integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "compose-runtime-integrated"
+      },
+      {
+        "nodeId": "startup",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "67d896b9e571442f83aaac0e86a48b8262d58d5137d6c3b3f83a966f6e65a37a",
+        "at": "2026-10-24T09:10:08.508Z",
+        "summary": "Task 10 startup integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "startup-runtime-integrated"
+      },
+      {
+        "nodeId": "canonical",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "35aa34a5c42e6101e749249ebac18742c28dd622152e74fe02414aaabba710b1",
+        "at": "2026-10-24T09:10:08.378Z",
+        "summary": "Task 10 canonical integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "canonical-runtime-integrated"
+      },
+      {
+        "nodeId": "domain",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "27e3e4b00942cf7013cb96f31074cb8fdd05ef2c7482f01ff32d3ce91db985e8",
+        "at": "2026-10-24T09:10:08.386Z",
+        "summary": "Task 10 domain integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "domain-runtime-integrated"
+      },
+      {
+        "nodeId": "project",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "c287342d30e6ad7009f8f1712684924f07a2f2114c912d74545dca1f69a38c92",
+        "at": "2026-10-24T09:10:08.412Z",
+        "summary": "Task 10 project integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "project-runtime-integrated"
+      },
+      {
+        "nodeId": "render",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "6d4006990d999aab098a7fcd34097f7aaf9508d58e7826f7ac7714f054c679d8",
+        "at": "2026-10-24T09:10:08.516Z",
+        "summary": "Task 10 render integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "render-runtime-integrated"
+      },
+      {
+        "nodeId": "retire",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "b38b8d30341df986415069aa98b475cedc65ff5b4856e2325c6e6d803093c9e4",
+        "at": "2026-10-24T09:10:08.595Z",
+        "summary": "Task 10 retire integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "retire-runtime-integrated"
+      },
+      {
+        "nodeId": "activate",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "98aa3371598ae488aff712ab96424e6e3214e229592a563a404c77426434e271",
+        "at": "2026-10-24T09:10:08.636Z",
+        "summary": "Task 10 activate integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "activate-runtime-integrated"
+      },
+      {
+        "nodeId": "edit",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "887db0664c901c7eb5176b4a1e5bcbecdb4afa1ec9017ad9de9a2273f4a1687a",
+        "at": "2026-10-24T09:10:08.586Z",
+        "summary": "Task 10 edit integrated behavior verified on the tested source.",
+        "details": [
+          "12 generic editing cases, Office transaction/revision cases and Sim original placement Feature/preview cases passed. Real transformed source preview/accept/replay/reopen passed; no second transaction/history owner.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "edit-runtime-integrated"
+      },
+      {
+        "nodeId": "assets",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "f30e5e54023c1f59beb6a59660a146c2723ead3bd1bf0e409656b6d6c43ad446",
+        "at": "2026-10-24T09:10:08.467Z",
+        "summary": "Task 10 assets integrated behavior verified on the tested source.",
+        "details": [
+          "Preset asset contracts and existing Sim restricted decoder/Worker/archive tests passed, plus actual Worker browser case and five real source/import/history cases. Restricted format and source byte identity preserved.",
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "assets-runtime-integrated"
+      },
+      {
+        "nodeId": "closeout",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "931db40aab1545ef0acaf6633be136598f46c131129c0be5d082fe8ad9fe928b",
+        "at": "2026-10-24T09:10:08.656Z",
+        "summary": "Task 10 closeout integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "closeout-runtime-integrated"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "integrated",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "binding": "b33a5b19a86bcea2545c671f8cd6b86adda994168430303e37c61416d7ecddbf",
+        "at": "2026-10-24T09:10:08.673Z",
+        "summary": "Task 10 integration integrated behavior verified on the tested source.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/."
+        ],
+        "executionId": "task10-local-2026-10-24",
+        "caseId": "integration-integrated-integrated"
+      },
+      {
+        "nodeId": "integration",
+        "criterionId": "review",
+        "kind": "manual",
+        "status": "accepted",
+        "actor": "codex-coordinator-self-review",
+        "binding": "b05925e44c4f75ac0a9a3088f9eb1eb3fbb295ae4a79c845372d2dbe56a1ba24",
+        "at": "2026-10-24T09:10:08.683Z",
+        "summary": "Task 10 bounded agent review accepted; user inspection remains separate.",
+        "details": [
+          "Same production source: e952b9589408e81a758a5be9a9880f82df6affef. Preset 352, Core 272, Render 273, Render Engine 11, Pixi 49, Office 24, Sim 299, FieldScope 60 and 61 source/runtime profile tests passed.",
+          "Five package builds and all three App typechecks/production builds passed. 42 real WebGL cases plus one Worker case passed. Naming, dependency, consumer/placement and documentation checks passed.",
+          "Monolithic ESLint exhausted default/8 GiB heap; identical rules passed in 39 batches over all 3093 tracked JS/TS files. No rules suppressed. Logs: .artifacts/preset-3d-task10/.",
+          "Inspected actual Office desktop/narrow, FieldScope tomato detail/clip wire/touch Camera and Sim transformed preview/reopened selected detail. No hardware performance claim."
+        ]
+      }
+    ],
+    "notes": [],
+    "progress": [
+      {
+        "nodeId": "admit",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "engine",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "project",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "render",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "camera",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "queries",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "interaction",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "compose",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "fieldscope",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "sim",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "office",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "activity",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      }
+    ],
+    "sources": [
+      {
+        "nodeId": "design",
+        "revision": "task10-reviewed:f2a88238638b7bc58087bbd74aeb0fa820c61b5c0f27f0f35ddd12d4616bb4a4"
+      },
+      {
+        "nodeId": "admit",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "engine",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "project",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "render",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "camera",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "queries",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "interaction",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "compose",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "fieldscope",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "sim",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "office",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "activity",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "startup",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "canonical",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "domain",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "retire",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "activate",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "edit",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "assets",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "closeout",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      },
+      {
+        "nodeId": "integration",
+        "revision": "e952b9589408e81a758a5be9a9880f82df6affef"
+      }
+    ],
+    "warnings": []
+  }
+}

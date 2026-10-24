@@ -284,6 +284,7 @@ export type RenderEngineSnapshotResult = Readonly<{
 }>
 
 export type RenderEngineQuery =
+  | import('./spatial.js').RenderEngineSpatialQuery
   | Readonly<{ type: 'measure-text'; layout: RenderEngineTextLayout }>
   | RenderEngineLocalContentBoundsQuery
   | RenderEngineSnapshotQuery
@@ -309,6 +310,7 @@ export type RenderEngineHitQueryResult = Readonly<{
 }>
 
 export type RenderEngineQueryResult =
+  | import('./spatial.js').RenderEngineSpatialResult
   | RenderEngineTextMeasurement
   | RenderEngineSnapshotResult
   | RenderEngineBoundsQueryResult

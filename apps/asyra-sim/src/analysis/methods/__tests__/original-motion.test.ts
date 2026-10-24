@@ -6,7 +6,7 @@ import { queryOriginalPartPair } from '../original-part-method'
 import { OriginalMeshQuery } from '../original-mesh-query'
 import type { PairQuery, QuerySettings } from '../continuous-query'
 import { createMechanicalVisuals } from '../../../../samples/mechanical-visuals'
-import { decodeRestrictedGlb } from '../../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { resolvePart } from '../../../domain/part-geometry'
 import {
   intervalAlgebra,

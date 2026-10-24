@@ -4,6 +4,8 @@ import { MeshMaterialResources } from './mesh-material-resources.js'
 import { PixiBatchPartitions } from './pixi-batch-partitions.js'
 import {
   RenderEngineCapabilities,
+  isSpatialQuery,
+  UnsupportedRenderEngineCapabilityError,
   type RenderEngine,
   type RenderEngineCapability,
   type RenderEngineCommand,
@@ -276,6 +278,10 @@ export class PixiRenderEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     const app = this.assertReady()
+    if (isSpatialQuery(query))
+      throw new UnsupportedRenderEngineCapabilityError(this.name, [
+        RenderEngineCapabilities.SPATIAL_QUERIES
+      ])
 
     switch (query.type) {
       case 'measure-text':

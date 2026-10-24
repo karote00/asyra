@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 test('room, agent, pet, task, waypoint, proposal and persistence path', async ({
   page
-}) => {
+}, testInfo) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
@@ -9,6 +9,32 @@ test('room, agent, pet, task, waypoint, proposal and persistence path', async ({
     page.getByRole('button', { name: 'Start synthetic task' })
   ).toBeVisible()
   await expect(page.locator('canvas')).toBeVisible()
+  const graphics = await page.locator('canvas').evaluate((canvas) => {
+    const gl = (canvas as HTMLCanvasElement).getContext('webgl2')
+    if (!gl || gl.isContextLost())
+      throw new Error('Missing live WebGL2 context')
+    const info = gl.getExtension('WEBGL_debug_renderer_info')
+    return {
+      version: gl.getParameter(gl.VERSION),
+      renderer: info
+        ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL)
+        : gl.getParameter(gl.RENDERER),
+      width: gl.drawingBufferWidth,
+      height: gl.drawingBufferHeight,
+      deviceScaleFactor: devicePixelRatio
+    }
+  })
+  expect(graphics.version).toContain('WebGL 2')
+  expect(graphics.width).toBeGreaterThan(0)
+  expect(graphics.height).toBeGreaterThan(0)
+  await testInfo.attach('live-webgl-context', {
+    body: JSON.stringify({
+      ...graphics,
+      url: page.url(),
+      viewport: page.viewportSize()
+    }),
+    contentType: 'application/json'
+  })
   await page.getByRole('button', { name: 'Start synthetic task' }).click()
   await expect(
     page.getByRole('button', { name: 'Follow Ari', exact: true }).first()

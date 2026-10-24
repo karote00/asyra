@@ -100,3 +100,19 @@ describe('Spatial projection owner', () => {
     expect(() => layer.submit(frame)).toThrow('disposed')
   })
 })
+
+it('rejects non-string visual identities before replacing accepted pending output', () => {
+  const invalidate = vi.fn(),
+    layer = new SpatialLayer(invalidate)
+  layer.submit(frame)
+  expect(() =>
+    layer.submit({
+      ...frame,
+      meshes: [{ ...frame.meshes[0], id: 7 as unknown as string }]
+    })
+  ).toThrow()
+  expect(invalidate).toHaveBeenCalledTimes(1)
+  layer.registration.update?.()
+  expect((layer.registration.layer as RenderContainer).children).toHaveLength(2)
+  layer.dispose()
+})
