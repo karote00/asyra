@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "release-update-guidance",
-  "revision": 16,
+  "revision": 23,
   "definition": {
     "title": "Release update guidance",
     "purpose": "Admit current release owners using artifact-bound guidance without publishing during validation.",
@@ -235,7 +235,7 @@
           "outputs": ["artifact:record"],
           "conditions": [
             "Exact source and artifacts; current release owner only; no publication authorization is inferred.",
-            "Actions retain immutable candidate artifacts and separate attempt results; a failed retry does not erase the last known matching publication."
+            "Actions retain immutable candidate artifacts and separate attempt results; a failed upload retry preserves the matching deployment and its verification, while the latest attempt stays failed. New publications use their own verification result."
           ],
           "bypasses": [
             "Missing, changed or unverifiable inputs stop this owner; no successful baseline advancement on failure."
@@ -325,14 +325,14 @@
         "criterionId": "contracts",
         "kind": "automated",
         "status": "passed",
-        "binding": "b3471bdd8688ee59ad2080f7f52f235e2cb9993c458ac47a6e6e19949f242a18",
+        "binding": "c675b1ec03fee6f3233428da432b65f84bfca49c47571eeb525f9364f5c937a5",
         "actor": "local-release-validation",
-        "executionId": "task-2-review-fix-4b4b07af4dd6",
+        "executionId": "task-2-verified-deployment-58bc42e60e96",
         "caseId": "release-guidance-prepare",
-        "at": "2026-10-24T10:35:13.280Z",
-        "summary": "89 release tests and 111 policy tests passed (200 distinct cases); the final 17-case guidance suite also passed after strengthening recovery assertions. Publication used stubs only.",
+        "at": "2026-10-24T11:35:23.121Z",
+        "summary": "99 release and declaration tests plus 15 naming tests passed. A verified deployment survives a failed retry and admits the next source; new unverified deployments remain blocked.",
         "details": [
-          "Permanent selections and boundaries are recorded in the Task 2 review corrections completion record. Four original regression cases failed before the correction. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
+          "The verified-then-failed regression failed at predecessor admission before the correction. Scoped ESLint, declaration and formatting checks passed. All provider, Actions and npm effects use stubs. No publication or Task 3 work is claimed."
         ]
       },
       {
@@ -340,14 +340,14 @@
         "criterionId": "contracts",
         "kind": "automated",
         "status": "passed",
-        "binding": "626765cd0b1ea786f5bb0f6091af6c8768624265838fe1356811499b9d2eadb3",
+        "binding": "9447a499b388c6c29d55f1d4ce432ea434ba8834efa5e15ad99e737ee9136802",
         "actor": "local-release-validation",
-        "executionId": "task-2-review-fix-4b4b07af4dd6",
+        "executionId": "task-2-verified-deployment-58bc42e60e96",
         "caseId": "release-guidance-admit",
-        "at": "2026-10-24T10:35:13.283Z",
-        "summary": "89 release tests and 111 policy tests passed (200 distinct cases); the final 17-case guidance suite also passed after strengthening recovery assertions. Publication used stubs only.",
+        "at": "2026-10-24T11:35:23.124Z",
+        "summary": "99 release and declaration tests plus 15 naming tests passed. A verified deployment survives a failed retry and admits the next source; new unverified deployments remain blocked.",
         "details": [
-          "Permanent selections and boundaries are recorded in the Task 2 review corrections completion record. Four original regression cases failed before the correction. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
+          "The verified-then-failed regression failed at predecessor admission before the correction. Scoped ESLint, declaration and formatting checks passed. All provider, Actions and npm effects use stubs. No publication or Task 3 work is claimed."
         ]
       },
       {
@@ -355,14 +355,14 @@
         "criterionId": "contracts",
         "kind": "automated",
         "status": "passed",
-        "binding": "6837f9c8eb738e641b88b0a7528d78e128b3cbc0b0bae9a7fc63d0df5949e7f8",
+        "binding": "f7eddaad32bd2ec71a879e6ca1b8593f65e9da66f241200a3c875544d4f7d9e0",
         "actor": "local-release-validation",
-        "executionId": "task-2-review-fix-4b4b07af4dd6",
+        "executionId": "task-2-verified-deployment-58bc42e60e96",
         "caseId": "release-guidance-record",
-        "at": "2026-10-24T10:35:13.285Z",
-        "summary": "89 release tests and 111 policy tests passed (200 distinct cases); the final 17-case guidance suite also passed after strengthening recovery assertions. Publication used stubs only.",
+        "at": "2026-10-24T11:35:23.125Z",
+        "summary": "99 release and declaration tests plus 15 naming tests passed. A verified deployment survives a failed retry and admits the next source; new unverified deployments remain blocked.",
         "details": [
-          "Permanent selections and boundaries are recorded in the Task 2 review corrections completion record. Four original regression cases failed before the correction. ESLint, naming, public documentation and whitespace checks passed. No publication, Task 3 discovery or consumer runtime change is claimed."
+          "The verified-then-failed regression failed at predecessor admission before the correction. Scoped ESLint, declaration and formatting checks passed. All provider, Actions and npm effects use stubs. No publication or Task 3 work is claimed."
         ]
       }
     ],
@@ -371,15 +371,15 @@
     "sources": [
       {
         "nodeId": "prepare",
-        "revision": "4b4b07af4dd6fa683aff805419ca0bca53700db4bd8ed151f879fe225e3caf93"
+        "revision": "58bc42e60e965e5e54f3dec045bc6a5ec40908cf579815c52a1f7ead0c52432b"
       },
       {
         "nodeId": "admit",
-        "revision": "4b4b07af4dd6fa683aff805419ca0bca53700db4bd8ed151f879fe225e3caf93"
+        "revision": "58bc42e60e965e5e54f3dec045bc6a5ec40908cf579815c52a1f7ead0c52432b"
       },
       {
         "nodeId": "record",
-        "revision": "4b4b07af4dd6fa683aff805419ca0bca53700db4bd8ed151f879fe225e3caf93"
+        "revision": "58bc42e60e965e5e54f3dec045bc6a5ec40908cf579815c52a1f7ead0c52432b"
       }
     ],
     "warnings": []

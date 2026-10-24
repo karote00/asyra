@@ -1021,3 +1021,109 @@ test('a mixed npm release retains unchanged-member and partial-retry baselines i
     /Missing release guidance for this published candidate/
   )
 })
+
+test('a verified Cloudflare deployment survives a failed retry and admits the next source on a fresh runner', async (t) => {
+  const {
+    cloudflareGuidance,
+    recordCloudflareGuidance,
+    restoreCloudflareGuidance
+  } = await import('../cloudflare-release-guidance.mjs')
+  const f = cloudflareFixture(t)
+  const id = 'asyra-design'
+  const candidate = await cloudflareGuidance('prepare', id, f.options)
+  recordCloudflareGuidance(id, {
+    root: f.root,
+    deploymentId: 'verified-deployment',
+    published: true,
+    verified: true
+  })
+  const retry = recordCloudflareGuidance(id, {
+    root: f.root,
+    published: false,
+    verified: false
+  })
+  const archived = archivedCloudflareRun(f, candidate, retry)
+  f.provider.sourceSha = candidate.sourceSha
+  f.provider.deploymentId = 'verified-deployment'
+  fs.writeFileSync(
+    path.join(f.root, 'apps/asyra-design/README.md'),
+    '# Next documented release\n'
+  )
+  f.git('add', '.')
+  f.git('commit', '-qm', 'Next documentation update')
+  const sourceSha = f.git('rev-parse', 'HEAD')
+  fs.writeFileSync(
+    path.join(f.output, 'deployment-version.json'),
+    JSON.stringify({ app: id, sourceSha })
+  )
+  fs.rmSync(path.join(f.root, 'tmp/cloudflare-release-guidance'), {
+    recursive: true
+  })
+  await restoreCloudflareGuidance(id, {
+    ...archived.options,
+    sourceSha,
+    runId: 102
+  })
+  const next = await cloudflareGuidance('prepare', id, {
+    ...f.options,
+    sourceSha
+  })
+  assert.equal(next.deliveries[0].baseline.sourceSha, candidate.sourceSha)
+  assert.equal(next.deliveries[0].baseline.deploymentId, 'verified-deployment')
+  assert.ok(next.deliveries[0].changes.includes('apps/asyra-design/README.md'))
+  assert.deepEqual(next.deliveries[0].notes, [])
+  await cloudflareGuidance('check', id, { ...f.options, sourceSha })
+  assert.deepEqual(retry.outcomes[id], {
+    status: 'failed',
+    deploymentId: 'verified-deployment',
+    published: true,
+    verified: true,
+    attemptPublished: false,
+    attemptVerified: false
+  })
+})
+
+test('a new Cloudflare publication cannot inherit an earlier deployment verification', async (t) => {
+  const { cloudflareGuidance, recordCloudflareGuidance } =
+    await import('../cloudflare-release-guidance.mjs')
+  const f = cloudflareFixture(t)
+  const id = 'asyra-design'
+  await cloudflareGuidance('prepare', id, f.options)
+  recordCloudflareGuidance(id, {
+    root: f.root,
+    deploymentId: 'verified-deployment',
+    published: true,
+    verified: true
+  })
+  const replacement = recordCloudflareGuidance(id, {
+    root: f.root,
+    deploymentId: 'new-unverified-deployment',
+    published: true,
+    verified: false
+  })
+  assert.deepEqual(replacement.outcomes[id], {
+    status: 'failed',
+    deploymentId: 'new-unverified-deployment',
+    published: true,
+    verified: false,
+    attemptPublished: true,
+    attemptVerified: false
+  })
+  f.provider.sourceSha = f.options.sourceSha
+  f.provider.deploymentId = 'new-unverified-deployment'
+  fs.writeFileSync(
+    path.join(f.root, 'apps/asyra-design/README.md'),
+    '# Next release after replacement\n'
+  )
+  f.git('add', '.')
+  f.git('commit', '-qm', 'Next documented source')
+  const sourceSha = f.git('rev-parse', 'HEAD')
+  fs.writeFileSync(
+    path.join(f.output, 'deployment-version.json'),
+    JSON.stringify({ app: id, sourceSha })
+  )
+  await assert.rejects(
+    cloudflareGuidance('prepare', id, { ...f.options, sourceSha }),
+    /verify its original candidate/
+  )
+})

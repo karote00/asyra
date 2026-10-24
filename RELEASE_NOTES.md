@@ -159,3 +159,19 @@ These development notes are not published release summaries.
   "reason": "Release admission and recovery only; preserve consumer runtime, custom features and saved data, package versions, authorization and Markdown-only exemptions."
 }
 ```
+
+```update-note
+{
+  "change": "cloudflare-verified-deployment-retention",
+  "owner": "Repository release tooling",
+  "summary": "Preserve verified deployment outcomes when a later upload attempt fails, while recording that attempt separately.",
+  "sources": [
+    "scripts/cloudflare-release-guidance.mjs",
+    "scripts/__tests__/release-guidance.test.mjs",
+    "tools/flow-inspector/inspectors/release-update-guidance.flow.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Release result bookkeeping only; consumer runtime, custom behavior, saved data, versioning and Markdown-only exemptions are unchanged."
+}
+```

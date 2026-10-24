@@ -373,14 +373,15 @@ export function recordCloudflareGuidance(
     {
       deploymentId: retained ? previous.deploymentId : deploymentId,
       published: retained || published,
-      verified,
-      attemptPublished: published
+      verified: verified || (retained && previous.verified === true),
+      attemptPublished: published,
+      attemptVerified: verified
     }
   )
   if (process.env.GITHUB_STEP_SUMMARY)
     fs.appendFileSync(
       process.env.GITHUB_STEP_SUMMARY,
-      `\nRelease guidance: \`${path.relative(root, app.evidenceFile)}\` (${result.guidance})\n\nPublished: ${published}; verified: ${verified}.\n`
+      `\nRelease guidance: \`${path.relative(root, app.evidenceFile)}\` (${result.guidance})\n\nLatest attempt - published: ${published}; verified: ${verified}.\n\nRecorded deployment - published: ${result.outcomes[id].published}; verified: ${result.outcomes[id].verified}.\n`
     )
   return result
 }

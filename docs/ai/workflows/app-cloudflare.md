@@ -104,9 +104,13 @@ release; inspect the project and source marker before retrying. For an operation
 failure, rerun the failed publication job or dispatch the same current `main`:
 `restore` retrieves the original candidate/result, `prepare` preserves its
 baseline and summary, and `check` verifies its bytes and recorded deployment ID.
-A later failed upload retains the last known published deployment receipt without
-claiming that the latest attempt succeeded. No automatic rollback or mutation
-retry is performed.
+A later failed upload retains the last known published deployment receipt and its
+verification result. `deploymentId`, `published` and `verified` describe that
+recorded deployment; `status`, `attemptPublished` and `attemptVerified` describe
+the latest attempt. Thus a failed retry stays failed without invalidating a
+previously verified baseline. A newly published deployment uses its own
+verification result and cannot inherit an earlier deployment's success. No
+automatic rollback or mutation retry is performed.
 
 A newer source cannot silently use an uploaded but unverified predecessor. Verify
 and record that predecessor against its original candidate before proceeding;

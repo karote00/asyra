@@ -313,6 +313,15 @@ source/artifact/deployment mismatch, genuine unchanged packages, missing retry
 evidence and preservation of declaration exemptions. No new release service,
 version policy, public lookup or runtime migration is introduced.
 
+The follow-up `record` correction preserves a known deployment's verification
+when a later attempt does not publish. Existing deployment fields remain
+`deploymentId`, `published` and `verified`; `status`, `attemptPublished` and
+`attemptVerified` describe the latest attempt. A newly published deployment
+must use its own verification result. Gates prove verified-then-failed recovery
+through a fresh runner into the next source, plus rejection of a newly published
+unverified replacement. The existing result owner, admission tests and workflow
+documentation are the complete boundary; no publisher or recovery service is added.
+
 ### Task 2 completion record - 2026-10-24
 
 Completed on `codex/release-update-guidance-plan` from Task 1 base `246690fbd`.
@@ -403,6 +412,18 @@ local tests to the corrected source. Provider, Actions and npm effects use stubs
 no real workflow run, publication or remote mutation is claimed. All original
 Text guides, fixtures and independent acceptance evidence remain unchanged.
 Tasks 3-4 remain planned.
+
+Task 2 verified-deployment follow-up - 2026-10-24: completed from `8e9460b35`.
+The permanent verified-then-failed regression first failed at predecessor
+admission. The corrected result owner retains deployment verification separately
+from the latest attempt. A fresh runner can restore that evidence and prepare
+and admit the next source; a newly published unverified replacement still blocks.
+The same eight-file release selection (excluding the Inspector contract test,
+including `scripts/docs/__tests__/release-update-guidance.test.mjs`) passed all
+99 tests. Naming (15 cases), scoped ESLint, declaration, formatting and Inspector
+validation passed. Effects use provider/Actions/npm stubs only. Original Text
+evidence, document exemptions and Task 3 scope are unchanged; nothing was pushed
+or published.
 
 ## Task 3 - Expose release history and applicable guides
 
