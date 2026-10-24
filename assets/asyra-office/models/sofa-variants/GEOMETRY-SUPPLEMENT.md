@@ -8,15 +8,27 @@ Foot cylinders end at Z=0.09 and overlap the base beginning at Z=0.07. This conc
 
 ## L-shaped sofa
 
-Top-view footprint polygon, in order: (-0.90,-0.075), (0,-0.075), (0,-0.575), (0.90,-0.575), (0.90,0.575), (-0.90,0.575). This is the base, extruded Z=0.07..0.235. Chamfer/bevel every edge inward by 0.018 with four segments; do not bridge the empty concave corner. The long rear section is 0.65 deep, and the right chaise extends 0.50 farther forward. Total depth is 1.15. This is one continuous L, not two detached sofas.
+The [L-shaped sofa construction contract](L-SHAPED-SOFA-SPEC.md) owns the revised
+inset base polygon, exact concave rounding, cushion tilt, attachment witnesses,
+instance sizing, appearance regions and LOD sampling. Its rules take precedence
+over shared defaults for this module only.
 
-The left arm occupies X=-0.90..-0.79 and Y=-0.075..0.575. Right arm occupies X=0.79..0.90 and Y=-0.075..0.575; it stops at the straight section rather than extending along the chaise. Both extend Z=0.09..0.56 and have rounded-box bevel radius 0.045. Rear shell is the 1.58 x 0.12 x 0.39 box at (0,0.515,0.415), bevel 0.025.
+The base now spans Z=0.07..0.25 and overlaps both seat cushions by 15 mm. Its
+rear portion is inset beneath the arms and rear shell; its forward +X chaise
+keeps the overall depth. One continuous stepped chaise cushion remains at
+Z=0.235..0.34, with a short right arm that stops at Y=-0.075. Do not fill the
+front-left opening or split off an ottoman. Both seat tops stay at Z=0.34.
 
-Exactly two seat cushions: left 0.78 x 0.445 x 0.105 at (-0.395,0.1675,0.2875), bevel 0.035. The chaise is one closed six-vertex polygon in JSON, extruded Z=0.235..0.34 and beveled inward 0.025. Its rear width is 0.780, front width 0.875, and depth 0.945: the small right-side step at Y=-0.075 fills the area in front of the short arm. Preserve this one-piece outline rather than inventing a separate ottoman. Both seat tops are Z=0.34, with a 0.010 gap between inner X edges.
+Back cushions are 0.40 m high and lean -10 degrees about their own centres;
+compute their Z placement from rounded support so their tops remain Z=0.70.
+The rear shell extends to Z=0.08..0.61. Six original feet remain at their numeric
+centres, Z=0..0.09, embedded in the base. There are fourteen closed solids in all.
 
-Exactly two back cushions: each 0.78 wide, 0.15 deep and 0.35 high, centred X=-0.395/+0.395, Y=0.465, Z=0.525; bevel 0.045. Tops reach Z=0.70. Their rear portion intersects the continuous rear shell as a concealed join.
-
-Six feet are located at the six XY coordinates in JSON. Radius 0.025, height 0.09, 48 segments, inward bevel 0.005 with three segments. There is no foot in the empty front-left cutout. Bottom base surface is plain sage fabric; no dust-cover pattern, support bars or mechanism.
+Both polygon solids use the documented section-based rounding, including local
+reflex-corner fillets. These do not bridge the empty cutout. Do not substitute
+a convex hull, an unspecified bevel modifier or added patch geometry. Full
+numeric tables, profile equations, contacts and acceptance limits are in the
+L-shaped sofa contract; model appearance remains unverified.
 
 ## Curved sofa
 

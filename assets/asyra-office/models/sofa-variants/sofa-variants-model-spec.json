@@ -39,22 +39,10 @@
       "name": "L-shaped sofa - right chaise single unit",
       "unitCount": 1,
       "reviewDrawing": "review/01-l-shaped-sofa-v1.png",
-      "overallSize": [
-        1.8,
-        1.15,
-        0.7
-      ],
+      "overallSize": [1.8, 1.15, 0.7],
       "bounds": {
-        "min": [
-          -0.9,
-          -0.575,
-          0
-        ],
-        "max": [
-          0.9,
-          0.575,
-          0.7
-        ]
+        "min": [-0.9, -0.575, 0],
+        "max": [0.9, 0.575, 0.7]
       },
       "seatTop": 0.34,
       "handedness": "chaise on +X; viewer right in front view",
@@ -63,33 +51,17 @@
           "partId": "base",
           "primitive": "L-polygon extrusion",
           "polygonXY": [
-            [
-              -0.9,
-              -0.075
-            ],
-            [
-              0,
-              -0.075
-            ],
-            [
-              0,
-              -0.575
-            ],
-            [
-              0.9,
-              -0.575
-            ],
-            [
-              0.9,
-              0.575
-            ],
-            [
-              -0.9,
-              0.575
-            ]
+            [-0.85, -0.075],
+            [0, -0.075],
+            [0, -0.575],
+            [0.9, -0.575],
+            [0.9, -0.075],
+            [0.85, -0.075],
+            [0.85, 0.54],
+            [-0.85, 0.54]
           ],
           "zMin": 0.07,
-          "zMax": 0.235,
+          "zMax": 0.25,
           "bevel": 0.018,
           "bevelSegments": 4,
           "material": "sage"
@@ -97,16 +69,8 @@
         {
           "partId": "rear-shell",
           "primitive": "rounded-box",
-          "size": [
-            1.58,
-            0.12,
-            0.39
-          ],
-          "centre": [
-            0,
-            0.515,
-            0.415
-          ],
+          "size": [1.58, 0.12, 0.53],
+          "centre": [0, 0.515, 0.345],
           "bevel": 0.025,
           "bevelSegments": 4,
           "material": "sage"
@@ -114,16 +78,8 @@
         {
           "partId": "left-arm",
           "primitive": "rounded-box",
-          "size": [
-            0.11,
-            0.65,
-            0.47
-          ],
-          "centre": [
-            -0.845,
-            0.25,
-            0.325
-          ],
+          "size": [0.11, 0.65, 0.47],
+          "centre": [-0.845, 0.25, 0.325],
           "bevel": 0.045,
           "bevelSegments": 4,
           "material": "sage"
@@ -131,16 +87,8 @@
         {
           "partId": "right-arm",
           "primitive": "rounded-box",
-          "size": [
-            0.11,
-            0.65,
-            0.47
-          ],
-          "centre": [
-            0.845,
-            0.25,
-            0.325
-          ],
+          "size": [0.11, 0.65, 0.47],
+          "centre": [0.845, 0.25, 0.325],
           "bevel": 0.045,
           "bevelSegments": 4,
           "material": "sage"
@@ -148,16 +96,8 @@
         {
           "partId": "left-seat",
           "primitive": "rounded-box",
-          "size": [
-            0.78,
-            0.445,
-            0.105
-          ],
-          "centre": [
-            -0.395,
-            0.1675,
-            0.2875
-          ],
+          "size": [0.78, 0.445, 0.105],
+          "centre": [-0.395, 0.1675, 0.2875],
           "bevel": 0.035,
           "bevelSegments": 4,
           "material": "sage"
@@ -166,30 +106,12 @@
           "partId": "chaise-seat",
           "primitive": "closed polygon extrusion with bevel",
           "polygonXY": [
-            [
-              0.005,
-              -0.555
-            ],
-            [
-              0.88,
-              -0.555
-            ],
-            [
-              0.88,
-              -0.075
-            ],
-            [
-              0.785,
-              -0.075
-            ],
-            [
-              0.785,
-              0.39
-            ],
-            [
-              0.005,
-              0.39
-            ]
+            [0.005, -0.555],
+            [0.88, -0.555],
+            [0.88, -0.075],
+            [0.785, -0.075],
+            [0.785, 0.39],
+            [0.005, 0.39]
           ],
           "zMin": 0.235,
           "zMax": 0.34,
@@ -200,36 +122,22 @@
         {
           "partId": "left-back-cushion",
           "primitive": "rounded-box",
-          "size": [
-            0.78,
-            0.15,
-            0.35
-          ],
-          "centre": [
-            -0.395,
-            0.465,
-            0.525
-          ],
+          "size": [0.78, 0.15, 0.4],
+          "centre": [-0.395, 0.445, 0.49714535295309975],
           "bevel": 0.045,
           "bevelSegments": 4,
-          "material": "sage"
+          "material": "sage",
+          "rotationXDegrees": -10
         },
         {
           "partId": "right-back-cushion",
           "primitive": "rounded-box",
-          "size": [
-            0.78,
-            0.15,
-            0.35
-          ],
-          "centre": [
-            0.395,
-            0.465,
-            0.525
-          ],
+          "size": [0.78, 0.15, 0.4],
+          "centre": [0.395, 0.445, 0.49714535295309975],
           "bevel": 0.045,
           "bevelSegments": 4,
-          "material": "sage"
+          "material": "sage",
+          "rotationXDegrees": -10
         },
         {
           "partId": "feet",
@@ -239,68 +147,143 @@
           "zMin": 0,
           "zMax": 0.09,
           "centresXY": [
-            [
-              -0.82,
-              0.49
-            ],
-            [
-              0,
-              0.49
-            ],
-            [
-              0.82,
-              0.49
-            ],
-            [
-              -0.82,
-              0
-            ],
-            [
-              0.08,
-              -0.49
-            ],
-            [
-              0.82,
-              -0.49
-            ]
+            [-0.82, 0.49],
+            [0, 0.49],
+            [0.82, 0.49],
+            [-0.82, 0],
+            [0.08, -0.49],
+            [0.82, -0.49]
           ],
           "radialSegments": 48,
           "bevel": 0.005,
           "bevelSegments": 3,
           "material": "dark-wood"
         }
-      ]
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "L-SHAPED-SOFA-SPEC.md",
+        "productionRoute": "programmatic-polygon-and-rounded-primitives",
+        "partCount": 14,
+        "rule": "Eight upholstery solids including one inset stepped base and one continuous stepped chaise cushion, plus six feet; preserve the +X chaise and open front-left cutout."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Assemble the default fourteen solids and rotate back cushions about their own centres, then scale all geometry and gaps once by requested/default XYZ ratios about the fixed ground origin. No mirroring, terrain fit or independent refitting."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "base",
+            "parts": ["base"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "rear-shell",
+            "parts": ["rear-shell"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "left-arm",
+            "parts": ["left-arm"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "right-arm",
+            "parts": ["right-arm"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "left-seat",
+            "parts": ["left-seat"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "chaise-seat",
+            "parts": ["chaise-seat"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "left-back-cushion",
+            "parts": ["left-back-cushion"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "right-back-cushion",
+            "parts": ["right-back-cushion"],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "feet",
+            "parts": ["feet"],
+            "defaultMaterial": "dark-wood"
+          }
+        ],
+        "footSubregions": "Feet use their zero-based centresXY indices for independent overrides; part-level feet overrides apply to all six unless a per-foot override is supplied.",
+        "overrideOrder": "Per-foot material/colour if present, then part region, then sofa override, then preset; colour overrides follow material resolution and retain other properties.",
+        "defaultSurface": "Solid sage upholstery and solid dark wood. Optional cloth weave is a separately selected material, not required default geometry or texture."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "boxSegments": 8,
+            "cornerTopology": "normalized-barycentric-grid",
+            "polygonSegments": 8,
+            "footRadialSegments": 48,
+            "footRimSegments": 3,
+            "maxTriangles": 15000,
+            "maxSurfaceError": 0.001,
+            "maxFootSurfaceError": 0.0003
+          },
+          {
+            "id": "lod1",
+            "boxSegments": 5,
+            "cornerTopology": "normalized-barycentric-grid",
+            "polygonSegments": 5,
+            "footRadialSegments": 32,
+            "footRimSegments": 2,
+            "maxTriangles": 7500,
+            "maxSurfaceError": 0.002,
+            "maxFootSurfaceError": 0.0006
+          },
+          {
+            "id": "lod2",
+            "boxSegments": 4,
+            "cornerTopology": "normalized-barycentric-grid",
+            "polygonSegments": 3,
+            "footRadialSegments": 16,
+            "footRimSegments": 1,
+            "maxTriangles": 4000,
+            "maxSurfaceError": 0.003,
+            "maxFootSurfaceError": 0.002
+          }
+        ],
+        "rule": "Keep fourteen closed solids, six horizontal ground contacts, exact overall extrema, two seats and backs, the short right arm and unbridged notch. Validate all joint witnesses at every tier.",
+        "errorMetric": "Per-part adaptive bidirectional distance against ideal rounded/lofted default geometry; polygon solids are concave and must not be convex-hulled.",
+        "failurePolicy": "Reject overflow, contact loss or topology/error failure; do not fill notches, remove feet or add patches."
+      }
     },
     {
       "moduleId": "curved-sofa",
       "name": "Curved sofa - single 120-degree unit",
       "unitCount": 1,
       "reviewDrawing": "review/02-curved-sofa-v1.png",
-      "nominalOverallSize": [
-        1.7320508075688772,
-        0.825,
-        0.7
-      ],
+      "nominalOverallSize": [1.7320508075688772, 0.825, 0.7],
       "nominalBounds": {
-        "min": [
-          -0.8660254037844386,
-          -0.4125,
-          0
-        ],
-        "max": [
-          0.8660254037844386,
-          0.4125,
-          0.7
-        ]
+        "min": [-0.8660254037844386, -0.4125, 0],
+        "max": [0.8660254037844386, 0.4125, 0.7]
       },
       "seatTop": 0.34,
       "polarCoordinates": {
         "formula": "X=r*sin(theta); Y=r*cos(theta)-0.5875; Z unchanged",
         "angleZero": "+Y",
-        "rangeDegrees": [
-          -60,
-          60
-        ],
+        "rangeDegrees": [-60, 60],
         "angularTessellation": "at most 1 degree per interval, include exact endpoints"
       },
       "components": [
@@ -309,10 +292,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.35,
           "outerRadius": 1,
-          "angleDegrees": [
-            -60,
-            60
-          ],
+          "angleDegrees": [-60, 60],
           "zMin": 0.07,
           "zMax": 0.235,
           "bevel": 0.018,
@@ -324,10 +304,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.9,
           "outerRadius": 1,
-          "angleDegrees": [
-            -60,
-            60
-          ],
+          "angleDegrees": [-60, 60],
           "zMin": 0.22,
           "zMax": 0.61,
           "bevel": 0.025,
@@ -339,10 +316,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.35,
           "outerRadius": 1,
-          "angleDegrees": [
-            -60,
-            -53
-          ],
+          "angleDegrees": [-60, -53],
           "zMin": 0.09,
           "zMax": 0.56,
           "bevel": 0.012,
@@ -354,10 +328,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.35,
           "outerRadius": 1,
-          "angleDegrees": [
-            53,
-            60
-          ],
+          "angleDegrees": [53, 60],
           "zMin": 0.09,
           "zMax": 0.56,
           "bevel": 0.012,
@@ -369,10 +340,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.36,
           "outerRadius": 0.84,
-          "angleDegrees": [
-            -52.8,
-            -17.866666666666664
-          ],
+          "angleDegrees": [-52.8, -17.866666666666664],
           "zMin": 0.235,
           "zMax": 0.34,
           "bevel": 0.025,
@@ -384,10 +352,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.835,
           "outerRadius": 0.965,
-          "angleDegrees": [
-            -52.8,
-            -17.866666666666664
-          ],
+          "angleDegrees": [-52.8, -17.866666666666664],
           "zMin": 0.35,
           "zMax": 0.7,
           "bevel": 0.025,
@@ -399,10 +364,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.36,
           "outerRadius": 0.84,
-          "angleDegrees": [
-            -17.466666666666665,
-            17.466666666666672
-          ],
+          "angleDegrees": [-17.466666666666665, 17.466666666666672],
           "zMin": 0.235,
           "zMax": 0.34,
           "bevel": 0.025,
@@ -414,10 +376,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.835,
           "outerRadius": 0.965,
-          "angleDegrees": [
-            -17.466666666666665,
-            17.466666666666672
-          ],
+          "angleDegrees": [-17.466666666666665, 17.466666666666672],
           "zMin": 0.35,
           "zMax": 0.7,
           "bevel": 0.025,
@@ -429,10 +388,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.36,
           "outerRadius": 0.84,
-          "angleDegrees": [
-            17.86666666666667,
-            52.8
-          ],
+          "angleDegrees": [17.86666666666667, 52.8],
           "zMin": 0.235,
           "zMax": 0.34,
           "bevel": 0.025,
@@ -444,10 +400,7 @@
           "primitive": "annular-sector extrusion",
           "innerRadius": 0.835,
           "outerRadius": 0.965,
-          "angleDegrees": [
-            17.86666666666667,
-            52.8
-          ],
+          "angleDegrees": [17.86666666666667, 52.8],
           "zMin": 0.35,
           "zMax": 0.7,
           "bevel": 0.025,

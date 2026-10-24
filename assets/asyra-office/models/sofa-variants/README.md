@@ -4,12 +4,21 @@ Status: **The user approved these drawings and documents for commit. No models, 
 
 These two shapes were requested by the user but do not appear in the approved office image. They extend the [approved two-seat sofa](../furniture/review/03-sofa-v1.png) using its sage fabric, rounded cushioning and dark wooden feet. They are not claimed as exact copies of unseen reference objects.
 
-| One placeable unit | Nominal X x Y x Z (m) | Fixed structure | Sheet |
-| --- | --- | --- | --- |
-| L-shaped sofa | 1.80 x 1.15 x 0.70 | Right-side forward chaise, two seat cushions, two back cushions, six feet | [L-shaped sofa](review/01-l-shaped-sofa-v1.png) |
-| Curved sofa | 1.73205 x 0.825 x 0.70 | 120-degree annular sector, three seat cushions, three back cushions, six feet | [Curved sofa](review/02-curved-sofa-v1.png) |
+| One placeable unit | Nominal X x Y x Z (m)  | Fixed structure                                                               | Sheet                                           |
+| ------------------ | ---------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------- |
+| L-shaped sofa      | 1.80 x 1.15 x 0.70     | Right-side forward chaise, two seat cushions, two back cushions, six feet     | [L-shaped sofa](review/01-l-shaped-sofa-v1.png) |
+| Curved sofa        | 1.73205 x 0.825 x 0.70 | 120-degree annular sector, three seat cushions, three back cushions, six feet | [Curved sofa](review/02-curved-sofa-v1.png)     |
 
 Each sheet has front, right, back, top and oblique views. Seat top is 0.34 m for both. These are two complete furniture units; feet, fixed armrests and structural cushions belong to the same unit. Loose throw pillows remain separate assets. No room or furniture arrangement is included.
+
+## Current L-shaped sofa document review
+
+The [updated L-shaped sofa contract](L-SHAPED-SOFA-SPEC.md) is approved by the user for commit.
+It retains the right-side chaise, short right arm, original six feet and overall
+size, while correcting embedded seat joints, inset base surfaces, lowered rear
+coverage and leaned back cushions. It defines concave rounding, replaceable
+appearance and unverified LOD targets. The original sheet and curved-sofa inputs
+remain unchanged. No model is produced or verified.
 
 ## Modeling inputs
 

@@ -9,6 +9,14 @@ Both extend the [approved green sofa](../../furniture/review/03-sofa-v1.png); th
 
 The L specification follows the drawn short right arm and forward chaise, including its one-piece stepped cushion. Numeric foot centres define all six feet even where the drawing occludes them. Curved angle, radii and exact cushion gaps follow JSON; apparent angle changes in generated views are not alternate configurations.
 
+## L-shaped sofa document revision
+
+The [updated L-shaped sofa specification](../L-SHAPED-SOFA-SPEC.md) is approved by the user
+for commit. The original sheet is preserved. Exact revised dimensions and
+connections are defined in the numeric inputs and contract; generated view
+projections are not independent geometries. The curved-sofa specification and
+image remain unchanged. No production mesh has been verified.
+
 ## Lighting revision - 2026-10-04
 
 The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.
