@@ -412,3 +412,37 @@ hit. Only this public client path converts DOM coordinates; legacy surface-space
 picking remains unchanged. Sim consumes it through Core, with existing selection
 Features and pointer-cancel policies. Office and FieldScope keep their existing
 non-picking behavior. No query result becomes canonical or solver evidence.
+
+## Task 6 delivery boundary
+
+This boundary supersedes Task 5 optional-ID/yaw admission. The neutral mesh
+accepts positive finite `scale`, `castShadow` and `receiveShadow`
+independently of selectability (omitted flags are false). Instances require
+nonempty unique `id`, local `position` and normalized `rotation`, with optional
+positive scale. Neutral admission rejects yaw/shear fields rather than silently
+ignoring unsupported transforms. FieldScope retains its App-owned yaw inputs and
+converts them once at admission to paired immutable neutral projection receipts;
+no domain algorithm or saved format changes. Both Sim and FieldScope keep rigid
+domain input restrictions.
+Apps explicitly retain their existing shadow and lighting policies.
+
+Distant detail accepts positive `pixelError` (default 2 physical pixels). Its
+existing retained result depends on full/distant geometry, placements, world
+pose, view/projection, logical viewport height, DPR, geometric and pixel error.
+Visibility restoration uses current inputs. Complete shape and pose continue to
+own bounds/picking. Material and pose updates do not replace geometry or surface
+textures. No new retained cache family is introduced.
+
+Optional mesh definitions use `spatial-mesh` and `spatial-mesh-data` registration
+identities, with schema-backed descriptor and visibility values. Explicit Core
+registration orders schema/property, component and strategy with reverse cleanup;
+no catalog default, Camera, scene tree UI or navigation policy is installed.
+The strategy retains one derived mesh child, with explicit visual/entity identity.
+Apps can customize by ordinary Core unregistration/registration. Schema failures
+reject runtime writes and retain ordinary load fallback semantics.
+
+`SpatialPosePresentation` accepts one immutable pose target; caller-supplied
+progress, tolerance and reduced-motion choice govern position, quaternion and
+scale interpolation. Retarget replaces the target, cancel drops it, and dispose
+rejects future use. It owns no clock, canonical writes or draw loop and never
+modifies geometry. Singular/invalid input rejects before replacing accepted state.

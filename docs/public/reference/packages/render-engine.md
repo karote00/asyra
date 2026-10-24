@@ -92,5 +92,10 @@ The typed query/result unions support projection, screen ray, local/world point
 conversion, local/world bounds, ray intersections and overlay-first picking.
 Surface points are logical CSS coordinates; projection includes NDC depth and
 frustum visibility. Hit identity uses opaque handles and source-instance index
-plus optional stable ID. Existing 2D queries retain their meanings. Pixi and the
+plus stable ID. Existing 2D queries retain their meanings. Pixi and the
 default recording engine reject spatial queries explicitly.
+
+Neutral spatial instances require unique nonempty IDs and local quaternion poses.
+Mesh and instance scale must be positive; explicit shear/yaw transforms reject.
+Apps translate their narrower placement formats at their admission boundary.
+Mesh `castShadow` and `receiveShadow` flags are independent of selectability.

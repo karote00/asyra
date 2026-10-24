@@ -87,9 +87,30 @@ are release-checked; version metadata remains generated from the manifest.
 ## Optional spatial picking
 
 The optional spatial engine supports full-shape queries through Render/Core.
-Picking retains source instance index and optional stable ID across LoD/culling;
+Picking retains source instance index and stable ID across LoD/culling;
 hidden/nonselectable objects are excluded, while transparent selectable geometry
 remains eligible. Screen overlays take precedence. Queries reuse owned geometry
 and do not create GPU resources or solver evidence. Apps keep camera modes,
 angles, input actions and selection policy. This does not activate the reserved
 `3D` profile.
+
+## Opt-in mesh definitions and pose presentation
+
+Import `registerSpatialMesh` from `@asyra/preset/spatial` and call it with Core
+before startup to register a generic mesh property, schema, component and Render
+strategy. Compose the ordinary Core state/projection channels separately, as in
+[custom composition](../../start/custom-composition.md). No catalog default,
+Camera, navigation mode or tree UI is added. Exported definitions support normal
+Core customization; failed registration cleans up in reverse. The returned
+cleanup is for open composition; Core `resetRuntime` retires successful runtime
+registrations. Schema-invalid runtime writes reject; invalid loads use defaults.
+
+Instances require stable IDs and quaternion poses; meshes and instances accept
+positive scale. Explicit `castShadow`/`receiveShadow` are independent of
+selection. Apps configure lights and supply full/distant shapes plus geometric
+error and optional `pixelError` (2 physical pixels by default). Pose, material
+and placement-count updates retain unchanged geometry/material resources.
+
+Use `SpatialPosePresentation.retarget`, `advance`, `cancel` and `dispose` for
+optional pose transitions. The caller supplies progress, tolerance and reduced
+motion and chooses targets; the mechanism has no clock or document writes.

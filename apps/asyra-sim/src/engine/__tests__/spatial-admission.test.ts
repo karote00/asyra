@@ -104,3 +104,13 @@ it('keeps the rigid-part whitelist while sharing neutral admission receipts', as
   expect(neutral.readSpatialDescriptor(accepted)).toBe(accepted)
   expect(readSpatialDescriptor(accepted)).toBe(accepted)
 })
+
+it('keeps rigid-part admission independent of neutral scale support', () => {
+  expect(() => readSpatialDescriptor({ ...input(), scale: [2, 2, 2] })).toThrow(
+    /rigid/
+  )
+  expect(readSpatialDescriptor(input())).toMatchObject({
+    castShadow: true,
+    receiveShadow: true
+  })
+})

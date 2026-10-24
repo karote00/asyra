@@ -4,12 +4,14 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1-5 complete within their bounded contracts; stopped for user
-inspection before Task 6. Task 1 produced the reviewed specification and full
+Status: Tasks 1-6 complete within their bounded contracts; stopped for user
+inspection before Task 7. Task 1 produced the reviewed specification and full
 architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
 shared incremental projection/bounds with direct App preservation checks.
 Tasks 4-5 add App-directed shared Camera controls and typed spatial queries with
-shared picking. Tasks 6-10 remain unexecuted;
+shared picking. Task 6 adds opt-in mesh definitions, generalized instance/pose
+presentation, explicit lighting/shadows and physical-pixel detail controls.
+Tasks 7-10 remain unexecuted;
 official 3D activation and whole-flow runtime acceptance remain pending.
 
 Planning base: local `main` at
@@ -646,6 +648,53 @@ have deterministic dependencies/cleanup; App customization uses public Core
 registration. LoD affects presentation only; hiding/showing uses current inputs;
 material/pose updates do not regenerate geometry. No camera mode or domain
 animation policy is installed by the foundation.
+
+Task 6 execution contract: base `04552ae09`, same worktree and branch. Deliver
+opt-in mesh property/schema/component/strategy registration, positive mesh and
+instance scale with stable instance IDs/quaternions, explicit shadow flags,
+configurable pixel-error detail and caller-timed pose presentation. Keep existing
+FieldScope yaw domain inputs in its admission adapter; convert once to neutral
+projection receipts. No domain algorithm, saved identifier, Camera mode, catalog
+selection or profile activation changes. Discovery is limited to the named owner
+slices, direct three-App consumers, their tests and contract docs. Gates: neutral
+admission/bounds/query/resource/registration/presentation tests, scoped Render/Core
+and three-App preservation suites under supervisors, affected builds, naming,
+lint/format, dependency/placement/docs and source-bound Inspector evidence.
+Real-WebGL integration remains Task 7. Stop for inspection before Task 7.
+
+Task 6 bounded test revision: the optional-registration lifetime case must load
+an empty document through public Core APIs before starting the renderer and
+creating canonical content. The failed fixture omitted this ordinary document
+initialization; Core startup does not create a workspace without a load source.
+Re-audit of the compose step, Task 6 opt-in lifecycle contract, and the existing
+Core runtime-reset integration fixture confirms no production Core change is
+needed. Limit this revision to the registration test: load, start, transact, save,
+and reset; prove the focused case and then the Preset suite. Self-review found
+no owner or behavior change, fallback, or expansion beyond the compose contract.
+
+Task 6 result: explicit mesh schema/property/component/strategy installation uses
+public Core registration, rollback and runtime reset. Permanent tests prove
+canonical creation/save and cleanup, invalid-write/load behavior, retained mesh
+identity and visibility-only isolation. Neutral instances now carry stable IDs,
+quaternions and positive scales; FieldScope converts its unchanged yaw domain
+receipts once. Sim and FieldScope retain rigid domain restrictions. All Apps
+explicitly retain their former lighting and shadow policies.
+
+Shared bounds, queries and uploads use the same transform order. Detail selection
+uses physical-pixel error and invalidates on current pose, placements, viewport,
+DPR and policy; unchanged inputs reuse the result. Instance-count changes replace
+only instance containers, retaining geometry/material resources. Caller-timed pose
+presentation supports retarget/cancel/reduced motion without canonical writes.
+
+Validation: Preset 37 files / 289 tests; Render 273; Core 272; Render Engine 11.
+Sim 6 files / 58 tests plus 13 supervisor guards; FieldScope 7 files / 86 tests
+and source-profile 23 tests, each with 8 supervisor guards; Office 4 files / 16
+tests. Naming 15, dependency validation 29 workspaces / 6 tests, placement 3,
+scoped lint/format, affected package and three App TypeScript/production builds,
+public documentation and Flow Inspector admission pass. Lighting rejection and
+instance-count resource retention were proved red before owner fixes. No real
+WebGL acceptance, default catalog/profile activation or Task 7 completion is
+claimed. Stop here for user inspection.
 
 ## Task 7 - Complete the three App migrations
 

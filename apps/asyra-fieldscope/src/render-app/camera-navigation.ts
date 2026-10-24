@@ -1,3 +1,4 @@
+import { toSpatialProjection } from '../engine/spatial-contract'
 import type { SpatialCamera, SpatialFrame } from './spatial-layer'
 import { fitCamera } from './site-projection'
 
@@ -26,7 +27,14 @@ export function measureScene(
 ): SceneBounds {
   const bounds = owner ?? new SpatialBoundsOwner()
   try {
-    const result = bounds.measure(meshes.map((mesh) => mesh.descriptor))
+    const result = bounds.measure(
+      meshes.map(
+        (mesh) =>
+          toSpatialProjection(
+            mesh.descriptor
+          ) as import('@asyra/preset/spatial').SpatialMesh
+      )
+    )
     if (!result) throw new Error('Empty site bounds')
     return result
   } finally {

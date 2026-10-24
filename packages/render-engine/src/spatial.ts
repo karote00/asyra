@@ -21,9 +21,10 @@ export type SpatialShape =
     }
 
 export interface SpatialInstance {
-  id?: string
+  id: string
   position: SpatialVector
-  yaw: number
+  rotation: SpatialQuaternion
+  scale?: SpatialVector
 }
 
 export type SpatialDescriptor =
@@ -39,9 +40,12 @@ export type SpatialDescriptor =
       kind: 'mesh'
       position: SpatialVector
       rotation: SpatialQuaternion
+      scale?: SpatialVector
+      castShadow?: boolean
+      receiveShadow?: boolean
       shape: SpatialShape
       instances?: readonly SpatialInstance[]
-      distant?: { shape: SpatialShape; maxError: number }
+      distant?: { shape: SpatialShape; maxError: number; pixelError?: number }
       surface?: SpatialSurface
       roughness?: number
       metalness?: number

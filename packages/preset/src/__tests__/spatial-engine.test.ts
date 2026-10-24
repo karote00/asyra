@@ -148,10 +148,10 @@ describe('CUSTOM Three engine', () => {
     engine.destroy()
   })
 
-  it('bounds studio shadows, limits casters to solid selectable geometry and releases the light', () => {
+  it('uses explicit shadow flags independently of selection and releases the light', () => {
     const { engine, driver, add } = setup()
     add(camera)
-    add(box)
+    add({ ...box, selectable: false, castShadow: true, receiveShadow: true })
     engine.execute({ type: 'flush' })
     const scene = vi.mocked(driver.render).mock.calls[0][0]
     const key = scene.children.find(
@@ -164,8 +164,8 @@ describe('CUSTOM Three engine', () => {
     )
     if (!(ambient instanceof THREE.HemisphereLight))
       throw new Error('Missing ambient light')
-    // Reflected daylight keeps the undersides of opaque leaves readable.
-    expect(ambient.groundColor.g * ambient.intensity).toBeGreaterThan(0.5)
+    // Generic lighting has no App-specific daylight policy.
+    expect(ambient.intensity).toBe(1)
     expect(key.castShadow).toBe(true)
     expect(key.shadow.mapSize.toArray()).toEqual([1024, 1024])
     const mesh = scene.getObjectsByProperty('isMesh', true)[0]
@@ -603,4 +603,151 @@ it('rejects foreign and retired paint handles without consuming the owning resou
   ).toThrow(/destroyed/)
   expect(a.engine.destroy().destroyedResources).toBe(0)
   b.engine.destroy()
+})
+
+it('reuses instance detail until real pose, visibility or pixel-policy dependencies change', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const descriptor: SpatialDescriptor = {
+    ...box,
+    instances: [{ id: 'visible', position: [0, 0, 0], rotation: [0, 0, 0, 1] }],
+    distant: {
+      shape: { kind: 'box', size: [0.5, 0.5, 0.5] },
+      maxError: 0.01,
+      pixelError: 100
+    }
+  }
+  const object = add(descriptor)
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const full = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  )[0] as THREE.InstancedMesh
+  const distant = full.children[0] as THREE.InstancedMesh
+  expect(full.count).toBe(0)
+  expect(distant.count).toBe(1)
+  const write = vi.spyOn(full, 'setMatrixAt'),
+    otherWrite = vi.spyOn(distant, 'setMatrixAt'),
+    release = vi.spyOn(full.geometry, 'dispose')
+  engine.execute({ type: 'flush' })
+  expect(write).not.toHaveBeenCalled()
+  expect(otherWrite).not.toHaveBeenCalled()
+  engine.execute({
+    type: 'update-object',
+    object,
+    properties: {
+      visible: false,
+      [SPATIAL_PROPERTY]: {
+        ...descriptor,
+        scale: [2, 3, 4],
+        distant: { ...descriptor.distant, pixelError: 0.001 }
+      }
+    }
+  })
+  engine.execute({ type: 'flush' })
+  expect(write).not.toHaveBeenCalled()
+  engine.execute({
+    type: 'update-object',
+    object,
+    properties: { visible: true }
+  })
+  engine.execute({ type: 'flush' })
+  expect(full.count).toBe(1)
+  expect(distant.count).toBe(0)
+  expect(write).toHaveBeenCalledTimes(1)
+  expect(release).not.toHaveBeenCalled()
+  engine.destroy()
+  expect(release).toHaveBeenCalledTimes(1)
+})
+
+it('uses physical pixel error independently for each surface DPR', () => {
+  for (const resolution of [1, 2]) {
+    const { engine, driver, add } = setup(undefined, resolution)
+    add(camera)
+    add({
+      ...box,
+      instances: [
+        { id: 'sample', position: [0, 0, 0], rotation: [0, 0, 0, 1] }
+      ],
+      distant: {
+        shape: { kind: 'box', size: [0.5, 0.5, 0.5] },
+        maxError: 0.01,
+        pixelError: 2
+      }
+    })
+    engine.execute({ type: 'flush' })
+    const full = vi
+      .mocked(driver.render)
+      .mock.calls[0][0].getObjectsByProperty(
+        'isInstancedMesh',
+        true
+      )[0] as THREE.InstancedMesh
+    expect(full.count).toBe(resolution === 1 ? 0 : 1)
+    engine.destroy()
+  }
+})
+
+it('rejects invalid explicit lighting before allocating a driver', () => {
+  const createDriver = vi.fn()
+  const engine = new ThreeEngine(
+    { createDriver },
+    {
+      lighting: {
+        hemisphere: [0xffffff, 0, 1],
+        keyPosition: [0, 1, 0],
+        fillPosition: [1, 1, 1],
+        shadowExtent: 10,
+        shadowFar: 50,
+        keyIntensity: NaN
+      }
+    }
+  )
+  expect(() => engine.initialize({ host: {}, width: 10, height: 10 })).toThrow(
+    /lighting/
+  )
+  expect(createDriver).not.toHaveBeenCalled()
+})
+
+it('retains geometry and material when instance placement count changes', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const instance = {
+    id: 'one',
+    position: [0, 0, 0],
+    rotation: [0, 0, 0, 1]
+  } as const
+  const descriptor: SpatialDescriptor = { ...box, instances: [instance] }
+  const object = add(descriptor)
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const original = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  )[0] as THREE.InstancedMesh
+  const disposeGeometry = vi.spyOn(original.geometry, 'dispose'),
+    disposeMaterial = vi.spyOn(original.material as THREE.Material, 'dispose')
+  engine.execute({
+    type: 'update-object',
+    object,
+    properties: {
+      [SPATIAL_PROPERTY]: {
+        ...descriptor,
+        instances: [instance, { ...instance, id: 'two', position: [2, 0, 0] }]
+      }
+    }
+  })
+  engine.execute({ type: 'flush' })
+  const next = scene.getObjectsByProperty(
+    'isInstancedMesh',
+    true
+  )[0] as THREE.InstancedMesh
+  expect(next.count).toBe(2)
+  expect(next.geometry).toBe(original.geometry)
+  expect(next.material).toBe(original.material)
+  expect(disposeGeometry).not.toHaveBeenCalled()
+  expect(disposeMaterial).not.toHaveBeenCalled()
+  engine.destroy()
+  expect(disposeGeometry).toHaveBeenCalledTimes(1)
+  expect(disposeMaterial).toHaveBeenCalledTimes(1)
 })

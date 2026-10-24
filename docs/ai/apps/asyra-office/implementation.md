@@ -38,3 +38,11 @@ Permanent cases cover renderer lifecycle/resource preservation; duplicate/invali
 Design review against current public APIs: the existing CUSTOM render provider accepts a shared engine; the two existing adapters share object lifecycle and graphics operations while App lighting and admission policies differ. Core provides property schemas, Features, transactions, Undo/Redo and explicit serialization. Renderer-local transforms can therefore remain outside canonical storage. Provider sequence and attempt checks belong before entity projection, not in React or geometry. Proposal revision checks belong before transaction entry. No step requires a provider credential to prove these boundaries.
 
 Flow Inspector owns the accompanying architecture representation. The static map has owner/handoff structural tests. Dynamic admission remains blocked because the current proof service requires Factory-specific negative scenarios; no Office target or accepted baseline has been admitted. Office tests provide runtime evidence and must not be represented as an accepted whole-target baseline. Live provider permission/fidelity comparisons, durable provider replay, general building/floor construction, full decorating, progression/rewards and target-device profiling remain original-plan obligations until separately implemented and verified.
+
+## Shared spatial content policy
+
+Office explicitly supplies its existing lighting palette, intensities, positions,
+shadow range and software-renderer policy to the shared engine. Scene descriptors
+remain nonselectable and do not cast shadows; their receiver flag is explicit.
+Common scale/instance/pose mechanisms add no Office layout, task, focus or follow
+policy and do not change proposal/history/save acknowledgement behavior.

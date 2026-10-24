@@ -439,3 +439,11 @@ the App no longer duplicates scaling or bounds checks. The runtime returns the
 overlay entity or spatial entity/visual ID to the existing viewport selection
 Feature. Pointer capture, modifiers and cancellation remain App policy. Picks,
 bounds and camera queries do not write canonical state or undo history.
+
+### Spatial content policy
+
+Shared neutral scale support does not broaden rigid-part admission: Sim rejects
+explicit scale before projection. Its adapter supplies the existing solid,
+selectable, non-wireframe caster policy and non-wireframe receiver policy as
+independent neutral fields. Workcell light colors/intensities remain explicit
+App composition. No geometry, solver, source or playback policy changes.

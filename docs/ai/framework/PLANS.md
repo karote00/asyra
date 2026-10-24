@@ -61,9 +61,9 @@ None.
 ## Preset 3D Foundation
 
 - [Preset 3D Foundation and App Migration](plans/preset-3d-foundation-plan.md)
-  - Tasks 1-5 complete: reviewed design, pure admission, engine resources, shared
-    projection/bounds, App-directed Camera controls and spatial queries/picking
-    verified. Paused for user inspection before Task 6; whole-flow runtime and 3D activation remain pending.
+  - Tasks 1-6 complete: reviewed design, pure admission, engine resources, shared
+    projection/bounds, App-directed Camera controls, spatial queries/picking and
+    optional content/presentation verified. Paused for user inspection before Task 7; whole-flow runtime and 3D activation remain pending.
   - One canonical 3D architecture for Sim, FieldScope and Office. Scene Tree
     presentation and camera angles/modes remain App-owned; shared controls and
     projection mechanisms are optional Preset foundations.

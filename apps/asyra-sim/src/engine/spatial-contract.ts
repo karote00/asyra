@@ -68,6 +68,8 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
     return admitDescriptor(value) as SpatialDescriptor
   if (!record(value)) return admitDescriptor(value) as SpatialDescriptor
   const snapshot = { ...value }
+  if (snapshot.kind === 'mesh' && snapshot.scale !== undefined)
+    throw new Error('Sim requires rigid poses')
   const input =
     snapshot.kind === 'mesh'
       ? {
@@ -78,7 +80,12 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
           color: snapshot.color,
           opacity: snapshot.opacity,
           wireframe: snapshot.wireframe,
-          selectable: snapshot.selectable
+          selectable: snapshot.selectable,
+          castShadow:
+            snapshot.selectable === true &&
+            snapshot.opacity === 1 &&
+            snapshot.wireframe === false,
+          receiveShadow: snapshot.wireframe === false
         }
       : snapshot
   const accepted = admitDescriptor(input)

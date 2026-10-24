@@ -85,7 +85,13 @@ it('validates the detached values it will retain rather than earlier accessor re
 })
 
 it('detaches instance transforms and reuses accepted transforms across presentation changes', () => {
-  const instances = [{ position: [1, 0, 2], yaw: Math.PI }]
+  const instances = [
+    {
+      position: [1, 0, 2],
+      rotation: [0, Math.sin(Math.PI / 2), 0, Math.cos(Math.PI / 2)],
+      id: 'instance-1'
+    }
+  ]
   const accepted = readSpatialDescriptor({ ...input(), instances })
   if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
   instances[0].position[0] = 99
@@ -95,8 +101,20 @@ it('detaches instance transforms and reuses accepted transforms across presentat
   expect(next.kind === 'mesh' && next.instances).toBe(accepted.instances)
   for (const invalid of [
     [],
-    [{ position: [NaN, 0, 0], yaw: 0 }],
-    [{ position: [0, 0, 0], yaw: Infinity }]
+    [
+      {
+        position: [NaN, 0, 0],
+        rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)],
+        id: 'instance-2'
+      }
+    ],
+    [
+      {
+        position: [0, 0, 0],
+        rotation: [0, Math.sin(Infinity / 2), 0, Math.cos(Infinity / 2)],
+        id: 'instance-3'
+      }
+    ]
   ])
     expect(() =>
       readSpatialDescriptor({ ...input(), instances: invalid })
@@ -192,16 +210,54 @@ vi.mock('@asyra/render', () => {
   throw new Error('Pure admission must not load Render')
 })
 
-it('preserves optional stable instance identities and rejects duplicates atomically', async () => {
+it('preserves required stable instance identities and rejects duplicates atomically', async () => {
   const { readSpatialInstances } = await import('../spatial-contract.js')
   const input = [
-    { id: 'a', position: [0, 0, 0], yaw: 0 },
-    { id: 'b', position: [2, 0, 0], yaw: 0 }
+    {
+      id: 'a',
+      position: [0, 0, 0],
+      rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)]
+    },
+    {
+      id: 'b',
+      position: [2, 0, 0],
+      rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)]
+    }
   ]
   const result = readSpatialInstances(input)
   expect(result[0]).toMatchObject({ id: 'a' })
   expect(() => readSpatialInstances([input[0], input[0]])).toThrow()
   expect(() => readSpatialInstances([{ ...input[0], id: '' }])).toThrow()
+  for (const invalid of [
+    { ...input[0], id: undefined },
+    { ...input[0], rotation: [0, 0, 0, 0] },
+    { ...input[0], scale: [0, 1, 1] },
+    { ...input[0], yaw: 0 }
+  ])
+    expect(() => readSpatialInstances([invalid])).toThrow()
   input[0].id = 'mutated'
   expect(result[0]).toMatchObject({ id: 'a' })
+})
+
+it('admits complete mesh poses and independent shadow policy while rejecting invalid transforms', () => {
+  const accepted = readSpatialDescriptor({
+    ...input(),
+    scale: [2, 3, 4],
+    castShadow: true,
+    receiveShadow: false
+  })
+  expect(accepted).toMatchObject({
+    scale: [2, 3, 4],
+    castShadow: true,
+    receiveShadow: false
+  })
+  for (const scale of [
+    [0, 1, 1],
+    [-1, 1, 1],
+    [Infinity, 1, 1]
+  ])
+    expect(() => readSpatialDescriptor({ ...input(), scale })).toThrow()
+  expect(() =>
+    readSpatialDescriptor({ ...input(), shear: [1, 0, 0] })
+  ).toThrow()
 })

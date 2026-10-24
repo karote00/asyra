@@ -32,9 +32,19 @@ it('bounds primitives, empty scenes and current mesh/instance transforms using c
     const value = mesh({
       position: [7, -2, 3],
       rotation: q.toArray(),
+      scale: [2, 1, 3],
       instances: [
-        { position: [2, 1, 0], yaw: 0.7 },
-        { position: [-3, 0, 5], yaw: -0.4 }
+        {
+          position: [2, 1, 0],
+          rotation: [0, Math.sin(0.7 / 2), 0, Math.cos(0.7 / 2)],
+          id: 'instance-1',
+          scale: [1, 2, 0.5]
+        },
+        {
+          position: [-3, 0, 5],
+          rotation: [0, Math.sin(-0.4 / 2), 0, Math.cos(-0.4 / 2)],
+          id: 'instance-2'
+        }
       ]
     })
     const expected = new Box3()
@@ -44,8 +54,10 @@ it('bounds primitives, empty scenes and current mesh/instance transforms using c
           for (const z of [-3, 3])
             expected.expandByPoint(
               new Vector3(x, y, z)
-                .applyAxisAngle(new Vector3(0, 1, 0), instance.yaw)
+                .multiply(new Vector3(...(instance.scale ?? [1, 1, 1])))
+                .applyQuaternion(new Quaternion(...instance.rotation))
                 .add(new Vector3(...instance.position))
+                .multiply(new Vector3(...(value.scale ?? [1, 1, 1])))
                 .applyQuaternion(q)
                 .add(new Vector3(...value.position))
             )
@@ -72,8 +84,16 @@ it('scans admitted local vertices once, with bounded corner work for repeated pl
   const value = mesh({
     shape: { kind: 'triangles', positions, indices: [0, 1, 2] },
     instances: [
-      { position: [0, 0, 0], yaw: 0 },
-      { position: [2, 0, 1], yaw: 0.4 }
+      {
+        position: [0, 0, 0],
+        rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)],
+        id: 'instance-3'
+      },
+      {
+        position: [2, 0, 1],
+        rotation: [0, Math.sin(0.4 / 2), 0, Math.cos(0.4 / 2)],
+        id: 'instance-4'
+      }
     ]
   })
   const owner = new SpatialBoundsOwner()

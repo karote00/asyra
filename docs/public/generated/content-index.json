@@ -1771,7 +1771,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "d8e6517c38f103665e109e37146febc4ac0a1388cd013ce330016c4ec58d05ca",
+      "contentSha256": "46fd3b6a88f558f2d23a187d98c29fe62c2fa3dd82b766ffc4e658ceed69bba8",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -1821,6 +1821,10 @@
         {
           "depth": 2,
           "title": "Optional spatial picking"
+        },
+        {
+          "depth": 2,
+          "title": "Opt-in mesh definitions and pose presentation"
         }
       ],
       "id": "reference/packages/preset",
@@ -1831,7 +1835,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 536
+      "wordCount": 700
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
@@ -2019,7 +2023,7 @@
       "wordCount": 609
     },
     {
-      "contentSha256": "3d2f6eb22a4f6eaf8f02706423f34a0c94b4970ceebb89218c9dd67d7eb427e0",
+      "contentSha256": "246eafa4d7dbd2750ec25680fbe42424a78fb392b71f0d4c7334b1980a16a713",
       "description": "Public engine-provider contract that keeps renderer implementations replaceable.",
       "headings": [
         {
@@ -2083,7 +2087,7 @@
       "path": "reference/packages/render-engine.md",
       "section": "Reference",
       "title": "@asyra/render-engine",
-      "wordCount": 530
+      "wordCount": 570
     },
     {
       "contentSha256": "6b1da10bd572467992694c5e0ae923f7d803b97db81d494b35b37b4c2a69c34f",

@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "13f03182f28a7b1730d1279fcd895a03074ef2f77497e91ffe976f5ba21d82e8"
+          "sha256": "d0e06fe75fe05660ee2b4bc48ff4b8e5e14bace93a9a6db2ee949a1f460792a8"
         }
       ]
     },
@@ -170,7 +170,7 @@
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
-          "sha256": "cab173d60fa275ac5751e4d580a48a947c31986bb02d4b0342e3aa8f72f50d91"
+          "sha256": "7962e836bcf6e5853c60cf805c5ef59c7931a444bead5572d7f18d6a62b0fd12"
         },
         {
           "path": "docs/ai/framework/golden-paths/replace-render-engine.md",
@@ -242,7 +242,7 @@
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
-          "sha256": "cab173d60fa275ac5751e4d580a48a947c31986bb02d4b0342e3aa8f72f50d91"
+          "sha256": "7962e836bcf6e5853c60cf805c5ef59c7931a444bead5572d7f18d6a62b0fd12"
         }
       ]
     },
@@ -434,11 +434,11 @@
     },
     {
       "id": "reference/packages/preset",
-      "pageSha256": "d8e6517c38f103665e109e37146febc4ac0a1388cd013ce330016c4ec58d05ca",
+      "pageSha256": "46fd3b6a88f558f2d23a187d98c29fe62c2fa3dd82b766ffc4e658ceed69bba8",
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "13f03182f28a7b1730d1279fcd895a03074ef2f77497e91ffe976f5ba21d82e8"
+          "sha256": "d0e06fe75fe05660ee2b4bc48ff4b8e5e14bace93a9a6db2ee949a1f460792a8"
         },
         {
           "path": "packages/preset/package.json",
@@ -490,11 +490,11 @@
     },
     {
       "id": "reference/packages/render-engine",
-      "pageSha256": "3d2f6eb22a4f6eaf8f02706423f34a0c94b4970ceebb89218c9dd67d7eb427e0",
+      "pageSha256": "246eafa4d7dbd2750ec25680fbe42424a78fb392b71f0d4c7334b1980a16a713",
       "sources": [
         {
           "path": "docs/ai/framework/packages/render-engine.md",
-          "sha256": "cab173d60fa275ac5751e4d580a48a947c31986bb02d4b0342e3aa8f72f50d91"
+          "sha256": "7962e836bcf6e5853c60cf805c5ef59c7931a444bead5572d7f18d6a62b0fd12"
         },
         {
           "path": "packages/render-engine/package.json",

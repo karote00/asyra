@@ -45,8 +45,10 @@ custom engine implementations.
 
 Spatial data types are SDK-independent. Preset owns structural admission and
 immutable receipts; App admission may retain a narrower product subset. The
-current instance representation retains position/yaw and an optional nonempty,
-unique source `id`. Expanded scale/rotation formats remain later plan slices.
+current instance representation requires a nonempty unique `id`, local position
+and normalized quaternion, with optional positive scale. Meshes also accept
+positive scale and explicit independent shadow flags. App placement adapters own
+conversion from narrower domain formats.
 
 `initialize(...)` may be asynchronous. `execute(...)`, `query(...)`, and
 `destroy()` are synchronous so render orchestration observes deterministic

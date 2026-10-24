@@ -390,3 +390,40 @@ Interactive screen graphics precede scene hits. Bounds reuse owned local geometr
 bounds and apply source-instance/world poses; no input or solver policy is inferred.
 Apps consume the named Render/Core facade and retain action, capture and cancel
 policy. These mechanisms do not activate the reserved `3D` profile.
+
+## Optional spatial content and presentation
+
+`registerSpatialMesh(core)` explicitly registers `SPATIAL_MESH_SCHEMA`,
+`SPATIAL_MESH_PROPERTY_DEFINITION`, `SPATIAL_MESH_COMPONENT_DEFINITION` and
+`SPATIAL_MESH_RENDER_STRATEGY` before startup. The exported definitions remain
+customizable through ordinary Core registration. They do not join the Preset
+catalog or install projection channels, a camera, navigation, or a tree UI.
+Compose the normal Core state/projection channels for a canonical document App;
+domain Apps can continue supplying completed `SpatialLayer` submissions.
+
+The `spatial-mesh-data` property contains schema-backed `descriptor` and `visible`
+values. The `spatial-mesh` component exposes them to a strategy retaining one
+mesh child with explicit element/visual identity. Runtime invalid values reject;
+load validation uses declared defaults. Installation failures reverse completed
+registrations and report cleanup failures. The returned cleanup is for open
+composition; Core `resetRuntime` owns successful runtime retirement. No second
+registration or editing runtime is installed.
+
+Neutral instances require unique stable IDs, normalized local quaternions and
+optional positive scale; mesh scale is applied once after each instance pose.
+`castShadow` and `receiveShadow` default to false independently of selectability.
+Apps supply explicit lighting colors, intensities, positions, shadow range and
+software-renderer policy. Invalid lighting rejects before driver allocation.
+The shared default lighting is neutral; each existing App supplies its own style.
+
+Distant geometry has `maxError` and optional `pixelError` (default 2 physical
+pixels). Retained detail depends on current world pose, placements, full geometry,
+view/projection, height, DPR and both error values. Hidden meshes resume with
+current inputs. Material/pose/instance-count changes retain unchanged geometry
+and material ownership; capacity changes retire only old instance buffers.
+Full-shape bounds and queries remain independent of detail selection.
+
+`SpatialPosePresentation` interpolates one admitted position/quaternion/scale
+target from caller-provided progress and tolerance/reduced-motion policy.
+Retarget replaces, cancel drops and dispose retires the target. It owns no time,
+canonical state, geometry or scheduling. Camera choices remain App-owned.

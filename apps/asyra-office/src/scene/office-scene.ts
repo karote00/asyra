@@ -38,7 +38,9 @@ const meshDescriptor = (
     color,
     opacity: 1,
     wireframe: false,
-    selectable: false
+    selectable: false,
+    castShadow: false,
+    receiveShadow: true
   }) as Mesh
 /** Scene assets and motion are presentation only; no task/document reads in a frame. */
 export class OfficeScene {

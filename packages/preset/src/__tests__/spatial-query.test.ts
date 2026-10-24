@@ -138,7 +138,13 @@ it('converts complete instance poses once and measures local/world full-shape bo
   const object = f.add({
     ...box,
     position: [3, 0, 0],
-    instances: [{ id: 'source-a', position: [2, 0, 0], yaw: Math.PI / 2 }]
+    instances: [
+      {
+        id: 'source-a',
+        position: [2, 0, 0],
+        rotation: [0, Math.sin(Math.PI / 2 / 2), 0, Math.cos(Math.PI / 2 / 2)]
+      }
+    ]
   })
   const world = f.engine.query({
     type: 'spatial-convert',
@@ -162,10 +168,20 @@ it('converts complete instance poses once and measures local/world full-shape bo
   ).toMatchObject({ point: [expect.closeTo(0, 10), 0, 1] })
   expect(
     f.engine.query({ type: 'spatial-bounds', object, space: 'local' })
-  ).toMatchObject({ bounds: { min: [1.5, -0.5, -0.5], max: [2.5, 0.5, 0.5] } })
+  ).toMatchObject({
+    bounds: {
+      min: [1.5, -0.5, expect.closeTo(-0.5)],
+      max: [2.5, 0.5, expect.closeTo(0.5)]
+    }
+  })
   expect(
     f.engine.query({ type: 'spatial-bounds', object, space: 'world' })
-  ).toMatchObject({ bounds: { min: [4.5, -0.5, -0.5], max: [5.5, 0.5, 0.5] } })
+  ).toMatchObject({
+    bounds: {
+      min: [4.5, -0.5, expect.closeTo(-0.5)],
+      max: [5.5, 0.5, expect.closeTo(0.5)]
+    }
+  })
   expect(() =>
     f.engine.query({
       type: 'spatial-convert',
@@ -188,8 +204,16 @@ it('returns full-shape source instance hits despite detail compaction, with stab
     ...box,
     opacity: 0,
     instances: [
-      { id: 'offscreen', position: [100, 0, 0], yaw: 0 },
-      { id: 'selected', position: [0, 0, 0], yaw: 0 }
+      {
+        id: 'offscreen',
+        position: [100, 0, 0],
+        rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)]
+      },
+      {
+        id: 'selected',
+        position: [0, 0, 0],
+        rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)]
+      }
     ],
     distant: {
       shape: { kind: 'box', size: [0.01, 0.01, 0.01] },
@@ -234,8 +258,16 @@ it('returns full-shape source instance hits despite detail compaction, with stab
       [SPATIAL_PROPERTY]: {
         ...box,
         instances: [
-          { id: 'selected', position: [0, 0, 0], yaw: 0 },
-          { id: 'offscreen', position: [100, 0, 0], yaw: 0 }
+          {
+            id: 'selected',
+            position: [0, 0, 0],
+            rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)]
+          },
+          {
+            id: 'offscreen',
+            position: [100, 0, 0],
+            rotation: [0, Math.sin(0 / 2), 0, Math.cos(0 / 2)]
+          }
         ]
       }
     }
@@ -347,5 +379,36 @@ it('prioritizes eligible screen overlays and reuses full geometry across repeate
   expect(
     f.engine.query({ type: 'spatial-pick', point: { x: 320, y: 240 } })
   ).toMatchObject({ hit: null })
+  f.engine.destroy()
+})
+
+it('applies nonuniform mesh and instance scale to query conversion and full-shape bounds without baking geometry', () => {
+  const f = setup()
+  f.add(camera)
+  const object = f.add({
+    ...box,
+    position: [10, 0, 0],
+    scale: [2, 3, 4],
+    instances: [
+      {
+        id: 'scaled',
+        position: [1, 0, 0],
+        rotation: [0, 0, 0, 1],
+        scale: [2, 1, 1]
+      }
+    ]
+  })
+  expect(
+    f.engine.query({
+      type: 'spatial-convert',
+      object,
+      point: [1, 1, 1],
+      to: 'world',
+      instanceIndex: 0
+    })
+  ).toMatchObject({ point: [16, 3, 4] })
+  expect(
+    f.engine.query({ type: 'spatial-bounds', object, space: 'world' })
+  ).toMatchObject({ bounds: { min: [10, -1.5, -2], max: [14, 1.5, 2] } })
   f.engine.destroy()
 })

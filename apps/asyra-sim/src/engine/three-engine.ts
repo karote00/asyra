@@ -15,7 +15,11 @@ export class ThreeEngine extends SpatialEngine {
         keyPosition: [3, 6, 4],
         fillPosition: [-3, 3, -4],
         shadowExtent: 4,
-        shadowFar: 20
+        shadowFar: 20,
+        keyColor: 0xfff3e5,
+        keyIntensity: 2.6,
+        fillColor: 0xb6d5f5,
+        fillIntensity: 1.2
       }
     })
   }
