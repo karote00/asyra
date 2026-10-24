@@ -1315,7 +1315,7 @@ Inspector admission, implementation readiness or runtime completion.
 ## Closeout
 
 Completed: 2026-10-24
-Reviewed source: 48af2e13e4458fed7d6123729c54f6404eab921c
+Reviewed source: dc623fedcb5a5a5797a6e02c55af8df3b3f46201
 Outcome: Tasks 1-10 are complete; the generic spatial foundation, three App migrations, official 3D profile, editing and restricted assets were merged in PR #357.
 Decision: The user confirmed the merge and requested archival; this record is DONE. Camera policy, scene-tree UI and domain behavior remain App-owned.
 Exit criteria: The reviewed C01-C12 implementation, preservation and WebGL evidence recorded in this plan passed, followed by complete local PR validation and successful final CI.
@@ -1336,6 +1336,7 @@ This archival synchronizes the plan's incoming references and rebases its
 relative links without changing the reviewed flow or historical task results.
 HYBRID, orthographic world cameras, multiview, full glTF/skins/animation,
 physics/pathfinding and new domain tools remain outside the completed scope.
-No version, Changeset, tag, publication, deployment or local .env changes are
-part of closeout. Design production remains static; local full-backend
+No version bump, tag, publication, deployment or local .env changes are
+part of closeout. The separately requested non-versioned checker correction
+has an empty Changeset solely for repository PR admission. Design production remains static; local full-backend
 configuration is preserved.
