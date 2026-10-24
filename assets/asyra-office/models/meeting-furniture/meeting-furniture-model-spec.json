@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "Original references approved; meeting table document revision approved by the user for commit; no model verification",
+  "status": "Original references and meeting table revision approved; whiteboard document revision approved by the user for commit; no model verification",
   "units": "metres",
   "coordinates": {
     "up": "+Z",
@@ -192,6 +192,135 @@
         "backing": "honey-wood",
         "tray": "honey-wood",
         "writingPanel": "ivory"
+      },
+      "frameMembers": [
+        {
+          "id": "frame-top",
+          "polygonXZ": [
+            [-0.45, 0.3],
+            [-0.425, 0.275],
+            [0.425, 0.275],
+            [0.45, 0.3]
+          ]
+        },
+        {
+          "id": "frame-right",
+          "polygonXZ": [
+            [0.45, 0.3],
+            [0.425, 0.275],
+            [0.425, -0.275],
+            [0.45, -0.3]
+          ]
+        },
+        {
+          "id": "frame-bottom",
+          "polygonXZ": [
+            [0.45, -0.3],
+            [0.425, -0.275],
+            [-0.425, -0.275],
+            [-0.45, -0.3]
+          ]
+        },
+        {
+          "id": "frame-left",
+          "polygonXZ": [
+            [-0.45, -0.3],
+            [-0.425, -0.275],
+            [-0.425, 0.275],
+            [-0.45, 0.3]
+          ]
+        }
+      ],
+      "constructionReview": {
+        "documentStatus": "user-approved-for-commit",
+        "geometryRecipe": "WHITEBOARD-SPEC.md",
+        "productionRoute": "programmatic-prisms-and-boxes",
+        "closedComponentCount": 7,
+        "contactCount": 13,
+        "modelVerified": false,
+        "rule": "Extrude four counter-clockwise XZ frame polygons through parts.frame.yRange. Preserve sharp 45-degree default miters, original ring envelope, three boxes and positive-area flush contacts. Do not emit parts.frame as an additional mesh; it supplies the ring envelope and depth only. Emit four frameMembers prisms plus writingPanel, backing and tray boxes, exactly once each.",
+        "referenceSheet": "review/02-blank-whiteboard-v2.png",
+        "referenceCorrection": "RIGHT inset generated from the existing frame/tray bounds: forward projection is screen-left and tray top equals frame bottom. Other four views retain source pixels; v1 is historical input only."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "defaultExtentsXYZ": [0.9, 0.06, 0.612],
+        "invalidExtentPolicy": "reject",
+        "rule": "Scale every part once about the frame rear mounting origin; preserve Y=0 and asymmetric Z bounds. Do not recenter, refit frame members or restore miter angles after nonuniform sizing."
+      },
+      "appearance": {
+        "regions": [
+          {
+            "id": "frame-top",
+            "part": "frame",
+            "member": "frame-top",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "frame-right",
+            "part": "frame",
+            "member": "frame-right",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "frame-bottom",
+            "part": "frame",
+            "member": "frame-bottom",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "frame-left",
+            "part": "frame",
+            "member": "frame-left",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "writing-panel",
+            "part": "writingPanel",
+            "defaultMaterial": "ivory"
+          },
+          {
+            "id": "backing",
+            "part": "backing",
+            "defaultMaterial": "honey-wood"
+          },
+          {
+            "id": "tray",
+            "part": "tray",
+            "defaultMaterial": "honey-wood"
+          }
+        ],
+        "overrideOrder": "Resolve material and colour independently: region, part group, whiteboard, preset. Apply supplied colour after material selection; isolate instance state.",
+        "coordinateSpace": "resized local metres before placement",
+        "defaultOpacity": 1,
+        "defaultTransmission": 0,
+        "defaultEmission": 0,
+        "defaultClearcoat": 0,
+        "bakedLighting": false
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "triangleCount": 84,
+            "maxTriangles": 84,
+            "maxSurfaceError": 0
+          },
+          {
+            "id": "lod1",
+            "triangleCount": 84,
+            "maxTriangles": 84,
+            "maxSurfaceError": 0
+          },
+          {
+            "id": "lod2",
+            "triangleCount": 84,
+            "maxTriangles": 84,
+            "maxSurfaceError": 0
+          }
+        ],
+        "rule": "Reuse the same seven closed components across tiers, with seven regions and thirteen flush contacts. No geometric simplification, cavity fill or cap deletion."
       }
     }
   ],

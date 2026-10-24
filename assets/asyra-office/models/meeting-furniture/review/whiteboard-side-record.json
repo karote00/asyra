@@ -1,0 +1,36 @@
+{
+  "source": "02-blank-whiteboard-v1.png",
+  "current": "02-blank-whiteboard-v2.png",
+  "patchBoundsXYWH": [
+    700,
+    70,
+    185,
+    465
+  ],
+  "pixelsPerMetre": 500.0,
+  "camera": {
+    "positionAxis": "+X",
+    "lookDirection": "-X",
+    "screenRight": "+Y",
+    "screenUp": "+Z"
+  },
+  "frameRectXYWH": [
+    783.5,
+    136.0,
+    12.5,
+    300.0
+  ],
+  "trayRectXYWH": [
+    766.0,
+    436.0,
+    30.0,
+    6.000000000000005
+  ],
+  "sourceSha256": "aa589326789353b62406d60a26e84e6ead66d48e0914bb250bf88da3b5599318",
+  "svgSha256": "3af53cff9021064734d9865442c4339d12c8695489f49ced8d9453721c5a1e9a",
+  "scope": "Only the RIGHT inset is replaced. Other four views retain original pixels. No model geometry or production render is generated.",
+  "pixelVerification": {
+    "changedPixels": 77088,
+    "outsidePatchChangedPixels": 0
+  }
+}

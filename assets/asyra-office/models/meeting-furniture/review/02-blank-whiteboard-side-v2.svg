@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+<rect x="700" y="70" width="185" height="465" fill="white"/>
+<g fill="#B9864E" stroke="#514536" stroke-width="1">
+<rect id="frame" x="783.5" y="136" width="12.5" height="300"/>
+<rect id="tray" x="766" y="436" width="30" height="6"/>
+</g><g fill="none" stroke="#222" stroke-width="1">
+<path d="M783.5,136 V109 M796,136 V109 M783.5,116 H796"/>
+<path fill="#222" d="M783.5,116 l4,-2 v4 z M796,116 l-4,-2 v4 z"/>
+<path d="M766,442 V465 M796,442 V465 M766,458 H796"/>
+<path fill="#222" d="M766,458 l4,-2 v4 z M796,458 l-4,-2 v4 z"/>
+</g><g fill="#111" font-family="Arial,Helvetica,sans-serif" text-anchor="middle">
+<text x="789.75" y="99" font-size="23">0.025 m</text>
+<text x="781" y="484" font-size="23">0.06 m</text>
+<text x="781" y="519" font-size="25">RIGHT</text></g></svg>

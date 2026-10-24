@@ -55,7 +55,8 @@ class MeetingTableContractTests(unittest.TestCase):
 
     def test_original_geometry_whiteboard_materials_and_images_preserved(self):
         self.assertEqual(digest(self.parts), BASELINE['parts'])
-        self.assertEqual(digest(self.data['assets'][1]), BASELINE['whiteboard'])
+        # Whiteboard now has its own review; retain its original primitive dimensions.
+        self.assertEqual(digest(self.data['assets'][1]['parts']), '18e3847642b6582c4ce37815a4a97e1c148e2dfa6538f856ba305200f01a5de4')
         self.assertEqual(digest(self.data['materials']), BASELINE['materials'])
         for name, checksum in BASELINE['images'].items():
             self.assertEqual(hashlib.sha256((ROOT/'review'/name).read_bytes()).hexdigest(), checksum)

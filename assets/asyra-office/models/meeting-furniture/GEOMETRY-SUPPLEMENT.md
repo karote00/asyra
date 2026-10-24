@@ -22,13 +22,20 @@ No model or rendered likeness has been verified.
 
 ## Blank whiteboard
 
-Origin is the frame center on its rear mounting plane Y=0. Frame bounds: X +/-0.450, Z +/-0.300, Y=-0.025 to 0. The frame is a rectangular ring with square corners, outer width/height 0.900/0.600 and aperture 0.850/0.550. It has a constant 0.025 border.
+The [whiteboard construction contract](WHITEBOARD-SPEC.md) retains all existing
+part dimensions and resolves the frame as four 45-degree mitered prisms. Together
+they occupy the original rectangular ring. Frame XYZ size: 0.900 x 0.025 x 0.600 m
+(width x depth x height), with an .850 x .550 m XZ aperture. A separate panel, backing and flat tray give seven closed
+components with thirteen exact flush contacts. `parts.frame` describes the
+envelope and member depth; it is not an eighth mesh. No bevel, gap or extra connector.
 
-The writing panel fills the aperture, from Y=-0.021 to -0.017. Its front is recessed 0.004 relative to the frame front. A wooden backing fills the same aperture from Y=-0.005 to 0, leaving empty space behind the panel. Frame, panel, and backing are separately closed solids meeting at shared boundaries without extra seams.
-
-The marker tray is a plain flat box: X +/-0.300, Y=-0.060 to 0, Z=-0.312 to -0.300. Its top touches the lower frame edge. It has no front lip or storage groove.
-
-Total bounds including tray: width 0.900, height 0.612, depth 0.060. The frame alone is 0.600 high. No wall mounts, screws, marker, eraser, magnet, writing, stand, or room is included. Writing and interaction belong to the app later.
+The panel front recess is .004 m; the concealed panel/backing cavity is .012 m.
+Total XYZ extents are .900 x .060 x .612 m about the frame's rear mounting origin.
+The tray projects .035 m forward beyond the frame front; its total depth is .060 m.
+The current v2 RIGHT inset is generated from these dimensions: the tray projects
+screen-left and its top meets the frame bottom. Original v1 is historical input;
+its former reversed/elevated tray is not a construction reference.
+See the contract for polygons, topology, defaults, scaling and LOD counts.
 
 ## Views and future acceptance
 
