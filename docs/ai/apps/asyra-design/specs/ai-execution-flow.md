@@ -1644,6 +1644,25 @@ this delivery change; distinguish missing capability from missing usage informat
 
 ### Selective nested Knowledge delivery
 
+`discover_knowledge` accepts optional nonempty `ids` with known topic IDs alongside
+existing contexts. Supply these IDs to inspect only those topics and their selectable
+children in one call; omit ids for intentional full-catalog exploration. Direct reads
+remain legal without discovery. The App forwards selection to Runtime, never filters
+by topic names or independently walks dependencies. Missing/hidden/inapplicable roots
+return an empty selection, not the full catalog. Invalid selectors reject. Selected
+visible navigation cycles reject; unrelated graphs do not affect scoped selection.
+Keep source metadata and required dependency links; retrieval still resolves necessary
+constraints outside the chosen catalog. No automatic descendant-body reads, higher
+limits, mandatory Knowledge step or additional preliminary request.
+
+The repository-local `test:design-execution-flow` entry builds current Runtime
+public exports, then runs existing Runtime tests and the App server
+consumer harness before Inspector verification. Consumer failure blocks this entry
+regardless of a standalone Inspector pass. Reuse existing suite inventories; test the
+actual command's failure propagation. Standalone Inspector proves its mapped cases,
+not the unexecuted consumer suites. This gate neither queries CI nor calls a model and is not copied into standalone
+App templates.
+
 Discovery exposes selectable child IDs, descriptions and revisions through the
 existing metadata catalog. `children` means optional navigation, never automatic
 content retrieval; dotted IDs alone do not establish hierarchy. Only discoverable

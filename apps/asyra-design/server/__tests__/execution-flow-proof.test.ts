@@ -6820,8 +6820,17 @@ it('execution proof selects nested Knowledge without reading sibling bodies', as
   try {
     const contexts = ['architectural-illustration']
     const found = JSON.parse(
-      await tools.call('discover_knowledge', { contexts }, abortSignal)
+      await tools.call(
+        'discover_knowledge',
+        { contexts, ids: ['design.architectural-illustration'] },
+        abortSignal
+      )
     )
+    expect(
+      found.entries.some(
+        (item: { id: string }) => item.id === 'components.button'
+      )
+    ).toBe(false)
     const root = found.entries.find(
       (item: { id: string }) => item.id === 'design.architectural-illustration'
     )

@@ -816,6 +816,117 @@ it('reuses retained content until context or revision changes and rejects dispos
   state.access.dispose()
 })
 
+describe('scoped Knowledge navigation', () => {
+  it('uses registered children with constant selected work under unrelated catalog growth', async () => {
+    const inspected: string[] = []
+    let reads = 0
+    const access = createAiKnowledgeAccess({
+      tenantId: 'tenant',
+      scopeId: 'scope',
+      authorize: (operation, _identity, entry) => {
+        if (operation === 'discover' && entry) inspected.push(entry.id)
+        return true
+      },
+      read: async (entry) => {
+        reads++
+        return { revision: entry.revision, text: entry.id }
+      }
+    })
+    for (const entry of [
+      metadata('topic', { children: ['choice', 'missing'] }),
+      metadata('choice', { children: ['leaf'], references: ['constraint'] }),
+      metadata('leaf', { references: ['constraint'] }),
+      metadata('constraint'),
+      metadata('topic.unrelated')
+    ])
+      access.register(entry, admin)
+    const session = access.openSession(reader, 'scoped')
+    const before = session.discover([], ['topic', 'choice'])
+    expect(before.map(({ id }) => id)).toEqual(['choice', 'leaf', 'topic'])
+    expect(before.find(({ id }) => id === 'topic')?.children).toEqual([
+      'choice'
+    ])
+    expect(inspected.sort()).toEqual(['choice', 'leaf', 'topic'])
+    expect(reads).toBe(0)
+    for (let i = 0; i < 100; i++)
+      access.register(metadata(`unrelated-${i}`), admin)
+    inspected.length = 0
+    expect(session.discover([], ['topic'])).toEqual(before)
+    expect(inspected.sort()).toEqual(['choice', 'leaf', 'topic'])
+    expect(session.discover()).toHaveLength(105)
+    const selected = await session.retrieve({ ids: ['leaf'] }, signal())
+    expect(selected.documents.map(({ target }) => target)).toEqual([
+      'constraint',
+      'leaf'
+    ])
+    expect(reads).toBe(2)
+    access.dispose()
+  })
+
+  it('filters roots and children on each call without broadening or caching permissions', () => {
+    let hidden = true
+    const access = createAiKnowledgeAccess({
+      tenantId: 'tenant',
+      scopeId: 'scope',
+      authorize: (operation, _identity, entry) =>
+        operation !== 'discover' || !hidden || entry?.id !== 'hidden',
+      read: async (entry) => ({ revision: entry.revision, text: entry.id })
+    })
+    for (const entry of [
+      metadata('root', { children: ['hidden', 'special', 'missing'] }),
+      metadata('hidden', { children: ['independent'] }),
+      metadata('special', { contexts: ['special'] }),
+      metadata('independent')
+    ])
+      access.register(entry, admin)
+    const session = access.openSession(reader, 'visibility')
+    expect(session.discover([], ['missing', 'hidden', 'special'])).toEqual([])
+    expect(session.discover([], ['root']).map(({ id }) => id)).toEqual(['root'])
+    expect(session.discover(['special'], ['root']).map(({ id }) => id)).toEqual(
+      ['root', 'special']
+    )
+    hidden = false
+    expect(session.discover([], ['root']).map(({ id }) => id)).toEqual([
+      'hidden',
+      'independent',
+      'root'
+    ])
+    access.update(
+      metadata('root', { revision: 2, children: ['independent'] }),
+      1,
+      admin
+    )
+    expect(session.discover([], ['root']).map(({ id }) => id)).toEqual([
+      'independent',
+      'root'
+    ])
+    access.unregister('independent', 1, admin)
+    expect(session.discover([], ['root'])[0].children).toEqual([])
+    session.dispose()
+    expect(() => session.discover([], ['root'])).toThrow('KNOWLEDGE_DISPOSED')
+    access.dispose()
+  })
+
+  it('rejects invalid selectors and selected cycles but ignores unrelated navigation cycles', () => {
+    const f = fixture()
+    for (const entry of [
+      metadata('safe'),
+      metadata('a', { children: ['b'] }),
+      metadata('b', { children: ['a'] })
+    ])
+      f.access.register(entry, admin)
+    const session = f.access.openSession(reader, 'cycles')
+    expect(session.discover([], ['safe']).map(({ id }) => id)).toEqual(['safe'])
+    expect(() => session.discover([], ['a'])).toThrow('KNOWLEDGE_CYCLE')
+    expect(() => session.discover()).toThrow('KNOWLEDGE_CYCLE')
+    for (const ids of [[], ['safe', 'safe'], ['bad id'], null, 'safe'])
+      expect(() => session.discover([], ids as string[])).toThrow(
+        'KNOWLEDGE_INVALID_METADATA'
+      )
+    f.access.dispose()
+  })
+})
+
 describe('selective Knowledge navigation', () => {
   it('discovers nested choices without reading bodies or treating children as dependencies', async () => {
     const f = fixture()

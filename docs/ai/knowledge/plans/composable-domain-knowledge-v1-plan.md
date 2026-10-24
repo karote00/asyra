@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **The six discovery failures are resolved as obsolete test oracles; all 62 discovery cases now pass. Prior image-to-judgment work remains preserved and locally verified. Task 3 remains active. Push is authorized for the two locally verified slices; model/101 remains unauthorized.**
+Status: **Task 3 scoped Knowledge catalog and direct-consumer local verification are complete on formal local evidence. Task 3 remains active. AI adoption and latency effects are unobserved; no CI inspection, model run, 101 or push was performed for this slice.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,11 +20,9 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: close and push the locally verified main-workflow image handoff and
-  discovery oracle reconciliation. Preserve independent binding, multiscale evidence,
-  local invalidation and no replay. Then inspect the latest saved run for one next
-  App/framework handoff and assess existing drift-prevention gates, read-only.
-  No model/101, Knowledge, geometry, budget or unrelated owner change.
+- Current scope: scoped Knowledge discovery and consumer-first local verification
+  are locally complete under the fixed DoD below. Stop after reporting; do not
+  start another issue, inspect CI, push or run a model without new authorization.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -82,6 +80,93 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Scoped Knowledge catalog and consumer verification - 2026-10-24
+
+Step Execution Card - compose, optional Knowledge discovery:
+- Objective: a known topic can expose its complete selectable subtree in one metadata
+  request, without unrelated catalog growth or implicit advice reads. Inputs are the
+  existing context labels and optional nonempty `ids`; outputs retain the existing
+  metadata envelope. Full discovery when ids is omitted and direct retrieval bypass
+  scoped navigation. Missing, hidden or inapplicable roots return no entries, never
+  a broad catalog fallback. Invalid selectors reject; visible selected cycles reject.
+- Owner: Runtime Knowledge access owns traversal, visibility and lifecycle; the App
+  advertises and forwards the selector. Children are the sole navigation relation;
+  dotted names, prefixes, known topic lists and dependency relations never select
+  descendants. Required read dependencies still resolve even outside the catalog.
+- Sources: ai-execution-flow specification, Selective nested Knowledge delivery;
+  Framework optional Knowledge access; Inspector compose step and its
+  compose.knowledge-selection proof. No new registry, retained state or cache.
+- Authorized production files: Runtime knowledge.ts / knowledge-types.ts, App
+  local-knowledge.ts; repository package.json owns the validation entry. Contracts include this plan, those two specs,
+  the existing Inspector data/mapping and generated bundle. Formal tests stay in
+  the corresponding existing Knowledge suites, execution-flow proof and App local
+  validation contract tests in scripts/__tests__/local-validation.test.mjs. No Knowledge bodies, geometry or saved evidence edits.
+- Existing validation integration: Repository `test:design-execution-flow` chains the existing
+  Runtime build (public exports must match source), Runtime `test:local`, App `test:server-response-harness`, then Inspector verify.
+  Reuse the suite inventories; do not copy test filenames or extend Inspector's
+  architecture proof claim to arbitrary consumers. A failed consumer exits nonzero
+  before the Inspector command. Its standalone architecture check remains available.
+  Self-review found App scripts are copied into standalone templates: keep this
+  repository-only gate at the root, not in the App manifest or a new exclusion list.
+  This corrects the validation entry boundary without changing product behavior.
+- Fixed discovery methods: current owner/API/schema reads, actual published invocation,
+  saved 1792770001609 metadata input/output and direct-consumer execution. Captured
+  Knowledge owners match current source. Full response 9596 bytes / 20 entries;
+  existing child closure 5752 bytes / 10 entries is an estimate, not achieved evidence.
+- Fixed DoD: actual advertised selector -> catalog -> selected child -> complete
+  required dependencies in two calls; no sibling bodies; full catalog/direct reads
+  preserved; unrelated registration growth does not enlarge selected delivery or
+  cause unrelated traversal; arbitrary registered IDs work without owner edits.
+  Test hidden/missing/inapplicable roots and children, invalid/empty selectors,
+  selected/unrelated cycles, multiple overlapping roots, updates/removal/disposal,
+  cancellation, rehydrate, pagination and stale recovery. No writes or replay.
+  Test the actual local gate command: passing Inspector cannot mask failed consumers;
+  success reaches all phases, each failure stops later phases. Keep independent
+  expected sets and semantic oracles rather than copying traversal into tests.
+- Gates: naming, task-context, Inspector admission before production, test-first
+  failures, focused owner/consumer suites, existing local flow gate, production
+  types, scoped lint and generated Inspector tests. No CI queries or live models.
+- Stop: any unresolved boundary mismatch or new owner requirement outside this slice;
+  three failed repair iterations require bounded replanning. Live adoption and time
+  improvements remain unobserved even after deterministic completion.
+
+Local completion and bounded self-review:
+- Admission preceded production edits. Initial review
+  03f2a23e1e69a3884af1a7b34e28d11ceacf39dd74f047303bbdc4f537ff58f8
+  admitted the selector contract at revision 78; subsequent source-proof and local
+  gate-boundary reviews retain all obligations. Final accepted revision: 81.
+- Test-first: five new owner/consumer failures exposed unsupported selector delivery,
+  broad results and unrelated-cycle coupling; the local gate test exposed its missing
+  entry. A separate regression caught the unchanged native revision; discovery now
+  owns revision 3 while legal no-selector calls remain supported.
+- Self-review: App imports use public Runtime dist exports, so the local gate builds
+  current exports first. The gate belongs to the repository root because App scripts
+  are copied into standalone templates. Existing local-validation tests execute the
+  actual command with controlled process outcomes, covering success and each failed
+  phase without launching models. No duplicated test-file inventory or new registry.
+- Final actual entry `yarn test:design-execution-flow`: Runtime 433/433, App consumer
+  harness 1627 passed / 2 existing skips, then Inspector 71/71. The preserved skips
+  are not claimed as executed evidence. Knowledge focused suites: 58/58, including
+  advertised-expression execution, dependency bodies, no eager siblings, 100 unrelated
+  registrations with unchanged selected policy work, permissions, lifecycle, paging
+  and context recovery. Local-validation suite 15/15, generated Inspector tests 25/25,
+  naming 15/15, Runtime build and App/server/proof production types passed. Scoped
+  lint has zero errors and the existing proof console warning.
+- Final Inspector run: 5d3a8603-7974-4619-8b12-bea20a44c9a7, source
+  942e245349dc7556a5eaf01b03c6755f841a4c37306d67147e20d7e151eeffca,
+  mapping 6e24a2ffad14f9a25acdabc7ec6248711c166ad81fb8dfd18081edf78df97c05.
+  Logs: tmp/knowledge-scope-root-flow-final.log, validation-closeout, types,
+  lint-closeout, generated-closeout and naming-closeout under the same prefix.
+- Current-owner measurement (same catalog, no model): full metadata 20 entries /
+  9524 bytes; selected subtree 10 entries / 5680 bytes. Including each query input:
+  9567 versus 5767 bytes, a 3800-byte reduction (39.7%) at the same call count.
+  These owner-envelope figures exclude provider-added outcome/transport fields and
+  shared tool declarations; they are not whole-turn token or latency measurements.
+- Reviewed direct consumers, public exports, registered identities, full discovery,
+  unchanged retrieval closure/recovery, and standalone packaging. No unresolved
+  in-scope behavior finding. Shared/App advice bodies and immutable saved evidence
+  remain unchanged. No observation of live AI selector adoption or timing benefit.
 
 ### Local convergence and authorized push - 2026-10-24
 

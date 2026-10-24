@@ -514,11 +514,19 @@ and delivery reuse unchanged. The controller binds one tenant and
 scope. A host creates `openSession(principal, taskId)` from trusted request context;
 never obtain these identities from model tool arguments.
 
-Sessions expose `discover(contexts)`, `retrieve({ ids, contexts, rehydrate? }, signal)`,
+Sessions expose `discover(contexts?, ids?)`, `retrieve({ ids, contexts, rehydrate? }, signal)`,
 `invalidateContext()` and `dispose()`. Context invalidation only clears delivery
 receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Optional `children` lists navigation IDs,
 filtered to entries discoverable in the same contexts; missing children are omitted
-and visible navigation cycles reject. Navigation never participates in retrieval,
+and visible navigation cycles reject. Optional `ids` select roots plus their transitively visible children using the
+registered navigation relations, not name prefixes. Overlapping roots deduplicate;
+results retain deterministic ordering. Omitted ids preserves the full visible catalog;
+explicit empty ids rejects rather than broadening. Missing, unauthorized or
+inapplicable roots/children are omitted. Only cycles in the selected visible graph
+reject scoped discovery; unrelated graphs are not traversed. No content is read or
+cached. Registration and permission changes take effect on each call; session
+disposal still rejects. Read dependencies outside the selection remain mandatory.
+Navigation never participates in retrieval,
 permission to read, or implicit parent loading. Descriptions/revisions remain on
 those same catalog entries; no parallel index exists. Retrieval traverses sorted
 references/extends/explicit override targets, deduplicates dependencies, rejects

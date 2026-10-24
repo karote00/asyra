@@ -209,32 +209,36 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
         !metadata.contexts?.length ||
         metadata.contexts.some((context) => contexts.includes(context))
       const session: AiKnowledgeSession = Object.freeze({
-        discover(contexts: readonly string[] = []) {
+        discover(contexts: readonly string[] = [], ids?: readonly string[]) {
           assertSession()
           const labels = list(contexts)
+          const roots = ids === undefined ? entries.keys() : list(ids)
+          if (ids !== undefined && !ids.length)
+            fail('KNOWLEDGE_INVALID_METADATA')
           requirePermission('discover', who)
-          const visible = [...entries.values()].filter(
-            (metadata) =>
-              relevant(metadata, labels) && permitted('discover', who, metadata)
-          )
-          const choices = new Map(
-            visible.map((metadata) => [metadata.id, metadata])
-          )
+          const choices = new Map<string, AiKnowledgeMetadata>()
           const visited = new Set<string>()
           const visiting = new Set<string>()
           const visit = (id: string, depth: number) => {
             if (visiting.has(id)) fail('KNOWLEDGE_CYCLE')
             if (visited.has(id)) return
-            if (depth > 16) fail('KNOWLEDGE_LIMIT')
-            visiting.add(id)
-            for (const child of choices.get(id)?.children ?? [])
-              if (choices.has(child)) visit(child, depth + 1)
-            visiting.delete(id)
             visited.add(id)
+            const metadata = entries.get(id)
+            if (
+              !metadata ||
+              !relevant(metadata, labels) ||
+              !permitted('discover', who, metadata)
+            )
+              return
+            if (depth > 16) fail('KNOWLEDGE_LIMIT')
+            choices.set(id, metadata)
+            visiting.add(id)
+            for (const child of metadata.children ?? []) visit(child, depth + 1)
+            visiting.delete(id)
           }
-          for (const metadata of visible) visit(metadata.id, 0)
+          for (const id of roots) visit(id, 0)
           return Object.freeze(
-            visible
+            [...choices.values()]
               .sort((a, b) => (a.id < b.id ? -1 : 1))
               .map((metadata) =>
                 Object.freeze({

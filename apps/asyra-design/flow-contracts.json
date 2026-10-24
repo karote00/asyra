@@ -576,7 +576,8 @@
           "testName": "execution proof selects nested Knowledge without reading sibling bodies",
           "implementationPaths": [
             "apps/asyra-design/server/local-knowledge.ts",
-            "packages/ai-agent-runtime/src/knowledge.ts"
+            "packages/ai-agent-runtime/src/knowledge.ts",
+            "packages/ai-agent-runtime/src/knowledge-types.ts"
           ]
         },
         {
