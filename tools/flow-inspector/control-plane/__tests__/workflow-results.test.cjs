@@ -1481,7 +1481,10 @@ test('existing required E2E check names succeed for producers or declared skips'
     )?.[1]
     assert.ok(block, 'missing existing required check: ' + job)
     assert.match(block, /needs: \[scope, design-e2e\]/)
-    assert.match(block, /always\(\).*github.event.pull_request.draft == false/)
+    assert.match(
+      block,
+      /!cancelled\(\).*github.event.pull_request.draft == false/
+    )
     assert.ok(
       block.includes(
         'FLOW_PRODUCER_RESULT: ${{ needs.design-e2e.outputs.' + output + ' }}'
