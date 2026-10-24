@@ -2,9 +2,10 @@
 
 ## Status and bounded contract
 
-IN PROGRESS - updated 2026-10-24. This revision replaces the Changeset-centered
+IMPLEMENTATION COMPLETE - updated 2026-10-24. This revision replaces the Changeset-centered
 proposal with the existing App and Framework release owners. Task 1 is complete;
-Task 2 and its review corrections are complete; Task 3 is complete; Task 4 remains PLANNED.
+Task 2 and its review corrections are complete; Tasks 3 and 4 are complete.
+No publication occurred; formal plan archival remains a separate closeout action.
 Closeout owner: the release update guidance coordinating chat.
 
 Inspected base: `5f6b0c51aa0dd3178e5a9de285b10141f4691e5e`.
@@ -537,7 +538,7 @@ publication occurred.
 
 ## Task 4 - Prove customization and data preservation
 
-Status: PLANNED. Prerequisites: Tasks 1-3.
+Status: COMPLETE. Prerequisites: Tasks 1-3.
 Reuse the Text fixture tooling with separate new scenarios and evidence. Model
 three releases: official Text overlaps two custom fields; a later default changes
 while the consumer adds another custom field/Feature; a later representation
@@ -563,9 +564,58 @@ Required cases:
   the current App, sample data and its adoption note. It can complete the update
   and leave a usable next note without this conversation or maintainer-only paths.
 
+Execution contract: the public documentation verification owner prepares a new
+`fixtures/app-update-text-cross-version` consumer and an immutable input delivery.
+Public entries expose explicitly modeled release records and a self-contained
+three-stage guide. Existing candidate packages supply the actual APIs; no package
+or Framework runtime is changed. The new consumer starts with equivalent local
+line-height/spacing overrides, newer installed packages, stale adoption notes and
+an intervening review-note field/action. Its App-owned version-3 wire format moves
+letter spacing into a typed `tracking` value; canonical runtime units stay unchanged.
+The guide requires version 1 multiplier conversion before version 3 serialization,
+retains explicit saved values and rejects ambiguous units before load.
+
+The `verify-public-documentation` Inspector step owns this acceptance: inputs are
+public guides, retained candidate bytes, the isolated consumer and sample data;
+outputs are reproducible preservation tests and a separately identified consumer
+integration result. Gates cover baseline preservation, expected-red target cases,
+package/source identities, prior-evidence hashes, test/type/lint/build, public
+entry discovery, and the fresh-context handoff. An integration implementation is
+not supplied in the input delivery. New test evidence never replaces the original
+Text acceptance. Stop before publication; do not claim fresh-AI completion until
+an isolated consumer run has actually completed.
+
 Keep all original independent acceptance records unchanged. New fixture tests and
 consumer exercises report their own context and results; local candidate success
 is not proof of registry availability or universal historical compatibility.
+
+Preparation checkpoint (2026-10-24): the immutable `input-v1.tar.gz` contains only
+public documentation, the unsolved consumer, adopted-state inputs and exact local
+candidates. Four preservation cases, type/lint/build, delivery identity checks,
+public document gates and four website discovery cases pass. Four target cases
+fail as expected before integration. See the new fixture's `evidence/README.md`;
+these are coordinating-maintainer results, not independent acceptance. This was
+the pre-integration checkpoint; the completed result is recorded below.
+
+Task 4 completion (2026-10-24): independent chat
+`01a16e30-e3d0-7fa3-b7aa-f33e5f14c82a` integrated all three stages using only
+input-v1, public guides and the existing adoption note. It preserved intervening
+customization and direct/partial data through ordered migration, repeated reloads
+and one-action undo/redo. Its 31 tests, typecheck, lint and build passed. The
+implementation and 23 added tests are now in the permanent fixture; its separate
+maintainer replay passed the same 31 tests and all gates.
+
+`evidence/independent-v1.tar.gz` preserves the original source, notes, conversation
+outcomes and logs. `evidence/ERRATA.md` corrects the independent report's digest
+comparison: release guide hashes use JSON-encoded text, handoff hashes use raw
+bytes, and the original values are both correct. Public revision 2 documents that
+algorithm and composition-only definition reads. The test now uses the existing
+pre-start `app.definition` without weakening assertions. Original input-v1,
+revision-1 guide/records and both earlier Text acceptance fixtures are unchanged.
+Seven permanent evidence/discovery checks and the public documentation/Inspector
+gates passed. This is completed independent acceptance plus a maintainer replay,
+not a pending rerun. Registry/production/pixel coverage is not claimed; em-unit
+conversion remains an explicit product decision and the optional panel is deferred.
 
 ## Verification and completion
 

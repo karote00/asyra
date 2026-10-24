@@ -158,6 +158,12 @@ register it in `docs/public/content-manifest.json`, and include one
 consumer actions and evidence limits. Use the necessary fields below; no new
 service or update CLI is involved.
 
+Release summaries may stay concise: at least 40 words of explanatory prose plus
+the validated structured record and canonical sources. Full guides retain the
+normal 250-word minimum. Compact summaries still require every identity,
+predecessor, prerequisite, guide hash and source/link check; do not pad them with
+duplicated integration instructions.
+
 | Field                      | Required content                                                                                                                                                                           |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `id`, `owner`, `channel`   | Stable record ID, actual delivery owner, and `npm` or `cloudflare`.                                                                                                                        |

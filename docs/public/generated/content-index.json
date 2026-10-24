@@ -1299,7 +1299,7 @@
       "wordCount": 513
     },
     {
-      "contentSha256": "c5a1accd9a5c1db8f054bc23f0406c2d96017e6fe7fd5076ebb0ca9d05da2f20",
+      "contentSha256": "0e10f553822bd1cf945e93199518d1be4d836454fcab868f2f0f52c9b98ef62a",
       "description": "Select official update guides, retain App-owned extensions and give a coding agent enough context for first and subsequent integrations.",
       "headings": [
         {
@@ -1340,10 +1340,10 @@
       "path": "updates/index.md",
       "section": "Extend",
       "title": "Update your App with an AI coding agent",
-      "wordCount": 1093
+      "wordCount": 1162
     },
     {
-      "contentSha256": "0ba905db0f527c9fe23a52de65543b0dcd01e8c6ddece092c2308d2ff197dcde",
+      "contentSha256": "fad1881f6caf730c865ce5b0b99b779d58940bd4e66d66339d4a3b1947f1a317",
       "description": "Find per-owner release summaries, verified predecessor boundaries, prerequisites and guide corrections; report gaps and revisit deferred adoption.",
       "headings": [
         {
@@ -1369,7 +1369,183 @@
       "path": "updates/history.md",
       "section": "Extend",
       "title": "Release History and Update Coverage",
-      "wordCount": 344
+      "wordCount": 467
+    },
+    {
+      "contentSha256": "68f855f9e4649a541ca147cd20a48c5033a01ebd06f5083136f1d60b0ae65148",
+      "description": "Frozen revision-1 input used in the completed independent modeled Text acceptance; see revision 2 for digest and definition-read clarifications.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt Text Across Versions and Resume Partial Adoption"
+        },
+        {
+          "depth": 2,
+          "title": "Exact inputs and selected outcome"
+        },
+        {
+          "depth": 2,
+          "title": "Follow every stage and prerequisite"
+        },
+        {
+          "depth": 2,
+          "title": "Keep the official base and App extensions"
+        },
+        {
+          "depth": 2,
+          "title": "Ordered App serialization migration"
+        },
+        {
+          "depth": 2,
+          "title": "Required acceptance and next adoption note"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/text-cross-version-example-3",
+      "markdownPath": "docs/public/updates/text-cross-version-example-3.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/preset"
+      ],
+      "path": "updates/text-cross-version-example-3.md",
+      "section": "Extend",
+      "title": "Adopt Text Across Versions and Resume Partial Adoption",
+      "wordCount": 1159
+    },
+    {
+      "contentSha256": "463f5a0f378bcdeb4f3a1d6661704f65c8f2b017cc8cef8a99aec8af66c59173",
+      "description": "Revision 2 clarifies digest algorithms and composition-time reads after independent local acceptance with 31 tests; original input and evidence remain preserved.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt Text Across Versions and Resume Partial Adoption"
+        },
+        {
+          "depth": 2,
+          "title": "Verify the two digest formats"
+        },
+        {
+          "depth": 2,
+          "title": "Exact inputs and selected outcome"
+        },
+        {
+          "depth": 2,
+          "title": "Follow every stage and prerequisite"
+        },
+        {
+          "depth": 2,
+          "title": "Keep the official base and App extensions"
+        },
+        {
+          "depth": 2,
+          "title": "Ordered App serialization migration"
+        },
+        {
+          "depth": 2,
+          "title": "Required acceptance and next adoption note"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/text-cross-version-example-3-r2",
+      "markdownPath": "docs/public/updates/text-cross-version-example-3-r2.md",
+      "packages": [
+        "@asyra/core",
+        "@asyra/preset"
+      ],
+      "path": "updates/text-cross-version-example-3-r2.md",
+      "section": "Extend",
+      "title": "Adopt Text Across Versions and Resume Partial Adoption",
+      "wordCount": 1456
+    },
+    {
+      "contentSha256": "84bd9a9c23088eb1257c213d2fa9581d0da82340da0afed4811dfb3a1627f553",
+      "description": "Retained candidate with shared spacing default 0.5; modeled only.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Modeled Text Framework"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/releases/model-text-framework",
+      "markdownPath": "docs/public/updates/releases/model-text-framework.md",
+      "packages": [],
+      "path": "updates/releases/model-text-framework.md",
+      "section": "Extend",
+      "title": "Modeled Text Framework",
+      "wordCount": 61
+    },
+    {
+      "contentSha256": "4212408706d4c711fc1c7620f60f930fe4d562f8099283535cf3e74073bea4e0",
+      "description": "Adopt official typography definitions and retain App extensions; modeled only.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Modeled Text App 1"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/releases/model-text-app-1",
+      "markdownPath": "docs/public/updates/releases/model-text-app-1.md",
+      "packages": [],
+      "path": "updates/releases/model-text-app-1.md",
+      "section": "Extend",
+      "title": "Modeled Text App 1",
+      "wordCount": 62
+    },
+    {
+      "contentSha256": "01f4d9e5ec5626c2282c89b48666b41b0acf1b49365775886a448df02b484f2c",
+      "description": "Resume deferred shared spacing default adoption; modeled only.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Modeled Text App 2"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/releases/model-text-app-2",
+      "markdownPath": "docs/public/updates/releases/model-text-app-2.md",
+      "packages": [],
+      "path": "updates/releases/model-text-app-2.md",
+      "section": "Extend",
+      "title": "Modeled Text App 2",
+      "wordCount": 62
+    },
+    {
+      "contentSha256": "cc998d9ea61aea465abdf023c7f2593a94967881f9b0c30adad1c9b82d8a4e8b",
+      "description": "Migrate App serialization to typed tracking after multiplier conversion; modeled only.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Modeled Text App 3"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/releases/model-text-app-3",
+      "markdownPath": "docs/public/updates/releases/model-text-app-3.md",
+      "packages": [],
+      "path": "updates/releases/model-text-app-3.md",
+      "section": "Extend",
+      "title": "Modeled Text App 3",
+      "wordCount": 62
     },
     {
       "contentSha256": "317bf04a5f3db2289629904f2992d534867227e6031a6eb10ca8e52223117bf0",
@@ -2900,7 +3076,142 @@
       "wordCount": 1305
     }
   ],
-  "releaseHistory": [],
+  "releaseHistory": [
+    {
+      "id": "model-text-framework",
+      "owner": "@fixture/framework",
+      "channel": "npm",
+      "status": "modeled",
+      "previous": null,
+      "target": {
+        "sourceSha": "7bf3655242e6adca9ac7d81ff57d17df9b310c9e",
+        "version": "0.5.8-task4.0",
+        "integrity": "sha256-60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7"
+      },
+      "requires": [],
+      "evidence": [
+        "https://github.com/karote00/asyra/blob/7bf3655242e6adca9ac7d81ff57d17df9b310c9e/packages/preset/src/props/components/text-component.ts"
+      ],
+      "changes": [
+        {
+          "change": "model-text-framework",
+          "summary": "Retained candidate with shared spacing default 0.5",
+          "impact": "integration",
+          "reason": "Modeled exercise only; inspect actual adoption and preserve custom fields and data.",
+          "guides": [
+            "updates/text-cross-version-example-3.md"
+          ]
+        }
+      ],
+      "guideHashes": {
+        "updates/text-cross-version-example-3.md": "227135e30355aa0843af0bc853f678cdfa5e803094521cbd01622989273b5592"
+      },
+      "boundary": "First supported modeled exercise boundary; no historical published coverage.",
+      "path": "updates/releases/model-text-framework.md",
+      "title": "Modeled Text Framework"
+    },
+    {
+      "id": "model-text-app-1",
+      "owner": "@fixture/text-app",
+      "channel": "npm",
+      "status": "modeled",
+      "previous": null,
+      "target": {
+        "sourceSha": "7bf3655242e6adca9ac7d81ff57d17df9b310c9e",
+        "version": "model-1",
+        "integrity": "sha256-60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7"
+      },
+      "requires": [],
+      "evidence": [
+        "https://github.com/karote00/asyra/blob/7bf3655242e6adca9ac7d81ff57d17df9b310c9e/packages/preset/src/props/components/text-component.ts"
+      ],
+      "changes": [
+        {
+          "change": "model-text-app-1",
+          "summary": "Adopt official typography definitions and retain App extensions",
+          "impact": "integration",
+          "reason": "Modeled exercise only; inspect actual adoption and preserve custom fields and data.",
+          "guides": [
+            "updates/text-cross-version-example-3.md"
+          ]
+        }
+      ],
+      "guideHashes": {
+        "updates/text-cross-version-example-3.md": "227135e30355aa0843af0bc853f678cdfa5e803094521cbd01622989273b5592"
+      },
+      "boundary": "First supported modeled exercise boundary; no historical published coverage.",
+      "path": "updates/releases/model-text-app-1.md",
+      "title": "Modeled Text App 1"
+    },
+    {
+      "id": "model-text-app-2",
+      "owner": "@fixture/text-app",
+      "channel": "npm",
+      "status": "modeled",
+      "previous": "model-text-app-1",
+      "target": {
+        "sourceSha": "7bf3655242e6adca9ac7d81ff57d17df9b310c9e",
+        "version": "model-2",
+        "integrity": "sha256-60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7"
+      },
+      "requires": [
+        "model-text-framework"
+      ],
+      "evidence": [
+        "https://github.com/karote00/asyra/blob/7bf3655242e6adca9ac7d81ff57d17df9b310c9e/packages/preset/src/props/components/text-component.ts"
+      ],
+      "changes": [
+        {
+          "change": "model-text-app-2",
+          "summary": "Resume deferred shared spacing default adoption",
+          "impact": "integration",
+          "reason": "Modeled exercise only; inspect actual adoption and preserve custom fields and data.",
+          "guides": [
+            "updates/text-cross-version-example-3.md"
+          ]
+        }
+      ],
+      "guideHashes": {
+        "updates/text-cross-version-example-3.md": "227135e30355aa0843af0bc853f678cdfa5e803094521cbd01622989273b5592"
+      },
+      "path": "updates/releases/model-text-app-2.md",
+      "title": "Modeled Text App 2"
+    },
+    {
+      "id": "model-text-app-3",
+      "owner": "@fixture/text-app",
+      "channel": "npm",
+      "status": "modeled",
+      "previous": "model-text-app-2",
+      "target": {
+        "sourceSha": "7bf3655242e6adca9ac7d81ff57d17df9b310c9e",
+        "version": "model-3",
+        "integrity": "sha256-60ba8503161a1f88adfbe17a5c136e4d202df987b07b14452a3b4e9047db32b7"
+      },
+      "requires": [
+        "model-text-framework"
+      ],
+      "evidence": [
+        "https://github.com/karote00/asyra/blob/7bf3655242e6adca9ac7d81ff57d17df9b310c9e/packages/preset/src/props/components/text-component.ts"
+      ],
+      "changes": [
+        {
+          "change": "model-text-app-3",
+          "summary": "Migrate App serialization to typed tracking after multiplier conversion",
+          "impact": "integration",
+          "reason": "Modeled exercise only; inspect actual adoption and preserve custom fields and data.",
+          "guides": [
+            "updates/text-cross-version-example-3.md"
+          ]
+        }
+      ],
+      "guideHashes": {
+        "updates/text-cross-version-example-3.md": "227135e30355aa0843af0bc853f678cdfa5e803094521cbd01622989273b5592"
+      },
+      "path": "updates/releases/model-text-app-3.md",
+      "title": "Modeled Text App 3"
+    }
+  ],
   "release": {
     "family": "0.5",
     "packageCount": 19,
@@ -2948,6 +3259,12 @@
         "build/app-retrieval-action",
         "updates/index",
         "updates/history",
+        "updates/text-cross-version-example-3",
+        "updates/text-cross-version-example-3-r2",
+        "updates/releases/model-text-framework",
+        "updates/releases/model-text-app-1",
+        "updates/releases/model-text-app-2",
+        "updates/releases/model-text-app-3",
         "updates/text-official-fields-example-1-r2",
         "updates/text-official-fields-example-1-r3",
         "updates/text-spacing-example-2-r1",

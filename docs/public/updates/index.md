@@ -35,6 +35,14 @@ installation guidance and a retained pre-update delivery package. Its original
 tests. The revision-2 isolated rerun passed 34 tests with existing context; it
 is not a new independent acceptance. Published-release support remains unverified.
 
+The [cross-version and partial-adoption exercise](text-cross-version-example-3-r2.md)
+models three App stages and a shared Framework prerequisite. Independent
+revision-1 acceptance passed 31 tests plus typecheck, lint and build. Revision 2
+clarifies hash algorithms and composition-time definition reads; its permanent
+fixture replay is distinct from that original independent run. The frozen
+[revision 1](text-cross-version-example-3.md) and original evidence remain intact.
+This does not replace earlier Text results or establish a verified published range.
+
 The prior [revision 2](text-official-fields-example-1-r2.md) remains available for
 its original acceptance record. Revision 3 does not claim a second independent run.
 

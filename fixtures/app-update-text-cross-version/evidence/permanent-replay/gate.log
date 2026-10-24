@@ -1,0 +1,16 @@
+✔ cross-version delivery preserves evidence and reproduces the integrated consumer (11063.384417ms)
+ℹ restore-candidates passed; /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/app-update-cross-version-validation/restore-candidates.log
+ℹ install passed; /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/app-update-cross-version-validation/install.log
+ℹ test passed; /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/app-update-cross-version-validation/test.log
+ℹ typecheck passed; /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/app-update-cross-version-validation/typecheck.log
+ℹ lint passed; /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/app-update-cross-version-validation/lint.log
+ℹ build passed; /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/app-update-cross-version-validation/build.log
+ℹ evidence-after-replay passed; /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/tmp/app-update-cross-version-validation/evidence-after-replay.log
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11110.392209

@@ -1,0 +1,2 @@
+# Preserve raw evidence output, including whitespace and line endings.
+evidence/**/*.log -text -whitespace

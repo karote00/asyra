@@ -322,7 +322,7 @@
     },
     {
       "id": "updates/index",
-      "pageSha256": "c5a1accd9a5c1db8f054bc23f0406c2d96017e6fe7fd5076ebb0ca9d05da2f20",
+      "pageSha256": "0e10f553822bd1cf945e93199518d1be4d836454fcab868f2f0f52c9b98ef62a",
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
@@ -340,11 +340,71 @@
     },
     {
       "id": "updates/history",
-      "pageSha256": "0ba905db0f527c9fe23a52de65543b0dcd01e8c6ddece092c2308d2ff197dcde",
+      "pageSha256": "fad1881f6caf730c865ce5b0b99b779d58940bd4e66d66339d4a3b1947f1a317",
       "sources": [
         {
           "path": "docs/ai/framework/rules/release-update-guidance.md",
-          "sha256": "3fb1492787c302a4405e80338aefc4145ed4cc0607e552cdb2ef325027baff2e"
+          "sha256": "4cf54d8e63bb075a8d237a83f35d5d2b1944c266c1f078252d5df291b1624427"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-cross-version-example-3",
+      "pageSha256": "68f855f9e4649a541ca147cd20a48c5033a01ebd06f5083136f1d60b0ae65148",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "4cf54d8e63bb075a8d237a83f35d5d2b1944c266c1f078252d5df291b1624427"
+        }
+      ]
+    },
+    {
+      "id": "updates/text-cross-version-example-3-r2",
+      "pageSha256": "463f5a0f378bcdeb4f3a1d6661704f65c8f2b017cc8cef8a99aec8af66c59173",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "4cf54d8e63bb075a8d237a83f35d5d2b1944c266c1f078252d5df291b1624427"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-framework",
+      "pageSha256": "84bd9a9c23088eb1257c213d2fa9581d0da82340da0afed4811dfb3a1627f553",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "4cf54d8e63bb075a8d237a83f35d5d2b1944c266c1f078252d5df291b1624427"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-app-1",
+      "pageSha256": "4212408706d4c711fc1c7620f60f930fe4d562f8099283535cf3e74073bea4e0",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "4cf54d8e63bb075a8d237a83f35d5d2b1944c266c1f078252d5df291b1624427"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-app-2",
+      "pageSha256": "01f4d9e5ec5626c2282c89b48666b41b0acf1b49365775886a448df02b484f2c",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "4cf54d8e63bb075a8d237a83f35d5d2b1944c266c1f078252d5df291b1624427"
+        }
+      ]
+    },
+    {
+      "id": "updates/releases/model-text-app-3",
+      "pageSha256": "cc998d9ea61aea465abdf023c7f2593a94967881f9b0c30adad1c9b82d8a4e8b",
+      "sources": [
+        {
+          "path": "docs/ai/framework/rules/release-update-guidance.md",
+          "sha256": "4cf54d8e63bb075a8d237a83f35d5d2b1944c266c1f078252d5df291b1624427"
         }
       ]
     },

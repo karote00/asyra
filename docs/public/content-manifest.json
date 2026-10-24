@@ -288,6 +288,60 @@
       "packages": []
     },
     {
+      "id": "updates/text-cross-version-example-3",
+      "path": "updates/text-cross-version-example-3.md",
+      "section": "Extend",
+      "title": "Adopt Text Across Versions and Resume Partial Adoption",
+      "description": "Frozen revision-1 input used in the completed independent modeled Text acceptance; see revision 2 for digest and definition-read clarifications.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": ["@asyra/core", "@asyra/preset"]
+    },
+    {
+      "id": "updates/text-cross-version-example-3-r2",
+      "path": "updates/text-cross-version-example-3-r2.md",
+      "section": "Extend",
+      "title": "Adopt Text Across Versions and Resume Partial Adoption",
+      "description": "Revision 2 clarifies digest algorithms and composition-time reads after independent local acceptance with 31 tests; original input and evidence remain preserved.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": ["@asyra/core", "@asyra/preset"]
+    },
+    {
+      "id": "updates/releases/model-text-framework",
+      "path": "updates/releases/model-text-framework.md",
+      "section": "Extend",
+      "title": "Modeled Text Framework",
+      "description": "Retained candidate with shared spacing default 0.5; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/releases/model-text-app-1",
+      "path": "updates/releases/model-text-app-1.md",
+      "section": "Extend",
+      "title": "Modeled Text App 1",
+      "description": "Adopt official typography definitions and retain App extensions; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/releases/model-text-app-2",
+      "path": "updates/releases/model-text-app-2.md",
+      "section": "Extend",
+      "title": "Modeled Text App 2",
+      "description": "Resume deferred shared spacing default adoption; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
+      "id": "updates/releases/model-text-app-3",
+      "path": "updates/releases/model-text-app-3.md",
+      "section": "Extend",
+      "title": "Modeled Text App 3",
+      "description": "Migrate App serialization to typed tracking after multiplier conversion; modeled only.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
       "id": "updates/text-official-fields-example-1-r2",
       "path": "updates/text-official-fields-example-1-r2.md",
       "section": "Extend",

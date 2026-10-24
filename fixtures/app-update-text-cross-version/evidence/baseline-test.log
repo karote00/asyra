@@ -1,0 +1,60 @@
+
+ RUN  v3.2.7 /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/baseline-preservation.test.ts (4 tests) 111ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  21:07:31
+   Duration  1.14s (transform 39ms, setup 12ms, collect 473ms, tests 111ms, environment 385ms, prepare 45ms)
+

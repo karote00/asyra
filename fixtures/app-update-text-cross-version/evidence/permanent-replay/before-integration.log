@@ -1,0 +1,334 @@
+
+ RUN  v3.2.7 /Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version
+
+stderr | src/__tests__/migration-boundaries.test.ts > accepts existing version 3 and keeps wire tracking outside canonical state and projections
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects unsupported version before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects missing spacing before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects conflicting legacy representation before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects conflicting version 3 representation before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking undefined undefined before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking 1.5 em before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking 1.5 layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking 101 layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking NaN layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid tracking Infinity layout before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid approvalStatus before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid sourceRecordId before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid labelCategory before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid reviewNote before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid multiplier after conversion before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > rejects invalid negative multiplier and font size before changing canonical state or storage
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > preserves official flags and all four unique extension fields
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > keeps each action atomic after reload and isolates chart controls
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/migration-boundaries.test.ts > keeps each action atomic after reload and isolates chart controls
+Render layer "selection-overlay-layer" not found.
+
+ ❯ src/__tests__/migration-boundaries.test.ts (23 tests | 6 failed) 159ms
+   × accepts existing version 3 and keeps wire tracking outside canonical state and projections 28ms
+     → Unsupported document format
+   × preserves every typography field and explicit chart zero through repeated migrations 21ms
+     → expected 2 to be 3 // Object.is equality
+   × preserves every typography field and explicit chart zero through repeated migrations 7ms
+     → expected 2 to be 3 // Object.is equality
+   × preserves every typography field and explicit chart zero through repeated migrations 5ms
+     → expected 2 to be 3 // Object.is equality
+   ✓ rejects unsupported version before changing canonical state or storage 5ms
+   ✓ rejects missing spacing before changing canonical state or storage 5ms
+   × rejects conflicting legacy representation before changing canonical state or storage 5ms
+     → expected [Function] to throw an error
+   ✓ rejects conflicting version 3 representation before changing canonical state or storage 4ms
+   ✓ rejects invalid tracking undefined undefined before changing canonical state or storage 4ms
+   ✓ rejects invalid tracking 1.5 em before changing canonical state or storage 5ms
+   ✓ rejects invalid tracking 1.5 layout before changing canonical state or storage 4ms
+   ✓ rejects invalid tracking 101 layout before changing canonical state or storage 3ms
+   ✓ rejects invalid tracking NaN layout before changing canonical state or storage 4ms
+   ✓ rejects invalid tracking Infinity layout before changing canonical state or storage 3ms
+   ✓ rejects invalid approvalStatus before changing canonical state or storage 3ms
+   ✓ rejects invalid sourceRecordId before changing canonical state or storage 3ms
+   ✓ rejects invalid labelCategory before changing canonical state or storage 2ms
+   ✓ rejects invalid reviewNote before changing canonical state or storage 3ms
+   ✓ rejects invalid multiplier after conversion before changing canonical state or storage 3ms
+   ✓ rejects invalid negative multiplier and font size before changing canonical state or storage 3ms
+   × validates version 3 metadata rather than rejecting its envelope 1ms
+     → expected [Function] to throw error including 'Invalid approvalStatus' but got 'Unsupported document format'
+   ✓ preserves official flags and all four unique extension fields 4ms
+   ✓ keeps each action atomic after reload and isolates chart controls 32ms
+stderr | src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > orders partial adoption migrations and saves version 3 without double conversion
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/cross-version-acceptance.test.ts > rejects ambiguous same-name units and invalid migration before canonical mutation
+Render layer "selection-overlay-layer" not found.
+
+ ❯ src/__tests__/cross-version-acceptance.test.ts (4 tests | 4 failed) 64ms
+   × uses official shared defaults without replacing explicit zero or custom gray 38ms
+     → expected { id: 'new-text', x: +0, y: +0, …(16) } to match object { letterSpacing: 0.5, …(1) }
+(17 matching properties omitted from actual)
+   × orders direct legacy migrations and saves version 3 without double conversion 13ms
+     → expected 2 to be 3 // Object.is equality
+   × orders partial adoption migrations and saves version 3 without double conversion 5ms
+     → expected 2 to be 3 // Object.is equality
+   × rejects ambiguous same-name units and invalid migration before canonical mutation 7ms
+     → expected [Function] to throw an error
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stdout | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+PixiJS Deprecation Warning: addChild: Only Containers will be allowed to add children in v8.0.0
+Deprecated since v8.0.0
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+      at PixiRenderEngine.applyDrawOperation (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:691:18)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:237:16
+      at Array.forEach (<anonymous>)
+      at PixiRenderEngine.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render-engine-pixi/src/pixi-render-engine.ts:236:28)
+      at RenderObjectRuntime.execute (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:232:24)
+      at RenderObjectRuntime.flushDraws (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/types/render-object.ts:441:14)
+      at file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/render/src/render.ts:277:44
+      at measureBrowserDragPhase (file:///Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/node_modules/@asyra/utils/src/helpers/browser-drag-phase.ts:41:12)
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains legacy data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains direct data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains partial data and intervening fields through two fresh reloads
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+stderr | src/__tests__/baseline-preservation.test.ts > retains custom annotation, approval, chart projection and session history after reload
+Render layer "selection-overlay-layer" not found.
+
+ ✓ src/__tests__/baseline-preservation.test.ts (4 tests) 110ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > uses official shared defaults without replacing explicit zero or custom gray
+AssertionError: expected { id: 'new-text', x: +0, y: +0, …(16) } to match object { letterSpacing: 0.5, …(1) }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "letterSpacing": 0.5,
++   "letterSpacing": 0,
+    "textColor": "#cccccc",
+  }
+
+ ❯ src/__tests__/cross-version-acceptance.test.ts:23:60
+     21|       y: 0
+     22|     })
+     23|     expect(app.core.getElementComputedData(`new-${type}`)).toMatchObje…
+       |                                                            ^
+     24|       letterSpacing: 0.5,
+     25|       textColor: createDefaultFill().color
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > orders direct legacy migrations and saves version 3 without double conversion
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > orders partial adoption migrations and saves version 3 without double conversion
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ src/__tests__/cross-version-acceptance.test.ts:58:37
+     56|       })
+     57|       const saved = await app.save()
+     58|       expect(saved.documentVersion).toBe(3)
+       |                                     ^
+     59|       const wire = saved.core.props['text-typography'] as unknown as R…
+     60|         string,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/__tests__/cross-version-acceptance.test.ts > rejects ambiguous same-name units and invalid migration before canonical mutation
+AssertionError: expected [Function] to throw an error
+ ❯ src/__tests__/cross-version-acceptance.test.ts:78:37
+     76|   const before = await app.save()
+     77|   const untouched = structuredClone(ambiguous)
+     78|   expect(() => app.load(ambiguous)).toThrow()
+       |                                     ^
+     79|   expect(ambiguous).toEqual(untouched)
+     80|   expect(await app.save()).toEqual(before)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/__tests__/migration-boundaries.test.ts > accepts existing version 3 and keeps wire tracking outside canonical state and projections
+Error: Unsupported document format
+ ❯ prepareDocument src/documents.ts:16:11
+     14|     !envelope.core?.props
+     15|   ) {
+     16|     throw new Error('Unsupported document format')
+       |           ^
+     17|   }
+     18|   for (const property of Object.values(envelope.core.props)) {
+ ❯ Core.runLoadHooks node_modules/@asyra/core/src/core.ts:2307:31
+ ❯ Core.prepareLoadedData node_modules/@asyra/core/src/core.ts:2334:27
+ ❯ Core.applyLoadedData node_modules/@asyra/core/src/core.ts:2400:14
+ ❯ Core.load node_modules/@asyra/core/src/core.ts:2206:10
+ ❯ Core.loadFromSource node_modules/@asyra/core/src/core.ts:1132:10
+ ❯ Core.start node_modules/@asyra/core/src/core.ts:1100:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+ FAIL  src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+ FAIL  src/__tests__/migration-boundaries.test.ts > preserves every typography field and explicit chart zero through repeated migrations
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ src/__tests__/migration-boundaries.test.ts:57:37
+     55|     for (let pass = 0; pass < 3; pass++) {
+     56|       const saved = await app.save()
+     57|       expect(saved.documentVersion).toBe(3)
+       |                                     ^
+     58|       expect(saved.core.sceneTree).toEqual(source.core.sceneTree)
+     59|       for (const [id, property] of Object.entries(source.core.props)) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/__tests__/migration-boundaries.test.ts > rejects conflicting legacy representation before changing canonical state or storage
+AssertionError: expected [Function] to throw an error
+ ❯ src/__tests__/migration-boundaries.test.ts:168:35
+    166|     const input = makeInput()
+    167|     const original = structuredClone(input)
+    168|     expect(() => app.load(input)).toThrow()
+       |                                   ^
+    169|     expect(await app.core.save()).toEqual(raw)
+    170|     expect(window.localStorage.getItem(STORAGE_SLOT)).toBe(stored)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/__tests__/migration-boundaries.test.ts > validates version 3 metadata rather than rejecting its envelope
+AssertionError: expected [Function] to throw error including 'Invalid approvalStatus' but got 'Unsupported document format'
+
+Expected: "Invalid approvalStatus"
+Received: "Unsupported document format"
+
+ ❯ src/__tests__/migration-boundaries.test.ts:179:40
+    177|   const input = versionThree()
+    178|   input.core.props['text-typography'].approvalStatus = 'archived'
+    179|   expect(() => prepareDocument(input)).toThrow('Invalid approvalStatus…
+       |                                        ^
+    180| })
+    181| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  10 failed | 21 passed (31)
+   Start at  22:23:32
+   Duration  2.28s (transform 46ms, setup 15ms, collect 834ms, tests 333ms, environment 722ms, prepare 89ms)
+

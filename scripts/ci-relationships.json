@@ -160,7 +160,8 @@
       "ownsInputs": true,
       "patterns": [
         "fixtures/app-update-text-consumer/**",
-        "fixtures/app-update-text-subsequent/**"
+        "fixtures/app-update-text-subsequent/**",
+        "fixtures/app-update-text-cross-version/**"
       ],
       "tests": ["scripts/__tests__/app-update-fixtures.test.mjs"],
       "requiresFrameworkDeclarations": false

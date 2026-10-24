@@ -1,0 +1,19 @@
+E.....
+======================================================================
+ERROR: test_current_entry_explains_digest_and_composition_corrections (__main__.DeliveryContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/fixtures/app-update-text-cross-version/tools/test-delivery.py", line 81, in test_current_entry_explains_digest_and_composition_corrections
+    source = (public / guide).read_text()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1256, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1242, in open
+    return io.open(self, mode, buffering, encoding, errors, newline,
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1110, in _opener
+    return self._accessor.open(self, flags, mode)
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/asa/Desktop/workspace/asra/.worktrees/app-update-guides/docs/public/updates/text-cross-version-example-3-r2.md'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.133s
+
+FAILED (errors=1)

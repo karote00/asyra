@@ -47,17 +47,13 @@ or unsupported capability claims.
 ## Release Update Guidance
 
 - [Release Update Summaries and Consumer Integration Guidance](plans/release-update-guidance-plan.md)
-  - IN PROGRESS. Task 1 is complete: permanent rules, workflow entries and PR
-    document checks are implemented and locally verified. Task 2 is complete:
-    npm and Cloudflare Pages publication now require artifact-bound guidance.
-    Task 3 is complete: committed release history and applicable guides are
-    discoverable through existing public entries, with explicit coverage gaps.
-    Task 4 remains planned. Use each App/Framework owner's actual release baseline and target
-    for update summaries and necessary guides, then verify skipped releases,
-    partial adoption and preservation of customization/data. Changesets are not
-    the coverage authority.
-    No publication occurred. The prior App update guidance
-    plan remains complete.
+  - IMPLEMENTATION COMPLETE. Tasks 1-4 are complete: permanent development rules,
+    npm/Cloudflare guidance admission, public release discovery, and independent
+    cross-version/partial-adoption Text acceptance. The independent run and
+    permanent fixture each passed 31 tests plus typecheck, lint and build.
+    Revision 2 clarifies digest algorithms and definition-read timing; original
+    acceptance evidence remains unchanged. Formal archival is a separate closeout.
+    No publication occurred. The prior App update guidance plan remains complete.
 
 ## Active Developer Agent Work
 

@@ -1,0 +1,112 @@
+{
+  "documentVersion": 2,
+  "core": {
+    "version": "1.0.0",
+    "sceneTree": {
+      "workspace": "workspace-1",
+      "workspaceList": [
+        "workspace-1"
+      ],
+      "elements": {
+        "workspace-1": {
+          "id": "workspace-1",
+          "type": "workspace",
+          "name": "Report",
+          "visible": true,
+          "lock": false,
+          "children": [
+            "text-1",
+            "chart-1"
+          ],
+          "parentId": ""
+        },
+        "text-1": {
+          "id": "text-1",
+          "type": "text",
+          "name": "Quarterly report",
+          "visible": true,
+          "lock": false,
+          "parentId": "workspace-1",
+          "props": {
+            "position": "text-position",
+            "dimension": "text-dimension",
+            "typography": "text-typography"
+          }
+        },
+        "chart-1": {
+          "id": "chart-1",
+          "type": "chart-caption",
+          "name": "Revenue",
+          "visible": true,
+          "lock": false,
+          "parentId": "workspace-1",
+          "props": {
+            "typography": "chart-typography",
+            "caption-reference": "chart-reference"
+          }
+        }
+      }
+    },
+    "props": {
+      "text-position": {
+        "id": "text-position",
+        "type": "position",
+        "x": 10,
+        "y": 20,
+        "rotation": 0,
+        "xUnit": "px",
+        "yUnit": "px"
+      },
+      "text-dimension": {
+        "id": "text-dimension",
+        "type": "dimension",
+        "width": 200,
+        "height": 80,
+        "widthUnit": "px",
+        "heightUnit": "px"
+      },
+      "text-typography": {
+        "id": "text-typography",
+        "type": "typography",
+        "text": "Quarterly report",
+        "fontFamily": "sans-serif",
+        "fontSize": 16,
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "textColor": "#000000",
+        "lineHeight": 24,
+        "letterSpacing": 1.5,
+        "approvalStatus": "draft",
+        "sourceRecordId": "record-17",
+        "labelCategory": "warning",
+        "reviewNote": "Keep the customer exception"
+      },
+      "chart-typography": {
+        "id": "chart-typography",
+        "type": "typography",
+        "text": "Revenue",
+        "fontFamily": "sans-serif",
+        "fontSize": 16,
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textAlign": "left",
+        "textColor": "#000000",
+        "lineHeight": 24,
+        "letterSpacing": 1.5,
+        "approvalStatus": "draft",
+        "sourceRecordId": "record-17",
+        "labelCategory": "warning",
+        "reviewNote": "Keep chart note"
+      },
+      "chart-reference": {
+        "id": "chart-reference",
+        "type": "caption-reference",
+        "sourceTextId": "text-1"
+      }
+    }
+  },
+  "typographySemantics": {
+    "letterSpacing": "em"
+  }
+}

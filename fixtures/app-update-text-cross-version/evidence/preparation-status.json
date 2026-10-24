@@ -1,0 +1,10 @@
+{
+  "kind": "maintainer-preparation-not-independent-acceptance",
+  "commands": {
+    "baseline-test": 0,
+    "baseline-typecheck": 0,
+    "baseline-lint": 0,
+    "baseline-build": 0,
+    "target-before-integration": 1
+  }
+}

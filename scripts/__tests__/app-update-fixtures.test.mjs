@@ -82,3 +82,63 @@ test('retained candidates reproduce both App update fixtures without changing ac
   run('artifact-contract', 'python3', [`${subsequent}/tools/test-artifacts.py`])
   assert.deepEqual(snapshot(), original)
 })
+
+test('cross-version delivery preserves evidence and reproduces the integrated consumer', (t) => {
+  const result = spawnSync(
+    'python3',
+    ['fixtures/app-update-text-cross-version/tools/test-delivery.py'],
+    {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      timeout: 30_000
+    }
+  )
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
+  const fixture = 'fixtures/app-update-text-cross-version'
+  const output = path.join(
+    repositoryRoot,
+    'tmp/app-update-cross-version-validation'
+  )
+  const temporary = path.join(output, 'tmp')
+  fs.mkdirSync(temporary, { recursive: true })
+  const run = (name, command, args) => {
+    const log = path.join(output, `${name}.log`)
+    const fd = fs.openSync(log, 'w')
+    let replay
+    try {
+      replay = spawnSync(command, args, {
+        cwd: repositoryRoot,
+        env: {
+          ...process.env,
+          YARN_GLOBAL_FOLDER: path.join(output, 'yarn-global'),
+          TMPDIR: temporary
+        },
+        stdio: ['ignore', fd, fd],
+        timeout: 180_000
+      })
+    } finally {
+      fs.closeSync(fd)
+    }
+    assert.equal(
+      replay.status,
+      0,
+      `${name}: ${replay.error?.message ?? replay.signal ?? 'failed'}; ${log}\n${fs.readFileSync(log, 'utf8').slice(-4000)}`
+    )
+    t.diagnostic(`${name} passed; ${log}`)
+  }
+  const artifacts = path.join(repositoryRoot, fixture, 'artifacts')
+  fs.mkdirSync(artifacts, { recursive: true })
+  run('restore-candidates', 'tar', [
+    '-xzf',
+    `${fixture}/delivery/input-v1.tar.gz`,
+    '--strip-components=2',
+    '-C',
+    artifacts,
+    'consumer/artifacts'
+  ])
+  run('install', 'yarn', ['--cwd', fixture, 'install', '--immutable'])
+  for (const command of ['test', 'typecheck', 'lint', 'build']) {
+    run(command, 'yarn', ['--cwd', fixture, command])
+  }
+  run('evidence-after-replay', 'python3', [`${fixture}/tools/test-delivery.py`])
+})

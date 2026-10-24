@@ -8,6 +8,13 @@ Start with [the update guide](index.md). Identify the owner/channel and actual a
 
 No verified release summaries are registered yet. There is no supported release-to-release range to claim. Existing Text guides are modeled integration examples, not evidence that any published version introduced Text.
 
+| Summary | Owner / channel | Availability | Previous boundary | Prerequisites | Correction | Coverage |
+| --- | --- | --- | --- | --- | --- | --- |
+| [model-text-framework](releases/model-text-framework.md) | @fixture/framework / npm | modeled | First supported modeled exercise boundary; no historical published coverage. | None declared | None | Baseline unavailable: model-text-framework; Release unavailable: model-text-framework |
+| [model-text-app-1](releases/model-text-app-1.md) | @fixture/text-app / npm | modeled | First supported modeled exercise boundary; no historical published coverage. | None declared | None | Baseline unavailable: model-text-app-1; Release unavailable: model-text-app-1 |
+| [model-text-app-2](releases/model-text-app-2.md) | @fixture/text-app / npm | modeled | [model-text-app-1](releases/model-text-app-1.md) | [model-text-framework](releases/model-text-framework.md) | None | Baseline unavailable: model-text-app-1; Release unavailable: model-text-app-2; Missing prerequisite target: @fixture/framework; Unsupported baseline (missing) for npm:@fixture/framework; Release unavailable: model-text-framework |
+| [model-text-app-3](releases/model-text-app-3.md) | @fixture/text-app / npm | modeled | [model-text-app-2](releases/model-text-app-2.md) | [model-text-framework](releases/model-text-framework.md) | None | Baseline unavailable: model-text-app-2; Release unavailable: model-text-app-3; Missing prerequisite target: @fixture/framework; Unsupported baseline (missing) for npm:@fixture/framework; Release unavailable: model-text-framework |
+
 ## Gaps and partial adoption
 
 - Stop if a predecessor or guide is missing, the baseline is outside the stated boundary, the target is unavailable, or a prerequisite does not match the selected dependency. Do not infer missing releases from adjacent version numbers.

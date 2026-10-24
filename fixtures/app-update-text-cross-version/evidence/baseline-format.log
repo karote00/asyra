@@ -1,0 +1,18 @@
+[warn] Ignored unknown option { editorconfig: true }.
+src/__tests__/baseline-preservation.test.ts 46ms
+[warn] Ignored unknown option { editorconfig: true }.
+src/__tests__/cross-version-acceptance.test.ts 10ms
+[warn] Ignored unknown option { editorconfig: true }.
+src/__tests__/helpers.ts 3ms (unchanged)
+[warn] Ignored unknown option { editorconfig: true }.
+src/__tests__/setup-canvas.ts 6ms (unchanged)
+[warn] Ignored unknown option { editorconfig: true }.
+src/definitions.ts 9ms
+[warn] Ignored unknown option { editorconfig: true }.
+src/documents.ts 3ms (unchanged)
+[warn] Ignored unknown option { editorconfig: true }.
+src/main.ts 2ms (unchanged)
+[warn] Ignored unknown option { editorconfig: true }.
+src/panel.ts 3ms (unchanged)
+[warn] Ignored unknown option { editorconfig: true }.
+src/runtime.ts 7ms

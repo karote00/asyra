@@ -345,12 +345,16 @@ module.exports = Object.freeze({
       outputs: ['artifact:verified-public-documentation'],
       conditions: [
         'All content cases and documentation quality gates pass.',
+        'Isolated modeled consumer acceptance preserves cross-version changes, customization and data; original evidence remains unchanged.',
         'README and website implementation remain unmodified siblings.'
       ],
       bypasses: [
         'Final public registry and deployment links wait for their external owners.'
       ],
-      allowedContributors: ['deterministic project-owned documentation gates'],
+      allowedContributors: [
+        'deterministic project-owned documentation gates',
+        'isolated consumers using retained public candidate APIs'
+      ],
       forbiddenContributors: [
         'manual spot-check as sole evidence',
         'link suppression',
@@ -359,9 +363,15 @@ module.exports = Object.freeze({
       implementationBoundary: [
         'docs/public/**',
         'scripts/docs/**',
+        'fixtures/app-update-text-cross-version/**',
+        'scripts/__tests__/app-update-fixtures.test.mjs',
         'package.json'
       ],
-      specRefs: ['#quality-gates', '#definition-of-done'],
+      specRefs: [
+        '#quality-gates',
+        '#definition-of-done',
+        'docs/ai/framework/plans/release-update-guidance-plan.md#task-4---prove-customization-and-data-preservation'
+      ],
       failureOwnerStepId: 'verify-public-documentation'
     })
   ]),
