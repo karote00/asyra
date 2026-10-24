@@ -6,6 +6,8 @@ Use metres and X/Y/Z size order, +Z up and -Y front. Rug origin is the bottom-fa
 
 ## Rectangular rug
 
+The [rectangular-rug construction specification](RECTANGULAR-RUG-SPEC.md) defines the exact inward circular edge profile and LoD sampling. Flat top and bottom footprints are 1.398 x 0.948 m with 0.024 m corner radius. The nominal 12 mm binding includes the 1 mm rounded edge, leaving 11 mm on each flat cap. All regions are replaceable appearances on one closed body. Whole-unit positive XYZ scaling applies once; the original reference remains unchanged.
+
 A rounded XY rectangle spans X=-0.70..0.70 and Y=-0.475..0.475 with plan corner radius 0.025. Extrude from Z=0 to 0.008. Use 12 segments per quarter circle. Bevel the top and bottom perimeter inward by 0.001 with three segments, without expanding bounds. The planar top and underside remain flat. There is no hidden floor, underlay, tassel, grass or displaced pile.
 
 Top colour is sage, except the 0.012 m binding band. Its inner boundary is the centred rounded rectangle 1.376 x 0.926 m with corner radius 0.013. Points outside that boundary use the darker sage binding colour. The top bevel and side faces also use binding; the flat underside is tan backing with an outer binding band matching the top boundary. The band is a colour/material region on the same surface, not an added lip or stitched cord. Bottom perimeter bevel uses binding. Straight edges and corners have the same thickness.
