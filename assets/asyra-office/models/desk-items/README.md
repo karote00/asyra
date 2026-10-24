@@ -2,10 +2,10 @@
 
 Status: **The user approved these drawings and documents for commit. No models, animation, app implementation or model verification.**
 
-| One placeable unit | Source in central office | Fixed design dimensions | Sheet |
-| --- | --- | --- | --- |
-| Silver laptop | Silver Apple-style lid on the left work desk | Base 0.30 x 0.21 x 0.012 m; lid 0.30 x 0.006 x 0.19 m; 110-degree opening | [Laptop](review/01-laptop-v2.png) |
-| Empty ceramic mug | Pale cup held at the tea point and pale table cups | Vessel diameter 0.084 m and height 0.090 m; total width with handle 0.119 m | [Mug](review/02-ceramic-mug-v1.png) |
+| One placeable unit | Source in central office                           | Fixed design dimensions                                                                            | Sheet                               |
+| ------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Silver laptop      | Silver Apple-style lid on the left work desk       | Base including underside pads 0.30 x 0.21 x 0.012 m; lid 0.30 x 0.006 x 0.19 m; 110-degree opening | [Laptop](review/01-laptop-v2.png)   |
+| Empty ceramic mug  | Pale cup held at the tea point and pale table cups | Vessel diameter 0.084 m and height 0.090 m; total width with handle 0.119 m                        | [Mug](review/02-ceramic-mug-v1.png) |
 
 Each drawing provides front, right, back, top and oblique views. One laptop includes its screen, hinge, keys and trackpad. One mug includes its handle and hollow body. No desk, person, drink, charger or scene geometry is included.
 

@@ -29,3 +29,15 @@ The drawings' internal contour circles describe construction rather than painted
 ## Future acceptance
 
 After separate modeling authorization: bounds and profile vertices within 0.0005 m; one open mouth, one genuine through-hole, correct collar/lip shape, continuous manifold material shell with no filled cavity, duplicate faces or unintended caps. Inspect all five views and the underside. No model has been made or verified in this batch.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Open mouths and drains
+
+Terracotta pot is 280 x 280 x 240 mm with a 12 mm through-drain and 14 mm floor; ivory pot is 200 x 200 x 180 mm with a 10 mm through-drain and 10 mm floor. Closing the profile between its last and first points creates the bore wall. It must not create a disk across the drain. Each remains one closed material shell surrounding an empty cavity and open drain.
+
+Profiles include the lip/chamfer geometry already, with no further bevel. LoD reduces only angular sectors, retaining every radial station, mouth and drain. Circumference and radial normals remain separate from flat floor/rim normals. Terracotta and ivory are presets on replaceable surfaces, not restrictions on future materials.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

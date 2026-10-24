@@ -10,13 +10,13 @@ Front looks along +Y, right along -X, back along -Y, top along -Z and bottom alo
 
 Revolve the following ordered radius/Z profile around Z using 64 equal angular segments, starting at angle zero on +X:
 
-| Ring | Radius | Z | Surface to next ring |
-| --- | --- | --- | --- |
-| 1 | 0.001 | 0 | Sage conical underside |
-| 2 | 0.030 | 0.025 | Sage vertical rim band |
-| 3 | 0.030 | 0.030 | Sage horizontal upper annulus |
-| 4 | 0.006 | 0.030 | Wood-colored handle cylinder |
-| 5 | 0.006 | 0.070 | End of profile |
+| Ring | Radius | Z     | Surface to next ring          |
+| ---- | ------ | ----- | ----------------------------- |
+| 1    | 0.001  | 0     | Sage conical underside        |
+| 2    | 0.030  | 0.025 | Sage vertical rim band        |
+| 3    | 0.030  | 0.030 | Sage horizontal upper annulus |
+| 4    | 0.006  | 0.030 | Wood-colored handle cylinder  |
+| 5    | 0.006  | 0.070 | End of profile                |
 
 Join adjacent rings with quads. Close ring 1 with a flat sage disk and ring 5 with a flat wood-colored disk, using centre triangle fans. All winding faces outward. This produces one closed exterior mesh without internal caps at the body/handle junction.
 
@@ -35,3 +35,13 @@ Body and handle are parts of one toy, not separately placeable catalogue items. 
 ## Future acceptance
 
 After model authorization, verify bounds within 0.0002 m, all profile rings, closed caps, material boundaries and absence of the rejected extra bottom nub. No reconstruction, export or runtime verification has been performed. Alternate LOD meshes, rigging, rotational animation and physics are outside this handoff.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Axial profile
+
+Default extent is 60 x 60 x 70 mm. Body cone reaches radius 30 mm at Z=25 mm; band height is 5 mm; handle radius is 6 mm and height 40 mm. The tip is a flat 2 mm diameter disk at Z=0, not a sharp point or an extra foot. A five-ring exterior with two fan caps has 10*N triangles (640/320/160 for 64/32/16 sectors). Counts are analytic, not export measurements. Preserve every ring at all tiers, with sage body and replaceable wood handle region. Rotation/physics are app-owned.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

@@ -43,3 +43,17 @@ Each plant is one placeable assembly, but keep stem, leaves, petals and center s
 FRONT looks along +Y, RIGHT along -X, BACK along -Y, TOP along -Z with +Y upward. Both flowers face upward; an exact elevation sees the thin bloom edge rather than all petal faces. Oblique views can reveal the radial arrangement.
 
 Future model review checks dimensions within 0.0005, one stem/two leaves/one bloom per plant, exactly five or eight petals, capped solids, hidden underside, ground origin and connecting intersections. No model or animation validation has occurred. Generated view-to-view geometry is not a calibrated reconstruction.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Two independent flowers
+
+Yellow flower has five petals, height 250 mm; white has eight, height 280 mm. Each has one stem, one centre and two leaves. Petals rotate around Z with their long axis radial; leaf tilts are around Y. A head facing upward must appear thin in a true horizontal elevation, even if the concept sheet shows its face.
+
+Yellow petal radial reach is 40 mm, but fivefold placement is not an 80 x 80 mm circle. Compute each rotated ellipsoid's support extent and union the bounds. White includes cardinal petals and is exactly 90 x 90 mm in plan. Both centre ellipsoids add 6 mm above headZ; the thin petal tops stay lower. Leaf inner extents intersect the radius-2 mm stem; no floating leaf or invented petiole is permitted.
+
+LoD preserves five/eight petals, two leaves, stem connection and real thickness. Reduce ellipsoid sampling while keeping extrema. Stem/leaf/petal/centre regions remain independently replaceable; shadows and pollen are not texture defaults.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

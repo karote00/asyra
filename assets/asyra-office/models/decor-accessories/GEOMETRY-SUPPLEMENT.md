@@ -27,3 +27,17 @@ Broad front/back cover surfaces are plain blue. The page marks are intrinsic col
 ## Future model acceptance
 
 No models have been built or verified. After separate modeling authorization, compare front, side, rear, top, oblique and underside views. Confirm one hanging with open sleeve ends, dowel and triangular cord, front-only green band and plain back; confirm one closed book with blue front/back/spine and three exposed cream page edges. Check exact part dimensions within 0.001 m; approximate envelopes are not scaling targets. No baked shadows or lighting. Appearance approval and later geometry verification remain separate.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Hanging and closed book
+
+The hanging's 420 mm dowel, 360 x 440 mm cloth and cord remain independent of wall placement. Cloth Y range is -13..-8 mm; sleeve reaches Y=+/-10.5 mm, so actual depth is 23.5 mm, not the old nominal 30 mm. With the defined mitered cord, maximum Z is 0.56+0.0015*sqrt(0.2^2+0.112^2)/0.2 metres (about 561.719 mm). Use the constructed bounds for requested overall size; preserve origin and anchor, rather than stretching to the approximate caption. The sleeve radial clearance around the dowel is 0.5 mm. It is a visual suspension fit, not a physical cloth solver. Only the front has the sage band.
+
+Book extent is 125 x 28 x 180 mm. Covers are 2 mm thick, pages 24 mm thick, with 3 mm overhang at fore-edge/top/bottom. Build the binding union before removing hidden internal faces. At the 1 mm cover roundover limit, the thickness core may reduce to a plane; use a closed analytic roundover, not a modifier that silently enlarges or deletes the cover. The page block remains separate. Only the front hinge receives the 0.2 mm groove; page lines are surface marks.
+
+LoD reduces cloth grid and circular sampling while preserving ripple extrema, sleeve openings, cord apex, exposed page edges and groove silhouette. Do not remove the cord or add baked shadows to replace depth.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

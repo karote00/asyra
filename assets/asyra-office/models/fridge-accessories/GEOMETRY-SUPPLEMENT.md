@@ -16,7 +16,7 @@ Revolve the ordered closed (radius,Y) profile in JSON around Y with 96 equal ang
 
 Profile indices are zero-based. Segments 5->6 and 6->7 form the charcoal backing side and rear disk. Every other visible segment is sage. The backing diameter is 0.014 and extends from Y=-0.0008 to Y=0. Sage housing reaches radius 0.009 and front Y=-0.005. Its front and rear outer edges have 0.0003 straight chamfers. One continuous exterior uses face material assignments; do not overlay two coplanar disks.
 
-The initial prompt requested flush backing. The selected drawing instead shows a small rear projection. Final specification deliberately uses 0.0008 projection and 0.0042 housing depth, preserving total depth 0.005. This is an authored completion pending review. No spring, socket, lettering or separate mounting plate.
+The initial prompt requested flush backing. The selected drawing instead shows a small rear projection. Final specification deliberately uses 0.0008 projection and 0.0042 housing depth, preserving total depth 0.005. This numeric completion retains the selected drawing's rear projection; model fit remains unverified. No spring, socket, lettering or separate mounting plate.
 
 Front is a plain sage circle; rear is a charcoal circle within a sage annulus. Right and top show the projected charcoal backing. No physical magnetic simulation or attachment mechanism is specified.
 
@@ -25,3 +25,15 @@ Front is a plain sage circle; rear is a charcoal circle within a sage annulus. R
 A note rear face can lie on a vertical receiving plane at Y=0. A magnet placed over it would put its rear face at Y=-0.0002, with any chosen X/Z offset within the paper. This explains thickness only; it is not app snapping behavior or a bundled arrangement.
 
 After separate model authorization, verify note dimensions within 0.00002 m and magnet dimensions within 0.0001 m, closed surfaces, correct blank backs/materials, five views and no baked lighting. No model has been generated or validated in this batch.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Mounting planes
+
+Note is 55 x 0.2 x 70 mm with a rear-centre origin and twelve box triangles. Magnet is 18 x 5 x 18 mm, also rear-centred; housing depth 4.2 mm plus 0.8 mm backing projection. The rear projection agrees with the retained side/top views. Sage housing and charcoal backing are regions on one closed surface, not coincident disks. Plain paper remains independently replaceable.
+
+When assembled, first size each unit, then place the magnet rear on the resized note front: Y=-0.2*noteScaleY mm. The magnet's own scaling does not determine this receiving plane. LoD keeps the note solid and magnet backing step; reduce magnet angular segments only. No thickness exaggeration from the drawing is allowed in geometry.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

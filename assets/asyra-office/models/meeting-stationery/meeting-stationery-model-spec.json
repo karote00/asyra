@@ -12,18 +12,11 @@
     {
       "id": "capped-whiteboard-marker",
       "origin": "center of assembled axis; cylinder axis +X",
-      "bounds": [
-        0.14,
-        0.018,
-        0.018
-      ],
+      "bounds": [0.14, 0.018, 0.018],
       "parts": {
         "barrel": {
           "axis": "+X",
-          "xRange": [
-            -0.07,
-            0.035
-          ],
+          "xRange": [-0.07, 0.035],
           "radius": 0.007,
           "segments": 64,
           "edgeBevel": 0.0005,
@@ -32,65 +25,55 @@
         },
         "neck": {
           "axis": "+X",
-          "xRange": [
-            0.035,
-            0.05
-          ],
+          "xRange": [0.035, 0.05],
           "radius": 0.005,
           "segments": 64,
           "material": "charcoal"
         },
         "nib": {
           "axis": "+X",
-          "xRange": [
-            0.05,
-            0.057
-          ],
+          "xRange": [0.05, 0.057],
           "radius": 0.0025,
           "segments": 48,
           "material": "charcoal"
         },
         "cap": {
           "axis": "+X",
-          "xRange": [
-            0.035,
-            0.07
-          ],
+          "xRange": [0.035, 0.07],
           "outerRadius": 0.009,
           "outerEdgeBevel": 0.0005,
           "bevelSegments": 3,
           "subtractBore": {
-            "xRange": [
-              0.034,
-              0.067
-            ],
+            "xRange": [0.034, 0.067],
             "radius": 0.007
           },
           "segments": 64,
-          "material": "charcoal"
+          "material": "charcoal",
+          "retainingCollar": {
+            "method": "union annular cylinder into cap after bore subtraction",
+            "axis": "+X",
+            "xRange": [0.035, 0.038],
+            "outerRadius": 0.007,
+            "innerRadius": 0.005,
+            "segments": 64,
+            "material": "charcoal"
+          }
         }
       },
-      "hidden": "All cylinders centered Y=Z=0. Cap is hollow, open toward -X, closed at +X. Neck and nib fit inside; no ink reservoir, clip or mechanism.",
+      "hidden": "All cylinders centered Y=Z=0. Cap is hollow, open toward -X, closed at +X. Internal collar contacts the neck and barrel end; no ink reservoir, clip or mechanism.",
       "state": "capped only; no uncapped drawing or animation"
     },
     {
       "id": "whiteboard-eraser",
       "origin": "center of bottom felt contact plane",
-      "bounds": [
-        0.1,
-        0.045,
-        0.025
-      ],
+      "bounds": [0.1, 0.045, 0.025],
       "parts": {
         "felt": {
           "method": "XY rounded rectangle extrusion",
           "width": 0.1,
           "depth": 0.045,
           "cornerRadius": 0.006,
-          "zRange": [
-            0,
-            0.006
-          ],
+          "zRange": [0, 0.006],
           "segmentsPerCorner": 16,
           "material": "charcoal"
         },
@@ -99,10 +82,7 @@
           "width": 0.1,
           "depth": 0.045,
           "cornerRadius": 0.006,
-          "zRange": [
-            0.006,
-            0.025
-          ],
+          "zRange": [0.006, 0.025],
           "segmentsPerCorner": 16,
           "material": "sage"
         }

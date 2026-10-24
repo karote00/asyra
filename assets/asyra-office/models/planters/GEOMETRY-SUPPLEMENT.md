@@ -6,7 +6,7 @@ Metres, +Z up, -Y front. Tree origin is the pot bottom centre. Wall planter orig
 
 ## Small tree
 
-Revolve the closed pot profile in JSON about Z with 96 radial segments, straight profile interpolation and inward edge bevel 0.001 with three segments. Weld axis vertices and close the bottom. This is a hollow tapered pot with a thick flared lip and flat unmarked underside. The numeric profile resolves its inner wall and floor completely. Soil is a separate cylinder radius 0.106, Z=0.163..0.205, with a flat brown top below the lip.
+Revolve the closed pot profile in JSON about Z with 96 radial segments, straight profile interpolation and inward edge bevel 0.001 with three segments. Weld axis vertices and close the bottom. This is a hollow tapered pot with a thick flared lip and flat unmarked underside. The numeric profile resolves its inner wall and floor completely. Soil begins as a separate cylinder radius 0.106, Z=0.163..0.205. Intersect its entire volume with the pot cavity, retaining the flat brown top below the lip; otherwise its lower edge intersects the tapered ceramic shell.
 
 Trunk follows the four-point cubic in JSON. Evaluate B(t)=(1-t)^3*P0+3*(1-t)^2*t*P1+3*(1-t)*t^2*P2+t^3*P3 for t=0..1. Use 32 path intervals and 24 radial segments; interpolate radius from 0.015 to 0.009. Cross-section frame uses +Y projected perpendicular to the tangent, and the cross product of tangent with that projected axis. Close caps. The trunk starts in the soil and forks into the three straight tapered branch tubes with explicit start/end points. Branch radius tapers from 0.008 to 0.003. Keep connected intersections; no sphere canopy.
 
@@ -26,12 +26,26 @@ Soil is a D-shaped prism: half-ellipse X=0.086*cos(t), Y=-0.009-0.086*sin(t), cl
 
 ## Three trailing vines
 
-JSON contains two joined cubic curves per vine. The first rises over the rim before descending outside the bowl; the second trails downward. Evaluate the same cubic formula as the tree, 24 intervals per segment, tube radius 0.0015 and 12 radial segments. Use a parallel-transport frame seeded with +X projected perpendicular to the first tangent; carry it along the curve without random twists. Weld joined endpoints and close terminal caps.
+JSON contains two joined cubic curves per vine. All three root centres start at Z=0.140, inside the soil interval 0.125..0.143, rather than floating above it. The first rises over the rim before descending outside the bowl; the second trails downward. Evaluate the same cubic formula as the tree, 24 intervals per segment, tube radius 0.0015 and 12 radial segments. Use a parallel-transport frame seeded with +X projected perpendicular to the first tangent; carry it along the curve without random twists. Weld joined endpoints and close terminal caps.
 
-Five leaves attach to the second curve of each vine at t=0.12,0.30,0.48,0.66,0.84. For index i=0..4, side is -1 for even i and +1 for odd; invert it for the middle vine. Normalize D=(side*0.65,0,-1). Let E=(D.z,0,-D.x), a perpendicular unit vector in X/Z. For s=0..1 and q=-1..1, leaf position is attachment+0.043*s*D+q*0.013*sin(pi*s)*E-0.002*(1-abs(q))*sin(pi*s)*(0,1,0). Add top/bottom offsets +/-0.0004 along Y, close boundary, weld width-zero tips. Use 16 length and eight width intervals. Each leaf joins its vine at the base, without extra unspecified stems.
+Five leaves attach to the second curve of each vine at t=0.12,0.30,0.48,0.66,0.84. For index i=0..4, side is -1 for even i and +1 for odd; invert it for the middle vine. Normalize D=(side*0.65,0,-1). Let E=(D.z,0,-D.x), a perpendicular unit vector in X/Z. For s=0..1 and q=-1..1, leaf position is attachment+0.043*s*D+q*0.013*sin(pi*s)_E-0.002_(1-abs(q))*sin(pi*s)*(0,1,0). Add top/bottom offsets +/-0.0004 along Y, close boundary, weld width-zero tips. Use 16 length and eight width intervals. Each leaf joins its vine at the base, without extra unspecified stems.
 
 This fixes fifteen trailing leaves and three vine lengths. Six additional rim leaves attach to the first curve of each vine at t=0.25 and 0.55. Use the same leaf patch formula with length 0.035, half-width 0.012, and direction normalize(side,0,0.35), side=-1 then +1. For these rising leaves use E=(D.z,0,-D.x) as before. Thus the assembly has twenty-one leaves total; the left vine is longest, middle intermediate, right shortest. Nominal assembly envelope 0.25 x 0.15 x 0.44 m includes the over-rim stem arch and downward leaves; it is a conservative display envelope, not a filled box. Nothing may extend behind the rear mounting plane. The exact curve/leaf positions override approximate prompt heights and sheet overlaps.
 
 ## Future validation
 
 Modeling is not performed. After separate authorization, compare front -Y, right +X, back +Y, top +Z, oblique (1,-1,0.8), undersides and empty pot cavities. Check pot dimensions within 0.001 m, flat tree ground contact, thirty tree leaves, three vines, fifteen trailing and six rim leaves, blind keyhole and flush mounting plane. Check no scene geometry or baked illumination. A numeric handoff does not establish model verification.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Tree and wall planter
+
+Small tree pot diameter/height are 250/230 mm. Its thirty leaf instances are explicit, not a request to generate random canopy balls. Cluster centres for petioles are exactly the three branch endpoints, in the same index order. Each petiole ends at leafCentre-0.055*normalizedMajorDirection; maintain both endpoints under resizing. Soil is cavity-trimmed. Approximate 400 mm crown and 710 mm height are descriptive; exact requested size uses the full constructed default bounds.
+
+Wall planter pot is 200 x 110 x 160 mm, with an 8 mm rear wall and 3 mm blind keyhole, leaving 5 mm material behind that cut. Three vines start inside the soil at Z=140 mm. Fifteen trailing plus six rim leaves remain attached to their parent paths. Preserve the downward extent below the origin and rear plane Y=0. The 250 x 150 x 440 mm value is a conservative planning envelope, not a mandatory final geometry box.
+
+LoD lowers ellipsoid, patch and tube samples while preserving all leaf instances, pot/keyhole geometry, attachment points and wall clearance. Keep pot, soil, wood, vine and both leaf defaults independently replaceable.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

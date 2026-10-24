@@ -45,3 +45,15 @@ Hole/recess locations are completions of a hidden mounting face. Include no wall
 Only drawings/documents exist; no modeling has been performed. Future checks cover dimensions (tolerance 0.002), snack cabinet's two compartments/two doors, bookcase's three compartments, one wall plank/two blind holes, ground contact, closed backing, real compartment voids, origins, and absence of contents.
 
 Compare the same model from front -Y, right +X, back +Y, top +Z, and oblique (1,-1,0.8). Generated sheets have slight perspective and face tones, not precision projections or textures. Use surface recipes for grain and solid colours.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Wall shelf plank
+
+One 600 x 180 x 35 mm plank; X=+/-300, Y=-180..0, Z=0..35 mm. The two rear sockets at X=+/-200 are blind: diameter 8, total depth 25 mm from Y=0, including the 2 mm mounting recess. Remaining bore beyond the recess is 23 mm. Residual wood toward the front is 155 mm; vertical bore margin is 13.5 mm. Recess height 18 leaves 8.5 mm above and below. Keep each circular entrance open through its dark recess-floor region; do not cover it with a colored rectangle. Mount hardware is excluded. Rear mating surfaces remain planar after exposed-edge rounding.
+
+Oak and grain retain the existing storage palette. Shelf, recess floor and bore wall remain addressable surface regions; a dark floor is an intrinsic default, not baked occlusion. LoD must retain two blind sockets, the planar mounting face and the board envelope. Reduce edge/ring sampling, never replace sockets with black dots.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

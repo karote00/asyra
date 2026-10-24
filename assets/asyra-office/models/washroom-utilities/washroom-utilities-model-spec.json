@@ -15,77 +15,36 @@
       "parts": {
         "mount": {
           "axis": "-Y",
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            0,
-            -0.008,
-            0
-          ],
+          "start": [0, 0, 0],
+          "end": [0, -0.008, 0],
           "radius": 0.025,
           "segments": 64
         },
         "rod": {
           "method": "solid circular sweep",
           "centerline": [
-            [
-              0,
-              -0.008,
-              0
-            ],
-            [
-              0,
-              -0.08,
-              0
-            ],
-            [
-              0,
-              -0.08,
-              -0.018
-            ],
-            [
-              0.12,
-              -0.08,
-              -0.018
-            ],
-            [
-              0.12,
-              -0.08,
-              0
-            ]
+            [0, -0.008, 0],
+            [0, -0.08, 0],
+            [0, -0.08, -0.018],
+            [0.12, -0.08, -0.018],
+            [0.12, -0.08, 0]
           ],
           "radius": 0.006,
-          "elbowCenterlineRadius": 0.006,
+          "elbowCenterlineRadius": 0.008,
           "elbowSegments": 16,
           "radialSegments": 48,
           "caps": "flat end disks"
         }
       },
       "bounds": {
-        "x": [
-          -0.025,
-          0.126
-        ],
-        "y": [
-          -0.086,
-          0
-        ],
-        "z": [
-          -0.025,
-          0.025
-        ]
+        "x": [-0.025, 0.126],
+        "y": [-0.086, 0],
+        "z": [-0.025, 0.025]
       },
       "rollPlacement": {
         "rollAsset": "toilet-paper-roll",
         "axis": "+X",
-        "center": [
-          0.06,
-          -0.08,
-          -0.018
-        ],
+        "center": [0.06, -0.08, -0.018],
         "rollExcluded": true
       },
       "material": "muted-metal"
@@ -97,100 +56,49 @@
         "body": {
           "method": "closed radius-z revolution",
           "profile": [
-            [
-              0,
-              0
-            ],
-            [
-              0.031,
-              0
-            ],
-            [
-              0.035,
-              0.004
-            ],
-            [
-              0.035,
-              0.11
-            ],
-            [
-              0.033,
-              0.118
-            ],
-            [
-              0.027,
-              0.125
-            ],
-            [
-              0.015,
-              0.13
-            ],
-            [
-              0.015,
-              0.145
-            ],
-            [
-              0,
-              0.145
-            ]
+            [0, 0],
+            [0.031, 0],
+            [0.035, 0.004],
+            [0.035, 0.11],
+            [0.033, 0.118],
+            [0.027, 0.125],
+            [0.015, 0.13],
+            [0.015, 0.145],
+            [0, 0.145]
           ],
           "segments": 96
         },
         "collar": {
           "axis": "+Z",
-          "centerBottom": [
-            0,
-            0,
-            0.145
-          ],
+          "centerBottom": [0, 0, 0.145],
           "radius": 0.017,
           "height": 0.008,
           "segments": 64
         },
         "stem": {
           "axis": "+Z",
-          "centerBottom": [
-            0,
-            0,
-            0.153
-          ],
+          "centerBottom": [0, 0, 0.153],
           "radius": 0.005,
           "height": 0.018,
           "segments": 48
         },
         "head": {
           "axis": "+Z",
-          "centerBottom": [
-            0,
-            0,
-            0.171
-          ],
+          "centerBottom": [0, 0, 0.171],
           "radius": 0.014,
           "height": 0.009,
           "segments": 64
         },
         "nozzle": {
           "method": "Y cylinder",
-          "start": [
-            0,
-            0,
-            0.172
-          ],
-          "end": [
-            0,
-            -0.045,
-            0.172
-          ],
+          "start": [0, 0, 0.172],
+          "end": [0, -0.045, 0.172],
           "radius": 0.006,
           "segments": 48
         },
         "outletTip": {
           "method": "Z cylinder with blind recess",
-          "centerBottom": [
-            0,
-            -0.04,
-            0.161
-          ],
+          "centerBottom": [0, -0.04, 0.161],
           "radius": 0.0035,
           "height": 0.007,
           "segments": 48,
@@ -203,25 +111,17 @@
         }
       },
       "bounds": {
-        "x": [
-          -0.035,
-          0.035
-        ],
-        "y": [
-          -0.045,
-          0.035
-        ],
-        "z": [
-          0,
-          0.18
-        ]
+        "x": [-0.035, 0.035],
+        "y": [-0.045, 0.035],
+        "z": [0, 0.18]
       },
       "materials": {
         "body": "ivory",
         "collar": "sage",
         "stem": "sage",
         "head": "sage",
-        "nozzle": "sage"
+        "nozzle": "sage",
+        "outletTip": "sage"
       },
       "hidden": "Closed display body, no fluid, internal tube or pump mechanism. Outlet recess is real geometry, not a painted dark dot.",
       "pivot": "Pump parts remain separate; no animation defined."

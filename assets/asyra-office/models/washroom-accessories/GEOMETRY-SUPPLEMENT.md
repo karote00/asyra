@@ -13,6 +13,7 @@ Rounded rectangles lie in XZ, centered on X=Z=0. Width and height are full dimen
 Overall bounds: X +/-0.200, Z +/-0.280, Y=-0.025 to 0.
 
 The frame is an extruded rounded rectangular ring:
+
 - Outside: width 0.400, height 0.560, corner radius 0.040.
 - Inside aperture: width 0.350, height 0.510, corner radius 0.015.
 - Both are concentric. Their difference creates a constant 0.025 border, including corners.
@@ -29,6 +30,7 @@ The pale blue-gray field is an unlit review representation of the mirror. Do not
 Overall bounds: X +/-0.230, Y=-0.080 to 0, Z +/-0.025.
 
 Exactly five closed cylindrical parts:
+
 - One horizontal crossbar, radius 0.010, from X=-0.230 to +0.230 at Y=-0.070, Z=0.
 - Two arms, radius 0.008, at X=-0.200 and +0.200, Z=0. Each extends from Y=-0.008 to -0.070.
 - Two mounting disks, radius 0.025, at those same X/Z centers, extending from Y=0 to -0.008.
@@ -42,3 +44,17 @@ Front shows the horizontal bar with mounting disks behind it. In the right view 
 FRONT looks along +Y; RIGHT along -X; BACK along -Y; TOP along -Z, with +Y upward. THREE-QUARTER is illustrative from (+X,-Y,+Z). Resolve drawing perspective or occlusion ambiguity through the numeric specification.
 
 Future model acceptance checks: overall bounds within 0.0005 m, mounting plane at Y=0, closed solids, correct part counts, pane recess, flat backing, rail projection, and absence of baked lighting or attached props. Verify front, side, top, rear, and close views. No model or reflection behavior has been validated in this drawing stage.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Frame and mounting
+
+Mirror extent is 400 x 25 x 560 mm, outer corner radius 40 mm and aperture radius 15 mm. The 25 mm border is constant, including rounded corners. Pane front is Y=-20 mm, 5 mm behind the frame front. Backing spans Y=-5..0 mm; the hidden air gap is 12 mm between backing and pane, bounded laterally by the frame. Keep the pane aperture closed by the pane, without adding glass thickness a second time.
+
+Towel rail is 460 x 80 x 50 mm. Its bar radius is 10 mm, wall-arm radius 8 mm and mounting disk radius 25 mm. Five construction solids intentionally meet/intersect; remove hidden intersection faces in a welded static output, retaining named regions. The separate towel's 10 mm inner fold radius fits this default bar exactly; scale both coherently if retaining that fit.
+
+LoD retains the frame recess, pane, two mounts and rail clearance. Frame/backing wood, mirror pane and metal remain replaceable; app reflections are not baked into the reference.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

@@ -31,3 +31,15 @@ Overall bounds: X=-0.030..0.030, Y=-0.050..0.050, Z=0..0.030. The underside is i
 Place the origin at the supporting surface elevation. The app owns position, orientation, interaction and animation.
 
 After modeling authorization, verify bounds within 0.0002 m, the ellipsoid profile, base height, closed bottom, material boundary and lack of unintended parts. No reconstruction, export or runtime verification has occurred. No alternate LOD mesh or click animation is included.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Dome interpretation
+
+Default 60 x 100 x 30 mm bounds consist of a 4 mm elliptical base and an upper ellipsoid rising another 26 mm. The front/right elevations and numeric dome agree; the flattened three-quarter illustration is not a second valid shape. Retain it as original evidence, but do not use its apparent flatness to lower the dome. A future same-camera render must verify the dome before model acceptance.
+
+Shell and base share one equator ring; only the bottom has a cap. There is no internal equator disk. Ivory shell and grey base remain replaceable. Angular/meridian subdivision may reduce for LoD, retaining the pole, cardinal extrema, base height and closed bottom. No buttons or wheel are added to this deliberately minimal design.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

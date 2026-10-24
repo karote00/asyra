@@ -23,62 +23,20 @@ Revolve this closed radius/Z profile around Z. Each pair is [radius, height]:
 
 ```json
 [
-  [
-    0,
-    0
-  ],
-  [
-    0.03,
-    0
-  ],
-  [
-    0.033,
-    0.003
-  ],
-  [
-    0.04,
-    0.012
-  ],
-  [
-    0.048,
-    0.025
-  ],
-  [
-    0.055,
-    0.04
-  ],
-  [
-    0.06,
-    0.053
-  ],
-  [
-    0.059,
-    0.055
-  ],
-  [
-    0.056,
-    0.055
-  ],
-  [
-    0.051,
-    0.04
-  ],
-  [
-    0.044,
-    0.025
-  ],
-  [
-    0.036,
-    0.012
-  ],
-  [
-    0.029,
-    0.005
-  ],
-  [
-    0,
-    0.005
-  ]
+  [0, 0],
+  [0.03, 0],
+  [0.033, 0.003],
+  [0.04, 0.012],
+  [0.048, 0.025],
+  [0.055, 0.04],
+  [0.06, 0.053],
+  [0.059, 0.055],
+  [0.056, 0.055],
+  [0.051, 0.04],
+  [0.044, 0.025],
+  [0.036, 0.012],
+  [0.029, 0.005],
+  [0, 0.005]
 ]
 ```
 
@@ -100,3 +58,15 @@ The provided images label these views, but generated elevations include slight d
 ## Future modeling acceptance
 
 Check overall dimensions within 0.0002, origin placement, closed shell topology, empty cavities, and absence of bundled props. Compare the tray plan and bowl profile against the numeric specification. Inspect the bottom as well as visible faces. This is a future checklist; no model or Blender verification was performed in this batch.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Hollow tray and bowl
+
+Tray interior is 264 x 164 x 19 mm, above a 6 mm floor with 8 mm walls. Its volume is empty; no hidden full-height box remains after subtraction. The four rim grain regions meet without grooves. Bowl extent is 120 x 120 x 55 mm, floor 5 mm, flat ground contact diameter 60 mm. The 4 mm side thickness is nominal radial thickness; lip transitions follow the complete ordered profile.
+
+Tray honey wood and grain, and bowl ivory ceramic, use the explicit surface recipe defaults. Both interior and exterior remain independently addressable without forced dark tints. LoD retains the tray cavity and every bowl profile station; reduce only the bowl's angular samples. The tray's planar topology needs no dense subdivisions.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

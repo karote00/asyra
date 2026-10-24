@@ -22,12 +22,26 @@ Front-most extent is the rim at -0.055; hands and pin stay behind that lip. Hand
 
 Vertical: X=-0.20..0.20, Y=-0.001..0, Z=0..1.20. Horizontal: X=-0.60..0.60, Y=-0.001..0, Z=0..0.40. Six planar faces, sharp corners, zero bevel, no backing board, no adhesive mesh, no curled edges. This is decorative paper, not a wall segment.
 
-For front UV coordinates u=(X+width/2)/width, v=Z/height, assign sage to 0.25 <= u < 0.75 on the vertical strip and 0.25 <= v < 0.75 on the horizontal strip. Assign cream elsewhere. Back, top, bottom and side faces are entirely cream. Front normal is -Y; back normal is +Y. All faces opaque.
+At default size, for front UV coordinates u=(X+width/2)/width, v=Z/height, assign sage to 0.25 <= u < 0.75 on the vertical strip and 0.25 <= v < 0.75 on the horizontal strip. Assign cream elsewhere. Back, top, bottom and side faces are entirely cream. Front normal is -Y; back normal is +Y. All faces opaque.
 
 Thus the vertical face has cream/green/cream widths 0.10/0.20/0.10 m, while the horizontal face has cream/green/cream heights 0.10/0.20/0.10 m. Two adjacent half-bands form one full cream band. The seam has no gap, overlap, raised line or bevel. A material boundary has no depth. The horizontal variant rotates the motif, not an entire wall assembly.
 
-One physical strip includes one motif. Material colour slots allow later solid-colour variants without changing geometry; the delivered sheets show only the sage/cream version. Placement count, slicing around openings, stacking, host-wall clearance and avoiding coplanar surfaces belong to the app. No hard-coded scene offset or underlying asphalt/wall is included in this asset.
+One default-size strip includes one motif. For resized strips, use the fixed physical repeat and partial cycles in `resizedPattern` rather than stretching this default UV mask. Material colour slots allow later solid-colour variants without changing geometry; the delivered sheets show only the sage/cream version. Placement count, slicing around openings, stacking, host-wall clearance and avoiding coplanar surfaces belong to the app. No hard-coded scene offset or underlying asphalt/wall is included in this asset.
 
 ## Future model acceptance
 
-After modeling is separately authorized, compare the same mesh from all five sheet directions and inspect the hidden faces. Required checks: specified bounds (clock tolerance 0.001 m; paper tolerance 0.0001 m), clock centre origin and paper bottom-centre origin, twelve marks, two separate hands, plain rear, correct band ratios, exactly one strip, no wall or shadow plane, and no baked lighting. Paper thickness must remain 0.001 m even if a sheet makes its silhouette look thicker. No such model checks have been run in this drawing-only batch.
+After modeling is separately authorized, compare the same mesh from all five sheet directions and inspect the hidden faces. Required checks: specified bounds (clock tolerance 0.001 m; paper tolerance 0.0001 m), clock centre origin and paper bottom-centre origin, twelve marks, two separate hands, plain rear, correct band ratios, exactly one strip, no wall or shadow plane, and no baked lighting. Default paper thickness is 0.001 m even if a sheet makes its silhouette look thicker; an explicit overall Y-size override scales that thickness once. No such model checks have been run in this drawing-only batch.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Clock and wallpaper
+
+Clock default extent is 600 x 55 x 600 mm, with rear mounting centre at the origin. The rim projects to Y=-55 mm; dial face is Y=-43 mm, index fronts -45 mm, hour hand -48 mm, minute hand -51 mm and pin front -53 mm. Thus both hands clear the index plane and each other. The pin intentionally intersects their pivot areas. Default time is 01:35: minute angle 210 degrees and hour angle 47.5 degrees clockwise from +Z. Retain twelve indices and separate hands; no numerals, glass or second hand.
+
+Vertical strip is 400 x 1 x 1200 mm and horizontal strip 1200 x 1 x 400 mm. Each is a single closed box, with rear bottom origin; use twelve triangles, with no separate stripe geometry. After resizing, the 400 mm physical motif repeats from the resized left/bottom edge as specified in `resizedPattern`, including partial cycles. Normalized default UV alone must not stretch stripes. Appearance remains replaceable; back and thin edges use cream by default.
+
+Clock LoD preserves the ring opening, hands, pivot and twelve indices; reduce circular sampling only. Wallpaper does not need additional geometric LoD copies.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

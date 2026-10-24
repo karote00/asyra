@@ -12,160 +12,88 @@
   "assets": [
     {
       "id": "sage-desk-lamp",
-      "bounds": [
-        0.18,
-        0.18,
-        0.3
-      ],
+      "bounds": [0.18, 0.18, 0.3],
       "parts": {
         "base": {
           "method": "Z cylinder",
           "radius": 0.07,
-          "zRange": [
-            0,
-            0.018
-          ],
+          "zRange": [0, 0.018],
           "material": "sage"
         },
         "stem": {
           "method": "Z cylinder",
           "radius": 0.006,
-          "zRange": [
-            0.018,
-            0.298
-          ],
+          "zRange": [0.018, 0.298],
           "material": "charcoal"
         },
         "shade": {
           "method": "closed radius-z profile revolution",
           "profile": [
-            [
-              0,
-              0.3
-            ],
-            [
-              0.03,
-              0.3
-            ],
-            [
-              0.09,
-              0.22
-            ],
-            [
-              0.087,
-              0.22
-            ],
-            [
-              0.02925,
-              0.297
-            ],
-            [
-              0,
-              0.297
-            ]
+            [0, 0.3],
+            [0.03, 0.3],
+            [0.09, 0.22],
+            [0.087, 0.22],
+            [0.02925, 0.297],
+            [0, 0.297]
           ],
           "outerMaterial": "sage",
           "innerMaterial": "ivory",
           "radialWallThickness": 0.003,
-          "topThickness": 0.003
+          "topThickness": 0.003,
+          "radialWallThicknessMeaning": "3 mm at equal Z on the straight conical wall; top thickness is separately 3 mm"
         },
         "bulb": {
           "method": "sphere",
-          "center": [
-            0,
-            0,
-            0.248
-          ],
+          "center": [0, 0, 0.248],
           "radius": 0.018,
           "material": "ivory"
         }
       },
-      "lightAnchor": [
-        0,
-        0,
-        0.248
-      ]
+      "lightAnchor": [0, 0, 0.248]
     },
     {
       "id": "ivory-floor-lamp",
-      "bounds": [
-        0.36,
-        0.36,
-        1.4
-      ],
+      "bounds": [0.36, 0.36, 1.4],
       "parts": {
         "base": {
           "method": "Z cylinder",
           "radius": 0.15,
-          "zRange": [
-            0,
-            0.025
-          ],
+          "zRange": [0, 0.025],
           "material": "charcoal"
         },
         "stem": {
           "method": "Z cylinder",
           "radius": 0.011,
-          "zRange": [
-            0.025,
-            1.375
-          ],
+          "zRange": [0.025, 1.375],
           "material": "charcoal"
         },
         "shade": {
           "method": "annular Z cylinder, open through top and bottom",
           "outerRadius": 0.18,
           "innerRadius": 0.176,
-          "zRange": [
-            1.12,
-            1.4
-          ],
+          "zRange": [1.12, 1.4],
           "material": "ivory"
         },
         "supportX": {
           "method": "box",
-          "min": [
-            -0.176,
-            -0.003,
-            1.367
-          ],
-          "max": [
-            0.176,
-            0.003,
-            1.373
-          ],
+          "min": [-0.176, -0.003, 1.367],
+          "max": [0.176, 0.003, 1.373],
           "material": "charcoal"
         },
         "supportY": {
           "method": "box",
-          "min": [
-            -0.003,
-            -0.176,
-            1.367
-          ],
-          "max": [
-            0.003,
-            0.176,
-            1.373
-          ],
+          "min": [-0.003, -0.176, 1.367],
+          "max": [0.003, 0.176, 1.373],
           "material": "charcoal"
         },
         "bulb": {
           "method": "sphere",
-          "center": [
-            0,
-            0,
-            1.24
-          ],
+          "center": [0, 0, 1.24],
           "radius": 0.035,
           "material": "ivory"
         }
       },
-      "lightAnchor": [
-        0,
-        0,
-        1.24
-      ]
+      "lightAnchor": [0, 0, 1.24]
     }
   ],
   "construction": {

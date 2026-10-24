@@ -11,6 +11,7 @@ One closed brown trunk cylinder: radius 0.007, from (0,0,0) to (0,0,0.390), 24 r
 Each olive leaf is a closed ellipsoid with local X/Y/Z radii 0.025/0.006/0.070. Use 24 longitude segments and 12 latitude intervals, weld poles, and smooth curved normals. The long leaf direction is local +Z; no veins, serration, or displacement.
 
 Place three radial tiers:
+
 - 10 leaves: radius 0.110, center height 0.160, outward tilt 55 degrees, start angle 0 degrees.
 - 12 leaves: radius 0.120, center height 0.240, outward tilt 45 degrees, start angle 15 degrees.
 - 8 leaves: radius 0.060, center height 0.330, outward tilt 25 degrees, start angle 22.5 degrees.
@@ -28,6 +29,7 @@ This is one plant, not a repeated hedge section. No exposed root ball, soil, pot
 Exactly seven independent closed blade solids, sharing a root center. Each row in JSON supplies angle a, height h and outward reach d.
 
 For t from 0 to 1:
+
 - Centerline C(t)=(d*t*t*cos(a),d*t*t*sin(a),h*t).
 - Full width w(t)=0.016*sin(pi*t)^0.7+0.004*(1-t).
 - Full thickness b(t)=0.001*(1-t).
@@ -44,3 +46,17 @@ The longest blade reaches 0.240. Blades fan in the specified seven directions; t
 FRONT looks along +Y, RIGHT along -X, BACK along -Y, TOP along -Z with +Y upward. Oblique views and overlap are illustrative; numeric part counts govern concealed elements.
 
 Future review checks dimensions within 0.001, 31 shrub leaves, 30 branches plus trunk, seven grass blades, capped solids, welded tips, intentional intersections, ground origin, and absence of bundled scenery. Inspect top, back, underside and close leaf silhouettes. No model, wind animation, physics, exact reconstruction or performance validation has occurred.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Shrub and grass
+
+Shrub contains 31 leaf ellipsoids, 30 branches and one trunk. Tier rotations are Rz(a)*Ry(tilt): apply Ry first, then Rz, to column vectors in the authored local axes; top leaf is identity. Its 460 mm height follows the top leaf centre 390 mm plus 70 mm radius. Use oriented-ellipsoid support extents for exact XY bounds, not the approximate 350 mm width.
+
+Grass contains exactly seven thick blades. Each root lies on Z=0 because its cross-section normal there has zero Z component. Explicitly set width and thickness to zero at t=1 before welding the tip; floating-point sin(pi) must not create microscopic extra rings. Keep root caps and no support disk. Highest tip is 240 mm.
+
+LoD reduces leaf/ring/path sampling while retaining instance counts, extrema, stems and thickness. Materials remain replaceable for foliage and wood; no random seeds, extra leaf generation or alpha-card substitution is introduced.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.

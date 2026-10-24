@@ -27,3 +27,13 @@ No hidden recess, logo, wrapper, separate cap, hollowing, felt pad or handle. Th
 The bottom plane is Z=0. Placing the origin at a desktop's surface elevation makes the eraser rest on its flat bottom. Counts, rotation, placement and interactions belong to the app.
 
 When models are authorized, verify bounds within 0.0001 m, chamfer construction, closed faces and single-unit boundary. No reconstruction or export validation has occurred. Wear, deformation, crumbs, erasing animation and alternate LOD meshes are outside this handoff.
+
+## Resizing, appearance and LoD - construction review
+
+Apply the [shared overall-size and appearance contract](../README.md#overall-size-and-appearance---2026-10-09): finite positive whole-unit XYZ extents, one transform about the authored origin, then appearance mapping. Preserve selected material colour when no tint is supplied. Named part/region overrides take priority over the applicable group and preset. Existing surface recipes are explicit defaults, not immutable material restrictions. Identity artwork follows inverse-scaled default coordinates; repeating texture recipes use final local metres.
+
+### Chamfer topology
+
+Default extent is 50 x 20 x 12 mm. The 1 mm chamfer leaves main top/bottom flats 48 x 18 mm, front/back 48 x 10 mm and ends 18 x 10 mm. The defined convex hull has 24 vertices, 26 polygon faces and 44 triangles; no alternate shape is needed for LoD. These analytic counts exclude renderer vertex splits for flat normals. Positive nonuniform scaling stretches chamfers with the rest of the unit and does not re-create a fixed 45-degree bevel. Ivory rubber is a replaceable default over the whole exterior.
+
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.
