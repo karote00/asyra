@@ -1,3 +1,4 @@
+import { assertReleaseSummaryUnchanged } from './release-history.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
@@ -44,6 +45,30 @@ export function validateUpdateGuidance({
   exists,
   existsBase
 }) {
+  const manifestPath = 'docs/public/content-manifest.json'
+  if (
+    changes.some(
+      (file) =>
+        file === manifestPath ||
+        file.startsWith('docs/public/updates/releases/')
+    )
+  ) {
+    const before = JSON.parse(readBase(manifestPath) ?? '{"pages":[]}').pages
+    const after = JSON.parse(read(manifestPath) ?? '{"pages":[]}').pages
+    for (const page of before.filter((page) =>
+      page.path.startsWith('updates/releases/')
+    )) {
+      const file = `docs/public/${page.path}`
+      const original = readBase(file)
+      assertReleaseSummaryUnchanged(original, read(file))
+      if (!after.some((item) => item.path === page.path)) {
+        requireValue(
+          false,
+          `Release history removed from discovery: ${page.path}`
+        )
+      }
+    }
+  }
   const required = changes.filter((file) => !file.endsWith('.md'))
   const covered = new Set()
   const identities = new Set()

@@ -23,17 +23,27 @@ test('content manifest owns the exact stable documentation inventory', async () 
   const contract = await readPublicContentContract({ repositoryRoot })
 
   assert.equal(contract.schemaVersion, 1)
-  assert.equal(contract.pages.length, 46)
+  assert.equal(
+    contract.pages.length,
+    JSON.parse(
+      fs.readFileSync(
+        path.join(repositoryRoot, 'docs/public/content-manifest.json'),
+        'utf8'
+      )
+    ).pages.length
+  )
   const schema = JSON.parse(
     fs.readFileSync(
       path.join(repositoryRoot, PUBLIC_CONTENT_SCHEMA_PATH),
       'utf8'
     )
   )
-  assert.equal(schema.properties.pages.minItems, contract.pages.length)
-  assert.equal(schema.properties.pages.maxItems, contract.pages.length)
+  assert.equal(schema.properties.pages.minItems, 1)
+  assert.equal(schema.properties.pages.maxItems, undefined)
   assert.deepEqual(
-    contract.pages.map(({ id }) => id),
+    contract.pages
+      .map(({ id }) => id)
+      .filter((id) => inspector.pageIds.includes(id)),
     inspector.pageIds
   )
   assert.equal(contract.pages[0].path, 'index.md')
@@ -108,5 +118,21 @@ test('content validation fails closed on duplicate, private, or unknown inputs',
       candidate.pages[0].path = '../website-owned.md'
     }),
     /stable Markdown path/
+  )
+})
+
+test('new update pages use declared inventory without raising a fixed page count', async () => {
+  const contract = await readPublicContentContract({ repositoryRoot })
+  const inputs = await readApprovedDocumentationInputs({ repositoryRoot })
+  const manifest = structuredClone(contract)
+  manifest.pages.push({
+    ...manifest.pages.find((page) => page.id === 'updates/index'),
+    id: 'updates/releases/test-release',
+    path: 'updates/releases/test-release.md'
+  })
+  assert.equal(
+    validatePublicContentManifest({ inputs, manifest, repositoryRoot }).pages
+      .length,
+    contract.pages.length + 1
   )
 })

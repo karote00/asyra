@@ -121,7 +121,7 @@ module.exports = Object.freeze({
       ],
       outputs: ['artifact:public-content-contract'],
       conditions: [
-        'Exactly 46 stable page ids are declared once.',
+        'Required stable page ids remain present; additional update pages are explicitly declared once in the manifest.',
         'Each page owns a Markdown path, section, title, sources, and relationships to packages.',
         'Public indexes exclude internal operations, secrets, obsolete contracts, and historical audits.'
       ],
@@ -303,7 +303,8 @@ module.exports = Object.freeze({
       outputs: ['artifact:public-documentation-bundle'],
       conditions: [
         'Generated indexes are deterministic and source-mapped.',
-        'Plain-text discovery contains only approved public content.'
+        'Plain-text discovery contains only approved public content.',
+        'Durable release summaries retain predecessors, exact prerequisites, guide revisions and availability; missing coverage is explicit.'
       ],
       bypasses: [
         'Website consumers present this bundle but cannot rewrite its semantic claims.'
@@ -319,11 +320,16 @@ module.exports = Object.freeze({
       ],
       implementationBoundary: [
         'docs/public/generated/**',
+        'docs/public/updates/**',
         'docs/public/llms.txt',
         'scripts/docs/**',
         'package.json'
       ],
-      specRefs: ['#ai-readable-documentation-contract', '#freshness-contract'],
+      specRefs: [
+        '#ai-readable-documentation-contract',
+        '#freshness-contract',
+        'docs/ai/framework/plans/release-update-guidance-plan.md#task-3---expose-release-history-and-applicable-guides'
+      ],
       failureOwnerStepId: 'publish-documentation-indexes'
     }),
     step({

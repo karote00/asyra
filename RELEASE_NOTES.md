@@ -175,3 +175,38 @@ These development notes are not published release summaries.
   "reason": "Release result bookkeeping only; consumer runtime, custom behavior, saved data, versioning and Markdown-only exemptions are unchanged."
 }
 ```
+
+```update-note
+{
+  "change": "public-release-history-discovery",
+  "owner": "Public release documentation",
+  "summary": "Expose durable per-owner release summaries and cross-version guidance through the existing public document inventory, website and AI discovery entries.",
+  "sources": [
+    "apps/asyra-framework-site/__tests__/content.test.mjs",
+    "apps/asyra-framework-site/__tests__/docs.test.mjs",
+    "apps/asyra-framework-site/__tests__/e2e/supporting-routes.spec.ts",
+    "apps/asyra-framework-site/__tests__/e2e/update-guides.spec.ts",
+    "apps/asyra-framework-site/__tests__/static-delivery.test.mjs",
+    "apps/asyra-framework-site/lib/content.mjs",
+    "apps/asyra-framework-site/public/llms.txt",
+    "docs/public/content-manifest.json",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/source-map.json",
+    "docs/public/llms.txt",
+    "docs/public/schema/content-manifest.schema.json",
+    "scripts/docs/__tests__/public-content-contract.test.mjs",
+    "scripts/docs/__tests__/public-documentation.test.mjs",
+    "scripts/docs/__tests__/public-documentation-validation.test.mjs",
+    "scripts/docs/__tests__/release-update-guidance.test.mjs",
+    "scripts/docs/public-content-contract.mjs",
+    "scripts/docs/public-documentation.mjs",
+    "scripts/docs/release-update-guidance.mjs",
+    "tools/flow-inspector/inspectors/__tests__/asyra-public-package-documentation-flow-inspector.contract.test.cjs",
+    "tools/flow-inspector/inspectors/asyra-public-package-documentation-flow-inspector.data.cjs",
+    "scripts/docs/release-history.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Documentation discovery and validation only; consumer runtime, custom features and stored data are unchanged. No historical release availability is inferred."
+}
+```

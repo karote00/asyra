@@ -61,10 +61,16 @@ export async function loadVerifiedPublicContent() {
       readJson('docs/public/generated/package-reference.json')
     ])
 
-  if (manifest.pages.length !== 46 || contentIndex.pages.length !== 46) {
-    throw new Error(
-      'The public content inventory must contain exactly 46 pages'
-    )
+  const expectedIds = manifest.pages.map((page) => page.id).sort()
+  for (const inventory of [contentIndex.pages, sourceMap.pages]) {
+    if (
+      JSON.stringify(inventory.map((page) => page.id).sort()) !==
+      JSON.stringify(expectedIds)
+    ) {
+      throw new Error(
+        'Generated public content inventory differs from the manifest'
+      )
+    }
   }
   if (packageReference.packages.length !== 19) {
     throw new Error('The package reference must contain exactly 19 packages')

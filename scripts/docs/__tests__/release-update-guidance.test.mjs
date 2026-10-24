@@ -519,3 +519,64 @@ test('current release guidance routes hosted Apps and the website to Cloudflare 
   assert.ok(!contract.includes('(../../workflows/manual-app-release.md)'))
   assert.ok(contract.includes('site-cloudflare.yml'))
 })
+
+test('published summaries cannot be edited, deleted or removed from discovery; ordinary Markdown stays exempt', () => {
+  const file = 'docs/public/updates/releases/retained.md'
+  const manifest = 'docs/public/content-manifest.json'
+  const original =
+    '# Retained\n```release-summary\n{"id":"retained","status":"verified"}\n```\n'
+  const inventory = JSON.stringify({
+    pages: [{ path: 'updates/releases/retained.md' }]
+  })
+  const before = { [file]: original, [manifest]: inventory }
+  assert.throws(
+    () =>
+      check({
+        notes: [],
+        changes: [file],
+        before,
+        files: { [file]: original + 'Edited', [manifest]: inventory }
+      }),
+    /immutable/
+  )
+  assert.throws(
+    () =>
+      check({
+        notes: [],
+        changes: [file],
+        before,
+        files: { [manifest]: inventory }
+      }),
+    /immutable/
+  )
+  assert.throws(
+    () =>
+      check({
+        notes: [
+          note({
+            sources: [manifest],
+            impact: 'no-action',
+            guides: [],
+            reason: 'Metadata'
+          })
+        ],
+        changes: [manifest, notePath],
+        before,
+        files: { [file]: original, [manifest]: '{"pages":[]}' }
+      }),
+    /discovery/
+  )
+  assert.equal(
+    check({
+      notes: [],
+      changes: ['README.md'],
+      before,
+      files: {
+        [file]: original,
+        [manifest]: inventory,
+        'README.md': '# Wording'
+      }
+    }).notes,
+    0
+  )
+})

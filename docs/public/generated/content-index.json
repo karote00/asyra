@@ -1299,7 +1299,7 @@
       "wordCount": 513
     },
     {
-      "contentSha256": "3102bae4bb2aec8be4087280e4b7147ed88eb2fb2c20e2781ac80cdb2cb57d65",
+      "contentSha256": "f08c0a4e7e25d1e31f2ffde9c85a9be8e9df892c59fb6c7e2c4cbc23220cca91",
       "description": "Select official update guides, retain App-owned extensions and give a coding agent enough context for first and subsequent integrations.",
       "headings": [
         {
@@ -1340,7 +1340,36 @@
       "path": "updates/index.md",
       "section": "Extend",
       "title": "Update your App with an AI coding agent",
-      "wordCount": 945
+      "wordCount": 1030
+    },
+    {
+      "contentSha256": "a17ff131fb866a31592b5681f3189294e1e7715e23ca90f9eecc409634f0a65f",
+      "description": "Find per-owner release summaries, verified predecessor boundaries, prerequisites and guide corrections; report gaps and revisit deferred adoption.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Release History and Update Coverage"
+        },
+        {
+          "depth": 2,
+          "title": "Covered deliveries"
+        },
+        {
+          "depth": 2,
+          "title": "Gaps and partial adoption"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/history",
+      "markdownPath": "docs/public/updates/history.md",
+      "packages": [],
+      "path": "updates/history.md",
+      "section": "Extend",
+      "title": "Release History and Update Coverage",
+      "wordCount": 263
     },
     {
       "contentSha256": "317bf04a5f3db2289629904f2992d534867227e6031a6eb10ca8e52223117bf0",
@@ -2871,6 +2900,7 @@
       "wordCount": 1305
     }
   ],
+  "releaseHistory": [],
   "release": {
     "family": "0.5",
     "packageCount": 19,
@@ -2917,6 +2947,7 @@
         "build/ai-actions",
         "build/app-retrieval-action",
         "updates/index",
+        "updates/history",
         "updates/text-official-fields-example-1-r2",
         "updates/text-official-fields-example-1-r3",
         "updates/text-spacing-example-2-r1",

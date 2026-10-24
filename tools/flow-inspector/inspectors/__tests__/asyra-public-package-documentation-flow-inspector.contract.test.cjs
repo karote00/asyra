@@ -64,7 +64,7 @@ test('content contract owns schema, stable ids, mappings, and exclusions', () =>
     ...content.allowedContributors,
     ...content.forbiddenContributors
   ].join(' ')
-  assert.match(contract, /Exactly 46 stable page ids/i)
+  assert.match(contract, /additional update pages.*manifest/i)
   assert.match(contract, /Markdown path.*sources.*packages/is)
   assert.doesNotMatch(contract, /example ids/i)
   assert.match(contract, /secrets.*obsolete contracts.*historical audits/is)

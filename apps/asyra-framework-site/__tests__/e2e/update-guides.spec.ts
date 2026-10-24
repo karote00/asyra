@@ -1,4 +1,15 @@
 import { expect, test } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+
+const { releaseHistory } = JSON.parse(
+  readFileSync(
+    new URL(
+      '../../../../docs/public/generated/content-index.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+) as { releaseHistory: { id: string; status: string }[] }
 
 test('an agent can follow website discovery to the update index and Text guide', async ({
   page,
@@ -135,4 +146,47 @@ test('the subsequent guide is discoverable and retains its exact artifact and da
     .getByRole('link', { name: 'App-owned document migration', exact: true })
     .click()
   await expect(page).toHaveURL(/\/docs\/build\/persistence-migration$/)
+})
+
+test('release history is reachable from discovery and reports declared coverage honestly', async ({
+  page,
+  request
+}) => {
+  const discovery = await request.get('/llms.txt')
+  expect(discovery.ok()).toBe(true)
+  expect(await discovery.text()).toContain('/docs/updates/history')
+  await page.goto('/docs/updates/index')
+  await page
+    .getByRole('link', {
+      name: 'Release history and update coverage',
+      exact: true
+    })
+    .click()
+  await expect(page).toHaveURL(/\/docs\/updates\/history$/)
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Release History and Update Coverage'
+    })
+  ).toBeVisible()
+  if (!releaseHistory.some((record) => record.status === 'verified')) {
+    await expect(
+      page.getByText(/No verified release summaries are registered yet/)
+    ).toBeVisible()
+  }
+  for (const record of releaseHistory) {
+    await expect(
+      page.getByRole('link', { name: record.id, exact: true }).first()
+    ).toBeVisible()
+  }
+  await expect(
+    page.getByText(/Without a note, inspect the App and sample data/)
+  ).toBeVisible()
+  await expect(
+    page.getByText(/Revisit earlier summaries for retained or deferred changes/)
+  ).toBeVisible()
+  await page
+    .getByRole('link', { name: 'the update guide', exact: true })
+    .click()
+  await expect(page).toHaveURL(/\/docs\/updates\/index$/)
 })

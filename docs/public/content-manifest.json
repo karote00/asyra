@@ -279,6 +279,15 @@
       "packages": ["@asyra/core", "@asyra/preset"]
     },
     {
+      "id": "updates/history",
+      "path": "updates/history.md",
+      "section": "Extend",
+      "title": "Release History and Update Coverage",
+      "description": "Find per-owner release summaries, verified predecessor boundaries, prerequisites and guide corrections; report gaps and revisit deferred adoption.",
+      "sources": ["docs/ai/framework/rules/release-update-guidance.md"],
+      "packages": []
+    },
+    {
       "id": "updates/text-official-fields-example-1-r2",
       "path": "updates/text-official-fields-example-1-r2.md",
       "section": "Extend",

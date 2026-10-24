@@ -141,7 +141,55 @@ See [Cloudflare recovery](../../workflows/app-cloudflare.md#verification-and-rec
 
 Publication and public verification remain separate outcomes. Local/CI candidate
 files and expiring artifacts do not implement durable public release history or
-consumer discovery; those remain planned. No gate changes release authorization.
+consumer discovery; use the committed records below. No gate changes release authorization.
+
+## Durable public release records
+
+After delivery verification, copy the matching frozen candidate and per-owner
+result into permanent, publicly accessible release evidence in the repository
+or the owner's durable release assets. Check the candidate hash, owner, source
+and registry integrity/deployment ID; use the recorded deployment's `verified`
+result, not the latest attempt status. Do not infer availability from local
+candidate tests. Actions artifacts alone are not durable evidence.
+
+Author one English Markdown summary under `docs/public/updates/releases/`,
+register it in `docs/public/content-manifest.json`, and include one
+`release-summary` JSON fence. The surrounding prose explains what changed,
+consumer actions and evidence limits. Use the necessary fields below; no new
+service or update CLI is involved.
+
+| Field                      | Required content                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`, `owner`, `channel`   | Stable record ID, actual delivery owner, and `npm` or `cloudflare`.                                                                                                                        |
+| `target`                   | Frozen `sourceSha` and artifact `integrity`, plus npm `version` or Pages `deploymentId`.                                                                                                   |
+| `previous`                 | Record ID matching the candidate's actual baseline; use `null` only with an explicit `boundary` describing the first supported release. Never infer a predecessor from version arithmetic. |
+| `status`, `evidence`       | `verified`, `candidate` or `modeled`; durable public HTTPS evidence links. Only verified paths support adoption.                                                                           |
+| `requires`                 | Exact prerequisite release IDs, including shared Framework requirements. A different selected dependency is a gap until its compatibility is explicitly documented.                        |
+| `changes`                  | Candidate notes projected to `change`, `summary`, `impact`, `reason`, `guides`; retain stable change IDs and all required conversions. Guide paths are relative to `docs/public`.          |
+| `guideHashes`              | Each referenced public guide path mapped to its frozen candidate guide hash (SHA-256 of the JSON-encoded UTF-8 text, the existing release-guidance hashing contract).                      |
+| `supersedes`, `correction` | For a correction only: prior record ID and reason. Preserve target/predecessor identity and required changes/prerequisites; link a new guide revision rather than edit a frozen one.       |
+
+The current public history intentionally has no verified releases. Do not backfill
+old availability or promote the Text examples without actual release evidence.
+Register modeled or candidate summaries only when their scope is useful and
+explicit; they never count as a verified update range.
+
+Run `yarn docs:public` and `yarn docs:public:check` to regenerate/check
+`updates/history.md`, content/source indexes and both `llms.txt` entries. The
+manifest owns additional update pages; no fixed page count is raised for each
+release. The generator checks duplicate IDs, predecessor/prerequisite links,
+cycles, corrections, registered guides and frozen guide hashes. The existing
+`yarn docs:updates:check` also rejects editing/deleting published summary bytes
+or removing retained release pages from discovery. Ordinary Markdown wording
+changes remain exempt from new impact notes.
+
+The history and each release page are Git-tracked public content, independent
+of CI retention. Publish them through the normal authorized documentation release.
+A locally generated page is not evidence of an online deployment. Consumers
+follow every predecessor, revisit earlier pending adoption, and inspect actual
+code/data when an adoption note is missing. Maintainer review still owns semantic
+coverage and the truth of publication evidence; structural checks cannot prove
+that a declared release occurred.
 
 ## Consumer preservation and subsequent updates
 

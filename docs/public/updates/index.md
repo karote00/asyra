@@ -5,6 +5,12 @@ your existing App. Official definitions are the base; your fields, Features,
 rendering choices and document meaning remain App-owned. Updating a generator
 does not update an existing App. Reading a guide does not modify your project.
 
+Start with [Release history and update coverage](history.md) for per-owner
+release summaries, supported boundaries, prerequisites and guide corrections.
+Select the complete predecessor chain and revisit any earlier deferred adoption;
+installed package versions alone do not prove that local Features or data were
+integrated. Missing history or unavailable targets are explicit coverage gaps.
+
 ## How to use
 
 Choose an applicable guide below and give its link or complete Markdown file to
@@ -32,7 +38,7 @@ is not a new independent acceptance. Published-release support remains unverifie
 The prior [revision 2](text-official-fields-example-1-r2.md) remains available for
 its original acceptance record. Revision 3 does not claim a second independent run.
 
-There is no verified release-to-release comparison in this index yet. The Text
+The release history owns current availability and supported comparisons. The Text
 guide demonstrates the delivery format and preservation requirements; it is not
 an announcement that a particular release added Text or a command to install a
 package. Its own metadata owns the precise scope and evidence limits.
@@ -57,6 +63,9 @@ package. Its own metadata owns the precise scope and evidence limits.
 Use this request in the App project with the selected guide attached or linked:
 
 > Integrate the selected official changes described in this guide into my App.
+> Start from the release history and inspect my actual adopted baseline, target
+> and adoption note. Include every intervening summary, prerequisite and earlier
+> deferred change. Follow guide corrections and stop on coverage gaps before edits.
 > Check applicability and actual installed APIs first. Preserve my custom fields,
 > Features, read/write paths, projections and saved data. Use existing Asyra
 > composition and App migration APIs. Run the guide's preservation cases using

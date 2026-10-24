@@ -6,6 +6,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
+import { readReleaseHistory, renderReleaseHistory } from './release-history.mjs'
 import { readPublicContentContract } from './public-content-contract.mjs'
 import {
   checkPublicPackageReference,
@@ -17,6 +18,7 @@ export const WEBSITE_LLM_DISCOVERY_PATH =
   'apps/asyra-framework-site/public/llms.txt'
 
 export const PUBLIC_DOCUMENTATION_PATHS = Object.freeze({
+  releaseHistory: 'docs/public/updates/history.md',
   apiIndex: 'docs/public/generated/api-index.json',
   contentIndex: 'docs/public/generated/content-index.json',
   llms: 'docs/public/llms.txt',
@@ -222,9 +224,20 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
     repositoryRoot: root
   })
 
+  const markdownByPath = new Map(
+    content.pages
+      .filter((page) => page.path !== 'updates/history.md')
+      .map((page) => [page.path, readSource(root, `docs/public/${page.path}`)])
+  )
+  const releaseHistory = readReleaseHistory({
+    pages: content.pages,
+    read: (file) => markdownByPath.get(file)
+  })
+  const historyMarkdown = renderReleaseHistory(releaseHistory)
+  markdownByPath.set('updates/history.md', historyMarkdown)
   const pages = content.pages.map((page) => {
     const markdownPath = `docs/public/${page.path}`
-    const markdown = readSource(root, markdownPath)
+    const markdown = markdownByPath.get(page.path)
     return {
       contentSha256: sha256(markdown),
       description: page.description,
@@ -241,6 +254,7 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
 
   const contentIndex = {
     pages,
+    releaseHistory,
     release: {
       family: packageReference.release.family,
       packageCount: packageReference.release.packageCount,
@@ -287,6 +301,7 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
   }
 
   return {
+    releaseHistory: historyMarkdown,
     apiIndex,
     contentIndex,
     llms: serializeLlms({ contentIndex }),
@@ -296,6 +311,7 @@ export const createPublicDocumentationBundle = async ({ repositoryRoot }) => {
 }
 
 const serializedBundle = (bundle) => ({
+  releaseHistory: bundle.releaseHistory,
   apiIndex: serializeJson(bundle.apiIndex),
   contentIndex: serializeJson(bundle.contentIndex),
   llms: bundle.llms,

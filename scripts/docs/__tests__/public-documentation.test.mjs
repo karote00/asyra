@@ -16,6 +16,13 @@ const repositoryRoot = path.resolve(
   '../../..'
 )
 
+const declaredPages = JSON.parse(
+  fs.readFileSync(
+    path.join(repositoryRoot, 'docs/public/content-manifest.json'),
+    'utf8'
+  )
+).pages
+
 test('public API inventories use source exports regardless of dependency build state', (context) => {
   const temporaryRoot = path.join(repositoryRoot, 'tmp')
   fs.mkdirSync(temporaryRoot, { recursive: true })
@@ -94,8 +101,8 @@ test('public indexes derive the exact page, source, and API inventories', async 
   const bundle = await createPublicDocumentationBundle({ repositoryRoot })
 
   assert.equal(bundle.contentIndex.schemaVersion, 1)
-  assert.equal(bundle.contentIndex.pages.length, 46)
-  assert.equal(bundle.sourceMap.pages.length, 46)
+  assert.equal(bundle.contentIndex.pages.length, declaredPages.length)
+  assert.equal(bundle.sourceMap.pages.length, declaredPages.length)
   assert.equal(bundle.apiIndex.packages.length, 19)
   assert.deepEqual(
     bundle.contentIndex.sections.map(({ id }) => id),
@@ -118,21 +125,13 @@ test('public indexes derive the exact page, source, and API inventories', async 
     'learn/projection-registration-replacement',
     'learn/runtime-boundaries-roadmap'
   ])
-  assert.deepEqual(sections.extend, [
-    'start/extend-with-ai',
-    'build/custom-schema',
-    'build/feature-session',
-    'build/hierarchy-groups',
-    'build/persistence-migration',
-    'build/collaboration',
-    'build/ai-actions',
-    'build/app-retrieval-action',
-    'updates/index',
-    'updates/text-official-fields-example-1-r2',
-    'updates/text-official-fields-example-1-r3',
-    'updates/text-spacing-example-2-r1',
-    'updates/text-spacing-example-2-r2'
-  ])
+  assert.deepEqual(
+    sections.extend,
+    declaredPages
+      .filter((page) => page.section === 'Extend')
+      .map((page) => page.id)
+  )
+
   assert.deepEqual(sections.customize, [
     'start/custom-composition',
     'build/render-boundary'
@@ -196,7 +195,7 @@ test('llms discovery gives the published Starter command and current/future boun
   const { llms } = await createPublicDocumentationBundle({ repositoryRoot })
 
   assert.match(llms, /^# Asyra Framework/m)
-  assert.match(llms, /46 public Markdown pages/)
+  assert.ok(llms.includes(`${declaredPages.length} public Markdown pages`))
   assert.match(llms, /Current: browser\/Core/)
   assert.match(llms, /Future: Headless Core and Core Kernel/)
   assert.match(
@@ -207,12 +206,12 @@ test('llms discovery gives the published Starter command and current/future boun
   assert.match(llms, /\]\(index\.md#generic-starter-source\)/u)
   assert.doesNotMatch(llms, /docs\/ai\//)
   assert.doesNotMatch(llms, /AI_PROVIDER_API_KEY|ws:\/\/|package-private/)
-  assert.equal((llms.match(/^- \[/gm) ?? []).length, 46)
+  assert.equal((llms.match(/^- \[/gm) ?? []).length, declaredPages.length)
 })
 
 test('checked public documentation artifacts are deterministic and current', async () => {
   const bundle = await checkPublicDocumentation({ repositoryRoot })
-  assert.equal(bundle.contentIndex.pages.length, 46)
+  assert.equal(bundle.contentIndex.pages.length, declaredPages.length)
   assert.equal(bundle.apiIndex.packages.length, 19)
   assert.equal(
     fs.readFileSync(
@@ -450,4 +449,323 @@ test('revision 2 subsequent guide distinguishes the independent run and context 
     /\[subsequent Text update\]\(text-spacing-example-2-r2\.md\)/
   )
   assert.ok(index.includes('(text-spacing-example-2-r1.md)'))
+})
+
+function releaseHistoryFixture() {
+  const guide = 'updates/range-fixture-guide.md'
+  const sources = new Map([
+    [
+      guide,
+      '# Modeled guide\n\n## Canonical sources\n\nKeep custom fields, reads, writes, projections and saved data.\n'
+    ]
+  ])
+  const pages = [{ id: guide.slice(0, -3), path: guide }]
+  const record = (id, previous, extra = {}) => ({
+    id,
+    owner: '@fixture/core',
+    channel: 'npm',
+    previous,
+    ...(previous
+      ? {}
+      : {
+          boundary:
+            'First verified fixture boundary; earlier history is unsupported.'
+        }),
+    status: 'verified',
+    target: {
+      version: id,
+      sourceSha: 'a'.repeat(40),
+      integrity: `sha512-${id}`
+    },
+    evidence: ['https://example.test/permanent/release-evidence'],
+    requires: [],
+    changes: [
+      {
+        change: id,
+        summary: `Modeled ${id} change`,
+        impact: 'integration',
+        reason: 'Inspect custom fields and data',
+        guides: [guide]
+      }
+    ],
+    ...extra
+  })
+  const entries = [
+    record('first', null),
+    record('second', 'first'),
+    record('third', 'second')
+  ]
+  const bundle = async () => {
+    const { createHash } = await import('node:crypto')
+    for (const item of entries) {
+      item.guideHashes = Object.fromEntries(
+        item.changes
+          .flatMap((change) => change.guides)
+          .map((file) => [
+            file,
+            createHash('sha256')
+              .update(JSON.stringify(sources.get(file) ?? ''))
+              .digest('hex')
+          ])
+      )
+      const file = `updates/releases/${item.id}.md`
+      sources.set(
+        file,
+        '# Modeled release fixture\n\n```release-summary\n' +
+          JSON.stringify(item) +
+          '\n```\n\n## Canonical sources\n'
+      )
+      if (!pages.some((page) => page.path === file))
+        pages.push({ id: file.slice(0, -3), path: file, title: item.id })
+    }
+    return { pages, read: (file) => sources.get(file) }
+  }
+  return { guide, sources, pages, entries, record, bundle }
+}
+
+test('durable release records support multi-release and earlier pending adoption without chat context', async () => {
+  const { readReleaseHistory, selectReleaseUpdates, renderReleaseHistory } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  const intermediateGuide = 'updates/intermediate-fixture-guide.md'
+  f.sources.set(intermediateGuide, f.sources.get(f.guide))
+  f.pages.push({ path: intermediateGuide })
+  f.entries[1].changes[0].guides = [intermediateGuide]
+  const history = readReleaseHistory(await f.bundle())
+  const selected = selectReleaseUpdates(history, {
+    from: 'first',
+    to: 'third',
+    pending: []
+  })
+  assert.deepEqual(selected.releases, ['second', 'third'])
+  assert.deepEqual(selected.guides, [intermediateGuide, f.guide])
+  assert.deepEqual(selected.gaps, [])
+  const resumed = selectReleaseUpdates(history, {
+    from: 'third',
+    to: 'third',
+    pending: ['second']
+  })
+  assert.ok(resumed.releases.includes('second'))
+  assert.ok(
+    resumed.releases.indexOf('first') < resumed.releases.indexOf('second')
+  )
+  assert.ok(resumed.guides.includes(f.guide))
+  assert.ok(resumed.guides.includes(intermediateGuide))
+  assert.equal(
+    selectReleaseUpdates(history, { from: 'first', to: 'third' })
+      .needsInspection,
+    true
+  )
+  assert.match(
+    renderReleaseHistory(history),
+    /updates\/releases\/second\.md|releases\/second\.md/
+  )
+  assert.match(renderReleaseHistory([]), /No verified release summaries/)
+})
+
+test('release discovery reports unsupported ranges, unavailable targets and incompatible prerequisites', async () => {
+  const { readReleaseHistory, selectReleaseUpdates } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  f.entries.push(
+    f.record('app', null, { owner: '@fixture/app', requires: ['third'] })
+  )
+  const history = readReleaseHistory(await f.bundle())
+  assert.match(
+    selectReleaseUpdates(history, {
+      from: 'missing',
+      to: 'third',
+      pending: []
+    }).gaps.join(' '),
+    /baseline/
+  )
+  assert.match(
+    selectReleaseUpdates(history, {
+      from: 'first',
+      to: 'missing',
+      pending: []
+    }).gaps.join(' '),
+    /target/
+  )
+  assert.match(
+    selectReleaseUpdates(history, {
+      from: 'app',
+      to: 'app',
+      pending: [],
+      dependencies: { 'npm:@fixture/core': 'second' }
+    }).gaps.join(' '),
+    /Incompatible prerequisite/
+  )
+  f.entries[2].status = 'candidate'
+  assert.match(
+    selectReleaseUpdates(readReleaseHistory(await f.bundle()), {
+      from: 'first',
+      to: 'third',
+      pending: []
+    }).gaps.join(' '),
+    /unavailable/
+  )
+})
+
+test('release validation rejects missing middle records, missing or changed guides and cyclic history', async () => {
+  const { readReleaseHistory } = await import('../release-history.mjs')
+  for (const mutation of ['middle', 'guide', 'hash', 'cycle', 'dependency']) {
+    const f = releaseHistoryFixture()
+    const inputs = await f.bundle()
+    if (mutation === 'middle')
+      inputs.pages = inputs.pages.filter(
+        (page) => !page.path.endsWith('/second.md')
+      )
+    if (mutation === 'guide') f.sources.delete(f.guide)
+    if (mutation === 'hash')
+      f.sources.set(f.guide, '# Changed guide after release')
+    if (mutation === 'cycle') {
+      f.entries[0].previous = 'third'
+      await f.bundle()
+    }
+    if (mutation === 'dependency') {
+      f.entries[2].requires = ['missing']
+      await f.bundle()
+    }
+    assert.throws(
+      () => readReleaseHistory(inputs),
+      /Missing|changed|cycle/i,
+      mutation
+    )
+  }
+})
+
+test('guide corrections preserve old records and required changes', async () => {
+  const { readReleaseHistory, selectReleaseUpdates } =
+    await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  const correction = {
+    ...f.entries[1],
+    id: 'second-corrected',
+    supersedes: 'second',
+    correction: 'Clarify retained data verification'
+  }
+  f.entries.push(correction)
+  const history = readReleaseHistory(await f.bundle())
+  assert.equal(history.length, 4)
+  assert.ok(
+    selectReleaseUpdates(history, {
+      from: 'first',
+      to: 'third',
+      pending: []
+    }).releases.includes('second-corrected')
+  )
+  correction.changes = []
+  const invalid = await f.bundle()
+  assert.throws(() => readReleaseHistory(invalid), /required changes/)
+})
+
+test('release guide validation shares one read per invocation and rereads changed inputs', async () => {
+  const { readReleaseHistory } = await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  const inputs = await f.bundle()
+  let reads = 0
+  const read = (file) => {
+    if (file === f.guide) reads++
+    return inputs.read(file)
+  }
+  readReleaseHistory({ ...inputs, read })
+  assert.equal(reads, 1)
+  f.sources.set(f.guide, '# Changed input')
+  assert.throws(
+    () => readReleaseHistory({ ...inputs, read }),
+    /sources|changed/
+  )
+  assert.equal(reads, 2)
+})
+
+test('a correction cannot create an effective predecessor cycle', async () => {
+  const { readReleaseHistory } = await import('../release-history.mjs')
+  const f = releaseHistoryFixture()
+  f.entries.push({
+    ...f.entries[1],
+    id: 'second-corrected',
+    supersedes: 'second',
+    correction: 'Clarify guide',
+    requires: ['third']
+  })
+  const inputs = await f.bundle()
+  assert.throws(() => readReleaseHistory(inputs), /cycle/)
+})
+
+test('release history is discoverable from repository and website entries without a fixed page count', async () => {
+  const { contentIndex, releaseHistory, llms, websiteLlms } =
+    await createPublicDocumentationBundle({ repositoryRoot })
+  assert.ok(contentIndex.pages.some((page) => page.id === 'updates/history'))
+  assert.ok(llms.includes('](updates/history.md)'))
+  assert.ok(websiteLlms.includes('](/docs/updates/history)'))
+  assert.match(releaseHistory, /No verified release summaries/)
+  assert.match(releaseHistory, /Without a note, inspect/)
+  assert.match(
+    fs.readFileSync(
+      path.join(repositoryRoot, 'docs/public/updates/index.md'),
+      'utf8'
+    ),
+    /\]\(history\.md\)/
+  )
+})
+
+test('registered release pages flow through real generation without CI artifacts', async (t) => {
+  const f = releaseHistoryFixture()
+  await f.bundle()
+  const temporaryRoot = path.join(repositoryRoot, 'tmp')
+  fs.mkdirSync(temporaryRoot, { recursive: true })
+  const root = fs.mkdtempSync(
+    path.join(temporaryRoot, 'release-history-bundle-')
+  )
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  fs.mkdirSync(path.join(root, 'docs'), { recursive: true })
+  fs.cpSync(
+    path.join(repositoryRoot, 'docs/public'),
+    path.join(root, 'docs/public'),
+    { recursive: true }
+  )
+  for (const entry of [
+    'packages',
+    'tools',
+    'apps',
+    'create-app',
+    'package.json',
+    'LICENSE',
+    'SECURITY.md',
+    'SUPPORT.md'
+  ]) {
+    fs.symlinkSync(path.join(repositoryRoot, entry), path.join(root, entry))
+  }
+  fs.symlinkSync(
+    path.join(repositoryRoot, 'docs/ai'),
+    path.join(root, 'docs/ai')
+  )
+  const manifestPath = path.join(root, 'docs/public/content-manifest.json')
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+  const template = manifest.pages.find((page) => page.id === 'updates/index')
+  for (const page of f.pages) {
+    const file = path.join(root, 'docs/public', page.path)
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, f.sources.get(page.path))
+    manifest.pages.push({
+      ...template,
+      ...page,
+      title: page.title ?? 'Modeled test guide',
+      description: 'Modeled discovery fixture; not a real release claim.'
+    })
+  }
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest))
+  const bundle = await createPublicDocumentationBundle({ repositoryRoot: root })
+  assert.deepEqual(
+    bundle.contentIndex.releaseHistory.map((record) => record.id),
+    ['first', 'second', 'third']
+  )
+  assert.equal(bundle.contentIndex.pages.length, manifest.pages.length)
+  for (const id of ['first', 'second', 'third']) {
+    assert.ok(bundle.llms.includes(`](updates/releases/${id}.md)`))
+    assert.ok(bundle.websiteLlms.includes(`](/docs/updates/releases/${id})`))
+    assert.ok(bundle.releaseHistory.includes(`](releases/${id}.md)`))
+  }
+  assert.equal(fs.existsSync(path.join(root, 'tmp')), false)
 })

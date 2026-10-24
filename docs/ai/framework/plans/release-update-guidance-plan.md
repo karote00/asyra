@@ -4,7 +4,7 @@
 
 IN PROGRESS - updated 2026-10-24. This revision replaces the Changeset-centered
 proposal with the existing App and Framework release owners. Task 1 is complete;
-Task 2 and its review corrections are complete; Tasks 3-4 remain PLANNED.
+Task 2 and its review corrections are complete; Task 3 is complete; Task 4 remains PLANNED.
 Closeout owner: the release update guidance coordinating chat.
 
 Inspected base: `5f6b0c51aa0dd3178e5a9de285b10141f4691e5e`.
@@ -427,7 +427,7 @@ or published.
 
 ## Task 3 - Expose release history and applicable guides
 
-Status: PLANNED. Prerequisite: Task 2.
+Status: DONE - 2026-10-24. Prerequisite: Task 2.
 Use the current public index, content manifest/generator, website and `llms.txt`.
 Expose each owner's release summaries, predecessor references, Framework
 prerequisites and guide corrections. Derive inventory checks from declared
@@ -439,6 +439,63 @@ a missing middle release/guide, unsupported baseline, unavailable target or
 incompatible dependency. Partial adoption retrieves earlier outstanding guides;
 a missing adoption note triggers inspection of actual state rather than an
 assumption of full adoption. Published history survives normal CI retention.
+
+### Task 3 execution contract
+
+The existing public documentation flow owns this slice. `freeze-content-contract`
+keeps required baseline pages and admits explicitly registered update pages;
+page counts derive from the manifest, never from each release. `publish-documentation-indexes`
+reads durable Markdown release records, validates predecessors, guide hashes and
+exact prerequisite references, and generates the history page with existing
+content/source indexes and repository/website discovery. Website content loading
+presents that verified inventory without owning release semantics.
+
+Records identify owner/channel, exact target, availability, predecessor or an
+explicit first supported boundary, changes, guide revisions, prerequisites and
+durable publication evidence. Corrections are separate records; original Text
+pages and acceptance evidence remain unchanged. An internal pure range selector
+shares these records with validation tests; it adds no service or update CLI.
+Missing middle entries/guides, unsupported baselines, unavailable targets and
+incompatible selected prerequisites report gaps. Earlier pending adoption remains
+selectable even with newer installed packages; absent adoption evidence requires
+inspection. No historical releases are invented.
+
+Boundaries: existing public content contract/schema, documentation generator and
+validation tests, a release-history helper under `scripts/docs`, update entry/history
+pages, manifest/generated outputs, website content adapter and discovery tests,
+matching public documentation Inspector and release authoring rule. Gates: modeled
+three-release discovery, broken references, corrections, partial adoption, manifest
+inventory drift, existing Text navigation and website route/browser checks. No
+consumer integration/migration execution, runtime changes, Task 4, new dependencies,
+remote writes or publication. Stop at a validated local Task 3 commit.
+
+### Task 3 completion record
+
+The update entry now links generated `docs/public/updates/history.md`; the
+manifest, content/source indexes, website search/navigation and both `llms.txt`
+copies discover registered release summaries. Required baseline pages remain
+stable while explicitly registered update pages grow without fixed page counts.
+Durable Markdown records identify exact deliveries, predecessor boundaries,
+prerequisites, changes, immutable guide hashes and corrections. The existing
+update check rejects editing or deleting published summaries. Ordinary Markdown
+changes still require no new impact note.
+
+Validation: 59 focused document/content/Inspector tests, 24 browser navigation
+and supporting-route tests, and 2 static-delivery tests passed. The modeled
+three-release fixture uses the real generator without CI artifacts and verifies
+intermediate guides, earlier pending adoption, missing state inspection, coverage
+gaps, prerequisite mismatch and correction retention. Public generation/check,
+structural/link/API validation, update-note checks, naming, scoped ESLint, site
+typecheck and static build passed. The public bundle contains 47 pages and 19
+package guides. Static export requires explicit site URL/environment settings;
+the successful local build used the existing Cloudflare production identity.
+
+No verified historical release records currently exist; the public page says so.
+Maintainers must retain actual frozen release evidence before declaring a verified
+range. These tests prove discovery and validation, not consumer integration or
+data migration. Task 4 remains unstarted. Original Text guides, fixtures and
+independent acceptance evidence are unchanged. No package publication, deployment
+or push occurred.
 
 ## Task 4 - Prove customization and data preservation
 

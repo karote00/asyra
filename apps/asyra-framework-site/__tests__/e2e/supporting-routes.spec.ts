@@ -80,7 +80,7 @@ test('documentation supports search, section navigation, and mobile dialogs', as
     animations: 'disabled',
     path: testInfo.outputPath('docs-reading-without-authoring-tools.png')
   })
-  await page.getByRole('button', { name: 'Search 46 guides' }).click()
+  await page.getByRole('button', { name: /^Search \d+ guides$/ }).click()
   const search = page.getByRole('searchbox', { name: 'Search' })
   await search.fill('transaction')
   await expect(page.locator('.search-results a')).not.toHaveCount(0)
@@ -89,7 +89,7 @@ test('documentation supports search, section navigation, and mobile dialogs', as
   )
   await page.getByRole('button', { name: 'Close search' }).click()
   await expect(
-    page.getByRole('button', { name: 'Search 46 guides' })
+    page.getByRole('button', { name: /^Search \d+ guides$/ })
   ).toBeFocused()
 
   await page.setViewportSize({ width: 390, height: 844 })
@@ -162,7 +162,7 @@ test('mobile documentation search uses the shared compact close control', async 
   for (const width of [1440, 1080, 768, 767, 520, 390, 320]) {
     await page.setViewportSize({ width, height: 568 })
     await page.goto('/docs')
-    await page.getByRole('button', { name: 'Search 46 guides' }).click()
+    await page.getByRole('button', { name: /^Search \d+ guides$/ }).click()
 
     const close = page.getByRole('button', { name: 'Close search' })
     const box = await close.boundingBox()
@@ -249,7 +249,7 @@ test('every mobile popup uses the shared close control and locks the page', asyn
       close: 'Close search',
       dialog: 'Find a guide or concept',
       key: 'documentation-search',
-      open: 'Search 46 guides',
+      open: /^Search \d+ guides$/,
       title: '.search-dialog__header .support-label'
     }
   ] as const

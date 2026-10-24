@@ -11,8 +11,7 @@
     },
     "pages": {
       "type": "array",
-      "minItems": 46,
-      "maxItems": 46,
+      "minItems": 1,
       "items": {
         "$ref": "#/$defs/page"
       }

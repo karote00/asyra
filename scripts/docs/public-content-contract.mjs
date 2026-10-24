@@ -84,7 +84,7 @@ const expectedSection = (id) => {
   if (id === 'overview') return 'Overview'
   if (START_PAGE_IDS.has(id)) return 'Start'
   if (CONCEPT_PAGE_IDS.has(id)) return 'Concepts'
-  if (EXTEND_PAGE_IDS.has(id)) return 'Extend'
+  if (EXTEND_PAGE_IDS.has(id) || id.startsWith('updates/')) return 'Extend'
   if (CUSTOMIZE_PAGE_IDS.has(id)) return 'Customize'
   if (id.startsWith('reference/')) return 'Reference'
   throw new Error(`Unknown public documentation section for ${id}`)
@@ -101,7 +101,16 @@ export const validatePublicContentManifest = ({
     )
   }
   const ids = manifest.pages.map(({ id }) => id)
-  if (JSON.stringify(ids) !== JSON.stringify(inspector.pageIds)) {
+  if (
+    new Set(ids).size !== ids.length ||
+    JSON.stringify(ids.filter((id) => inspector.pageIds.includes(id))) !==
+      JSON.stringify(inspector.pageIds) ||
+    ids.some(
+      (id) =>
+        !inspector.pageIds.includes(id) &&
+        !/^updates\/(?:[a-z0-9-]+\/)*[a-z0-9-]+$/.test(id)
+    )
+  ) {
     throw new Error(
       'Public content manifest must match the exact ordered page inventory'
     )

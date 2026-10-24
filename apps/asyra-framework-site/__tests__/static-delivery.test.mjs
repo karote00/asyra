@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 import { isProductionSite } from '../lib/site-environment.mjs'
 import { siteSecurityHeaders } from '../lib/site-security-headers.mjs'
 import { isIndexingAuthorized, resolveSiteOrigin } from '../lib/site-origin.ts'
@@ -57,7 +57,28 @@ test(
     const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/gu)].map(
       (match) => match[1]
     )
-    assert.equal(urls.length, 46)
+    const manifest = JSON.parse(
+      await readFile(
+        path.resolve(root, '../../../docs/public/content-manifest.json'),
+        'utf8'
+      )
+    )
+    const expectedRoutes = [
+      '/',
+      '/atlas',
+      '/asyra-design',
+      '/releases',
+      '/roadmap',
+      ...manifest.pages.map((page) =>
+        page.id === 'overview' ? '/docs' : `/docs/${page.id}`
+      )
+    ]
+    assert.deepEqual(
+      [...urls].sort(),
+      [
+        ...new Set(expectedRoutes.map((route) => new URL(route, origin).href))
+      ].sort()
+    )
     for (const url of urls) {
       assert.ok(url.startsWith(`${origin}/`))
       const route = url.slice(origin.length)
