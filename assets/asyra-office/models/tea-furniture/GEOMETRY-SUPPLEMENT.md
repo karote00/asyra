@@ -26,14 +26,24 @@ in the construction contract. The overall size remains .68 x .68 x .58 m.
 
 ## Orange tea chair
 
-The continuous shell is an elliptical annular sector over theta=-120..+120 degrees, using X=rx*sin(theta),Y=ry*cos(theta). Outer radii are (0.22,0.23), inner radii (0.17,0.18). Zero angle faces rear +Y; open front faces -Y. Bottom height is Z=0.235. Top height is 0.39+0.26*(1-(abs(theta)/120)^1.6). Thus rear centre reaches 0.65 and the short arm ends reach 0.39. Use 120 angular intervals, connect inner and outer surfaces at their top/bottom and close both radial end caps. It is a real thick U-shaped shell, not a solid bucket blocking the seating area. Bevel edges inward 0.012 with four segments.
+The [tea chair construction contract](TEA-CHAIR-SPEC.md) owns the exact mapped
+shell, rounded-seat construction, clearance cut, connections, sizing and LOD
+rules. Keep the continuous open-front shell and the .44 x .46 x .65 m bounds.
+The existing inner/outer ellipse radii, varying height and four leg inputs remain.
+The source box is rounded before mapping; this replaces the unspecified shell
+bevel operation. No solid bucket or separate back cushion is introduced.
 
-Seat base is a rounded XY rectangle width 0.36, depth 0.35, centre (0,-0.015), Z=0.205..0.255; plan radius 0.07 and edge bevel 0.008 with three segments. Cushion is width 0.36, depth 0.39, centre (0,-0.035), Z=0.255..0.33, plan radius 0.07 and edge bevel 0.025 with four segments. Sample each plan corner with twelve intervals. Keep the cushion as one component. It meets the shell and base; small concealed overlaps are allowed, but no inner shell wall should cut across the usable seat surface.
+The base remains unchanged. The cushion blank now spans Z=0.245..0.33 m with depth
+.425 m, centre Y=-.0175, preserving its Y=-.23 front and Z=.33 top. First clip
+its rear half to the documented ellipse, then subtract the mapped shell with
+.002 m source-space clearance expansion. This yields one conforming cushion,
+not a fixed rectangular final footprint. Its bottom embeds 10 mm into the base.
+Keep seven closed components and seven independent appearance regions.
 
-Four legs use the end centres and radii in JSON, with the same horizontal-ring sheared-frustum construction as the table. Top Z=0.23 overlaps the seat base, bottom Z=0. Legs splay outward to X +/-0.175; front bottoms Y=-0.18 and rear bottoms Y=0.145. Use 48 radial segments and inward 0.002 edge bevel, three segments. There are no crossbars, wheels or metal plates.
-
-Nominal bounds before bevel are X +/-0.22, Y +/-0.23, Z=0..0.65. Underside upholstery is plain orange. Rear is the same continuous shell, without a separate back pillow, seam cord, label or zipper. The complete inner-shell shape is a simple authored completion of a partly obscured reference chair.
+Use exact tangent tapered leg profiles before shear, with horizontal end caps.
+The seven attachment witnesses and final gap/topology checks are in the contract.
+The original reference image remains unchanged; no production model is verified.
 
 ## Future verification
 
-After modeling is separately authorized, compare all five sheet directions plus undersides. Check dimensions within 0.001 m before bevel, circular table top, four flat-footed legs per unit, apron void, open chair front, continuous shell, one cushion and seat height 0.33. Check no scene geometry or baked lighting. No model or model verification has been performed here.
+After modeling is separately authorized, compare all five sheet directions plus undersides. Check each current construction contract's physical bounds within 0.001 m, circular table top, four flat-footed legs per unit, apron void, open chair front, continuous shell, one cushion and seat height 0.33. Check no scene geometry or baked lighting. No model or model verification has been performed here.

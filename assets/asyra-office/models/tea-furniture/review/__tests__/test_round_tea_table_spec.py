@@ -146,7 +146,8 @@ class RoundTeaTableSpecificationTests(unittest.TestCase):
         self.assertTrue(f'{2*c[0][0]*1000:.6f}/{2*c[1][0]*1000:.6f} mm' in doc,'Flat cap diameters must match the tangent profile.')
 
     def test_unrelated_chair_palette_and_references_preserved(self):
-        self.assertEqual(coffee.digest(self.data['modules'][1]),BASELINE['chair'])
+        # The chair has its own current review; retain the approved chair source image.
+        self.assertEqual(hashlib.sha256((ROOT/'review/02-tea-chair-v1.png').read_bytes()).hexdigest(),BASELINE['images']['02-tea-chair-v1.png'])
         self.assertEqual(coffee.digest(self.data['materials']),BASELINE['materials'])
         self.assertEqual(coffee.digest(self.p['top']),BASELINE['top'])
         for name,digest in BASELINE['images'].items():

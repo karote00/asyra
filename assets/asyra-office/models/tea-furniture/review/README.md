@@ -1,6 +1,6 @@
 # Group 4I - Tea Furniture Review
 
-Status: original drawings and documents approved for commit; tea table document revision approved by the user for commit. No model verification.
+Status: original drawings and documents approved for commit; tea table revision approved for commit; tea chair document revision approved by the user for commit. No model verification.
 
 1. [Round tea table](01-round-tea-table-v1.png): empty circular wood top, four splayed legs and hidden square apron.
 2. [Tea chair](02-tea-chair-v1.png): orange continuous wraparound shell, one cushion and four wooden legs.
@@ -13,6 +13,14 @@ The [tea table specification](../ROUND-TEA-TABLE-SPEC.md) is approved by the use
 The original five-view sheet remains unchanged. Revised hidden joints and exact
 construction inputs do not change the overall size or four ground locations.
 The tea chair is outside this revision. Actual model review remains required.
+
+## Current tea chair document revision
+
+The [tea chair construction specification](../TEA-CHAIR-SPEC.md) is approved by the user
+for commit. The original sheet remains the appearance reference. Exact shell
+mapping, a clipped cushion blank, positive seam clearance and base embedment
+are current construction inputs. The approved table and leg inputs are unchanged.
+No actual model or rendered likeness has been verified.
 
 ## Lighting revision - 2026-10-04
 

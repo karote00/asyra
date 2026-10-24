@@ -1,6 +1,6 @@
 # Asyra Office - Group 4I - Tea Furniture
 
-Status: original references are approved for commit; the tea table document revision is approved by the user for commit. No models, app implementation or model verification.
+Status: original references are approved for commit; the tea table revision is approved for commit and the tea chair revision is approved by the user for commit. No models, app implementation or model verification.
 
 | One unit               | Source in the central office                                | X x Y x Z (m)                     | Sheet                                     |
 | ---------------------- | ----------------------------------------------------------- | --------------------------------- | ----------------------------------------- |
@@ -15,7 +15,15 @@ The [round tea table specification](ROUND-TEA-TABLE-SPEC.md) is approved by the 
 for commit. It repairs flush-only structural joints while preserving the tabletop,
 foot locations, overall size and reference images. It defines a hollow unioned
 frame, tangent leg fillets, replaceable regions and unverified LOD targets.
-The orange tea chair remains unchanged. No model has been produced or verified.
+That revision preserved the orange tea chair. No model has been produced or verified.
+
+## Current tea chair document review
+
+The [tea chair specification](TEA-CHAIR-SPEC.md) is approved by the user for commit. It
+replaces ambiguous shell beveling with a mapped source solid, defines a
+conforming trimmed cushion and embedded base joint, and supplies sizing,
+replaceable regions and unverified LOD targets. The approved table, four leg
+inputs and original sheets remain unchanged. Actual model review is still required.
 
 ## Handoff
 
