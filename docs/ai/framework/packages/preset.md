@@ -218,6 +218,12 @@ recovery policy.
   map and flattened-array identities remain current. Later structural batches
   update affected memberships without rereading unrelated rows. Complete ordered
   flattened identity output is still materialized once per structural publication.
+  Proven fresh depth-first tail additions consume their admitted delta without
+  rediscovering roots or traversing unchanged subtrees. This does not defer
+  publication or mutate earlier snapshots. Interior edits and invalidated or
+  incomplete preparations still require complete ordered derivation. Formal
+  tests distinguish hierarchy work from necessary immutable output copying and
+  preserve every intermediate result, observer isolation and replay semantics.
   Reseeding, load, foreign publication, failure and disposal invalidate retained
   preparation; incomplete membership is not reused as a complete projection.
 

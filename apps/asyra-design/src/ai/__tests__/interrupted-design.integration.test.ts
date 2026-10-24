@@ -90,6 +90,31 @@ const persistPublications = async (
   }
 }
 
+const projectedSnapshot = () => {
+  const tree = scene.save()
+  const ids: string[] = []
+  const visit = (id: string) => {
+    ids.push(id)
+    const children =
+      (tree.elements[id] as { children?: string[] }).children ?? []
+    children.forEach(visit)
+  }
+  ;(tree.elements[tree.workspace] as { children: string[] }).children.forEach(
+    visit
+  )
+  expect(core.getUIProperty('flattenedElementIds')).toEqual(ids)
+  const rows =
+    core.getUIProperty<
+      Record<string, { parentId?: string; children?: string[] }>
+    >('elementDataMap')
+  for (const id of ids) {
+    expect(rows?.[id].parentId).toBe(tree.elements[id].parentId)
+    const children = (tree.elements[id] as { children?: string[] }).children
+    if (children) expect(rows?.[id].children).toEqual(children)
+  }
+  return { version: '1.0.0', props: props.save(), sceneTree: tree }
+}
+
 beforeAll(() => {
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
@@ -97,7 +122,8 @@ beforeAll(() => {
       PresetDefaults.BASIC_SHAPES,
       PresetDefaults.CONTAINERS,
       PresetDefaults.VECTOR,
-      PresetDefaults.SELECTION
+      PresetDefaults.SELECTION,
+      PresetDefaults.UI_CONTEXT
     ]
   })
 })
@@ -127,11 +153,7 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
       }
     }
     core.load(initial)
-    const snapshot = () => ({
-      version: '1.0.0',
-      props: props.save(),
-      sceneTree: scene.save()
-    })
+    const snapshot = projectedSnapshot
     const design = prepareDesign(
       {
         type: 'group',
@@ -364,11 +386,7 @@ it('continues only retained remaining parts after cancellation with real history
     }
   }
   core.load(initial)
-  const snapshot = () => ({
-    version: '1.0.0',
-    props: props.save(),
-    sceneTree: scene.save()
-  })
+  const snapshot = projectedSnapshot
   // The existing test budget makes two retained partitions cheaply; this tests
   // continuation, not budget admission or a changed production limit.
   const session = createDesignPreparationSession(

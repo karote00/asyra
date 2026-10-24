@@ -608,6 +608,18 @@ it does not maintain a list of parallel tool names. Internal access metadata is
 not exposed as a native tool schema field. A request owns one barrier queue and
 disposes it on Stop or settlement; no cross-request scheduling state is retained.
 
+### Creation batch UI projection
+
+Each canonical creation batch reaches the existing Preset UI projection once,
+with complete ordered IDs and immutable rows. Continuous depth-first tail
+additions reuse valid hierarchy preparation instead of rederiving unrelated
+subtrees. Preserve immediate partial results, selection/layer consumers,
+cancellation, history and durable collaboration. Do not enlarge batches, defer
+publication or replay writes. Cold, interior and invalidated structural changes
+retain complete derivation. Tests must count hierarchy work separately from
+necessary immutable copying and compare every intermediate snapshot. The
+[Preset contract](../../../framework/packages/preset.md) owns projection reuse.
+
 ### Prepared design delivery
 
 The existing resolver delivers owned prepared designs with property names instead
