@@ -2,7 +2,9 @@
 
 The [sparrow construction contract](TREE-SPARROW-SPEC.md) owns sparrow-specific
 source-label mapping, complete sizing, feet, appearance and LOD clarifications.
-It takes precedence for the sparrow; the cockatiel recipe remains unchanged.
+The [cockatiel construction contract](COCKATIEL-SPEC.md) owns its crest, beak,
+feet, sizing, appearance and LOD clarifications. Each contract takes precedence
+for its own bird; existing raw geometry remains unchanged.
 
 ## Coordinate and authority contract
 
@@ -22,7 +24,7 @@ Sparrow beak rows are [Y, centreZ, radiusX, radiusZ], using the same constructio
 
 ## Cockatiel crest
 
-Three independent overlapping feather lofts form the swept-back crest. Each row is [Z, centreX, centreY, radiusX, radiusY]. Use the same 64-sample capped XY-ellipse loft construction as the upper beak, with outward normals. Roots overlap the head; tips are closed and rounded by their small final ellipses. No extra feather strands. Include the crest in final bounds normalization.
+Three independent head-attached feather lofts form the swept-back crest. Their side projections may overlap, but adjacent X intervals have at least 2 mm clearance; do not union the feathers together. Each row is [Z, centreX, centreY, radiusX, radiusY]. Use the same 64-sample capped XY-ellipse loft construction as the upper beak, with outward normals. Roots overlap the head; tips are closed and rounded by their small final ellipses. No extra feather strands. Include the crest in final bounds normalization.
 
 ## Legs and exact toe counts
 

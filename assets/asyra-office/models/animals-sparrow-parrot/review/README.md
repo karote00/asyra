@@ -10,7 +10,7 @@ One round chestnut-and-tan bird with folded wings. Each foot has three forward t
 
 ## Cockatiel
 
-One gray cockatiel with a yellow head and crest, orange cheeks, hooked beak, white wing patches and long tapered tail. Each foot has two forward toes and two rear toes. Final authored bounds: 0.180 x 0.360 x 0.320 m.
+One gray cockatiel with a yellow head and crest, orange cheeks, hooked beak, white wing patches and long tapered tail. Each foot has two forward toes and two rear toes. Default final bounds: 0.180 x 0.360 x 0.320 m. The [updated cockatiel specification](../COCKATIEL-SPEC.md) is approved for commit. The source RIGHT labels map to canonical LEFT views as documented; source pixels are unchanged.
 
 ![Cockatiel - six views](02-cockatiel-v2.png)
 

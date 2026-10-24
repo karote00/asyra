@@ -685,6 +685,113 @@
             ]
           }
         ]
+      },
+      "review": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "COCKATIEL-SPEC.md",
+        "sourceViewMapping": {
+          "RIGHT": "LEFT",
+          "RIGHT THREE-QUARTER": "FRONT-LEFT THREE-QUARTER"
+        },
+        "limitations": "Reference images are illustrative, not calibrated geometry. Numeric checks do not certify final surfaces, masks or LOD performance."
+      },
+      "sizing": {
+        "defaultBoundsSource": "complete-default-surface-including-crest-beak-feet-tail",
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "normalization": "One shared raw-to-default transform precedes LOD generation; include three crest feathers, both beak parts, tail and feet. All LODs inherit the same transform and origin.",
+        "maskSpace": "Inverse instance sizing followed by inverse default normalization recovers raw anatomical space; wing patches then use inverse wing rotation."
+      },
+      "crestConstruction": {
+        "topology": "three independent head-attached lofts; no inter-feather union",
+        "minimumRawXIntervalGap": 0.002,
+        "sweepDirection": "+Y",
+        "tipCap": "Closed centre fan on each final ellipse; no additional dome.",
+        "projection": "Side projections may overlap; adjacent feather X intervals remain separated in 3D."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "body",
+            "defaultMaterial": "featherGray"
+          },
+          {
+            "id": "head",
+            "defaultMaterial": "yellow"
+          },
+          {
+            "id": "crest",
+            "defaultMaterial": "yellow"
+          },
+          {
+            "id": "cheeks",
+            "defaultMaterial": "orange"
+          },
+          {
+            "id": "eyes",
+            "defaultMaterial": "dark"
+          },
+          {
+            "id": "wings",
+            "defaultMaterial": "wingGray"
+          },
+          {
+            "id": "wing-patches",
+            "defaultMaterial": "ivory"
+          },
+          {
+            "id": "tail",
+            "defaultMaterial": "wingGray"
+          },
+          {
+            "id": "upper-beak",
+            "defaultMaterial": "beakGray"
+          },
+          {
+            "id": "lower-beak",
+            "defaultMaterial": "beakGray"
+          },
+          {
+            "id": "feet",
+            "defaultMaterial": "gray"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise bird material, otherwise preset; then region colour, otherwise bird colour. Retain other properties and isolate instances.",
+        "maskOwnership": "Keep named masks independent of palette and atlases. Head field must be lower than body; ties belong to body. Wing patches are wing-local ranges on outward faces only."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "maxTriangles": 16000,
+            "maxSurfaceError": 0.0005
+          },
+          {
+            "id": "lod1",
+            "maxTriangles": 8000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod2",
+            "maxTriangles": 4000,
+            "maxSurfaceError": 0.002
+          }
+        ],
+        "errorMetric": "Maximum adaptive bidirectional surface distance in default metres against normalized pre-reduction surfaces, separately per body, wing, tail, crest feather, beak part and foot. Count all triangles including hidden caps.",
+        "preserve": [
+          "three separate head-attached crest feathers",
+          "closed hooked beak with overlapping mandibles",
+          "two folded wings",
+          "eight distinct toes",
+          "two grounded feet",
+          "tail attachment",
+          "named appearance regions"
+        ],
+        "failurePolicy": "Reject if either budget or surface error fails; do not drop parts, resize individual LODs or silently increase limits."
       }
     }
   ]

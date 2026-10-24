@@ -14,7 +14,16 @@ One independent animal per asset. These birds were requested in the original ani
 The [updated sparrow contract](TREE-SPARROW-SPEC.md) is approved for commit.
 It preserves raw geometry and the original image while defining component sizes,
 eight-toe construction, ground normalization, source-side label mapping,
-replaceable appearance and unverified LOD limits. The cockatiel is unchanged.
+replaceable appearance and unverified LOD limits. That review preserved the
+cockatiel geometry; its own review is described below.
+
+## Cockatiel review
+
+The [updated cockatiel contract](COCKATIEL-SPEC.md) is approved for commit.
+It preserves the numeric shape and original sheet while defining three separate
+head-attached crest feathers, hooked-beak overlap, two-forward/two-rear toes,
+complete sizing, source view mapping, editable appearance and unverified LOD
+limits. No model or animation rig is verified.
 
 ## Handoff
 

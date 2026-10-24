@@ -32,7 +32,9 @@ class TreeSparrowSpecificationTests(unittest.TestCase):
     def test_preserved_reference_and_geometry(self):
         keys = ('id','finalSize','reviewDrawing','ellipsoids','wings','tail','legs','toes','eyes','beak','masks')
         self.assertEqual(digest({k:self.bird[k] for k in keys}), '139db984d0c3a88ae9962bdef45b2e859d11c78f9b1c7b967928eba51366cb8b')
-        self.assertEqual(digest(self.data['birds'][1]), '0df41d9d8e0941bcfcde6604e223184f393a5ab4d9cee580265b46f5549e2293')
+        cockatiel=self.data['birds'][1]
+        baseline={k:cockatiel[k] for k in (*keys,'crest')}
+        self.assertEqual(digest(baseline), '0df41d9d8e0941bcfcde6604e223184f393a5ab4d9cee580265b46f5549e2293')
         for name, expected in [('01-tree-sparrow-v2.png','2d54c849192b3af59b70e431570c5b688ed313e6613f623604fde9a23563d18d'),('02-cockatiel-v2.png','b5a92e9746f073b5af599459225aa325ffc5ea61ab6d91106a583eeb12ae0168')]:
             self.assertEqual(hashlib.sha256((ROOT/'review'/name).read_bytes()).hexdigest(), expected)
 

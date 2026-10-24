@@ -31,3 +31,20 @@ Use raw-space normals after wing rotation for wing-bar outward-face checks.
 Head masks require original head-field ownership on the joined body/head surface;
 mask-centre checks do not certify the full visible boundaries. Review final
 mask edges and occlusion during the later model stage.
+
+## Cockatiel replacement and review
+
+Use the numeric cockatiel `appearance.regions` and
+[cockatiel construction contract](COCKATIEL-SPEC.md). Body, head, crest, cheeks,
+eyes, wings, patches, tail, upper beak, lower beak and feet retain separate
+region identities even when default colours match. The crest region covers all
+three feathers. Region material overrides bird material, which overrides the
+preset; apply region colour or otherwise bird colour afterwards, preserving
+other properties and independent instances. Keep masks separate from atlases.
+
+Undo complete sizing before evaluating raw masks. Wing patches additionally
+require subtracting the wing centre and inverse-rotating the local X rotation;
+the local Y/Z ranges must not be tested as raw world Y/Z. Use outward raw-space
+rotated normals. Head/cheek/eye masks retain the common pre-blend ownership
+rule. Later mesh review must check full mask boundaries, occlusion and the
+closed hooked beak; numeric input checks alone do not certify the image match.
