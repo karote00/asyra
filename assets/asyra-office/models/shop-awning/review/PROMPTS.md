@@ -13,3 +13,18 @@ Use case: stylized-concept. Create a six-view component reference sheet using th
 ```text
 Correct this awning technical sheet only as follows: FRONT and BACK must have strictly rectangular outer silhouettes (vertical sides, parallel horizontal top/bottom), NOT tapered trapezoids. Keep eight equal-width vertical stripes. FRONT left-to-right blue ivory blue ivory blue ivory blue ivory. BACK mirrored ivory blue ivory blue ivory blue ivory blue. THREE-QUARTER currently has only seven bands: correct to EXACTLY EIGHT EQUAL WIDTH stripes, 4blue4ivory, starting blue on left and ending ivory on right, continuously down canopy and valance. Keep RIGHT TOP BOTTOM unchanged, all dimensions unchanged, no lighting/shadows or additional objects. Flat intrinsic colors only.
 ```
+
+## Current sheet correction - 2026-10-10
+
+The prompts above describe historical image generation, not the current view
+contract. The user requested FRONT/BACK surface boundaries, relabelling RIGHT
+as LEFT without redrawing it, and preserving the other views. The final sheet
+is produced by `annotate-shop-awning.py` from the retained original PNG and the
+numeric specification. No new image-generation prompt was used for this edit.
+FRONT receives its outer fold; BACK receives the rear lower edge and inner fold.
+These are existing profile edges, not new grooves or thickness changes.
+See the review gallery for the single current reference and parameter notes.
+
+The subsequent BOTTOM correction adds the projected boundary of the existing
+20 mm valance bottom face using the same script. It preserves stripe colours
+and adds no separate geometry, shading or image-generation prompt.

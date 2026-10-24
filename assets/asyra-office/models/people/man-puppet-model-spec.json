@@ -1,0 +1,2365 @@
+{
+  "specVersion": "1.2.0",
+  "moduleId": "office-man",
+  "status": "Documentation stage approved for commit after scoped numeric checks. No rendered or exported model, renderer, rig or wardrobe runtime verified.",
+  "units": "metres",
+  "angles": "Stored degrees; convert to radians before trigonometry.",
+  "reference": "review/01-man-v1.png",
+  "measurements": "man-reference-measurements.json",
+  "recipe": "PUPPET-SPEC.md",
+  "bodyProfile": "puppet-body-v1",
+  "coordinateSystem": {
+    "up": "+Z",
+    "front": "-Y",
+    "right": "+X",
+    "origin": "ground midpoint between default soles",
+    "sideNames": "left=-X; right=+X; stable local identifiers, not screen sides"
+  },
+  "defaultDimensions": {
+    "styledHeight": 1.2,
+    "skinHeadSize": [
+      0.56,
+      0.456,
+      0.56
+    ],
+    "skinHeadCentre": [
+      0,
+      0,
+      0.836
+    ],
+    "hairWidthTarget": 0.672,
+    "handSpan": 0.64,
+    "earSpan": 0.634,
+    "shoeSpan": 0.346,
+    "shirtWidthMax": 0.316
+  },
+  "dimensionAuthority": "Reference-derived X/Z proportions; authored Y/hidden geometry. Defaults are not size limits.",
+  "transforms": {
+    "sourceSpace": "Every coordinate is default puppet rest space. Part-local vertex = rest vertex - anchor rest position.",
+    "hierarchy": "Default rotations identity. Parent-relative translation = child rest position - parent rest position. Never apply rest translations twice.",
+    "order": [
+      "resolve body profile and replacement parts",
+      "construct geometry and garment fitting offsets",
+      "apply parent/socket hierarchy once",
+      "apply explicit whole-puppet XYZ scale once about root",
+      "resolve appearance and texture mapping",
+      "world placement"
+    ],
+    "accessoryScale": "Attachments inherit their chain and root scale once."
+  },
+  "sockets": [
+    {
+      "id": "root",
+      "parent": null,
+      "positionRest": [
+        0,
+        0,
+        0
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "pelvis",
+      "parent": "root",
+      "positionRest": [
+        0,
+        0,
+        0.287
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "torso",
+      "parent": "pelvis",
+      "positionRest": [
+        0,
+        0,
+        0.43
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "neck",
+      "parent": "torso",
+      "positionRest": [
+        0,
+        0,
+        0.545
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "head",
+      "parent": "neck",
+      "positionRest": [
+        0,
+        0,
+        0.836
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "hair",
+      "parent": "head",
+      "positionRest": [
+        0,
+        0,
+        0.875
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "eyewear",
+      "parent": "head",
+      "positionRest": [
+        0,
+        -0.26,
+        0.725
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "shirt",
+      "parent": "torso",
+      "positionRest": [
+        0,
+        0,
+        0.43
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "trousers",
+      "parent": "pelvis",
+      "positionRest": [
+        0,
+        0,
+        0.287
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "head-decoration",
+      "parent": "head",
+      "positionRest": [
+        0,
+        0,
+        1.19
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "chest-decoration",
+      "parent": "torso",
+      "positionRest": [
+        0,
+        -0.104,
+        0.435
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "back-decoration",
+      "parent": "torso",
+      "positionRest": [
+        0,
+        0.1,
+        0.445
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "shoulder-left",
+      "parent": "torso",
+      "positionRest": [
+        -0.128,
+        0,
+        0.485
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "elbow-left",
+      "parent": "shoulder-left",
+      "positionRest": [
+        -0.209,
+        0,
+        0.4
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "wrist-left",
+      "parent": "elbow-left",
+      "positionRest": [
+        -0.25,
+        0,
+        0.331
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "hip-left",
+      "parent": "pelvis",
+      "positionRest": [
+        -0.085,
+        0,
+        0.291
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "knee-left",
+      "parent": "hip-left",
+      "positionRest": [
+        -0.089,
+        0,
+        0.185
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ankle-left",
+      "parent": "knee-left",
+      "positionRest": [
+        -0.092,
+        0,
+        0.079
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "hand-left",
+      "parent": "wrist-left",
+      "positionRest": [
+        -0.262,
+        0,
+        0.292
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "foot-left",
+      "parent": "ankle-left",
+      "positionRest": [
+        -0.092,
+        -0.022,
+        0.034
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "shoe-left",
+      "parent": "ankle-left",
+      "positionRest": [
+        -0.092,
+        -0.022,
+        0.05
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ear-left",
+      "parent": "head",
+      "positionRest": [
+        -0.276,
+        0,
+        0.71
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "shoulder-right",
+      "parent": "torso",
+      "positionRest": [
+        0.128,
+        0,
+        0.485
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "elbow-right",
+      "parent": "shoulder-right",
+      "positionRest": [
+        0.209,
+        0,
+        0.4
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "wrist-right",
+      "parent": "elbow-right",
+      "positionRest": [
+        0.25,
+        0,
+        0.331
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "hip-right",
+      "parent": "pelvis",
+      "positionRest": [
+        0.085,
+        0,
+        0.291
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "knee-right",
+      "parent": "hip-right",
+      "positionRest": [
+        0.089,
+        0,
+        0.185
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ankle-right",
+      "parent": "knee-right",
+      "positionRest": [
+        0.092,
+        0,
+        0.079
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "hand-right",
+      "parent": "wrist-right",
+      "positionRest": [
+        0.262,
+        0,
+        0.292
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "foot-right",
+      "parent": "ankle-right",
+      "positionRest": [
+        0.092,
+        -0.022,
+        0.034
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "shoe-right",
+      "parent": "ankle-right",
+      "positionRest": [
+        0.092,
+        -0.022,
+        0.05
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ear-right",
+      "parent": "head",
+      "positionRest": [
+        0.276,
+        0,
+        0.71
+      ],
+      "rotationDegrees": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "bodyAndFaceParts": [
+    {
+      "id": "head",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "head",
+      "centre": [
+        0,
+        0,
+        0.836
+      ],
+      "radii": [
+        0.28,
+        0.228,
+        0.28
+      ],
+      "region": "head"
+    },
+    {
+      "id": "neck",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "neck",
+      "centre": [
+        0,
+        0,
+        0.555
+      ],
+      "radii": [
+        0.044,
+        0.034,
+        0.063
+      ],
+      "region": "neck"
+    },
+    {
+      "id": "torso",
+      "recipe": "z-loft",
+      "defaultMaterial": "skin",
+      "anchor": "torso",
+      "rings": [
+        [
+          0.26,
+          0,
+          0,
+          0.116,
+          0.072
+        ],
+        [
+          0.305,
+          0,
+          0,
+          0.14,
+          0.081
+        ],
+        [
+          0.405,
+          0,
+          0,
+          0.128,
+          0.075
+        ],
+        [
+          0.485,
+          0,
+          0,
+          0.112,
+          0.065
+        ],
+        [
+          0.525,
+          0,
+          0,
+          0.048,
+          0.037
+        ]
+      ],
+      "capEnds": true,
+      "region": "torso"
+    },
+    {
+      "id": "pelvis",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "pelvis",
+      "centre": [
+        0,
+        0,
+        0.281
+      ],
+      "radii": [
+        0.139,
+        0.083,
+        0.055
+      ],
+      "region": "pelvis"
+    },
+    {
+      "id": "ear-left",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "ear-left",
+      "centre": [
+        -0.276,
+        0,
+        0.71
+      ],
+      "radii": [
+        0.041,
+        0.033,
+        0.063
+      ],
+      "region": "head"
+    },
+    {
+      "id": "upper-arm-left",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "shoulder-left",
+      "start": [
+        -0.128,
+        0,
+        0.485
+      ],
+      "end": [
+        -0.209,
+        0,
+        0.4
+      ],
+      "startRadii": [
+        0.05,
+        0.044
+      ],
+      "endRadii": [
+        0.043,
+        0.039
+      ],
+      "endCapLength": 0.012,
+      "region": "upper-arm-left"
+    },
+    {
+      "id": "forearm-left",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "elbow-left",
+      "start": [
+        -0.209,
+        0,
+        0.4
+      ],
+      "end": [
+        -0.25,
+        0,
+        0.331
+      ],
+      "startRadii": [
+        0.043,
+        0.039
+      ],
+      "endRadii": [
+        0.038,
+        0.034
+      ],
+      "endCapLength": 0.012,
+      "region": "forearm-left"
+    },
+    {
+      "id": "thigh-left",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "hip-left",
+      "start": [
+        -0.085,
+        0,
+        0.291
+      ],
+      "end": [
+        -0.089,
+        0,
+        0.185
+      ],
+      "startRadii": [
+        0.064,
+        0.062
+      ],
+      "endRadii": [
+        0.055,
+        0.052
+      ],
+      "endCapLength": 0.012,
+      "region": "thigh-left"
+    },
+    {
+      "id": "shin-left",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "knee-left",
+      "start": [
+        -0.089,
+        0,
+        0.185
+      ],
+      "end": [
+        -0.092,
+        0,
+        0.079
+      ],
+      "startRadii": [
+        0.055,
+        0.052
+      ],
+      "endRadii": [
+        0.037,
+        0.037
+      ],
+      "endCapLength": 0.012,
+      "region": "shin-left"
+    },
+    {
+      "id": "hand-left",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "hand-left",
+      "centre": [
+        -0.262,
+        0,
+        0.292
+      ],
+      "radii": [
+        0.058,
+        0.049,
+        0.063
+      ],
+      "region": "hand-left"
+    },
+    {
+      "id": "foot-left",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "foot-left",
+      "centre": [
+        -0.092,
+        -0.022,
+        0.034
+      ],
+      "radii": [
+        0.066,
+        0.096,
+        0.034
+      ],
+      "region": "foot-left"
+    },
+    {
+      "id": "eye-left",
+      "recipe": "face-ellipse",
+      "defaultMaterial": "eye",
+      "anchor": "head",
+      "centreXZ": [
+        -0.106,
+        0.721
+      ],
+      "radiiXZ": [
+        0.024,
+        0.034
+      ],
+      "surfaceOffset": 0.001
+    },
+    {
+      "id": "eyebrow-left",
+      "recipe": "face-curve",
+      "defaultMaterial": "brown-hair",
+      "anchor": "head",
+      "pointsXZ": [
+        [
+          -0.064,
+          0.837
+        ],
+        [
+          -0.088,
+          0.85
+        ],
+        [
+          -0.12,
+          0.85
+        ],
+        [
+          -0.147,
+          0.837
+        ]
+      ],
+      "radius": 0.0035,
+      "surfaceOffset": 0.001
+    },
+    {
+      "id": "ear-right",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "ear-right",
+      "centre": [
+        0.276,
+        0,
+        0.71
+      ],
+      "radii": [
+        0.041,
+        0.033,
+        0.063
+      ],
+      "region": "head"
+    },
+    {
+      "id": "upper-arm-right",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "shoulder-right",
+      "start": [
+        0.128,
+        0,
+        0.485
+      ],
+      "end": [
+        0.209,
+        0,
+        0.4
+      ],
+      "startRadii": [
+        0.05,
+        0.044
+      ],
+      "endRadii": [
+        0.043,
+        0.039
+      ],
+      "endCapLength": 0.012,
+      "region": "upper-arm-right"
+    },
+    {
+      "id": "forearm-right",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "elbow-right",
+      "start": [
+        0.209,
+        0,
+        0.4
+      ],
+      "end": [
+        0.25,
+        0,
+        0.331
+      ],
+      "startRadii": [
+        0.043,
+        0.039
+      ],
+      "endRadii": [
+        0.038,
+        0.034
+      ],
+      "endCapLength": 0.012,
+      "region": "forearm-right"
+    },
+    {
+      "id": "thigh-right",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "hip-right",
+      "start": [
+        0.085,
+        0,
+        0.291
+      ],
+      "end": [
+        0.089,
+        0,
+        0.185
+      ],
+      "startRadii": [
+        0.064,
+        0.062
+      ],
+      "endRadii": [
+        0.055,
+        0.052
+      ],
+      "endCapLength": 0.012,
+      "region": "thigh-right"
+    },
+    {
+      "id": "shin-right",
+      "recipe": "tapered-limb",
+      "defaultMaterial": "skin",
+      "anchor": "knee-right",
+      "start": [
+        0.089,
+        0,
+        0.185
+      ],
+      "end": [
+        0.092,
+        0,
+        0.079
+      ],
+      "startRadii": [
+        0.055,
+        0.052
+      ],
+      "endRadii": [
+        0.037,
+        0.037
+      ],
+      "endCapLength": 0.012,
+      "region": "shin-right"
+    },
+    {
+      "id": "hand-right",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "hand-right",
+      "centre": [
+        0.262,
+        0,
+        0.292
+      ],
+      "radii": [
+        0.058,
+        0.049,
+        0.063
+      ],
+      "region": "hand-right"
+    },
+    {
+      "id": "foot-right",
+      "recipe": "ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "foot-right",
+      "centre": [
+        0.092,
+        -0.022,
+        0.034
+      ],
+      "radii": [
+        0.066,
+        0.096,
+        0.034
+      ],
+      "region": "foot-right"
+    },
+    {
+      "id": "eye-right",
+      "recipe": "face-ellipse",
+      "defaultMaterial": "eye",
+      "anchor": "head",
+      "centreXZ": [
+        0.106,
+        0.721
+      ],
+      "radiiXZ": [
+        0.024,
+        0.034
+      ],
+      "surfaceOffset": 0.001
+    },
+    {
+      "id": "eyebrow-right",
+      "recipe": "face-curve",
+      "defaultMaterial": "brown-hair",
+      "anchor": "head",
+      "pointsXZ": [
+        [
+          0.064,
+          0.837
+        ],
+        [
+          0.088,
+          0.85
+        ],
+        [
+          0.12,
+          0.85
+        ],
+        [
+          0.147,
+          0.837
+        ]
+      ],
+      "radius": 0.0035,
+      "surfaceOffset": 0.001
+    },
+    {
+      "id": "nose",
+      "recipe": "face-ellipsoid",
+      "defaultMaterial": "skin",
+      "anchor": "head",
+      "centreXZ": [
+        0,
+        0.685
+      ],
+      "radii": [
+        0.02,
+        0.018,
+        0.018
+      ],
+      "surfaceOffset": 0
+    },
+    {
+      "id": "mouth",
+      "recipe": "face-curve",
+      "defaultMaterial": "mouth",
+      "anchor": "head",
+      "pointsXZ": [
+        [
+          -0.025,
+          0.642
+        ],
+        [
+          -0.013,
+          0.628
+        ],
+        [
+          0.013,
+          0.628
+        ],
+        [
+          0.025,
+          0.642
+        ]
+      ],
+      "radius": 0.002,
+      "surfaceOffset": 0.001
+    }
+  ],
+  "hair": {
+    "anchor": "hair",
+    "defaultMaterial": "brown-hair",
+    "scalpCentre": [
+      0,
+      0,
+      0.875
+    ],
+    "scalpRadii": [
+      0.3125,
+      0.26,
+      0.315
+    ],
+    "shellThickness": 0.006,
+    "capThetaLimitsDegrees": {
+      "front": 83,
+      "side": 129,
+      "back": 162
+    },
+    "capPurpose": "Replaceable root coverage belonging to hairstyle, not skin. Visible locks are independent parts.",
+    "leafProfile": {
+      "widthSamples": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          0.65,
+          0.9
+        ],
+        [
+          0.9,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rootInset": 0.002,
+      "crossSection": "closed ellipse; width/depth are diameters",
+      "tip": "merge final ring into one vertex",
+      "frame": "Scalp-normal depth and path tangent; see PUPPET-SPEC.md."
+    },
+    "targetEnvelope": {
+      "width": 0.672,
+      "heightMaximum": 1.2,
+      "tolerance": 0.01,
+      "meaning": "Reference review target, not a post-build normalization instruction."
+    },
+    "locks": [
+      {
+        "id": "fringe-outer-left",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            25,
+            -35
+          ],
+          [
+            47,
+            -58
+          ],
+          [
+            83,
+            -70
+          ],
+          [
+            105,
+            -58
+          ]
+        ],
+        "width": 0.14,
+        "depth": 0.038,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "fringe-left",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            18,
+            -4
+          ],
+          [
+            42,
+            -25
+          ],
+          [
+            80,
+            -41
+          ],
+          [
+            103,
+            -34
+          ]
+        ],
+        "width": 0.17,
+        "depth": 0.042,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "fringe-middle",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            19,
+            20
+          ],
+          [
+            49,
+            7
+          ],
+          [
+            83,
+            -8
+          ],
+          [
+            103,
+            -4
+          ]
+        ],
+        "width": 0.14,
+        "depth": 0.038,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "fringe-right",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            22,
+            29
+          ],
+          [
+            42,
+            48
+          ],
+          [
+            72,
+            57
+          ],
+          [
+            99,
+            55
+          ]
+        ],
+        "width": 0.155,
+        "depth": 0.04,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "temple-left",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            58,
+            -80
+          ],
+          [
+            82,
+            -88
+          ],
+          [
+            107,
+            -92
+          ],
+          [
+            126,
+            -90
+          ]
+        ],
+        "width": 0.105,
+        "depth": 0.027,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "temple-right",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            58,
+            80
+          ],
+          [
+            82,
+            88
+          ],
+          [
+            107,
+            92
+          ],
+          [
+            126,
+            90
+          ]
+        ],
+        "width": 0.105,
+        "depth": 0.027,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "rear-left-upper",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            26,
+            -115
+          ],
+          [
+            49,
+            -129
+          ],
+          [
+            76,
+            -138
+          ],
+          [
+            99,
+            -142
+          ]
+        ],
+        "width": 0.19,
+        "depth": 0.032,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "rear-centre-upper",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            21,
+            180
+          ],
+          [
+            51,
+            174
+          ],
+          [
+            87,
+            167
+          ],
+          [
+            119,
+            160
+          ]
+        ],
+        "width": 0.21,
+        "depth": 0.034,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "rear-right-upper",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            25,
+            112
+          ],
+          [
+            50,
+            123
+          ],
+          [
+            83,
+            133
+          ],
+          [
+            111,
+            135
+          ]
+        ],
+        "width": 0.185,
+        "depth": 0.032,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "rear-left-lower",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            70,
+            -111
+          ],
+          [
+            95,
+            -115
+          ],
+          [
+            125,
+            -121
+          ],
+          [
+            150,
+            -127
+          ]
+        ],
+        "width": 0.15,
+        "depth": 0.03,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "rear-middle-lower",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            78,
+            180
+          ],
+          [
+            103,
+            178
+          ],
+          [
+            136,
+            174
+          ],
+          [
+            161,
+            174
+          ]
+        ],
+        "width": 0.175,
+        "depth": 0.03,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "rear-right-lower",
+        "recipe": "scalp-leaf",
+        "controlAnglesDegrees": [
+          [
+            71,
+            111
+          ],
+          [
+            96,
+            115
+          ],
+          [
+            126,
+            122
+          ],
+          [
+            151,
+            127
+          ]
+        ],
+        "width": 0.15,
+        "depth": 0.03,
+        "defaultMaterial": "brown-hair"
+      },
+      {
+        "id": "crown-tuft",
+        "recipe": "free-leaf",
+        "points": [
+          [
+            0.03,
+            -0.01,
+            1.135686247081
+          ],
+          [
+            0.02,
+            -0.018,
+            1.194686247081
+          ],
+          [
+            0.092,
+            -0.02,
+            1.167686247081
+          ],
+          [
+            0.1,
+            -0.032,
+            1.118686247081
+          ]
+        ],
+        "width": 0.064,
+        "depth": 0.022,
+        "defaultMaterial": "brown-hair",
+        "frameHint": [
+          0,
+          -1,
+          0
+        ]
+      }
+    ]
+  },
+  "glasses": {
+    "anchor": "eyewear",
+    "defaultMaterial": "spectacle",
+    "ringCentres": [
+      [
+        -0.126,
+        -0.26,
+        0.725
+      ],
+      [
+        0.126,
+        -0.26,
+        0.725
+      ]
+    ],
+    "ringRadius": 0.093,
+    "wireRadius": 0.006,
+    "ringPlane": "XZ",
+    "bridge": [
+      [
+        -0.033,
+        -0.26,
+        0.733
+      ],
+      [
+        -0.018,
+        -0.272,
+        0.761
+      ],
+      [
+        0.018,
+        -0.272,
+        0.761
+      ],
+      [
+        0.033,
+        -0.26,
+        0.733
+      ]
+    ],
+    "templePaths": [
+      [
+        [
+          -0.219,
+          -0.26,
+          0.738
+        ],
+        [
+          -0.29,
+          -0.243,
+          0.755
+        ],
+        [
+          -0.304,
+          -0.09,
+          0.75
+        ],
+        [
+          -0.302,
+          0.012,
+          0.736
+        ]
+      ],
+      [
+        [
+          0.219,
+          -0.26,
+          0.738
+        ],
+        [
+          0.29,
+          -0.243,
+          0.755
+        ],
+        [
+          0.304,
+          -0.09,
+          0.75
+        ],
+        [
+          0.302,
+          0.012,
+          0.736
+        ]
+      ]
+    ],
+    "lenses": false,
+    "replaceableParts": [
+      "rim-left",
+      "rim-right",
+      "bridge",
+      "temple-left",
+      "temple-right"
+    ]
+  },
+  "clothing": {
+    "shirt": {
+      "anchor": "shirt",
+      "bodyProfile": "puppet-body-v1",
+      "defaultMaterial": "shirt",
+      "wallThickness": 0.003,
+      "bodyOuterRings": [
+        [
+          0.315,
+          0,
+          0,
+          0.157,
+          0.096
+        ],
+        [
+          0.344,
+          0,
+          0,
+          0.158,
+          0.097
+        ],
+        [
+          0.433,
+          0,
+          0,
+          0.145,
+          0.089
+        ],
+        [
+          0.504,
+          0,
+          0,
+          0.122,
+          0.076
+        ],
+        [
+          0.546,
+          0,
+          0,
+          0.054,
+          0.044
+        ]
+      ],
+      "openEnds": [
+        "neck",
+        "hem",
+        "cuffs"
+      ],
+      "sleeves": [
+        {
+          "id": "sleeve-left",
+          "rings": [
+            [
+              0.334,
+              -0.242,
+              0,
+              0.052,
+              0.047
+            ],
+            [
+              0.375,
+              -0.221,
+              0,
+              0.072,
+              0.057
+            ],
+            [
+              0.452,
+              -0.176,
+              0,
+              0.085,
+              0.067
+            ],
+            [
+              0.51,
+              -0.13,
+              0,
+              0.075,
+              0.065
+            ],
+            [
+              0.53,
+              -0.099,
+              0,
+              0.065,
+              0.054
+            ],
+            [
+              0.54,
+              -0.035,
+              0,
+              0.008,
+              0.02
+            ]
+          ],
+          "cuffZRange": [
+            0.334,
+            0.368
+          ],
+          "cuffOffset": 0.002,
+          "cuffThickness": 0.002
+        },
+        {
+          "id": "sleeve-right",
+          "rings": [
+            [
+              0.334,
+              0.242,
+              0,
+              0.052,
+              0.047
+            ],
+            [
+              0.375,
+              0.221,
+              0,
+              0.072,
+              0.057
+            ],
+            [
+              0.452,
+              0.176,
+              0,
+              0.085,
+              0.067
+            ],
+            [
+              0.51,
+              0.13,
+              0,
+              0.075,
+              0.065
+            ],
+            [
+              0.53,
+              0.099,
+              0,
+              0.065,
+              0.054
+            ],
+            [
+              0.54,
+              0.035,
+              0,
+              0.008,
+              0.02
+            ]
+          ],
+          "cuffZRange": [
+            0.334,
+            0.368
+          ],
+          "cuffOffset": 0.002,
+          "cuffThickness": 0.002
+        }
+      ],
+      "collar": {
+        "anchor": "neck",
+        "bandInnerRadii": [
+          0.049,
+          0.039
+        ],
+        "bandOuterRadii": [
+          0.058,
+          0.048
+        ],
+        "zRange": [
+          0.529,
+          0.553
+        ],
+        "angularRangeDegrees": [
+          0,
+          360
+        ],
+        "frontFlaps": [
+          {
+            "id": "collar-flap-left",
+            "rootPhiDegrees": [
+              -65,
+              -5
+            ],
+            "rootZ": 0.536,
+            "freeEdge": [
+              [
+                -0.079,
+                -0.07,
+                0.511
+              ],
+              [
+                -0.025,
+                -0.091,
+                0.485
+              ]
+            ],
+            "wallThickness": 0.003,
+            "rootEmbed": 0.0015
+          },
+          {
+            "id": "collar-flap-right",
+            "mirrorOf": "collar-flap-left",
+            "axis": "X"
+          }
+        ]
+      },
+      "buttons": {
+        "centresZ": [
+          0.467,
+          0.393
+        ],
+        "x": 0,
+        "radius": 0.009,
+        "depth": 0.003,
+        "defaultMaterial": "button"
+      },
+      "seams": {
+        "radius": 0.0008,
+        "surfaceOffset": 0.001,
+        "defaultMaterial": "seam",
+        "backYoke": {
+          "z": 0.47,
+          "xRange": [
+            -0.122,
+            0.122
+          ]
+        },
+        "backCentre": {
+          "x": 0,
+          "zRange": [
+            0.315,
+            0.47
+          ]
+        }
+      },
+      "coverageRegions": [
+        "torso",
+        "upper-arm-left",
+        "upper-arm-right"
+      ]
+    },
+    "trousers": {
+      "anchor": "trousers",
+      "bodyProfile": "puppet-body-v1",
+      "defaultMaterial": "taupe-trousers",
+      "wallThickness": 0.003,
+      "pelvisOuterRings": [
+        [
+          0.218,
+          0,
+          0,
+          0.133,
+          0.083
+        ],
+        [
+          0.272,
+          0,
+          0,
+          0.151,
+          0.096
+        ],
+        [
+          0.323,
+          0,
+          0,
+          0.157,
+          0.097
+        ]
+      ],
+      "legs": [
+        {
+          "id": "trouser-left",
+          "rings": [
+            [
+              0.069,
+              -0.092,
+              0,
+              0.073,
+              0.071
+            ],
+            [
+              0.1,
+              -0.092,
+              0,
+              0.075,
+              0.076
+            ],
+            [
+              0.194,
+              -0.089,
+              0,
+              0.078,
+              0.08
+            ],
+            [
+              0.263,
+              -0.085,
+              0,
+              0.081,
+              0.087
+            ],
+            [
+              0.306,
+              -0.079,
+              0,
+              0.083,
+              0.091
+            ]
+          ]
+        },
+        {
+          "id": "trouser-right",
+          "rings": [
+            [
+              0.069,
+              0.092,
+              0,
+              0.073,
+              0.071
+            ],
+            [
+              0.1,
+              0.092,
+              0,
+              0.075,
+              0.076
+            ],
+            [
+              0.194,
+              0.089,
+              0,
+              0.078,
+              0.08
+            ],
+            [
+              0.263,
+              0.085,
+              0,
+              0.081,
+              0.087
+            ],
+            [
+              0.306,
+              0.079,
+              0,
+              0.083,
+              0.091
+            ]
+          ]
+        }
+      ],
+      "waistband": {
+        "zRange": [
+          0.296,
+          0.323
+        ],
+        "outerRadii": [
+          0.158,
+          0.098
+        ],
+        "wallThickness": 0.003
+      },
+      "waistButton": {
+        "x": 0,
+        "z": 0.303,
+        "radius": 0.008,
+        "depth": 0.003,
+        "defaultMaterial": "spectacle"
+      },
+      "openEnds": [
+        "waist",
+        "left-ankle",
+        "right-ankle"
+      ],
+      "coverageRegions": [
+        "pelvis",
+        "thigh-left",
+        "thigh-right",
+        "shin-left",
+        "shin-right"
+      ],
+      "joining": "Union capped outer pelvis and leg lofts; subtract the union of inner lofts. Inner volumes extend 10 mm through waist/ankles. Remove duplicate internal faces; preserve crotch void below pelvis."
+    },
+    "shoes": [
+      {
+        "id": "shoe-left",
+        "anchor": "shoe-left",
+        "bodyProfile": "puppet-body-v1",
+        "defaultMaterial": "brown-shoes",
+        "outerRings": [
+          [
+            0,
+            -0.092,
+            -0.022,
+            0.073,
+            0.112
+          ],
+          [
+            0.012,
+            -0.092,
+            -0.022,
+            0.081,
+            0.121
+          ],
+          [
+            0.05,
+            -0.092,
+            -0.028,
+            0.079,
+            0.123
+          ],
+          [
+            0.076,
+            -0.092,
+            -0.017,
+            0.066,
+            0.088
+          ],
+          [
+            0.095,
+            -0.092,
+            0,
+            0.048,
+            0.052
+          ]
+        ],
+        "wallThickness": 0.003,
+        "soleThickness": 0.004,
+        "openTop": true,
+        "soleZ": 0,
+        "footPoseOffset": [
+          0,
+          0,
+          0.009
+        ],
+        "barefootPoseOffset": [
+          0,
+          0,
+          0
+        ],
+        "coverageRegions": [
+          "foot-left"
+        ],
+        "fitRule": "While equipped, offset naked foot only; ankle stays fixed. On removal restore foot offset zero so bare sole returns to Z=0.",
+        "soleSeam": {
+          "recipe": "integrated-loft-recess",
+          "zRange": [
+            0.0124,
+            0.0136
+          ],
+          "depth": 0.0005,
+          "profile": "d(z)=depth*(1-cos(2*pi*u))/2, u=(z-zMin)/(zMax-zMin); zero outside the interval.",
+          "defaultMaterial": "brown-shoes",
+          "topology": "Displace outer shoe vertices inward along the horizontal analytic ellipse normal. Share angular indices and adjacent rings with the shoe surface. No separate cutter, strip, ring or coplanar faces. Inner cavity unchanged.",
+          "lodPresence": [
+            "lod0",
+            "lod1"
+          ],
+          "samplingSource": "Selected lod.tiers entry sampling; zero grooveProfileIntervals omits the groove at LOD2 only."
+        }
+      },
+      {
+        "id": "shoe-right",
+        "anchor": "shoe-right",
+        "bodyProfile": "puppet-body-v1",
+        "defaultMaterial": "brown-shoes",
+        "outerRings": [
+          [
+            0,
+            0.092,
+            -0.022,
+            0.073,
+            0.112
+          ],
+          [
+            0.012,
+            0.092,
+            -0.022,
+            0.081,
+            0.121
+          ],
+          [
+            0.05,
+            0.092,
+            -0.028,
+            0.079,
+            0.123
+          ],
+          [
+            0.076,
+            0.092,
+            -0.017,
+            0.066,
+            0.088
+          ],
+          [
+            0.095,
+            0.092,
+            0,
+            0.048,
+            0.052
+          ]
+        ],
+        "wallThickness": 0.003,
+        "soleThickness": 0.004,
+        "openTop": true,
+        "soleZ": 0,
+        "footPoseOffset": [
+          0,
+          0,
+          0.009
+        ],
+        "barefootPoseOffset": [
+          0,
+          0,
+          0
+        ],
+        "coverageRegions": [
+          "foot-right"
+        ],
+        "fitRule": "While equipped, offset naked foot only; ankle stays fixed. On removal restore foot offset zero so bare sole returns to Z=0.",
+        "soleSeam": {
+          "recipe": "integrated-loft-recess",
+          "zRange": [
+            0.0124,
+            0.0136
+          ],
+          "depth": 0.0005,
+          "profile": "d(z)=depth*(1-cos(2*pi*u))/2, u=(z-zMin)/(zMax-zMin); zero outside the interval.",
+          "defaultMaterial": "brown-shoes",
+          "topology": "Displace outer shoe vertices inward along the horizontal analytic ellipse normal. Share angular indices and adjacent rings with the shoe surface. No separate cutter, strip, ring or coplanar faces. Inner cavity unchanged.",
+          "lodPresence": [
+            "lod0",
+            "lod1"
+          ],
+          "samplingSource": "Selected lod.tiers entry sampling; zero grooveProfileIntervals omits the groove at LOD2 only."
+        }
+      }
+    ]
+  },
+  "replacementContract": {
+    "slots": [
+      "hairstyle",
+      "hair-lock",
+      "eyewear",
+      "head-decoration",
+      "chest-decoration",
+      "back-decoration",
+      "head",
+      "neck",
+      "torso",
+      "pelvis",
+      "ear-left",
+      "upper-arm-left",
+      "forearm-left",
+      "thigh-left",
+      "shin-left",
+      "hand-left",
+      "foot-left",
+      "eye-left",
+      "eyebrow-left",
+      "ear-right",
+      "upper-arm-right",
+      "forearm-right",
+      "thigh-right",
+      "shin-right",
+      "hand-right",
+      "foot-right",
+      "eye-right",
+      "eyebrow-right",
+      "nose",
+      "mouth",
+      "shirt",
+      "trousers",
+      "shoe-left",
+      "shoe-right"
+    ],
+    "requiredMetadata": [
+      "slot",
+      "anchor",
+      "bodyProfile or explicit fit adapter",
+      "material regions",
+      "coverage regions",
+      "rest bounds",
+      "LOD variants"
+    ],
+    "geometryAndAppearanceSeparate": true,
+    "unclothedBody": "Complete independent skin parts. Garment removal restores covered regions; no permanent body deletion.",
+    "fit": "Match body profile and rest pose. Scalar resizing is not an adapter for a different body shape. Reject unspecified compatibility.",
+    "clearanceDefault": 0.003,
+    "jointOverlapDefault": 0.008,
+    "contactTolerance": 0.002,
+    "coverage": "Only fully covered triangles may be masked after fit review; never hide exposed clipping.",
+    "hairSwap": "Swap cap and leaf set as one style or a selected leaf. Override all hair or a selected leaf colour.",
+    "clothesSwap": "Shirt owns sleeves/collar/cuffs/buttons/seams. Trousers and each shoe are independent groups.",
+    "clearanceMeaning": "Default axis-wise inset of garment inner cross-section radii for numeric fit screening; not a guaranteed Euclidean clearance. End openings and intentional attachment contact are reviewed separately."
+  },
+  "materials": {
+    "skin": {
+      "baseColorSRGB": "#F3C8A4",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "blush": {
+      "baseColorSRGB": "#ECA88E",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "eye": {
+      "baseColorSRGB": "#241F1A",
+      "roughness": 0.8,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "mouth": {
+      "baseColorSRGB": "#986550",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "brown-hair": {
+      "baseColorSRGB": "#443329",
+      "roughness": 0.88,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "black-hair": {
+      "baseColorSRGB": "#292827",
+      "roughness": 0.88,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "shirt": {
+      "baseColorSRGB": "#EEE7DB",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "collar": {
+      "baseColorSRGB": "#CBCBC6",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "taupe-trousers": {
+      "baseColorSRGB": "#776958",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "charcoal-trousers": {
+      "baseColorSRGB": "#53524F",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "brown-shoes": {
+      "baseColorSRGB": "#42332A",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "dark-shoes": {
+      "baseColorSRGB": "#302E2B",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "spectacle": {
+      "baseColorSRGB": "#252724",
+      "roughness": 0.75,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "button": {
+      "baseColorSRGB": "#C2B6A4",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "seam": {
+      "baseColorSRGB": "#8A847C",
+      "roughness": 0.9,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "appearance": {
+    "defaults": "defaultMaterial resolves to materials in this file; every part/group accepts overrides.",
+    "precedence": "Part material > group material > preset; then part colour > group colour.",
+    "isolation": "Do not mutate materials shared by another instance.",
+    "noBakedLighting": true
+  },
+  "lod": {
+    "status": "Budgets only; actual counts and silhouette require mesh review.",
+    "tiers": [
+      {
+        "id": "lod0",
+        "maxTriangles": 24000,
+        "bodyRadial": 20,
+        "ellipsoidLatitude": 12,
+        "loftIntervals": 4,
+        "leafLength": 16,
+        "leafRadial": 8,
+        "rimSegments": 40,
+        "wireRadial": 6,
+        "sampling": {
+          "surfaceTolerance": 0.0005,
+          "angularChordTolerance": 0.00025,
+          "refinementThreshold": 0.00035,
+          "grooveProfileIntervals": 8,
+          "grooveDetailTolerance": 5e-05
+        }
+      },
+      {
+        "id": "lod1",
+        "maxTriangles": 10000,
+        "bodyRadial": 16,
+        "ellipsoidLatitude": 10,
+        "loftIntervals": 4,
+        "leafLength": 10,
+        "leafRadial": 6,
+        "rimSegments": 32,
+        "wireRadial": 4,
+        "sampling": {
+          "surfaceTolerance": 0.001,
+          "angularChordTolerance": 0.0005,
+          "refinementThreshold": 0.0007,
+          "grooveProfileIntervals": 4,
+          "grooveDetailTolerance": 0.0001
+        }
+      },
+      {
+        "id": "lod2",
+        "maxTriangles": 4000,
+        "bodyRadial": 10,
+        "ellipsoidLatitude": 6,
+        "loftIntervals": 2,
+        "leafLength": 6,
+        "leafRadial": 4,
+        "rimSegments": 20,
+        "wireRadial": 4,
+        "sampling": {
+          "surfaceTolerance": 0.002,
+          "angularChordTolerance": 0.001,
+          "refinementThreshold": 0.0014,
+          "grooveProfileIntervals": 0,
+          "grooveDetailTolerance": 0
+        }
+      }
+    ],
+    "selection": "App-owned projected-size thresholds with hysteresis; no runtime implemented.",
+    "preserve": [
+      "hair silhouette",
+      "face positions",
+      "round spectacles",
+      "hands/feet",
+      "coverage",
+      "sockets",
+      "material regions"
+    ],
+    "reduce": "Lower tessellation; merge render batches without losing logical part IDs. Distant seams/buttons may use intrinsic decals."
+  },
+  "review": {
+    "documentChecksOnly": true,
+    "expectedMeshBoundsTolerance": 0.002,
+    "referenceLandmarkTolerance": 0.01,
+    "fitTolerance": 0.002,
+    "required": [
+      "multiview overview and close-ups",
+      "complete body with clothes removed",
+      "neck/wrist/limb joins",
+      "continuous collar",
+      "shirt/waist buttons and back seams",
+      "independent replacement of hair, glasses, clothes and shoes",
+      "XYZ scale applied once",
+      "actual LOD triangles and silhouette"
+    ],
+    "limitations": "Approximate reference measurements plus authored hidden geometry; no claim of exact reconstruction or verified mesh."
+  },
+  "construction": {
+    "loftInterpolation": "Z is linear in interval parameter t; cx, cy, rx and ry use s=3*t*t-2*t*t*t. For evaluation at height z, t=(z-z0)/(z1-z0). Never ease Z.",
+    "limbLengthIntervals": 8,
+    "limbCapLatitude": 4,
+    "hairCapLongitude": 40,
+    "hairCapLatitude": 16,
+    "faceCurveIntervals": 24,
+    "wireCurveIntervals": 24,
+    "buttonRadial": 20,
+    "seamRadial": 4,
+    "collarRadial": 48,
+    "flapRootIntervals": 12,
+    "flapAcrossIntervals": 4,
+    "reduction": "Segment counts are starting samples, not ceilings. Refine to the applicable geometry and detail tolerances; lower LOD starts do not authorize broken joins. Final whole-puppet triangle ceilings remain hard limits. Fail delivery if both fit/precision and budget cannot be satisfied.",
+    "loftSampling": "Z-linear smoothstep lofts retain every source row. Start with the tier loftIntervals. Insert detail boundaries and centre rows; refine the actual triangulated surface, not just ideal curves. See meshSampling and PUPPET-SPEC.md.",
+    "segmentCountMeaning": "starting-samples",
+    "meshSampling": {
+      "maxRefinementPasses": 12,
+      "angularRule": "Start with bodyRadial; add four until rMax*(1-cos(pi/N)) <= angularChordTolerance. Use one angular index grid across each connected loft.",
+      "heightRule": "Start with loftIntervals subdivisions per source-row interval. Add all selected-tier groove profile samples, endpoints and centre when present. Bisect failing height intervals.",
+      "triangles": "Each cell uses (v00,v10,v11) and (v00,v11,v01); reverse winding if needed for outward normals. Shared vertices, periodic angular wrap, no duplicate seam vertices.",
+      "refinementProbes": [
+        0.25,
+        0.5,
+        0.75
+      ],
+      "validationProbes": [
+        0.125,
+        0.375,
+        0.625,
+        0.875
+      ],
+      "errorMetric": "For each analytic cell probe, distance to the nearer of its two mesh triangles. Check all angular cells. Refinement probes use refinementThreshold; independent validation probes use surfaceTolerance. If radial error prevents convergence, add four angular samples and repeat.",
+      "failurePolicy": "At the pass limit, failed independent validation, or exhausted triangle budget, reject delivery. Do not relax tolerances or silently omit required LOD0/LOD1 detail. Probe checks are sampled evidence; a final mesh still needs topology, fit and visual validation.",
+      "precisionSource": "Use the selected lod.tiers entry sampling values. LOD0 preserves the 0.5 mm construction surface target; lower LOD approximation never relaxes attachment, wall separation or topology checks."
+    }
+  }
+}

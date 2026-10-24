@@ -3,6 +3,52 @@
 Authoring recipes only; no executable models. Dimensions and seeds are in
 street-model-spec.json. All color variation is intrinsic pigment, never lighting.
 
+## Asphalt default and overrides
+
+For `road-asphalt-straight`, the default is sRGB #55545D, roughness 0.94 and
+metallic 0, matching the JSON asphalt material. The grain and macro variation
+below are default appearance recipes only. They do not create geometric
+bumps, normals or displacement, and are not baked into the mesh.
+
+Future creation parameters must allow a base-colour override or replacement
+of the complete material independently of geometry. A complete material
+replacement disables the default asphalt grain and macro recipe. Overrides
+must not change dimensions, origin, bottom bevel, tiling boundaries or other
+instances. Scene lighting and independently placed markings remain separate.
+The current reference image is unchanged and illustrates the default surface;
+it is not a production texture to be stretched over the mesh.
+
+## Paving stone defaults and overrides
+
+The single paving stone defaults to `stone-cream`: sRGB #D9CDBA, roughness 0.88,
+metallic 0. `stone-pale` (#E3D9C9, roughness 0.88) and `stone-grey` (#C9C4B9,
+roughness 0.90) remain alternatives, both metallic 0. Values match the numeric
+material definitions. Existing seed 404 grain is an optional default colour
+recipe, never geometric bumps or baked lighting.
+
+Colour and complete material are independently replaceable without changing
+bounds, origin, bevel or other instances. A replacement material replaces the
+stone grain recipe as well. The simplified review sheet's face shading and
+outlines must not be sampled as material features. The assembled layout does
+not require assigning random colours or generating grout in each stone.
+
+### Paving stone surface-detail note
+
+The smooth single-unit drawing establishes dimensions, silhouette and bevels;
+it is not a requirement for a polished or visually featureless final stone.
+Keep the current model geometry. Later replaceable stone materials may add
+intrinsic grain, roughness variation and small-pore shading using normal or
+bump maps, without adding vertices or changing the silhouette. Such maps must
+not contain baked shadows, ambient occlusion or directional highlights.
+
+This is a future material option, not a completed texture or a newly enabled
+default. The current colour-grain recipe and zero default normal strength
+remain unchanged. Map scale, strength and close-up appearance require a later
+material specification and review; do not infer them from drawing shading.
+Do not convert this note into geometric displacement. Chipped corners,
+irregular outer edges or visible surface depressions that change geometry
+require separately specified model variants rather than a material override.
+
 ## Random sequence
 
 Use unsigned 32-bit integer state initialized to the listed seed. Each sample:
@@ -40,6 +86,22 @@ fraction of that band. It is pigment and never follows the light direction.
 
 ## Paint masks
 
+Road straight/arc/dash presets share paint independently of their contour.
+See [path markings](PATH-MARKINGS.md): the app derives contours from path and
+width, while pigment and default wear are reusable. v4 PNGs are appearance
+references, not seamless source materials. Production texture coordinates must
+follow physical path distance, retaining speck scale as length changes.
+
+
+These masks belong to independent decal components. Ochre or ivory is the
+default pigment material, separately replaceable from the receiving surface.
+Colour/material overrides must retain the decal contour, physical dimensions
+and alpha-mask coverage, including transparent wear. A material override must
+not turn a masked marking into an opaque rectangular patch. No backing mesh
+or receiving-surface pixels belong to this material. See the
+[shared classification](../ASSET-TYPES.md).
+
+
 Paint has uniform intrinsic ochre or ivory pigment, not asphalt grain.
 Use the dot algorithm only to cut transparent wear holes. Outside the marking
 and in wear holes, alpha=0 and RGB=0; opaque pixels retain pigment RGB. Use
@@ -50,7 +112,7 @@ interpolated linearly. Use abs(offset) inward, up to the JSON maximum, keeping
 first/last samples zero. Short ends remain straight. The maximum authored
 rectangle is unchanged. No paint extrusion or side faces.
 
-For future production masks, use density 1024 pixels/metre with 16-pixel
+For optional baked/exported per-instance masks (not the reusable path material), use density 1024 pixels/metre with 16-pixel
 transparent padding, round image dimensions upward to a multiple of four.
 Keep local UV axes aligned to local X and Y; record padding separately.
 Generated review PNGs illustrate appearance, not calibrated production masks.
@@ -79,31 +141,35 @@ source of transparent edge data.
 
 ## Tree leaves
 
-Use the twelve ellipsoid guides in listed order; guides never render.
-Each has 96 leaves. For i=0..95, set u=(i+0.5)/96, z=1-2*u,
-theta=i*2.399963229728653 + clusterIndex*0.73;
-d=(sqrt(1-z*z)*cos(theta), sqrt(1-z*z)*sin(theta), z).
-Even i uses radial factor 1; odd i uses
-0.55+0.4*fract((i+1)*0.618033988749895).
-Position = guide center + componentwise(guide radii * d * radial factor).
+The sole current tree geometry and assembly recipe is
+[TREE-CONSTRUCTION.md](TREE-CONSTRUCTION.md), using
+[tree-construction-spec.json](tree-construction-spec.json).
+It defines one rounded solid leaf, 23 groups and 1,744 shared instances,
+including size mixtures, subgroup offsets, orientations and fixed random streams.
+The previous twelve-guide/1,152-leaf recipe is superseded; do not reuse it.
 
-Start the sequence at foliage seed + 1009*clusterIndex. Consume three samples
-per leaf: length within the JSON range, rotation in [0,2*pi), material choice.
-Choose materials[0] for q<0.5, [1] for 0.5<=q<0.8, [2] otherwise.
-Choice is independent of normal, location, camera and lighting.
+### Tree defaults and overrides
 
-Normal = normalized(d.x/rx,d.y/ry,d.z/rz).
-T = normalized(cross(+Z,normal)); if its length is below 0.000001, use
-cross(+X,normal). B=cross(normal,T). Rotate T and B by the sampled rotation.
-Map the six normalized outline points in JSON onto T and B using length and
-width. Add the centre raised along normal by the bulge amount. Form six front
-triangles. Duplicate vertices offset minus thickness along normal, reverse
-back faces, and close the six side edges. Leaves are closed geometry.
-Do not add visible spheres, leaf stems, veins, clusters or a soil pedestal.
+Bark defaults to #806144, roughness 0.94, metallic 0. Leaves use olive #829347,
+pale #A7AD58 and deep #596D3D, all roughness 0.90 and metallic 0. These are
+replaceable intrinsic colours. Their spatial correlation is specified in the
+construction guide and never follows scene lighting. No default displacement.
 
-Each branch starts at the trunk centreline interpolated at its listed Z.
-Its endpoint is the corresponding guide center; midpoint and radii are given
-in JSON. Cap branch ends. Trunk base is a flat closed face.
+Independent bark and leaf colour/material overrides preserve seed, positions,
+dimensions, branch graph and normals. A full material override replaces prior
+textures/shaders. All leaf slots may use one replacement material. Still consume
+the same eight uniforms per leaf and the separate subgroup palette draws, so
+appearance changes cannot alter geometry. No baked cast/contact shadows, AO,
+highlights or drawn reference outlines. The scene owns illumination.
+
+## Street lantern appearance
+
+Use [LANTERN-SPEC.md](LANTERN-SPEC.md#default-appearance-and-independent-replacement)
+and the lantern module's appearance overrides. Seed 707 metal grain applies to
+the default structural and lower-collar materials only; amber panes use uniform
+intrinsic pigment. Full material replacement removes prior shader/textures;
+colour-only changes preserve the selected material's other properties. Do not
+bake reference shadows or outlines, or alter geometry through displacement.
 
 ## Reconstruction limit
 

@@ -1,9 +1,9 @@
 {
-  "specVersion": "2.0.0",
-  "status": "user approved commit on 2026-10-04; drawings and documents only",
+  "specVersion": "2.0.5",
+  "status": "2026-10-04 design baseline; wall v5, floor v7 with independent PNG, and partition v5 approved on 2026-10-06; no model approval; window v6 geometry approved for commit on 2026-10-06 with flush sill and 45-degree frame corners; colour and materials excluded",
   "approval": {
     "originalOfficeReference": "approved by user",
-    "newDrawings": "user approved commit on 2026-10-04",
+    "newDrawings": "wall review/01-wall-v5.png, floor review/02-floor-v7.png, and partition review/03-partition-v5.png approved on 2026-10-06; stair and door v2 retain 2026-10-04 approval; window v6 geometry approved for commit on 2026-10-06, not model approval",
     "newDimensions": "fixed authoring proposal, not measured from image",
     "modelVerification": "not performed"
   },
@@ -19,7 +19,7 @@
     "primary": "review/approved-office-reference.jpg",
     "door": "review/entry-door-reference.png",
     "secondary": "neighbouring shop window only",
-    "newSheets": "review/*-v2.png, approved for commit",
+    "newSheets": "wall: review/01-wall-v5.png; floor: review/02-floor-v7.png; partition: review/03-partition-v5.png; window: review/06-window-v6.png for approved geometry; stair and door: module reviewDrawing v2 paths; earlier wall, floor, and partition drawings are superseded",
     "historical": "old PNG, orthoviews, BUILD_SCENE.py, .blend and GLBs are not current authority"
   },
   "unitRule": {
@@ -117,7 +117,7 @@
       "moduleId": "wall-segment",
       "name": "Wall - single segment",
       "unitCount": 1,
-      "reviewDrawing": "review/01-wall-v2.png",
+      "reviewDrawing": "review/01-wall-v5.png",
       "components": [
         {
           "partId": "body",
@@ -167,7 +167,7 @@
         "X": 0,
         "Y": 0.015
       },
-      "edgeRule": "only body and cap upper edges parallel to X: inward radius .004, 2 segments; all other edges sharp; X ends closed and planar",
+      "edgeRule": "only body and cap upper edges parallel to X: inward radius .004, 2 segments; all other edges sharp; body and cap X end planes exactly coincide at -0.5 and +0.5 m with zero setback or overhang; capOverhang.Y is 0.015 m per side, never an X-end extension; no end-face bevel, underside lip or added seam geometry at either X join",
       "excluded": [
         "skirting",
         "floor",
@@ -179,7 +179,7 @@
       "moduleId": "floor-plank",
       "name": "Floor - single plank",
       "unitCount": 1,
-      "reviewDrawing": "review/02-floor-v2.png",
+      "reviewDrawing": "review/02-floor-v7.png",
       "components": [
         {
           "partId": "plank",
@@ -238,13 +238,13 @@
         "tongue-and-groove",
         "fixed stagger"
       ],
-      "hiddenFace": "plain oak on underside, grain on visible top/long sides"
+      "hiddenFace": "uniform active-PNG mean sRGB on underside and short ends; natural grain on top/long sides; materials/README.md defines the approved PNG and UV mapping"
     },
     {
       "moduleId": "partition-segment",
       "name": "Partition - single segment",
       "unitCount": 1,
-      "reviewDrawing": "review/03-partition-v2.png",
+      "reviewDrawing": "review/03-partition-v5.png",
       "components": [
         {
           "partId": "body",
@@ -562,75 +562,163 @@
       "moduleId": "window-four-pane",
       "name": "Window - single four-pane unit",
       "unitCount": 1,
-      "reviewDrawing": "review/06-window-v2.png",
+      "reviewDrawing": "review/06-window-v6.png",
       "components": [
         {
           "partId": "jamb-left",
-          "shape": "closed box",
+          "shape": "closed XZ polygon extruded along Y; mitered frame member",
           "sizeMetres": [
             0.08,
             0.1,
-            1.2
+            1.28
           ],
           "centreMetres": [
             -0.87,
             0,
-            0.6
+            0.64
           ],
           "material": "cream-cap",
           "bevelMetres": 0.002,
-          "bevelSegments": 2
+          "bevelSegments": 2,
+          "profileVerticesXZMetres": [
+            [
+              -0.91,
+              0
+            ],
+            [
+              -0.83,
+              0.08
+            ],
+            [
+              -0.83,
+              1.2
+            ],
+            [
+              -0.91,
+              1.28
+            ]
+          ],
+          "extrusionYMetres": [
+            -0.05,
+            0.05
+          ]
         },
         {
           "partId": "jamb-right",
-          "shape": "closed box",
+          "shape": "closed XZ polygon extruded along Y; mitered frame member",
           "sizeMetres": [
             0.08,
             0.1,
-            1.2
+            1.28
           ],
           "centreMetres": [
             0.87,
             0,
-            0.6
+            0.64
           ],
           "material": "cream-cap",
           "bevelMetres": 0.002,
-          "bevelSegments": 2
+          "bevelSegments": 2,
+          "profileVerticesXZMetres": [
+            [
+              0.83,
+              0.08
+            ],
+            [
+              0.91,
+              0
+            ],
+            [
+              0.91,
+              1.28
+            ],
+            [
+              0.83,
+              1.2
+            ]
+          ],
+          "extrusionYMetres": [
+            -0.05,
+            0.05
+          ]
         },
         {
           "partId": "head",
-          "shape": "closed box",
+          "shape": "closed XZ polygon extruded along Y; mitered frame member",
           "sizeMetres": [
             1.82,
             0.1,
             0.08
           ],
           "centreMetres": [
-            0,
+            0.0,
             0,
             1.24
           ],
           "material": "cream-cap",
           "bevelMetres": 0.002,
-          "bevelSegments": 2
+          "bevelSegments": 2,
+          "profileVerticesXZMetres": [
+            [
+              -0.91,
+              1.28
+            ],
+            [
+              -0.83,
+              1.2
+            ],
+            [
+              0.83,
+              1.2
+            ],
+            [
+              0.91,
+              1.28
+            ]
+          ],
+          "extrusionYMetres": [
+            -0.05,
+            0.05
+          ]
         },
         {
           "partId": "bottom-rail",
-          "shape": "closed box",
+          "shape": "closed XZ polygon extruded along Y; mitered frame member",
           "sizeMetres": [
-            1.66,
+            1.82,
             0.1,
             0.08
           ],
           "centreMetres": [
-            0,
+            0.0,
             0,
             0.04
           ],
           "material": "cream-cap",
           "bevelMetres": 0.002,
-          "bevelSegments": 2
+          "bevelSegments": 2,
+          "profileVerticesXZMetres": [
+            [
+              -0.91,
+              0
+            ],
+            [
+              0.91,
+              0
+            ],
+            [
+              0.83,
+              0.08
+            ],
+            [
+              -0.83,
+              0.08
+            ]
+          ],
+          "extrusionYMetres": [
+            -0.05,
+            0.05
+          ]
         },
         {
           "partId": "vertical-mullion",
@@ -687,7 +775,7 @@
           "partId": "sill",
           "shape": "closed box",
           "sizeMetres": [
-            1.86,
+            1.82,
             0.18,
             0.035
           ],
@@ -777,19 +865,19 @@
       ],
       "overallBoundsMetres": {
         "min": [
-          -0.93,
+          -0.91,
           -0.13,
           -0.035
         ],
         "max": [
-          0.93,
+          0.91,
           0.05,
           1.28
         ]
       },
       "glassPaneCount": 4,
       "rear": "same four-pane geometry; opaque muted glass; no room backdrop",
-      "referencePriority": "secondary neighbouring shop only; not a new required feature of central office",
+      "referencePriority": "v2 THREE-QUARTER selected by user; v6 window geometry review, with four 45-degree frame corners and flat frame-to-sill contact confirmed on 2026-10-06; original styling derives from neighbouring shops",
       "mounting": {
         "roughOpeningSizeMetres": [
           1.84,
@@ -804,7 +892,8 @@
         "shutters",
         "painted reflections",
         "room backdrop"
-      ]
+      ],
+      "edgeRule": "Frame polygon profiles control all four 45-degree corner joints; extrude through Y=-.05 to +.05. Keep mating miter faces and their seam edges exact, without independent bevels, offsets or added gaps. Existing .002 m frame bevel applies only to exposed perimeter edges; exclude the complete frame bottom Z=0 contact with sill. Sill top contact with frame stays planar and uncut; bevel only exposed sill edges. Shared contact faces must not become duplicate exposed faces. Mullion bevels retain their existing definitions."
     }
   ],
   "materialRules": {
@@ -829,7 +918,7 @@
     }
   },
   "verification": {
-    "status": "criteria only, no models built",
+    "status": "acceptance criteria only; existing model drafts are not verified against wall v5 or floor v7",
     "dimensionsToleranceMetres": 0.001,
     "viewDirectionsFromTarget": {
       "front": [

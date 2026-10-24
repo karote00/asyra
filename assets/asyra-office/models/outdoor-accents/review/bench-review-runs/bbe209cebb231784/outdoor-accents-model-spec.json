@@ -1,0 +1,726 @@
+{
+  "specVersion": "1.0.0",
+  "status": "Bench v4 reconciled construction and full review pending; chalkboard unchanged",
+  "units": "metres",
+  "coordinates": {
+    "up": "+Z",
+    "front": "-Y",
+    "origin": "ground-level footprint centre",
+    "sizeOrder": "X,Y,Z"
+  },
+  "reference": "../architecture/review/approved-office-reference.jpg",
+  "materials": {
+    "wood": {
+      "baseColorSRGB": "#B68050",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "wood-grain": {
+      "baseColorSRGB": "#95683E",
+      "roughness": 0.85,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "metal": {
+      "baseColorSRGB": "#343633",
+      "roughness": 0.85,
+      "metallic": 0.5,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "board": {
+      "baseColorSRGB": "#34332F",
+      "roughness": 0.98,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "chalk": {
+      "baseColorSRGB": "#EBE6D6",
+      "roughness": 0.98,
+      "metallic": 0,
+      "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    }
+  },
+  "modules": [
+    {
+      "moduleId": "park-bench",
+      "name": "Park bench - single unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/01-park-bench-v4.png",
+      "nominalSize": [
+        1.2,
+        0.5089551654746741,
+        0.65
+      ],
+      "seatTop": 0.34,
+      "components": [
+        {
+          "partId": "seat-slats",
+          "primitive": "four rounded boxes",
+          "size": [
+            1.14,
+            0.1,
+            0.035
+          ],
+          "centresY": [
+            -0.165,
+            -0.055,
+            0.055,
+            0.165
+          ],
+          "centreX": 0,
+          "centreZ": 0.3225,
+          "bevel": 0.006,
+          "bevelSegments": 3,
+          "material": "wood"
+        },
+        {
+          "partId": "back-slats",
+          "primitive": "three rounded boxes in tilted frame",
+          "width": 1.07,
+          "normalThickness": 0.03,
+          "localHeight": 0.09,
+          "centresZ": [
+            0.40377477649741206,
+            0.5037747764974121,
+            0.6037747764974121
+          ],
+          "centreYFormula": "0.18+(Z-0.29)*tan(15deg)-0.025",
+          "basisWidth": [
+            1,
+            0,
+            0
+          ],
+          "basisUp": "(0,sin(15deg),cos(15deg))",
+          "basisFront": "(0,-cos(15deg),sin(15deg))",
+          "bevel": 0.005,
+          "bevelSegments": 3,
+          "material": "wood",
+          "inclinationDegrees": 15,
+          "rearPostSetbackY": 0.025
+        },
+        {
+          "partId": "seat-supports",
+          "primitive": "two rotated rounded boxes",
+          "bevel": 0.003,
+          "bevelSegments": 3,
+          "material": "metal",
+          "sizeWidthLengthHeight": [
+            0.045,
+            0.37286171601287216,
+            0.025
+          ],
+          "centrelineEndpoints": [
+            [
+              [
+                -0.5775,
+                -0.18,
+                0.2945
+              ],
+              [
+                -0.485,
+                0.18120577136594004,
+                0.2945
+              ]
+            ],
+            [
+              [
+                0.5775,
+                -0.18,
+                0.2945
+              ],
+              [
+                0.485,
+                0.18120577136594004,
+                0.2945
+              ]
+            ]
+          ],
+          "basisRule": "Local length is normalized end-start; width=(lengthY,-lengthX,0); height=(0,0,1). Centre is endpoint midpoint."
+        },
+        {
+          "partId": "front-legs",
+          "primitive": "two cylinders",
+          "axis": "Z",
+          "centresXY": [
+            [
+              -0.5775,
+              -0.18
+            ],
+            [
+              0.5775,
+              -0.18
+            ]
+          ],
+          "radius": 0.0225,
+          "zMin": 0,
+          "zMax": 0.41,
+          "radialSegments": 48,
+          "material": "metal"
+        },
+        {
+          "partId": "rear-posts",
+          "primitive": "two capped circular tube sweeps",
+          "xValues": [
+            -0.485,
+            0.485
+          ],
+          "pathYZ": [
+            [
+              0.18,
+              0
+            ],
+            [
+              0.18,
+              0.29
+            ],
+            [
+              0.2722218343831701,
+              0.6341765714851932
+            ]
+          ],
+          "radius": 0.0225,
+          "radialSegments": 48,
+          "joint": "Union the two closed cylindrical segments with a radius-matched sphere at the internal bend only; no added fitting or visible internal seam.",
+          "groundCutZ": 0,
+          "material": "metal",
+          "endCap": "Flat circular terminal disk perpendicular to the upper post centreline. No terminal sphere, hemisphere or protruding knob. Highest rim is 10 mm below the backrest top.",
+          "inclinationDegrees": 15,
+          "sphereLongitudeSegments": 48,
+          "sphereLatitudeIntervals": 24
+        },
+        {
+          "partId": "arms",
+          "primitive": "two piecewise cubic circular tube sweeps",
+          "radius": 0.0225,
+          "radialSegments": 24,
+          "material": "metal",
+          "construction": "Sample each cubic at t=i/32 and deduplicate shared endpoints. Union closed cylinders on consecutive samples and radius-matched spheres at all samples including endpoints. The four segments share tangent direction (G1); this defines one continuous rounded polyline tube per side.",
+          "sphereLongitudeSegments": 24,
+          "sphereLatitudeIntervals": 12,
+          "leftRule": "Mirror all X coordinates of every right-side segment through X=0.",
+          "pathIntervalsPerSegment": 32,
+          "controlSegmentsRightXYZ": [
+            [
+              [
+                0.5775,
+                -0.18,
+                0.41
+              ],
+              [
+                0.5775,
+                -0.18,
+                0.45
+              ],
+              [
+                0.5775,
+                -0.155,
+                0.46
+              ],
+              [
+                0.5775,
+                -0.12,
+                0.46
+              ]
+            ],
+            [
+              [
+                0.5775,
+                -0.12,
+                0.46
+              ],
+              [
+                0.5775,
+                0,
+                0.46
+              ],
+              [
+                0.5775,
+                0.12,
+                0.455
+              ],
+              [
+                0.5775,
+                0.2,
+                0.44
+              ]
+            ],
+            [
+              [
+                0.5775,
+                0.2,
+                0.44
+              ],
+              [
+                0.5775,
+                0.26,
+                0.42875
+              ],
+              [
+                0.57,
+                0.26,
+                0.41
+              ],
+              [
+                0.53,
+                0.26,
+                0.41
+              ]
+            ],
+            [
+              [
+                0.53,
+                0.26,
+                0.41
+              ],
+              [
+                0.515,
+                0.26,
+                0.41
+              ],
+              [
+                0.5,
+                0.2341539030917347,
+                0.41
+              ],
+              [
+                0.485,
+                0.2341539030917347,
+                0.41
+              ]
+            ]
+          ],
+          "rearAttachment": "End at rear post centreline Y at Z=0.410 plus 0.022 m toward +Y. Crown Z=0.460; descend to the rear post behind the wood.",
+          "woodClearance": {
+            "minimumMetres": 0.002,
+            "maximumWitnessSpacingMetres": 0.0005,
+            "method": "For every sampled centreline segment, subdivide into equal steps no longer than the maximum spacing. Evaluate exact rounded-box signed distance at all samples for all seven boards. Subtract tube radius and half the largest subdivision length to obtain a conservative whole-capsule clearance bound. Require minimumMetres on both mirrored arms, including end spheres."
+          }
+        },
+        {
+          "partId": "seat-crossrails",
+          "primitive": "two rounded boxes",
+          "bevel": 0.003,
+          "bevelSegments": 3,
+          "material": "metal",
+          "source": "Horizontal under-seat frame visible in original FRONT and BACK; previously omitted from the component list.",
+          "instances": [
+            {
+              "size": [
+                1.155,
+                0.025,
+                0.025
+              ],
+              "centre": [
+                0,
+                -0.18,
+                0.2945
+              ]
+            },
+            {
+              "size": [
+                0.97,
+                0.025,
+                0.025
+              ],
+              "centre": [
+                0,
+                0.18120577136594004,
+                0.2945
+              ]
+            }
+          ]
+        }
+      ],
+      "sourceLocation": "lower-right park bench; obscured slat counts/supports are authored completions",
+      "reviewStatus": "Shared-geometry five-view candidate; technical checks and source differences recorded separately; user approval pending",
+      "defaultBounds": {
+        "min": [
+          -0.6,
+          -0.25447758273733706,
+          0
+        ],
+        "max": [
+          0.6,
+          0.25447758273733706,
+          0.65
+        ]
+      },
+      "constructionToAssetTranslation": [
+        0,
+        -0.03947758273733708,
+        0
+      ],
+      "originDefinition": "Exact centre of the default XY bounding rectangle at Z=0. Apply constructionToAssetTranslation once to all construction coordinates below before overall XYZ sizing.",
+      "dimensionPolicy": "Default extents are exact analytic bounds; apply ../README.md#overall-size-and-appearance---2026-10-09 to the complete unit.",
+      "joins": {
+        "metalFrame": "Union all intersecting metal members including front/rear crossrails and both side frames; remove internal faces and hidden seams. No further unseen crossbars.",
+        "seatToSupport": "Support/crossrail top Z=0.307 overlaps seat underside Z=0.305 by 2 mm before rounding. Side support centreline endpoints meet both leg axes at Z=0.2945. Preserve positive contact after rounding.",
+        "backToPost": "Back boards are 1070 mm wide; rear post centrelines at X=+/-485 mm lie 50 mm inside board ends. Post radius 22.5 mm leaves 27.5 mm of wood outside each post, before board rounding. Preserve positive contact at 25 mm Y setback.",
+        "armEnds": "Front endpoint sphere overlaps front leg. Rear endpoint sphere joins the back side of the existing rear post at +22 mm Y offset from its centreline. Arms must stay at least 2 mm clear of every wooden slat; metal/wood penetration is permitted only at the explicitly defined board supports and rear-post interfaces."
+      },
+      "appearanceRegions": {
+        "wood": "All seven slats; default wood with wood-grain recipe.",
+        "metal": "Complete metal frame including legs, rear posts, arms, side supports and front/rear seat crossrails."
+      },
+      "referenceReview": {
+        "mode": "All five views project one analytic construction; original v1 remains an immutable appearance reference",
+        "source": "review/01-park-bench-v1.png",
+        "sheetPixels": [
+          3072,
+          2048
+        ],
+        "appearance": "Original wood samples, dark metal, geometric contour lines; no new lighting or shadows. No copied object views in the candidate.",
+        "authority": "Original illustrations define visible shape relationships. Authored numeric defaults define construction; do not treat picture pixels as exact dimensions.",
+        "angleBasis": "Original RIGHT post outline: at source row 160, dark span x=859..877; at row 270, x=829..849. Centreline slope atan((868-839)/110)=14.77 degrees. Rounded authored default 15 degrees; image is illustrative, not calibrated.",
+        "heightBasis": "Original FRONT outer bounds are 556 x 302 source pixels. At nominal width 1200 mm the ratio suggests 651.8 mm. Choose a rounded authored height of 650 mm for the coherent reference construction; this is not calibrated reconstruction. The old 730 mm default failed complete-view review.",
+        "backLandmarks": {
+          "source": "review/01-park-bench-v1.png",
+          "view": "BACK",
+          "rearPostSpansAtRow160": [
+            [
+              999,
+              1017
+            ],
+            [
+              1437,
+              1454
+            ]
+          ],
+          "frontLegSpansAtRow420": [
+            [
+              957,
+              978
+            ],
+            [
+              1479,
+              1500
+            ]
+          ],
+          "backWoodSpanAtRow155": [
+            986,
+            1469
+          ],
+          "seatWoodSpanAtRow300": [
+            971,
+            1485
+          ]
+        },
+        "backRatios": {
+          "rearSpacing": 0.8381226053639846,
+          "backWidth": 0.9272030651340997,
+          "seatWidth": 0.9865900383141762,
+          "absoluteTolerance": 0.003,
+          "meaning": "Compare horizontal ratios from the same BACK view and same front-leg centre spacing; these are illustration guides, not calibrated world measurements."
+        },
+        "widthBasis": "Front-leg centre span stays 1155 mm. BACK ratios give rear spacing about 968.03 mm, back width about 1070.92 mm, seat width about 1139.51 mm. Authored rounded defaults: 970, 1070, 1140 mm. Use one ratio basis, not independent per-part scaling.",
+        "armRouteBasis": "Original RIGHT supplies a rounded crown and descending rear connection. Revised crown Z=460 mm; outside-run end Z=440 mm; rear attachment Z=410 mm. Hidden XY return remains an authored completion.",
+        "projectionCameras": {
+          "FRONT": {
+            "azimuthDegrees": 0,
+            "elevationDegrees": 0,
+            "targetMetres": [
+              0,
+              0.03947758273733708,
+              0.325
+            ]
+          },
+          "RIGHT": {
+            "azimuthDegrees": 90,
+            "elevationDegrees": 0,
+            "targetMetres": [
+              0,
+              0.03947758273733708,
+              0.325
+            ]
+          },
+          "BACK": {
+            "azimuthDegrees": 180,
+            "elevationDegrees": 0,
+            "targetMetres": [
+              0,
+              0.03947758273733708,
+              0.325
+            ]
+          },
+          "TOP": {
+            "azimuthDegrees": 0,
+            "elevationDegrees": 90,
+            "targetMetres": [
+              0,
+              0.03947758273733708,
+              0.325
+            ]
+          },
+          "THREE-QUARTER": {
+            "azimuthDegrees": 25,
+            "elevationDegrees": 23,
+            "targetMetres": [
+              0,
+              0.03947758273733708,
+              0.325
+            ]
+          }
+        },
+        "cameraPolicy": "Fixed orthographic projections at uniform 800 px/m: FRONT/RIGHT/BACK elevation 0 degrees, TOP 90 degrees, THREE-QUARTER azimuth 25/elevation 23 degrees. True elevations replace the uncalibrated illustration poses; do not claim calibrated source cameras.",
+        "seatHeightBasis": "Choose authored seat top 340 mm. With unchanged 90 mm back slats and 100 mm global pitch, the lowest rounded back edge clears the seat by 17.549553 mm instead of the former 77.549553 mm."
+      },
+      "defaultDimensionTolerance": 0.0005,
+      "visualConstraints": [
+        "Seat boards are wider than back boards: 1140 mm > 1070 mm.",
+        "Rear post ends are flat; highest rim remains below the upper back board.",
+        "Rear posts inset 92.5 mm per side relative to front legs; outer post surface remains 27.5 mm inside back-board ends.",
+        "Arms, support endpoints and crossrails connect the same front and rear centrelines.",
+        "Each entire arm tube stays at least 2 mm clear of all wooden boards; continuous metal attachment is verified separately from exclusion clearance.",
+        "All five candidate views use one component construction and geometry digest. Source camera discrepancy must be reported separately from construction correctness."
+      ]
+    },
+    {
+      "moduleId": "entry-chalkboard",
+      "name": "Entry chalkboard - one open A-frame unit",
+      "unitCount": 1,
+      "reviewDrawing": "review/02-entry-chalkboard-v1.png",
+      "nominalSize": [
+        0.416,
+        0.37,
+        0.69
+      ],
+      "fixedOpenPose": true,
+      "frameCoordinates": {
+        "frontOrigin": [
+          0,
+          -0.17,
+          0
+        ],
+        "rearOrigin": [
+          0,
+          0.17,
+          0
+        ],
+        "widthAxis": [
+          1,
+          0,
+          0
+        ],
+        "frontUp": "(0,sin(14deg),cos(14deg))",
+        "rearUp": "(0,-sin(14deg),cos(14deg))",
+        "frontOut": "(0,-cos(14deg),sin(14deg))",
+        "rearOut": "(0,cos(14deg),sin(14deg))",
+        "localOrder": "width, up, outward normal"
+      },
+      "components": [
+        {
+          "partId": "side-posts",
+          "primitive": "two boxes per leaning frame",
+          "localCentres": [
+            [
+              -0.1825,
+              0.35,
+              0
+            ],
+            [
+              0.1825,
+              0.35,
+              0
+            ]
+          ],
+          "sizeWidthUpNormal": [
+            0.035,
+            0.7,
+            0.024
+          ],
+          "bevel": 0.002,
+          "bevelSegments": 3,
+          "groundCutZ": 0,
+          "material": "wood"
+        },
+        {
+          "partId": "rails",
+          "primitive": "two boxes per leaning frame",
+          "localCentres": [
+            [
+              0,
+              0.155,
+              0
+            ],
+            [
+              0,
+              0.665,
+              0
+            ]
+          ],
+          "sizeWidthUpNormal": [
+            0.33,
+            0.035,
+            0.024
+          ],
+          "bevel": 0.002,
+          "bevelSegments": 3,
+          "material": "wood"
+        },
+        {
+          "partId": "panels",
+          "primitive": "one box per leaning frame",
+          "localCentre": [
+            0,
+            0.41,
+            0.004
+          ],
+          "sizeWidthUpNormal": [
+            0.33,
+            0.475,
+            0.008
+          ],
+          "frontFaceNormalCoordinate": 0.008,
+          "material": "board"
+        },
+        {
+          "partId": "hinges",
+          "primitive": "two cylinders",
+          "axis": "X",
+          "centres": [
+            [
+              -0.1825,
+              0,
+              0.679207
+            ],
+            [
+              0.1825,
+              0,
+              0.679207
+            ]
+          ],
+          "radius": 0.008,
+          "length": 0.03,
+          "radialSegments": 32,
+          "material": "metal"
+        },
+        {
+          "partId": "side-spreaders",
+          "primitive": "two boxes",
+          "centres": [
+            [
+              -0.203,
+              0,
+              0.3
+            ],
+            [
+              0.203,
+              0,
+              0.3
+            ]
+          ],
+          "size": [
+            0.01,
+            0.198,
+            0.026
+          ],
+          "material": "wood",
+          "note": "outside side posts; contact ends, no articulation in this asset",
+          "bevel": 0.002,
+          "bevelSegments": 3
+        },
+        {
+          "partId": "front-lettering",
+          "primitive": "flat vector stroke mask on front panel only",
+          "textLines": [
+            "Good",
+            "Ideas",
+            "Live",
+            "Here"
+          ],
+          "glyphPaths": {
+            "G": "M 43 15 C 6 -5 -6 71 30 70 L 43 64 L 43 40 L 26 40",
+            "o": "M 23 29 C -2 25 -1 72 23 71 C 48 72 47 27 23 29",
+            "d": "M 36 6 L 36 70 M 36 37 C 1 12 -1 79 26 68 Q 36 65 36 45",
+            "I": "M 8 6 L 40 6 M 24 6 L 24 70 M 8 70 L 40 70",
+            "e": "M 5 48 L 38 48 C 37 16 1 21 4 53 C 6 77 29 74 39 63",
+            "a": "M 35 36 C 2 16 -2 74 23 69 Q 36 65 35 44 M 35 32 L 36 70",
+            "s": "M 38 33 C 3 17 -1 46 23 48 C 52 52 35 84 5 66",
+            "L": "M 7 6 L 7 70 L 43 70",
+            "i": "M 12 31 L 12 70 M 12 13 L 12 15",
+            "v": "M 5 31 L 22 70 L 40 31",
+            "H": "M 7 6 L 7 70 M 42 6 L 42 70 M 7 37 L 42 37",
+            "r": "M 7 70 L 7 30 M 7 44 Q 18 22 34 32"
+          },
+          "glyphCellWidth": 50,
+          "tracking": 8,
+          "strokeWidth": 3,
+          "strokeCaps": "round",
+          "strokeJoins": "round",
+          "fill": "none",
+          "fontDependency": null,
+          "scaleMetresPerGlyphUnit": 0.00075,
+          "lineTopLocalUp": [
+            0.585,
+            0.485,
+            0.385,
+            0.285
+          ],
+          "alignment": "centre each advance box; total=50*N+8*(N-1)",
+          "mapping": "localWidth=(offset+glyphX-total/2)*scale; localUp=lineTop-glyphY*scale; normal=0.008",
+          "arrow": {
+            "line": [
+              [
+                -0.07,
+                0.19
+              ],
+              [
+                0.07,
+                0.19
+              ]
+            ],
+            "head": [
+              [
+                0.045,
+                0.21
+              ],
+              [
+                0.07,
+                0.19
+              ],
+              [
+                0.045,
+                0.17
+              ]
+            ],
+            "strokeWidth": 0.0025
+          },
+          "material": "chalk"
+        }
+      ],
+      "sourceLocation": "central office entrance A-frame with Good / Ideas / Live / Here and right arrow",
+      "rearPanel": "blank charcoal, no lettering"
+    }
+  ],
+  "omissions": [
+    "people",
+    "pets",
+    "cups",
+    "plants",
+    "floor",
+    "wall",
+    "electrical lights",
+    "bench cushions",
+    "animated folding"
+  ],
+  "futureAcceptance": {
+    "modelsVerified": false,
+    "nominalDimensionTolerance": 0.002,
+    "seatSlats": 4,
+    "backSlats": 3,
+    "benchLegs": 4,
+    "signFeet": 4,
+    "bakedLighting": false
+  }
+}

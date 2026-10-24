@@ -1,0 +1,138 @@
+{
+  "source": "review/01-man-v1.png",
+  "sha256": "9e17fb87fba9985e351e541f621e53e0be1c159fc7bbd3b63fd05eedbe376ee5",
+  "imagePixels": [
+    1536,
+    1024
+  ],
+  "method": "Front silhouette anchors measured in source pixels; feature centres manually picked. Illustrative image, not calibrated photogrammetry.",
+  "frontOriginPixels": [
+    205,
+    782
+  ],
+  "crownY": 283,
+  "soleY": 782,
+  "heightPixels": 499,
+  "adoptedHeightMetres": 1.2,
+  "metresPerPixel": 0.002404809619238477,
+  "conversion": "X=(pixelX-205)*scale; Z=(782-pixelY)*scale. FRONT does not determine Y.",
+  "estimatedPickingUncertaintyPixels": 3,
+  "estimatedPickingUncertaintyMetres": 0.00721442885771543,
+  "anchors": [
+    {
+      "feature": "hair width",
+      "pixels": [
+        64,
+        343
+      ],
+      "measuredMetres": 0.670941883767535,
+      "referenceTargetMetres": 0.672,
+      "modelDefaultMetres": 0.672,
+      "modelValueSource": "/defaultDimensions/hairWidthTarget",
+      "differenceFromMeasurementMetres": 0.0010581162324649895
+    },
+    {
+      "feature": "hand span",
+      "pixels": [
+        71,
+        337
+      ],
+      "measuredMetres": 0.6396793587174349,
+      "referenceTargetMetres": 0.64,
+      "modelDefaultMetres": 0.64,
+      "modelValueSource": "/defaultDimensions/handSpan",
+      "differenceFromMeasurementMetres": 0.00032064128256514834
+    },
+    {
+      "feature": "eyes height",
+      "pixels": [
+        482
+      ],
+      "measuredMetres": 0.721442885771543,
+      "referenceTargetMetres": 0.721,
+      "modelDefaultMetres": 0.721,
+      "modelValueSource": "/bodyAndFaceParts/eye-right/centreXZ/1",
+      "differenceFromMeasurementMetres": -0.00044288577154305564
+    },
+    {
+      "feature": "nose height",
+      "pixels": [
+        497
+      ],
+      "measuredMetres": 0.685370741482966,
+      "referenceTargetMetres": 0.685,
+      "modelDefaultMetres": 0.685,
+      "modelValueSource": "/bodyAndFaceParts/nose/centreXZ/1",
+      "differenceFromMeasurementMetres": -0.00037074148296589726
+    },
+    {
+      "feature": "mouth endpoints",
+      "pixels": [
+        515
+      ],
+      "measuredMetres": 0.6420841683366734,
+      "referenceTargetMetres": 0.642,
+      "modelDefaultMetres": 0.642,
+      "modelValueSource": "/bodyAndFaceParts/mouth/pointsXZ/0/1",
+      "differenceFromMeasurementMetres": -8.416833667335144e-05
+    },
+    {
+      "feature": "chin height",
+      "pixels": [
+        551
+      ],
+      "measuredMetres": 0.5555110220440882,
+      "referenceTargetMetres": 0.556,
+      "modelDefaultMetres": 0.556,
+      "modelValueSource": "head.centre[2] - head.radii[2]",
+      "differenceFromMeasurementMetres": 0.0004889779559118512
+    },
+    {
+      "feature": "shirt hem",
+      "pixels": [
+        648
+      ],
+      "measuredMetres": 0.3222444889779559,
+      "referenceTargetMetres": 0.322,
+      "modelDefaultMetres": 0.315,
+      "modelValueSource": "/clothing/shirt/bodyOuterRings/0/0",
+      "differenceFromMeasurementMetres": -0.007244488977955876
+    },
+    {
+      "feature": "waist button",
+      "pixels": [
+        656
+      ],
+      "measuredMetres": 0.3030060120240481,
+      "referenceTargetMetres": 0.303,
+      "modelDefaultMetres": 0.303,
+      "modelValueSource": "/clothing/trousers/waistButton/z",
+      "differenceFromMeasurementMetres": -6.0120240480965315e-06
+    },
+    {
+      "feature": "shoe top",
+      "pixels": [
+        745
+      ],
+      "measuredMetres": 0.08897795591182364,
+      "referenceTargetMetres": 0.089,
+      "modelDefaultMetres": 0.095,
+      "modelValueSource": "/clothing/shoes/shoe-right/outerRings/-1/0",
+      "differenceFromMeasurementMetres": 0.006022044088176359
+    }
+  ],
+  "depthAuthority": "Y dimensions, naked anatomy and hidden garment interiors are authored completions. SIDE constrains their appearance qualitatively.",
+  "oldImageCaption": "The old approximate 0.52 m head-width caption is superseded by measured hair width and separate skin-head width. Original pixels retained pending annotation approval.",
+  "numericEnvelopeReview": {
+    "method": "Evaluate leaf centreline at 1025 samples and analytic elliptical cross-section extrema; include scalp cap inside envelope. Arithmetic review only; no render or mesh construction.",
+    "hairWidthMetres": 0.6719620101015322,
+    "hairDepthMetres": 0.5772500353708285,
+    "hairTopMetres": 1.2000000000001445,
+    "limits": "Sampling is not a proof of the continuous global extrema; later mesh and visual checks remain required.",
+    "specificationSHA256AtOriginalReview": "885a18e3b8dff95fd3ace0a1970ffd03ffe12878981a5488b9c28a30d87ec4e4",
+    "hairInputSHA256": "46b548a961d8266bc1ee105f41a8a5c97ab5b0da036648f7b574def80a096c10",
+    "inputBinding": "Original full-file hash retained as history. Hair-input hash uses UTF-8 JSON with sorted keys, compact separators and no trailing newline. The hair input is unchanged by the clothing corrections."
+  },
+  "valueAuthority": "measuredMetres is the unrounded pixel conversion; referenceTargetMetres is the rounded visual target, not a construction input. modelDefaultMetres is the construction value in man-puppet-model-spec.json. Array items in modelValueSource may use their stable id, and -1 means the last row. Chin uses the stated derived expression.",
+  "modelDeviationToleranceMetres": 0.01
+}

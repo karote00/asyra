@@ -1,5 +1,5 @@
 {
-  "specVersion": "2.1.0",
+  "specVersion": "2.2.0",
   "scope": "seven approved street component designs; documentation only",
   "approval": {
     "date": "2026-10-04",
@@ -173,7 +173,7 @@
       "geometry": {
         "primitive": "closed box",
         "bevelMetres": 0.003,
-        "bevelScope": "outer vertical corners and bottom edges only; top boundary remains planar for tiling"
+        "bevelScope": "four bottom perimeter edges at Z=-0.08 only; exclude top edges and vertical edges; corner blends remain within the bottom 0.003 m band"
       },
       "surface": {
         "seed": 101,
@@ -200,7 +200,7 @@
     },
     {
       "moduleId": "road-marking-segments",
-      "name": "Road markings - independent segments",
+      "name": "Road markings - shared paint with path presets",
       "approvedDrawing": "review/02-road-line-single-v4.png",
       "origin": "each straight piece at centre; curved piece at arc centre; all on Z=0",
       "pieces": [
@@ -338,10 +338,10 @@
         "surfaceMaterialOwner": "future app; material-agnostic",
         "reviewProjection": "top only; no thickness or road slab needed for side views",
         "materialAlphaSource": "marking mask; overrides materialConvention.alpha=1",
-        "sourcePNGRole": "approved appearance reference; not dimensionally calibrated production texture",
+        "sourcePNGRole": "appearance reference only; not a seamless shared paint texture or a production mask for arbitrary paths",
         "lightingContent": "no lights, emission, shadow, AO, ground fill or halo in production texture"
       },
-      "drawingInterpretation": "The v4 transparent single-unit drawings are approved appearance references. Use one independently placeable piece; no receiving material. Numeric local dimensions remain authoritative.",
+      "drawingInterpretation": "The three pieces are independently placeable path presets sharing paint, not separate fixed mesh or shape-specific material deliverables. Existing dimensions are preset defaults. See PATH-MARKINGS.md for path, width, contour and material ownership. v4 images remain appearance examples; no receiving material is included.",
       "singleUnitDrawing": "review/02-road-line-single-v4.png",
       "inventoryUnitsPerPiece": 1,
       "combinedKitMesh": false
@@ -403,7 +403,7 @@
     {
       "moduleId": "pavement-pieces",
       "name": "Pavement and curb - individual units",
-      "approvedDrawing": "review/04-pavement-curb-v2.png",
+      "approvedDrawing": "review/04-pavement-layout-v3.png",
       "drawingInterpretation": "assembled appearance reference only; paving stones and curb blocks are independent units, not one fixed L-shaped mesh",
       "origin": "specified per piece",
       "inventoryUnitsPerPiece": 1,
@@ -418,6 +418,8 @@
             0.05
           ],
           "bevelMetres": 0.004,
+          "bevelScope": "all outer edges, inward within unchanged overall bounds",
+          "material": "stone-cream",
           "materialOptions": [
             "stone-cream",
             "stone-pale",
@@ -427,6 +429,7 @@
         },
         {
           "partId": "curb-straight",
+          "singleUnitDrawing": "review/04-curb-shared-section-v1.png",
           "origin": "bottom face centre",
           "sizeMetres": [
             0.3,
@@ -434,15 +437,18 @@
             0.12
           ],
           "bevelMetres": 0.008,
+          "bevelScope": "all outer edges, inward within unchanged overall bounds",
+          "material": "stone-grey",
           "materialOptions": [
             "stone-grey",
             "stone-cream",
             "stone-pale"
           ],
-          "shape": "one closed rectangular block"
+          "shape": "straight preset of the shared planar curb section; see PLANAR-CURBS.md"
         },
         {
           "partId": "curb-curved",
+          "singleUnitDrawing": "review/04-curb-shared-section-v1.png",
           "origin": "arc centre at bottom Z=0",
           "centreMetres": [
             0,
@@ -457,13 +463,15 @@
           ],
           "heightMetres": 0.12,
           "arcSegments": 8,
-          "bevelMetres": 0.004,
+          "bevelMetres": 0.008,
+          "bevelScope": "top and bottom boundary loops plus four vertical radial-end corners; exclude intermediate arc tessellation seams; inward surface offset with two segments, without expanding the nominal envelope",
+          "material": "stone-grey",
           "materialOptions": [
             "stone-grey",
             "stone-cream",
             "stone-pale"
           ],
-          "shape": "one closed annular-sector curb stone, not a complete corner"
+          "shape": "circular-arc preset of the shared planar curb section; see PLANAR-CURBS.md"
         }
       ],
       "surface": {
@@ -483,14 +491,15 @@
       "assemblyNotes": {
         "foundation": "scene-owned, not baked into stones",
         "joints": "scene chooses gap and staggering",
-        "curvedRuns": "app places multiple curved pieces; each piece remains independent",
-        "cutting": "arbitrary trimming is outside the present fixed-piece asset specification"
+        "curvedRuns": "app generates the shared section along planar paths; continuous or separately capped pieces follow PLANAR-CURBS.md",
+        "cutting": "curbs may be split by centreline arc length; arbitrary solid trimming and paver cutting remain outside scope"
       }
     },
     {
       "moduleId": "road-drain-cover-round",
       "name": "Round manhole cover",
-      "approvedDrawing": "review/05-manhole-cover-v2.png",
+      "approvedDrawing": "review/05-manhole-dimensioned-v2.png",
+      "drawingInterpretation": "Topology and numeric modeling dimensions accepted by user on 2026-10-07: raised centre disk and rings 2/4, base-plane rings 1/3, six radial blind recesses, separable cover/frame and 4 mm radial gap. Dimensioned v2 synchronizes the accepted contract; its final annotation layout was approved by the user on 2026-10-07. Original appearance source is unchanged; annotated v1 is historical. Section is schematic, not to scale. Ring radii are rounded image-derived estimates; common 1 mm rise and edge treatment are accepted authored decisions, not measured heights. Numeric specification controls geometry.",
       "origin": "centre of rim TOP on road surface, Z=0",
       "overallSizeMetres": [
         0.66,
@@ -513,17 +522,30 @@
           -0.021,
           -0.001
         ],
-        "bevelMetres": 0.001
-      },
-      "grooves": {
-        "circleRadiiMetres": [
-          0.065,
-          0.1,
-          0.14,
-          0.265
-        ],
-        "widthMetres": 0.003,
-        "depthMetres": 0.0015
+        "bevelMetres": 0.001,
+        "radialProfile": {
+          "orderFromCentre": [
+            "raised centre disk",
+            "ring 1 - base plane",
+            "ring 2 - raised",
+            "ring 3 - base plane",
+            "ring 4 - raised",
+            "outer field - base plane with six capsule recesses"
+          ],
+          "raisedHeightMetres": 0.001,
+          "radialBoundariesMetres": [
+            0,
+            0.045,
+            0.07,
+            0.09,
+            0.125,
+            0.16,
+            0.286
+          ],
+          "status": "Numeric modeling definition accepted by user on 2026-10-07. Consecutive boundary pairs map to orderFromCentre. Ring radii are rounded image-derived estimates; common 1 mm rise and relief bevel are accepted authored choices. Former narrow-groove dimensions are withdrawn.",
+          "bodyZRangeInterpretation": "Base body Z=-0.021 to -0.001 m; raised centre and rings 2/4 reach Z=0. Cover maximum thickness is 0.021 m; assembly remains Z=-0.026 to 0 m.",
+          "edgeTreatment": "Nominal transitions at the listed radii are vertical 1 mm steps. Bevel only the convex upper circular edge of each transition: 0.0002 m inward surface offset, two segments, profile 0.5. Leave concave feet sharp; never cut below the base plane. Do not bevel tessellation seams. Boundaries are nominal pre-bevel radii."
+        }
       },
       "slots": {
         "count": 6,
@@ -554,8 +576,8 @@
       "mounting": {
         "roadCutoutRadiusMetres": 0.33,
         "cutoutDepthMetres": 0.026,
-        "rule": "rim top flush to road; remove intersecting road top faces, not stack a disk above road",
-        "interaction": "none"
+        "rule": "rim top flush to road; remove intersecting road top faces, not stack a disk above road; keep cover and rim separate solids and preserve the nominal 0.004 m radial clearance",
+        "interaction": "not implemented; cover and rim must support independent transforms without shared vertices or bridging geometry"
       },
       "unitCount": 1
     },
@@ -563,266 +585,27 @@
       "moduleId": "street-tree-leafy",
       "name": "Street tree",
       "approvedDrawing": "review/06-street-tree-v2.png",
+      "constructionSpec": "tree-construction-spec.json",
+      "constructionGuide": "TREE-CONSTRUCTION.md",
+      "bareStructureReference": "review/06-bare-tree-selected-v1.png",
+      "foliageAssemblyReference": "review/06-leaf-cluster-v2.png",
+      "singleLeafReference": "review/06-single-leaf-v1.png",
       "origin": "trunk base centre on planting ground, Z=0",
       "silhouetteEnvelopeMetres": {
         "min": [
-          -1.18,
-          -0.9,
+          -1.5,
+          -0.95,
           0
         ],
         "max": [
-          1.18,
-          0.9,
+          1.5,
+          0.95,
           3.55
         ],
-        "role": "maximum allowed envelope; not an instruction to scale canopy to fill it"
+        "role": "maximum envelope; do not scale or clip to fill it"
       },
-      "trunk": {
-        "material": "bark",
-        "ringSides": 12,
-        "centrelineXYZRadiusMetres": [
-          [
-            0,
-            0,
-            0,
-            0.115
-          ],
-          [
-            -0.02,
-            0.005,
-            0.28,
-            0.095
-          ],
-          [
-            0.015,
-            0,
-            0.72,
-            0.08
-          ],
-          [
-            0.035,
-            0.01,
-            1.1,
-            0.067
-          ],
-          [
-            -0.025,
-            0.015,
-            1.5,
-            0.05
-          ],
-          [
-            0.01,
-            0.02,
-            1.95,
-            0.034
-          ],
-          [
-            0.03,
-            0.035,
-            2.55,
-            0.012
-          ]
-        ],
-        "interpolation": "piecewise linear centreline and radius, segment divisions=4",
-        "capEnds": true
-      },
-      "branches": {
-        "count": 12,
-        "startZMetres": [
-          1.05,
-          1.1,
-          1.2,
-          1.32,
-          1.42,
-          1.6,
-          1.68,
-          1.75,
-          1.9,
-          2.05,
-          2.25,
-          1.65
-        ],
-        "endTargets": "cluster centres in listed order",
-        "midpointRule": "(start+end)/2 + (0,0,0.12)",
-        "radiiMetres": [
-          0.036,
-          0.024,
-          0.01
-        ],
-        "ringSides": 8,
-        "interpolation": "two straight tapered segments",
-        "material": "bark"
-      },
-      "foliage": {
-        "clusterGuidesXYZRadiiMetres": [
-          [
-            -0.62,
-            -0.03,
-            1.72,
-            0.46,
-            0.4,
-            0.45
-          ],
-          [
-            0.56,
-            -0.02,
-            1.8,
-            0.44,
-            0.39,
-            0.43
-          ],
-          [
-            0,
-            -0.37,
-            1.97,
-            0.47,
-            0.37,
-            0.44
-          ],
-          [
-            -0.45,
-            0.32,
-            2.08,
-            0.43,
-            0.36,
-            0.47
-          ],
-          [
-            0.45,
-            0.34,
-            2.12,
-            0.45,
-            0.38,
-            0.48
-          ],
-          [
-            -0.59,
-            -0.1,
-            2.4,
-            0.46,
-            0.38,
-            0.45
-          ],
-          [
-            0.53,
-            -0.1,
-            2.4,
-            0.43,
-            0.36,
-            0.44
-          ],
-          [
-            0,
-            -0.33,
-            2.48,
-            0.46,
-            0.37,
-            0.46
-          ],
-          [
-            -0.22,
-            0.29,
-            2.65,
-            0.44,
-            0.36,
-            0.46
-          ],
-          [
-            0.33,
-            0.22,
-            2.79,
-            0.38,
-            0.35,
-            0.41
-          ],
-          [
-            -0.12,
-            -0.05,
-            3.0,
-            0.37,
-            0.34,
-            0.42
-          ],
-          [
-            0.02,
-            0.12,
-            2.26,
-            0.48,
-            0.39,
-            0.5
-          ]
-        ],
-        "guidesVisible": false,
-        "leafCountPerCluster": 96,
-        "distributionRule": "SURFACE-RECIPES.md#tree-leaves",
-        "leafLengthRangeMetres": [
-          0.075,
-          0.115
-        ],
-        "leafWidthToLength": 0.58,
-        "leafThicknessMetres": 0.001,
-        "leafCentreBulgeMetres": 0.003,
-        "outlineNormalized": [
-          [
-            -0.5,
-            0
-          ],
-          [
-            -0.28,
-            -0.5
-          ],
-          [
-            0.25,
-            -0.5
-          ],
-          [
-            0.5,
-            0
-          ],
-          [
-            0.25,
-            0.5
-          ],
-          [
-            -0.28,
-            0.5
-          ]
-        ],
-        "seed": 606,
-        "materials": [
-          "leaf-olive",
-          "leaf-pale",
-          "leaf-deep"
-        ],
-        "materialProbabilities": [
-          0.5,
-          0.3,
-          0.2
-        ],
-        "billboard": false,
-        "visibleSpheres": false
-      },
-      "hiddenSurfaces": {
-        "trunkBase": "flat closed cap",
-        "canopyRear": "same leaf algorithm over full volume; no flat back",
-        "roots": "no additional roots or soil mesh"
-      },
-      "barkDetail": {
-        "seed": 607,
-        "grainDiameterRangeMetres": [
-          0.001,
-          0.003
-        ],
-        "coverageFraction": 0.04,
-        "albedoValueMultiplierRange": [
-          0.94,
-          1.06
-        ],
-        "textureRule": "SURFACE-RECIPES.md#grain",
-        "grooves": "none; keep trunk taper and branching readable"
-      },
-      "unitCount": 1
+      "unitCount": 1,
+      "status": "User delegated the remaining dimensions and construction choices; finalized 2026-10-08. Canonical tree-only numeric definitions are in tree-construction-spec.json; old sparse branch and uniform foliage recipes are superseded. No model has been generated or visually accepted."
     },
     {
       "moduleId": "streetlight-vintage-lantern",
@@ -830,155 +613,266 @@
       "approvedDrawing": "review/07-street-lantern-v2.png",
       "origin": "foot base centre on pavement, Z=0",
       "overallSizeMetres": [
-        0.38,
-        0.38,
+        0.53,
+        0.53,
         2.74
       ],
-      "radialSymmetry": "fourfold lamp head; circular pole and foot",
+      "radialSymmetry": "Fourfold head about +Z; axisymmetric foot, shaft, collars, neck and finial. All centres X=Y=0.",
       "foot": {
         "latheZRadiusMetres": [
           [
             0,
-            0.14
+            0.215
           ],
           [
-            0.035,
-            0.14
+            0.008,
+            0.22
           ],
           [
-            0.05,
-            0.125
+            0.07,
+            0.22
           ],
           [
-            0.12,
-            0.095
+            0.1,
+            0.21
           ],
           [
-            0.17,
-            0.065
+            0.118,
+            0.18
+          ],
+          [
+            0.145,
+            0.158
           ],
           [
             0.2,
-            0.065
+            0.133
+          ],
+          [
+            0.245,
+            0.112
+          ],
+          [
+            0.265,
+            0.109
           ]
         ],
+        "profileInterpolation": "shape-preserving cubic Hermite r(z), defined in LANTERN-SPEC.md",
         "material": "lamp-metal",
-        "segments": 48
+        "segments": 64,
+        "caps": "flat closed bottom; remove buried upper cap at structural union"
       },
       "shaft": {
         "zRangeMetres": [
-          0.2,
-          1.88
+          0.3,
+          1.78
         ],
-        "radiusMetres": 0.037,
+        "radiusBottomMetres": 0.08,
+        "radiusTopMetres": 0.075,
+        "radiusInterpolation": "linear in Z",
         "material": "lamp-metal",
-        "segments": 32
+        "segments": 64,
+        "caps": "remove buried end caps inside collars"
       },
       "collars": [
         {
           "partId": "foot-collar",
-          "zRangeMetres": [
-            0.17,
-            0.21
+          "latheZRadiusMetres": [
+            [
+              0.245,
+              0.109
+            ],
+            [
+              0.252,
+              0.118
+            ],
+            [
+              0.272,
+              0.123
+            ],
+            [
+              0.294,
+              0.119
+            ],
+            [
+              0.313,
+              0.101
+            ],
+            [
+              0.32,
+              0.08
+            ]
           ],
-          "radiusMetres": 0.068,
-          "material": "collar-metal"
+          "material": "collar-metal",
+          "segments": 64
         },
         {
           "partId": "upper-collar",
-          "zRangeMetres": [
-            1.87,
-            1.92
+          "latheZRadiusMetres": [
+            [
+              1.76,
+              0.0751
+            ],
+            [
+              1.772,
+              0.09
+            ],
+            [
+              1.79,
+              0.101
+            ],
+            [
+              1.81,
+              0.101
+            ],
+            [
+              1.83,
+              0.088
+            ],
+            [
+              1.84,
+              0.075
+            ]
           ],
-          "radiusMetres": 0.064,
-          "material": "collar-metal"
+          "material": "lamp-metal",
+          "segments": 64
         }
       ],
       "neck": {
         "latheZRadiusMetres": [
           [
-            1.92,
-            0.052
+            1.82,
+            0.075
           ],
           [
-            1.97,
-            0.062
+            1.85,
+            0.075
           ],
           [
-            2.01,
-            0.055
+            1.88,
+            0.08
           ],
           [
-            2.05,
-            0.085
+            1.9,
+            0.103
+          ],
+          [
+            1.925,
+            0.12
+          ],
+          [
+            1.94,
+            0.13
           ]
         ],
         "material": "lamp-metal",
-        "segments": 32
+        "segments": 64
       },
       "glass": {
-        "bottomZMetres": 2.05,
-        "topZMetres": 2.45,
-        "bottomOuterSideMetres": 0.2,
-        "topOuterSideMetres": 0.3,
+        "bottomZMetres": 1.9809999999999999,
+        "topZMetres": 2.379,
+        "visibleBottomZMetres": 1.9849999999999999,
+        "visibleTopZMetres": 2.375,
+        "bottomPanelWidthMetres": 0.2564782608695652,
+        "topPanelWidthMetres": 0.377608695652174,
+        "frontPlaneSetbackAlongXYMetres": 0.008,
+        "edgeEmbedMetres": 0.004,
         "wallThicknessMetres": 0.003,
+        "thicknessDirection": "along the sloped pane inward unit normal; paired back face is translated, not scaled",
         "panelCount": 4,
         "material": "amber-glass",
         "transmission": 0,
         "alpha": 1,
         "emissionStrength": 0,
-        "internalBulb": false
+        "internalBulb": false,
+        "construction": "Planar trapezoids with inward-translated backs and closed edge walls; exact vertices in LANTERN-SPEC.md. Glass overlaps metal only inside its concealed 4 mm seat."
       },
       "frame": {
-        "railWidthMetres": 0.018,
-        "railDepthMetres": 0.018,
+        "zRangeMetres": [
+          1.94,
+          2.4
+        ],
+        "bottomOuterSideMetres": 0.3,
+        "topOuterSideMetres": 0.44,
+        "bottomRingHeightMetres": 0.045,
+        "topRingHeightMetres": 0.025,
+        "postFaceWidthMetres": 0.032,
+        "wallDepthAlongXYMetres": 0.024,
+        "bottomTrayThicknessMetres": 0.008,
         "material": "lamp-metal",
-        "geometry": "four sloped corner posts connecting square corner coordinates at glass bottom/top; square border rails at both levels",
-        "bevelMetres": 0.002
+        "construction": "Truncated square shell with four face windows cut out; retains four L-section corner posts, continuous upper/lower rings and solid bottom tray. Exact set definitions in LANTERN-SPEC.md.",
+        "bevelMetres": 0.003,
+        "bevelSegments": 3,
+        "bevelRule": "Exposed metal convex edges only, inward constant-distance chamfer rounded by three arc segments; exclude glass contact seats, part interfaces and buried edges. Preserve authored outer extrema."
       },
       "roof": {
-        "eaveSideMetres": 0.38,
-        "eaveBottomZMetres": 2.45,
-        "eaveTopZMetres": 2.48,
-        "peakZMetres": 2.62,
-        "peakSideMetres": 0.055,
+        "eaveSideMetres": 0.53,
+        "eaveBottomZMetres": 2.4,
+        "eaveTopZMetres": 2.445,
+        "peakZMetres": 2.575,
+        "peakSideMetres": 0.18,
         "shellThicknessMetres": 0.012,
-        "shape": "four-sided hipped truncated pyramid; closed underside",
-        "material": "lamp-metal"
+        "shellThicknessDirection": "normal distance from each unrounded outer plane",
+        "bottomLidThicknessMetres": 0.012,
+        "topCapThicknessMetres": 0.012,
+        "shape": "Closed hollow square hip roof with underside lid; subtract the exact enclosed cavity defined in LANTERN-SPEC.md.",
+        "material": "lamp-metal",
+        "bevelMetres": 0.003,
+        "bevelSegments": 3,
+        "bevelRule": "Inward rounding on four exterior vertical eave corners and upper/lower eave perimeter only. Keep four hip creases and peak attachment plane sharp; no geometry overhang beyond 0.53 m square."
       },
       "finial": {
         "latheZRadiusMetres": [
           [
-            2.62,
-            0.034
+            2.575,
+            0.09
           ],
           [
-            2.64,
-            0.043
+            2.585,
+            0.09
+          ],
+          [
+            2.604,
+            0.052
+          ],
+          [
+            2.62,
+            0.045
+          ],
+          [
+            2.637,
+            0.064
+          ],
+          [
+            2.649,
+            0.071
           ],
           [
             2.66,
-            0.033
+            0.064
+          ],
+          [
+            2.668,
+            0.045
+          ],
+          [
+            2.674,
+            0.04
           ],
           [
             2.68,
-            0.039
-          ],
-          [
-            2.71,
-            0.035
-          ],
-          [
-            2.735,
-            0.015
-          ],
-          [
-            2.74,
-            0
+            0.046475800154489
           ]
         ],
-        "segments": 32,
-        "material": "lamp-metal"
+        "profileInterpolation": "same cubic Hermite rule, except the final derivative equals the spherical-cap derivative",
+        "lastDerivativeRadiusPerZ": 0.25819888974716115,
+        "topSphereCentreZMetres": 2.692,
+        "topSphereRadiusMetres": 0.048,
+        "topSphereStartZMetres": 2.68,
+        "maximumZMetres": 2.74,
+        "segments": 64,
+        "material": "lamp-metal",
+        "construction": "Revolve the profile, then continue the exact spherical cap to its welded top pole. Do not cap the profile at the sphere join or add another sphere underneath."
       },
       "surface": {
         "seed": 707,
@@ -991,11 +885,112 @@
           0.98,
           1.02
         ],
-        "textureRule": "SURFACE-RECIPES.md#grain"
+        "textureRule": "SURFACE-RECIPES.md#grain",
+        "appliesTo": "Default lamp-metal and collar-metal only; amber panes use uniform intrinsic colour. Replacing a material removes this grain recipe."
       },
       "lightObjects": false,
       "sideArm": false,
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionGuide": "LANTERN-SPEC.md",
+      "dimensionStatus": "Recalculated 2026-10-08 from FRONT proportions with retained authored height 2.74 m. Pixel readings are approximate; hidden geometry and rounded metric values are authoring decisions. No model acceptance.",
+      "proportionSource": {
+        "imageSizePixels": [
+          1536,
+          1024
+        ],
+        "view": "FRONT",
+        "topRow": 180,
+        "bottomRow": 850,
+        "heightPixels": 670,
+        "metresPerPixel": 0.00408955223880597,
+        "measurements": [
+          {
+            "part": "roof eave",
+            "row": 256,
+            "spanPixels": 129,
+            "estimatedWidthMetres": 0.5275522388059702,
+            "adoptedWidthMetres": 0.53
+          },
+          {
+            "part": "foot",
+            "row": 828,
+            "spanPixels": 106,
+            "estimatedWidthMetres": 0.43349253731343285,
+            "adoptedWidthMetres": 0.44
+          },
+          {
+            "part": "shaft",
+            "row": 600,
+            "spanPixels": 36,
+            "estimatedWidthMetres": 0.14722388059701494,
+            "adoptedWidthMetres": 0.15
+          }
+        ],
+        "rule": "Use FRONT for proportional reconstruction; SIDE checks fourfold symmetry, TOP checks square roof and centred finial. Do not turn drawn base ellipses into a pointed physical base."
+      },
+      "joins": {
+        "axis": "X=Y=0",
+        "structuralRule": "Union foot, shaft, collars, neck and frame tray; remove all buried faces. Exterior face ownership determines independently replaceable appearance slots. Roof and finial attach at specified planes with hidden coincident interface faces removed.",
+        "surfaceOwnershipPriority": [
+          "foot-collar",
+          "upper-collar",
+          "frame",
+          "neck",
+          "shaft",
+          "foot"
+        ],
+        "glassRule": "Keep four closed panes separate, subtract their exact occupied solids from concealed metal seats; exposed frame openings stay unchanged. No coplanar visible faces."
+      },
+      "appearanceOverrides": {
+        "scope": "Each component has independent colour and full material replacement; the four panes may share a slot or override individually. This is a construction contract, not an implemented API.",
+        "parts": {
+          "foot": "lamp-metal",
+          "shaft": "lamp-metal",
+          "foot-collar": "collar-metal",
+          "upper-collar": "lamp-metal",
+          "neck": "lamp-metal",
+          "frame": "lamp-metal",
+          "roof": "lamp-metal",
+          "finial": "lamp-metal",
+          "pane-front": "amber-glass",
+          "pane-right": "amber-glass",
+          "pane-back": "amber-glass",
+          "pane-left": "amber-glass"
+        },
+        "precedence": [
+          "per-part material",
+          "group material",
+          "default material"
+        ],
+        "colourRule": "Select material first, then apply per-part colour, otherwise group colour, if explicitly supplied. No colour override means preserve selected material colour.",
+        "replacementRule": "Full material replacement discards the previous shader and textures. A colour override changes tint only and preserves the selected material remaining properties. No geometry displacement, dimension/origin changes or mutation of another instance.",
+        "groups": {
+          "structure": [
+            "foot",
+            "shaft",
+            "upper-collar",
+            "neck",
+            "frame",
+            "roof",
+            "finial"
+          ],
+          "accent": [
+            "foot-collar"
+          ],
+          "panes": [
+            "pane-front",
+            "pane-right",
+            "pane-back",
+            "pane-left"
+          ]
+        },
+        "defaultMaterialsFrom": "top-level materials: lamp-metal, collar-metal, amber-glass",
+        "defaultLighting": "opaque panes; no emission, bulb geometry, light objects or baked shadows/AO/highlights. App owns optional illumination."
+      },
+      "dimensionedDrawing": "review/07-street-lantern-dimensioned-v2.png",
+      "dimensionedDrawingRole": "Deterministic annotation companion for user review. Original raster retained pixel-for-pixel; annotations and computed sections are separate. Original approvedDrawing remains the appearance source; numeric geometry unchanged. Generated dimensioned-v1 rejected.",
+      "annotationLayer": "review/07-street-lantern-annotation-layer-v2.svg",
+      "annotationSource": "review/draw-lantern-annotations.py"
     }
   ],
   "verification": {

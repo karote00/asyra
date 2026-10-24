@@ -1,6 +1,8 @@
 # Group 1D - Stair Baluster and Sloped Handrail
 
-Status: user-approved reference sheets. Drawings and reconstruction specifications only.
+Status: baluster v4 was approved by the user on 2026-10-06 after the top-cut
+correction; the calculated handrail v3 sheet was approved by the user on 2026-10-06. Drawings and reconstruction
+specifications only; the existing numeric dimensions are unchanged.
 
 Two independent units: one stair baluster and one sloped handrail segment. Neither includes steps, another post or an assembled railing.
 

@@ -4,21 +4,191 @@ Inventory date: 2026-10-05. Source baseline: `fee6019cab9d88fed76d2047fe7c105618
 
 This catalog covers **56 approved reference batches, 121 current drawing sheets and 56 numeric specification files**. A sheet is not necessarily a single unit: the street pavement/curb sheet covers multiple independent components, and transparent markings use planar views. Counts exclude source images, historical revisions and prompt records.
 
-All listed batches have user approval for their drawings and documentation. **No completed or verified 3D models are claimed.** The original named asset categories have basic representatives; the scene-specific omissions below remain open. This inventory is a navigation and coverage summary, not a new modeling or application contract.
+All listed batches have user approval for their drawings and documentation. **No completed or verified 3D models are claimed.** The original named asset categories have basic representatives; the scene-specific omissions below remain open. The dated inventory is a navigation and coverage summary; the common reference contracts below govern future asset construction without implementing app behavior.
 
 ## Start here
+
+### CI classification of reference inputs
+
+Reference inputs are development documentation, not shipped app assets. The
+repository CI relationship policy recognizes model specifications and
+`*-measurements.json`, plus files inside a batch's `review/` directory:
+versioned drawing JSON (`*-v*.json`), layout/annotation records (`*-layout.json`
+and `*-record.json`), `comparison.json` and `comparison-run.json`, SVG drawing
+layers, Python drawing/review helpers, and archived Python source (`*.py.txt`).
+Existing Markdown, PNG and JPG reference classification remains unchanged.
+
+This classification does not execute the helpers or certify model geometry.
+Run each batch's documented numeric and visual checks when changing its inputs.
+Runtime code, package/configuration manifests, model exports, and Python outside
+`review/` are not admitted by these reference-input rules. Moving a helper into
+app generation or a build requires its runtime owner and validation routing.
+
+### Asset types - 2026-10-07
+
+Use the [asset type classification](ASSET-TYPES.md) alongside the existing
+scene-category catalog. Model components own geometry; material assets own
+replaceable surface recipes and texture inputs; decal components own independent
+surface markings, dimensions and alpha masks. Road lines are [path-marking presets](street/PATH-MARKINGS.md) that share paint
+and generate their contour from path and width; crosswalk stripes remain
+rectangular decal components. Floor planks and asphalt tiles remain model components;
+their wood/asphalt appearances are independent material assets.
+
+The classification includes the already reviewed architectural and railing
+components and the lounge armchair. It preserves their dimensions, identifiers,
+unit boundaries and approval states. Existing drawing counts are not model or
+material implementation counts. No folders or files are relocated.
+
+### Current review scope and configurable appearance - 2026-10-06
+
+This rule and the overall-size rule below apply to every asset batch and take
+precedence over earlier batch text that fixes dimensions, colours or materials
+as the only allowed instance configuration.
+
+- Current review and correction cover dimensions and geometry only: silhouette,
+  topology, part boundaries, recesses, bevels, joins, placement and view consistency.
+  Colour, grain, texture and material fidelity do not block this review stage.
+- Every future asset creation function must accept colour or material options,
+  following the user's `createXXX` concept. This is a required capability, not
+  a finalized function name, signature or implemented API.
+- Keep appearance independent from geometry. Preserve selectable part/material
+  regions so callers can replace colour or material without remodeling. Existing
+  palette values, texture recipes and material assignments are defaults only.
+- A colour override retains the chosen material's other properties; a material
+  override can replace the surface itself. Neither operation changes dimensions,
+  topology, part transforms or placement. Geometric displacement is a separate
+  geometry change, not an implied appearance override.
+- An instance's appearance override must not unintentionally change other
+  instances through shared mutable material state.
+- Replaceable appearance still requires an explicit default. Each batch's
+  surface document must identify the default material or colour for every
+  independently configurable part, matching its numeric material specification.
+  Use those defaults when no override is supplied. Preserve an approved texture
+  as the default where specified; do not replace it with an arbitrary flat tint.
+  Drawing face tones, shadows, outlines and review annotations are not defaults.
+- Existing appearance references remain available as optional defaults. This
+  stage does not generate texture assets, implement factories, validate shader
+  support or certify material fidelity. Concrete API signatures and renderer support are deferred to
+  the implementation contract; shared override precedence is specified below.
+
+The previously reviewed lounge chair has an explicit
+[default appearance contract](furniture/ARMCHAIR-DEFAULT-APPEARANCE.md).
+
+### Overall size and appearance - 2026-10-09
+
+All asset creation flows share this contract. Existing numeric dimensions,
+origins and part geometry define the default reference configuration, not a
+fixed size for every placed instance. Exact default geometry remains necessary
+for reconstruction, proportions and review. A batch need not repeat this common
+contract; it only supplies its defaults, material regions and any explicit
+asset-specific construction requirements.
+
+1. Select the base geometry or preset, including its default dimensions, origin,
+   component relationships and geometry details such as chamfers.
+2. Resolve requested overall X/Y/Z extents in the asset's local axes. Omitted
+   dimensions retain defaults. For a positive default extent D and target T,
+   the corresponding scale is T/D. Values must be finite and positive; no
+   zero-scale collapse, negative-scale mirroring or implicit axis swap.
+3. Scale the complete unit about its authored origin: for each local point p,
+   `pFinal = origin + diag(scaleX, scaleY, scaleZ) * (pDefault - origin)`.
+   These dimensions describe the final local bounding box, before placement
+   rotation; they are not the rotated world-space bounding box.
+4. Resolve replaceable colour/material regions and the selected surface mapping
+   using those final dimensions, then place or assemble the instance. This is
+   a semantic dependency order, not a requirement to rebuild meshes or bake a
+   new texture every time a setting changes.
+
+Independent axis scaling is supported. An optional proportional lock uses one
+common scale; incompatible requested extents must not silently distort or
+change the lock. Whole-unit scaling includes component positions and dimensions,
+chamfers, joint gaps and the attachment hierarchy. A character's attached clothes
+and accessories follow that same effective transform once, while skin, clothes
+and accessory appearance remains independently replaceable where regions exist.
+This rule does not define rigging, clothing fit or animation implementation.
+
+Nonuniform scaling can turn circles into ellipses and alter chamfer angles.
+Do not silently keep a detail at a fixed physical size or regenerate a 45-degree
+chamfer to compensate. A different base chamfer is a preset/construction
+parameter, not a consequence of the overall-size override. Preserve surface
+normals appropriate to the transformed geometry.
+
+An authored zero-thickness decal remains planar: resize its nonzero axes only.
+Thickness requires explicit geometry authoring, not division by a zero default
+extent or automatic extrusion. Three-axis sizing adds no terrain fitting,
+surface conformance, arbitrary bending, adaptive joints or curved extrusion.
+Existing separately specified planar path generators remain their own contracts;
+this rule does not add new path behavior.
+
+Material mapping must distinguish stretching from physical-scale repetition.
+Identity artwork or alpha masks can stretch with the final surface. Repeating
+wallpaper, road and stone patterns use their specified physical tile size or
+procedural coordinates in resized local metres, before world placement. Compute
+mapping from final dimensions so an elongated road does not stretch each grain.
+Wallpapers and roads can be assembled as independently sized patches or tiles;
+continuous length is an app-selected sequence, not an infinite mesh. Seam/phase
+alignment between patches belongs to their assembly contract and is not guaranteed
+by scaling alone. Defaults remain explicit; review colours never replace them.
+
+Select per-region material, otherwise an applicable group material, otherwise
+the preset default. Then apply per-region colour, otherwise group colour; when
+no tint is supplied, retain the selected material's colour. Overrides preserve
+geometry and other instances. These are shared future creation requirements,
+not implemented factory signatures or verified renderer capabilities.
+
+Equivalent geometry families may share one future generator with multiple
+selectable presets. Preserve each preset's identifier, default dimensions,
+geometry details, default appearance and reference evidence when they provide
+useful choices. A reference sheet is not proof that a separate mesh generator
+must exist. See [shared geometry presets](ASSET-TYPES.md#shared-geometry-families-and-selectable-presets).
+
+### Geometry production routes - agreed 2026-10-09
+
+Reference drawing and production geometry are separate stages. A script that
+projects specification dimensions into a PNG supplies a reference sheet; it
+does not deliver a runtime mesh or complete the Blender/modeling stage.
+
+Use direct programmatic geometry for simple, fully specified shapes: boxes,
+chamfered boxes, cylinders, spheres and straightforward assemblies such as the
+park railing post. These assets do not require a Blender intermediary. Reuse
+the shared geometry family with preset parameters rather than writing a new
+generator for each material or size variant.
+
+Use Blender where complex surfaces, sculpted details, topology or rigging need
+dedicated authoring, for example detailed characters, animals or upholstered
+furniture. Select the route from the actual geometry requirements; the object
+category alone does not make Blender mandatory.
+
+Both routes must use the same approved dimensions, origins, part boundaries,
+joins, reference views and shared XYZ sizing/appearance contract. Programmatic
+generation must preserve specified chamfers, overlaps and surface boundaries;
+choosing primitives does not permit extra intersecting/internal faces in a
+unit whose specification requires a joined surface. Both routes remain subject
+to geometry, visual and LOD validation during implementation.
+
+This records the production approach only. Current work remains component
+reference/specification review; no runtime generator, model export, renderer
+integration or repository-wide asset migration is implemented by this decision.
+
+### Paving stone and layout reference - approved 2026-10-07
+
+The [single paving stone](street/review/04-paving-stone-single-v1.png) is the
+approved individual-unit sheet. The [annotated pavement layout](street/review/04-pavement-layout-v3.png)
+is an assembly example, not a combined model. These supplements do not add
+another component or retroactively change the dated baseline sheet counts.
+
+### Reading order
 
 1. Select a batch below and open its review gallery for the current appearance sheets.
 2. Read that batch's README, geometry supplement, numeric specification and surface recipes together.
 3. Follow the [approved office reference](architecture/review/approved-office-reference.jpg), with the central office taking priority over neighboring shops. The [entrance close-up](architecture/review/entry-door-reference.png) establishes the complete door set, including its narrow same-color side panel.
-4. Use numeric specifications for dimensions, axes, component boundaries and authored hidden surfaces. Treat a drawing/specification conflict as a review issue; do not silently invent a resolution or claim that every view is calibrated.
+4. Use numeric specifications for default dimensions, axes, component boundaries and authored hidden surfaces; apply the shared overall-size rule to explicit instance overrides. Treat a drawing/specification conflict as a review issue; do not silently invent a resolution or claim that every view is calibrated.
 5. Future model creation and comparison form a separate stage. Assembly, placement, lighting, interactions and animation behavior belong to the app.
 
 ## Current versus historical material
 
 - The exact sheet links below identify current review inputs. Do not select a file merely because its version number is highest or it is the newest file in a folder.
-- Architecture uses six v2 sheets. Earlier overview/orthoview files are historical, not the current reconstruction target.
-- Street markings use transparent v4 single units. The old road-marking and crosswalk arrays are historical color references only. Markings contain no asphalt and can be placed on other surfaces.
+- Architecture uses approved wall v5, floor v7 and partition v5; window v6 geometry is approved, while stair and door retain v2. Superseded review drawings have been removed; use only the current sheets.
+- Street markings use transparent v4 single units. The obsolete road-marking and crosswalk array images have been removed. Markings contain no asphalt and can be placed on other surfaces.
 - The approved parrot is the **cockatiel**. The rejected generic green bird is not a deliverable. Sparrow and cockatiel use the v2 sheets linked below.
 - [Lighting revision history](SHADOW-FREE-REVIEW.md) records an earlier 53-image pass; that number is not the count of all current assets and does not certify later images.
 - Older batch text saying another item is deferred or belongs to a later batch reflects that batch's original scope. Use this catalog to locate subsequently approved work. Historical source and prompt records are retained.
@@ -54,26 +224,26 @@ Every row has approved drawings/documents; model construction and verification r
 
 | Batch | Current sheets | Reconstruction documents |
 | --- | --- | --- |
-| Asyra Office - Architectural Components - Design Revision 2 | [Wall - single segment](architecture/review/01-wall-v2.png)<br>[Floor - single plank](architecture/review/02-floor-v2.png)<br>[Partition - single segment](architecture/review/03-partition-v2.png)<br>[Stair - single step](architecture/review/04-stair-v2.png)<br>[Entrance door - complete set](architecture/review/05-door-v2.png)<br>[Window - one unit with sill](architecture/review/06-window-v2.png) | [Overview](architecture/README.md), [gallery](architecture/review/README.md), [geometry](architecture/GEOMETRY-SUPPLEMENT.md), [numbers](architecture/architecture-model-spec.json), [surfaces](architecture/SURFACE-RECIPES.md) |
+| Asyra Office - Architectural Components - Design Revision 2 | [Wall - single segment](architecture/review/01-wall-v5.png)<br>[Floor - single plank](architecture/review/02-floor-v7.png)<br>[Partition - single segment](architecture/review/03-partition-v5.png)<br>[Stair - single step](architecture/review/04-stair-v2.png)<br>[Entrance door - complete set](architecture/review/05-door-v2.png)<br>[Window - one unit with sill](architecture/review/06-window-v6.png) | [Overview](architecture/README.md), [gallery](architecture/review/README.md), [geometry](architecture/GEOMETRY-SUPPLEMENT.md), [numbers](architecture/architecture-model-spec.json), [surfaces](architecture/SURFACE-RECIPES.md) |
 | Group 1C - Square Column and Horizontal Beam | [Square column - multiple views](column-beam/review/01-square-column-v1.png)<br>[Horizontal beam - multiple views](column-beam/review/02-horizontal-beam-v1.png) | [Overview](column-beam/README.md), [gallery](column-beam/review/README.md), [geometry](column-beam/GEOMETRY-SUPPLEMENT.md), [numbers](column-beam/column-beam-model-spec.json), [surfaces](column-beam/SURFACE-RECIPES.md) |
 | Group 1B - Roof Slab and Parapet | [Flat roof slab - multiple views](roof-modules/review/01-flat-roof-slab-v1.png)<br>[Rooftop parapet - multiple views](roof-modules/review/02-rooftop-parapet-v1.png) | [Overview](roof-modules/README.md), [gallery](roof-modules/review/README.md), [geometry](roof-modules/GEOMETRY-SUPPLEMENT.md), [numbers](roof-modules/roof-modules-model-spec.json), [surfaces](roof-modules/SURFACE-RECIPES.md) |
-| Group 1D - Stair Baluster and Sloped Handrail | [Stair baluster - multiple views](stair-railing/review/01-stair-baluster-v2.png)<br>[Sloped handrail - multiple views](stair-railing/review/02-sloped-handrail-v1.png) | [Overview](stair-railing/README.md), [gallery](stair-railing/review/README.md), [geometry](stair-railing/GEOMETRY-SUPPLEMENT.md), [numbers](stair-railing/stair-railing-model-spec.json), [surfaces](stair-railing/SURFACE-RECIPES.md) |
+| Group 1D - Stair Baluster and Sloped Handrail | [Stair baluster - multiple views](stair-railing/review/01-stair-baluster-v4.png)<br>[Sloped handrail - multiple views](stair-railing/review/02-sloped-handrail-v3.png) | [Overview](stair-railing/README.md), [gallery](stair-railing/review/README.md), [geometry](stair-railing/GEOMETRY-SUPPLEMENT.md), [numbers](stair-railing/stair-railing-model-spec.json), [surfaces](stair-railing/SURFACE-RECIPES.md) |
 | Group 1E - Landing Baluster and Level Handrail | [Landing baluster - multiple views](landing-railing/review/01-landing-baluster-v1.png)<br>[Level handrail - multiple views](landing-railing/review/02-level-handrail-v1.png) | [Overview](landing-railing/README.md), [gallery](landing-railing/review/README.md), [geometry](landing-railing/GEOMETRY-SUPPLEMENT.md), [numbers](landing-railing/landing-railing-model-spec.json), [surfaces](landing-railing/SURFACE-RECIPES.md) |
-| Group 1F - Railing Transition Posts | [Upper transition post - multiple views](railing-transitions/review/01-upper-transition-post-v1.png)<br>[Lower transition post - multiple views](railing-transitions/review/02-lower-transition-post-v2.png) | [Overview](railing-transitions/README.md), [gallery](railing-transitions/review/README.md), [geometry](railing-transitions/GEOMETRY-SUPPLEMENT.md), [numbers](railing-transitions/railing-transitions-model-spec.json), [surfaces](railing-transitions/SURFACE-RECIPES.md) |
-| Group 1G - Level Handrail Corner | [Level handrail corner - multiple views](railing-corner/review/01-level-handrail-corner-v1.png) | [Overview](railing-corner/README.md), [gallery](railing-corner/review/README.md), [geometry](railing-corner/GEOMETRY-SUPPLEMENT.md), [numbers](railing-corner/railing-corner-model-spec.json), [surfaces](railing-corner/SURFACE-RECIPES.md) |
+| Group 1F - Railing Transition Posts | [Upper transition post - multiple views](railing-transitions/review/01-upper-transition-post-v2.png)<br>[Lower transition post - multiple views](railing-transitions/review/02-lower-transition-post-v14.png) | [Overview](railing-transitions/README.md), [gallery](railing-transitions/review/README.md), [geometry](railing-transitions/GEOMETRY-SUPPLEMENT.md), [numbers](railing-transitions/railing-transitions-model-spec.json), [surfaces](railing-transitions/SURFACE-RECIPES.md) |
+| Group 1G - Level Handrail Corner | [Level handrail corner - multiple views](railing-corner/review/01-level-handrail-corner-v2.png) | [Overview](railing-corner/README.md), [gallery](railing-corner/review/README.md), [geometry](railing-corner/GEOMETRY-SUPPLEMENT.md), [numbers](railing-corner/railing-corner-model-spec.json), [surfaces](railing-corner/SURFACE-RECIPES.md) |
 
 ### 2 - Street and outdoor setting
 
 | Batch | Current sheets | Reconstruction documents |
 | --- | --- | --- |
-| Asyra Office - Street Components - Group 2 | [Asphalt](street/review/01-asphalt-v2.png)<br>[Pavement and curb appearance](street/review/04-pavement-curb-v2.png)<br>[Round manhole](street/review/05-manhole-cover-v2.png)<br>[Street tree](street/review/06-street-tree-v2.png)<br>[Street lantern](street/review/07-street-lantern-v2.png)<br>[One straight edge line](street/review/02-road-line-single-v4.png)<br>[One curved edge line](street/review/02-road-curve-single-v4.png)<br>[One short dash](street/review/02-road-dash-single-v4.png)<br>[One crosswalk stripe](street/review/03-crossing-single-v4.png) | [Overview](street/README.md), [gallery](street/review/README.md), [geometry](street/STREET-SUPPLEMENT.md), [numbers](street/street-model-spec.json), [surfaces](street/SURFACE-RECIPES.md) |
-| Asyra Office - Group 4N - Street Sign and Bollard | [Street sign](street-details/review/01-street-sign-v1.png)<br>[Roadside bollard](street-details/review/02-roadside-bollard-v1.png) | [Overview](street-details/README.md), [gallery](street-details/review/README.md), [geometry](street-details/GEOMETRY-SUPPLEMENT.md), [numbers](street-details/street-details-model-spec.json), [surfaces](street-details/SURFACE-RECIPES.md) |
+| Asyra Office - Street Components - Group 2 | [Asphalt](street/review/01-asphalt-v2.png)<br>[Paving stone - single unit](street/review/04-paving-stone-single-v1.png)<br>[Pavement layout example](street/review/04-pavement-layout-v3.png)<br>[Round manhole - dimensioned reference](street/review/05-manhole-dimensioned-v2.png)<br>[Street tree](street/review/06-street-tree-v2.png)<br>[Street lantern](street/review/07-street-lantern-v2.png)<br>[Straight path preset](street/review/02-road-line-single-v4.png)<br>[Arc path preset](street/review/02-road-curve-single-v4.png)<br>[Short path preset](street/review/02-road-dash-single-v4.png)<br>[One crosswalk stripe](street/review/03-crossing-single-v4.png) | [Overview](street/README.md), [gallery](street/review/README.md), [geometry](street/STREET-SUPPLEMENT.md), [numbers](street/street-model-spec.json), [surfaces](street/SURFACE-RECIPES.md) |
+| Asyra Office - Group 4N - Street Sign and Bollard | [Street sign - approved v6](street-details/review/01-street-sign-v6.png)<br>[Roadside bollard](street-details/review/02-roadside-bollard-v3.png) | [Overview](street-details/README.md), [gallery](street-details/review/README.md), [geometry](street-details/GEOMETRY-SUPPLEMENT.md), [numbers](street-details/street-details-model-spec.json), [surfaces](street-details/SURFACE-RECIPES.md) |
 | Group 2C - Red Clay Paver | [Red clay paver - multiple views](clay-paving/review/01-red-clay-paver-v1.png) | [Overview](clay-paving/README.md), [gallery](clay-paving/review/README.md), [geometry](clay-paving/GEOMETRY-SUPPLEMENT.md), [numbers](clay-paving/clay-paving-model-spec.json), [surfaces](clay-paving/SURFACE-RECIPES.md) |
 | Asyra Office - Group 2B - Garden Masonry | [Masonry block](garden-masonry/review/01-masonry-block-v1.png)<br>[Wall coping slab](garden-masonry/review/02-wall-coping-v1.png) | [Overview](garden-masonry/README.md), [gallery](garden-masonry/review/README.md), [geometry](garden-masonry/GEOMETRY-SUPPLEMENT.md), [numbers](garden-masonry/garden-masonry-model-spec.json), [surfaces](garden-masonry/SURFACE-RECIPES.md) |
-| Asyra Office - Group 4M - Park Railing | [Railing post](park-railing/review/01-railing-post-v1.png)<br>[Railing panel](park-railing/review/02-railing-panel-v1.png) | [Overview](park-railing/README.md), [gallery](park-railing/review/README.md), [geometry](park-railing/GEOMETRY-SUPPLEMENT.md), [numbers](park-railing/park-railing-model-spec.json), [surfaces](park-railing/SURFACE-RECIPES.md) |
-| Asyra Office - Group 4J - Outdoor Bench and Entry Sign | [Park bench](outdoor-accents/review/01-park-bench-v1.png)<br>[Entry chalkboard](outdoor-accents/review/02-entry-chalkboard-v1.png) | [Overview](outdoor-accents/README.md), [gallery](outdoor-accents/review/README.md), [geometry](outdoor-accents/GEOMETRY-SUPPLEMENT.md), [numbers](outdoor-accents/outdoor-accents-model-spec.json), [surfaces](outdoor-accents/SURFACE-RECIPES.md) |
+| Asyra Office - Group 4M - Park Railing | [Railing post - review colours](park-railing/review/01-railing-post-v3.png)<br>[Railing panel](park-railing/review/02-railing-panel-v2.png) | [Overview](park-railing/README.md), [gallery](park-railing/review/README.md), [geometry](park-railing/GEOMETRY-SUPPLEMENT.md), [numbers](park-railing/park-railing-model-spec.json), [surfaces](park-railing/SURFACE-RECIPES.md) |
+| Asyra Office - Group 4J - Outdoor Bench and Entry Sign | [Park bench - original; procedural generation selected](outdoor-accents/review/01-park-bench-v1.png)<br>[Entry chalkboard - annotated](outdoor-accents/review/02-entry-chalkboard-annotated-v1.png) | [Overview](outdoor-accents/README.md), [gallery](outdoor-accents/review/README.md), [geometry](outdoor-accents/GEOMETRY-SUPPLEMENT.md), [numbers](outdoor-accents/outdoor-accents-model-spec.json), [surfaces](outdoor-accents/SURFACE-RECIPES.md) |
 | Group 4AC - Garden Parasol and Base | [Open garden parasol - multiview sheet](outdoor-shade/review/01-open-garden-parasol-v1.png)<br>[Parasol base - five views](outdoor-shade/review/02-parasol-base-v1.png) | [Overview](outdoor-shade/README.md), [gallery](outdoor-shade/review/README.md), [geometry](outdoor-shade/GEOMETRY-SUPPLEMENT.md), [numbers](outdoor-shade/outdoor-shade-model-spec.json), [surfaces](outdoor-shade/SURFACE-RECIPES.md) |
-| Group 4AF - Striped Shop Awning | [Striped shop awning - multiple views](shop-awning/review/01-striped-shop-awning-v2.png) | [Overview](shop-awning/README.md), [gallery](shop-awning/review/README.md), [geometry](shop-awning/GEOMETRY-SUPPLEMENT.md), [numbers](shop-awning/shop-awning-model-spec.json), [surfaces](shop-awning/SURFACE-RECIPES.md) |
+| Group 4AF - Striped Shop Awning | [Shop awning - annotated assembly](shop-awning/review/01-striped-shop-awning-annotated-v1.png) | [Overview](shop-awning/README.md), [gallery](shop-awning/review/README.md), [geometry](shop-awning/GEOMETRY-SUPPLEMENT.md), [numbers](shop-awning/shop-awning-model-spec.json), [surfaces](shop-awning/SURFACE-RECIPES.md) |
 
 ### 3 - People and animals
 
@@ -87,7 +257,7 @@ Every row has approved drawings/documents; model construction and verification r
 
 | Batch | Current sheets | Reconstruction documents |
 | --- | --- | --- |
-| Asyra Office - Group 4A - Basic Furniture | [Wooden writing desk](furniture/review/01-desk-v1.png)<br>[Work chair](furniture/review/02-work-chair-v1.png)<br>[Green two-seat sofa](furniture/review/03-sofa-v1.png)<br>[Orange lounge armchair](furniture/review/04-armchair-v1.png)<br>[Round coffee table](furniture/review/05-coffee-table-v1.png) | [Overview](furniture/README.md), [gallery](furniture/review/README.md), [geometry](furniture/GEOMETRY-SUPPLEMENT.md), [numbers](furniture/furniture-model-spec.json), [surfaces](furniture/SURFACE-RECIPES.md) |
+| Asyra Office - Group 4A - Basic Furniture | [Wooden writing desk](furniture/review/01-desk-v1.png)<br>[Work chair](furniture/review/02-work-chair-v1.png)<br>[Green two-seat sofa](furniture/review/03-sofa-v1.png)<br>[Orange lounge armchair](furniture/source/side-source-reset/five-views-v3-wider.png)<br>[Round coffee table](furniture/review/05-coffee-table-v1.png) | [Overview](furniture/README.md), [gallery](furniture/review/README.md), [geometry](furniture/GEOMETRY-SUPPLEMENT.md), [numbers](furniture/furniture-model-spec.json), [surfaces](furniture/SURFACE-RECIPES.md) |
 | Asyra Office - Group 4H - Sofa Variants | [L-shaped sofa](sofa-variants/review/01-l-shaped-sofa-v1.png)<br>[Curved sofa](sofa-variants/review/02-curved-sofa-v1.png) | [Overview](sofa-variants/README.md), [gallery](sofa-variants/review/README.md), [geometry](sofa-variants/GEOMETRY-SUPPLEMENT.md), [numbers](sofa-variants/sofa-variants-model-spec.json), [surfaces](sofa-variants/SURFACE-RECIPES.md) |
 | Asyra Office - Group 4O - Stool and Pedestal Side Table | [Square low stool](accent-furniture/review/01-square-low-stool-v1.png)<br>[Pedestal side table](accent-furniture/review/02-pedestal-side-table-v1.png) | [Overview](accent-furniture/README.md), [gallery](accent-furniture/review/README.md), [geometry](accent-furniture/GEOMETRY-SUPPLEMENT.md), [numbers](accent-furniture/accent-furniture-model-spec.json), [surfaces](accent-furniture/SURFACE-RECIPES.md) |
 | Asyra Office - Group 4I - Tea Furniture | [Round tea table](tea-furniture/review/01-round-tea-table-v1.png)<br>[Tea chair](tea-furniture/review/02-tea-chair-v1.png) | [Overview](tea-furniture/README.md), [gallery](tea-furniture/review/README.md), [geometry](tea-furniture/GEOMETRY-SUPPLEMENT.md), [numbers](tea-furniture/tea-furniture-model-spec.json), [surfaces](tea-furniture/SURFACE-RECIPES.md) |
