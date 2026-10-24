@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 scoped Knowledge catalog and direct-consumer local verification are complete on formal local evidence. Task 3 remains active. AI adoption and latency effects are unobserved; no CI inspection, model run, 101 or push was performed for this slice.**
+Status: **Task 3 visual correction handoff is locally verified at Inspector revision 83 and approved for a convergence push; AI adoption remains unobserved. Scoped Knowledge discovery was pushed as c8fa19507. The next handoff investigation is read-only; no live model, 101 or CI inspection is authorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -20,9 +20,9 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: scoped Knowledge discovery and consumer-first local verification
-  are locally complete under the fixed DoD below. Stop after reporting; do not
-  start another issue, inspect CI, push or run a model without new authorization.
+- Current scope: preserve individual unresolved visual checks through correction
+  discovery, existing edit owners and affected re-review. No guessed targets,
+  tool allowlist, new result state, model execution or CI inspection.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -80,6 +80,112 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Visual correction handoff - 2026-10-24
+
+Step Execution Card - inspect / inspect-to-compose:
+- Objective: deliver each unresolved visual check with its exact identity, unit,
+  status, revision, full evidence and inspection links across sparse submissions.
+  Known fact-bound elements are separate from image targets and never edit authority.
+- Inputs: existing pending result store, required coverage, retained inspections,
+  exact criterion/unit fact bindings and reference decisions. Outputs replace the
+  criterion-aggregated correction summary with per-check `checks`, deduplicated
+  inspection metadata, explicit unavailable inspection IDs and optional discovery
+  guidance through the existing registered query owner. Known edits bypass discovery.
+- Owner: App review coordinator; failure owner inspect. The main agent selects the
+  repair intent and values; existing query, preparation and mutation owners retain
+  schema, scope, receipt and recovery authority. No automatic semantic repair.
+- Allowed contributors: current review/check/inspection owners and existing query
+  contract. Forbidden: guessed targets from image roots, name prefixes, diagnostic
+  prose or local rectangles; repair tool lists; new state/cache; automatic replay.
+- Boundary: local-design-review.ts, direct local-operation-tools.ts consumer only
+  if necessary, their existing formal suites, local-design-tools.test.ts for the world-material
+  query consumer, the recorded correction fixture, visual-correction.integration.test.ts and
+  execution-flow-proof.test.ts. Register the direct consumer in the existing App
+  server harness; no separate suite registry.
+  Contracts: this plan, ai-execution-flow.md, existing Inspector data/mapping and
+  generated workspace. No changes to geometry, persistence, Knowledge or providers.
+- Conditions/bypass: emit only unresolved checks; keep passed results in the store.
+  All-passed or no-plan produces empty correction checks. Missing/expired images
+  retain identity/evidence with unavailable scope; they never authorize a write.
+  Guidance is optional and derives the query identity from existing constants;
+  it does not preload schemas or require a discovery call for known operations.
+- Public names are request-local response fields, not persisted document state.
+  Remove the superseded `correction.criteria` aggregation and update direct tests;
+  retain no alias. Advance the review tool contract revision.
+- Spec references: Whole-result review and revision handoff; Tool-first correction
+  contract. Inspector inspect conditions and inspect-to-compose route. Re-read
+  those boundaries before tests, production and closeout.
+- Fixed discovery: retained 1792770001609 inputs/outputs and source snapshot,
+  current review/result/query/material owners, direct consumers and existing tests.
+  Do not infer the cause of the observed 28.29-second no-call interval.
+- Fixed DoD: (1) preserve individual multi-unit, multi-image and cross-call findings,
+  exclude passes; (2) retain visual scope without fact bindings, distinguish unknown
+  edit targets; (3) execute shipped guidance through query/dispatcher/real correction
+  owner and re-review; (4) cover known world material, selected local properties and
+  unresolved target selection without compulsory Knowledge/discovery; (5) invalidate
+  only affected evidence, retain independent passes and whole-view requirements;
+  (6) invalid input, expired source, cancellation and partial success keep truthful
+  receipts and recover only unfinished work, with zero replay; (7) compare total
+  handoff bytes and necessary calls, preserving complete limits/evidence.
+- Formal regression first: add per-check and cross-call projection cases, published
+  discovery-to-edit integration and source-bound proof before production. Existing
+  local material, mutation receipt, partial recovery and invalidation suites remain
+  authoritative; extend gaps rather than replace their real-owner checks with mocks.
+- Gates: naming baseline/closeout, task context, Inspector admission, red/green
+  focused suites, root test:design-execution-flow, production types, scoped lint,
+  generated Inspector tests, diff review. No model, 101, CI or push.
+- Stop on a required new state/owner, out-of-scope mutation, or three failed repair
+  iterations. Local correctness does not prove AI adoption or latency improvement.
+
+Bounded test-harness review: the integration fixture imports browser-owned APIs
+only after establishing its Node window stub, uses the public owner methods (the
+operation owner has no dispose API), and chooses an input actually rejected by
+the registered schema (negative fill index, not an unconstrained color string).
+The query and mutation boundaries remain unchanged. These fixture corrections
+must pass focused execution and production types before broader verification;
+no production fallback or weaker receipt oracle is authorized. Whole-file proof
+execution exposed shared singleton Preset initialization between two integration
+cases. Keep the real-Core correction case in its own formal integration file and
+select it through the existing harness; keep the mapped proof owner-only. Use the
+actual Runtime host to translate partial transaction settlement and await Core.save
+before reload. No production initialization or transaction contract changes.
+
+Local closeout - 2026-10-24:
+- Admission preceded implementation: review
+  `99eb62961f13151d57a03d4f32de262e145515d1a8f3cbe3fd3e3c245a799583`.
+  Two formal regression failures reproduced missing per-check correction delivery
+  before the production change. The final direct-consumer boundary admission is
+  `61162989524614c376c4c24a57989b0163c1768aafc04cfc8a7b570497ff0e3a`.
+- Shipped projection replaces `correction.criteria` with individual pending checks,
+  exact unit fact associations, shared image metadata, explicit unavailable image
+  IDs and optional existing-query guidance. No mutation target inference, repair
+  tool list, new retained state or automatic repair was introduced.
+- Focused suites: 231/231. Direct material, non-Core receipt, interrupted-operation
+  and inspection-dependency preservation: 18/18 with the existing jsdom environment.
+  The initial Node invocation failed browser-global imports; it was not a product
+  regression or a successful test. No assertion was weakened to address it.
+- Existing root `test:design-execution-flow` passed: Runtime public build, 433
+  Runtime tests, 1,631 App tests and two existing guarded skips, then 71 Inspector
+  proofs. Verification `4438f3ad-6fef-47b6-83ee-120c3cc84d52`, revision 83,
+  source digest `27a6c7ea0d5d62d74a7670a587d1446e725afd7eb96ea310fe214b76da8da791`.
+  Production types, naming 15/15, generated Inspector tests 25/25, task context and
+  diff checks passed. Scoped lint has zero errors and one unchanged console warning.
+- Existing skips remain explicit: large saved-document bootstrap encode/decode
+  needs `E2E_LARGE_DOCUMENT=true`; installed native registration needs
+  `LOCAL_AI_PROTOCOL_EXECUTABLE`. Neither owner changed in this slice, and neither
+  skipped case counts as passed.
+- The delivered query guidance reaches real local-property and material consumers.
+  Real Runtime/Core integration verifies invalid input and cancellation before
+  writes, acknowledged prefix retention, retry of only the unfinished operation,
+  Undo/Redo and save/reload. Separate scoped dependency tests preserve local passes;
+  stale-image judgments reject until explicitly rebound to current evidence.
+- The saved-input exchange is smaller than the old receipt plus the pending-detail
+  read needed for complete per-check context. This is a conditional deterministic
+  comparison, not proof that the historical agent performed that extra read or that
+  its 28.29-second no-call interval was caused by this defect. Review judgments in
+  integration tests are authored inputs, not independent pixel-quality assessment.
+  No live model, 101 or CI was run; AI adoption and latency effects remain unobserved.
 
 ### Scoped Knowledge catalog and consumer verification - 2026-10-24
 

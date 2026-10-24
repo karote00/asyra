@@ -671,6 +671,72 @@ export const designEvidenceDefinitions = [
           accepted: toolResultBoolean,
           inspectionIds: toolResultIds,
           results: designCheckDeliverySchema,
+          correction: toolResultObject(
+            {
+              diagnosticOnly: { const: true },
+              requiresFreshReview: toolResultBoolean,
+              revision: toolResultCount,
+              checks: {
+                type: 'array',
+                items: toolResultObject(
+                  {
+                    id: toolResultString,
+                    criterionId: toolResultString,
+                    unitId: toolResultString,
+                    revision: { type: 'integer', minimum: 1 },
+                    evidence: toolResultString,
+                    reason: toolResultString,
+                    status: {
+                      enum: ['missing', 'unverified', 'stale', 'fail']
+                    },
+                    inspectionIds: toolResultIds,
+                    factElementIds: toolResultIds
+                  },
+                  [
+                    'id',
+                    'criterionId',
+                    'status',
+                    'inspectionIds',
+                    'factElementIds'
+                  ]
+                )
+              },
+              inspections: {
+                type: 'array',
+                items: toolResultObject(
+                  {
+                    inspectionId: toolResultString,
+                    elementId: toolResultString,
+                    region: { type: 'object' },
+                    coordinateSpace: { const: 'element-local' },
+                    overview: toolResultBoolean,
+                    detail: toolResultBoolean
+                  },
+                  ['inspectionId', 'elementId', 'overview', 'detail']
+                )
+              },
+              unavailableInspectionIds: toolResultIds,
+              discovery: toolResultObject({
+                tool: { const: AiDesignToolIds.DESCRIBE_DESIGN_APIS },
+                arguments: toolResultObject({ view: { const: 'full' } }),
+                requiredInputs: {
+                  type: 'array',
+                  items: { const: 'query' },
+                  minItems: 1,
+                  maxItems: 1
+                },
+                instruction: toolResultString
+              })
+            },
+            [
+              'diagnosticOnly',
+              'requiresFreshReview',
+              'revision',
+              'checks',
+              'inspections',
+              'unavailableInspectionIds'
+            ]
+          ),
           acceptanceContext: toolResultObject({
             method: toolResultString,
             requirementRevision: toolResultCount,
@@ -752,10 +818,10 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
-    revision: 13,
+    revision: 14,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
-      'Review the current drawing against retained criteria and selected references. Execution success is not visual approval. reviewOperation identifies capture/bind/record; recordedChecks acknowledges exactly the committed judgments (including local passes), while accepted reports whole-request completion. Counts are labeled with their request or selected scope. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. A conclusion may cite necessary overview and detail images of the same target. Every cited image is a dependency: broad evidence carries broad invalidation. Cite only necessary local images for independent local conclusions; never inherit the enclosing image list. A regional overview does not replace the separate whole-view judgment. Do not discard necessary evidence merely to recover a pass. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. Read acceptanceContext for the current method and selected criterion meaning; it is informational and must not be copied into arguments. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and exact dependencies with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. A rejected binding after successful capture returns partial with those images and bindChecks recovery; read the affected current revisions and rebind without recapturing or replaying edits. Follow returned correction scope on failure. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
+      'Review the current drawing against retained criteria and selected references. Execution success is not visual approval. reviewOperation identifies capture/bind/record; recordedChecks acknowledges exactly the committed judgments (including local passes), while accepted reports whole-request completion. Counts are labeled with their request or selected scope. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. A conclusion may cite necessary overview and detail images of the same target. Every cited image is a dependency: broad evidence carries broad invalidation. Cite only necessary local images for independent local conclusions; never inherit the enclosing image list. A regional overview does not replace the separate whole-view judgment. Do not discard necessary evidence merely to recover a pass. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. Read acceptanceContext for the current method and selected criterion meaning; it is informational and must not be copied into arguments. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and exact dependencies with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. A rejected binding after successful capture returns partial with those images and bindChecks recovery; read the affected current revisions and rebind without recapturing or replaying edits. Use correction.checks for each unresolved identity, status and evidence, with linked inspections and explicit unavailableInspectionIds. factElementIds are source-fact associations, not edit targets. Follow optional correction.discovery only for a missing edit or target-query contract; known edits need no lookup. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -1556,48 +1622,65 @@ export const createLocalDesignReview = (
       }
     },
     recordCalculations: facts.recordCalculations,
-    correctionContext(inspectionIds: string[] = []) {
-      const checks = results
-        .read()
-        .items.filter(
-          (item) =>
-            item.origin === 'main-agent' && item.criterionId !== undefined
-        )
-      const criterionIds = new Set([
-        ...pendingCriterionIds(),
-        ...checks.flatMap((check) =>
-          check.criterionId ? [check.criterionId] : []
-        )
-      ])
-      return {
-        diagnosticOnly: true,
-        coverage: reviewState().coverage,
-        referenceDecisions: references.snapshot(),
-        requiresFreshReview: !accepted,
-        revision,
-        criteria: [...criterionIds].map((criterionId) => ({
-          criterionId,
-          evidence: [
-            ...new Set(
-              [
-                ...checks
-                  .filter(
-                    (check) =>
-                      check.criterionId === criterionId &&
-                      check.status !== 'pass'
-                  )
-                  .map((check) => check.evidence)
-              ].filter((value): value is string => !!value)
-            )
-          ],
-          elementIds: [
+    correctionContext() {
+      const coverage = reviewState().coverage
+      const pending = new Map(
+        results
+          .read()
+          .items.filter(
+            (item) =>
+              item.origin === 'main-agent' && item.criterionId !== undefined
+          )
+          .map((item) => [item.id, item])
+      )
+      // Coverage can require re-review of a retained pass (for example missing whole-view evidence).
+      const missing = coverage.pending.filter((item) => !pending.has(item.id))
+      for (const item of results.read({
+        ids: missing.map((item) => item.id),
+        includePassed: true
+      }).items)
+        pending.set(item.id, item)
+      const obligations = new Map(
+        coverage.pending.map((item) => [item.id, item])
+      )
+      for (const item of pending.values())
+        if (!obligations.has(item.id))
+          obligations.set(item.id, {
+            id: item.id,
+            criterionId: item.criterionId as string,
+            ...(item.unitId === undefined ? {} : { unitId: item.unitId }),
+            status: item.status
+          })
+      const checks = [...obligations.values()].map((obligation) => {
+        const item = pending.get(obligation.id)
+        return {
+          ...obligation,
+          ...(item ? { revision: item.revision, evidence: item.evidence } : {}),
+          ...(item?.reason ? { reason: item.reason } : {}),
+          inspectionIds: [...(item?.scope ?? [])],
+          factElementIds: [
             ...new Set(
               [...factBindings.values()]
-                .filter((binding) => binding.criterionId === criterionId)
+                .filter(
+                  (binding) =>
+                    binding.criterionId === obligation.criterionId &&
+                    binding.unitId === obligation.unitId
+                )
                 .flatMap((binding) => binding.elementIds)
             )
           ]
-        })),
+        }
+      })
+      const inspectionIds = [
+        ...new Set(checks.flatMap((check) => check.inspectionIds))
+      ]
+      return {
+        diagnosticOnly: true,
+        coverage,
+        referenceDecisions: references.snapshot(),
+        requiresFreshReview: !accepted,
+        revision,
+        checks,
         inspections: inspectionIds.flatMap((inspectionId) => {
           const entry = inspections.get(inspectionId)
           return entry
@@ -1616,7 +1699,21 @@ export const createLocalDesignReview = (
                 }
               ]
             : []
-        })
+        }),
+        unavailableInspectionIds: inspectionIds.filter(
+          (id) => !inspections.has(id)
+        ),
+        ...(checks.length
+          ? {
+              discovery: {
+                tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+                arguments: { view: 'full' },
+                requiredInputs: ['query'],
+                instruction:
+                  'Use a known scoped edit directly. Only for a missing contract, fill query with your chosen correction capability or exact registered name and follow its execution route. Image targets/regions and factElementIds are evidence context, not inferred edit targets; target-local regions are not workspace query bounds. Resolve missing current targets through the existing query owner. Choose new values explicitly. Preserve actual partial receipts and retry only unfinished work; never replay completed edits. Reinspect affected evidence and submit only changed checks, retaining unrelated passes and whole-view obligations.'
+              }
+            }
+          : {})
       }
     },
     factTargets: () => [
@@ -2398,7 +2495,7 @@ export const createLocalDesignReview = (
           structureAccepted,
           checks,
           inspectionIds: value.inspectionIds,
-          correction: this.correctionContext(value.inspectionIds)
+          correction: this.correctionContext()
         }
       }
       deferredDetails = nextDeferred
@@ -2495,7 +2592,7 @@ export const createLocalDesignReview = (
         accepted: this.isAccepted(),
         checks,
         inspectionIds: value.inspectionIds,
-        correction: this.correctionContext(value.inspectionIds)
+        correction: this.correctionContext()
       }
     },
     getStructureIssue(): string | undefined {

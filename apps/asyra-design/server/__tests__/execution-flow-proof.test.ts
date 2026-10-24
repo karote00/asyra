@@ -1281,8 +1281,8 @@ it('execution proof distinguishes stage readiness from current final assessment'
     accepted: false,
     correction: {
       diagnosticOnly: true,
-      criteria: [
-        { criterionId: 'Finish', evidence: ['Missing requested visible trim'] }
+      checks: [
+        { criterionId: 'Finish', evidence: 'Missing requested visible trim' }
       ]
     }
   })
@@ -3648,7 +3648,7 @@ it('execution proof retains deterministic regional image checks without model ev
   expect(spawn.mock.calls.length).toBe(before)
 })
 
-it('execution proof uses only current conversion and primary judgment contracts', () => {
+it('execution proof uses only current conversion and primary judgment contracts', async () => {
   spawn.mockClear()
   expect
     .soft(providerCapabilities)
@@ -3707,8 +3707,34 @@ it('execution proof uses only current conversion and primary judgment contracts'
   const failed = review.record(inputReview)
   expect.soft(failed.accepted).toBe(false)
   expect.soft(failed).not.toHaveProperty('independentAssessment')
+
+  expect(failed.correction).toMatchObject({
+    checks: [
+      {
+        id: 'visual:appearance',
+        criterionId: 'appearance',
+        status: 'fail',
+        evidence: 'The requested silhouette is incorrect.',
+        inspectionIds,
+        factElementIds: []
+      }
+    ],
+    inspections: [
+      expect.objectContaining({
+        inspectionId: inspectionIds[0],
+        elementId: 'part'
+      })
+    ],
+    unavailableInspectionIds: [],
+    discovery: {
+      tool: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      arguments: { view: 'full' },
+      requiredInputs: ['query']
+    }
+  })
+
   expect
-    .soft(review.correctionContext().criteria)
+    .soft(review.correctionContext().checks)
     .toEqual(
       expect.arrayContaining([
         expect.objectContaining({ criterionId: 'appearance' })
@@ -3754,10 +3780,10 @@ it('execution proof uses only current conversion and primary judgment contracts'
   })
   expect(review.isAccepted()).toBe(false)
   expect(review.getIssue()).toContain('requested silhouette')
-  expect(review.correctionContext().criteria).toMatchObject([
+  expect(review.correctionContext().checks).toMatchObject([
     {
       criterionId: 'appearance',
-      evidence: ['The requested silhouette is incorrect.']
+      evidence: 'The requested silhouette is incorrect.'
     }
   ])
   expect(

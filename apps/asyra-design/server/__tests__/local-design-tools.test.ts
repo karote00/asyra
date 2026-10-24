@@ -1620,9 +1620,65 @@ it('hands a material revision to its material-only consumer and reuses the same 
   const first = JSON.parse(
     await owner.call('prepare_design', { draft: source }, signal())
   )
+  const { createLocalDesignReview } = await import('../local-design-review')
+  const review = createLocalDesignReview()
+  review.record({
+    phase: 'plan',
+    method: 'Review the selected surface',
+    references: [],
+    criteria: {
+      surface: {
+        requirement: 'Requested surface',
+        description: 'Inspect its material',
+        verification: 'visual',
+        requiredUnits: []
+      }
+    },
+    structureCriteria: [],
+    detailRequired: false
+  })
+  const image = review.inspect('original-surface', true, true)
+  if (!image) throw new Error('Missing image')
+  const bound = review.bindReview('visual', [
+    { criterionId: 'surface', inspectionIds: [image.inspectionId] }
+  ])
+  review.recordBoundReview({
+    ...bound,
+    checks: bound.checks.map((check) => ({
+      ...check,
+      status: 'fail',
+      evidence: 'The chosen field needs a new palette'
+    }))
+  })
+  const guidance = review.correctionContext().discovery
+  if (!guidance) throw new Error('Missing discovery handoff')
+  const query = createLocalOperationTools(
+    actions,
+    owner,
+    async () => {
+      throw new Error('Discovery must not mutate')
+    },
+    {
+      getNativeTools: () =>
+        owner.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design'
+        }))
+    }
+  )
+  const found = JSON.parse(
+    await query.call(
+      guidance.tool,
+      { ...guidance.arguments, query: materialDefinition.name },
+      signal()
+    )
+  )
+  expect(found.tools).toHaveLength(1)
+  expect(found.tools[0].inputSchema).toEqual(materialDefinition.inputSchema)
+  expect(found.tools[0].execution.kind).toBe('native-tool')
   const revision = JSON.parse(
     await owner.call(
-      'prepare_material_revision',
+      found.tools[0].execution.tool,
       {
         artifactId: first.artifactId,
         field: 'glass',
