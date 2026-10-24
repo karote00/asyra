@@ -46,3 +46,13 @@ shadow range and software-renderer policy to the shared engine. Scene descriptor
 remain nonselectable and do not cast shadows; their receiver flag is explicit.
 Common scale/instance/pose mechanisms add no Office layout, task, focus or follow
 policy and do not change proposal/history/save acknowledgement behavior.
+
+## Local browser verification
+
+Set `APP_URL` in the App's local `.env` from `.env.example`; Vite and Playwright
+resolve the same explicit local origin through `app-environment.ts`. Static
+builds do not require a server origin. The default local URL remains
+`http://127.0.0.1:5194`. Browser checks use installed Chrome with SwiftShader
+WebGL2, or an explicitly configured `PLAYWRIGHT_CHROMIUM_EXECUTABLE`; no mock
+graphics driver is used. Runtime contract tests separately verify canonical
+reads/publications, stale proposals, save acknowledgement and resource cleanup.

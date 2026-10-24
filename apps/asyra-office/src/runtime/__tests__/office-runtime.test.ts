@@ -80,6 +80,29 @@ async function start(storage = new MemoryStorage()) {
   return { runtime, storage }
 }
 describe('Office canonical interaction path', () => {
+  it('publishes task activity with the browser microtask receiver contract', async () => {
+    const enqueue = globalThis.queueMicrotask.bind(globalThis)
+    vi.stubGlobal(
+      'queueMicrotask',
+      function (this: unknown, callback: VoidFunction) {
+        if (this !== undefined && this !== globalThis)
+          throw new TypeError('Illegal invocation')
+        enqueue(callback)
+      }
+    )
+    const { runtime } = await start()
+    const changed = vi.fn()
+    const unsubscribe = runtime.activity.subscribeAgent(runtime.key, changed)
+    try {
+      await runtime.send('working')
+      await new Promise<void>((resolve) => enqueue(resolve))
+      expect(changed).toHaveBeenCalledTimes(1)
+      expect(runtime.activity.getAgent(runtime.key)?.status).toBe('working')
+    } finally {
+      unsubscribe()
+    }
+  })
+
   it('keeps the bootstrap room when Undo is requested before any user edit', async () => {
     const { runtime } = await start()
     const layout = runtime.layout.getSnapshot().layout

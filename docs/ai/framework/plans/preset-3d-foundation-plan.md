@@ -4,14 +4,16 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1-6 complete within their bounded contracts; stopped for user
-inspection before Task 7. Task 1 produced the reviewed specification and full
+Status: Tasks 1-7 complete within their bounded contracts. Task 7 verifies all
+three Apps through real WebGL and includes the user-approved minimum activity
+scheduler correction. Stopped for user inspection before Task 8.
+Task 1 produced the reviewed specification and full
 architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
 shared incremental projection/bounds with direct App preservation checks.
 Tasks 4-5 add App-directed shared Camera controls and typed spatial queries with
 shared picking. Task 6 adds opt-in mesh definitions, generalized instance/pose
 presentation, explicit lighting/shadows and physical-pixel detail controls.
-Tasks 7-10 remain unexecuted;
+Tasks 8-10 remain unexecuted;
 official 3D activation and whole-flow runtime acceptance remain pending.
 
 Planning base: local `main` at
@@ -714,6 +716,149 @@ Sim's complete original geometry and analysis/playback evidence boundaries;
 FieldScope's configuration/pose/visibility update isolation; Office's layout
 transaction, proposal revision and save acknowledgement semantics. Tree UI and
 camera modes remain App choices. Run their affected real-WebGL workflows.
+
+Task 7 execution contract: base `538ca20d1`, same worktree and branch. Complete
+FieldScope, Sim and Office integration in that order. Discovery is limited to
+current composition, admission, layer, Camera and lifecycle adapters, direct
+consumers, existing unit/profile/browser suites and their App contracts. Tasks
+2-6 already removed the duplicated engine/projection/control implementations;
+keep the remaining domain adapters and do not invent a second cutover. Preserve
+source geometry, identities, schema/history, analysis/playback and persistence
+meaning. No solver changes, new caches, catalog activation or Task 9 asset/editing
+extensions. If browser evidence reveals a shared-owner defect, stop that App
+segment and repair only the matching reviewed owner with a failing formal test.
+
+Gates: affected Preset/Core/Render and App tests; FieldScope source/update profile
+proofs under the existing supervisor; actual WebGL browser suites for scene,
+Camera, visibility, edit/replay, picking, source/playback and Office proposal/save;
+inspect synchronized App screenshots at the existing configured URLs. Keep
+resource/time guards. Run affected typechecks/builds, naming, scoped lint,
+dependency/placement/docs checks and source-bound Flow Inspector admission.
+Office lacks an App URL contract: its integration may add one shared environment
+resolver for Vite/Playwright with a permanent configuration test and `.env.example`.
+Stop after Task 7 evidence, before official 3D activation.
+
+Task 7 FieldScope Step Execution Card: owner/failure `fieldscope`; specification
+Single architecture, Projection and resources, Camera control, C03-C08/C11-C12;
+Inspector step `fieldscope` and its listed implementation boundary. Inputs are
+the integrated foundation and unchanged admitted domain output; output is
+`artifact:fieldscope-preserved`. Only adapters/projection/control and their
+verification may change; no domain algorithm, new cache, or UI-only proof.
+Existing supervisors and source oracles contribute. There is no WebGL bypass.
+Files: existing engine/runtime/render-app tests, `e2e/greenhouse.spec.ts`, affected
+App architecture/rendering docs. Verify admission/engine/surfaces, Camera,
+bootstrap/scene-demand and source/update profiles, then greenhouse/crops/drains,
+Camera flight/touch and configuration history/responsiveness browser cases.
+Add explicit live-context evidence to the existing browser case; preserve its
+normal product fixture and geometry oracles. Naming adds no saved identity.
+Advance only after focused gates and screenshot inspection pass; failed shared
+owner contracts or unsupported product behavior stop this segment.
+
+Task 7 Sim Step Execution Card: owner/failure `sim`; specification Spatial data,
+Projection, Queries and C03-C08/C11-C12; Inspector `sim`. Input is the same
+integrated foundation with strict App source admission; output is
+`artifact:sim-preserved`. Preserve original topology, rigid pose, lighting and
+analysis/playback meaning; no bypass, solver modification, physical verdict from
+visual hits, broadened admission or cache. Existing App tests/supervisor contribute.
+Implementation stays in listed `init`, viewport, spatial adapters, tests/E2E and
+App architecture/CUSTOM contract. Correct stale extraction and picking docs and
+add live-WebGL context evidence to `e2e/__tests__/workcell.spec.ts`. Gates: engine,
+layer/frame, bootstrap/lifecycle and viewport tests; browser workcell/navigation,
+original-part admission, live playback, original GLB acceptance/reopening and
+historical replacement. Stop on failed source, replay or actual WebGL evidence.
+FieldScope preceding gate: 60 focused tests, 23 source-profile tests and 18
+Metal WebGL cases passed; overview/detail/mobile/history screenshots inspected.
+
+Task 7 Office Step Execution Card: owner/failure `office`; specification Camera,
+Presentation, Persistence and C06/C08-C09/C11-C12; Inspector `office`. Inputs are
+the integrated foundation and existing layout/activity projection; output is
+`artifact:office-preserved`. App camera/movement choices and canonical/transient
+separation remain mandatory; no bypass, task decisions in Preset, new product
+scope or cache. Existing schemas, layout validator and semantic activity output
+contribute. The step boundary now explicitly includes the App-owned server/test
+origin resolver, `.env.example`, Vite and Playwright configuration because the
+required synchronized WebGL gate needs one configured origin. This changes only
+verification configuration, not runtime domains or shared APIs. Tests first prove
+server/test URL parity and invalid-origin rejection, then ordinary runtime tests
+prove layout/history/proposal/save isolation and browser cases prove WebGL output,
+focus/follow, persistence and narrow layout. Add context metadata to the existing
+Office E2E. Build remains independent of local origin configuration. Stop before
+Task 8; reject source/config mismatches rather than selecting a fallback URL.
+Self-review: scope is confined to the authorized App integration gate and its
+existing consumers; no new dependency or second scene implementation is needed.
+Sim preceding gate: 95 focused tests and 18 real-WebGL browser cases passed;
+selection/navigation, playback and original-source reopening screenshots inspected.
+
+Task 7 approved correction (2026-10-24): the user explicitly authorized the
+minimum ActivityProjection default-scheduler binding correction, its owner test
+and repeated Office verification. The real browser and permanent Office runtime
+regression reproduce `Illegal invocation` at the default microtask call.
+
+Activity Step Execution Card: owner/failure `activity`, Preset ActivityProjection;
+Office Integration and projections contract and C11/C12 preservation. Inputs are
+validated activity batches, archive acknowledgement and the default microtask
+scheduler; output is the existing read-only activity notification. Archive-before-
+projection, coalescing, per-agent notification, explicit injected scheduling and
+retirement semantics remain unchanged. Closed/replayed batches keep their existing
+bypasses. Allowed contributors are ActivityProjection and the native microtask
+scheduler; forbidden are App-specific scheduling, new task decisions, clocks,
+canonical writes and swallowed errors. No cache. Boundary is only
+`packages/preset/src/agent-activity.ts` and its existing owner test. First add a
+browser-receiver regression and prove red; wrap the default scheduler invocation,
+then run the owner suite and the existing Office regression. Return to the Office
+step for full runtime/UI/WebGL tests and screenshot review. Self-review confirms
+the fix changes invocation binding only, and no downstream workaround is needed.
+
+Task 7 result (2026-10-24): all three Apps retain their existing shared foundation
+integration. Remaining adapters own domain admission, source identity and App
+policy; no duplicate engine, projection or Camera implementation was introduced.
+Scene-tree UI and Camera modes/angles remain App-owned. Sim's restricted asset
+decoder remains in Task 9. Office now has one tested server/browser origin
+contract, with static builds independent of local configuration.
+
+The default activity scheduler invokes the native function through an arrow
+adapter. Both the permanent Preset owner regression and Office runtime regression
+failed on the original receiver binding and pass after the correction. Archive
+acknowledgement, notification coalescing, injected scheduling and disposal retain
+their behavior. The public Preset distribution was rebuilt before the final
+Office unit/browser acceptance; no App selector or behavioral assertion was
+weakened.
+
+Validation: Preset 37 files / 290 tests; Core 272, Render 273, Render Engine 11;
+FieldScope 60 focused plus 23 source-profile tests with eight supervisor guards
+per run; Sim 95 focused tests with 13 supervisor guards; Office five files / 20
+tests. Affected package and all three App typechecks/builds passed. Naming,
+scoped lint, dependency/placement, public documentation and Flow Inspector
+admission checks passed. Unit/build command logs are retained under
+`.artifacts/preset-3d-task7/`. The final activity correction only affects Office;
+FieldScope/Sim shared spatial source is unchanged from their passing runs.
+
+Real WebGL acceptance: 38 browser cases passed, with live WebGL2 context and
+drawing-buffer metadata attached by the maintained browser tests:
+
+- FieldScope: 18 cases at `http://127.0.0.1:5178`, installed Chrome with Metal.
+  Existing greenhouse/crop/drain and interaction suites cover Camera flight,
+  touch, configuration/canvas Undo and planted-scene responsiveness. Inspected
+  actual overview/front/top, crop/clip/drain closeups, mobile and original/changed/
+  Undo screenshots. Artifacts: `apps/asyra-fieldscope/test-results/` and
+  `apps/asyra-fieldscope/.artifacts/task7-interaction/`.
+- Sim: 18 cases at `http://127.0.0.1:3020`, installed Chrome with SwiftShader.
+  `node scripts/run-e2e.mjs` preserves the configured origin while running
+  workcell/navigation, original-part, live/recorded playback and visual-source
+  suites. Inspected selected/panned scenes, playback closeups, original source
+  reopening and historical-source screenshots. Artifacts:
+  `apps/asyra-sim/.artifacts/task7-navigation/`, `task7-playback/`, `task7-sources/`.
+- Office: two cases at `http://127.0.0.1:5194`, installed Chrome with SwiftShader.
+  Existing `playwright test` cases pass task/follow, layout/Undo/proposal/save and
+  narrow-layout behavior. Inspected the final 1440x960 desktop and 390x844 narrow
+  screenshots in `apps/asyra-office/test-results/`; completed activity and scene
+  presentation are visible without the former browser exception.
+
+These are real browser rendering and behavior checks, not hardware performance
+certification. No unexplained visual difference was found in the reviewed states.
+Flow observations bind the tested source and reviewed contract. Official profile
+activation and the remaining whole-flow runtime criteria are still pending.
+Task 7 stops here for user inspection; do not start Task 8 automatically.
 
 ## Task 8 - Activate the official 3D profile
 

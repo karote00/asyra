@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "preset-3d-foundation",
-  "revision": 98,
+  "revision": 158,
   "definition": {
     "title": "Preset 3D foundation and App migration",
     "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
@@ -956,6 +956,47 @@
         ]
       },
       {
+        "id": "activity",
+        "title": "Preserve browser activity delivery",
+        "objective": "Preserve acknowledged activity notifications with a valid native microtask invocation.",
+        "owner": "@asyra/preset",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "design"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "runtime",
+            "title": "Browser scheduler binding preserves ordinary activity semantics",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "preset-3d-foundation/activity/runtime"
+            }
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
+        ],
+        "implementationRefs": [
+          "packages/preset/src/agent-activity.ts",
+          "packages/preset/src/__tests__/agent-activity.test.ts"
+        ],
+        "actions": [
+          {
+            "id": "verify",
+            "label": "Verify activity scheduler",
+            "kind": "external",
+            "instructions": "Run the permanent ActivityProjection receiver regression and Office integration regression, followed by Office WebGL preservation.",
+            "criterionIds": ["runtime"]
+          }
+        ]
+      },
+      {
         "id": "office",
         "title": "Preserve Office through migration",
         "objective": "Use shared scene/control mechanisms without changing task, movement, layout or persistence semantics.",
@@ -970,6 +1011,10 @@
           {
             "flowId": "preset-3d-foundation",
             "nodeId": "domain"
+          },
+          {
+            "flowId": "preset-3d-foundation",
+            "nodeId": "activity"
           }
         ],
         "criteria": [
@@ -993,7 +1038,11 @@
           "apps/asyra-office/src/runtime/__tests__/**",
           "apps/asyra-office/src/ui/__tests__/**",
           "apps/asyra-office/e2e/**",
-          "docs/ai/apps/asyra-office/implementation.md"
+          "docs/ai/apps/asyra-office/implementation.md",
+          "apps/asyra-office/app-environment.ts",
+          "apps/asyra-office/.env.example",
+          "apps/asyra-office/vite.config.ts",
+          "apps/asyra-office/playwright.config.ts"
         ],
         "actions": [
           {
@@ -1972,11 +2021,14 @@
           "order": 18,
           "inputs": [
             "Integrated shared foundation and existing layout/activity projection",
-            "artifact:reviewed-design"
+            "artifact:reviewed-design",
+            "App-configured local origin shared by server and browser verification",
+            "artifact:activity-notification"
           ],
           "outputs": ["artifact:office-preserved"],
           "conditions": [
-            "App still chooses camera mode/angle and movement destinations; canonical edits separated from transient pose."
+            "App still chooses camera mode/angle and movement destinations; canonical edits separated from transient pose.",
+            "Browser evidence uses the same configured App origin; build does not require a local server origin."
           ],
           "bypasses": [
             "No bypass: layout/Undo/save/stale-proposal and real-WebGL cases required."
@@ -1995,7 +2047,11 @@
             "apps/asyra-office/src/runtime/__tests__/**",
             "apps/asyra-office/src/ui/__tests__/**",
             "apps/asyra-office/e2e/**",
-            "docs/ai/apps/asyra-office/implementation.md"
+            "docs/ai/apps/asyra-office/implementation.md",
+            "apps/asyra-office/app-environment.ts",
+            "apps/asyra-office/.env.example",
+            "apps/asyra-office/vite.config.ts",
+            "apps/asyra-office/playwright.config.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#verification-cases-and-gates"
@@ -2080,6 +2136,40 @@
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#definition-of-done"
+          ]
+        },
+        {
+          "id": "activity",
+          "laneId": "framework",
+          "title": "Preserve browser activity delivery",
+          "ownerPackage": "@asyra/preset",
+          "purpose": "Publish acknowledged read-only activity updates through the existing default microtask scheduler.",
+          "failureOwnerStepId": "activity",
+          "order": 21,
+          "inputs": [
+            "Validated activity batches, archive acknowledgement and default microtask scheduler",
+            "artifact:reviewed-design"
+          ],
+          "outputs": ["artifact:activity-notification"],
+          "conditions": [
+            "Preserve archive acknowledgement, coalescing, per-agent notification and injected scheduler behavior. Native callbacks receive a valid invocation receiver."
+          ],
+          "bypasses": [
+            "Closed or replayed inputs retain existing no-notification behavior."
+          ],
+          "allowedContributors": [
+            "ActivityProjection and the native microtask scheduler"
+          ],
+          "forbiddenContributors": [
+            "App-specific workaround, task decisions, canonical writes, new clocks or swallowed errors"
+          ],
+          "cacheDimensions": [],
+          "implementationBoundary": [
+            "packages/preset/src/agent-activity.ts",
+            "packages/preset/src/__tests__/agent-activity.test.ts"
+          ],
+          "specRefs": [
+            "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
           ]
         }
       ],
@@ -2491,6 +2581,22 @@
           "kind": "failure-or-retirement",
           "predicate": "Failure or retirement may occur before readiness; cleanup receives the generation and partial acquisition.",
           "producedArtifacts": ["artifact:initialization-request"]
+        },
+        {
+          "id": "activity-office-notification",
+          "from": "activity",
+          "to": "office",
+          "kind": "handoff",
+          "predicate": "An admitted, acknowledged batch changes the existing read-only activity projection.",
+          "producedArtifacts": ["artifact:activity-notification"]
+        },
+        {
+          "id": "design-activity-reviewed",
+          "from": "design",
+          "to": "activity",
+          "kind": "handoff",
+          "predicate": "The bounded scheduler correction is reviewed and authorized.",
+          "producedArtifacts": ["artifact:reviewed-design"]
         }
       ],
       "artifacts": [
@@ -2517,7 +2623,8 @@
             "sim",
             "office",
             "activate",
-            "closeout"
+            "closeout",
+            "activity"
           ],
           "title": "reviewed design",
           "description": "Reviewed target semantics and explicit implementation boundaries, not runtime success.",
@@ -2729,6 +2836,15 @@
           "title": "scene bounds",
           "description": "Completed current visible/selected world bounds or null.",
           "terminal": false
+        },
+        {
+          "id": "artifact:activity-notification",
+          "ownerStepId": "activity",
+          "channel": "read-only notification",
+          "consumerStepIds": ["office"],
+          "title": "acknowledged activity notification",
+          "description": "Existing per-agent/list/log notification after archive acknowledgement; no canonical or renderer state.",
+          "terminal": false
         }
       ],
       "invariants": [
@@ -2814,14 +2930,12 @@
         "kind": "manual",
         "status": "accepted",
         "actor": "codex-coordinator-self-review",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "design-bounded-preservation",
-        "binding": "2492d4e9f8f1b6caccff3e5cd8f55c294467065d4c48a4aa95e9d3ef98268666",
-        "at": "2026-10-24T05:39:04.699Z",
-        "summary": "Task 6 complete owner design re-reviewed against implementation and bounded verification.",
+        "binding": "2fc54f8b448a05adce2bb2758bf2017fcfe9ba12492124482a5eee50f5382599",
+        "at": "2026-10-24T07:49:05.135Z",
+        "summary": "Task 7 integration and user-approved minimum activity correction reviewed.",
         "details": [
-          "Reviewed compose, admission, projection/pose, concrete engine and direct App adapters; ordinary Core initialization fixture corrected without production Core changes.",
-          "Task 7 real-WebGL integration and profile activation remain pending."
+          "Exact owner boundaries, browser receiver regression and Office handoff reviewed; no App policy moved into Preset.",
+          "Tasks 8-10 and whole-flow activation remain pending."
         ]
       },
       {
@@ -2830,10 +2944,10 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "admit-bounded-preservation",
-        "binding": "f773a901e1c745098ee5116cc1b0ee639906fb10835ccaa99b4efe4f1bc07737",
-        "at": "2026-10-24T05:39:04.707Z",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "admit-integration",
+        "binding": "1fe6a30b92c04aaa2c54ed83852a8f899ddc538eb825c3b303fb837875882d59",
+        "at": "2026-10-24T07:49:05.144Z",
         "summary": "Neutral immutable admission and App-domain adapters pass.",
         "details": [
           "Preset admission 10; required unique IDs, quaternions, positive scale, explicit shadows and pixel error; malformed values reject.",
@@ -2846,10 +2960,10 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "engine-bounded-preservation",
-        "binding": "6fb17cb05cf2b6c63eb43bbc322711836dc43e32ebea0cd0aa557e44bcf59aaa",
-        "at": "2026-10-24T05:39:04.715Z",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "engine-integration",
+        "binding": "5a6628782cb6e55e92f1b51211c542b33b1e819c3f56eb90dd7e14e6fc3837a6",
+        "at": "2026-10-24T07:49:05.152Z",
         "summary": "Resource ownership and incremental spatial engine remain verified.",
         "details": [
           "Preset engine 24, resources 1 and query 6; instance-count changes retain geometry/material and retire buffers.",
@@ -2862,13 +2976,13 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "project-bounded-preservation",
-        "binding": "79fe7955d25e838a48ad70f2795f1b686cd0c5e0548d00fe75817e4f31d3661a",
-        "at": "2026-10-24T05:39:04.728Z",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "project-integration",
+        "binding": "4ceea1730514dbcf8643b30747ddf70d4579df952dac29b1625b7491e2e27c16",
+        "at": "2026-10-24T07:49:05.158Z",
         "summary": "Incremental projection, transformed bounds and caller-timed pose pass.",
         "details": [
-          "Preset 289 includes bounds 3, pose 2 and layer 6; mesh/instance scales and quaternion composition match concrete transforms.",
+          "Preset 290 includes bounds 3, pose 2 and layer 6; mesh/instance scales and quaternion composition match concrete transforms.",
           "Pose retarget/cancel/reduced-motion use explicit caller progress and never write canonical data."
         ]
       },
@@ -2878,10 +2992,10 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "render-bounded-preservation",
-        "binding": "74827d3d7601438d66722198947fb004e1147d796cafd46a4fd4eae018402f74",
-        "at": "2026-10-24T05:39:04.734Z",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "render-integration",
+        "binding": "b6276f34e71e07b4fc1a2c868201bec0640bf1cdc021696589484963b8bba831",
+        "at": "2026-10-24T07:49:05.165Z",
         "summary": "Existing public Render/Core projection and query ownership remain verified.",
         "details": [
           "Render 273, Core 272 and Render Engine 11 tests pass; no second scheduler or domain state owner added."
@@ -2893,13 +3007,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "camera-bounded-preservation",
-        "binding": "804762473475e83ba6caf09d470bc89a04c5aa1a42fe74f8e8ca58fc8e7e61a0",
-        "at": "2026-10-24T05:39:04.741Z",
-        "summary": "Existing App-controlled Camera policy preserved.",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "camera-integration",
+        "binding": "5aeb66cef8cba80003a1b01c3efe6b42d97f0d1740bf75a67b180734c810d170",
+        "at": "2026-10-24T07:49:05.173Z",
+        "summary": "App-directed Camera controls preserved through three-App integration.",
         "details": [
-          "Sim 58, FieldScope 86 plus source profile 23 and Office 16 pass; existing camera controls and flight behavior retained."
+          "FieldScope 60 focused plus 23 profile tests; Sim 95 focused; Office 20 tests pass.",
+          "Real-WebGL Camera/navigation/flight/touch/follow checks are included in the 38 passing browser cases. Modes and angles remain App policy."
         ]
       },
       {
@@ -2908,10 +3023,10 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "queries-bounded-preservation",
-        "binding": "cdbf315e91ad07660a6e71fb5e207a4a0312c5469e7688390c8c27329f0fa895",
-        "at": "2026-10-24T05:39:04.747Z",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "queries-integration",
+        "binding": "17390f5864da3e501545bf318b238edfd8fa53a2ccf15d578d8f8db8209f7c02",
+        "at": "2026-10-24T07:49:05.180Z",
         "summary": "Full geometry queries use stable source identities and generalized transforms.",
         "details": [
           "Preset query 6 verifies transformed instances, source indices/IDs and LoD-independent hits; Render/Core public query tests pass."
@@ -2923,14 +3038,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "interaction-bounded-preservation",
-        "binding": "083f3efb4e4a8d07335d2a9f351efac37acd239b72a51ced79c828bf6382bc88",
-        "at": "2026-10-24T05:39:04.754Z",
-        "summary": "Existing three-App interaction behavior preserved.",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "interaction-integration",
+        "binding": "7d4643cb8627dc5f871cc91d43d0b0e59e8da1592f0566e9d94fd72ff1a6548f",
+        "at": "2026-10-24T07:49:05.187Z",
+        "summary": "Three-App interaction and canonical/transient separation preserved.",
         "details": [
-          "Sim 6 files / 58 tests with 13 supervisor guards; FieldScope 7 files / 86 plus source profile 23 with 8 guards per run; Office 4 files / 16.",
-          "No App camera mode, scene-tree UI or domain algorithm is moved into Preset."
+          "FieldScope 60 focused plus 23 source-profile tests with eight supervisor guards; Sim 95 with 13 guards; Office 20 pass.",
+          "38 real-WebGL cases and synchronized screenshots cover picking, navigation, configuration history, playback, proposal and persistence. No domain decisions moved into Preset."
         ]
       },
       {
@@ -2939,14 +3054,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "engine-bounded-preservation",
-        "binding": "6fb17cb05cf2b6c63eb43bbc322711836dc43e32ebea0cd0aa557e44bcf59aaa",
-        "at": "2026-10-24T05:39:04.721Z",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "engine-integration",
+        "binding": "5a6628782cb6e55e92f1b51211c542b33b1e819c3f56eb90dd7e14e6fc3837a6",
+        "at": "2026-10-24T07:49:05.194Z",
         "summary": "Task 6 presentation policy and resource reuse pass.",
         "details": [
           "Permanent tests prove unchanged detail upload counts, hidden/show current inputs, DPR/pixelError selection, explicit shadow independence and instance-count resource retention.",
-          "No real-WebGL visual acceptance is claimed."
+          "Task 7 additionally verifies 38 actual browser WebGL cases; this criterion remains bounded to optional presentation."
         ]
       },
       {
@@ -2955,15 +3070,83 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task6-local-2026-10-24",
-        "caseId": "compose-bounded-preservation",
-        "binding": "5f47cd5ccb1e27b68933d50d5075839934a5674c52acd3222b5bb063259e590c",
-        "at": "2026-10-24T05:39:04.761Z",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "compose-integration",
+        "binding": "65206a193321cc477267f631c5a40ec21164f2b14c974dc41429cac02e9b05c9",
+        "at": "2026-10-24T07:49:05.200Z",
         "summary": "Opt-in mesh content uses ordinary Core registration and lifetime.",
         "details": [
           "Registration 5 proves explicit install, no implicit registration, rollback, invalid write/load, retained mesh identity, canonical create/save and runtime reset cleanup.",
-          "Preset full 37 files / 289 tests; affected package and three App builds, naming 15, dependency 29 workspaces / 6, placement 3 and scoped lint/docs passed.",
+          "Preset 37 files / 290 tests and required affected package/App gates pass; see Task 7 plan result.",
           "Official catalog/profile activation remains pending."
+        ]
+      },
+      {
+        "nodeId": "fieldscope",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "fieldscope-integration",
+        "binding": "0d1442db01dfc50aff92a2d65ed245991c5cb49c1629a2e85e60fedf40eb63d5",
+        "at": "2026-10-24T07:49:05.208Z",
+        "summary": "FieldScope same-source shared integration and Metal WebGL preservation pass.",
+        "details": [
+          "9 files / 60 tests, source-profile 23 tests through supervisors (8 guards each); build and focused lint passed.",
+          "18 browser cases passed at http://127.0.0.1:5178: greenhouse/crops/drains, camera flight/touch, configuration/canvas history and planted responsiveness.",
+          "Inspected overview/front/top, crop/clip/drain detail, mobile Camera and original/changed/Undo screenshots from the actual App. Artifacts: apps/asyra-fieldscope/test-results and .artifacts/task7-interaction."
+        ]
+      },
+      {
+        "nodeId": "sim",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "sim-integration",
+        "binding": "0761317bd6af9a096f429220bb8ad02d5fabdb2258500f20b9e3c8d43b52a1c9",
+        "at": "2026-10-24T07:49:05.216Z",
+        "summary": "Sim same-source original geometry, shared spatial integration and WebGL preservation pass.",
+        "details": [
+          "12 files / 95 tests with 13 supervisor guards; build and focused lint passed.",
+          "18 browser cases passed at http://127.0.0.1:3020 using installed Chrome/SwiftShader WebGL2: workcell/navigation, original-part admission, live playback/continuity and visual sources.",
+          "Inspected selection/pan, live/recorded playback, original source reopening and historical source screenshots. Artifacts: apps/asyra-sim/.artifacts/task7-navigation, task7-playback and task7-sources."
+        ]
+      },
+      {
+        "nodeId": "office",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "office-integration",
+        "binding": "e25712f4bfd0c8fff8f370ba1a29d6821ddd53b05080cbe373446b4f7a87990d",
+        "at": "2026-10-24T07:49:05.225Z",
+        "summary": "Office shared integration and real-WebGL preservation pass.",
+        "details": [
+          "Five files / 20 tests; typecheck/build and scoped lint pass. Server/browser origin parity, invalid origins and build independence are formally tested.",
+          "Two Chrome/SwiftShader WebGL cases pass at http://127.0.0.1:5194: task/follow, layout/Undo/proposal/save and narrow layout.",
+          "Final desktop and narrow screenshots visually inspected in apps/asyra-office/test-results/. No App workaround or weakened assertion."
+        ]
+      },
+      {
+        "nodeId": "activity",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task7-local-2026-10-24",
+        "caseId": "activity-integration",
+        "binding": "3535d701f8478a741b99660995a66beba7b9288cc3a13cba445c9e45fc802ce9",
+        "at": "2026-10-24T07:49:05.233Z",
+        "summary": "Browser scheduler binding preserves acknowledged activity publication.",
+        "details": [
+          "Permanent Preset owner and Office runtime regressions failed before the correction; default callback adapter resolves native receiver failure.",
+          "Preset 290 tests including nine activity tests; Office 20 tests and two WebGL cases pass after public distribution rebuild.",
+          "Archive acknowledgement, coalescing, per-agent isolation, injection and disposal preserved. Logs: .artifacts/preset-3d-task7/activity-owner-before.log, activity-owner.log, office-unit-final.log, office-webgl-final.log."
         ]
       }
     ],
@@ -2972,80 +3155,116 @@
       {
         "nodeId": "admit",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       },
       {
         "nodeId": "engine",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       },
       {
         "nodeId": "project",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       },
       {
         "nodeId": "render",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       },
       {
         "nodeId": "camera",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       },
       {
         "nodeId": "queries",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       },
       {
         "nodeId": "interaction",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       },
       {
         "nodeId": "compose",
         "status": "in-progress",
-        "reason": "Task 6 bounded content/presentation and existing behavior verified; stopped for user inspection before Task 7. Whole-flow integration and activation remain pending."
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "fieldscope",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "sim",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "office",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
+      },
+      {
+        "nodeId": "activity",
+        "status": "in-progress",
+        "reason": "Task 7 bounded integration and preservation gates pass; stopped for user inspection before Task 8. Official activation and remaining whole-flow prerequisites are pending."
       }
     ],
     "sources": [
       {
         "nodeId": "design",
-        "revision": "task6-design:75ad6a4c5f50d246a0f38000c58adbccb3dc1a8429ed0cc26d1d8c0c548d2688"
+        "revision": "task7-reviewed:0d1513f8d3059b84a2a0f498c963d1cd2e46b0963075535df9880051d78565bd"
       },
       {
         "nodeId": "admit",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       },
       {
         "nodeId": "engine",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       },
       {
         "nodeId": "project",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       },
       {
         "nodeId": "render",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       },
       {
         "nodeId": "camera",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       },
       {
         "nodeId": "queries",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       },
       {
         "nodeId": "interaction",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       },
       {
         "nodeId": "compose",
-        "revision": "04552ae090365ed63b99381cd36211393ac1d3f9/task6-sha256:c37bb9be2acdd57749f07b689f184b8318cd099d101157c3f81cc6bd558dcf77"
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+      },
+      {
+        "nodeId": "fieldscope",
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+      },
+      {
+        "nodeId": "sim",
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+      },
+      {
+        "nodeId": "office",
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
+      },
+      {
+        "nodeId": "activity",
+        "revision": "538ca20d12ca6c4b536a98de185e36bc9f3acae2/task7-sha256:ccb61049143d407e9c486a6bdbd9395c60b5823b23f105cd152d441a8561984a"
       }
     ],
     "warnings": []

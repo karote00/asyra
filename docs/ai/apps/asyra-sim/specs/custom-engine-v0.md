@@ -2,7 +2,7 @@
 
 ## Scope
 
-The first engine is an App-owned Three.js adapter using the ordinary
+The App composes the shared Preset Three.js adapter using the ordinary
 `Core -> Render -> RenderEngine` boundary. Preset composition uses `CUSTOM` and
 explicitly selected defaults. Official `3D` and `HYBRID` profiles remain
 unavailable. This is not a public Framework 3D guarantee.
@@ -10,7 +10,7 @@ unavailable. This is not a public Framework 3D guarantee.
 The engine owns SDK objects, camera projection, rasterization, visual ray
 selection, GPU resources, and normalized pointer events. It imports only public
 `@asyra/render-engine` contracts and its own engine-neutral spatial descriptor;
-it cannot import Core, Render, workcells, trajectories, solvers, or UI.
+the concrete implementation cannot import Core, Render, workcells, trajectories, solvers, or UI. Sim supplies its rigid admission and lighting policy through a narrow App adapter.
 
 ## Spatial Projection
 
@@ -27,8 +27,8 @@ not inferred from robot data by the engine. Nonuniform scale is not a pose.
 
 Each body projection has its own opaque engine handle. Camera and mesh updates
 travel through Render commands; camera is a spatial container descriptor, not a
-fake mesh or a second canvas. The descriptor is a CUSTOM capability contract
-owned by this App; generic `Record<string, unknown>` typing alone is not evidence
+fake mesh or a second canvas. The descriptor uses the neutral shared spatial capability, with narrower rigid
+App admission; generic `Record<string, unknown>` typing alone is not evidence
 that arbitrary engines support it. Unknown versions and malformed descriptors
 fail explicitly before changing an accepted object.
 
@@ -65,13 +65,14 @@ their explicit opacity. Unsupported requests fail before replacing accepted
 content; silently ignoring a requested effect is not conformance. General 2D
 rendering parity is outside R0 and must be revisited before generic extraction.
 
-The runtime's App-facing `pick(x, y)` accepts DOM client coordinates. Composition
-converts them using the actual canvas bounds and current logical surface size
-before calling Core's `getElementIdAtClientPos` facade. Despite that legacy
-facade name, its current engine query forwards surface-local coordinates without
-DOM conversion. The CUSTOM query keeps those existing semantics. Outside or
-zero-sized surfaces return no hit. CSS scaling and device-pixel ratio do not
-change model coordinates.
+The runtime's App-facing `pick(x, y)` accepts DOM client coordinates and calls
+Core's `pickSpatialAtClientPoint` facade. Render converts client coordinates once using
+the actual canvas bounds and logical surface size; it gives eligible screen
+overlays precedence, then resolves spatial hits through explicit visual/entity
+identity. The old `getElementIdAtClientPos` retains its surface-local semantics
+and is not the Sim DOM picking route. Outside or zero-sized surfaces return no
+hit. CSS scaling and DPR do not change model coordinates. Visual hit results
+remain separate from original-source collision evidence.
 
 ## Lifecycle
 
@@ -116,14 +117,15 @@ surface; a stubbed graphics driver is unit-test evidence only.
 M0 succeeds only after the normal pipeline and numerical feasibility proofs
 pass. This contract does not turn a rotating cube into a completed R0 product.
 
-## Future Extraction
+## Shared implementation
 
-Keep engine-neutral descriptors and concrete SDK code separate. A later task
-may move the generic adapter/contracts to dedicated packages and install the
-default provider through Preset. Preset would own default composition, not SDK
-execution, robot semantics, or collision decisions. No extraction is performed
-in this task.
-
+Pure admission lives in `@asyra/preset/spatial-contract`; incremental projection,
+bounds and Camera controls live in `@asyra/preset/spatial`; concrete SDK execution
+and resource cleanup live in `@asyra/preset/spatial-engine`. Sim's wrappers retain
+only layer identity, rigid descriptor restrictions and studio-lighting policy.
+Its original source, GLB binding, analysis and playback owners are unchanged.
+The restricted GLB decoder remains App-owned until the separately scoped asset
+extension task. This migration does not activate the official 3D profile.
 
 The CUSTOM engine advertises only its implemented object, graphics, interaction,
 resource and spatial capabilities. The optional framework snapshot query is not

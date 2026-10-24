@@ -1,4 +1,6 @@
 import { defineConfig } from '@playwright/test'
+import { resolveAppEnvironment } from './app-environment'
+const environment = resolveAppEnvironment()
 export default defineConfig({
   testDir: './e2e',
   workers: 1,
@@ -7,8 +9,9 @@ export default defineConfig({
   globalTimeout: 150000,
   reporter: 'line',
   use: {
-    baseURL: 'http://127.0.0.1:5194',
+    baseURL: environment.url,
     viewport: { width: 1440, height: 960 },
+    channel: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? undefined : 'chrome',
     launchOptions: {
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
       args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
@@ -17,8 +20,8 @@ export default defineConfig({
   },
   webServer: {
     command: 'node ../../node_modules/vite/bin/vite.js',
-    url: 'http://127.0.0.1:5194',
-    reuseExistingServer: false,
+    url: environment.url,
+    reuseExistingServer: true,
     timeout: 60000
   }
 })

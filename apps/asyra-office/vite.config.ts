@@ -1,9 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  base: './',
-  server: { host: '127.0.0.1', port: 5194, strictPort: true },
-  build: { target: 'es2022' }
+import { resolveAppEnvironment } from './app-environment'
+export default defineConfig(({ command }) => {
+  const environment = command === 'serve' ? resolveAppEnvironment() : undefined
+  return {
+    plugins: [react(), tailwindcss()],
+    base: './',
+    ...(environment
+      ? {
+          server: {
+            host: environment.host,
+            port: environment.port,
+            strictPort: true
+          }
+        }
+      : {}),
+    build: { target: 'es2022' }
+  }
 })

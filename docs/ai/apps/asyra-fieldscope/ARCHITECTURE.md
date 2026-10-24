@@ -1,6 +1,6 @@
 # Architecture
 
-`domain` produces engine-neutral geometry and layout from an admitted farm configuration. `render-app/site-projection.ts` assembles immutable spatial descriptors once for each applied configuration. `render-app/spatial-layer.ts` projects those descriptors through the framework render layer. `engine/spatial-contract.ts` validates and detaches incoming spatial values; `engine/three-engine.ts` owns Three.js objects, camera, GPU resources, and disposal.
+`domain` produces engine-neutral geometry and layout from an admitted farm configuration. `render-app/site-projection.ts` assembles immutable spatial descriptors once for each applied configuration. `render-app/spatial-layer.ts` projects those descriptors through the framework render layer. `engine/spatial-contract.ts` preserves App rigid/yaw admission and pairs it with neutral Preset receipts; `engine/three-engine.ts` supplies App lighting and admission policy to `@asyra/preset/spatial-engine`, which owns Three.js objects, camera, GPU resources and disposal. Shared projection, bounds and Camera controls come from `@asyra/preset/spatial`; no App copy of those mechanisms remains.
 
 `runtime/bootstrap.ts` owns Core initialization, configuration transactions, configuration subscriptions, scene replacement, and teardown. The React workbench composes independent controls and subscriptions. It must not become a second canonical farm model.
 
