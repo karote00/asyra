@@ -34,3 +34,13 @@ The desk's default wood transitions over rounded edges using the
 Keep blend weights in default local normal space and grain sampling positions
 in resized local metres. Lighting normals and replacement-material mappings
 remain independent; do not switch abruptly between projections at bevel seams.
+
+## Work chair replacement
+
+The [work-chair contract](WORK-CHAIR-SPEC.md) and numeric `appearance.regions`
+keep seat, backrest, posts and legs independently replaceable. Sage and
+dark-frame are defaults. Use region material, otherwise chair material, otherwise
+preset; then region colour, otherwise chair colour. Preserve other properties
+and independent instances. Solid defaults have no texture mapping; replacement
+materials own their mappings under the shared resized-local-space rule. The
+desk's wood-grain blend does not apply to chair cushions or supports.

@@ -22,9 +22,13 @@ Front and back are symmetric. No drawers, handles, cross-braces, keyboard tray, 
 
 ## Work chair
 
+The [work-chair contract](WORK-CHAIR-SPEC.md) owns exact rounded support bounds,
+shared back placement, corrected post termination, instance sizing and LOD sampling.
+Its chair-specific clarifications take precedence over the common defaults.
+
 One green rounded seat, one backrest, two dark back posts, and four dark round legs. Seat top Z=0.36, width 0.42, depth 0.40. Rotate the backrest -7° about local X so its top leans backward; rotate both posts similarly.
 
-Then apply the same Y/Z translation to the backrest and posts under JSON normalizeBackAssembly so their combined max Y=0.24 and max Z=0.70. Seat front Y=-0.22 gives total depth 0.46. Do not move posts independently to match generated perspective differences. Retain embedded post portions inside seat/backrest so connections remain intact.
+Then apply the same Y/Z translation to the backrest and posts under JSON normalizeBackAssembly so their combined max Y=0.24 and max Z=0.70. Seat front Y=-0.22 gives total depth 0.46. Do not move posts independently to match generated perspective differences. Retain embedded post portions inside seat/backrest so connections remain intact. The corrected lower post ends stop at the seat bottom Z=0.290 m; no hanging stubs extend below it. Portions against the rear seat face may remain visible. The work-chair contract defines the shortened length while preserving the upper endpoints.
 
 The original character obscures legs/posts. Four legs, no wheels, and no arms are chosen completions, not a mechanism proven by the image. Rear uses the same green, with no pocket, logo, or adjustment knob. Fine image edge lines indicate cushion contours; do not add piping cords.
 

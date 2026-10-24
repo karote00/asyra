@@ -21,6 +21,14 @@ preserves the nine-part design and original sheet, specifies beveled contacts,
 whole-unit sizing, replaceable defaults and unverified LOD limits, and selects
 programmatic primitives for future production. No generator or model is delivered.
 
+## Work chair review
+
+The [updated work-chair contract](WORK-CHAIR-SPEC.md) is approved for commit.
+It defines rounded-surface back positioning, eight-part assembly, explicit
+post termination at the seat bottom, replacement regions and unverified LOD limits.
+Only the post lower ends are shortened to match the sheet; other geometry inputs
+and reference pixels remain unchanged. No model is verified.
+
 ## Sources and modeling inputs
 
 - [Original approved image](../architecture/review/approved-office-reference.jpg): central office first.

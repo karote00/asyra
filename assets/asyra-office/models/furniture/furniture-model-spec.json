@@ -448,12 +448,12 @@
           "size": [
             0.022,
             0.022,
-            0.34
+            0.28361735458966025
           ],
           "centre": [
             -0.14,
-            0.17,
-            0.4
+            0.1734356579878017,
+            0.427981188860695
           ],
           "radius": 0.003,
           "material": "dark-frame",
@@ -465,12 +465,12 @@
           "size": [
             0.022,
             0.022,
-            0.34
+            0.28361735458966025
           ],
           "centre": [
             0.14,
-            0.17,
-            0.4
+            0.1734356579878017,
+            0.427981188860695
           ],
           "radius": 0.003,
           "material": "dark-frame",
@@ -498,6 +498,110 @@
           "back-post-1"
         ],
         "rule": "translate assembly after rotation so maxY=.24 and maxZ=.70"
+      },
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "WORK-CHAIR-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "boundsAuthority": "ideal-rounded-surface-support",
+        "rotationOrder": "Rotate each back part around its own centre, then apply the same ideal-support-derived translation to all three.",
+        "visualReviewPoint": "Reference BACK shows back posts ending at the seat lower edge. Post lower bounds are Z=0.290 m, with original upper endpoints and -7 degree inclination preserved; no dangling stubs below the seat."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "defaultNormalization": "back-assembly-translation-only",
+        "origin": "Keep authored root (0,0,0); default bounds Y midpoint is +0.01 m.",
+        "rule": "Assemble the default chair, then scale all placed points and seat datum by requested/default XYZ ratios once. Never repeat back normalization or retune angles per LOD or instance."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "seat",
+            "parts": [
+              "seat"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "backrest",
+            "parts": [
+              "backrest"
+            ],
+            "defaultMaterial": "sage"
+          },
+          {
+            "id": "posts",
+            "parts": [
+              "back-post--1",
+              "back-post-1"
+            ],
+            "defaultMaterial": "dark-frame"
+          },
+          {
+            "id": "legs",
+            "parts": [
+              "leg-1",
+              "leg-2",
+              "leg-3",
+              "leg-4"
+            ],
+            "defaultMaterial": "dark-frame"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise chair material, otherwise preset; then region colour, otherwise chair colour. Preserve other properties and isolate instances.",
+        "mapping": "Defaults are solid colours. Replacement materials own their mappings under the shared resized-local-space contract; no forced wood grain or fabric texture."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "cushionBevelSegments": 6,
+            "cushionCornerTopology": "normalized-barycentric-grid",
+            "postBevelSegments": 3,
+            "postCornerTopology": "normalized-barycentric-grid",
+            "legRadialSegments": 32,
+            "legBevelSegments": 3,
+            "maxTriangles": 4000,
+            "maxSurfaceError": 0.001
+          },
+          {
+            "id": "lod1",
+            "cushionBevelSegments": 4,
+            "cushionCornerTopology": "normalized-barycentric-grid",
+            "postBevelSegments": 2,
+            "postCornerTopology": "centre-fan",
+            "legRadialSegments": 24,
+            "legBevelSegments": 2,
+            "maxTriangles": 2200,
+            "maxSurfaceError": 0.002
+          },
+          {
+            "id": "lod2",
+            "cushionBevelSegments": 2,
+            "cushionCornerTopology": "centre-fan",
+            "postBevelSegments": 1,
+            "postCornerTopology": "single-triangle",
+            "legRadialSegments": 12,
+            "legBevelSegments": 1,
+            "maxTriangles": 900,
+            "maxSurfaceError": 0.004
+          }
+        ],
+        "supportPlanes": "All tiers retain ideal-support witnesses for complete bounds and use one shared back placement. Insert boundary-consistent ideal-surface samples; count additional triangles.",
+        "errorMetric": "Adaptive bidirectional surface distance per part against ideal default placed surfaces. Include hidden caps; base-sampling checks do not certify the final mesh.",
+        "preserve": [
+          "eight closed solids",
+          "four ground contacts",
+          "seat and back-post overlaps",
+          "rotated backrest support extrema",
+          "independent appearance regions"
+        ],
+        "failurePolicy": "Reject a budget or error failure; do not remove supports, fit each tier separately or silently relax limits."
       }
     },
     {
