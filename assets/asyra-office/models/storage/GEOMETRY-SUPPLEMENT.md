@@ -4,21 +4,25 @@ Units m, +Z up, -Y front. JSON size order X/Y/Z; centre is local. Cabinet origin
 
 ## Shared panels
 
+The snack cabinet uses the explicit union-first and contact rules below rather than independently rounding its touching carcass panels. The following general rounded-box definition still applies to isolated rounded parts; bookcase and wall shelf remain unchanged in this review.
+
 rounded-box is closed, with all outer edges beveled inward by radius using 3 circular-arc segments, without enlarging bounds. Keep planar normals and smooth arc normals. Front, back, and bottom surfaces are complete; no exposed duplicate contact faces. Bookcase and snack cabinet use actual side, back, bottom, and shelf panels. Compartments are empty space, not black rectangles on solid boxes.
 
 Grain directions follow the surface document. No contents, shadow maps, lights, colliders, or animation. Doors remain separate for future replacement, but there is no hinge or opening-mechanism contract here.
 
 ## Snack cabinet
 
-Body width 0.70, depth 0.34, height 1.00; recessed plinth height 0.04, inset on all sides. Side thickness 0.025; top/bottom panels fit between sides; back thickness 0.018.
+Use the [snack-cabinet specification](SNACK-CABINET-SPEC.md) and JSON together. Complete size is 0.700 x 0.378 x 1.000 m including handles; body depth is 0.340 m. Origin remains the body ground centre, so complete Y bounds are -0.208..0.170 rather than symmetric around zero.
 
-Two upper clear compartments: lower Z=0.460–0.6975, upper Z=0.7225–0.975, width 0.65, depth 0.322. Intermediate shelf thickness 0.025, centre Z=0.71. Upper/lower section divider centre Z=0.4475, top 0.46. There are two compartments; counting top/bottom boards as shelves does not add compartments.
+The 25 mm top cap spans the full 700 mm width at Z=975..1000 mm. Side panels are 25 mm thick and occupy Z=40..975 mm. The 40 mm plinth is inset 30 mm at both sides, 40 mm at front and 20 mm at back. Union the eight carcass boxes, remove internal faces, then round exposed convex edges inward by 3 mm. Do not bevel contact faces separately and create cracks. Concave cavity corners stay sharp.
 
-Lower doors each have width 0.321, height 0.38, thickness 0.02, centres X=±0.1645, Y=-0.168, Z=0.25, gap 0.008. Front Y=-0.178. Each centred shallow rectangular field is width 0.261, height 0.32, depth 0.004. A 0.002-wide inward slope transitions to the recessed floor, reducing its width/height by another 0.004 each. Do not cut through the door.
+Two upper clear compartments remain: lower Z=0.460..0.6975, upper Z=0.7225..0.975, width 0.650 and depth 0.322. Their shelf boards are 25 mm thick. These are empty regions, not dark rectangles.
 
-Handles and upper/lower mounts follow JSON. Handle front Y=-0.208, cabinet rear Y=0.17, total depth 0.378. Add no compartments, drawers, glass, or light strips behind doors. Rear is plain wood; small corner dots in the sheet are illustrative, not modeled screw decorations.
+Lower doors each have size 0.319 x 0.020 x 0.366, centres X=+/-0.1635, Y=-0.168, Z=0.250. Centre gap stays 8 mm; side, top and bottom gaps are 2 mm. Doors end at Z=0.067..0.433 without colliding with the bottom or divider. A field on each door opens at Y=-0.178, width 0.259 and height 0.306. Its 2 mm inset transition descends 4 mm toward +Y, giving a 0.255 x 0.302 floor at Y=-0.174 and 16 mm residual thickness. Four planar slopes meet at 45-degree XZ mitres; no raised frame is added.
 
-The original does not clearly identify a standalone snack cabinet. This is a new design in the same warm-wood style. Unreadable dimensions and rear structure are fixed here rather than left to tool invention.
+Handle front remains Y=-0.208. Each bar unions with two 12 x 15 x 12 mm rounded mounts. The mounts' 4 x 4 mm planar rear pads touch the door at Y=-0.178, rather than entering it. Carcass, two doors and two handles form five closed output solids; actual mesh validation remains pending. Original rear dots do not add screws. No additional lower shelf, drawer, glazing or light is supplied.
+
+The original office does not clearly identify a standalone snack cabinet. This is the existing new matching-style design; the current revision fixes numeric assembly while retaining its sheet.
 
 ## Narrow bookcase
 
