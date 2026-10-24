@@ -45,7 +45,7 @@ class WorkChairSpecificationTests(unittest.TestCase):
             if p['partId'].startswith('back-post'):
                 p['centre'][1:]=[.17,.4];p['size'][2]=.34
         self.assertEqual(helpers.digest(preserved),'20bd52c4cfdbe262630bafed5236c8bfd5ac22e3ee9846d36b89bad0bb1a9de3')
-        self.assertEqual(helpers.digest([m for m in self.data['modules'] if m['moduleId'] not in ('work-chair','two-seat-sofa')]),'39e1ff28c95224ac92443820d1aab4fa731fc524efdbb5cd3cbeef6982825f6d')
+        self.assertEqual(helpers.digest([m for m in self.data['modules'] if m['moduleId'] not in ('work-chair','two-seat-sofa','round-coffee-table')]),'46607e0a556b9d566d7dea965458e61a7e044d39c47d558e2a79a6ba3dda04bd')
         self.assertEqual(hashlib.sha256((ROOT/self.chair['reviewDrawing']).read_bytes()).hexdigest(),'4cdf9460313c15887e8339d7ba83caa04ec218d2fa410ae09aa67faa51dff53b')
 
     def test_rounded_support_normalization(self):

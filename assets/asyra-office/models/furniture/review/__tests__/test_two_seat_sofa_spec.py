@@ -102,8 +102,8 @@ class TwoSeatSofaSpecificationTests(unittest.TestCase):
                     self.assertGreater(margin,error,(tier['id'],a,b,name))
 
     def test_other_assets_and_reference_preserved(self):
-        others=[m for m in self.data['modules'] if m['moduleId']!='two-seat-sofa']
-        self.assertEqual(chair.helpers.digest(others),'2d727c337e4eb6f84dfce48276fe95444054502d320686027c83a3328b6b33f1')
+        others=[m for m in self.data['modules'] if m['moduleId'] not in ('two-seat-sofa','round-coffee-table')]
+        self.assertEqual(chair.helpers.digest(others),'5ac4338bb83ce1fa5fd89578c0c3dc9c02d9e2fbf71efb00de7c5cb66fb5b31f')
         self.assertEqual(hashlib.sha256((ROOT/self.sofa['reviewDrawing']).read_bytes()).hexdigest(),'16a16dc1cf5c6ea76944ba12db4267abffc81404147211e957f09b44a83a7a08')
 
     def test_document_tables_appearance_and_lod(self):

@@ -54,3 +54,15 @@ preset; then region colour, otherwise sofa colour, preserving other properties
 and isolating instances. Default fabric and feet are solid colours. Replacement
 materials own their mapping under the shared resized-local-space rules; no
 reference shading, painted seam gaps or compulsory wood/fabric texture.
+
+## Round coffee table replacement
+
+The [coffee-table contract](COFFEE-TABLE-SPEC.md) owns four replaceable part
+regions. Tabletop oak defaults to #D5B587, roughness 0.80, with secondary grain
+#BD986B; legs default to dark-wood #584333, roughness 0.82. Region material takes
+priority over table material and preset; then apply region colour, otherwise
+table colour. Preserve other properties and isolate instances. Plain material
+replacement removes grain. Blend resized-local X/Y and X/Z grain continuously
+over rounded rims using the documented default geometric normals. Unlike the
+desk, the circular edge has no separate short-end faces. Underside and legs
+remain solid by default; replacement materials control their own mappings.

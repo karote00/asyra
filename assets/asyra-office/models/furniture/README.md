@@ -39,6 +39,15 @@ component revisions are construction choices, not measurements from pixels.
 The original sheet is preserved; its side-height label is explicitly corrected
 in the document. No model or app output is verified.
 
+## Round coffee table review
+
+The [coffee-table contract](COFFEE-TABLE-SPEC.md) is approved for commit. It
+preserves the 0.62 m diameter and 0.32 m height, defines three tapered legs with
+horizontal caps, adds 10 mm embedment and specifies replaceable surfaces and
+unverified LOD budgets. The unchanged illustration is not a calibrated set of
+projections; exact three-leg construction is defined numerically. No model is
+verified.
+
 ## Sources and modeling inputs
 
 - [Original approved image](../architecture/review/approved-office-reference.jpg): central office first.

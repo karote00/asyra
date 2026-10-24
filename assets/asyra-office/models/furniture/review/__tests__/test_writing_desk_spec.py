@@ -65,14 +65,14 @@ class WritingDeskSpecificationTests(unittest.TestCase):
     def test_existing_geometry_and_other_furniture_preserved(self):
         keys=('moduleId','name','reviewDrawing','size','components','surfaceHeight','source','hiddenDecisions','unitCount')
         self.assertEqual(digest({k:self.desk[k] for k in keys}),'b2352471b83595f9b572a7c20363b940c9424dc09d3e2d1e756d6b28d0ffc155')
-        others=[{k:v for k,v in m.items() if m['moduleId']!='work-chair' or k not in ('constructionReview','sizing','appearance','lod')} for m in self.data['modules'] if m['moduleId'] not in ('writing-desk','two-seat-sofa')]
+        others=[{k:v for k,v in m.items() if m['moduleId']!='work-chair' or k not in ('constructionReview','sizing','appearance','lod')} for m in self.data['modules'] if m['moduleId'] not in ('writing-desk','two-seat-sofa','round-coffee-table')]
         others=copy.deepcopy(others)
         for module in others:
             if module['moduleId']=='work-chair':
                 for p in module['components']:
                     if p['partId'].startswith('back-post'):
                         p['centre'][1:]=[.17,.4];p['size'][2]=.34
-        self.assertEqual(digest(others),'0634b6293d153664db832b56c2676d0f3969112134673b639b6b194e02bc5a64')
+        self.assertEqual(digest(others),'a02c7d4a7c58ac73f1899078f3b10ad2832a53f51212f59a45fad98da1d0c9f7')
         self.assertEqual(hashlib.sha256((ROOT/self.desk['reviewDrawing']).read_bytes()).hexdigest(),'16b8f058b57fc3d83aadd0985e619ea75f85615546607168aa690a468d21554c')
 
     def test_dimensions_and_ground_contact(self):

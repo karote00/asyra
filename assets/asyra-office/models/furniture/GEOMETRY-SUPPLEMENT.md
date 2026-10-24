@@ -70,9 +70,21 @@ Offset leg centres create splay. Tops Z=0.17 intersect the base spanning Z=0.145
 
 ## Round wooden coffee table
 
-A true circular top, radius 0.31, thickness 0.035, top Z=0.32. Three round wooden legs spaced 120° around it, upper radius from centre 0.18 and lower 0.24; directions/coordinates follow JSON. Three legs, not four, with no central column, lower shelf, or attached props.
+The [coffee-table contract](COFFEE-TABLE-SPEC.md) owns tabletop and tapered-leg
+profiles, horizontal caps, embedded joints, sizing, mapping and LOD rules.
+Its part-specific sampling and rim construction supersede the common defaults.
 
-Generated FRONT/BACK/SIDE leg projections are not fully consistent and TOP has slight contour distortion. Do not build different geometry for each view. The numeric true circle and one set of three legs are the fixed design. Underside uses the same wood colour; leg tops attach directly to the tabletop bottom.
+True circular top: radius 0.31, thickness 0.035, top Z=0.32. Three splayed round
+legs are spaced 120 degrees, with upper/lower centre radii 0.18/0.24 m. Corrected
+upper caps reach Z=0.295, embedding 10 mm in the tabletop; lower caps remain at
+Z=0. Use tangent profile fillets and XY shear, not whole-leg rotation. Nominal
+32/44 mm diameters differ from the smaller rounded flat cap diameters.
+
+The reference projections are not calibrated and TOP has contour distortion.
+Use one circular top and one three-leg arrangement across all views. No fourth
+leg, shelf, underside platform or attached props. Underside and legs have solid
+replaceable default colours; tabletop grain uses the coffee-table mapping.
+No production model or visual match is verified by this documentation.
 
 ## Dimensions, use, and future verification
 

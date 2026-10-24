@@ -36,6 +36,14 @@ construction height; the agreed overall height is 0.70 m. The revised numeric
 assembly follows the reference's cushion-above-shell relationship and short
 feet, with documented contacts and no model acceptance claim.
 
+## Round coffee table document review
+
+The [coffee-table specification](../COFFEE-TABLE-SPEC.md) is approved for commit.
+The original sheet remains unchanged. Use one true circle and three legs at
+120 degrees despite illustrative projection differences. The updated contract
+separates nominal taper widths from rounded contact discs and embeds each leg
+10 mm into the tabletop. Appearance and exported meshes remain unverified.
+
 ## Lighting revision - 2026-10-04
 
 The user authorized committing these lighting-only drawing revisions. Prior approval applies to the underlying design. Dimensions and construction specifications are unchanged.

@@ -1160,7 +1160,7 @@
           "topCentre": [
             0.0,
             -0.18,
-            0.285
+            0.295
           ],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
@@ -1171,14 +1171,14 @@
           "partId": "leg-2",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            0.207846,
+            0.207846096908265,
             0.12,
             0
           ],
           "topCentre": [
-            0.155885,
+            0.155884572681199,
             0.09,
-            0.285
+            0.295
           ],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
@@ -1189,14 +1189,14 @@
           "partId": "leg-3",
           "primitive": "tapered-round-leg",
           "bottomCentre": [
-            -0.207846,
+            -0.207846096908265,
             0.12,
             0
           ],
           "topCentre": [
-            -0.155885,
+            -0.155884572681199,
             0.09,
-            0.285
+            0.295
           ],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
@@ -1211,7 +1211,94 @@
         "three splayed feet at 120 degrees",
         "no underside shelf"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionReview": {
+        "documentStatus": "approved-for-commit",
+        "modelVerified": false,
+        "geometryRecipe": "COFFEE-TABLE-SPEC.md",
+        "productionRoute": "programmatic-primitives",
+        "legConstruction": "Round tapered profile with tangent inward rim fillets, followed by height-dependent XY shear. End caps remain horizontal.",
+        "attachment": "Each leg embeds 10 mm into the tabletop; no separate brackets or underside platform."
+      },
+      "sizing": {
+        "instanceScaleApplications": 1,
+        "invalidExtentPolicy": "reject",
+        "rule": "Assemble the default four-part unit first, then apply requested/default XYZ ratios once about the ground origin to all points, caps, grain coordinates and attachment datums. Nonuniform sizing may turn circles into ellipses; never compensate by rebuilding parts."
+      },
+      "appearance": {
+        "bakedLighting": false,
+        "independentInstanceOverrides": true,
+        "regions": [
+          {
+            "id": "top",
+            "parts": [
+              "top"
+            ],
+            "defaultMaterial": "oak"
+          },
+          {
+            "id": "leg-1",
+            "parts": [
+              "leg-1"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "leg-2",
+            "parts": [
+              "leg-2"
+            ],
+            "defaultMaterial": "dark-wood"
+          },
+          {
+            "id": "leg-3",
+            "parts": [
+              "leg-3"
+            ],
+            "defaultMaterial": "dark-wood"
+          }
+        ],
+        "overrideOrder": "Region material, otherwise table material, otherwise preset; then region colour, otherwise table colour. Preserve other properties and independent instances.",
+        "mapping": "Top grain uses resized local X/Y; circular side grain uses X/Z. Blend on rounded rims using default geometric normals as documented. Underside and legs are solid defaults; replacement materials own their mappings."
+      },
+      "lod": {
+        "verified": false,
+        "tiers": [
+          {
+            "id": "lod0",
+            "topRadialSegments": 64,
+            "legRadialSegments": 32,
+            "rimSegments": 3,
+            "baseTriangles": 2560,
+            "maxTriangles": 2800,
+            "maxTopSurfaceError": 0.001,
+            "maxLegSurfaceError": 0.00025
+          },
+          {
+            "id": "lod1",
+            "topRadialSegments": 48,
+            "legRadialSegments": 24,
+            "rimSegments": 2,
+            "baseTriangles": 1440,
+            "maxTriangles": 1600,
+            "maxTopSurfaceError": 0.0015,
+            "maxLegSurfaceError": 0.0005
+          },
+          {
+            "id": "lod2",
+            "topRadialSegments": 24,
+            "legRadialSegments": 12,
+            "rimSegments": 1,
+            "baseTriangles": 480,
+            "maxTriangles": 600,
+            "maxTopSurfaceError": 0.005,
+            "maxLegSurfaceError": 0.002
+          }
+        ],
+        "rule": "Retain four closed convex inscribed parts, three horizontal ground contacts, exact whole bounds and embedded upper joints. Compare signed containment at the three documented Z=.292 m axis witnesses. Count all caps and hidden faces.",
+        "errorMetric": "Per-part adaptive bidirectional distance to the ideal placed default surface, including leg shear. Analytic sampling bounds are not exported-mesh verification.",
+        "failurePolicy": "Reject budget, attachment or error failures; do not move feet, add patch geometry or silently relax limits."
+      }
     }
   ],
   "construction": {
