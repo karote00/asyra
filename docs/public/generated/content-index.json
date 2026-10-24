@@ -2897,7 +2897,7 @@
       "wordCount": 389
     },
     {
-      "contentSha256": "c8f46c0786c0584519150eb8402069259a8a01b75ca01b44113220a5a492a4c7",
+      "contentSha256": "ecdddc4ca47e48ab9d5c8ad2b0593d4da9e217cadb2c258c0c351e43aeb5e947",
       "description": "Small shared public utilities without Framework state or lifecycle ownership.",
       "headings": [
         {
@@ -2953,7 +2953,7 @@
       "path": "reference/packages/utils.md",
       "section": "Reference",
       "title": "@asyra/utils",
-      "wordCount": 450
+      "wordCount": 481
     },
     {
       "contentSha256": "79888ae4681529bb11ffa09ec7dec3850cff48d14945b8fe21de12d364df1caa",

@@ -71,7 +71,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "1dd5d85fac27c7d251644f3fd81054e761f989258ad04efc0b61b709af364774",
+        "contract": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333",
         "guide": "e2ddd1a4890f404a6e3717d4b7977e5925a2880c073fa60db037f13ac0b3452e",
         "manifest": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
       },
@@ -213,7 +213,7 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "17ab747acefef2c872128f1aca884861df6105959f1765212305c99dffcd51fa",
+        "contract": "99089ad60579a8a26c9d07acb084dc8e7c50b32a2837176f90c259b7284294be",
         "guide": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },
@@ -284,7 +284,7 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "f9b362b1d98fae39e808c1e402505f0577b31c6a91d7a09a2679f80ffa63254b",
+        "contract": "cf3300f1b0fdf07637fae83686da2898a263ca9f2c01fa3aa328bf22960e110a",
         "guide": "4365de7999d88314d240e8240083c3636217fdad4443b515ad7bab85b57c8baf",
         "manifest": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
       },
@@ -432,8 +432,8 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "10f76368c0b6af1ecd727cf90700aaa63cd43c7096293179b77c0acbc6b2da35",
-        "guide": "c8f46c0786c0584519150eb8402069259a8a01b75ca01b44113220a5a492a4c7",
+        "contract": "313ef64a3a0c0a8151a2b4b20337365a3a42cae068a9ea05c270ae0e533b9cf6",
+        "guide": "ecdddc4ca47e48ab9d5c8ad2b0593d4da9e217cadb2c258c0c351e43aeb5e947",
         "manifest": "d13130904aebc87f640dbbe3ecd21d7c3a697c354ec1a94c083445230b41a5e6"
       },
       "version": "0.5.2"

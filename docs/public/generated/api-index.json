@@ -3387,6 +3387,7 @@
             "replaceAll",
             "requires",
             "reverse",
+            "rotation",
             "sceneTreeSaveData",
             "search",
             "segmentId",
@@ -3638,6 +3639,8 @@
         {
           "members": [
             "height",
+            "rotation",
+            "type",
             "width",
             "x",
             "y"
@@ -6978,6 +6981,7 @@
             "ZOOM_SMOOTH_RATIO",
             "arrEqual",
             "beginBrowserDragPhase",
+            "calculateEllipseBounds",
             "calculateZoomFit",
             "calculateZoomToCenter",
             "capitalizeFirstLetter",

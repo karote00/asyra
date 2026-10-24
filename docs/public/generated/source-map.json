@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "17ab747acefef2c872128f1aca884861df6105959f1765212305c99dffcd51fa"
+          "sha256": "99089ad60579a8a26c9d07acb084dc8e7c50b32a2837176f90c259b7284294be"
         }
       ]
     },
@@ -66,7 +66,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "1dd5d85fac27c7d251644f3fd81054e761f989258ad04efc0b61b709af364774"
+          "sha256": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333"
         },
         {
           "path": "docs/ai/framework/rules/app-optimization-and-maintainability.md",
@@ -96,7 +96,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "1dd5d85fac27c7d251644f3fd81054e761f989258ad04efc0b61b709af364774"
+          "sha256": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333"
         }
       ]
     },
@@ -166,7 +166,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "f9b362b1d98fae39e808c1e402505f0577b31c6a91d7a09a2679f80ffa63254b"
+          "sha256": "cf3300f1b0fdf07637fae83686da2898a263ca9f2c01fa3aa328bf22960e110a"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -184,7 +184,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "1dd5d85fac27c7d251644f3fd81054e761f989258ad04efc0b61b709af364774"
+          "sha256": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333"
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -206,7 +206,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "1dd5d85fac27c7d251644f3fd81054e761f989258ad04efc0b61b709af364774"
+          "sha256": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333"
         },
         {
           "path": "docs/ai/framework/packages/props-manager.md",
@@ -238,7 +238,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "f9b362b1d98fae39e808c1e402505f0577b31c6a91d7a09a2679f80ffa63254b"
+          "sha256": "cf3300f1b0fdf07637fae83686da2898a263ca9f2c01fa3aa328bf22960e110a"
         },
         {
           "path": "docs/ai/framework/packages/render-engine.md",
@@ -256,7 +256,7 @@
         },
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "1dd5d85fac27c7d251644f3fd81054e761f989258ad04efc0b61b709af364774"
+          "sha256": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333"
         },
         {
           "path": "docs/ai/apps/asyra-design/features/group-interactions.md",
@@ -574,7 +574,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/core.md",
-          "sha256": "1dd5d85fac27c7d251644f3fd81054e761f989258ad04efc0b61b709af364774"
+          "sha256": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333"
         },
         {
           "path": "packages/core/package.json",
@@ -658,7 +658,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "17ab747acefef2c872128f1aca884861df6105959f1765212305c99dffcd51fa"
+          "sha256": "99089ad60579a8a26c9d07acb084dc8e7c50b32a2837176f90c259b7284294be"
         },
         {
           "path": "packages/preset/package.json",
@@ -700,7 +700,7 @@
       "sources": [
         {
           "path": "docs/ai/framework/packages/render.md",
-          "sha256": "f9b362b1d98fae39e808c1e402505f0577b31c6a91d7a09a2679f80ffa63254b"
+          "sha256": "cf3300f1b0fdf07637fae83686da2898a263ca9f2c01fa3aa328bf22960e110a"
         },
         {
           "path": "packages/render/package.json",
@@ -794,11 +794,11 @@
     },
     {
       "id": "reference/packages/utils",
-      "pageSha256": "c8f46c0786c0584519150eb8402069259a8a01b75ca01b44113220a5a492a4c7",
+      "pageSha256": "ecdddc4ca47e48ab9d5c8ad2b0593d4da9e217cadb2c258c0c351e43aeb5e947",
       "sources": [
         {
           "path": "docs/ai/framework/packages/utils.md",
-          "sha256": "10f76368c0b6af1ecd727cf90700aaa63cd43c7096293179b77c0acbc6b2da35"
+          "sha256": "313ef64a3a0c0a8151a2b4b20337365a3a42cae068a9ea05c270ae0e533b9cf6"
         },
         {
           "path": "packages/utils/package.json",

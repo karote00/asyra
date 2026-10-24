@@ -402,15 +402,19 @@ test('local flow validation executes existing suites and stops before proof on c
   const expected = [
     'yarn workspace @asyra/ai-agent-runtime build:ai-agent-runtime',
     'yarn workspace @asyra/ai-agent-runtime test:local',
+    'yarn workspace @asyra/preset build:preset',
+    'yarn workspace @asyra/preset exec vitest run src/__tests__/selection-subscriptions.test.ts',
     'yarn workspace @asyra/asyra-design test:server-response-harness',
     'node tools/flow-inspector/control-plane/cli.cjs --manifest apps/asyra-design/flow-contracts.json verify'
   ]
   for (const [failure, count] of [
-    ['never-matches', 4],
+    ['never-matches', 6],
     ['build:ai-agent-runtime', 1],
     ['test:local', 2],
-    ['test:server-response-harness', 3],
-    ['verify', 4]
+    ['build:preset', 3],
+    ['selection-subscriptions.test.ts', 4],
+    ['test:server-response-harness', 5],
+    ['verify', 6]
   ]) {
     const trace = path.join(directory, 'trace')
     fs.writeFileSync(trace, '')
