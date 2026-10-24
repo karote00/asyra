@@ -383,3 +383,32 @@ camera and App-supplied progress/tolerance/reduced-motion policy. Follow submits
 current target pose through the same mechanism, without document/task reads.
 Invalid retarget/advance leaves the accepted target intact. No timer, frame loop,
 canonical publication or mesh submission is installed by the control.
+
+## Task 5 delivery boundary
+
+Spatial queries have a separate capability from descriptor rendering. Typed
+requests cover world projection, surface ray, local/world conversion, local/world
+bounds and world-ray intersections. Old 2D query names retain their semantics.
+Projection returns surface-local logical CSS coordinates, NDC depth and a visibility
+flag requiring positive eye depth and all frustum planes. At the eye plane,
+projection returns null point/depth and a false visibility flag. Surface bounds use a
+half-open rectangle; outside or zero-sized client surfaces return no ray/pick.
+Nonfinite inputs reject. Rays use finite nonzero directions, normalized by the
+query owner; results contain nearest full-shape hit per visual/source instance,
+sorted by distance then current submitted visual and source-instance order.
+
+Existing instances may supply an optional nonempty unique `id`. Results preserve
+it and always expose the source instance index, never a compacted LoD slot.
+Omitting IDs preserves current App submissions; indices identify those source
+placements within that admitted submission. No scale/rotation format is added.
+Conversion and bounds accept an optional source instance index and reject invalid
+indices. Without an index, mesh bounds union all placements; local bounds are in
+mesh-local coordinates. Detached/foreign/retired handles reject spatial queries.
+
+Render maps only registered explicit visual identities for 3D object queries;
+unknown or ambiguous IDs reject. Core delegates the named typed facades. Client
+picking prioritizes eligible screen overlays, otherwise maps the nearest spatial
+hit. Only this public client path converts DOM coordinates; legacy surface-space
+picking remains unchanged. Sim consumes it through Core, with existing selection
+Features and pointer-cancel policies. Office and FieldScope keep their existing
+non-picking behavior. No query result becomes canonical or solver evidence.

@@ -191,3 +191,17 @@ vi.mock('@asyra/core', () => {
 vi.mock('@asyra/render', () => {
   throw new Error('Pure admission must not load Render')
 })
+
+it('preserves optional stable instance identities and rejects duplicates atomically', async () => {
+  const { readSpatialInstances } = await import('../spatial-contract.js')
+  const input = [
+    { id: 'a', position: [0, 0, 0], yaw: 0 },
+    { id: 'b', position: [2, 0, 0], yaw: 0 }
+  ]
+  const result = readSpatialInstances(input)
+  expect(result[0]).toMatchObject({ id: 'a' })
+  expect(() => readSpatialInstances([input[0], input[0]])).toThrow()
+  expect(() => readSpatialInstances([{ ...input[0], id: '' }])).toThrow()
+  input[0].id = 'mutated'
+  expect(result[0]).toMatchObject({ id: 'a' })
+})

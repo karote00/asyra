@@ -1,5 +1,8 @@
 import { expect, it, vi } from 'vitest'
-import type { RenderEngine } from '@asyra/render-engine'
+import {
+  RenderEngineCapabilities,
+  type RenderEngine
+} from '@asyra/render-engine'
 import { RecordingRenderEngine } from '@asyra/render-engine/testing'
 import { createSpatialRenderEngine } from '../spatial/lazy-engine.js'
 
@@ -17,7 +20,10 @@ const deferred = <T>() => {
   return { promise, resolve, reject }
 }
 const delegate = () =>
-  new RecordingRenderEngine({ name: 'Deferred spatial test' })
+  new RecordingRenderEngine({
+    name: 'Deferred spatial test',
+    capabilities: Object.values(RenderEngineCapabilities)
+  })
 
 it('keeps root/2D, pure admission and mechanism imports independent of the spatial SDK', async () => {
   const root = await import('../index.js')

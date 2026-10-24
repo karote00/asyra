@@ -377,3 +377,16 @@ interiors are emitted once. The default remains `nonzero` for existing compound
 callers. Preparation preserves source anchors/controls; empty contours produce
 empty coverage. GPU material integration must preserve these same coverage
 semantics and must not select topology from the gradient mode or opacity.
+
+## Full-shape spatial queries
+
+The optional concrete spatial engine implements the separate spatial-query
+capability. Ray hits use admitted full geometry and source instance transforms,
+independent of distant-detail geometry or compacted visible slots. Queries borrow
+owned geometry/material resources and create no GPU resources. Nearest hits are
+ordered by distance, then current submitted visual/source-instance order.
+Hidden/nonselectable visuals are excluded; opacity alone does not exclude a hit.
+Interactive screen graphics precede scene hits. Bounds reuse owned local geometry
+bounds and apply source-instance/world poses; no input or solver policy is inferred.
+Apps consume the named Render/Core facade and retain action, capture and cancel
+policy. These mechanisms do not activate the reserved `3D` profile.

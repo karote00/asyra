@@ -4,11 +4,12 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1-4 complete within their bounded contracts; stopped for user
-inspection before Task 5. Task 1 produced the reviewed specification and full
+Status: Tasks 1-5 complete within their bounded contracts; stopped for user
+inspection before Task 6. Task 1 produced the reviewed specification and full
 architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
 shared incremental projection/bounds with direct App preservation checks.
-Task 4 adds App-directed shared Camera controls. Tasks 5-10 remain unexecuted;
+Tasks 4-5 add App-directed shared Camera controls and typed spatial queries with
+shared picking. Tasks 6-10 remain unexecuted;
 official 3D activation and whole-flow runtime acceptance remain pending.
 
 Planning base: local `main` at
@@ -577,6 +578,55 @@ Acceptance: CSS scale/DPR/resize and outside/zero-sized surfaces have defined
 results; depth and instance identity remain correct through LoD; unsupported
 queries fail without fallback. UI/Apps never extract SDK objects to implement
 queries, and visual hits never become solver evidence.
+
+Task 5 execution contract: base `3eeb2f634`, same worktree and branch. Implement
+neutral typed spatial query contracts and explicit unsupported-engine rejection;
+then optional instance identity admission, concrete full-shape queries, public
+Render/Core mapping and the direct Sim picking consumer. Keep existing Feature,
+Input and Selection owners; do not install another session runtime or 2D overlay.
+Discovery is bounded to those owners and their current direct consumers/tests.
+Required gates: owner query/admission tests, 2D preservation, Render/Core/Preset
+suites, three-App picking/navigation/runtime tests under existing supervisors,
+package/App builds, naming, lint/format, dependencies, docs and source-bound
+Inspector evidence. No scale/roll/content extension, editor tool, assets,
+activation or real-WebGL visual acceptance. Stop for inspection before Task 6.
+
+### Task 5 result and inspection checkpoint
+
+Completed separate spatial-query capability and typed projection, surface ray,
+local/world conversion, local/world bounds, world-ray intersections and
+screen-overlay-first picking. Render resolves explicit visual/entity IDs; Core
+exposes named delegates. Source instance indices and optional stable IDs survive
+LoD compaction and submission reorder. Queries borrow full geometry/materials
+without allocating GPU resources. Pixi and the default recording engine reject
+unsupported spatial queries; legacy 2D contracts remain intact.
+
+Sim now uses the public client-point facade, removing its duplicate DOM
+conversion. Existing Feature selection, pointer capture/modifiers/cancel and
+Camera policies remain App-owned. FieldScope and Office gain no new picking
+behavior. Query execution leaves undo history unchanged. All changes remain in
+the same worktree and branch.
+
+Regression-first tests exposed invalid instance bounds being accepted on empty
+content and stale hits being accepted after replacement with the same visual ID.
+Both now reject at their canonical query owner. Permanent cases cover near/far
+and eye-plane projection, CSS/DPR/resize, outside/zero-sized surface, foreign and
+detached handles, transparent/hidden/nonselectable geometry, overlay precedence,
+instance pose/bounds, LoD/full geometry, source reorder and resource reuse.
+
+Verification: Render Engine 11 tests, Pixi 49, Render 273, Core 272 and Preset
+276 passed. The final shared query suite has 5 tests. Sim 6 selected files / 57
+tests and FieldScope 5 selected files / 48 tests passed through existing
+supervisors; their 13 and 8 guard tests passed. Office full suite 4 files / 16
+tests passed. All five affected package builds and all three App TypeScript /
+production builds passed. Naming (15), dependency validation (29 workspaces /
+6 tests), test placement (3), scoped lint/format and public documentation checks
+passed. Existing console warnings remain unchanged. Source-bound Inspector
+evidence records only the verified bounded slices, not whole-flow acceptance.
+
+No real-WebGL visual acceptance, selectable content extension, editing/assets or
+reserved-profile activation is claimed. Stop for user inspection before Task 6.
+No push or dependency change was performed.
 
 ## Task 6 - Complete selectable content and presentation mechanisms
 

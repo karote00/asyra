@@ -95,3 +95,17 @@ local bounds. Capture is read-only and owns no cross-call image cache.
 
 Version plus `.` and `./canvas-pipeline-debugger` exports are generated from the
 manifest and checked by the documentation gate.
+
+## Spatial queries
+
+With a spatial-query-capable provider, use `projectSpatialPoint`,
+`getSpatialRayAtClientPoint`, `raycastSpatial`, `convertSpatialPoint`,
+`getSpatialBounds` and `pickSpatialAtClientPoint`. Register explicit visual IDs
+through `RenderNode.projectionIdentity`; unknown, ambiguous or retired IDs reject.
+Hits expose visual/entity/source-instance identity, never SDK objects.
+
+Client-point methods convert DOM bounds once into logical surface coordinates;
+zero-sized/outside surfaces return null. `SpatialPick` distinguishes screen
+overlays (which take precedence) from spatial hits. Legacy
+`getElementIdAtClientPos` continues to accept surface coordinates. Apps retain
+selection, capture and cancellation policy through existing Features.

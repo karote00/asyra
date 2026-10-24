@@ -11,7 +11,8 @@ export const SPATIAL_ENGINE_CAPABILITIES = Object.freeze([
   RenderEngineCapabilities.GRAPHICS,
   RenderEngineCapabilities.INTERACTION,
   RenderEngineCapabilities.RESOURCES,
-  RenderEngineCapabilities.SPATIAL
+  RenderEngineCapabilities.SPATIAL,
+  RenderEngineCapabilities.SPATIAL_QUERIES
 ])
 
 /** The provider is synchronous; only initialize evaluates the concrete SDK. */

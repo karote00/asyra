@@ -71,8 +71,8 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "33574ecc06d4f8ce0eaf9a4a26f81df225e623a8d47d7722deb445e3aace7965",
-        "guide": "181850c14032cc9e4f8cec2c8e1124f7c3df3443a357ae0b8c9994ee6d0a9cb1",
+        "contract": "ec1de2a7849e7312496dddd22f8a01e3af92d3879c78a1caa046fe760326a672",
+        "guide": "e2ddd1a4890f404a6e3717d4b7977e5925a2880c073fa60db037f13ac0b3452e",
         "manifest": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
       },
       "version": "0.5.7"
@@ -212,8 +212,8 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "7f1b1cdf938035fd57964de050661f93f635038764c83207a310215eeed4cb1b",
-        "guide": "aaf77100ea84e00a87f4731d25edcc1b6cf58d4f0bb3d044321ddfb4eeea09cf",
+        "contract": "13f03182f28a7b1730d1279fcd895a03074ef2f77497e91ffe976f5ba21d82e8",
+        "guide": "d8e6517c38f103665e109e37146febc4ac0a1388cd013ce330016c4ec58d05ca",
         "manifest": "b634ac4129c43fdb770ba1e6f380abd5b8d320aa8f6a2903c9abbdb04133a24b"
       },
       "version": "0.5.8"
@@ -283,8 +283,8 @@
         "./canvas-pipeline-debugger"
       ],
       "sourceDigests": {
-        "contract": "7bfdccadb5ec0479808aebfa709520f03394dbcfc3b098d057a4de014ac40327",
-        "guide": "8d14600f2148d974b2f1f247dffbdbcc2f46325ff854849960376f317bae8f88",
+        "contract": "f9b362b1d98fae39e808c1e402505f0577b31c6a91d7a09a2679f80ffa63254b",
+        "guide": "4365de7999d88314d240e8240083c3636217fdad4443b515ad7bab85b57c8baf",
         "manifest": "d863f33f404300dfbec8e2cd521d5bf4bfcf76f440cc09c148520eb92150c77e"
       },
       "version": "0.5.7"
@@ -303,8 +303,8 @@
         "./testing"
       ],
       "sourceDigests": {
-        "contract": "c17fa10d4b8bd033b551f4a283541dcdcc7ae7130776cae9bf4ae46dc020be30",
-        "guide": "8cb722dd37096748fdb51f7bf88bc473ff306611915b01ec460bad19875fdbdb",
+        "contract": "cab173d60fa275ac5751e4d580a48a947c31986bb02d4b0342e3aa8f72f50d91",
+        "guide": "3d2f6eb22a4f6eaf8f02706423f34a0c94b4970ceebb89218c9dd67d7eb427e0",
         "manifest": "2ffcd587c6076b001aeddbf11d2afbc95e3f8531cef35590e2ff804d59bf31f8"
       },
       "version": "0.5.1"

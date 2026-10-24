@@ -84,3 +84,13 @@ engines do not advertise this capability or manufacture image evidence.
 
 Version plus `.` and `./testing` entrypoints are generated from the manifest and
 verified against the release inventory.
+
+## Optional spatial queries
+
+`SPATIAL_QUERIES` (`spatial-queries.v0`) is independent of descriptor rendering.
+The typed query/result unions support projection, screen ray, local/world point
+conversion, local/world bounds, ray intersections and overlay-first picking.
+Surface points are logical CSS coordinates; projection includes NDC depth and
+frustum visibility. Hit identity uses opaque handles and source-instance index
+plus optional stable ID. Existing 2D queries retain their meanings. Pixi and the
+default recording engine reject spatial queries explicitly.

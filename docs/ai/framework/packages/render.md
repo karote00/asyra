@@ -418,3 +418,20 @@ entity ID when supplied, otherwise the visual ID, independently of display
 labels. Ordinary nodes without this metadata retain their existing label-based
 interaction behavior. Invalid identity assignment leaves prior metadata intact.
 Render owns the abstract handoff; Preset owns spatial record reconciliation.
+
+## Spatial query facade
+
+The optional spatial-query capability exposes `projectSpatialPoint`,
+`getSpatialRayAtClientPoint`, `raycastSpatial`, `convertSpatialPoint`,
+`getSpatialBounds` and `pickSpatialAtClientPoint`. Render resolves registered
+`projectionIdentity.visualId` values and maps hits to `SpatialHit` with optional
+entity/source-instance identity. Unknown, ambiguous or retired identities reject.
+Core delegates the same named methods; neither facade exposes engine handles.
+
+Only the client-point methods convert actual DOM bounds to logical surface
+coordinates. Zero-sized or outside half-open surfaces yield null; unsupported
+engines reject before conversion. `SpatialPick` distinguishes an eligible screen
+overlay from a spatial hit, with overlay precedence. Legacy
+`getElementIdAtClientPos` retains its surface-coordinate contract. Queries do not
+publish document, history, selection or solver state; Apps route accepted intent
+through their existing Features.

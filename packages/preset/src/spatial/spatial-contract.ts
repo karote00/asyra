@@ -166,15 +166,23 @@ export function readSpatialInstances(
     !snapshot.every(
       (item) =>
         record(item) &&
+        (item.id === undefined ||
+          (typeof item.id === 'string' && item.id.length > 0)) &&
         finiteTuple(item.position, 3) &&
         typeof item.yaw === 'number' &&
         Number.isFinite(item.yaw)
     )
   )
     throw new Error('Invalid spatial instances')
+  const ids = snapshot
+    .filter((item) => item.id !== undefined)
+    .map((item) => item.id)
+  if (new Set(ids).size !== ids.length)
+    throw new Error('Duplicate spatial instance identity')
   const instances = Object.freeze(
     snapshot.map((item) =>
       Object.freeze({
+        ...(item.id === undefined ? {} : { id: item.id as string }),
         position: Object.freeze([...item.position]) as SpatialVector,
         yaw: item.yaw as number
       })

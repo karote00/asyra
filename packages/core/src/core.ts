@@ -777,6 +777,42 @@ class Core implements CoreAPIs {
     )
   }
 
+  projectSpatialPoint(point: import('@asyra/render-engine').SpatialVector) {
+    return this.deps.render.projectSpatialPoint(point)
+  }
+  getSpatialRayAtClientPoint(
+    point: import('@asyra/render-engine').RenderEnginePoint
+  ) {
+    return this.deps.render.getSpatialRayAtClientPoint(point)
+  }
+  raycastSpatial(ray: import('@asyra/render-engine').SpatialRay) {
+    return this.deps.render.raycastSpatial(ray)
+  }
+  convertSpatialPoint(
+    visualId: string,
+    point: import('@asyra/render-engine').SpatialVector,
+    to: 'local' | 'world',
+    instanceIndex?: number
+  ) {
+    return this.deps.render.convertSpatialPoint(
+      visualId,
+      point,
+      to,
+      instanceIndex
+    )
+  }
+  getSpatialBounds(
+    visualId: string,
+    space: 'local' | 'world',
+    instanceIndex?: number
+  ) {
+    return this.deps.render.getSpatialBounds(visualId, space, instanceIndex)
+  }
+  pickSpatialAtClientPoint(
+    point: import('@asyra/render-engine').RenderEnginePoint
+  ) {
+    return this.deps.render.pickSpatialAtClientPoint(point)
+  }
   getElementIdAtClientPos(clientPos: { x: number; y: number }) {
     return this.deps.render.getElementIdAtClientPos(clientPos)
   }

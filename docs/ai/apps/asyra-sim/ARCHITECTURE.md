@@ -430,3 +430,12 @@ authorize Framework publication, merging, tagging, or deployment.
   silently during project load.
 - Replacing error handling, numerical validation, or user support with a
   disclaimer.
+
+### Shared spatial picking
+
+The runtime picks through `Core.pickSpatialAtClientPoint`. Render performs one
+DOM client-to-logical-surface conversion and resolves registered visual identity;
+the App no longer duplicates scaling or bounds checks. The runtime returns the
+overlay entity or spatial entity/visual ID to the existing viewport selection
+Feature. Pointer capture, modifiers and cancellation remain App policy. Picks,
+bounds and camera queries do not write canonical state or undo history.

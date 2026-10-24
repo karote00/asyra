@@ -46,8 +46,7 @@ or unsupported capability claims.
 
 ## Active Developer Agent Work
 
-- [Asyra Developer Agent Distribution and Maintenance](
-  plans/asyra-developer-agent-plan.md)
+- [Asyra Developer Agent Distribution and Maintenance](plans/asyra-developer-agent-plan.md)
   - Codex 0.1.1 local candidate includes the complete Starter App standard;
     packaging and scoped validation pass. CLI installation and desktop Skill
     loading were confirmed for 0.1.0; 0.1.1 update and fresh product-task
@@ -62,9 +61,9 @@ None.
 ## Preset 3D Foundation
 
 - [Preset 3D Foundation and App Migration](plans/preset-3d-foundation-plan.md)
-  - Tasks 1-4 complete: reviewed design, pure admission, engine resources and
-    shared projection/bounds and App-directed Camera controls verified. Paused
-    for user inspection before Task 5; whole-flow runtime and 3D activation remain pending.
+  - Tasks 1-5 complete: reviewed design, pure admission, engine resources, shared
+    projection/bounds, App-directed Camera controls and spatial queries/picking
+    verified. Paused for user inspection before Task 6; whole-flow runtime and 3D activation remain pending.
   - One canonical 3D architecture for Sim, FieldScope and Office. Scene Tree
     presentation and camera angles/modes remain App-owned; shared controls and
     projection mechanisms are optional Preset foundations.

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "preset-3d-foundation",
-  "revision": 49,
+  "revision": 69,
   "definition": {
     "title": "Preset 3D foundation and App migration",
     "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
@@ -528,7 +528,8 @@
           "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
           "apps/asyra-office/src/ui/__tests__/OfficeApp.test.tsx",
           "apps/asyra-sim/src/engine/__tests__/three-engine.test.ts",
-          "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts"
+          "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts",
+          "packages/preset/src/__tests__/spatial-query.test.ts"
         ],
         "actions": [
           {
@@ -581,7 +582,13 @@
           "packages/core/src/apis/render.ts",
           "packages/core/src/types/render.ts",
           "packages/core/src/index.ts",
-          "packages/core/src/__tests__/spatial-query.test.ts"
+          "packages/core/src/__tests__/spatial-query.test.ts",
+          "packages/render-engine/src/testing/recording-render-engine.ts",
+          "packages/render-engine-pixi/src/pixi-render-engine.ts",
+          "packages/render/src/index.ts",
+          "packages/core/src/core.ts",
+          "packages/render-engine/src/__tests__/spatial-query.test.ts",
+          "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
         ],
         "actions": [
           {
@@ -630,7 +637,9 @@
           "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
           "apps/asyra-office/src/runtime/office-runtime.ts",
           "packages/preset/src/spatial/input.ts",
-          "packages/preset/src/__tests__/spatial-input.test.ts"
+          "packages/preset/src/__tests__/spatial-input.test.ts",
+          "apps/asyra-sim/src/ui/viewport/__tests__/viewport-controls.test.ts",
+          "apps/asyra-sim/src/init/__tests__/custom-renderer.test.ts"
         ],
         "actions": [
           {
@@ -1600,7 +1609,8 @@
             "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
             "apps/asyra-office/src/ui/__tests__/OfficeApp.test.tsx",
             "apps/asyra-sim/src/engine/__tests__/three-engine.test.ts",
-            "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts"
+            "apps/asyra-fieldscope/src/engine/__tests__/three-engine.test.ts",
+            "packages/preset/src/__tests__/spatial-query.test.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#task-2-delivery-boundary",
@@ -1651,7 +1661,13 @@
             "packages/core/src/apis/render.ts",
             "packages/core/src/types/render.ts",
             "packages/core/src/index.ts",
-            "packages/core/src/__tests__/spatial-query.test.ts"
+            "packages/core/src/__tests__/spatial-query.test.ts",
+            "packages/render-engine/src/testing/recording-render-engine.ts",
+            "packages/render-engine-pixi/src/pixi-render-engine.ts",
+            "packages/render/src/index.ts",
+            "packages/core/src/core.ts",
+            "packages/render-engine/src/__tests__/spatial-query.test.ts",
+            "packages/render-engine-pixi/src/__tests__/pixi-render-engine.test.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#spatial-queries-and-input"
@@ -1691,7 +1707,9 @@
             "apps/asyra-fieldscope/src/runtime/bootstrap.ts",
             "apps/asyra-office/src/runtime/office-runtime.ts",
             "packages/preset/src/spatial/input.ts",
-            "packages/preset/src/__tests__/spatial-input.test.ts"
+            "packages/preset/src/__tests__/spatial-input.test.ts",
+            "apps/asyra-sim/src/ui/viewport/__tests__/viewport-controls.test.ts",
+            "apps/asyra-sim/src/init/__tests__/custom-renderer.test.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#single-architecture-and-app-policy"
@@ -2750,13 +2768,13 @@
         "kind": "manual",
         "status": "accepted",
         "actor": "codex-coordinator-self-review",
-        "binding": "85bcdc0ccf553731911347fda5d2e80e455afd0666d6069331c78fbdd940abed",
-        "at": "2026-10-24T04:34:51.744Z",
-        "summary": "Task 4 bounded self-review: App-directed controls and one cancellable presentation target satisfy C06.",
+        "binding": "c21d4a858d0932b97865ba2da3601cf5ea7b4bea526c2d53f100d2beca682dc4",
+        "at": "2026-10-24T05:06:12.354Z",
+        "summary": "Task 5 typed-query and existing interaction owner boundaries reviewed against the specification and complete flow.",
         "details": [
-          "Reviewed the camera owner inputs/outputs, conditions, bypasses, contributors, no-cache boundary and direct App consumers.",
-          "App angles, modes, sensitivities, clipping-distance policies and scheduling retained; no canonical writes, new SDK or frame loop.",
-          "Same worktree and branch; Task 5 queries and world orthographic support remain outside delivery."
+          "Neutral query capability, full-shape instance selection, explicit visual mapping and one client conversion; no SDK extraction or canonical writes.",
+          "Implementation and permanent tests stay in queries, engine, admission and direct interaction boundaries. Existing Features/capture/cancel remain authoritative.",
+          "Bounded self-review only, not independent approval. Tasks 6-10, real-WebGL visual and whole-flow acceptance remain pending."
         ]
       },
       {
@@ -2765,14 +2783,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task4-local-2026-10-24",
+        "executionId": "task5-local-2026-10-24",
         "caseId": "admit-bounded-preservation",
-        "binding": "d0695aa6ac0a72f95ae2632002b604b7ab3494b2b5776a766f62e14ca1bd648a",
-        "at": "2026-10-24T04:34:51.751Z",
-        "summary": "Pure admission foundation remains verified on Task 4 source.",
+        "binding": "298706807423f7308abd784dcdde77213dd6dc7177b23f52d02d4195adc8e951",
+        "at": "2026-10-24T05:06:12.371Z",
+        "summary": "Current descriptor admission and optional source-instance identity remain immutable and explicitly validated.",
         "details": [
-          "Preset full suite: 269 passed, including admission 8 and pure-entry separation.",
-          "Camera controls consume admitted snapshots; accessor reread regression fails before and passes after correction."
+          "Preset full suite: 35 files / 276 tests, including 9 admission cases. Nonempty unique instance IDs preserved in frozen snapshots; duplicate/empty IDs reject.",
+          "Sim and FieldScope narrow admission suites pass within their supervised selections. Expanded instance scale/roll remains Task 6."
         ]
       },
       {
@@ -2781,14 +2799,15 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task4-local-2026-10-24",
+        "executionId": "task5-local-2026-10-24",
         "caseId": "engine-bounded-preservation",
-        "binding": "721e5818bf2c930e4c53c6d2408a23bb8daa0254e7ec68932f09da82314ead5a",
-        "at": "2026-10-24T04:34:51.758Z",
-        "summary": "Resource and initialization foundation remains verified on Task 4 source.",
+        "binding": "3a7baf0908bf551029f425ab60fb7ea19a112b13b1d369ddb889731bd2618762",
+        "at": "2026-10-24T05:06:12.389Z",
+        "summary": "Deferred resource ownership and full-shape query behavior pass on the Task 5 source.",
         "details": [
-          "Preset engine 20, entry 6 and resource 1 tests passed in the full suite.",
-          "Render 271 and three App production builds passed; concrete graphics-driver tests do not claim real-WebGL visual approval."
+          "Preset 276 tests; final 5 query tests additionally cover source-instance reorder. Lifecycle delegates explicitly declare the added capability.",
+          "Full-shape geometry/material reuse is asserted across repeated picks; source indices survive LoD compaction; transparent, hidden, nonselectable and overlay behavior verified.",
+          "Engine runtime criterion remains incomplete: later content/DPR-cache/real-WebGL obligations are not claimed here."
         ]
       },
       {
@@ -2797,14 +2816,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task4-local-2026-10-24",
+        "executionId": "task5-local-2026-10-24",
         "caseId": "project-bounded-preservation",
-        "binding": "e5a079d8e6c1d714cb9f0d1afced9381025049faf90e954d3daa23a17fae7106",
-        "at": "2026-10-24T04:34:51.765Z",
-        "summary": "Incremental projection/bounds remain verified with shared Camera consumers.",
+        "binding": "8b9f39bd097c85682fb480cfe089c5216094178b1896a36eb67fbec01d16585c",
+        "at": "2026-10-24T05:06:12.382Z",
+        "summary": "Shared incremental projection/bounds preservation passes on the Task 5 source.",
         "details": [
-          "Preset shared layer 6 and bounds 3 passed. Sim projection tests and FieldScope navigation/runtime preservation passed under supervisors.",
-          "Office full 16 tests includes zero Camera-only mesh updates, retained visuals and no canonical reads during presentation."
+          "Preset 276, Render 273 and the three App selections pass; camera and query execution do not add canonical/history writes.",
+          "Existing retained mesh reconciliation, mutation isolation and bounds-owner tests remain green. No new retained query cache."
         ]
       },
       {
@@ -2813,14 +2832,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task4-local-2026-10-24",
+        "executionId": "task5-local-2026-10-24",
         "caseId": "render-bounded-preservation",
-        "binding": "829d61eba7509270faee7855dbe37d29834d80f1c99f6769d30aacc69ee5e0e1",
-        "at": "2026-10-24T04:34:51.772Z",
-        "summary": "Explicit identity and Render scheduling remain verified on Task 4 source.",
+        "binding": "58ac586c850a217cc64cd9f1924f023730bac21f4a022042a30ce8db08d99d87",
+        "at": "2026-10-24T05:06:12.398Z",
+        "summary": "Render handoff and identity preservation pass with typed spatial query support.",
         "details": [
-          "Render full 23 files / 271 tests passed.",
-          "Sim custom renderer and layer tests passed; no Render production edits in Task 4."
+          "Render full suite 273 tests, Core 272, Render Engine 11 and Pixi 49 passed.",
+          "Render maps only explicit registered identity; same-ID replacement cannot authorize a retired handle. Legacy screen query behavior preserved."
         ]
       },
       {
@@ -2829,17 +2848,50 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task4-local-2026-10-24",
+        "executionId": "task5-local-2026-10-24",
         "caseId": "camera-bounded-preservation",
-        "binding": "eaa7a15855010ce2cebc21f333b9abfd2d74c8f2415351a0b6d967dc42f38206",
-        "at": "2026-10-24T04:34:51.779Z",
-        "summary": "C06: shared perspective controls, framing and cancellable target presentation preserve all three Apps.",
+        "binding": "d241b1685a8ee5b500ff2bbc82929bc69104bb67bd84fce3ddc7757a1833bd0f",
+        "at": "2026-10-24T05:06:12.409Z",
+        "summary": "C06 shared camera mechanisms and all three App policies remain preserved.",
         "details": [
-          "Final shared camera suite: 9 tests covering CSS pan, App angle/limits, empty fit, aspect/clipping, unsupported projection, atomic retarget/cancel/dispose, snapshots and singular interpolation.",
-          "Sim: 4 files / 38 tests; FieldScope: 4 files / 21 tests through existing supervisors (13 and 8 supervisor guard tests passed).",
-          "Office: full 4 files / 16 tests; rapid focus replacement, follow replacement, 0.12 interpolation and reduced motion produce no mesh writes.",
-          "Preset full suite 269 passed before final App-limit case; final camera suite 9 passed. Preset build and three App typechecks/production builds passed.",
-          "Naming 15, dependencies 29 workspaces / 6 tests, placement 3, scoped lint/format and generated-doc checks passed. No real-WebGL visual acceptance or whole-flow completion claimed."
+          "Preset 276 includes camera controls/presentation tests; Sim 57, FieldScope 48 and Office 16 cover existing camera, input and runtime ownership.",
+          "App modes/angles, limits and presentation choices remain unchanged. No real-WebGL visual acceptance claimed."
+        ]
+      },
+      {
+        "nodeId": "queries",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task5-local-2026-10-24",
+        "caseId": "queries-bounded-preservation",
+        "binding": "0cb22cbd16a449bfe6ca9aa46298e90b45bfb55ef52b53e5d0e02f241743ce7c",
+        "at": "2026-10-24T05:06:12.416Z",
+        "summary": "Bounded C05/C07 typed spatial queries pass through concrete engine, Render and Core.",
+        "details": [
+          "Preset final query suite 5; Render 273; Core 272; Render Engine 11; Pixi 49 passed. Unsupported capabilities reject without fallback.",
+          "Projection NDC depth/eye-plane/clipping, logical CSS/DPR/resize, zero/outside client surface, full pose/bounds, opaque handle lifetime, source instance ID/order and overlay priority covered.",
+          "Formal failing tests preceded fixes for invalid instance bounds on empty content and stale hits after same-ID replacement.",
+          "Five affected package builds, three App TypeScript/production builds, naming 15, dependencies 29 workspaces / 6 tests, placement 3, scoped lint/format and public-doc checks passed.",
+          "Bounds/hits are visual query products, not solver evidence. Actual browser visual acceptance remains a later integration checkpoint."
+        ]
+      },
+      {
+        "nodeId": "interaction",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task5-local-2026-10-24",
+        "caseId": "interaction-bounded-preservation",
+        "binding": "9e80a5eeca73afdcedcd185301140c5e8317788eba09c6b19b85df29fdc869c3",
+        "at": "2026-10-24T05:06:12.437Z",
+        "summary": "Bounded C06/C07 existing interaction flow consumes shared picking without a second session runtime.",
+        "details": [
+          "Sim 6 files / 57 tests and FieldScope 5 files / 48 tests passed under supervisors; 13 and 8 guard tests passed. Office full 4 files / 16 tests passed.",
+          "Sim Core integration proves CSS conversion, public visual IDs and unchanged undo history; existing viewport tests preserve modifiers, pointer capture/loss and cancel.",
+          "FieldScope/Office retain non-picking behavior. Asset/editing and whole-flow integration are not accepted by this observation."
         ]
       }
     ],
@@ -2869,32 +2921,50 @@
         "nodeId": "camera",
         "status": "in-progress",
         "reason": "Task 4 C06 verified; stopped for user inspection before Task 5. Whole-flow upstream acceptance remains pending."
+      },
+      {
+        "nodeId": "queries",
+        "status": "in-progress",
+        "reason": "Task 5 bounded queries and existing interaction verified; stopped for user inspection before Task 6. Whole-flow prerequisites remain pending."
+      },
+      {
+        "nodeId": "interaction",
+        "status": "in-progress",
+        "reason": "Task 5 bounded queries and existing interaction verified; stopped for user inspection before Task 6. Whole-flow prerequisites remain pending."
       }
     ],
     "sources": [
       {
         "nodeId": "design",
-        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/design-sha256:ddfaf0c261d3b36d9a6706c1a777a118b8c51d7e7239c01291636f31b514c0cc"
+        "revision": "task5-design-sha256:dd5944f13e8dd1278f29608f7b9633c283dd2a4838bc805682e924b7b003104e"
       },
       {
         "nodeId": "admit",
-        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
+        "revision": "3eeb2f634064cf34c9409087d678bf5dc6cc2ab9/task5-sha256:6855ded1db807dc4cbe1087479dff6d45f40240d0e191a046d10d8c87d7e7acd"
       },
       {
         "nodeId": "engine",
-        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
+        "revision": "3eeb2f634064cf34c9409087d678bf5dc6cc2ab9/task5-sha256:6855ded1db807dc4cbe1087479dff6d45f40240d0e191a046d10d8c87d7e7acd"
       },
       {
         "nodeId": "project",
-        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
+        "revision": "3eeb2f634064cf34c9409087d678bf5dc6cc2ab9/task5-sha256:6855ded1db807dc4cbe1087479dff6d45f40240d0e191a046d10d8c87d7e7acd"
       },
       {
         "nodeId": "render",
-        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
+        "revision": "3eeb2f634064cf34c9409087d678bf5dc6cc2ab9/task5-sha256:6855ded1db807dc4cbe1087479dff6d45f40240d0e191a046d10d8c87d7e7acd"
       },
       {
         "nodeId": "camera",
-        "revision": "e8e76973572f456c0b41b88487c46f379f2078bf/task4-sha256:d1ea90770df5c17a1d925d88fbbac21cf0ec29ad3865c7a423d57af579e2a75f"
+        "revision": "3eeb2f634064cf34c9409087d678bf5dc6cc2ab9/task5-sha256:6855ded1db807dc4cbe1087479dff6d45f40240d0e191a046d10d8c87d7e7acd"
+      },
+      {
+        "nodeId": "queries",
+        "revision": "3eeb2f634064cf34c9409087d678bf5dc6cc2ab9/task5-sha256:6855ded1db807dc4cbe1087479dff6d45f40240d0e191a046d10d8c87d7e7acd"
+      },
+      {
+        "nodeId": "interaction",
+        "revision": "3eeb2f634064cf34c9409087d678bf5dc6cc2ab9/task5-sha256:6855ded1db807dc4cbe1087479dff6d45f40240d0e191a046d10d8c87d7e7acd"
       }
     ],
     "warnings": []

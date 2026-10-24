@@ -119,3 +119,12 @@ unsupported capture throw; callers must explain unavailable review.
 Version and all three public entrypoints are generated from the package
 manifest. The documentation gate verifies this guide against the current
 release package set.
+
+## Spatial queries
+
+Core delegates `projectSpatialPoint`, `getSpatialRayAtClientPoint`,
+`raycastSpatial`, `convertSpatialPoint`, `getSpatialBounds` and
+`pickSpatialAtClientPoint` to Render. These transient queries require the spatial
+query capability and do not change document state or history. See
+[Render spatial queries](render.md#spatial-queries) for coordinate and identity
+contracts.

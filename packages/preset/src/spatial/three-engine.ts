@@ -3,6 +3,12 @@ import { SurfaceTextureStore } from './surface-textures.js'
 import * as THREE from 'three'
 import {
   RenderEngineCapabilities,
+  isSpatialQuery,
+  type RenderEngineSpatialQuery,
+  type RenderEngineSpatialResult,
+  type RenderEngineSpatialHit,
+  type SpatialVector,
+  type SpatialRay,
   UnsupportedRenderEngineCapabilityError
 } from '@asyra/render-engine'
 import type {
@@ -407,6 +413,7 @@ export class ThreeEngine implements RenderEngine {
         RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
       ])
     this.syncProjection()
+    if (isSpatialQuery(query)) return this.spatialQuery(query)
     if (query.type === 'hit-test')
       return { type: 'hit', target: this.pick(query.point), point: query.point }
     const record = this.owned(query.object)
@@ -857,9 +864,18 @@ export class ThreeEngine implements RenderEngine {
     this.camera.updateMatrixWorld(true)
     this.screenCamera.updateMatrixWorld(true)
   }
-  private pick(point: RenderEnginePoint): RenderEngineObjectHandle | null {
+  private pickScreen(
+    point: RenderEnginePoint
+  ): RenderEngineObjectHandle | null {
     if (!Number.isFinite(point.x) || !Number.isFinite(point.y))
       throw new Error('Invalid screen point')
+    if (
+      point.x < 0 ||
+      point.y < 0 ||
+      point.x >= this.width ||
+      point.y >= this.height
+    )
+      return null
     const ray = new THREE.Raycaster()
     const screenPoint = new THREE.Vector2(
       (point.x / this.width) * 2 - 1,
@@ -888,24 +904,229 @@ export class ThreeEngine implements RenderEngine {
         if (record) return record.handle
       }
     }
-    ray.setFromCamera(screenPoint, this.camera)
-    const eligible = [...this.objects.values()].filter(
-      (record) =>
-        record.spatial?.kind === 'mesh' &&
-        record.spatial.selectable &&
-        record.visual.visible &&
-        record.visual.parent === this.scene
-    )
-    const hits = ray.intersectObjects(
-      eligible.map((record) => record.visual),
-      true
-    )
-    for (const hit of hits) {
-      const record = eligible.find((item) => item.visual === hit.object.parent)
-      if (record) return record.handle
-    }
     return null
   }
+  private pick(point: RenderEnginePoint): RenderEngineObjectHandle | null {
+    const result = this.spatialQuery({ type: 'spatial-pick', point })
+    if (result.type !== 'spatial-pick')
+      throw new Error('Invalid picking result')
+    return result.overlay ?? result.hit?.object ?? null
+  }
+
+  private vector(value: THREE.Vector3): SpatialVector {
+    return [value.x, value.y, value.z]
+  }
+  private point(value: SpatialVector): THREE.Vector3 {
+    if (
+      !Array.isArray(value) ||
+      value.length !== 3 ||
+      !value.every(Number.isFinite)
+    )
+      throw new Error('Invalid spatial point')
+    return new THREE.Vector3(...value)
+  }
+  private spatialRecords(): ObjectRecord[] {
+    const records: ObjectRecord[] = []
+    const visit = (record: ObjectRecord) => {
+      records.push(record)
+      record.children.forEach(visit)
+    }
+    if (this.root) visit(this.root)
+    return records
+  }
+  private spatialObject(handle: RenderEngineObjectHandle): ObjectRecord {
+    const record = this.owned(handle)
+    if (!this.spatialRecords().includes(record))
+      throw new Error('Detached spatial object')
+    return record
+  }
+  private spatialMatrix(
+    record: ObjectRecord,
+    index: number | undefined,
+    world: boolean
+  ): THREE.Matrix4 {
+    const matrix = world
+      ? record.visual.matrixWorld.clone()
+      : new THREE.Matrix4()
+    if (index !== undefined) {
+      const instances =
+        record.spatial?.kind === 'mesh' ? record.spatial.instances : undefined
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        !instances ||
+        index >= instances.length
+      )
+        throw new Error('Invalid source instance index')
+      const instance = instances[index]
+      matrix.multiply(
+        new THREE.Matrix4()
+          .makeRotationY(instance.yaw)
+          .setPosition(...instance.position)
+      )
+    }
+    return matrix
+  }
+  private spatialQuery(
+    query: RenderEngineSpatialQuery
+  ): RenderEngineSpatialResult {
+    if (query.type === 'spatial-pick') {
+      const ray = this.spatialQuery({ type: 'spatial-ray', point: query.point })
+      if (ray.type !== 'spatial-ray')
+        throw new Error('Invalid screen ray result')
+      if (!ray.ray) return { type: 'spatial-pick', overlay: null, hit: null }
+      const overlay = this.pickScreen(query.point)
+      return {
+        type: 'spatial-pick',
+        overlay,
+        hit: overlay ? null : (this.spatialHits(ray.ray)[0] ?? null)
+      }
+    }
+    if (query.type === 'spatial-project') {
+      const point = this.point(query.point)
+      const clip = new THREE.Vector4(point.x, point.y, point.z, 1)
+        .applyMatrix4(this.camera.matrixWorldInverse)
+        .applyMatrix4(this.camera.projectionMatrix)
+      if (clip.w === 0)
+        return {
+          type: 'spatial-projection',
+          point: null,
+          depth: null,
+          inFrustum: false
+        }
+      const x = clip.x / clip.w,
+        y = clip.y / clip.w,
+        z = clip.z / clip.w
+      if (![x, y, z].every(Number.isFinite))
+        throw new Error('Nonfinite spatial projection')
+      return {
+        type: 'spatial-projection',
+        point: {
+          x: ((x + 1) * this.width) / 2,
+          y: ((1 - y) * this.height) / 2
+        },
+        depth: z,
+        inFrustum:
+          clip.w > 0 && Math.abs(x) <= 1 && Math.abs(y) <= 1 && Math.abs(z) <= 1
+      }
+    }
+    if (query.type === 'spatial-ray') {
+      const { x, y } = query.point
+      if (![x, y].every(Number.isFinite))
+        throw new Error('Invalid surface point')
+      if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+        return { type: 'spatial-ray', ray: null }
+      const ray = new THREE.Raycaster()
+      ray.setFromCamera(
+        new THREE.Vector2((x / this.width) * 2 - 1, 1 - (y / this.height) * 2),
+        this.camera
+      )
+      return {
+        type: 'spatial-ray',
+        ray: {
+          origin: this.vector(ray.ray.origin),
+          direction: this.vector(ray.ray.direction)
+        }
+      }
+    }
+    if (query.type === 'spatial-raycast')
+      return { type: 'spatial-hits', hits: this.spatialHits(query.ray) }
+    const record = this.spatialObject(query.object)
+    if (query.type === 'spatial-convert') {
+      if (
+        record.spatial?.kind !== 'mesh' ||
+        !['local', 'world'].includes(query.to)
+      )
+        throw new Error('Invalid spatial conversion')
+      const matrix = this.spatialMatrix(record, query.instanceIndex, true)
+      if (query.to === 'local') matrix.invert()
+      return {
+        type: 'spatial-point',
+        point: this.vector(this.point(query.point).applyMatrix4(matrix))
+      }
+    }
+    if (!['local', 'world'].includes(query.space))
+      throw new Error('Invalid bounds space')
+    if (query.instanceIndex !== undefined)
+      this.spatialMatrix(record, query.instanceIndex, false)
+    if (
+      record.spatial?.kind !== 'mesh' ||
+      !(record.content instanceof THREE.Mesh)
+    )
+      return { type: 'spatial-bounds', bounds: null }
+    const geometry = record.content.geometry
+    if (!geometry.boundingBox) geometry.computeBoundingBox()
+    const local = geometry.boundingBox
+    if (!local || local.isEmpty())
+      return { type: 'spatial-bounds', bounds: null }
+    const result = new THREE.Box3()
+    let indices: (number | undefined)[] = [undefined]
+    if (query.instanceIndex !== undefined) indices = [query.instanceIndex]
+    else if (record.spatial.instances)
+      indices = record.spatial.instances.map((_, index) => index)
+    for (const index of indices)
+      result.union(
+        local
+          .clone()
+          .applyMatrix4(
+            this.spatialMatrix(record, index, query.space === 'world')
+          )
+      )
+    return {
+      type: 'spatial-bounds',
+      bounds: { min: this.vector(result.min), max: this.vector(result.max) }
+    }
+  }
+  private spatialHits(input: SpatialRay): RenderEngineSpatialHit[] {
+    const origin = this.point(input.origin),
+      direction = this.point(input.direction)
+    const length = direction.length()
+    if (!Number.isFinite(length) || length === 0)
+      throw new Error('Invalid spatial ray direction')
+    direction.divideScalar(length)
+    const ray = new THREE.Raycaster(origin, direction),
+      hits: RenderEngineSpatialHit[] = []
+    for (const record of this.spatialRecords()) {
+      const spatial = record.spatial,
+        content = record.content
+      if (
+        spatial?.kind !== 'mesh' ||
+        !spatial.selectable ||
+        !record.visual.visible ||
+        record.visual.parent !== this.scene ||
+        !(content instanceof THREE.Mesh)
+      )
+        continue
+      // Borrow the owned full geometry/material. No GPU resource or LoD slot is created.
+      const mesh = new THREE.Mesh(content.geometry, content.material)
+      const indices = spatial.instances
+        ? spatial.instances.map((_, index) => index)
+        : [undefined]
+      for (const index of indices) {
+        mesh.matrixWorld.copy(this.spatialMatrix(record, index, true))
+        const intersections: THREE.Intersection[] = []
+        mesh.raycast(ray, intersections)
+        intersections.sort((a, b) => a.distance - b.distance)
+        const hit = intersections[0]
+        if (!hit) continue
+        hits.push({
+          object: record.handle,
+          ...(index === undefined
+            ? {}
+            : {
+                instanceIndex: index,
+                ...(spatial.instances?.[index].id === undefined
+                  ? {}
+                  : { instanceId: spatial.instances[index].id })
+              }),
+          distance: hit.distance,
+          point: this.vector(hit.point)
+        })
+      }
+    }
+    return hits.sort((a, b) => a.distance - b.distance)
+  }
+
   private paint(paint: RenderEnginePaint): {
     color: number | string
     alpha: number

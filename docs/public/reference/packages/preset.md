@@ -83,3 +83,13 @@ must name the desired catalog entries and respect dependency expansion.
 
 The root entrypoint, version, catalog dependencies, and package relationships
 are release-checked; version metadata remains generated from the manifest.
+
+## Optional spatial picking
+
+The optional spatial engine supports full-shape queries through Render/Core.
+Picking retains source instance index and optional stable ID across LoD/culling;
+hidden/nonselectable objects are excluded, while transparent selectable geometry
+remains eligible. Screen overlays take precedence. Queries reuse owned geometry
+and do not create GPU resources or solver evidence. Apps keep camera modes,
+angles, input actions and selection policy. This does not activate the reserved
+`3D` profile.

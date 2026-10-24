@@ -21,6 +21,7 @@ export type SpatialShape =
     }
 
 export interface SpatialInstance {
+  id?: string
   position: SpatialVector
   yaw: number
 }
@@ -49,3 +50,77 @@ export type SpatialDescriptor =
       wireframe: boolean
       selectable: boolean
     }
+
+export interface SpatialRay {
+  readonly origin: SpatialVector
+  readonly direction: SpatialVector
+}
+export interface SpatialBox {
+  readonly min: SpatialVector
+  readonly max: SpatialVector
+}
+export type RenderEngineSpatialQuery =
+  | { readonly type: 'spatial-project'; readonly point: SpatialVector }
+  | {
+      readonly type: 'spatial-pick'
+      readonly point: import('./types.js').RenderEnginePoint
+    }
+  | {
+      readonly type: 'spatial-ray'
+      readonly point: import('./types.js').RenderEnginePoint
+    }
+  | {
+      readonly type: 'spatial-convert'
+      readonly object: import('./types.js').RenderEngineObjectHandle
+      readonly point: SpatialVector
+      readonly to: 'local' | 'world'
+      readonly instanceIndex?: number
+    }
+  | {
+      readonly type: 'spatial-bounds'
+      readonly object: import('./types.js').RenderEngineObjectHandle
+      readonly space: 'local' | 'world'
+      readonly instanceIndex?: number
+    }
+  | { readonly type: 'spatial-raycast'; readonly ray: SpatialRay }
+export interface RenderEngineSpatialHit {
+  readonly object: import('./types.js').RenderEngineObjectHandle
+  readonly instanceIndex?: number
+  readonly instanceId?: string
+  readonly distance: number
+  readonly point: SpatialVector
+}
+export type RenderEngineSpatialResult =
+  | {
+      readonly type: 'spatial-pick'
+      readonly overlay: import('./types.js').RenderEngineObjectHandle | null
+      readonly hit: RenderEngineSpatialHit | null
+    }
+  | {
+      readonly type: 'spatial-projection'
+      readonly point: import('./types.js').RenderEnginePoint | null
+      readonly depth: number | null
+      readonly inFrustum: boolean
+    }
+  | { readonly type: 'spatial-ray'; readonly ray: SpatialRay | null }
+  | { readonly type: 'spatial-point'; readonly point: SpatialVector }
+  | { readonly type: 'spatial-bounds'; readonly bounds: SpatialBox | null }
+  | {
+      readonly type: 'spatial-hits'
+      readonly hits: readonly RenderEngineSpatialHit[]
+    }
+export function isSpatialQuery(
+  query: import('./types.js').RenderEngineQuery
+): query is RenderEngineSpatialQuery {
+  switch (query.type) {
+    case 'spatial-pick':
+    case 'spatial-project':
+    case 'spatial-ray':
+    case 'spatial-convert':
+    case 'spatial-bounds':
+    case 'spatial-raycast':
+      return true
+    default:
+      return false
+  }
+}

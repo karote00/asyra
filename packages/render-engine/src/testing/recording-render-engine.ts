@@ -1,3 +1,5 @@
+import { isSpatialQuery } from '../spatial.js'
+import { UnsupportedRenderEngineCapabilityError } from '../errors.js'
 import {
   RenderEngineCapabilities,
   assertRenderEngineCapabilities
@@ -65,6 +67,7 @@ export class RecordingRenderEngine implements RenderEngine {
       options.capabilities ??
         Object.values(RenderEngineCapabilities).filter(
           (value) =>
+            value !== RenderEngineCapabilities.SPATIAL_QUERIES &&
             value !== RenderEngineCapabilities.SNAPSHOT &&
             value !== RenderEngineCapabilities.TEXT_MEASUREMENT &&
             value !== RenderEngineCapabilities.LOCAL_CONTENT_BOUNDS
@@ -97,6 +100,10 @@ export class RecordingRenderEngine implements RenderEngine {
 
   query(query: RenderEngineQuery): RenderEngineQueryResult {
     this.assertReady()
+    if (isSpatialQuery(query))
+      throw new UnsupportedRenderEngineCapabilityError(this.name, [
+        RenderEngineCapabilities.SPATIAL_QUERIES
+      ])
 
     switch (query.type) {
       case 'measure-text':
