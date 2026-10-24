@@ -24,12 +24,12 @@ Closeout owner: the coordinating agent in the originating Preset 3D conversation
 with Asa. Individual task completion does not close this plan.
 
 Future work selects an exact Task heading below using
-[task context](../../workflows/task-context.md). Select a base containing this
+[task context](../../../workflows/task-context.md). Select a base containing this
 plan and the accepted prerequisite changes; the planning base above does not
 already contain the new plan. Record the actual base SHA, prerequisites and
 reviewed flow revision at handoff. Repository Git and execution rules apply.
 
-The existing [3D and Hybrid activation plan](preset-2d-3d-init-profile-plan.md)
+The existing [3D and Hybrid activation plan](../preset-2d-3d-init-profile-plan.md)
 continues to own profile activation prerequisites. This plan owns the bounded
 3D foundation, consumer migrations and evidence that satisfy its 3D gate.
 HYBRID activation remains outside this plan. No current availability or runtime
@@ -98,20 +98,20 @@ mechanisms selected by this plan.
 
 Direct source anchors:
 
-- [Preset contract](../packages/preset.md),
-  [engine contract](../packages/render-engine.md),
-  [Framework architecture](../ARCHITECTURE.md).
-- [Shared spatial entry](../../../../packages/preset/src/spatial.ts),
-  [descriptors](../../../../packages/preset/src/spatial/spatial-contract.ts),
-  [Three adapter](../../../../packages/preset/src/spatial/three-engine.ts).
-- [Sim architecture](../../apps/asyra-sim/ARCHITECTURE.md),
-  [CUSTOM contract](../../apps/asyra-sim/specs/custom-engine-v0.md),
-  [Sim layer](../../../../apps/asyra-sim/src/render-app/spatial-layer.ts).
-- [FieldScope architecture](../../apps/asyra-fieldscope/ARCHITECTURE.md),
-  [rendering](../../apps/asyra-fieldscope/modules/rendering.md),
-  [FieldScope layer](../../../../apps/asyra-fieldscope/src/render-app/spatial-layer.ts).
-- [Office implementation](../../apps/asyra-office/implementation.md) and
-  [product requirements](../../apps/asyra-office/asyra-office-product-plan.md).
+- [Preset contract](../../packages/preset.md),
+  [engine contract](../../packages/render-engine.md),
+  [Framework architecture](../../ARCHITECTURE.md).
+- [Shared spatial entry](../../../../../packages/preset/src/spatial.ts),
+  [descriptors](../../../../../packages/preset/src/spatial/spatial-contract.ts),
+  [Three adapter](../../../../../packages/preset/src/spatial/three-engine.ts).
+- [Sim architecture](../../../apps/asyra-sim/ARCHITECTURE.md),
+  [CUSTOM contract](../../../apps/asyra-sim/specs/custom-engine-v0.md),
+  [Sim layer](../../../../../apps/asyra-sim/src/render-app/spatial-layer.ts).
+- [FieldScope architecture](../../../apps/asyra-fieldscope/ARCHITECTURE.md),
+  [rendering](../../../apps/asyra-fieldscope/modules/rendering.md),
+  [FieldScope layer](../../../../../apps/asyra-fieldscope/src/render-app/spatial-layer.ts).
+- [Office implementation](../../../apps/asyra-office/implementation.md) and
+  [product requirements](../../../apps/asyra-office/asyra-office-product-plan.md).
 
 Observed design constraints to resolve, not unproven bug claims:
 
@@ -210,7 +210,7 @@ Task 1 resolves this through explicit optional spatial entries, without adding
 catalog modules or changing defaults resolution. Official `3D` supports `[]`
 and explicit `INPUT`; other existing modules, including omitted defaults that
 resolve to all eight, reject with `INVALID_OPTIONS` before mutation. No module
-is silently filtered. See the [composition contract](../specs/preset-3d-foundation.md#composition).
+is silently filtered. See the [composition contract](../../specs/preset-3d-foundation.md#composition).
 
 Pure spatial data/control imports must not initialize or load a concrete
 renderer. The ordinary 2D runtime import/bundle path must not acquire Three.js
@@ -254,9 +254,9 @@ Reviewer: coordinating agent in this conversation (self-review, not independent
 or human approval). Scope: product specification, complete owner flow, concrete
 source/API feasibility and preservation gates only.
 
-- Product authority: [Preset 3D Foundation Contract](../specs/preset-3d-foundation.md).
+- Product authority: [Preset 3D Foundation Contract](../../specs/preset-3d-foundation.md).
 - Architecture and current evidence:
-  [preset-3d-foundation.flow.json](preset-3d-foundation/preset-3d-foundation.flow.json).
+  [preset-3d-foundation.flow.json](../preset-3d-foundation/preset-3d-foundation.flow.json).
   This is a public schema-v1 flow document containing schema-v2 architecture,
   not an old Factory proof target or a copied accepted baseline.
 - The `design` node records this Task 1 review through the supported
@@ -1311,3 +1311,32 @@ The planning delivery requires English project prose, valid local references,
 unique task headings, an indexed plan, consistent activation cross-references,
 and a scoped diff/format review. It does not claim production test execution,
 Inspector admission, implementation readiness or runtime completion.
+
+## Closeout
+
+Completed: 2026-10-24
+Reviewed source: dc623fedcb5a5a5797a6e02c55af8df3b3f46201
+Outcome: Tasks 1-10 are complete; the generic spatial foundation, three App migrations, official 3D profile, editing and restricted assets were merged in PR #357.
+Decision: The user confirmed the merge and requested archival; this record is DONE. Camera policy, scene-tree UI and domain behavior remain App-owned.
+Exit criteria: The reviewed C01-C12 implementation, preservation and WebGL evidence recorded in this plan passed, followed by complete local PR validation and successful final CI.
+
+The accepted implementation is PR #357 head
+`b60cec0abdd9c3b12e5c912fd76a1f7fbf8b8e6e`, merged into main as
+`91ed0141aa7f4bc950768bf970176641d8544fb9`. Their Git trees are identical.
+The reviewed source above adds only the separately requested closeout-rule and
+skill correction; production implementation and acceptance criteria are unchanged.
+Final CI run 40101424783 succeeded. Task 10 retains the detailed 1,401-case,
+42-WebGL-case and real Worker evidence. The final PR additionally passed all
+11 selected workspaces, FieldScope profiles, full repository scripts,
+production artifacts and the 19-package clean consumer. Design E2E passed
+470 functional, 19 collaboration and three render-contract cases, with only
+the suites' declared skips and no unexpected or flaky results.
+
+This archival synchronizes the plan's incoming references and rebases its
+relative links without changing the reviewed flow or historical task results.
+HYBRID, orthographic world cameras, multiview, full glTF/skins/animation,
+physics/pathfinding and new domain tools remain outside the completed scope.
+No version bump, tag, publication, deployment or local .env changes are
+part of closeout. The separately requested non-versioned checker correction
+has an empty Changeset solely for repository PR admission. Design production remains static; local full-backend
+configuration is preserved.

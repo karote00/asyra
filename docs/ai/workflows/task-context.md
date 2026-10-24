@@ -215,6 +215,13 @@ After review, changes are limited to the following derived owner paths:
 3. Remove stale active-path references from the owner's `PLANS.md`.
 4. Append a dated entry linking the completed plan to the owner's
    `decisions/releases/unreleased.md`, preserving existing entries.
+5. Synchronize every reference to the old plan path, wherever it is maintained
+   (including specifications, other plans, Flow documents, registries and
+   tooling). Rebase the archived plan's relative links so they keep their
+   original destinations. These path-only updates are part of closeout and
+   require no separate scope approval. Preserve anchors, historical text,
+   acceptance criteria and flow semantics; an incoming reference does not
+   authorize unrelated edits in the same file.
 
 Append this concise section to the completed plan, using actual evidence:
 
@@ -228,8 +235,10 @@ Decision: <accepted result and agreed limitations>
 Exit criteria: <how required criteria were satisfied>
 ```
 
-Implementation, test, acceptance contract, or other file changes after review
-require another review before closeout. Closeout does not create Changesets,
+Preserve the reviewed plan text except for these mechanical link relocations,
+then append the outcome. Implementation, test behavior, acceptance contract,
+or other content changes after review require another review before closeout.
+Closeout does not create Changesets,
 versions, tags or releases. Push requires existing user authorization; merge
 requires successful checks on the resulting head.
 
@@ -238,6 +247,11 @@ supplied by a trusted review adapter. It rejects a missing review, unrelated
 post-review changes, missing moves, stale index links and rewritten decision
 history. Standalone and partial plan tasks do not need closeout; neither may
 hide a moved plan. Corrections to existing completed records may be standalone.
+Reference-only changes outside the closeout records must exactly match the
+old-to-completed path transformation; unrelated edits, new files and deleted
+files do not qualify. The archived plan may change link destinations only as
+needed to preserve resolution from its new location. Run the closeout tests,
+affected reference/Flow validators and a stale-path/link check before delivery.
 
 Structural checks do not prove arbitrary natural-language acceptance criteria.
 The named owner and review retain that judgment. The helper cannot discover an

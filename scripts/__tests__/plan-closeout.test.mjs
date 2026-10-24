@@ -71,6 +71,78 @@ test('completed record, index and append-only history prove bounded closeout', a
   assert.equal((await evaluateCloseout(example())).applicable, true)
 })
 
+test('closeout relocates outgoing links and synchronizes incoming plan references', async () => {
+  const input = example()
+  const links =
+    '\n[Contract](../specs/example.md#done)\n[Self](./example.md#task-1)\n[Remote](https://example.com/guide)\n[Local](#task-1)\n[ref]: ../specs/example.md\n'
+  input.files[reviewedSha][active] += links
+  input.files[headSha][paths.completed] = input.files[headSha][
+    paths.completed
+  ].replace(plan, plan + links.replaceAll('../specs/', '../../specs/'))
+  for (const [file, before, after] of [
+    [
+      'docs/ai/framework/specs/example.md',
+      '[Plan](../plans/example.md#task-1)',
+      '[Plan](../plans/completed/example.md#task-1)'
+    ],
+    [
+      'docs/ai/framework/overview.md',
+      '[Plan](/docs/ai/framework/plans/example.md)',
+      '[Plan](/docs/ai/framework/plans/completed/example.md)'
+    ],
+    [
+      'docs/ai/framework/guide.md',
+      '<a href="plans/example.md#task-1">Plan</a>',
+      '<a href="plans/completed/example.md#task-1">Plan</a>'
+    ],
+    [
+      'flows/example.flow.json',
+      JSON.stringify({ implementationRefs: [active], id: 'unchanged' }),
+      JSON.stringify({ implementationRefs: [paths.completed], id: 'unchanged' })
+    ],
+    [
+      'scripts/example.mjs',
+      'const plan = `' + active + '`',
+      'const plan = `' + paths.completed + '`'
+    ]
+  ]) {
+    input.files[reviewedSha][file] = before
+    input.files[headSha][file] = after
+  }
+  assert.equal((await evaluateCloseout(input)).applicable, true)
+})
+
+test('a related reference does not authorize unrelated edits or historical rewrites', async () => {
+  for (const suffix of ['\nChanged acceptance.', '\nconst bypass = true']) {
+    const input = example()
+    const file = 'docs/ai/framework/specs/example.md'
+    input.files[reviewedSha][file] = `[Plan](../plans/example.md)`
+    input.files[headSha][file] =
+      `[Plan](../plans/completed/example.md)${suffix}`
+    await assert.rejects(evaluateCloseout(input), /limited/)
+  }
+  const input = example()
+  input.files[headSha][paths.completed] = input.files[headSha][
+    paths.completed
+  ].replace('Required outcomes', 'Different outcomes')
+  await assert.rejects(evaluateCloseout(input), /preserve/)
+})
+
+test('similar filenames and external URLs are not incoming plan references', async () => {
+  for (const reference of [
+    active + '.backup',
+    'https://example.com/' + active,
+    'https://example.com/?path=' + active
+  ]) {
+    const input = example()
+    const file = 'docs/ai/framework/specs/example.md'
+    input.files[reviewedSha][file] = `[Other](${reference})`
+    input.files[headSha][file] =
+      `[Other](${reference.replace(active, paths.completed)})`
+    await assert.rejects(evaluateCloseout(input), /limited/)
+  }
+})
+
 test('task metadata cannot substitute for trusted exact-source review', async () => {
   const input = example()
   input.context.reviewedSha = reviewedSha
