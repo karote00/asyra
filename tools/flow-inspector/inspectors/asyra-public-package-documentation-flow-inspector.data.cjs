@@ -328,7 +328,7 @@ module.exports = Object.freeze({
       specRefs: [
         '#ai-readable-documentation-contract',
         '#freshness-contract',
-        'docs/ai/framework/plans/release-update-guidance-plan.md#task-3---expose-release-history-and-applicable-guides'
+        'docs/ai/framework/rules/release-update-guidance.md#durable-public-release-records'
       ],
       failureOwnerStepId: 'publish-documentation-indexes'
     }),
@@ -370,7 +370,7 @@ module.exports = Object.freeze({
       specRefs: [
         '#quality-gates',
         '#definition-of-done',
-        'docs/ai/framework/plans/release-update-guidance-plan.md#task-4---prove-customization-and-data-preservation'
+        'docs/ai/framework/rules/release-update-guidance.md#consumer-preservation-and-subsequent-updates'
       ],
       failureOwnerStepId: 'verify-public-documentation'
     })

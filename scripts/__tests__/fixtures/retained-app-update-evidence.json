@@ -22,5 +22,11 @@
   "fixtures/app-update-text-subsequent/evidence/revision-2/log-retention-before.txt": "3e439c50d7e95499f2fe546993ff6d1c9e6e71220aca0210ca4159cc8d4cebcf",
   "fixtures/app-update-text-subsequent/evidence/revision-2/packaging/validation/test.log": "560dbfdd2c57015b2774287efa0aee802cb0dc8c3db52ec9775b0614c645c124",
   "fixtures/app-update-text-subsequent/evidence/revision-2/packaging/verify-package.py": "7265bad9adcefb0fdd6a5d4b606b0bec92d02320a72fccb925323ec0b6dafa47",
-  "fixtures/app-update-text-subsequent/evidence/revision-2/retained-test.txt": "cc7eda14f2bf30bac17b9135319a64b5b529398a1122191c33192f80659ca2c8"
+  "fixtures/app-update-text-subsequent/evidence/revision-2/retained-test.txt": "cc7eda14f2bf30bac17b9135319a64b5b529398a1122191c33192f80659ca2c8",
+  "fixtures/app-update-text-cross-version/evidence/baseline-test.log": "332441c4836aace7f59015f646a746316ddd1c1097cc4104fba9b71de8a4c90d",
+  "fixtures/app-update-text-cross-version/evidence/permanent-replay/before-guide-correction.log": "186de5414d88f2b51287be53ee10f855c24f0a11d6fc393178b95402ab192d39",
+  "fixtures/app-update-text-cross-version/evidence/permanent-replay/before-integration.log": "04068470516ac0e780a79c613bc8653135b47cec8b3973f717cde26147d4acad",
+  "fixtures/app-update-text-cross-version/evidence/permanent-replay/gate.log": "6c61b735e570aa1c73991d7da6ba7b8628135bcfcce66958e70967860a4b71bd",
+  "fixtures/app-update-text-cross-version/evidence/permanent-replay/test.log": "3784e62145498181db615267c06f116aba809b70b6f2671d780da3890e7ed917",
+  "fixtures/app-update-text-cross-version/evidence/target-before-integration.log": "8c09a2ff21a01cb003add692019770944266369387d52b86c2c667ca1e5ecae2"
 }

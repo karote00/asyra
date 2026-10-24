@@ -27,7 +27,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/framework/plans/release-update-guidance-plan.md#task-2---connect-guidance-to-each-existing-release-boundary"
+          "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
         ],
         "implementationRefs": ["scripts/release-guidance.mjs"],
         "actions": []
@@ -57,7 +57,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/framework/plans/release-update-guidance-plan.md#task-2---connect-guidance-to-each-existing-release-boundary"
+          "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
         ],
         "implementationRefs": ["scripts/publish-framework-release.js"],
         "actions": []
@@ -87,7 +87,7 @@
           }
         ],
         "specRefs": [
-          "docs/ai/framework/plans/release-update-guidance-plan.md#task-2---connect-guidance-to-each-existing-release-boundary"
+          "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
         ],
         "implementationRefs": ["scripts/cloudflare-release-guidance.mjs"],
         "actions": []
@@ -106,7 +106,7 @@
         "subtitle": "Task 2"
       },
       "authority": {
-        "specPath": "docs/ai/framework/plans/release-update-guidance-plan.md",
+        "specPath": "docs/ai/framework/rules/release-update-guidance.md",
         "inspectorPath": "tools/flow-inspector/inspectors/release-update-guidance.flow.json",
         "semanticOwner": "Release owners",
         "inspectorOwner": "Release tooling"
@@ -166,7 +166,7 @@
             "docs/ai/framework/rules/release-update-guidance.md"
           ],
           "specRefs": [
-            "docs/ai/framework/plans/release-update-guidance-plan.md#task-2---connect-guidance-to-each-existing-release-boundary"
+            "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
           ],
           "failureOwnerStepId": "prepare"
         },
@@ -217,7 +217,7 @@
             "docs/ai/framework/rules/release-update-guidance.md"
           ],
           "specRefs": [
-            "docs/ai/framework/plans/release-update-guidance-plan.md#task-2---connect-guidance-to-each-existing-release-boundary"
+            "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
           ],
           "failureOwnerStepId": "admit"
         },
@@ -268,7 +268,7 @@
             "docs/ai/framework/rules/release-update-guidance.md"
           ],
           "specRefs": [
-            "docs/ai/framework/plans/release-update-guidance-plan.md#task-2---connect-guidance-to-each-existing-release-boundary"
+            "docs/ai/framework/rules/release-update-guidance.md#release-admission-commands-and-evidence"
           ],
           "failureOwnerStepId": "record"
         }

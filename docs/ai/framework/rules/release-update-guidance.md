@@ -299,4 +299,5 @@ records when retrying. Existing recovery and publication authorization remain in
 force. Cloudflare retains candidate/results with its workflow artifacts and links
 the summary hash in the job summary. These local/CI records are not durable public
 release history or a claim of comprehensive live acceptance. Public discovery and
-durable history remain Task 3; existing consumer adoption/data evidence is unchanged.
+durable history use the committed records above; retained consumer acceptance
+evidence stays distinct from registry and hosted-delivery verification.

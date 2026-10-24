@@ -319,3 +319,22 @@ These development notes are not published release summaries.
   "reason": "Modeled local candidate fixture and public documentation only; production runtime, published package versions and original acceptance evidence remain unchanged. Independent results and maintainer replay are recorded separately."
 }
 ```
+
+```update-note
+{
+  "change": "release-guidance-closeout-integration",
+  "owner": "Release guidance verification",
+  "summary": "Preserve exact historical cross-version logs in CI and bind continuing checks to permanent rules and the owner plan index before archival.",
+  "sources": [
+    "scripts/__tests__/fixtures/retained-app-update-evidence.json",
+    "scripts/__tests__/workspace-automation.test.mjs",
+    "scripts/docs/__tests__/release-update-guidance.test.mjs",
+    "tools/flow-inspector/inspectors/asyra-public-package-documentation-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/release-update-guidance.flow.json",
+    "docs/public/generated/source-map.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Verification references and exact-byte evidence retention only; no consumer runtime, versions or publication changes."
+}
+```

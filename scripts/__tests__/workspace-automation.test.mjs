@@ -213,7 +213,9 @@ const retainedEvidence = readJSON(
   'scripts/__tests__/fixtures/retained-app-update-evidence.json'
 )
 const isRetainedEvidence = (file, bytes) =>
-  /^fixtures\/app-update-text-(consumer|subsequent)\/evidence\//.test(file) &&
+  /^fixtures\/app-update-text-(consumer|subsequent|cross-version)\/evidence\//.test(
+    file
+  ) &&
   retainedEvidence[file] === createHash('sha256').update(bytes).digest('hex')
 
 test('historical path exceptions require exact retained evidence bytes', () => {

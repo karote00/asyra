@@ -508,8 +508,16 @@ test('retained historical source paths do not force restored files or a new docu
 })
 
 test('current release guidance routes hosted Apps and the website to Cloudflare Pages', () => {
+  const index = fs.readFileSync(
+    path.join(root, 'docs/ai/framework/PLANS.md'),
+    'utf8'
+  )
+  const entry = index.match(
+    /\[Release Update Summaries and Consumer Integration Guidance\]\(([^)]+)\)/
+  )
+  assert.ok(entry, 'Release guidance plan is missing from its owner index')
   const plan = fs.readFileSync(
-    path.join(root, 'docs/ai/framework/plans/release-update-guidance-plan.md'),
+    path.resolve(root, 'docs/ai/framework', entry[1]),
     'utf8'
   )
   const contract = fs.readFileSync(path.join(root, rule), 'utf8')
