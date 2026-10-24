@@ -236,6 +236,22 @@ Live observation and convergence - 2026-10-24:
   previously converged native oval work. Next-issue discovery is limited to this
   saved run and its direct App/framework owners; no implementation is authorized.
 
+Push integration validation - 2026-10-24:
+
+- Rebased the task branch onto main 91ed0141a. Preserved both spatial facade and
+  workspace snapshot contracts; regenerated public documentation from source.
+- Rebuilt the dependency graph (16 builds) after detecting stale local capability
+  artifacts. Refreshed tests: App inspection/runtime/receipts 404, discovery and
+  direct consumers including oval 130, Render 77, Core 15, Preset 5, local gate
+  selection 16, naming 15, and both drawing-inspection browser cases passed.
+- The validation-chain regression had omitted the existing Preset build and
+  selection-consumer steps. Its expected chain and injected failure cases now
+  cover both steps; production validation commands were not weakened or changed.
+- App production types and touched lint passed (two existing console warnings).
+  Inspector revision 102 verification a30bab3d-c51a-4e99-a855-bffec31a7ca2 passed
+  against captured source f36521a6c952dbdb5dfdf430e837aca265080468b294d3f0b40055b52847ab98.
+  Logs: tmp/workspace-push-*.log. No model run or CI inspection was performed.
+
 ### Projected oval handoff - 2026-10-24
 
 Status: locally complete after admission, formal fail-first regressions, bounded
