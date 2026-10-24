@@ -65,12 +65,17 @@ UPDATE_GUIDANCE_BASE_SHA=<base-sha> UPDATE_GUIDANCE_HEAD_SHA=<head-sha> yarn doc
 ```
 
 The check requires a new or revised declaration covering each changed non-Markdown
-file and validates added/revised notes even in documentation-only changes. Use
+file and validates added/revised notes even in documentation-only changes. All
+retained `update-note` blocks in the target notes files participate in identity
+and guide-reference checks, including when those files are unchanged. This does
+not require a new declaration for ordinary Markdown-only changes. Use
 one note for related code, configuration and tests; internal tooling needs only a
 no-action reason. An unchanged historical note cannot cover new work. Deleted
-and renamed source paths still need a disposition. Reference paths must exist
-in the compared source or baseline. Integration guides must exist in the target,
-be registered publicly and retain the source section. Existing public-document
+and renamed source paths still need a disposition. Source references in changed
+notes must exist in the compared source or baseline; check file metadata without
+reading source payloads. Retained historical source references do not require
+files removed by later work to be restored. Integration guides must exist in the
+target, be registered publicly and retain the source section. Existing public-document
 checks own full link and content validation.
 
 PR CI runs this check independently of versioning admission. It verifies declared

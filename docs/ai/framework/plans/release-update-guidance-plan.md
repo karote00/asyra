@@ -207,6 +207,22 @@ The new check enforces declared structure, not semantic completeness or release
 artifact admission. Publisher wiring, release history and preservation exercises
 remain Tasks 2-4. No publication, deployment or remote push occurred.
 
+Task 1 review corrections - 2026-10-24: completed from `9ae447cdb`.
+Retained notes now participate in identity and guide-reference checks across
+unchanged and changed notes files. Only new/revised declarations cover current
+code changes; ordinary Markdown edits still need no new note, and historical
+source paths do not require restoring removed files. Source existence uses Git
+metadata or filesystem metadata rather than reading binary/source payloads.
+
+Four new regression cases failed against the original implementation, including
+missing integrity failures and `ENOBUFS` for a 2 MiB source. The repaired suite
+passes 17 focused cases and 154 related tests, including unchanged-file guide
+references, cross-file duplicate identities, committed-source isolation, large
+source addition/deletion, missing-source rejection and Markdown exemptions.
+Scoped ESLint, formatting, naming and public-document checks passed. No publisher,
+Text guide/fixture or original acceptance evidence changed; Tasks 2-4 remain
+PLANNED. No remote push or publication occurred.
+
 ## Task 2 - Connect guidance to each existing release boundary
 
 Status: PLANNED. Prerequisite: Task 1.

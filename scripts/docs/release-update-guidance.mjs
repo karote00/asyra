@@ -36,18 +36,26 @@ function readNotes(source = '') {
 }
 
 // Readers bind all inputs to one checkout or Git snapshot for this invocation.
-export function validateUpdateGuidance({ changes, read, readBase }) {
+export function validateUpdateGuidance({
+  changes,
+  notePaths,
+  read,
+  readBase,
+  exists,
+  existsBase
+}) {
   const required = changes.filter((file) => !file.endsWith('.md'))
   const covered = new Set()
   const identities = new Set()
   const guides = new Set()
   let count = 0
-  for (const file of changes.filter((entry) => noteFile.test(entry))) {
-    const previous = readNotes(readBase(file)).map((note) =>
-      JSON.stringify(note)
-    )
+  for (const file of notePaths.filter((entry) => noteFile.test(entry))) {
+    const previous = changes.includes(file)
+      ? readNotes(readBase(file)).map((note) => JSON.stringify(note))
+      : []
     for (const note of readNotes(read(file))) {
-      if (previous.includes(JSON.stringify(note))) continue
+      const changed =
+        changes.includes(file) && !previous.includes(JSON.stringify(note))
       requireValue(
         note && typeof note === 'object',
         `${file}: Invalid update-note`
@@ -72,10 +80,10 @@ export function validateUpdateGuidance({ changes, read, readBase }) {
       for (const source of note.sources) {
         requireValue(repositoryPath(source), `${identity}: invalid source path`)
         requireValue(
-          read(source) !== undefined || readBase(source) !== undefined,
+          !changed || exists(source) || existsBase(source),
           `${identity}: missing source ${source}`
         )
-        covered.add(source)
+        if (changed) covered.add(source)
       }
       requireValue(
         Array.isArray(note.guides),
@@ -98,7 +106,7 @@ export function validateUpdateGuidance({ changes, read, readBase }) {
         )
         guides.add(guide)
       }
-      count++
+      if (changed) count++
     }
   }
   if (guides.size) {
@@ -178,26 +186,53 @@ export function checkUpdateGuidance({
       throw error
     }
   }
+  // Source references need metadata only, including when the source is deleted.
+  const snapshotExists = (sha) => (file) =>
+    git(['ls-tree', '-z', sha, '--', file])
+      .split('\0')
+      .some(
+        (entry) => entry.split('\t')[1] === file && /^[0-7]+ blob /.test(entry)
+      )
+  const localPath = (file) => {
+    try {
+      const resolved = fs.realpathSync(path.resolve(repositoryRoot, file))
+      requireValue(
+        !path.relative(repositoryRoot, resolved).startsWith('..'),
+        `Source escapes repository: ${file}`
+      )
+      return resolved
+    } catch (error) {
+      if (error.code === 'ENOENT') return undefined
+      throw error
+    }
+  }
   const read = target
     ? snapshotReader(target)
     : (file) => {
-        const absolute = path.resolve(repositoryRoot, file)
-        try {
-          const resolved = fs.realpathSync(absolute)
-          requireValue(
-            !path.relative(repositoryRoot, resolved).startsWith('..'),
-            `Source escapes repository: ${file}`
-          )
-          return fs.readFileSync(resolved, 'utf8')
-        } catch (error) {
-          if (error.code === 'ENOENT') return undefined
-          throw error
-        }
+        const resolved = localPath(file)
+        return resolved ? fs.readFileSync(resolved, 'utf8') : undefined
       }
+  const exists = target
+    ? snapshotExists(target)
+    : (file) => {
+        const resolved = localPath(file)
+        return resolved ? fs.statSync(resolved).isFile() : false
+      }
+  // Retained notes participate in integrity checks even when only a guide changes.
+  const notePaths = git(
+    target
+      ? ['ls-tree', '-r', '--name-only', '-z', target]
+      : ['ls-files', '--cached', '--others', '--exclude-standard', '-z']
+  )
+    .split('\0')
+    .filter((file) => noteFile.test(file))
   return validateUpdateGuidance({
     changes: [...new Set(changes)],
+    notePaths: [...new Set(notePaths)],
     read,
-    readBase: snapshotReader(baseline)
+    readBase: snapshotReader(baseline),
+    exists,
+    existsBase: snapshotExists(baseline)
   })
 }
 

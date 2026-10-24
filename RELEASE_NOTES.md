@@ -68,3 +68,18 @@ These development notes are not published release summaries.
   "reason": "Repository authoring checks only; App runtime, consumer data, package versions and publishers are unchanged."
 }
 ```
+
+```update-note
+{
+  "change": "release-guidance-integrity-fixes",
+  "owner": "Repository development tooling",
+  "summary": "Validate retained note identities and guide references; check source existence without loading source payloads.",
+  "sources": [
+    "scripts/docs/release-update-guidance.mjs",
+    "scripts/docs/__tests__/release-update-guidance.test.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Development document validation only; preserve Markdown exemptions and leave consumer runtime, data and publishers unchanged."
+}
+```

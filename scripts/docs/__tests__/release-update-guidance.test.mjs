@@ -46,8 +46,11 @@ function check({
   }
   return validateUpdateGuidance({
     changes,
+    notePaths: Object.keys(contents),
     read: (file) => contents[file],
-    readBase: (file) => before[file]
+    readBase: (file) => before[file],
+    exists: (file) => contents[file] !== undefined,
+    existsBase: (file) => before[file] !== undefined
   })
 }
 
@@ -318,10 +321,188 @@ test('integration guide reads are shared for one invocation and refreshed on the
     reads.set(file, (reads.get(file) ?? 0) + 1)
     return files[file]
   }
-  const input = { changes: [source, notePath], read, readBase: () => undefined }
+  const input = {
+    changes: [source, notePath],
+    notePaths: [notePath],
+    read,
+    readBase: () => undefined,
+    exists: (file) => files[file] !== undefined,
+    existsBase: () => false
+  }
   assert.equal(validateUpdateGuidance(input).notes, 2)
   assert.equal(reads.get(guide), 1)
   assert.equal(reads.get('docs/public/content-manifest.json'), 1)
   files[guide] = '# Broken guide'
   assert.throws(() => validateUpdateGuidance(input), /Canonical sources/)
+})
+
+test('retained notes reject duplicate identities and broken guide references', () => {
+  const retained = block(note())
+  assert.throws(
+    () =>
+      check({
+        changes: [notePath],
+        before: { [notePath]: retained },
+        notes: [note(), note({ summary: 'Add another field.' })]
+      }),
+    /Duplicate/
+  )
+  assert.throws(
+    () =>
+      check({
+        changes: [notePath, guide],
+        before: { [notePath]: retained },
+        files: { [guide]: undefined }
+      }),
+    /Missing guide/
+  )
+  assert.throws(
+    () =>
+      check({
+        changes: [notePath, 'docs/public/content-manifest.json'],
+        before: { [notePath]: retained },
+        notes: [
+          note(),
+          note({
+            change: 'docs-cleanup',
+            sources: ['docs/public/content-manifest.json'],
+            impact: 'no-action',
+            guides: []
+          })
+        ],
+        files: { 'docs/public/content-manifest.json': '{"pages":[]}' }
+      }),
+    /not registered/
+  )
+})
+
+function gitFixture(t) {
+  const parent = path.join(root, 'tmp')
+  fs.mkdirSync(parent, { recursive: true })
+  const directory = fs.mkdtempSync(
+    path.join(parent, 'update-guidance-regression-')
+  )
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: directory,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim()
+  const write = (file, contents) => {
+    fs.mkdirSync(path.dirname(path.join(directory, file)), { recursive: true })
+    fs.writeFileSync(path.join(directory, file), contents)
+  }
+  const commit = () => {
+    git('add', '.')
+    git('commit', '-m', 'Fixture state')
+    return git('rev-parse', 'HEAD')
+  }
+  git('init', '-b', 'test-guidance')
+  git('config', 'user.email', 'fixture@example.test')
+  git('config', 'user.name', 'Guidance fixture')
+  return { directory, write, commit }
+}
+
+test('unchanged note files participate in integrity checks without consuming the Markdown exemption', (t) => {
+  const { directory, write, commit } = gitFixture(t)
+  write(source, 'before')
+  write(notePath, block(note()))
+  write(guide, '# Guide\n\n## Canonical sources\nSources.')
+  write(
+    'docs/public/content-manifest.json',
+    JSON.stringify({ pages: [{ path: guide.slice('docs/public/'.length) }] })
+  )
+  const base = commit()
+  write('README.md', '# Documentation wording')
+  assert.equal(
+    checkUpdateGuidance({ repositoryRoot: directory, base }).mode,
+    'documentation-only'
+  )
+  // A different owner's notes file must not bypass the retained identity.
+  write(
+    'packages/preset/CHANGELOG.md',
+    block(note({ summary: 'Duplicate in another file.' }))
+  )
+  assert.throws(
+    () => checkUpdateGuidance({ repositoryRoot: directory, base }),
+    /Duplicate/
+  )
+  fs.rmSync(path.join(directory, 'packages/preset/CHANGELOG.md'))
+  fs.rmSync(path.join(directory, guide))
+  assert.throws(
+    () => checkUpdateGuidance({ repositoryRoot: directory, base }),
+    /Missing guide/
+  )
+  const head = commit()
+  // Restoring an uncommitted guide cannot repair a broken committed comparison.
+  write(guide, '# Guide\n\n## Canonical sources\nSources.')
+  assert.throws(
+    () => checkUpdateGuidance({ repositoryRoot: directory, base, head }),
+    /Missing guide/
+  )
+})
+
+test('large source files can be added and deleted with valid notes in Git comparisons', (t) => {
+  const { directory, write, commit } = gitFixture(t)
+  write('README.md', '# Fixture')
+  const base = commit()
+  const asset = 'assets/review.png'
+  write(asset, Buffer.alloc(2 * 1024 * 1024, 0x89))
+  const declaration = note({
+    sources: [asset],
+    impact: 'no-action',
+    guides: [],
+    reason: 'Review image only.'
+  })
+  write(notePath, block(declaration))
+  assert.equal(
+    checkUpdateGuidance({ repositoryRoot: directory, base }).notes,
+    1
+  )
+  const head = commit()
+  assert.equal(
+    checkUpdateGuidance({ repositoryRoot: directory, base, head }).notes,
+    1
+  )
+  fs.rmSync(path.join(directory, asset))
+  write(notePath, block({ ...declaration, summary: 'Remove review image.' }))
+  const deleted = commit()
+  assert.equal(
+    checkUpdateGuidance({
+      repositoryRoot: directory,
+      base: head,
+      head: deleted
+    }).notes,
+    1
+  )
+})
+
+test('source existence checks do not read payloads and still reject missing sources', () => {
+  const declaration = note({ impact: 'no-action', guides: [] })
+  const input = {
+    changes: [source, notePath],
+    notePaths: [notePath],
+    read: (file) => {
+      assert.notEqual(file, source, 'Source payload must not be read')
+      return file === notePath ? block(declaration) : undefined
+    },
+    readBase: () => undefined,
+    exists: (file) => file === source,
+    existsBase: () => false
+  }
+  assert.equal(validateUpdateGuidance(input).notes, 1)
+  assert.throws(
+    () => validateUpdateGuidance({ ...input, exists: () => false }),
+    /missing source/
+  )
+})
+
+test('retained historical source paths do not force restored files or a new documentation note', () => {
+  const result = check({
+    changes: ['README.md'],
+    before: { [notePath]: block(note()) },
+    files: { [source]: undefined, 'README.md': '# Updated documentation' }
+  })
+  assert.deepEqual(result, { mode: 'documentation-only', notes: 0 })
 })
