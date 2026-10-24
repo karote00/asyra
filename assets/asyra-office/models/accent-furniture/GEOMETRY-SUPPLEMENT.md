@@ -6,13 +6,22 @@ Metres, +Z up, -Y front, +X right. Origin is the centre of the footprint at Z=0.
 
 ## Square low stool
 
-One orange rounded box has bounds X/Y=-0.18..0.18, Z=0.16..0.30. Radius is 0.035 on all twelve edges. Define this surface as the Minkowski sum of a centred box of size (0.29,0.29,0.07) and a sphere of radius 0.035, then translate to Z=0.23. This defines planar centre regions, quarter-cylinder edges and spherical corners without scaling drift. Use eight equal angular intervals per quarter circle; preserve the exact outer bounds. No sculpted bulge, piping, button, seam, extra layer or indentation.
+The [square low stool contract](SQUARE-LOW-STOOL-SPEC.md) owns the complete
+construction and LOD rules. All original dimensions remain: 360 x 360 x 300 mm,
+one radius 35 mm rounded cushion, four vertical 35 mm square legs at XY=+-125 mm.
+Source legs reach Z=175 mm, embedding 15 mm into the cushion beginning at 160 mm.
+Every leg cap stays inside the planar underside with 2.5 mm margin.
 
-Four straight square wooden legs have centres X/Y=+-0.125, section 0.035, and run from Z=0 to 0.175. Each penetrates the cushion underside by 0.015 within its planar underside region. Legs are vertical, not splayed. No bevel, rail, stretcher, upholstery fastener or additional support block.
+The revised handoff makes the clipped exterior explicit: remove four holes from
+the flat underside, trim hidden leg sides/tops, and stitch the four leg rims to
+those holes into one closed exterior with five replaceable surface regions.
+The underside has 26 triangles without extra vertices, not two triangles covering
+the leg contacts. No legs, caps, seams, rails or support blocks are added.
 
-Treat legs and cushion as separate material parts of one placeable unit. Clip each leg at Z=0.16 for the visible exterior and remove covered contact faces when creating a unified watertight exterior; preserve the orange underside outside the four contact footprints. The untrimmed overlap coordinates specify the fit and do not authorize visible duplicate surfaces. Leg bottoms are plain dark wood.
-
-Front/back/right silhouettes match; two rear legs are occluded in exact orthographic front/right views. Top shows only the rounded square cushion. Oblique view can reveal all four legs, with the far leg partially occluded.
+Use normalized barycentric corner grids and matching atan2 edge samples under
+the new LOD contract, replacing the earlier equal-angle sampling instruction.
+Preserve exact outer bounds and ground contacts. Source drawings remain
+illustrative; no model or rendered likeness has been verified.
 
 ## Pedestal side table
 
