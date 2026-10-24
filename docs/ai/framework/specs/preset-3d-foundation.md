@@ -266,6 +266,16 @@ not a room/crop/robot validity rule. Apps own placement validation and feedback
 wording. Input intent still enters a Feature; these helpers are not a second
 session runtime. Selection outline/grid/axes/handles remain optional render output.
 
+The public optional spatial entry provides pure pose calculation and immutable
+target/revision previews. Translate is world-space; axis rotation explicitly
+chooses local/world composition. Plane axes are orthogonal, grid origin is
+explicit, spacing is positive, and half-grid ties round toward positive infinity.
+Resolution reports ready, unchanged or rejected (stale target, scale capability,
+App constraint); Apps translate those neutral results into product feedback.
+There is no shared session or history owner. Office consumes translation/grid and
+proposal resolution; Sim consumes absolute original-part rotation/scale placement
+through its existing preview and Feature acceptance. Rigid body policy is unchanged.
+
 ## Restricted assets and persistence
 
 Preserve Sim's current `restricted-glb-v0` limits and supported topology/material

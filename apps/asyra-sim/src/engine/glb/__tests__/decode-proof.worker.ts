@@ -1,4 +1,4 @@
-import { decodeRestrictedGlb } from '../decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 
 /** Permanent feasibility fixture: no Core, renderer, or worker reuse. */
 self.addEventListener(

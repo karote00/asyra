@@ -82,6 +82,57 @@ async function start(storage = new MemoryStorage()) {
   return { runtime, storage }
 }
 describe('Office canonical interaction path', () => {
+  it('previews snapped movement without writes, discards it, and commits once with stale and no-op protection', async () => {
+    const { runtime } = await start()
+    const initial = runtime.layout.getSnapshot()
+    const depth = runtime.core.getUndoHistoryDepth()
+    const publication = vi.fn()
+    const unsubscribe = runtime.core.subscribeToSharedPublication(publication)
+    const proposal = runtime.layout.previewMove('desk', [0.74, 12, 0], 'Human')
+    expect(proposal.layout.furniture[0].x).toBe(-1)
+    expect(runtime.layout.getSnapshot()).toBe(initial)
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth)
+    expect(publication).not.toHaveBeenCalled()
+    // Discarding a preview requires no canonical action.
+    runtime.layout.previewMove('desk', [-0.5, 0, 0], 'Human')
+    expect(runtime.layout.getSnapshot()).toBe(initial)
+    await runtime.layout.apply(proposal)
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth + 1)
+    expect(publication).toHaveBeenCalledOnce()
+    await expect(runtime.layout.apply(proposal)).rejects.toThrow(
+      'changed since preview'
+    )
+    const same = runtime.layout.getSnapshot()
+    await runtime.layout.apply(runtime.layout.propose(same.layout, 'Human'))
+    expect(runtime.layout.getSnapshot()).toBe(same)
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth + 1)
+    await runtime.layout.undo()
+    expect(runtime.layout.getSnapshot().layout).toEqual(initial.layout)
+    await runtime.layout.redo()
+    expect(runtime.layout.getSnapshot().layout).toEqual(proposal.layout)
+    expect(() =>
+      runtime.layout.previewMove('desk', [100, 0, 0], 'Human')
+    ).toThrow('Invalid layout')
+    expect(() =>
+      runtime.layout.previewMove('missing', [1, 0, 0], 'Human')
+    ).toThrow()
+    unsubscribe()
+  })
+
+  it('does not discard admitted additional layout fields as a transform no-op', async () => {
+    const { runtime } = await start()
+    const initial = runtime.layout.getSnapshot().layout
+    const depth = runtime.core.getUndoHistoryDepth()
+    const extended = { ...initial, note: 'Retained authored metadata' }
+    await runtime.layout.apply(runtime.layout.propose(extended, 'Human'))
+    expect(runtime.core.getUndoHistoryDepth()).toBe(depth + 1)
+    expect(runtime.layout.getSnapshot().layout).toMatchObject({
+      note: extended.note
+    })
+    await runtime.layout.undo()
+    expect(runtime.layout.getSnapshot().layout).toEqual(initial)
+  })
+
   it('requests the official 3D profile with unchanged App lighting before ordinary startup', async () => {
     const core = currentCore
     const apply = vi.spyOn(preset, 'applyPreset')

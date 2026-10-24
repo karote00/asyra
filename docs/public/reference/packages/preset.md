@@ -115,3 +115,17 @@ and placement-count updates retain unchanged geometry/material resources.
 Use `SpatialPosePresentation.retarget`, `advance`, `cancel` and `dispose` for
 optional pose transitions. The caller supplies progress, tolerance and reduced
 motion and chooses targets; the mechanism has no clock or document writes.
+
+For transient transform editing, use `transformSpatialPose` or capture an
+App-authorized target/revision with `previewSpatialEdit`, then call
+`resolveSpatialEdit` inside the App Feature immediately before its transaction.
+The shared mechanism supports translation, explicit local/world axis rotation,
+positive scale capability, absolute poses and optional plane/grid snapping.
+Apps discard previews on cancel and own domain validity, feedback and history.
+
+Use the explicit `@asyra/preset/spatial-assets` entry for restricted static,
+self-contained GLB decoding. `decodeRestrictedGlb` returns detached immutable
+triangles/bounds/source digest; `RestrictedGlbPreviewWorker` takes your bundled
+Worker factory and handles bounded request lifetime/cancellation. This is the
+existing `restricted-glb-v0` profile, not full glTF. Apps retain original bytes,
+source binding, canonical acceptance and storage; decoding never edits a scene.

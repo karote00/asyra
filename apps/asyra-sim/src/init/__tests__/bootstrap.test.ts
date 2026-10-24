@@ -12,7 +12,7 @@ import { SharedDataChannelNames } from '@asyra/utils'
 import { PropertyFields } from '../../constants'
 import { bootstrap } from '../bootstrap'
 import { VisualAssetArchive } from '../../storage/visual-archive'
-import { decodeRestrictedGlb } from '../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { ThreeEngine, type GraphicsDriver } from '../../engine/three-engine'
 import {
   createWorkcellFrame,

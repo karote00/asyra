@@ -4,7 +4,7 @@ import { createSyntheticExperimentDraft } from '../../../../samples/synthetic-ex
 import {
   decodeRestrictedGlb,
   type VisualAsset
-} from '../../../engine/glb/decode'
+} from '@asyra/preset/spatial-assets'
 import { IDENTITY_POSE } from '../../../domain/math'
 import { resolvePartWorkcell } from '../../../domain/part-geometry'
 import { createExperimentSnapshot } from '../../snapshot'

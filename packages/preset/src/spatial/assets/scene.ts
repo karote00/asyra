@@ -12,7 +12,7 @@ import {
   record,
   tuple,
   type JsonRecord
-} from './schema'
+} from './schema.js'
 
 export function nodeTransform(node: JsonRecord): Matrix4 {
   const matrix = new Matrix4()

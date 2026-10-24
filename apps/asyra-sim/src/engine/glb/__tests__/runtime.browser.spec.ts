@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import { encodeGlb, triangleFixture } from './fixtures'
-import type { VisualAsset } from '../decode'
+import type { VisualAsset } from '@asyra/preset/spatial-assets'
 
 test('the production preview worker decodes GLB without Core, GPU initialization, or external requests', async ({
   page

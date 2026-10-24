@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "asyra",
   "flowId": "preset-3d-foundation",
-  "revision": 201,
+  "revision": 247,
   "definition": {
     "title": "Preset 3D foundation and App migration",
     "purpose": "Task 1 design followed by source-bound foundation, App preservation, profile activation and generic extension verification.",
@@ -757,7 +757,30 @@
           "packages/preset/src/__tests__/spatial-editing.integration.test.ts",
           "apps/asyra-office/src/runtime/layout-controller.ts",
           "apps/asyra-office/src/runtime/office-runtime.ts",
-          "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts"
+          "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+          "packages/preset/src/spatial.ts",
+          "packages/preset/src/spatial/pose.ts",
+          "apps/asyra-office/src/ui/OfficeApp.tsx",
+          "apps/asyra-office/e2e/**",
+          "apps/asyra-sim/src/ui/imports/use-part-import.ts",
+          "apps/asyra-sim/src/ui/objects/visual-placement-fields.tsx",
+          "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts",
+          "apps/asyra-sim/src/features/storage-visuals.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-feature.test.ts",
+          "apps/asyra-sim/e2e/__tests__/visual-references.spec.ts",
+          "docs/ai/apps/asyra-office/implementation.md",
+          "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+          "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+          "docs/ai/framework/packages/preset.md",
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/public/generated/api-index.json",
+          "docs/public/generated/content-index.json",
+          "docs/public/generated/package-reference.json",
+          "docs/public/generated/source-map.json",
+          "docs/public/reference/packages/preset.md",
+          "docs/ai/framework/PLANS.md",
+          "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
         ],
         "actions": [
           {
@@ -803,7 +826,49 @@
           "packages/preset/src/spatial/assets/**",
           "packages/preset/src/__tests__/spatial-assets.test.ts",
           "apps/asyra-sim/src/engine/glb/**",
-          "apps/asyra-sim/src/ui/imports/glb-preview.tsx"
+          "apps/asyra-sim/src/ui/imports/glb-preview.tsx",
+          "packages/preset/package.json",
+          "packages/preset/src/__tests__/spatial-assets-fixture.ts",
+          "docs/ai/apps/asyra-office/implementation.md",
+          "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+          "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+          "docs/ai/framework/packages/preset.md",
+          "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+          "docs/ai/framework/specs/preset-3d-foundation.md",
+          "docs/public/generated/api-index.json",
+          "docs/public/generated/content-index.json",
+          "docs/public/generated/package-reference.json",
+          "docs/public/generated/source-map.json",
+          "docs/public/reference/packages/preset.md",
+          "apps/asyra-sim/src/analysis/__tests__/original-part-admission.test.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/original-mesh.test.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/original-motion.test.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/representative-fixture.ts",
+          "apps/asyra-sim/src/analysis/methods/__tests__/workcell-fixture.ts",
+          "apps/asyra-sim/src/domain/__tests__/collision-starter-fixture.ts",
+          "apps/asyra-sim/src/domain/__tests__/original-parts.test.ts",
+          "apps/asyra-sim/src/domain/__tests__/synthetic-visuals.test.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/decode-proof.worker.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/decode.test.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/preview-worker.test.ts",
+          "apps/asyra-sim/src/engine/glb/__tests__/runtime.browser.spec.ts",
+          "apps/asyra-sim/src/engine/glb/binary.ts",
+          "apps/asyra-sim/src/engine/glb/decode.ts",
+          "apps/asyra-sim/src/engine/glb/preview-worker.ts",
+          "apps/asyra-sim/src/engine/glb/preview.worker.ts",
+          "apps/asyra-sim/src/engine/glb/scene.ts",
+          "apps/asyra-sim/src/engine/glb/schema.ts",
+          "apps/asyra-sim/src/init/__tests__/bootstrap-lifecycle.test.ts",
+          "apps/asyra-sim/src/init/__tests__/bootstrap.test.ts",
+          "apps/asyra-sim/src/init/__tests__/runtime-controller.test.ts",
+          "apps/asyra-sim/src/render-app/__tests__/visual-frame.test.ts",
+          "apps/asyra-sim/src/render-app/workcell-frame.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-archive-resources.test.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-archive.test.ts",
+          "apps/asyra-sim/src/storage/__tests__/visual-project.test.ts",
+          "apps/asyra-sim/src/storage/visual-archive.ts",
+          "apps/asyra-sim/src/storage/visual-source.ts",
+          "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts"
         ],
         "actions": [
           {
@@ -1935,7 +2000,8 @@
           "inputs": [
             "Authorized target IDs, current revision, axes/plane/grid and App constraints",
             "artifact:reviewed-design",
-            "artifact:accepted-intent"
+            "artifact:accepted-intent",
+            "App-authored absolute draft pose; target authorization and acceptance remain App-owned."
           ],
           "outputs": [
             "artifact:validated-edit"
@@ -1959,7 +2025,30 @@
             "packages/preset/src/__tests__/spatial-editing.integration.test.ts",
             "apps/asyra-office/src/runtime/layout-controller.ts",
             "apps/asyra-office/src/runtime/office-runtime.ts",
-            "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts"
+            "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+            "packages/preset/src/spatial.ts",
+            "packages/preset/src/spatial/pose.ts",
+            "apps/asyra-office/src/ui/OfficeApp.tsx",
+            "apps/asyra-office/e2e/**",
+            "apps/asyra-sim/src/ui/imports/use-part-import.ts",
+            "apps/asyra-sim/src/ui/objects/visual-placement-fields.tsx",
+            "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts",
+            "apps/asyra-sim/src/features/storage-visuals.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-feature.test.ts",
+            "apps/asyra-sim/e2e/__tests__/visual-references.spec.ts",
+            "docs/ai/apps/asyra-office/implementation.md",
+            "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+            "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+            "docs/ai/framework/packages/preset.md",
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/public/generated/api-index.json",
+            "docs/public/generated/content-index.json",
+            "docs/public/generated/package-reference.json",
+            "docs/public/generated/source-map.json",
+            "docs/public/reference/packages/preset.md",
+            "docs/ai/framework/PLANS.md",
+            "docs/ai/framework/plans/preset-2d-3d-init-profile-plan.md"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#presentation-and-editing"
@@ -1999,7 +2088,49 @@
             "packages/preset/src/spatial/assets/**",
             "packages/preset/src/__tests__/spatial-assets.test.ts",
             "apps/asyra-sim/src/engine/glb/**",
-            "apps/asyra-sim/src/ui/imports/glb-preview.tsx"
+            "apps/asyra-sim/src/ui/imports/glb-preview.tsx",
+            "packages/preset/package.json",
+            "packages/preset/src/__tests__/spatial-assets-fixture.ts",
+            "docs/ai/apps/asyra-office/implementation.md",
+            "docs/ai/apps/asyra-sim/specs/custom-engine-v0.md",
+            "docs/ai/apps/asyra-sim/specs/visual-import-v0.md",
+            "docs/ai/framework/packages/preset.md",
+            "docs/ai/framework/plans/preset-3d-foundation-plan.md",
+            "docs/ai/framework/specs/preset-3d-foundation.md",
+            "docs/public/generated/api-index.json",
+            "docs/public/generated/content-index.json",
+            "docs/public/generated/package-reference.json",
+            "docs/public/generated/source-map.json",
+            "docs/public/reference/packages/preset.md",
+            "apps/asyra-sim/src/analysis/__tests__/original-part-admission.test.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/original-mesh.test.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/original-motion.test.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/representative-fixture.ts",
+            "apps/asyra-sim/src/analysis/methods/__tests__/workcell-fixture.ts",
+            "apps/asyra-sim/src/domain/__tests__/collision-starter-fixture.ts",
+            "apps/asyra-sim/src/domain/__tests__/original-parts.test.ts",
+            "apps/asyra-sim/src/domain/__tests__/synthetic-visuals.test.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/decode-proof.worker.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/decode.test.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/preview-worker.test.ts",
+            "apps/asyra-sim/src/engine/glb/__tests__/runtime.browser.spec.ts",
+            "apps/asyra-sim/src/engine/glb/binary.ts",
+            "apps/asyra-sim/src/engine/glb/decode.ts",
+            "apps/asyra-sim/src/engine/glb/preview-worker.ts",
+            "apps/asyra-sim/src/engine/glb/preview.worker.ts",
+            "apps/asyra-sim/src/engine/glb/scene.ts",
+            "apps/asyra-sim/src/engine/glb/schema.ts",
+            "apps/asyra-sim/src/init/__tests__/bootstrap-lifecycle.test.ts",
+            "apps/asyra-sim/src/init/__tests__/bootstrap.test.ts",
+            "apps/asyra-sim/src/init/__tests__/runtime-controller.test.ts",
+            "apps/asyra-sim/src/render-app/__tests__/visual-frame.test.ts",
+            "apps/asyra-sim/src/render-app/workcell-frame.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-archive-resources.test.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-archive.test.ts",
+            "apps/asyra-sim/src/storage/__tests__/visual-project.test.ts",
+            "apps/asyra-sim/src/storage/visual-archive.ts",
+            "apps/asyra-sim/src/storage/visual-source.ts",
+            "apps/asyra-sim/src/ui/imports/__tests__/glb-preview.test.ts"
           ],
           "specRefs": [
             "docs/ai/framework/specs/preset-3d-foundation.md#restricted-assets-and-persistence"
@@ -3261,12 +3392,12 @@
         "kind": "manual",
         "status": "accepted",
         "actor": "codex-coordinator-self-review",
-        "binding": "1bf13542237c3d8758cead3193f061d809e3cf4bd02a54e6d0b79a9cff74db8e",
-        "at": "2026-10-24T08:19:39.886Z",
-        "summary": "Task 8 contract and complete activation handoffs reviewed.",
+        "binding": "99dfd35e4438b9e9aac2563a477dca627fe031faa6f8e63514ec06548e8d156f",
+        "at": "2026-10-24T08:56:31.333Z",
+        "summary": "Task 9 design and direct consumer handoffs reviewed.",
         "details": [
-          "Reviewed Composition, C01-C08/C11-C12, exact owner handoffs and user-approved generic lighting entry.",
-          "Tasks 9-10 remain pending; existing App editing preservation is not generic editing completion."
+          "Task 9 C09/C10, generic pose/plane/grid semantics and restricted-glb-v0 extraction reviewed against exact owner boundaries.",
+          "User approved the existing Sim placement Feature/preview as the rotation/scale consumer. App policy, canonical transaction and archive ownership remain unchanged; Task 10 is not selected."
         ]
       },
       {
@@ -3275,14 +3406,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "admit-activation",
-        "binding": "9682c163e4c569ba5f11bfde3da0e1648119b2a8853d7f8f0b6c9041d8d402cf",
-        "at": "2026-10-24T08:19:39.901Z",
-        "summary": "Task 8 same-source admit behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "admit-editing-assets-preservation",
+        "binding": "8129233548ab6323146151d02cc926b6d4283076306861f6ebe3999d30aa8689",
+        "at": "2026-10-24T08:56:31.350Z",
+        "summary": "Task 9 admit behavior and preservation verified.",
         "details": [
-          "Preset 333 and affected App suites cover immutable admission, invalid numeric values, instances and strict domain boundaries on this source.",
-          "Logs preset-final.log, fieldscope-unit-final.log, sim-unit-final.log under .artifacts/preset-3d-task8/."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3291,14 +3422,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "engine-activation",
-        "binding": "4d1a92af9f3f8f225249bfc0797cc9e6ec56fca3d45cac30d58ec90a66b1f079",
-        "at": "2026-10-24T08:19:39.915Z",
-        "summary": "Task 8 same-source engine behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "engine-editing-assets-preservation",
+        "binding": "b02cadcea190749a5472e9431266dd409f35305d121a654f8c2cf2080183bfdd",
+        "at": "2026-10-24T08:56:31.371Z",
+        "summary": "Task 9 engine behavior and preservation verified.",
         "details": [
-          "Preset full suite covers lazy initialization, retire-during-load, command readiness, retained resources, textures, detail and picking; App focused suites preserve explicit shadow policy.",
-          "Actual production WebGL: FieldScope Chrome Metal; Office/Sim Chrome SwiftShader. No hardware performance claim."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3307,14 +3438,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "project-activation",
-        "binding": "6e7d56d9c1544ecea17c768e136f2b7858301489891a82109a12629f6fb780bb",
-        "at": "2026-10-24T08:19:39.979Z",
-        "summary": "Task 8 same-source project behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "project-editing-assets-preservation",
+        "binding": "000e5347fc6bec7d3d93791bc44e65e63971f0789af0ef92ce89cfdac5fc5c5a",
+        "at": "2026-10-24T08:56:31.434Z",
+        "summary": "Task 9 project behavior and preservation verified.",
         "details": [
-          "Preset full suite covers incremental projection, scene/camera ordering and current instance bounds; affected App suites preserve geometry work counts and update isolation.",
-          "FieldScope source/profile 32, focused 60; Sim focused 95; final WebGL picking and camera interactions pass."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3323,14 +3454,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "render-activation",
-        "binding": "9cdeca4b979e6fedcc9f5eb070c0b3e3a854f67fea5ad81783eb92c1d95ef060",
-        "at": "2026-10-24T08:19:40.002Z",
-        "summary": "Task 8 same-source render behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "render-editing-assets-preservation",
+        "binding": "8412eda56ca5bf35149b40c5f012d85a6bed80cbca14ec06ece896a2232889b3",
+        "at": "2026-10-24T08:56:31.465Z",
+        "summary": "Task 9 render behavior and preservation verified.",
         "details": [
-          "Render 273 and Render Engine 11 pass; Preset 333 cover typed commands, incremental handoff, opaque identity, scheduling and explicit flush.",
-          "Production App previews pass 38 real-WebGL cases without fallback surfaces."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3339,14 +3470,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "camera-activation",
-        "binding": "a35eedb9a8f5db0b1a1af35ee63e2c61465695c5daf911dd60f838d2714451a9",
-        "at": "2026-10-24T08:19:39.988Z",
-        "summary": "Task 8 same-source camera behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "camera-editing-assets-preservation",
+        "binding": "77c6f886bf0ef5ca04d3f69e03c3a8abd02c7532c361542731934d156dc17619",
+        "at": "2026-10-24T08:56:31.441Z",
+        "summary": "Task 9 camera behavior and preservation verified.",
         "details": [
-          "Existing shared Camera and App camera suites pass with no policy migration; FieldScope 18, Sim 18 and Office 2 final real-WebGL cases pass.",
-          "App angles/modes/follow bindings remain unchanged."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3355,14 +3486,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "queries-activation",
-        "binding": "5323ed3d9461755179705adefe919672bc39a6d9703895a2202f5f4d2a577617",
-        "at": "2026-10-24T08:19:40.010Z",
-        "summary": "Task 8 same-source queries behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "queries-editing-assets-preservation",
+        "binding": "0256000aeb4060a2557236993cfada9ed6ad6e13244a10000d8c2ce0ca34f7fe",
+        "at": "2026-10-24T08:56:31.475Z",
+        "summary": "Task 9 queries behavior and preservation verified.",
         "details": [
-          "Render 273 and Preset 333 cover typed bounds/ray/hit semantics, foreign identities, surface conversion and instance mapping.",
-          "Real App picking and camera navigation pass on final production builds."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3371,14 +3502,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "interaction-activation",
-        "binding": "f76f561bdab476903d686678f6fc65421dcda8048f99a3c70d47b70eed65a908",
-        "at": "2026-10-24T08:19:40.018Z",
-        "summary": "Task 8 same-source interaction behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "interaction-editing-assets-preservation",
+        "binding": "8c7fbac7bddced3fb168b6e775587f07a8f4e6b83801821f993a1bba83449f57",
+        "at": "2026-10-24T08:56:31.483Z",
+        "summary": "Task 9 interaction behavior and preservation verified.",
         "details": [
-          "Shared pointer/session/camera owner tests and final FieldScope touch/camera, Sim navigation/picking and Office follow/layout flows pass.",
-          "No new selection/session store or framework camera policy."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3387,14 +3518,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "engine-activation",
-        "binding": "4d1a92af9f3f8f225249bfc0797cc9e6ec56fca3d45cac30d58ec90a66b1f079",
-        "at": "2026-10-24T08:19:39.922Z",
-        "summary": "Task 8 same-source engine behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "engine-editing-assets-preservation",
+        "binding": "b02cadcea190749a5472e9431266dd409f35305d121a654f8c2cf2080183bfdd",
+        "at": "2026-10-24T08:56:31.379Z",
+        "summary": "Task 9 engine behavior and preservation verified.",
         "details": [
-          "Preset full suite covers lazy initialization, retire-during-load, command readiness, retained resources, textures, detail and picking; App focused suites preserve explicit shadow policy.",
-          "Actual production WebGL: FieldScope Chrome Metal; Office/Sim Chrome SwiftShader. No hardware performance claim."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3403,14 +3534,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "compose-activation",
-        "binding": "778f1b68f2f3dac25aa5630829ed968cbbddeb946d6d7a09e95d00c879e92bf2",
-        "at": "2026-10-24T08:19:39.935Z",
-        "summary": "Task 8 same-source compose behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "compose-editing-assets-preservation",
+        "binding": "efc15e28b35c56689a0eff6274d8e11ce35c56045cee121bd09e8dbdc48e30bb",
+        "at": "2026-10-24T08:56:31.395Z",
+        "summary": "Task 9 compose behavior and preservation verified.",
         "details": [
-          "333 Preset tests pass: explicit empty/INPUT 3D, omitted/incompatible defaults rejection before mutation, provider conflict, unchanged 2D/CUSTOM, optional mesh registration and immutable settings capture.",
-          "Logs: .artifacts/preset-3d-task8/preset-final.log; Office profile-bundle.test.ts proves the emitted public entry static closure excludes Three."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3419,14 +3550,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "fieldscope-activation",
-        "binding": "850096cdca8998d2d16bd99e3752287ea3044c85c1a35cd85422de717aa3b63d",
-        "at": "2026-10-24T08:19:40.033Z",
-        "summary": "Task 8 same-source fieldscope behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "fieldscope-editing-assets-preservation",
+        "binding": "c8879cf0cc393f023d105737511efa1eed5468f46486715d4ccdeb84ae75a12f",
+        "at": "2026-10-24T08:56:31.514Z",
+        "summary": "Task 9 fieldscope behavior and preservation verified.",
         "details": [
-          "60 focused tests, 32 source/profile tests, 8 supervisor guards; production build passes.",
-          "18 real WebGL cases pass: fieldscope-webgl-final-model.log and fieldscope-webgl-final-interaction.log. Final overview, clips, drains, Undo and mobile Camera screenshots inspected."
+          "60 focused cases / 9 files plus 8 supervisor guards and production build pass.",
+          "18 real WebGL cases pass: model 10, camera/history/responsiveness 8. Continuous wire, scene/history and camera screenshots inspected. No FieldScope production changes."
         ]
       },
       {
@@ -3435,14 +3566,15 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "sim-activation",
-        "binding": "06c608ded872393b04b463d5c3a0839d341adc82fc72deef282a990afbe34d10",
-        "at": "2026-10-24T08:19:40.041Z",
-        "summary": "Task 8 same-source sim behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "sim-editing-assets-preservation",
+        "binding": "5e2d91faa16ff3f833485a97184f3158d35f550eac52ff9edadfd2cd85ff933b",
+        "at": "2026-10-24T08:56:31.523Z",
+        "summary": "Task 9 sim behavior and preservation verified.",
         "details": [
-          "95 focused tests and 13 supervisor guards; production build passes.",
-          "18 real WebGL cases pass: sim-webgl-final-navigation.log (9), sim-webgl-final-playback.log (5), sim-webgl-final-sources.log (4). Selected body, collision closeup and original-part reopen screenshots inspected."
+          "92 focused tests / 12 files and 13 supervisor guards pass; production build passes.",
+          "22 WebGL cases pass: navigation/workcell 12, original-part/playback 5, source import/history/reopen 5. Separate real asset Worker case also passes.",
+          "Shared absolute transform and restricted decoder preserve original bytes/digests, source bindings and App rigid/solid/analysis semantics. Final transformed preview/reopen/detail screenshots inspected."
         ]
       },
       {
@@ -3451,14 +3583,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "office-activation",
-        "binding": "465cd0e86a4f535f2c175ae203a3a26ad1a1cc35f9655e485c443cbfcfdfaa09",
-        "at": "2026-10-24T08:19:40.071Z",
-        "summary": "Task 8 same-source office behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "office-editing-assets-preservation",
+        "binding": "1998d0b3ed48b0e9a28de9ad194a3e4e9c306c01df141da3bc37fe04ed5b34a7",
+        "at": "2026-10-24T08:56:31.538Z",
+        "summary": "Task 9 office behavior and preservation verified.",
         "details": [
-          "22 formal tests including official-profile startup and emitted lazy SDK graph; production build passes.",
-          "2 real WebGL cases pass: office-webgl-final.log. Ordinary runtime uses official 3D with exact existing lights/shadows. Desktop and narrow screenshots inspected; explicit injected test providers retain CUSTOM."
+          "24 tests / 6 files and production build pass after final no-op metadata regression correction.",
+          "2 final ordinary official-3D WebGL cases pass; desktop/narrow screenshots inspected. Shared movement/resolve keeps room validation, revision, transaction, history, Camera and appearance App-owned."
         ]
       },
       {
@@ -3467,14 +3599,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "activity-activation",
-        "binding": "a24ddd25c3e347e5428c089c8621a6de471f06ec5a21edede12c284956cfce27",
-        "at": "2026-10-24T08:19:40.055Z",
-        "summary": "Task 8 same-source activity behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "activity-editing-assets-preservation",
+        "binding": "ba553748075e84d0c7470822f5bfc00e8308dbcaf334972ab096b2a38a7d975f",
+        "at": "2026-10-24T08:56:31.531Z",
+        "summary": "Task 9 activity behavior and preservation verified.",
         "details": [
-          "Existing acknowledged-activity and scheduler binding tests remain in the passing 333-test Preset suite.",
-          "Office real WebGL task/follow/proposal flow passes through the previously approved scheduler correction."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3483,14 +3615,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "admit-activation",
-        "binding": "9682c163e4c569ba5f11bfde3da0e1648119b2a8853d7f8f0b6c9041d8d402cf",
-        "at": "2026-10-24T08:19:39.894Z",
-        "summary": "Task 8 same-source admit behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "admit-editing-assets-preservation",
+        "binding": "8129233548ab6323146151d02cc926b6d4283076306861f6ebe3999d30aa8689",
+        "at": "2026-10-24T08:56:31.342Z",
+        "summary": "Task 9 admit behavior and preservation verified.",
         "details": [
-          "Preset 333 and affected App suites cover immutable admission, invalid numeric values, instances and strict domain boundaries on this source.",
-          "Logs preset-final.log, fieldscope-unit-final.log, sim-unit-final.log under .artifacts/preset-3d-task8/."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3499,14 +3631,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "engine-activation",
-        "binding": "4d1a92af9f3f8f225249bfc0797cc9e6ec56fca3d45cac30d58ec90a66b1f079",
-        "at": "2026-10-24T08:19:39.908Z",
-        "summary": "Task 8 same-source engine behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "engine-editing-assets-preservation",
+        "binding": "b02cadcea190749a5472e9431266dd409f35305d121a654f8c2cf2080183bfdd",
+        "at": "2026-10-24T08:56:31.362Z",
+        "summary": "Task 9 engine behavior and preservation verified.",
         "details": [
-          "Preset full suite covers lazy initialization, retire-during-load, command readiness, retained resources, textures, detail and picking; App focused suites preserve explicit shadow policy.",
-          "Actual production WebGL: FieldScope Chrome Metal; Office/Sim Chrome SwiftShader. No hardware performance claim."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3515,14 +3647,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "compose-activation",
-        "binding": "778f1b68f2f3dac25aa5630829ed968cbbddeb946d6d7a09e95d00c879e92bf2",
-        "at": "2026-10-24T08:19:39.928Z",
-        "summary": "Task 8 same-source compose behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "compose-editing-assets-preservation",
+        "binding": "efc15e28b35c56689a0eff6274d8e11ce35c56045cee121bd09e8dbdc48e30bb",
+        "at": "2026-10-24T08:56:31.387Z",
+        "summary": "Task 9 compose behavior and preservation verified.",
         "details": [
-          "333 Preset tests pass: explicit empty/INPUT 3D, omitted/incompatible defaults rejection before mutation, provider conflict, unchanged 2D/CUSTOM, optional mesh registration and immutable settings capture.",
-          "Logs: .artifacts/preset-3d-task8/preset-final.log; Office profile-bundle.test.ts proves the emitted public entry static closure excludes Three."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3531,14 +3663,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "startup-activation",
-        "binding": "75f1f89abec91528967dc7f3d8c8fda708ea5c86ad2962772fec51043b07a469",
-        "at": "2026-10-24T08:19:39.943Z",
-        "summary": "Task 8 same-source startup behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "startup-editing-assets-preservation",
+        "binding": "83d518ec83d6c0767abfbb2b4b344282f93ae69e4c2a994908e2d8de3d36af7b",
+        "at": "2026-10-24T08:56:31.404Z",
+        "summary": "Task 9 startup behavior and preservation verified.",
         "details": [
-          "Official provider remains synchronous and creates its delegate only during initialize; lifecycle integration proves one delegate, failed initialization without a fallback surface, reset and fresh-Core reapply.",
-          "Core 272, Render 273, Preset 333 pass; logs core.log, render.log, preset-final.log under .artifacts/preset-3d-task8/."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3547,14 +3679,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "canonical-activation",
-        "binding": "cd7e1c0d47407a814a80841cc53bfbf2f318f392f6a2b29c0eeafb73b2fd6a1b",
-        "at": "2026-10-24T08:19:39.950Z",
-        "summary": "Task 8 same-source canonical behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "canonical-editing-assets-preservation",
+        "binding": "1518446e18f0c16a0a9063d82fee2f9a39d15e3d1de81196acd729ead45a378c",
+        "at": "2026-10-24T08:56:31.411Z",
+        "summary": "Task 9 canonical behavior and preservation verified.",
         "details": [
-          "Core canonical/load/replay suites and existing App tests preserve state owners, rollback and history. Office layout/proposal/stale acceptance and save acknowledgement remain covered.",
-          "Office 22 tests and 2 real WebGL cases; Sim original-part edit/Undo/reopen; FieldScope canvas history tests. Task 9 generic editing is not claimed."
+          "Core 272 and Office 24 pass: existing schema/transaction/replay owners retained, accepted edit one Undo, rejected/stale/cancelled preview no write, finite no-op preserves all admitted fields.",
+          "Sim original-part transform acceptance/Undo/Redo/reopen and FieldScope rendered history pass on final source."
         ]
       },
       {
@@ -3563,14 +3695,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "domain-activation",
-        "binding": "59f44fe2a3c61268309e6d2bb2ec30ced20481f25a4761d52994c02050e6f153",
-        "at": "2026-10-24T08:19:39.962Z",
-        "summary": "Task 8 same-source domain behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "domain-editing-assets-preservation",
+        "binding": "3303fd2033bf71727ce314dc17172b51e48447992ae6f6978fca3426aa159cd9",
+        "at": "2026-10-24T08:56:31.419Z",
+        "summary": "Task 9 domain behavior and preservation verified.",
         "details": [
-          "FieldScope 32 source/profile tests plus 60 focused cases; Sim 95 focused cases and real original-part/playback/reopen cases pass. Office 22 tests preserve domain state.",
-          "Existing source geometry, original-source identity and update isolation retained; no domain producer changes in Task 8."
+          "Sim 92 and FieldScope 60 focused tests plus all three real App suites preserve domain output and original source meaning.",
+          "Only public decoder import paths changed in existing domain/projection consumers. No robot/crop/room generation, analysis or Camera policy moved into Preset."
         ]
       },
       {
@@ -3579,14 +3711,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "project-activation",
-        "binding": "6e7d56d9c1544ecea17c768e136f2b7858301489891a82109a12629f6fb780bb",
-        "at": "2026-10-24T08:19:39.971Z",
-        "summary": "Task 8 same-source project behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "project-editing-assets-preservation",
+        "binding": "000e5347fc6bec7d3d93791bc44e65e63971f0789af0ef92ce89cfdac5fc5c5a",
+        "at": "2026-10-24T08:56:31.427Z",
+        "summary": "Task 9 project behavior and preservation verified.",
         "details": [
-          "Preset full suite covers incremental projection, scene/camera ordering and current instance bounds; affected App suites preserve geometry work counts and update isolation.",
-          "FieldScope source/profile 32, focused 60; Sim focused 95; final WebGL picking and camera interactions pass."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3595,14 +3727,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "render-activation",
-        "binding": "9cdeca4b979e6fedcc9f5eb070c0b3e3a854f67fea5ad81783eb92c1d95ef060",
-        "at": "2026-10-24T08:19:39.995Z",
-        "summary": "Task 8 same-source render behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "render-editing-assets-preservation",
+        "binding": "8412eda56ca5bf35149b40c5f012d85a6bed80cbca14ec06ece896a2232889b3",
+        "at": "2026-10-24T08:56:31.449Z",
+        "summary": "Task 9 render behavior and preservation verified.",
         "details": [
-          "Render 273 and Render Engine 11 pass; Preset 333 cover typed commands, incremental handoff, opaque identity, scheduling and explicit flush.",
-          "Production App previews pass 38 real-WebGL cases without fallback surfaces."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3611,14 +3743,14 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "retire-activation",
-        "binding": "c8793bf1113292e66dd7d3ad4e48de0c3c641e54ecf1c268ed030d1419486a41",
-        "at": "2026-10-24T08:19:40.026Z",
-        "summary": "Task 8 same-source retire behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "retire-editing-assets-preservation",
+        "binding": "5c0a326245c6a959f40d7da17293b9c003679970a2a1590f8113619574ad03f0",
+        "at": "2026-10-24T08:56:31.505Z",
+        "summary": "Task 9 retire behavior and preservation verified.",
         "details": [
-          "Core 272, Render 273 and Preset 333 include failure cleanup, destroy during load, late delegate settlement, reset/reapply and independent Render lifetimes.",
-          "Final App suites preserve teardown and restart; no fallback or swallowed startup error introduced."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
         ]
       },
       {
@@ -3627,15 +3759,48 @@
         "kind": "automated",
         "status": "passed",
         "actor": "codex-local-test-runner",
-        "executionId": "task8-local-2026-10-24",
-        "caseId": "activate-activation",
-        "binding": "885a014c194b31c89729423d8031749fa00fe4b0592d8f5d4fb05768a751ab8d",
-        "at": "2026-10-24T08:19:40.080Z",
-        "summary": "Task 8 same-source activate behavior and preservation verified.",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "activate-editing-assets-preservation",
+        "binding": "705c46dfe5e275a3e5a20e249d1fe2cce518e728f17e3612cfe52d6107580021",
+        "at": "2026-10-24T08:56:31.546Z",
+        "summary": "Task 9 activate behavior and preservation verified.",
         "details": [
-          "Official production 3D available with explicit [] or [INPUT], optional neutral captured lighting/shadow settings; no filtering of defaults, HYBRID unavailable, existing 2D/CUSTOM retained.",
-          "All prerequisite owner tests and 38 real WebGL cases pass; builds, scoped ESLint, naming, dependency/placement and public documentation checks pass. Root-wide ESLint exhausted both default and 8 GiB heaps; it is not a passed gate.",
-          "Evidence: .artifacts/preset-3d-task8/ and final App browser artifacts; Task 8 bounded contract requires scoped lint. Tasks 9-10 and integrated closeout remain pending."
+          "Preset 352 tests / 40 files, Core 272, Render 273 and Render Engine 11 pass on Task 9 source.",
+          "Existing owner contracts remain unchanged; all three production builds and 42 real WebGL preservation cases pass. Logs: .artifacts/preset-3d-task9/."
+        ]
+      },
+      {
+        "nodeId": "edit",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "edit-editing-assets-preservation",
+        "binding": "13942209226cf2e8afed30a0cc644c79f5bfff64154139aa1fc1e6540d25d576",
+        "at": "2026-10-24T08:56:31.491Z",
+        "summary": "Task 9 edit behavior and preservation verified.",
+        "details": [
+          "12 shared editing cases pass: translate/plane/grid, explicit local/world rotation, positive scale/rigid rejection, immutable preview, stale/deleted target and neutral App constraint/no-op resolution.",
+          "Office 24 tests cover discarded preview without publication/history, one accepted commit, stale proposal, Undo/Redo/save and complete-value no-op metadata preservation. Sim 92 focused tests include rotation/scale acceptance and invalid scale before retention.",
+          "42 final real WebGL cases pass, including Sim transformed preview/accept/Undo/Redo/reopen and Office ordinary layout controls. App-owned sessions and transactions remain authoritative."
+        ]
+      },
+      {
+        "nodeId": "assets",
+        "criterionId": "runtime",
+        "kind": "automated",
+        "status": "passed",
+        "actor": "codex-local-test-runner",
+        "executionId": "task9-local-2026-10-24",
+        "caseId": "assets-editing-assets-preservation",
+        "binding": "680059bc61f206f557a05f30d9d279e3034bfc7f1854abf6340ec1952a0e5e7d",
+        "at": "2026-10-24T08:56:31.498Z",
+        "summary": "Task 9 assets behavior and preservation verified.",
+        "details": [
+          "Optional public entry 7 new cases pass; existing Sim decoder (16), Worker (7), archive/storage and UI cases retain all restricted profile limits and exact original bytes.",
+          "One real browser Worker case passes using the App bundled script and shared factory-injected request owner. Five final original-source browser cases pass, including cancelled/oversized/invalid sources and reopened transformed source.",
+          "No network, renderer, canonical write or App storage policy entered the shared decoder. Removed duplicate parser owners; public imports resolve through the package export."
         ]
       }
     ],
@@ -3705,75 +3870,83 @@
     "sources": [
       {
         "nodeId": "design",
-        "revision": "task8-reviewed:49c043179817d7fc49371da429939d7feb90196bec5e440e96b9de489dd21bec"
+        "revision": "task9-reviewed:70322877a3e6329008a7d581d1940ee598eb3a29790be9a7319f5343452c34a2"
       },
       {
         "nodeId": "admit",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "engine",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "project",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "render",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "camera",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "queries",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "interaction",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "compose",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "fieldscope",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "sim",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "office",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "activity",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "startup",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "canonical",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "domain",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "retire",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       },
       {
         "nodeId": "activate",
-        "revision": "d9d2960ee14bf9a377bd3ac9ef2ba8e53df1ce42/task8-sha256:99c38dc374865360c5e1b8969e4bda11038a1ff9719b8e43887f18bd610e90c8"
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+      },
+      {
+        "nodeId": "edit",
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
+      },
+      {
+        "nodeId": "assets",
+        "revision": "fa684c3189fccad258545fa10e16a64c489c872c/task9-sha256:d2248254d41a1cdb41ac87004a763d7825597368f6352bdd0ee4f093f8c83b37"
       }
     ],
     "warnings": []

@@ -1,4 +1,4 @@
-import { decodeRestrictedGlb } from './decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 
 interface DecodeRequest {
   id: number

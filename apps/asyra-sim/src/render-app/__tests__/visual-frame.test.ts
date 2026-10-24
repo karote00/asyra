@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { IDENTITY_POSE, axisAngle, transformPoint } from '../../domain/math'
 import type { Body, Workcell } from '../../domain/workcell'
-import type { VisualAsset } from '../../engine/glb/decode'
+import type { VisualAsset } from '@asyra/preset/spatial-assets'
 import {
   createWorkcellFrame,
   DEFAULT_CAMERA,

@@ -58,3 +58,13 @@ builds do not require a server origin. The default local URL remains
 WebGL2, or an explicitly configured `PLAYWRIGHT_CHROMIUM_EXECUTABLE`; no mock
 graphics driver is used. Runtime contract tests separately verify canonical
 reads/publications, stale proposals, save acknowledgement and resource cleanup.
+
+## Shared transform editing
+
+Existing desk controls call the layout controller's `previewMove`: Preset derives
+a detached pose on the App's X/Z half-unit grid. The App validates the complete
+room and returns its existing attributed revision-bound proposal. Feature apply
+resolves shared pose/revision semantics and commits through the existing Core
+transaction. Discarded previews do not write; no-op proposals do not refresh or
+create history. Room constraints, schema, camera, UI wording and save semantics
+remain Office-owned. No new decorating tool or overlay is implied.

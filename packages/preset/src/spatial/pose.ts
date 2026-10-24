@@ -4,7 +4,7 @@ export interface SpatialPose {
   readonly rotation: SpatialQuaternion
   readonly scale?: SpatialVector
 }
-function admit(value: SpatialPose): SpatialPose {
+export function readSpatialPose(value: SpatialPose): SpatialPose {
   const position = [...value.position],
     rotation = [...value.rotation],
     scale = [...(value.scale ?? [1, 1, 1])]
@@ -32,7 +32,7 @@ export class SpatialPosePresentation {
   }
   retarget(target: SpatialPose): void {
     this.assertLive()
-    this.target = admit(target)
+    this.target = readSpatialPose(target)
   }
   cancel(): void {
     this.assertLive()
@@ -48,7 +48,7 @@ export class SpatialPosePresentation {
     policy: { tolerance: number; reducedMotion: boolean }
   ): SpatialPose {
     this.assertLive()
-    const from = admit(current)
+    const from = readSpatialPose(current)
     if (
       !Number.isFinite(fraction) ||
       fraction < 0 ||
@@ -76,7 +76,7 @@ export class SpatialPosePresentation {
     const next =
       t === 1
         ? target
-        : admit({
+        : readSpatialPose({
             position: from.position.map(
               (n, i) => n + (target.position[i] - n) * t
             ) as unknown as SpatialVector,

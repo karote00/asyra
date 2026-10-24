@@ -5,7 +5,7 @@ import {
   list,
   record,
   type JsonRecord
-} from './schema'
+} from './schema.js'
 
 export function readContainer(bytes: Uint8Array): {
   json: JsonRecord

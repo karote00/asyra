@@ -1,7 +1,10 @@
 import { createSyntheticExample } from '../../../samples/synthetic-workcell'
 import { createSyntheticExperimentPresets } from '../../../samples/synthetic-experiment'
 import { createMechanicalVisuals } from '../../../samples/mechanical-visuals'
-import { decodeRestrictedGlb, type VisualAsset } from '../../engine/glb/decode'
+import {
+  decodeRestrictedGlb,
+  type VisualAsset
+} from '@asyra/preset/spatial-assets'
 import { IDENTITY_POSE } from '../math'
 import { resolvePartWorkcell } from '../part-geometry'
 import { createExperimentSnapshot } from '../../analysis/snapshot'

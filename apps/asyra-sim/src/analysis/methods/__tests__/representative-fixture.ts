@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { createSyntheticExample } from '../../../../samples/synthetic-workcell'
 import { createSyntheticExperimentDraft } from '../../../../samples/synthetic-experiment'
 import { createMechanicalVisuals } from '../../../../samples/mechanical-visuals'
-import { decodeRestrictedGlb } from '../../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { IDENTITY_POSE } from '../../../domain/math'
 import {
   resolvePartWorkcell,

@@ -437,3 +437,32 @@ Full-shape bounds and queries remain independent of detail selection.
 target from caller-provided progress and tolerance/reduced-motion policy.
 Retarget replaces, cancel drops and dispose retires the target. It owns no time,
 canonical state, geometry or scheduling. Camera choices remain App-owned.
+
+## Generic spatial editing and restricted assets
+
+`@asyra/preset/spatial` exports `transformSpatialPose`, `previewSpatialEdit` and
+`resolveSpatialEdit`. Commands translate in world space, rotate about an explicit
+axis in local/world space, apply positive scale where permitted, or admit an
+absolute pose. Translation can project onto supplied orthogonal plane axes and
+snap relative to a supplied origin/positive two-axis spacing; half-grid ties use
+JavaScript rounding toward positive infinity. Preview values are detached and
+immutable. They contain target ID/revision, never a canonical document copy.
+
+Apps own target authorization, revision, preview lifetime/cancel, validation and
+Feature routing. Resolve immediately before the existing finite transaction:
+stale/deleted targets, revoked scale capability or rejected App constraints return
+neutral rejection; an equivalent pose returns `unchanged`. No helper owns a
+transaction, session, clock, history or persistence. Office uses these mechanisms
+for its existing half-unit placement/proposals. Sim uses absolute transforms for
+original-part preview/acceptance, retaining its stricter placement validation.
+
+`@asyra/preset/spatial-assets` exports `decodeRestrictedGlb`, `GLB_LIMITS`,
+`VisualAsset` and `RestrictedGlbPreviewWorker`. This optional entry preserves the
+existing `restricted-glb-v0` subset, baked complete triangles, bounds, appearance
+and SHA-256 source identity. Unsupported external resources, compression,
+textures, animation and skins reject; there is no network fetch or GPU startup.
+Root/2D imports do not import this entry. The Worker owner requires an App-supplied
+Worker factory; Sim retains its bundled worker script. It owns request IDs,
+result admission, cancellation, five-second deadline and termination. Source
+bytes, archive receipts, domain/solid analysis, canonical acceptance and storage
+acknowledgement remain App-owned. No transaction spans decoding.

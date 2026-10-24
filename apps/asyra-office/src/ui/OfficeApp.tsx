@@ -178,17 +178,7 @@ function LayoutPanel({
   const move = (dx: number, dz: number) =>
     act(() =>
       runtime.layout.apply(
-        runtime.layout.propose(
-          {
-            ...snapshot.layout,
-            furniture: snapshot.layout.furniture.map((item) =>
-              item.id === 'desk'
-                ? { ...item, x: item.x + dx, z: item.z + dz }
-                : item
-            )
-          },
-          'Human'
-        )
+        runtime.layout.previewMove('desk', [dx, 0, dz], 'Human')
       )
     )
   return (

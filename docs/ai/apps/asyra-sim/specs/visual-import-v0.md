@@ -2,10 +2,12 @@
 
 ## Purpose and ownership
 
-Import a self-contained static GLB as an original part source. The App-owned asset
-decoder is isolated under `src/engine/glb/`; it creates detached triangle data
+Import a self-contained static GLB as an original part source. The shared asset
+decoder is exposed by `@asyra/preset/spatial-assets`; it creates detached triangle data
 without starting a renderer, fetching resources, or editing a workcell. SDK
-types do not escape. The `asset` Inspector step owns decoding, not robot poses.
+types do not escape. Preset owns restricted decoding and request lifetime; the App retains its Worker
+construction under `src/engine/glb/`, source binding and archive acceptance.
+The `asset` Inspector step owns decoding, not robot poses.
 
 An accepted binding supplies complete original geometry to the domain resolver
 for rendering and analysis. The decoder does not author bodies, joints or solver
@@ -192,3 +194,13 @@ and portable current/historical reopening. Permanent browser tests exercise thos
 ordinary controls; decoder-only tests do not satisfy the full user journey.
 
 Format reference: <a href="https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html" target="_blank" rel="noopener noreferrer">Khronos glTF 2.0 specification</a>.
+
+## Shared placement mechanism
+
+Preview and explicit Feature retention use Preset's pure absolute-pose transform
+admission. Rotation and positive part scale retain the existing fields, units,
+quaternion order and App profile limits. Invalid generic transforms reject before
+source retention. Preview/cancel changes no history; accepted placement uses the
+existing one-action transaction and survives Undo/Redo and portable reopening.
+Placement reuses the prepared source and does not decode it again. Solid-analysis
+admission and rigid body/joint semantics remain App-owned.

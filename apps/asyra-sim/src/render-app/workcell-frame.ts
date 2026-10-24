@@ -1,7 +1,7 @@
 import { IDENTITY_POSE, compose, type Vec3 } from '../domain/math'
 import { forwardKinematics, type Body, type Workcell } from '../domain/workcell'
 import type { SpatialCamera, SpatialFrame, SpatialMesh } from './spatial-layer'
-import type { VisualAsset } from '../engine/glb/decode'
+import type { VisualAsset } from '@asyra/preset/spatial-assets'
 import { placedPartPositions } from '../domain/part-geometry'
 import { readSpatialShape, type SpatialShape } from '../engine/spatial-contract'
 

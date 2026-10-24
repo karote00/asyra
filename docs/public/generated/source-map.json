@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "3b6f59990beda55630cde446d40781de14928b59f8b3d5782b8c4b167f0bc625"
+          "sha256": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004"
         }
       ]
     },
@@ -434,15 +434,15 @@
     },
     {
       "id": "reference/packages/preset",
-      "pageSha256": "3dca0a44027d6d6dfc038c9d6137d857a2f1a162780cd826c5d59a5bd2bed684",
+      "pageSha256": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "3b6f59990beda55630cde446d40781de14928b59f8b3d5782b8c4b167f0bc625"
+          "sha256": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004"
         },
         {
           "path": "packages/preset/package.json",
-          "sha256": "b634ac4129c43fdb770ba1e6f380abd5b8d320aa8f6a2903c9abbdb04133a24b"
+          "sha256": "bbefee29031a3f8f4688b3cd147e40e8f926ce1d5c008a1aed5908b8575eff87"
         }
       ]
     },

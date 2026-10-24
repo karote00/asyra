@@ -1775,7 +1775,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "3dca0a44027d6d6dfc038c9d6137d857a2f1a162780cd826c5d59a5bd2bed684",
+      "contentSha256": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -1839,7 +1839,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 711
+      "wordCount": 818
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",

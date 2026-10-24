@@ -48,6 +48,11 @@
       "types": "./dist/spatial-engine.d.ts",
       "import": "./dist/spatial-engine.js",
       "default": "./dist/spatial-engine.js"
+    },
+    "./spatial-assets": {
+      "types": "./dist/spatial-assets.d.ts",
+      "import": "./dist/spatial-assets.js",
+      "default": "./dist/spatial-assets.js"
     }
   },
   "files": [

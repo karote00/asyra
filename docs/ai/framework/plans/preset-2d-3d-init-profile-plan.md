@@ -22,7 +22,7 @@ Selectable Defaults plan:
 
 This plan no longer decides identifiers or associates defaults with profiles.
 Its 3D activation gate is satisfied; it retains the prerequisites for the future
-HYBRID transition. This is not completion of the foundation plan's Tasks 9-10.
+HYBRID transition. The foundation plan's Task 10 closeout remains separately gated.
 
 ## Non-Negotiable Separation
 

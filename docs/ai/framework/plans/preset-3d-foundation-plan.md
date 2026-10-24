@@ -4,17 +4,17 @@
 
 Created: 2026-10-24.
 
-Status: Tasks 1-8 complete within their bounded contracts. Task 8 activates the
+Status: Tasks 1-9 complete within their bounded contracts. Task 8 activates the
 official 3D provider and the approved generic lighting entry; Office uses that
-profile with its original presentation policy. Stopped for inspection before
-Task 9. Task 7 includes the approved minimum activity scheduler correction.
+profile with its original presentation policy. Task 9 adds generic editing and
+restricted assets; stopped for inspection before Task 10. Task 7 includes the approved minimum activity scheduler correction.
 Task 1 produced the reviewed specification and full
 architecture flow. Tasks 2-3 delivered pure admission, resource ownership and
 shared incremental projection/bounds with direct App preservation checks.
 Tasks 4-5 add App-directed shared Camera controls and typed spatial queries with
 shared picking. Task 6 adds opt-in mesh definitions, generalized instance/pose
 presentation, explicit lighting/shadows and physical-pixel detail controls.
-Tasks 9-10 remain unexecuted; whole-flow runtime acceptance remains pending.
+Task 10 remains unexecuted; whole-plan closeout remains pending.
 
 Planning base: local `main` at
 `eaddcdba2c1705dca6646a730cd87818ae214d56`.
@@ -1017,6 +1017,128 @@ save/load reproduce accepted edits. Rejected/oversized/unsupported assets create
 no partial scene; stale async completion cannot attach to a retired runtime.
 Every mechanism has a real consumer and permanent behavior evidence. Broader
 formats and orthographic/multiview support require a separately selected scope.
+
+Task 9 execution contract: base `fa684c318`, same worktree and branch. Scope is
+`edit` and `assets`, their public entries, direct Office/Sim integration and
+formal tests, and current package/App documentation. Preserve App schemas,
+source bytes/digests, restricted-glb-v0 limits, canonical transactions, Camera,
+2D/CUSTOM/3D and all three App behavior. Read-only discovery is restricted to
+these owners and their direct callers/test supervisors. No solver, new format,
+new dependency, cache, general decorating tools or Task 10 closeout. Gates:
+naming, new owner and existing affected App tests, package/App builds, scoped
+lint, placement/dependency/docs checks, Inspector admission and all three App
+real-WebGL preservation. Stop for inspection after Task 9; unresolved owner or
+product decisions block only dependent work.
+
+Task 9 assets Step Execution Card: owner/failure `assets`, Restricted assets and
+persistence / C10-C12. Input is bounded supplied bytes, request identity and
+cancellation; output is detached immutable original meshes/bounds/digest.
+Extract the existing decoder and Worker request/result/lifetime mechanism into
+Preset; retain App Worker construction, asset binding/archive acceptance and
+storage. Preserve all existing limits, triangles, material interpretation and
+wire identities; no network, GPU initialization or canonical writes. Cancellation,
+deadline, retirement and stale messages cannot publish output. Allowed files are
+`spatial-assets.ts`, `spatial/assets/**`, package export metadata and owner tests;
+Sim's GLB adapter/Worker plus mechanical public-import changes at its direct
+callers. No change to their domain algorithms. Existing decode/Worker suites
+remain permanent preservation evidence; add a public-entry test before the
+extraction. One request performs one decode; placement consumes its completed
+asset and never reparses bytes. No retained computation cache. Run owner tests,
+Sim import/Worker/storage/UI suites and browser original-part workflows.
+
+Task 9 editing Step Execution Card: owner/failure `edit`, Presentation and editing /
+C09. Inputs: authorized target identity/revision, original neutral pose and
+explicit translate/rotate/scale or absolute-pose intent, optional App plane/grid,
+and scale capability. Outputs: immutable transient preview and neutral validity
+result; commit rechecks target/revision/capability and App validation immediately
+inside the existing Feature, before its finite transaction. Pure helpers own no
+session, document, clock, history, cache or callbacks that write state. Cancel
+means discarding preview; unchanged poses create no history. Quaternion order is
+existing XYZW; translation is world-space, rotation explicitly local/world,
+scale positive and optional. Reuse the existing pose admission owner.
+Boundary: editing.ts, pose.ts public admission, spatial.ts exports and permanent
+spatial-editing.integration.test.ts; Office layout controller/runtime and their
+tests consume the mechanism. On 2026-10-24 the user approved Sim placement Feature/preview wiring and direct
+tests as the rotation/positive-scale consumer, preserving its existing UI and
+saved format. Test deterministic arbitrary-plane/grid behavior, axis rotations,
+positive scale/rigid rejection, invalid input, detached preview, stale/deleted
+identity, neutral invalid feedback, cancel/no writes and one accepted history
+boundary. Existing App constraints remain authoritative. No speculative overlay
+or new decorating UI is required by the current accepted interactions.
+
+Task 9 browser-case iteration: the new Sim transform case reached accepted
+rotation/scale and one Undo, but two test attempts violated the existing Projects
+dialog preconditions (export leaves it open; import requires it open). Re-read
+C09/C10 and the `edit` handoff: this is test orchestration, not a product owner
+failure. Replace the assumed dialog state with the exact sequence: export,
+close Projects, Undo/Redo, reopen Projects, import/replace, await dialog dismissal,
+then inspect the restored binding. Only the new case in visual-references.spec.ts
+changes; no production patch, forced click, timeout increase or weaker assertion.
+Self-review: helpers and accessible controls support every transition; focused
+case must pass before the broader browser suites continue.
+
+Task 9 result (2026-10-24): optional spatial editing now provides pure
+translation, local/world axis rotation, positive-scale capability and absolute
+pose calculation, arbitrary orthogonal-plane/grid snapping, immutable preview
+and revision/capability/App-constraint resolution. No second session, canonical
+store, transaction or history owner was introduced. Office uses shared grid
+movement and proposal resolution through its existing Feature. Sim uses shared
+absolute transforms for original-part preview/retention, as explicitly approved.
+App limits, rigid body policy, saved fields and camera choices remain unchanged.
+No speculative grid/handle overlay was added to existing interactions.
+
+The optional `spatial-assets` entry now owns the former Sim restricted GLB
+parser and Worker request/result lifetime. Sim retains the bundled Worker
+factory/script, original bytes, archive, source acceptance and storage. All
+format limits, complete triangles, appearance and source digests are preserved;
+no broader glTF or external fetch support was added. Superseded decoder files
+were removed and direct consumers use the public package entry. Existing tests
+remain permanent. One prepared source is reused across placement; no new cache.
+
+Verification:
+
+- Preset: 352 tests / 40 files, including 12 new editing and 7 public asset
+  cases; Core 272, Render 273, Render Engine 11. Unit/integration oracles cover
+  invalid/rigid scaling, plane/grid determinism, detached source values, stale
+  targets, App rejection and unchanged poses. Office has 24 tests, Sim 92 focused
+  tests (12 files), FieldScope 60 (9 files); supervisor guards pass (Sim 13,
+  FieldScope 8). Sim's 47-case decoder/Worker/archive/UI subset also passed at
+  the extraction boundary. Invalid scale before source retention and Office
+  complete-value no-op preservation both have observed failing regressions.
+- Preset build, all three App typechecks/production builds, scoped ESLint,
+  naming, dependency validation (29 workspaces), 12 dependency/placement/consumer
+  contract tests and public documentation generation/checks pass. Installed App
+  command shims could not locate Vite/Vitest in some wrappers; the same declared
+  local CLI entrypoints ran directly without adding or upgrading tools.
+- Real browser evidence: 42 WebGL cases pass: FieldScope 18 (10 model + 8
+  interaction), Sim 22 (12 navigation/workcell + 5 playback + 5 original-source
+  cases), Office 2. A separate real Sim Worker case passes on the ordinary dev
+  route without Core/GPU/network ownership in the decoder. Browser production
+  previews used the configured local origins :5178, :3020 and :5194 respectively.
+  Chrome Metal (FieldScope) and Chrome SwiftShader (Sim/Office), DPR 1, were used;
+  no hardware performance claim follows. Two initial new-case failures were
+  test dialog orchestration errors; the bounded iteration above preserves them
+  and the corrected complete source suite passes.
+- Inspected screenshots: Sim rotated/scaled preview and reopened original
+  source, including closer selected geometry; FieldScope continuous clip wire,
+  scene/history and ordinary camera output; Office desktop/narrow scene and
+  layout. Geometry/pose/history/source-byte assertions remain the semantic
+  oracle. Office's final no-op correction was followed by full App tests/build
+  and both real WebGL cases again.
+
+Reproduction: package `test:local` scripts; Sim `test:local` with the recorded
+12 file selectors; FieldScope `test:local --file ...` with its 9 selectors.
+For browsers, Sim uses `node scripts/run-e2e.mjs` with viewport-navigation,
+trackpad-navigation, workcell, original-part-admission, live-playback,
+playback-continuity and visual-references specs; FieldScope uses the local
+Playwright CLI with greenhouse/crops/drains and camera-flight/camera-touch/
+configuration history/responsiveness specs; Office uses its office.spec.ts.
+Logs are `.artifacts/preset-3d-task9/*.log`; browser artifacts are each App's
+`.artifacts/task9-*` (final Sim sources in `task9-sources-final`, Office scene
+screenshots in `test-results/`). Servers use the matching App `.env` origins.
+
+Task 9 stops here for user inspection. Task 10 and whole-plan closeout remain
+pending; neither is implied by the completed editing/assets owner criteria.
 
 ## Task 10 - Integrated verification and closeout
 

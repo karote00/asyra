@@ -6,7 +6,7 @@ import {
 } from '../../../domain/kinematic-algebra'
 import type { MeshGeometry } from '../../../domain/part-geometry'
 import { MechanicalMesh } from '../../../../samples/mechanical-mesh'
-import { decodeRestrictedGlb } from '../../../engine/glb/decode'
+import { decodeRestrictedGlb } from '@asyra/preset/spatial-assets'
 import { resolvePart } from '../../../domain/part-geometry'
 import { MeshWorkLimit, OriginalMeshQuery } from '../original-mesh-query'
 import * as convexQuery from '../convex-query'

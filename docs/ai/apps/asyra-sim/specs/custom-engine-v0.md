@@ -124,8 +124,9 @@ bounds and Camera controls live in `@asyra/preset/spatial`; concrete SDK executi
 and resource cleanup live in `@asyra/preset/spatial-engine`. Sim's wrappers retain
 only layer identity, rigid descriptor restrictions and studio-lighting policy.
 Its original source, GLB binding, analysis and playback owners are unchanged.
-The restricted GLB decoder remains App-owned until the separately scoped asset
-extension task. This migration does not activate the official 3D profile.
+The restricted GLB decoder and Worker request lifetime are shared through
+`@asyra/preset/spatial-assets`; Sim retains Worker construction, source acceptance
+and storage. Sim continues to choose CUSTOM.
 
 The CUSTOM engine advertises only its implemented object, graphics, interaction,
 resource and spatial capabilities. The optional framework snapshot query is not
