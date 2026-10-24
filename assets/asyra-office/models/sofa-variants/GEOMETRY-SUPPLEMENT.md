@@ -32,18 +32,27 @@ L-shaped sofa contract; model appearance remains unverified.
 
 ## Curved sofa
 
-Use polar coordinates X=r*sin(theta), Y=r*cos(theta)-0.5875, with theta in [-60,+60] degrees. Zero angle points to the rear +Y. The inner concave face opens toward -Y; the outer rear is convex. Every sector uses this same origin and angular convention. Circumferential sampling must include exact end angles, with intervals no larger than one degree. Cap radial ends, top and bottom to make closed solids.
+The [curved sofa construction contract](CURVED-SOFA-SPEC.md) owns the current
+rounded physical dimensions, common polar map, back shear, joins, sizing,
+appearance and LOD rules. It supersedes the original sector bevel defaults.
+There are sixteen solids: ten upholstered components and six feet. Keep the
+120-degree envelope and three matching seat/back divisions.
 
-The base has inner radius 0.35, outer radius 1.00, full 120-degree span, Z=0.07..0.235. Rear shell occupies radius 0.90..1.00, full span, Z=0.22..0.61. Arms occupy the full radial width over [-60,-53] and [53,60] degrees, Z=0.09..0.56. Arms are curved end caps rather than added rectangular blocks. Apply each component's bevel in JSON; the narrow arm bevel is 0.012 so it fits the inner arc.
+Seats now embed 15 mm into the base; backs begin at Z=.30 and lean radially by
+10 degrees through shear while retaining Z=.70 tops. The inset rear shell
+extends to Z=.08. Its outer radius is .995 m and angular range is [-59,+59]
+degrees to avoid coincident exposed faces with arms. All six feet remain at
+their original polar radii/angles, converted using the corrected common origin.
 
-Divide the 106-degree seating span [-53,+53] into three equal intervals. Inset each interval by 0.2 degrees at both ends, yielding gaps of 0.4 degrees between cushions. JSON lists exact values. Each seat is a curved wedge with radius 0.36..0.84, Z=0.235..0.34. Each matching back cushion uses radius 0.835..0.965, Z=0.35..0.70. Bevel these parts by 0.025 with four segments. Use exactly three of each, not a continuous seat pad or two cushions.
-
-Six feet use polar radius 0.46 and 0.89, each at angles -48, 0 and 48 degrees. Convert their centres with the same formula. Feet have radius 0.023, Z=0..0.09, 48 segments and 0.005 bevel. They remain inside the curved footprint and are not distributed along a straight row. Underside is plain sage; no exposed mechanical frame.
-
-Nominal pre-bevel footprint bounds are X +/-sqrt(3)/2, Y +/-0.4125. Edge bevels may slightly reduce extrema; do not scale the sofa afterward to compensate. Preserve the exact radii, angle range and 0.5875 offset. The 0.825 depth refers to overall curved footprint, not radial seat width.
+The old 1.732050808 x .825 x .70 m size is an unrounded engineering envelope.
+The physical default is 1.723245086 x .817373398 x .70 m with polar Y offset
+.586313301 m. Use full-precision numeric values and the support equations in
+the contract. Source-space roundovers mapped into polar space define the exact
+construction; do not substitute an unspecified bevel modifier or fill the
+concavity. Default appearance and replacement are defined separately.
 
 ## Views and future verification
 
 Front from -Y, right from +X, back from +Y, top from +Z, oblique from (1,-1,0.8), all aimed at the unit centre. L chaise must stay on +X in every view; its apparent screen side changes naturally in back view. Curved top must show one annular sector, never an ellipse or semicircle. Some feet are occluded in a given view, but all six must be present in future geometry.
 
-After modeling is separately authorized, inspect these five views plus undersides. Verify nominal dimensions within 0.002 m before edge bevel, fixed handedness, two versus three seat/back cushions, six feet, ground contact, rounded arm ends and no scene geometry or baked lighting. No model or such validation exists in this drawing-only batch.
+After modeling is separately authorized, inspect these five views plus undersides. Verify the current module contract's physical dimensions and tolerance, fixed handedness, two versus three seat/back cushions, six feet, ground contact, rounded arm ends and no scene geometry or baked lighting. No model or such validation exists in this drawing-only batch.

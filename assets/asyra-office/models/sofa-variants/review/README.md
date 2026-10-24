@@ -1,6 +1,6 @@
 # Group 4H - Sofa Variant Review
 
-Status: approved by the user for commit; drawings and specifications only, with no model verification.
+Status: original drawings and L-shaped sofa documents are approved for commit; the revised curved sofa documents are approved by the user for commit. No model verification is claimed.
 
 1. [L-shaped sofa](01-l-shaped-sofa-v1.png): one right-chaise unit, two seats and two back cushions.
 2. [Curved sofa](02-curved-sofa-v1.png): one 120-degree arc, three seats and three back cushions.
@@ -14,8 +14,15 @@ The L specification follows the drawn short right arm and forward chaise, includ
 The [updated L-shaped sofa specification](../L-SHAPED-SOFA-SPEC.md) is approved by the user
 for commit. The original sheet is preserved. Exact revised dimensions and
 connections are defined in the numeric inputs and contract; generated view
-projections are not independent geometries. The curved-sofa specification and
-image remain unchanged. No production mesh has been verified.
+projections are not independent geometries. That revision did not change the curved sofa. No production mesh has been verified.
+
+## Curved sofa document revision
+
+The [curved sofa specification](../CURVED-SOFA-SPEC.md) is approved by the user for commit.
+Its original five-view sheet is preserved. Revised rounded physical bounds,
+common polar origin, shear, joints and inset rear shell are construction inputs;
+the image is not a calibrated measurement. Three seats, three backs and six feet
+remain. The approved L-shaped sofa is unchanged. No model is verified.
 
 ## Lighting revision - 2026-10-04
 

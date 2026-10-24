@@ -188,7 +188,8 @@ class LShapedSofaSpecificationTests(unittest.TestCase):
         self.assertCountEqual([x for r in regions for x in r['parts']],self.parts)
 
     def test_unrelated_asset_palette_and_reference_preserved(self):
-        self.assertEqual(chair.helpers.digest(self.data['modules'][1]),'d0fd2eef5609a63b7ef42c350e9b649f9130f03a9bf49dc0e1007c0f2e7dce3d')
+        # Curved geometry is reviewed separately; preserve its accepted source sheet.
+        self.assertEqual(hashlib.sha256((ROOT/'review/02-curved-sofa-v1.png').read_bytes()).hexdigest(),'610d8366ad31511e0e17eb0be6dd0726dd7f7f39259bccea68c603077830462a')
         self.assertEqual(chair.helpers.digest(self.data['materials']),'338ee1984fc2fc5ee550865c5d626fac8c05860ebbb36011a33814e493dbd625')
         self.assertEqual(hashlib.sha256((ROOT/self.sofa['reviewDrawing']).read_bytes()).hexdigest(),'164f81b55fb46eee19d676ff8097d72ef3e6001c22a96f871a918c5165884130')
 
