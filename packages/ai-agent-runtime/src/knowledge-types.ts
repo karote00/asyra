@@ -64,7 +64,11 @@ export interface AiKnowledgeResult {
 export interface AiKnowledgeSession {
   /** Host notification that retained tool results were dropped or reconstructed. */
   invalidateContext(): void
-  discover(contexts?: readonly string[]): readonly AiKnowledgeMetadata[]
+  /** Optional roots select registered visible children, never content dependencies. */
+  discover(
+    contexts?: readonly string[],
+    ids?: readonly string[]
+  ): readonly AiKnowledgeMetadata[]
   retrieve(
     query: AiKnowledgeQuery,
     signal: AbortSignal

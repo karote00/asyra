@@ -110,7 +110,8 @@
     "start:asyra-office": "yarn workspace @asyra/asyra-office dev",
     "test:asyra-office": "yarn workspace @asyra/asyra-office test:local",
     "validate:local": "node scripts/local-validation.mjs",
-    "docs:updates:check": "node scripts/docs/release-update-guidance.mjs"
+    "docs:updates:check": "node scripts/docs/release-update-guidance.mjs",
+    "test:design-execution-flow": "yarn workspace @asyra/ai-agent-runtime build:ai-agent-runtime && yarn workspace @asyra/ai-agent-runtime test:local && yarn workspace @asyra/asyra-design test:server-response-harness && node tools/flow-inspector/control-plane/cli.cjs --manifest apps/asyra-design/flow-contracts.json verify"
   },
   "workspaces": [
     "apps/*",

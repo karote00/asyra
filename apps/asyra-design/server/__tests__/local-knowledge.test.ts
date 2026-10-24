@@ -8,6 +8,238 @@ import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { withToolContractAssertions } from './tool-contract-assertions'
 const signal = () => new AbortController().signal
 
+it('executes the advertised scoped catalog call and reads a chosen child with external constraints', async () => {
+  const files = [
+    {
+      id: 'project',
+      description: 'Select project advice',
+      children: ['choice', 'alternative']
+    },
+    {
+      id: 'choice',
+      description: 'Use for the current decision',
+      references: ['constraint']
+    },
+    { id: 'alternative', description: 'Use only for a different decision' },
+    { id: 'constraint', description: 'Required restriction' },
+    ...Array.from({ length: 100 }, (_, i) => ({
+      id: `unrelated-${i}`,
+      description: 'Other advice'
+    }))
+  ].map(({ id, ...metadata }) => ({
+    id,
+    revision: 1,
+    markdown: `---\n${JSON.stringify({ ...metadata, provenance: ['Test authored advice'] })}\n---\n${id} body`
+  }))
+  const owner = withToolContractAssertions(
+    createLocalKnowledgeTools('scoped-contract', async () => files)
+  )
+  const calls: { name: string; input: unknown }[] = []
+  try {
+    const definition = owner.definitions.find(
+      ({ name }) => name === AiDesignToolIds.DISCOVER_KNOWLEDGE
+    )
+    if (!definition) throw new Error('Missing discovery definition')
+    // Revision 2 did not admit topic selection; pinned consumers must see a new contract.
+    expect(definition.revision).toBeGreaterThan(2)
+    // Execute the expression shipped to the provider, substituting only caller data.
+    const expression = definition.description.match(
+      /`(discover_knowledge\([^`]+\))`/
+    )?.[1]
+    expect(expression).toBeDefined()
+    const discovered = await new Function(
+      'discover_knowledge',
+      'topicId',
+      'contexts',
+      `return ${expression}`
+    )(
+      async (input: Record<string, unknown>) => {
+        calls.push({ name: definition.name, input })
+        return JSON.parse(await owner.call(definition.name, input, signal()))
+      },
+      'project',
+      []
+    )
+    expect(discovered.entries.map(({ id }: { id: string }) => id)).toEqual([
+      'alternative',
+      'choice',
+      'project'
+    ])
+    expect(
+      discovered.entries.find(({ id }: { id: string }) => id === 'choice')
+        .references
+    ).toEqual(['constraint'])
+    expect(JSON.stringify(discovered)).not.toContain(' body')
+    const selected = discovered.entries.find(
+      ({ description }: { description: string }) =>
+        description === 'Use for the current decision'
+    )
+    const input = { ids: [selected.id] }
+    calls.push({ name: AiDesignToolIds.READ_KNOWLEDGE, input })
+    const read = JSON.parse(
+      await owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal())
+    )
+    expect(
+      read.documents.map(({ target }: { target: string }) => target)
+    ).toEqual(['constraint', 'choice'])
+    expect(
+      read.documents.map(({ text }: { text: string }) => text.trim())
+    ).toEqual(['constraint body', 'choice body'])
+    expect(calls).toEqual([
+      {
+        name: AiDesignToolIds.DISCOVER_KNOWLEDGE,
+        input: { ids: ['project'], contexts: [] }
+      },
+      { name: AiDesignToolIds.READ_KNOWLEDGE, input: { ids: ['choice'] } }
+    ])
+    expect(
+      await owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal())
+    ).toBe(JSON.stringify(read))
+    expect(
+      JSON.parse(
+        await owner.call(
+          AiDesignToolIds.READ_KNOWLEDGE,
+          { ...input, rehydrate: true },
+          signal()
+        )
+      ).documents
+    ).toEqual(read.documents)
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('preserves full discovery and direct reading while delivering only the chosen registered subtree', async () => {
+  const owner = withToolContractAssertions(
+    createLocalKnowledgeTools('scoped-real-catalog')
+  )
+  try {
+    const contexts = ['architectural-illustration']
+    const call = (input: Record<string, unknown>) =>
+      owner.call(AiDesignToolIds.DISCOVER_KNOWLEDGE, input, signal())
+    const full = await call({ contexts })
+    const scoped = await call({
+      contexts,
+      ids: ['design.architectural-illustration']
+    })
+    const entries = JSON.parse(scoped).entries
+    expect(
+      entries.some(
+        (entry: { id: string }) =>
+          entry.id === 'design.architectural-illustration'
+      )
+    ).toBe(true)
+    for (const entry of entries)
+      for (const child of entry.children)
+        expect(
+          entries.some((candidate: { id: string }) => candidate.id === child)
+        ).toBe(true)
+    expect(
+      entries.every((entry: { id: string }) =>
+        JSON.parse(full).entries.some(
+          (other: { id: string }) => other.id === entry.id
+        )
+      )
+    ).toBe(true)
+    expect(Buffer.byteLength(scoped)).toBeLessThan(Buffer.byteLength(full))
+    expect(
+      JSON.parse(await call({ contexts, ids: ['absent'] })).entries
+    ).toEqual([])
+    for (const ids of [[], ['absent', 'absent'], ['bad id']])
+      await expect(call({ contexts, ids })).rejects.toThrow()
+    const aborted = new AbortController()
+    aborted.abort()
+    await expect(
+      owner.call(
+        AiDesignToolIds.DISCOVER_KNOWLEDGE,
+        { contexts, ids: ['design.architectural-illustration'] },
+        aborted.signal
+      )
+    ).rejects.toThrow()
+    const read = JSON.parse(
+      await owner.call(
+        AiDesignToolIds.READ_KNOWLEDGE,
+        { ids: ['design.architectural-illustration'], contexts },
+        signal()
+      )
+    )
+    expect(
+      read.documents.map(({ target }: { target: string }) => target)
+    ).toEqual(['design.architectural-illustration'])
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('continues a large directly selected child with required constraints and explicit context recovery', async () => {
+  const { readCompleteInformation } = await import('./tool-contract-assertions')
+  const body = 'Detailed selected guidance. '.repeat(2000)
+  const files = [
+    { id: 'catalog', children: ['long-topic', 'other'] },
+    { id: 'long-topic', references: ['required'] },
+    { id: 'other' },
+    { id: 'required' }
+  ].map(({ id, ...relations }) => ({
+    id,
+    revision: 1,
+    markdown: `---\n${JSON.stringify({ description: id, provenance: ['Test authored advice'], ...relations })}\n---\n${id === 'long-topic' ? body : id + ' constraint'}`
+  }))
+  const owner = withToolContractAssertions(
+    createLocalKnowledgeTools('scoped-pages', async () => files)
+  )
+  try {
+    const catalog = JSON.parse(
+      await owner.call(
+        AiDesignToolIds.DISCOVER_KNOWLEDGE,
+        { ids: ['catalog'] },
+        signal()
+      )
+    )
+    const id = catalog.entries.find((entry: { references: string[] }) =>
+      entry.references.includes('required')
+    ).id
+    const query = { ids: [id] }
+    const page = JSON.parse(
+      await owner.call(AiDesignToolIds.READ_KNOWLEDGE, query, signal())
+    )
+    expect(page.contentDelivery.lastPage).toBe(false)
+    const continued: Record<string, unknown>[] = []
+    const read = JSON.parse(
+      await readCompleteInformation(async (input) => {
+        continued.push(input as Record<string, unknown>)
+        expect((input as Record<string, unknown>).ids).toEqual(query.ids)
+        return owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal())
+      }, query)
+    )
+    expect(continued.length).toBeGreaterThan(1)
+    expect(
+      read.documents.map(({ target }: { target: string }) => target)
+    ).toEqual(['required', id])
+    expect(
+      read.documents
+        .find((doc: { target: string }) => doc.target === id)
+        .text.trim()
+    ).toBe(body.trim())
+    owner.invalidateContext()
+    await expect(
+      owner.call(
+        AiDesignToolIds.READ_KNOWLEDGE,
+        page.contentDelivery.next.arguments,
+        signal()
+      )
+    ).rejects.toThrow()
+    const recovered = JSON.parse(
+      await readCompleteInformation(
+        (input) => owner.call(AiDesignToolIds.READ_KNOWLEDGE, input, signal()),
+        { ...query, rehydrate: true }
+      )
+    )
+    expect(recovered.documents).toEqual(read.documents)
+  } finally {
+    owner.dispose()
+  }
+})
+
 it('delivers parent and detail selection conditions before reading and preserves both direct routes', async () => {
   const { readCompleteInformation } = await import('./tool-contract-assertions')
   const owner = withToolContractAssertions(
