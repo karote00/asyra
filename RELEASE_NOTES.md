@@ -3,6 +3,31 @@
 This file tracks releases for Asyra. Previous releases under Asyra (v0.1.0,
 etc.) are not included here.
 
+## Pending - FieldScope profile CI
+
+```update-note
+{
+  "change": "fieldscope-profile-ci-budget",
+  "owner": "Repository CI and Asyra FieldScope test tooling",
+  "summary": "Keep profile process deadlines independent from job setup and run costly midpoint proofs in separate bounded CI jobs.",
+  "sources": [
+    ".github/workflows/fieldscope-profile.yml",
+    "apps/asyra-fieldscope/scripts/__tests__/run-profile-groups.test.mjs",
+    "apps/asyra-fieldscope/scripts/run-profile-groups.py",
+    "apps/asyra-fieldscope/src/domain/__tests__/walking-constrained-kinematics-midpoint-profile-one.profile.test.ts",
+    "apps/asyra-fieldscope/src/domain/__tests__/walking-constrained-kinematics-midpoint-profile-two-phase-one.profile.test.ts",
+    "apps/asyra-fieldscope/src/domain/__tests__/walking-constrained-kinematics-midpoint-profile-two-phase-zero.profile.test.ts",
+    "apps/asyra-fieldscope/src/domain/__tests__/walking-constrained-kinematics-midpoint-test-fixtures.ts",
+    "apps/asyra-fieldscope/src/domain/__tests__/walking-constrained-kinematics.profile.test.ts",
+    "scripts/__tests__/ci-scope.test.mjs",
+    "scripts/__tests__/workspace-automation.test.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal test scheduling and evidence only; product behavior, original assertions and supervisor process limits are unchanged. No consumer integration is required."
+}
+```
+
 ## Pending - Asyra Office reference assets and CI
 
 These entries describe unreleased development inputs. They do not announce model

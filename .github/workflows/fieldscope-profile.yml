@@ -20,6 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     # Preserve the supervisor's 20-minute process limit plus setup and artifact time.
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        file: ${{ fromJSON(inputs.group == 'heavy' && inputs.files || '[""]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -41,19 +46,25 @@ jobs:
         env:
           PROFILE_FILES: ${{ inputs.files }}
           PROFILE_GROUP: ${{ inputs.group }}
+          PROFILE_FILE: ${{ matrix.file }}
         run: |
           python3 - <<'PYTHON'
           import json, os, subprocess
           files = json.loads(os.environ['PROFILE_FILES'])
           if not isinstance(files, list) or not files or any(not isinstance(f, str) for f in files):
               raise SystemExit('Invalid selected profile files')
+          selected = os.environ['PROFILE_FILE']
+          if selected:
+              if selected not in files:
+                  raise SystemExit('Matrix profile is outside the selected files')
+              files = [selected]
           subprocess.run(['python3', 'apps/asyra-fieldscope/scripts/run-profile-groups.py', '--group', os.environ['PROFILE_GROUP'], *[arg for f in files for arg in ('--file', f)]], check=True)
           PYTHON
       - name: Upload profile supervision artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: fieldscope-profile-${{ inputs.group }}
+          name: fieldscope-profile-${{ inputs.group }}-${{ strategy.job-index }}
           path: apps/asyra-fieldscope/.artifacts/test-supervision/
           include-hidden-files: true
           if-no-files-found: ignore
