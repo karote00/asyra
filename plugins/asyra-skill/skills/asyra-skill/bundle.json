@@ -20,11 +20,7 @@
     "docs/public/reference/support-release.md": "79888ae4681529bb11ffa09ec7dec3850cff48d14945b8fe21de12d364df1caa",
     "docs/public/start/create-design-app.md": "349a0c3ea263637742a863f2e685b01557686ec232ced917f05501b586cfe055",
     "docs/public/start/custom-composition.md": "36ac56dec5f47165081ad73ba646ff60455b43090a6d5120d0479917230bd0e8",
-<<<<<<< HEAD
-    "docs/public/start/extend-with-ai.md": "49a2da62553e2edf5c17ec6680ab2e34b9a2169a8bdda878be5435093d0f252e"
-=======
-    "docs/public/start/extend-with-ai.md": "a9e1db61272f374a19f7013bfccd91ddcc34c1032a054f2f20b0a25fca43bec6"
->>>>>>> 238468802 (fix(ci): validate retained App update fixtures and generated entries)
+    "docs/public/start/extend-with-ai.md": "07a55a414cbd753c3d7eb36e7e1c32c2328629fbf2a700e83f994c2ee78d25a7"
   },
   "referenceVersions": {
     "@asyra/ai-agent-runtime": "0.5.1",
@@ -73,13 +69,7 @@
     "skills/asyra-skill/references/docs/public/reference/support-release.md": "f486d597eeed75aff49a8cac1f2720d7eebc43d000cb1077ae4212851bfe08dc",
     "skills/asyra-skill/references/docs/public/start/create-design-app.md": "b6dc00b4c1273bf2543122b5b1824f54ff7eff44ee3b03561243b58a2900a434",
     "skills/asyra-skill/references/docs/public/start/custom-composition.md": "ead489fa5c0918b407b064727fae78dd9d4169ec390b67622a1df99f27d92468",
-<<<<<<< HEAD
-    "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "b12b1a328ad9c17e00a2a0ba79435f9ff7b4446b6e1a2fe2726b17c33a200b03"
+    "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "a6a3f2eb807455fce4603a20883966f8c736552d5454f3a59a7c5716d5ea420b"
   },
-  "contentDigest": "1b1f39391caf976696ce54eb4c6e4f71521cd0eecfdbe9487ce921ab966bd58b"
-=======
-    "skills/asyra-skill/references/docs/public/start/extend-with-ai.md": "49549117e5fdd5002b1ddaacbf98388c41bf0db35295096d8ac906ab3a6edbf6"
-  },
-  "contentDigest": "fb3b96d26363a041fe342cbd9cafa715fd417da8b7bb53ac2985e0f2d3161104"
->>>>>>> 238468802 (fix(ci): validate retained App update fixtures and generated entries)
+  "contentDigest": "3151123fb8f135b3ac308bd0b66eb2700b4167992b6c3b79d76545faa343d75c"
 }

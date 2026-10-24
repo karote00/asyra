@@ -1810,6 +1810,76 @@
             "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts",
             "apps/asyra-design/src/properties/strokes/use-stroke-interactions.ts"
           ]
+        },
+        {
+          "id": "functional.text-properties.901623a79254",
+          "stepId": "edit-fills",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Shared text color picker commits a color with one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.18aaff75966e",
+          "stepId": "edit-fills",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Text uses complete Fill controls with rendered opacity visibility layers and replay",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.42b711a33de9",
+          "stepId": "edit-fills",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Text shared linear gradient changes Canvas and restores with Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts",
+            "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.979d35e77b42",
+          "stepId": "edit-fills",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Text shared radial gradient changes Canvas and restores with Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts",
+            "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.6c385802df87",
+          "stepId": "edit-fills",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Text shared angular gradient changes Canvas and restores with Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts",
+            "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.6b311dd7592c",
+          "stepId": "edit-fills",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Text shared diamond gradient changes Canvas and restores with Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/common-apis/fills.ts",
+            "apps/asyra-design/src/properties/fills/use-fill-interactions.ts",
+            "apps/asyra-design/src/properties/fills/use-gradient-interactions.ts"
+          ]
         }
       ],
       "handoffs": []
@@ -6102,6 +6172,420 @@
           "implementationPaths": [
             "apps/asyra-design/src/properties/text.tsx",
             "apps/asyra-design/src/ai/design-actions.ts"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.2452fb6d63d9",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Canvas text input keeps the underlying scene visible",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.58f2818af29e",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Click creation stays provisional and commits one reversible Unicode text object",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.302a27a3baf8",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Cancel and empty new sessions leave no object or Undo entry",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.60d81daeb723",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Dragged text can be edited from the panel, cancelled, cleared and undone",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.5dcf3707a86c",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "IME confirmation and text shortcuts do not finish the session or switch tools",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.5cc50188dfb5",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Double click edits text and outside clicks commit before switching tools",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.a74052d3143b",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Text shortcut arms Canvas and Escape returns to Select",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.751c8180787f",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Canvas edit survives durable save and reload",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.4dcb01667920",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Rotated text editor follows Canvas projection and preserves geometry",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.3a9c47e059c2",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "A stale text draft cannot overwrite an external content change",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.0f26ca092724",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Native text Undo and select-all do not consume document history or delete the object",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.13e04feabd4e",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Point text grows and shrinks with content and keeps its committed dimensions",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.5a1f391f1f0a",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Dragged text keeps its width and fits its height during and after editing",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.442f08c2835e",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Leaving empty text cancels without an object or history - armed",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.4dfdccbc88b3",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Leaving empty text cancels without an object or history - click",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.9d0034dfd01f",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Leaving empty text cancels without an object or history - drag",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.1b86619f90e8",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Typography edits resize point text and Undo restores content dimensions together",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.058df569d810",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Editing replaces the old glyph projection and cancellation restores it without changing data",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-canvas.5318ab9c3f90",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-canvas.spec.ts",
+          "testName": "Canvas publishes live drafts without a Content field and preserves cancel and Undo",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/features/text-canvas/index.ts",
+            "apps/asyra-design/src/common-apis/text-canvas.ts",
+            "apps/asyra-design/src/common-apis/text-layout.ts",
+            "apps/asyra-design/src/render-app/text-canvas-editor.tsx"
+          ]
+        },
+        {
+          "id": "functional.text-properties.d030c21fe178",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography fontFamily serif changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.a3f08a3e7a1d",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography fontSize 40 changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.70d161b2175d",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography fontWeight bold changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.31065859c120",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography fontStyle italic changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.cd9b07cbee19",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography textAlign center changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.2b3491d82005",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography textAlign right changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.da2f4c9ac519",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography lineHeight 56 changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.0c09df4dab49",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography letterSpacing 3 changes rendered text and has one undo step",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.42f939bcca62",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Text toolbar and layer share their SVG and typography drafts preserve canonical values",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.7a3e91117685",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Typography controls match the compact geometry rows",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.56f655fc7447",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Combined font style changes both properties in one reversible action",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.ab78c2e0731d",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Font menu, spacing icons, and themed size steps update real text",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/properties/text.tsx",
+            "apps/asyra-design/src/properties/text-field.tsx",
+            "apps/asyra-design/src/properties/text-select.tsx",
+            "apps/asyra-design/src/controllers/scene-tree.ts"
+          ]
+        },
+        {
+          "id": "functional.text-properties.dbf873e94d8f",
+          "stepId": "edit-native-text",
+          "testFile": "apps/asyra-design/e2e/text-properties.spec.ts",
+          "testName": "Old text color documents load into complete Fill data without losing their appearance",
+          "projectName": "chromium",
+          "implementationPaths": [
+            "apps/asyra-design/src/collaboration/migrate-text-fills.ts"
           ]
         }
       ],

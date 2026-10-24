@@ -11315,17 +11315,21 @@
             "purpose": "Apply editable native text with canonical save and replay behavior.",
             "inputs": [
               "Selected canonical native text element",
-              "Text and typography field edits",
+              "Canvas text gestures, transient drafts and typography field edits",
+              "Current document generation and legacy text fill data",
               "Save and History replay state"
             ],
             "outputs": [
               "artifact:edit-native-text-outcome"
             ],
             "conditions": [
-              "Keep native text properties editable and retain them through save, Undo and Redo."
+              "Keep native text properties editable and retain them through save, Undo and Redo.",
+              "Canvas drafts stay transient until one accepted commit; cancellation and stale targets cannot overwrite canonical data.",
+              "Typography commits include measured automatic sizing; legacy document load preserves text paint through the App migration."
             ],
             "bypasses": [
-              "Invalid text preparation does not silently rasterize editable content."
+              "Invalid text preparation does not silently rasterize editable content.",
+              "Empty creation, unchanged drafts and cancelled sessions add no document history."
             ],
             "allowedContributors": [
               "Declared public App or Framework APIs",
@@ -11338,7 +11342,15 @@
             "cacheDimensions": [],
             "implementationBoundary": [
               "apps/asyra-design/src/properties/text.tsx",
-              "apps/asyra-design/src/ai/design-actions.ts"
+              "apps/asyra-design/src/ai/design-actions.ts",
+              "apps/asyra-design/src/features/text-canvas/index.ts",
+              "apps/asyra-design/src/common-apis/text-canvas.ts",
+              "apps/asyra-design/src/common-apis/text-layout.ts",
+              "apps/asyra-design/src/render-app/text-canvas-editor.tsx",
+              "apps/asyra-design/src/properties/text-field.tsx",
+              "apps/asyra-design/src/properties/text-select.tsx",
+              "apps/asyra-design/src/controllers/scene-tree.ts",
+              "apps/asyra-design/src/collaboration/migrate-text-fills.ts"
             ],
             "specRefs": [
               "#edit-native-text"

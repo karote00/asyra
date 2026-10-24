@@ -652,7 +652,7 @@ test('Reusable composition source config runs all unchanged cases without proof 
   assert.equal(report.numFailedTests, 0)
 })
 
-test('Pixi engine admission retains 27 exact responsibility locations', () => {
+test('Pixi engine admission retains 29 exact responsibility locations', () => {
   const root = path.resolve(__dirname, '../../../..')
   const contract = loadContract(
     root,
@@ -675,7 +675,7 @@ test('Pixi engine admission retains 27 exact responsibility locations', () => {
   )
   for (const reference of step.specRefs)
     assert.ok(headings.includes(reference), reference)
-  assert.equal(contract.cases.length, 27)
+  assert.equal(contract.cases.length, 29)
   for (const item of contract.cases) {
     assert.equal(item.stepId, 'execute-render-engine')
     assert.ok(
@@ -711,7 +711,7 @@ test('Pixi engine source config runs all unchanged cases without proof environme
   )
   assert.equal(result.status, 0, result.stdout + result.stderr)
   const report = JSON.parse(result.stdout)
-  assert.equal(report.numPassedTests, 27)
+  assert.equal(report.numPassedTests, 29)
   assert.equal(report.numFailedTests, 0)
 })
 
@@ -986,7 +986,7 @@ test('the complete functional discovery has one exact responsibility per case, i
     assert.equal(new Set(expected).size, expected.length)
     assert.deepEqual(observed.sort(), expected.sort())
   }
-  collect('functional', 'playwright.config.ts', 447)
+  collect('functional', 'playwright.config.ts', 485)
   collect('status', 'playwright.status-toast.config.ts', 1)
 })
 
@@ -1012,6 +1012,50 @@ test('functional responsibility follows the asserted operation across test-file 
   assert.deepEqual(
     selected('functional.app.0ed5202f90ef').implementationPaths,
     ['apps/asyra-design/index.html']
+  )
+})
+
+test('Text observations retain Canvas, typography, fill and migration owners', () => {
+  const root = path.resolve(__dirname, '../../../..')
+  const contract = loadContract(
+    root,
+    undefined,
+    'apps/asyra-design/playwright-functional-flow-contracts.json'
+  )
+  const cases = contract.cases.filter((item) =>
+    /\/text-(canvas|properties)\.spec\.ts$/.test(item.testFile)
+  )
+  assert.equal(cases.length, 38)
+  const requireOwner = (name, stepId, entry) => {
+    const item = cases.find((item) => item.testName === name)
+    assert.ok(item, name)
+    assert.equal(item.stepId, stepId)
+    assert.ok(item.implementationPaths.includes(entry), name)
+  }
+  requireOwner(
+    'Canvas publishes live drafts without a Content field and preserves cancel and Undo',
+    'edit-native-text',
+    'apps/asyra-design/src/common-apis/text-canvas.ts'
+  )
+  requireOwner(
+    'A stale text draft cannot overwrite an external content change',
+    'edit-native-text',
+    'apps/asyra-design/src/render-app/text-canvas-editor.tsx'
+  )
+  requireOwner(
+    'Combined font style changes both properties in one reversible action',
+    'edit-native-text',
+    'apps/asyra-design/src/properties/text.tsx'
+  )
+  requireOwner(
+    'Shared text color picker commits a color with one undo step',
+    'edit-fills',
+    'apps/asyra-design/src/common-apis/fills.ts'
+  )
+  requireOwner(
+    'Old text color documents load into complete Fill data without losing their appearance',
+    'edit-native-text',
+    'apps/asyra-design/src/collaboration/migrate-text-fills.ts'
   )
 })
 

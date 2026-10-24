@@ -196,7 +196,6 @@ test('normal development and release entries reach one permanent rule without th
       'bugfix',
       'refactor',
       'package-release-validation',
-      'manual-app-release',
       'app-cloudflare'
     ].map((name) => `docs/ai/workflows/${name}.md`)
   ]
