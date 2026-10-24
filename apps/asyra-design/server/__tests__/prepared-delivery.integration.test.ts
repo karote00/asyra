@@ -83,8 +83,8 @@ it('delivers the saved prepared input with at least fifteen percent fewer bytes 
     createHash('sha256').update(JSON.stringify(fixture.prepared)).digest('hex')
   ).toBe(fixture.source.preparedSha256)
   const canonical = session.resolve(receipt.artifactId)
-  // Geometry is already compiled: delivery visits entries, never topology contents.
-  expect(delivered.entries[1].descriptor.points).toBe(
+  // Only redundant identity fields are projected; retained geometry is not compiled.
+  expect(delivered.entries[1].descriptor.points).not.toBe(
     canonical.entries[1].descriptor.points
   )
   expect(delivered.entries[1].descriptor.fills).toBe(
@@ -181,6 +181,11 @@ const mixedDraft = {
               { x: 0, y: 50, outControl: { x: 0, y: 0 } },
               { x: 100, y: 50, inControl: { x: 100, y: 0 } },
               { x: 50, y: 100 }
+            ],
+            [
+              { x: 40, y: 60 },
+              { x: 50, y: 80 },
+              { x: 60, y: 60 }
             ]
           ]
         }
@@ -194,6 +199,7 @@ it('preserves all supported descriptor kinds and shared references without recom
     mixedDraft,
     'mixed'
   )
+  const unchanged = JSON.stringify(canonical)
   const wire = deliverPreparedDesign(canonical)
   expect(admitPreparedDesignDelivery(JSON.parse(JSON.stringify(wire)))).toEqual(
     canonical
@@ -203,8 +209,23 @@ it('preserves all supported descriptor kinds and shared references without recom
     (shape.fills[0] as { id: string }).id
   ])
   const curve = canonical.entries.at(-1)?.descriptor
-  expect(wire.entries.at(-1)?.descriptor.points).toBe(curve?.points)
-  expect(wire.entries.at(-1)?.descriptor.networks).toBe(curve?.networks)
+  for (const field of ['points', 'segments', 'networks']) {
+    const original = curve?.[field] as Record<string, Record<string, unknown>>
+    const delivered = wire.entries.at(-1)?.descriptor[field] as Record<
+      string,
+      Record<string, unknown>
+    >
+    expect(Object.keys(delivered)).toEqual(Object.keys(original))
+    for (const [key, value] of Object.entries(original)) {
+      const { id, ...retained } = value
+      expect(id).toBe(key)
+      expect(delivered[key]).toEqual(retained)
+      expect(delivered[key]).not.toHaveProperty('id')
+      for (const name of Object.keys(retained))
+        expect(delivered[key][name]).toBe(retained[name])
+    }
+  }
+  expect(JSON.stringify(canonical)).toBe(unchanged)
 })
 
 it('rejects inconsistent canonical identity maps before projection can conceal them', () => {
@@ -217,6 +238,26 @@ it('rejects inconsistent canonical identity maps before projection can conceal t
 })
 
 it.each([
+  [
+    'superseded compact wire',
+    (wire: Record<string, unknown>) => {
+      wire.version = 2
+    }
+  ],
+  ...(['points', 'segments', 'networks'] as const).map(
+    (field) =>
+      [
+        `redundant ${field} identity`,
+        (wire: PreparedDesignDelivery) => {
+          const records = wire.entries[1].descriptor[field] as Record<
+            string,
+            Record<string, unknown>
+          >
+          const [key, value] = Object.entries(records)[0]
+          value.id = key
+        }
+      ] as const
+  ),
   [
     'old wire',
     (wire: Record<string, unknown>) =>
@@ -265,6 +306,30 @@ it.each([
         { startId: string }
       >
       Object.values(segments)[0].startId = 'foreign'
+    }
+  ],
+  ...(['points', 'segments', 'networks'] as const).map(
+    (field) =>
+      [
+        `missing ${field} record`,
+        (wire: PreparedDesignDelivery) => {
+          const records = wire.entries[1].descriptor[field] as Record<
+            string,
+            unknown
+          >
+          Reflect.deleteProperty(records, Object.keys(records)[0])
+        }
+      ] as const
+  ),
+  [
+    'duplicate network reference',
+    (wire: PreparedDesignDelivery) => {
+      const records = wire.entries[1].descriptor.networks as Record<
+        string,
+        { pointIds: string[] }
+      >
+      const network = Object.values(records)[0]
+      network.pointIds[1] = network.pointIds[0]
     }
   ],
   [
@@ -505,3 +570,223 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     vi.unstubAllGlobals()
   }
 }, 30000)
+
+const vectorDeliveryFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      './fixtures/recorded-101/vector-delivery-20261025.json',
+      import.meta.url
+    ),
+    'utf8'
+  )
+) as {
+  cases: {
+    name: string
+    source: { identity: string; inputBytes: number; canonicalSha256: string }
+    input: { draft: unknown }
+  }[]
+}
+const canonicalValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(canonicalValue)
+  if (value && typeof value === 'object')
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [
+          key,
+          canonicalValue((value as Record<string, unknown>)[key])
+        ])
+    )
+  return value
+}
+
+// Historical wire baseline exists only in this cost/equality oracle. Production
+// accepts the single current version; it never executes this projection.
+const capturedVectorBaseline = (design: PreparedDesign) => {
+  const { keyToId: _keyToId, entries, ...rest } = design
+  return {
+    ...rest,
+    version: 2,
+    entries: entries.map((entry) => ({
+      ...entry,
+      descriptor: {
+        ...entry.descriptor,
+        props: Object.keys(entry.descriptor.props)
+      }
+    }))
+  }
+}
+const admitCapturedVectorBaseline = (
+  input: ReturnType<typeof capturedVectorBaseline>
+) =>
+  admitPreparedDesign({
+    ...input,
+    version: 1,
+    keyToId: Object.fromEntries(
+      input.entries.map((entry) => [entry.key, entry.descriptor.id])
+    ),
+    entries: input.entries.map((entry) => ({
+      ...entry,
+      descriptor: {
+        ...entry.descriptor,
+        props: Object.fromEntries(
+          entry.descriptor.props.map((name) => [
+            name,
+            `${entry.descriptor.id}-${name}`
+          ])
+        )
+      }
+    }))
+  })
+const measureVectorDelivery = <T>(
+  project: () => T,
+  admit: (wire: T) => unknown
+) => {
+  const rows: {
+    packMs: number
+    encodeMs: number
+    parseMs: number
+    restoreAndAdmissionMs: number
+  }[] = []
+  for (let iteration = 0; iteration < 4; iteration++) {
+    const start = performance.now()
+    const projected = project()
+    const packed = performance.now()
+    const encoded = JSON.stringify(projected)
+    const serialized = performance.now()
+    const parsed = JSON.parse(encoded)
+    const decoded = performance.now()
+    admit(parsed)
+    const end = performance.now()
+    if (iteration)
+      rows.push({
+        packMs: packed - start,
+        encodeMs: serialized - packed,
+        parseMs: decoded - serialized,
+        restoreAndAdmissionMs: end - decoded
+      })
+  }
+  return Object.fromEntries(
+    Object.keys(rows[0]).map((key) => [
+      key,
+      rows.map((row) => row[key as keyof typeof row]).sort((a, b) => a - b)[1]
+    ])
+  )
+}
+
+it.each(vectorDeliveryFixture.cases)(
+  'omits repeated vector IDs from $name without changing canonical values or compile work',
+  async (saved) => {
+    const compile = vi.fn<typeof prepareDesignAsync>(
+      (signal, input, _identity, ...rest) =>
+        prepareDesignAsync(signal, input, saved.source.identity, ...rest)
+    )
+    const session = createDesignPreparationSession(prepareDesign, compile)
+    const owner = createLocalDesignTools(actions, session)
+    const receipt = JSON.parse(
+      await owner.call(
+        'prepare_design',
+        { draft: saved.input.draft },
+        new AbortController().signal
+      )
+    )
+    const source = session.resolve(receipt.artifactId)
+    expect(
+      createHash('sha256')
+        .update(JSON.stringify(canonicalValue(source)))
+        .digest('hex')
+    ).toBe(saved.source.canonicalSha256)
+    const batch = {
+      batchId: 'apply',
+      actions: [
+        {
+          id: 'apply',
+          name: AiActionNames.APPLY_PREPARED_DESIGN,
+          arguments: { artifactId: receipt.artifactId },
+          summary: 'Apply retained vectors'
+        }
+      ]
+    }
+    const delivered = owner.resolveBatch(batch).actions[0].arguments as {
+      design: PreparedDesignDelivery
+    }
+    const encoded = JSON.stringify(delivered)
+    expect(admitPreparedDesignDelivery(JSON.parse(encoded).design)).toEqual(
+      JSON.parse(JSON.stringify(source))
+    )
+    expect(compile).toHaveBeenCalledTimes(1)
+    expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(
+      saved.source.inputBytes * 0.86
+    )
+    const baseline = { ...delivered, design: capturedVectorBaseline(source) }
+    expect(Buffer.byteLength(JSON.stringify(baseline))).toBe(
+      saved.source.inputBytes
+    )
+    expect(admitCapturedVectorBaseline(baseline.design)).toEqual(
+      JSON.parse(JSON.stringify(source))
+    )
+    console.info(
+      JSON.stringify({
+        measurement: 'vector-delivery',
+        case: saved.name,
+        baselineBytes: saved.source.inputBytes,
+        deliveredBytes: Buffer.byteLength(encoded),
+        compileCalls: compile.mock.calls.length,
+        baseline: measureVectorDelivery(
+          () => capturedVectorBaseline(source),
+          admitCapturedVectorBaseline
+        ),
+        compact: measureVectorDelivery(
+          () => deliverPreparedDesign(source),
+          admitPreparedDesignDelivery
+        )
+      })
+    )
+  }
+)
+
+it.each(['points', 'segments', 'networks'])(
+  'rejects conflicting %s identities before projection can conceal them',
+  (field) => {
+    const { sharedFillIds: _shared, ...source } = structuredClone(
+      prepareDesign(mixedDraft, 'conflict')
+    )
+    const vector = source.entries.find((e) => e.descriptor.type === 'vector')
+    if (!vector) throw new Error('Missing vector fixture')
+    const records = vector.descriptor[field] as Record<string, { id: string }>
+    Object.values(records)[0].id = 'foreign-identity'
+    expect(() => deliverPreparedDesign(source)).toThrow(/identity/)
+  }
+)
+
+it('visits each vector identity map once per projection and restoration without recompilation', () => {
+  const { sharedFillIds: _shared, ...source } = structuredClone(
+    prepareDesign(mixedDraft, 'visits')
+  )
+  const vector = source.entries.find(
+    (entry) => entry.descriptor.type === 'vector'
+  )
+  if (!vector) throw new Error('Missing vector fixture')
+  const projectVisits = vi.fn(Reflect.ownKeys)
+  for (const field of ['points', 'segments', 'networks']) {
+    vector.descriptor[field] = new Proxy(vector.descriptor[field] as object, {
+      ownKeys: projectVisits
+    })
+  }
+  const wire = deliverPreparedDesign(source)
+  expect(projectVisits).toHaveBeenCalledTimes(3)
+  const delivered = wire.entries.find(
+    (entry) => entry.descriptor.type === 'vector'
+  )
+  if (!delivered) throw new Error('Missing vector delivery')
+  const restoreVisits = vi.fn(Reflect.ownKeys)
+  for (const field of ['points', 'segments', 'networks']) {
+    delivered.descriptor[field] = new Proxy(
+      delivered.descriptor[field] as object,
+      { ownKeys: restoreVisits }
+    )
+  }
+  admitPreparedDesignDelivery(wire)
+  expect(restoreVisits).toHaveBeenCalledTimes(3)
+  expect(projectVisits).toHaveBeenCalledTimes(3)
+})

@@ -364,7 +364,7 @@ describe('local semantic design tools', () => {
     )
     expect(execute).toHaveBeenCalledTimes(3)
     expect(execute.mock.calls[0][0].actions[0].arguments).toMatchObject({
-      design: { version: 2, entries: expect.any(Array) }
+      design: { version: 3, entries: expect.any(Array) }
     })
     expect(execute.mock.calls[1][0].actions[0].name).toBe(
       AiActionNames.REVIEW_DESIGN

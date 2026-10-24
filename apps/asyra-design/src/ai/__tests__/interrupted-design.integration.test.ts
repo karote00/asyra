@@ -164,7 +164,19 @@ it.each(['admission', 'member-rollback', 'abort'] as const)(
         type: 'group',
         name: 'Repeated facade',
         children: Array.from({ length: 40 }, (_, index) => ({
-          type: 'rect',
+          type: index % 2 ? 'vector' : 'rect',
+          ...(index % 2
+            ? {
+                rings: [
+                  [
+                    { x: 0, y: 0 },
+                    { x: 30, y: 0 },
+                    { x: 30, y: 40 },
+                    { x: 0, y: 40 }
+                  ]
+                ]
+              }
+            : {}),
           key: `panel-${index}`,
           name: `Panel ${index}`,
           x: index * 50,

@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending vector delivery identities
+
+```update-note
+{
+  "change": "vector-delivery-identities",
+  "owner": "Repository Flow Inspector",
+  "summary": "Require identity-safe vector delivery, exact canonical reconstruction and measured payload and work costs in the existing apply contract.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal App delivery changes atomically; no persisted schema or public consumer migration. Canonical documents and independent conversions remain unchanged."
+}
+```
+
 ## Pending E2E execution continuity
 
 ```update-note

@@ -7,6 +7,7 @@ import {
   isDesignContainerType,
   PREPARED_DESIGN_VERSION,
   PREPARED_DESIGN_DELIVERY_VERSION,
+  PreparedVectorRecordFields,
   type PreparedDesign
 } from './prepared-design'
 
@@ -179,15 +180,25 @@ export function admitPreparedDesignDelivery(input: unknown): PreparedDesign {
     )
     check(!Object.hasOwn(keyToId, entry.key))
     keyToId[entry.key] = descriptor.id
-    return {
-      ...entry,
-      descriptor: {
-        ...descriptor,
-        props: Object.fromEntries(
-          names.map((name) => [name, `${descriptor.id}-${name}`])
+    const restored: Record<string, unknown> = {
+      ...descriptor,
+      props: Object.fromEntries(
+        names.map((name) => [name, `${descriptor.id}-${name}`])
+      )
+    }
+    if (descriptor.type === 'vector') {
+      for (const field of PreparedVectorRecordFields) {
+        const records = descriptor[field]
+        check(record(records))
+        restored[field] = Object.fromEntries(
+          Object.entries(records).map(([key, value]) => {
+            check(record(value) && !Object.hasOwn(value, 'id'))
+            return [key, { ...value, id: key }]
+          })
         )
       }
     }
+    return { ...entry, descriptor: restored }
   })
   return admitPreparedDesign({
     ...input,

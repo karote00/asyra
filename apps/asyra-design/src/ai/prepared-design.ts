@@ -63,7 +63,35 @@ export interface PreparedDesign {
   readonly findings: readonly DesignFinding[]
 }
 
-export const PREPARED_DESIGN_DELIVERY_VERSION = 2 as const
+export const PREPARED_DESIGN_DELIVERY_VERSION = 3 as const
+export const PreparedVectorRecordFields = [
+  'points',
+  'segments',
+  'networks'
+] as const
+type PreparedVectorRecordDelivery = Readonly<Record<string, unknown>> & {
+  readonly id?: never
+}
+
+function deliverVectorRecords(
+  input: unknown
+): Record<string, PreparedVectorRecordDelivery> {
+  if (!input || typeof input !== 'object' || Array.isArray(input))
+    throw new Error('Prepared vector identity map is invalid.')
+  return Object.fromEntries(
+    Object.entries(input).map(([key, value]) => {
+      if (
+        !value ||
+        typeof value !== 'object' ||
+        Array.isArray(value) ||
+        value.id !== key
+      )
+        throw new Error('Prepared vector identity is inconsistent.')
+      const { id: _id, ...record } = value
+      return [key, record]
+    })
+  )
+}
 export interface PreparedDesignDelivery extends Omit<
   PreparedDesign,
   'version' | 'entries' | 'keyToId'
@@ -76,7 +104,7 @@ export interface PreparedDesignDelivery extends Omit<
   })[]
 }
 
-/** Project owned canonical data without cloning or recompiling geometry. */
+/** Project identities without cloning retained values or recompiling geometry. */
 export function deliverPreparedDesign(
   design: PreparedDesign
 ): PreparedDesignDelivery {
@@ -95,7 +123,19 @@ export function deliverPreparedDesign(
       const names = Object.keys(props)
       if (names.some((name) => props[name] !== `${descriptor.id}-${name}`))
         throw new Error('Prepared design property identity is inconsistent.')
-      return { ...entry, descriptor: { ...descriptor, props: names } }
+      const vector =
+        descriptor.type === 'vector'
+          ? Object.fromEntries(
+              PreparedVectorRecordFields.map((field) => [
+                field,
+                deliverVectorRecords(descriptor[field])
+              ])
+            )
+          : {}
+      return {
+        ...entry,
+        descriptor: { ...descriptor, ...vector, props: names }
+      }
     })
   }
 }

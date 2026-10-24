@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 E2E execution continuity is locally complete against its fixed DoD. Previously completed local handoffs remain closed. No persistence owner changes, model run, 101, CI inspection or push were performed.**
+Status: **Task 3 vector delivery identity reduction is in progress. E2E execution continuity is locally complete and pushed as f5ad084ff. No model/101, CI inspection or push is authorized for this slice.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: E2E execution continuity and failure attribution only, as bounded below. No persistence owner changes, model/101, CI or push.
+- Current scope: vector delivery identity reduction only, as bounded below. No geometry recomputation, new tools, model/101, CI or push.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,121 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Vector delivery identity reduction - 2026-10-25
+
+Status: locally complete. Admission accepted at revision 111 (candidate
+de8eeb62-4922-41bf-b745-dd06f0015acb). Final Inspector verification
+fe7a6c26-6142-492b-b521-2ca77c138269 passed on captured source
+d74138412a36ef38f96cc5630b4330ad9df656a886631c65b413cc0fea26dbfa.
+Formal saved-byte and producer/admission identity regressions failed before the
+owner change; no model or 101 run was performed.
+
+Evidence: saved run 1792853203510, provider sequences 304/483/546 carry exact
+unredacted prepared inputs of 8,588,993 / 23,248,274 / 2,128,964 bytes. In 81,513
+point/segment/network records, map keys repeat each record's id. Removing only
+those fields and restoring from keys yields exact complete JSON-value equality;
+offline projected savings are 1,274,397 / 3,416,665 / 318,476 bytes (14.75% total).
+Preparation, delivery, admission, resolver and execution sources match that run.
+This is App-to-browser payload waste, not model input or a first-frame latency claim.
+
+Step Execution Card - apply / prepare-to-apply:
+- Owner: existing deliverPreparedDesign and admitPreparedDesignDelivery; unchanged
+  resolver, dispatcher and canonical validation/execution consume the result.
+  Spec: Prepared design delivery. Inspector: apply and prepare-to-apply.
+- Inputs: retained owned canonical prepared artifact and exact vector record keys.
+  Outputs: current compact wire version and identical admitted canonical artifact,
+  then ordinary complete/partial/cancelled receipts and recovery.
+- Conditions: verify every point, segment and network record id equals its key
+  before omission. Restore only those exact identities; reject supplied id fields
+  in the new wire shape and retain full canonical validation before writes.
+  Update the sole wire version; no prior-version compatibility branch. Canonical
+  version, independent conversions and explicit full receipts stay valid.
+- Allowed: current delivery/admission owners and directly affected tests/consumers.
+  Forbidden: geometry or topology recomputation, changed IDs/references/materials,
+  array or child reordering, guessed defaults, caches/registries, new tools or
+  round trips, changed budgets, persistence owner changes and replay.
+- Lifetime/work: pack once per existing delivery, restore once per admission;
+  retained canonical source remains immutable and the existing canonical clone
+  isolates admitted output. Count compilation, projection traversal and dispatch;
+  measure pack/encode and parse/restore/admission separately. No geometry work is
+  justified by smaller bytes. Non-vector payloads retain their existing semantics.
+- Boundary: prepared-design.ts, prepared-design-admission.ts; existing
+  prepared-delivery.integration, design-actions, interrupted-design.integration,
+  local-design-tools/local-ai-provider tests and execution proof; existing
+  design-construction E2E and necessary direct wire-contract fixtures; current
+  plan/spec/Inspector/mapping, App CHANGELOG and root release notes.
+  Permanent saved inputs: server/__tests__/fixtures/recorded-101/vector-delivery-20261025.json.
+- Naming: delivery version 3 is an internal App wire contract, not a persisted
+  document identity. Id-omitting vector record types belong to prepared-design.ts.
+  No new capability or registry names. Delivery owns no cache; unrelated existing
+  apply-step cache dimensions remain unchanged.
+- Failure owner: apply rejects inconsistent canonical IDs before projection and
+  malformed compact input before writes. Real cancellation and acknowledged
+  prefixes retain existing recovery and report owners.
+- Gates: admission, existing naming baseline, formal red saved-byte/identity
+  regressions, actual resolver/dispatcher/Core tests, cancellation and continuation,
+  affected browser collaboration/history/save/reload, direct-consumer server gates,
+  production types, focused lint, naming, documentation checks, final Inspector.
+- Stop: fixed DoD complete, or implementation requires another product owner,
+  compatibility branch or a third failed implementation iteration.
+
+Fixed DoD:
+1. Three permanent saved inputs each reduce bytes by at least 14% against their
+   captured v2 payload; existing 15% full-map baseline regression still passes.
+   No ignored tmp dependency or 101-specific runtime behavior.
+2. Complete JSON-roundtrip equality for canonical IDs, points, controls, curves,
+   networks, references, materials, ordering, hierarchy and continuation; include
+   generic mixed kinds and multi-ring curves. Source objects remain unmodified.
+3. Conflicting record IDs cannot disappear during projection. Missing, foreign,
+   duplicate or malformed references and superseded wire versions reject before
+   mutation; full canonical validation remains authoritative.
+4. Real resolver -> dispatcher -> admission -> Core preserves complete/partial
+   results, cancellation, recovery without replay, Undo/Redo, collaboration and
+   save/reload. Existing legitimate independent consumers remain covered.
+5. No extra model/dispatcher exchange or repeated geometry compilation. Formal
+   measurements retain exact bytes and pack/encode plus parse/restore/admission
+   costs for the same prepared values; report overhead honestly rather than infer
+   lower first-frame latency. Remove superseded wire behavior and stale tests.
+
+
+Validation and bounded self-review:
+- Three saved source inputs reproduce their captured canonical SHA-256 values and
+  exact v2 byte counts. Current payloads are 7,314,596 / 19,831,609 / 1,810,488
+  bytes: 5,009,538 bytes removed in total (14.7486%). The original full-map
+  regression also passes (17,380,806 -> 12,326,607 bytes).
+- The permanent mixed fixture includes shared fills, native oval/text/frame and
+  multi-ring cubic topology. Every restored value/reference matches; input stays
+  immutable, map projection/restoration each visit once, compilation stays once,
+  and the existing single isolation clone and dispatch count are preserved.
+- Producer identity conflicts and redundant/missing/foreign/duplicate wire data
+  reject before writes. Only wire v3 is accepted; canonical v1 is unchanged.
+  The v2 projection exists solely as a test cost oracle, never a runtime branch.
+- Focused suites: 382 passed; Inspector: 77 passed. One unrelated installed-Codex
+  native-registration probe was skipped because LOCAL_AI_PROTOCOL_EXECUTABLE was
+  unset; scripted-provider integration ran and no model inference was requested.
+  The first Node invocation of browser-owned suites failed at collection because
+  window was absent; their required jsdom invocation passed all 57 cases.
+- Browser partition recovery: 1 passed (39.1 s), including peer convergence,
+  original order/world placement, Undo/Redo, durable backend and strict reload
+  digest. The existing recorded geometry oracle and real Core cancellation tests
+  retain acknowledged prefixes and exclude replay. Test ports were released.
+- Production types, focused ESLint (zero errors; four diagnostic console warnings),
+  naming, update guidance and diff checks passed. No persistence, rendering,
+  scheduling, Knowledge, model prompts or capacity owners changed.
+- Cost measurements are three measured iterations after one warmup, per-stage
+  medians in milliseconds. They are diagnostics, not a latency guarantee:
+
+| Saved sequence | Pack + encode v2 / v3 | Parse + restore + admit v2 / v3 |
+| --- | --- | --- |
+| 304 | 14.84 / 26.26 | 113.75 / 109.22 |
+| 483 | 37.07 / 70.94 | 280.84 / 287.34 |
+| 546 | 3.34 / 5.68 | 25.71 / 23.82 |
+
+The final regression run trades about 40.37 ms of measured local CPU in its largest case for 3,416,665 fewer
+wire bytes. No extra exchange or geometry compilation occurs. Actual network,
+model behavior and first-frame latency were not measured; they are not closure
+claims for this bounded data-delivery change.
 
 ### E2E execution continuity and failure attribution - 2026-10-25
 

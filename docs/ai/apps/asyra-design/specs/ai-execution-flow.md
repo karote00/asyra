@@ -676,10 +676,13 @@ necessary immutable copying and compare every intermediate snapshot. The
 ### Prepared design delivery
 
 The existing resolver delivers owned prepared designs with property names instead
-of repeated property-ID values and without a duplicate key-to-ID map. Browser
-admission reconstructs those maps from the supplied names, keys and exact IDs,
-then runs the existing complete canonical validation before any write. The current
-compact delivery version is required; previous full-map wire input is rejected.
+of repeated property-ID values and without a duplicate key-to-ID map. Vector
+point, segment and network record IDs are omitted only after checking equality
+with their map keys; all graph references remain explicit and unchanged. The
+current wire shape forbids redundant record id fields. Browser admission restores
+those IDs from exact keys and property maps from the supplied names and IDs,
+then runs the existing complete canonical validation before any write. Compact
+delivery version 3 is required; previous wire versions are rejected.
 Retained canonical artifacts and independent conversion formats are unchanged.
 
 Reconstruction cannot infer missing properties, repair malformed references, alter
@@ -689,7 +692,9 @@ Explicit full receipts retain key/role mappings. Cancellation and partial recove
 keep actual acknowledged results and never replay completed edits. Projection adds
 no model query or round trip and owns no cache. Formal tests must exercise the real
 resolver through browser admission and Core, prove saved-case payload reduction of
-at least 15%, unchanged canonical output/work counts, and affected history,
+at least 15% against the original full-map baseline and at least 14% for each of
+the three fixed vector inputs against v2, unchanged canonical output/compilation
+and dispatch counts, explicit pack/restore costs, and affected history,
 collaboration and save/reload behavior. Timing measurements supplement deterministic
 work evidence; reduced bytes alone do not prove a first-frame latency improvement.
 

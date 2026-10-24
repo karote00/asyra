@@ -1,5 +1,27 @@
 # @asyra/asyra-design
 
+## Pending vector delivery identities
+
+```update-note
+{
+  "change": "vector-delivery-identities",
+  "owner": "Asyra Design prepared delivery",
+  "summary": "Omit verified duplicate vector record IDs in the internal wire format, restore exact keys before canonical admission and preserve recovery and document identity.",
+  "sources": [
+    "apps/asyra-design/src/ai/prepared-design.ts",
+    "apps/asyra-design/src/ai/prepared-design-admission.ts",
+    "apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/vector-delivery-20261025.json",
+    "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/src/ai/__tests__/interrupted-design.integration.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal App delivery changes atomically; no persisted schema or public consumer migration. Canonical documents and independent conversions remain unchanged."
+}
+```
+
 ## Pending E2E execution continuity
 
 ```update-note

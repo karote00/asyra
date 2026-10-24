@@ -1156,7 +1156,25 @@ it('execution proof composes preparation and canonical dispatch without repeated
   const application = schedule(workflow.definitions[0].executionAccess, () =>
     workflow.call(
       AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
-      { draft: proofDraft, inspection: 'defer' },
+      {
+        draft: {
+          ...proofDraft,
+          children: [
+            {
+              ...proofDraft.children[0],
+              type: 'vector',
+              rings: [
+                [
+                  { x: 0, y: 0 },
+                  { x: 80, y: 0 },
+                  { x: 40, y: 40 }
+                ]
+              ]
+            }
+          ]
+        },
+        inspection: 'defer'
+      },
       signal
     )
   )
@@ -1196,6 +1214,29 @@ it('execution proof composes preparation and canonical dispatch without repeated
   expect(design).not.toHaveProperty('keyToId')
   expect(Array.isArray(design.entries[0].descriptor.props)).toBe(true)
   expect(design.entries).toHaveLength(2)
+  for (const field of ['points', 'segments', 'networks']) {
+    const records = design.entries[1].descriptor[field] as Record<
+      string,
+      Record<string, unknown>
+    >
+    const restored = admitted.entries[1].descriptor[field] as Record<
+      string,
+      Record<string, unknown>
+    >
+    for (const [key, value] of Object.entries(records)) {
+      expect(value).not.toHaveProperty('id')
+      expect(restored[key]).toEqual({ ...value, id: key })
+    }
+    const invalid = structuredClone(design)
+    const [key, value] = Object.entries(
+      invalid.entries[1].descriptor[field] as Record<
+        string,
+        Record<string, unknown>
+      >
+    )[0]
+    value.id = key
+    expect(() => admitPreparedDesignDelivery(invalid)).toThrow()
+  }
   expect(result).toMatchObject({
     available: true,
     receiptScope: 'compact',
