@@ -876,7 +876,10 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
     signal,
     repair
   )
-  const entries = new Map<string, { type: string; x: number; y: number }>()
+  const entries = new Map<
+    string,
+    { type: string; x: number; y: number; rotation?: number }
+  >()
   const parents = new Map<string, string>()
   const api: PreparedDesignApis = {
     ...apis(),
@@ -925,6 +928,19 @@ it('continues budget partitions in one canonical root and refuses duplicate appl
       member.y += 100
     }
   const expectedSize = entries.size
+  const anchorId = session.resolve(later.artifactId).continuation?.anchor.id
+  const anchor = anchorId ? entries.get(anchorId) : undefined
+  if (!anchor) throw new Error('Missing continuation anchor')
+  const originalRotation = anchor.rotation
+  anchor.rotation = (originalRotation ?? 0) + 0.1
+  await expect(
+    action.execute(
+      { design: deliverPreparedDesign(session.resolve(later.artifactId)) },
+      context()
+    )
+  ).rejects.toThrow(/rotation changed/)
+  expect(entries.size).toBe(expectedSize)
+  anchor.rotation = originalRotation
   root.x += 1
   await expect(
     action.execute(

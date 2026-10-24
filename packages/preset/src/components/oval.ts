@@ -1,4 +1,7 @@
-import type { ComponentDefinition, RenderStrategy } from '@asyra/core'
+import type {
+  ComponentDefinition,
+  EngineNeutralRenderStrategy
+} from '@asyra/core'
 import { PropertyTypes, setElementGeometryLocalBounds } from '@asyra/utils'
 import {
   applyRenderableFill,
@@ -38,7 +41,10 @@ export const OVAL_COMPONENT_DEFINITION: ComponentDefinition = {
   ]
 }
 
-export const OVAL_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
+export const OVAL_RENDER_STRATEGY: EngineNeutralRenderStrategy = (
+  graphic,
+  data
+) => {
   graphic.clear()
   setElementGeometryLocalBounds(
     graphic as Parameters<typeof setElementGeometryLocalBounds>[0],
@@ -69,6 +75,7 @@ export const OVAL_RENDER_STRATEGY: RenderStrategy = (graphic, data) => {
 
   graphic.x = data.x
   graphic.y = data.y
+  graphic.rotation = data.rotation ?? 0
   graphic.renderable = true
   graphic.visible = true
 }

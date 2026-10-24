@@ -236,12 +236,14 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
     )
     const anchor = continuation.anchor
     check(
-      keysOnly(anchor, ['id', 'x', 'y']) &&
+      keysOnly(anchor, ['id', 'x', 'y', 'rotation']) &&
         typeof anchor.id === 'string' &&
         anchor.id.length > 0 &&
         anchor.id.length <= 256 &&
         finite(anchor.x) &&
-        finite(anchor.y)
+        finite(anchor.y) &&
+        (anchor.rotation === undefined ||
+          finite(anchor.rotation, limits.dimension))
     )
     check(
       input.entries.length > 1 && input.entries[0]?.descriptor?.type === 'group'
@@ -335,6 +337,10 @@ export function admitPreparedDesign(input: unknown): PreparedDesign {
       'lock',
       'props'
     ]
+    if (d.type === 'oval') {
+      fields.push('rotation')
+      check(d.rotation === undefined || finite(d.rotation, limits.dimension))
+    }
     if (d.type === 'text') {
       props.push('typography')
       fields.push(...textFields)

@@ -155,12 +155,11 @@ const projectedFaceExample = {
         key: 'face',
         name: 'Face',
         fill: '#123456',
-        vertices: [
-          { x: 0, y: 0, z: 0 },
-          { x: 10, y: 0, z: 0 },
-          { x: 10, y: 0, z: 20 },
-          { x: 0, y: 0, z: 20 }
-        ]
+        ellipse: {
+          center: { x: 5, y: 0, z: 10 },
+          u: { x: 5, y: 0, z: 0 },
+          v: { x: 0, y: 0, z: 10 }
+        }
       }
     ]
   }
@@ -337,7 +336,7 @@ const composedMaterialExample = {
             key: 'panel',
             name: 'Panel',
             materialField: 'glass',
-            vertices: surfaceGridExample.draft.children[0].boundary
+            ellipse: projectedFaceExample.draft.children[0].ellipse
           }
         ]
       },
@@ -383,4 +382,4 @@ export const designPreparationExamples = [
 
 /** Representation decisions belong to the model; the backend only executes the supplied data. */
 export const designRepresentationGuidance =
-  'Delegate a ready part to prepare_and_apply_design: it owns preparation, optional criteria, writing and inspection; inspect its compact receipt rather than relaying intermediate data. Define intentional shared fills once in draft.sharedFills and use fill:{shared:key}; equal independent inline fills remain independent. For vector rings omit both dimensions to let the owner measure exact bounds. Choose by the data you already have: existing object IDs -> registered batch edits with new values, not reconstruction; arbitrary or already-projected 2D outlines -> vector; repeated identical 2D curves -> vector-pattern template + placements; explicit world-space planar faces in an orthographic view -> projection + projected-face; translated repetitions of those faces -> pattern.faces + origin/axes; UI placement -> row/column/grid or relations. For a translated face/grid component, declare ordered pattern.members once (projected-face and surface-grid), then origin/axes; face-only components may use faces. Members retain their materials; no pattern fills, nested pattern or new container. Output order is instance-major, member-major, then grid painter order; the last axis varies fastest. Keep irregular exceptions as separate explicit nodes in their intended painter position. A chosen continuous field uses materialField; an intentional per-piece fill stays local. Let the backend expand suitable templates and calculate projection instead of emitting each derived vertex. Resolve returned artifact targets for local edits; never regenerate canonical IDs from pattern keys. Reuse instanceRanges only for known missing complete instances, never to replay an uncertain partial write. Preserve supplied 2D geometry; do not invent depth, force orthographic perspective, or build hidden faces merely to use projection. Irregular/nonrepeating geometry may remain explicit vectors. For a chosen continuous world material on projected or pattern faces, define draft.linearFields and select materialField on each intended face instead of repeating normalized gradient handles. Plain nodes and surface grids still use native fills. This converts explicit material intent, never automatic lighting or visual approval. These choices do not set style, detail level or camera angles.'
+  'Delegate ready parts to prepare_and_apply_design: preparation, optional criteria, writes and inspection; consume its receipt. Choose from existing data: object IDs -> registered batch edits, not reconstruction; arbitrary/already-projected 2D -> vector (omit both dimensions for measured bounds); identical 2D curves -> vector-pattern template + placements; world planar faces -> projection + projected-face; circles/ellipses -> ellipse:{center,u,v} instead of vertices; translated faces -> pattern.faces + origin/axes; face/grid assemblies -> ordered pattern.members, then origin/axes; UI placement -> row/column/grid or relations. Members keep materials; no pattern fills, nesting or new container. Order: instance, member, grid; last axis fastest. Keep irregular exceptions at their painter position. Let the backend expand templates and calculate projection instead of emitting derived vertices. Define intentional shared fills in draft.sharedFills and use fill:{shared:key}; independent inline fills stay independent. Continuous world materials on projected/pattern faces use draft.linearFields + materialField; plain nodes/grids use native fills. No inferred lighting or visual approval. Resolve artifact targets for edits, never reconstruct canonical IDs from pattern keys. instanceRanges restores known missing complete instances, never uncertain partial writes. Preserve supplied 2D geometry; do not invent depth, force orthographic perspective or build hidden faces to enable projection. Irregular/nonrepeating vectors remain valid; these choices do not set style, detail level or camera angles.'

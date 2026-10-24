@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 native image delivery and recovery is locally verified. One authorized live observation confirms retained-image binding without recapture; failure-recovery adoption and historical forwarding-error causality remain unconfirmed. Earlier brief-capacity work and its bounded live observations remain preserved.**
+Status: **Task 3 workspace overview and inspection receipt handoff is converged on formal local tests and the authorized live observation. Projected oval work remains converged. The convergence push is authorized; the next issue is read-only analysis, with no further model run or CI inspection.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: native image delivery and display-only recovery are locally verified; the subsequently authorized single 120-second work / 60-second report observation is complete. No further model/101 run, CI inspection or push.
+- Current scope: workspace overview through the existing snapshot owner and truthful inspection receipts/recovery. No new tools, document regrouping, model/101, CI or push.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,418 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Workspace overview and inspection receipts - 2026-10-24
+
+Status: converged after contract admission, formal local verification and one
+authorized live observation. The convergence push is authorized. Fixed D1-D8
+below remain unchanged; live failed-target recovery remains unobserved.
+Evidence: saved run 1792847647272, drawing request e4064411-79d6-457a-8dea-ab234241a77e,
+84-input/87-output. At 113.678 seconds workspace capture was refused before snapshot;
+the absent owner settlement became unknown in both browser and aggregate receipts.
+The actual delivered subtree overview description omitted this capability boundary.
+The native workspace container exists outside the ordinary Render element map.
+
+Bounded objective: support a read-only overview of the current workspace through
+Core.captureElementSnapshot and the existing Render snapshot owner. Preserve
+positions, ordering, visibility and overlap across independent roots. Keep explicit
+element captures, local detail, existing evidence lifetime and partial recovery.
+Workspace detail/region remains unsupported; use a concrete child for native detail.
+An empty workspace is unavailable evidence, never a visual pass. Unknown write
+settlement elsewhere is not normalized by this task.
+
+Step Execution Card - inspect (including its existing snapshot contributor):
+- Spec: AI execution flow / Workspace overview and inspection receipts; Render
+  and Core snapshot contracts. Inspector: inspect conditions, contributors,
+  implementationBoundary and failureOwnerStepId; no new route or state.
+- Inputs: actual current workspace/element identity, explicit overview/detail/region,
+  canonical geometry/order/visibility and the existing evidence stamp.
+- Outputs: exact snapshot with scoped evidence or owner-authored unavailable reason,
+  completed read settlement, recoverable arguments and preserved successful images.
+- Conditions: work only through existing Core snapshot; no document or selection
+  mutation, no grouping, no viewport screenshot, no artificial render composition,
+  no added model/tool/caches. Preserve explicit targets and mandatory native detail.
+- Failure owners: Render target/capture, App inspection/evidence, existing aggregate
+  review. Cancellation/transport failure retains real execution evidence.
+- Allowlist: Render render.ts, ViewportLayer/RenderLayer snapshot target access and
+  tests; App inspection API/action/schema/evidence and tests; local-design-review,
+  local-operation-tools and their invocation/fixture/proof tests; existing mapping,
+  package test scripts, drawing-inspection E2E, necessary Core/Render docs.
+- Gates: focused Render and App tests; delivered-contract/real-owner integration;
+  existing review/recovery and dependency tests; deterministic browser geometry,
+  read-only history/shared-publication and reload proof; production types, naming,
+  touched lint, Inspector source-bound verify and generated workspace contracts.
+- Stop on unresolved snapshot semantics, scope expansion, stale admission or a
+  repeated failed approach. Review only this diff and direct consumers.
+
+Fixed DoD (not replaceable by label changes or mock-only success):
+D1. Execute the actually delivered guide through formal dispatch/real inspection;
+workspace overview and element/detail restrictions are visible before first call.
+D2. Multiple independent roots with rotation, overlap, hidden elements and order
+produce one correct world-space image; exact geometry/pixel oracles, not existence.
+D3. No canonical, hierarchy, selection, undo/redo, shared publication or persisted
+state changes from capture. No group creation or later repair replay.
+D4. Missing/foreign target, empty workspace, unsupported scope, render failure,
+document change and cancellation have explicit true outcomes. Known completed read
+failures contain no unknown from owner through native reply.
+D5. Image success never approves visual quality. All-failed/mixed/all-success output,
+settlement and downstream presentation agree; preserve unrelated mutation uncertainty.
+D6. Retry only failed captures using returned recovery. Keep valid images and local
+judgments; zero additional captures for retained successes, zero mutation replay.
+D7. Workspace additions/removals/reorder/visual changes invalidate its broad evidence;
+unrelated local passes survive. Workspace switch/load cannot reuse old proof.
+D8. Permanent saved-input fixture plus real-owner integration, browser proof and
+bounded gates; no ignored tmp dependency, model rerun or CI query.
+
+Feasibility review: use the existing scene workspace container by exact label for
+snapshot resolution only; never insert it into the element map or alter other
+lookup semantics. Snapshot is already engine-neutral and excludes sibling overlays.
+Existing dependency ancestors cover workspace descendant edits; load clears receipts.
+Existing multi-target recovery retains images and checks. Extend owner receipt/schema
+and aggregate read settlement rather than weakening generic uncertain-write handling.
+
+Implementation and bounded review:
+- Snapshot-only workspace resolution reuses the existing scene container and
+  engine-neutral Core/Render capture. Ordinary element lookup is unchanged.
+- The App checks actual current workspace identity, childCount and overview scope.
+  Missing/empty/unsupported targets and capture/evidence failures carry explicit
+  completed-read receipts; no image or visual pass is fabricated. Generic uncertain
+  writes and real cancellation/transport failures retain their existing semantics.
+- The existing review owner distinguishes all-failed, mixed and successful capture
+  outcomes, forwards reason codes and retains valid inspection IDs. Recovery follows
+  returned failedInspections without replaying edits or recapturing retained images.
+- Shared inspection schema, action guidance and review guidance expose workspace
+  overview versus concrete-element native detail before dispatch. No new tool,
+  state, grouping, registry, cache or renderer-specific App path was introduced.
+- The direct owner integration is in the existing server-response harness. The
+  existing Inspector capture-handoff proof now executes the App read owner; its
+  source mapping includes the actual snapshot and receipt contributors.
+
+Validation evidence (2026-10-24):
+- Admission: candidate b43a6744-108e-4274-b267-fd3e8974e53f, accepted contract
+  revision 102, review 6b8fcdd33580049e3aa8c4fa536f024731d271dd8b4fcfeffbac3dd406b60d06.
+- Fail-first: real Render rejected the workspace target; actual App owner returned
+  unavailable for the valid workspace. Logs: tmp/workspace-inspection-render-red.log
+  and tmp/workspace-inspection-owner-red.log. Permanent fixture retains the saved
+  input; tests do not read tmp evidence.
+- Render: 53 tests. App owner/evidence/runtime/presentation/receipt: 404 tests across
+  focused runs. Native image interface and execution proof: 85 tests. Discovery,
+  schema admission and retained-review consumers: 118 tests.
+- Browser: independent-root pixels prove overlap order, hidden exclusion, rotated
+  oval shape and unchanged images after selection/pan/zoom. Capture preserves
+  canonical state, history and shared/document publications. Add/remove/reorder and
+  Undo/Redo invalidate broad evidence while unrelated local evidence survives.
+  Durable persistence is confirmed before reload; the reloaded pixels match.
+  Existing large-overview/native-detail, scoped-evidence, two-client edit and
+  manual-edit/history/load cases also passed on the current production source.
+- Browser fixture corrections use the existing compact prepared-delivery adapter,
+  existing fill rows, connected-document readiness and explicit persistence receipt.
+  Capture history is compared before/after capture, separately from deliberate UI
+  actions and edits. One existing cross-client UI case timed out once and passed
+  when rerun; that intermittent UI observation is not credited to this repair.
+- Production Render/App types, naming and touched lint pass (two pre-existing
+  no-console warnings). Inspector source-bound verify passed at revision 102;
+  final attempt and source identity are retained in tmp/workspace-inspection-verify.log.
+  Generated Inspector workspace is synchronized. Bounded review covered the diff,
+  direct discovery/dispatch/invocation consumers, failure branches and evidence life.
+- No claim is made about live AI target selection, visual judgment, recovery adoption
+  or first-frame timing. Those behaviors were not rerun and are outside this closure.
+
+Live observation and convergence - 2026-10-24:
+
+- Run 1792853203510 used gpt-6-astra / medium, 120 seconds of work, an independent
+  60-second report budget, no recording and the production 10,000 artifact limit.
+  First visible content appeared at 49.987 seconds. This is not a speed improvement
+  claim: the prior run observed 39.374 seconds under different generated work.
+- At 109.826 seconds the actual workspace capture returned a 385 x 1024 overview
+  in 53 ms, with both nested and outer success/completed receipts. All three
+  independent roots were present without regrouping or replaying construction.
+- The AI submitted overall pass and detail fail. Both judgments were retained;
+  accepted remained false and the correction handoff preserved the failed criterion.
+  Successful judgment recording was not treated as successful drawing acceptance.
+- Work stopped at 120.004 seconds, acknowledgement followed at 120.012 seconds,
+  and no tool/action execution occurred after cutoff. Report generation took
+  16.969 seconds. Seven streams were complete; 82 payload/asset hashes matched.
+  Saved subtree counts exactly matched 2,311 / 6,164 / 641 created elements.
+- Durable sequence 289, root order and fresh-context reload were verified.
+  Original evidence remains in tmp/knowledge-evaluation/
+  knowledge-quality-knowledge-taipei-101-1792853203510. No capture failed, so AI
+  adoption of failed-target-only recovery and nonreplay remains unobserved.
+- The user authorized convergence and push of this tested source, including the
+  previously converged native oval work. Next-issue discovery is limited to this
+  saved run and its direct App/framework owners; no implementation is authorized.
+
+### Projected oval handoff - 2026-10-24
+
+Status: locally complete after admission, formal fail-first regressions, bounded
+self-review and source-bound verification at Inspector revision 101. Supersedes
+sampled ellipse semantics; preserves the prior section as historical evidence.
+
+Objective and fixed DoD: center/u/v defines a planar ellipse independent of point
+count. Construction projects it into the existing oval component via official
+preparation/dispatcher/Core creation. No tool calls render APIs. Preserve native
+explicit vertices, pattern faces/members, order/identity/materials, source lifetime,
+node budgets and nonreplayed continuation. Reject segments rather than retaining
+an unrequested alias. Never rewrite saved documents or historical evidence.
+
+Step Execution Cards (one owner segment at a time):
+
+1. Prepare: design-face/construction/schema/budget/preparation, linear-field owner,
+   existing preset group-bounds public geometry and its Group consumer. Input is
+   exclusive vertices or ellipse:{center,u,v}; output is a normal prepared oval
+   with bounded finite rotation, plus correct geometric extents and fills. The
+   template is projected once; pattern instances translate the completed result.
+   Public geometry owns transformed oval bounds; Group preparation and type lookup
+   share one operation-local canonical snapshot without repeated full reads. Group normalization preserves
+   child origins and world placement. Material phase is expressed in oval-local
+   coordinates, not a screen bounding box. No sampling, curve fallback, model,
+   render access or new cache. Failure owner: prepare. Test-first projection,
+   analytic contour/bounds and materials, invalid/edge-on cases, zero curve-command
+   accounting with ordinary object limits. Stop on missing canonical capabilities.
+2. Apply: prepared admission and formal Core descriptor consumption, retained
+   continuation and material provenance; preset oval render strategy consumes
+   rotation only through its normal pipeline. Expected rotation comes from the
+   existing immutable source/continuation anchor, never inferred from the current
+   document. Permit original oval rotation and Group translation normalization;
+   reject changed rotation, skew/scale, hierarchy, binding or unknown settlement.
+   No new state or executor. Real Core tests cover partial cancellation, remaining
+   work only, duplicate rejection, history, collaboration and saved reload.
+3. Inspect/compose: design-review consumes shared oval bounds without bypassing
+   unsupported rotated containers; schema/examples deliver center/u/v without
+   segments in one existing acquisition. Run the actual example and rendered
+   deterministic browser case; tools never invoke the renderer directly.
+
+Bounded owners: existing App files named above and their direct formal tests;
+preset group-bounds/components/group/components/oval and tests; existing plan,
+AI execution spec/Inspector/mapping, and necessary package-owned behavior docs.
+No broad rotation/layout redesign, arbitrary transforms of containers, dependency
+installation, registry, scheduler, new tool, model run, 101, CI or push.
+
+Fixed acceptance cases:
+
+- Direct face, faces/members patterns, circles, oblique/conjugate and mirrored
+  bases, nearly circular ellipses and edge-on/invalid geometry. Independently
+  verify projected center and covariance, oval parametric boundary and exact
+  extents; do not compare to a polygon and call it an ellipse.
+- Renderer/selection geometry, Group normalization and Frame overflow agree with
+  the same canonical transform. Parent/child placements do not drift after
+  normalization or reload; unsupported transformed parents remain protected.
+- Solid/template fills and world linear fields retain phase across rotations,
+  pattern translations, revisions and source reuse. Genuine geometry/binding
+  changes invalidate provenance; valid Group translation does not.
+- One template compilation/projection per source, no sampled point arrays.
+  Ordinary oval node budgets, depth, extent, cancellation and prewrite validation
+  remain enforced; reduced path cost reflects the actual native representation.
+- Execute actual delivered examples and saved-input-derived cases through the
+  dispatcher and real Core; include partial/no-op/failure/recovery and reject
+  superseded segments. No extra initial query or full-schema preload; compare
+  complete selected delivery plus submission against the frozen prior evidence.
+- Applicable focused App/preset tests, formal execution-flow mapping, production
+  types, naming/lint, generated Inspector gates, deterministic browser rendering,
+  and bounded self-review must pass. Record unobservable AI adoption separately.
+
+Bounded correction after the first deterministic browser proof: creation/history/
+reload passed, but screenshot inspection showed zoom-fit clipping a rotated oval.
+Core scene bounds still unioned unrotated rectangles and skipped Group envelopes.
+This directly prevents the fixed bounds DoD. Extend only this existing downstream
+bounds path: move the analytic ellipse rectangle calculation into Utils geometry
+bounds; Preset and Core consume it, with no new registry or retained computation.
+
+Step Execution Card - apply / canonical world bounds: input is finite canonical
+oval position, dimensions, radians and existing unrotated ancestor translation;
+output is analytic world extents for current viewport consumers. Explicit oval
+semantics only; preserve other shapes and invalid/missing hierarchy rejection.
+Owners/allowlist: Utils render/geometry-bounds and tests, Core apis/scene-bounds and
+its existing formal tests, Preset group-bounds, and the existing browser proof.
+No renderer lookup, alternate viewport algorithm or new transform state. Add a
+failing Core world-bounds test before implementation, then rerun the complete oval
+browser case and inspect both initial and reloaded screenshots. This is the
+existing rotation/bounds DoD, not an additional product feature.
+
+Local closeout - 2026-10-24:
+
+- Native projected ovals now use center/u/v only. Removed segment-based ellipse
+  generation and its active schema/example contract; explicit polygon vertices
+  remain valid. Tools still use preparation, dispatcher and official Core creation.
+- Fail-first evidence covers native geometry/admission, analytic Group bounds,
+  material normalization, existing oval render rotation (0 instead of 0.63),
+  Core world bounds (minX 10 instead of 5.6298397555), and duplicate Group snapshot
+  work (two reads instead of one). Final Group preparation reuses its existing
+  operation-local snapshot; no persistent cache or extra registry was added.
+- The saved-source-derived case retains 225 ordered identities, including 192
+  native ovals. Every original oval contour sample lies on the analytic curve;
+  unrelated polygon descriptors/world placement remain equivalent. A true curve
+  can extend beyond the old polygon extrema, so the Group envelope legitimately
+  changes. Historical fixture bytes were not rewritten.
+- Exact selected first delivery: 19,931 bytes in one response versus the frozen
+  19,948-byte baseline. Saved input: 6,918 versus 57,630 bytes. Combined delivery
+  plus input: 26,849 versus 77,578 bytes (65.39% reduction). This proves encoding
+  and handoff reduction, not model adoption or elapsed-time improvement.
+- Formal local verification: Runtime 433; preset subscriptions 37; App server
+  harness 1,684 passed with two existing opt-in skips; direct apply/material/review
+  consumers 92; projected oval suite 12; Preset bounds/group/render 24; Core scene
+  bounds 11; Utils geometry bounds 4; Inspector/workspace contracts 27. Counts
+  overlap where the harness includes focused files. Two outdated assertions were
+  corrected against the new contract, then their complete files (117 tests) and
+  the server harness passed. The skips are installed native registration and the
+  opt-in large checkpoint bootstrap; neither counts as evidence for this slice.
+- Production App/server/flow-proof types and Utils/Core/Preset builds passed.
+  Naming passed; scoped lint has zero errors and the existing unrelated
+  execution-flow-proof console warning. Scoped Inspector verification passed at
+  revision 101: attempt d0824bda-76a6-45f2-91a3-eb15a8958357, source digest
+  af0f8c7a8916d921c7edde3473138cad67b4e976d956c7044c0d838a510363bd.
+- Deterministic browser proof at `http://localhost:3307`: `test:e2e
+  e2e/design-construction.spec.ts --grep 'structured ovals' --workers=1
+  --max-failures=1 --reporter=line`. Real App creation, rendered rotation,
+  analytic scene bounds, native hits after the normal viewport update, one
+  Undo/Redo and durable reload passed. Screenshots before/after reload were
+  inspected at 1440x1000, zoom-fit, no selection or agent panel. Initial clipping
+  was fixed at Core bounds, not hidden by test viewport changes. Final artifacts:
+  `apps/asyra-design/test-results/design-construction-struct-e50fe-able-geometry-with-one-Undo-chromium/ovals.png`
+  and `ovals-reloaded.png`. No model or 101 was involved.
+- Review covered changed owners and direct consumers, material phase/revision,
+  real cancellation/remaining-only recovery, duplicate rejection, history,
+  collaboration publication and durable replay. Arbitrary transformed containers
+  remain outside this contract; genuine changed transforms/bindings remain
+  rejected. AI adoption, first-frame timing and visual judgment are unobserved.
+  No CI query, remote push, new dependency, automation or new state owner.
+
+### Sampled planar ellipse handoff - 2026-10-24
+
+Status: locally complete after admission (revision 95), fail-first regression, bounded delivery iteration and source-bound verification (revision 96).
+
+Delivery review found two direct-consumer obligations: adding the canonical ellipse
+option exceeded existing guide-byte ceilings, and the generic example oracle
+assumed every projected face used vertices. Keep those byte ceilings unchanged.
+Consolidate redundant projection/pattern prose without dropping constraints; extend
+the independent oracle to expand ellipse samples and translations. This iteration
+changes neither discovery selection nor limits. The fixed DoD remains unchanged.
+
+Evidence: run 1792839882487, provider 7e6750b8-41cd-45e5-a227-9e0486d6a289,
+81-input.json (SHA-256 b79a470d717353ce76113380fa410c6a1456c28f904ba92f341e36451a3d4b6a)
+already uses eight pattern instances. Its 57,630-byte input contains 24 sampled
+ellipses and four quadrilaterals (976 template vertices); vertices consume 53,384
+bytes. Existing projected-face and motif inputs require explicit vertices; 2D
+vector-pattern explicitly does not project. Do not infer that the 20.400-second
+pre-submission interval is entirely caused by this data or claim faster live work.
+
+Step Execution Card - prepare / sampled planar faces:
+
+- Input: a projected-face or pattern face selects exactly one of vertices or
+  ellipse:{center,u,v,segments}. World vectors u/v are nonzero independent
+  conjugate radius vectors; equal perpendicular radii describe a circle.
+  segments is an explicit integer from 3 through the existing primitive guard.
+  Sample i is center + u*cos(2*pi*i/segments) + v*sin(2*pi*i/segments), i=0..n-1;
+  no repeated closing point, automatic precision, normalization or fitting.
+- Output: ordinary editable vectors via the existing projection, materials,
+  pattern translation, identity, preparation and application pipeline. Preserve
+  vertices as an independent legal representation; no new node/tool or alias.
+- Owner: construction owns bounded sampling once per template per preparation;
+  budget admission counts segments before sampling, multiplied by selected
+  instances for expanded cost. Existing source snapshot/retention and repair own
+  lifetime. Existing world-field semantics and painter order are unchanged.
+- Boundaries: design-construction/schema, a focused design-face geometry helper,
+  design-budget and their tests/fixtures. Forbidden: model calls, canonical writes
+  during preparation, renderer changes, new cache/store, hidden approximation,
+  fixture-specific geometry or relaxed budgets. Failure owner: prepare.
+- Cases: root face, faces and mixed members, generic rotated/oblique planes,
+  mirrored basis, circles/nonuniform ellipses, explicit quadrilateral siblings,
+  fill templates/world fields, ranges, partition continuation, invalid/both/missing
+  forms, nonfinite/collinear basis, invalid segments and generated extent.
+- Stop: inability to preserve sampled contour/order/material, unbounded sampling,
+  new ownership mechanism or required out-of-scope behavior.
+
+Step Execution Card - compose / selected delivery, after prepare gates:
+
+- Existing owner schema/examples feed selected usage and complete field/full
+  queries. Replace the selected projected-face example's explicit ellipse-like
+  data with the executable generic descriptor; no new preliminary request or
+  exhaustive schema. Execution must use the exact delivered example through the
+  dispatcher, not a separately authored substitute. Failure owner: compose.
+- Allowed: preparation examples, existing workflow discovery, actual discovery
+  integration and execution-flow proof. Existing checks/recovery remain complete.
+
+Step Execution Card - apply / direct-consumer proof, after compose gates:
+
+- No production mutation owner changes. Extend the existing real Core interrupted
+  design integration to consume the new descriptor and verify canonical geometry,
+  partial cancellation, remaining-only recovery, duplicate rejection, history,
+  collaboration and saved reload through existing owners. Failure owner: apply.
+
+Fixed DoD and gates:
+
+1. Permanent saved-input fixture (no ignored tmp dependency), red test before
+   implementation, explicit independent reconstruction oracle. Preserve all 225
+   elements, projected samples, material values, order, identities and references
+   within existing numerical precision; do not silently resample/simplify.
+2. Non-101 generic cases exercise the same owner without subject-specific code.
+3. Execute actual delivered example through schema, dispatcher and downstream
+   owner; selected acquisition is one response with complete limits/recovery.
+4. Saved compact input <=10,000 bytes; actual selected instruction/example plus
+   submitted input is smaller than the frozen pre-change counterpart. Do not
+   increase acquisition round trips or preload unrelated schemas. Preserve inline
+   vertices and optional 2D methods without forcing ellipse adoption.
+5. Budget/invalid input reject before writes; exact expanded costs, primitive
+   bounds, sampling/projection work counts and changed-input isolation pass.
+   Existing parts, partial success, cancellation and no-replay recovery pass.
+6. Focused preparation/pattern/material/discovery suites, real Core integration,
+   existing execution-flow gate, naming, scoped lint, production types, generated
+   Inspector checks and source-bound verification. Bounded self-review covers
+   changed owners, direct consumers and failure paths only. No model/101 or CI.
+
+
+Local closure evidence:
+
+- Fail-first: six selected regressions failed on the admitted pre-implementation
+  source: unsupported face geometry, zero structural point accounting and missing
+  delivered ellipse example. Logs: tmp/ellipse-red.log.
+- The existing projected-face and both pattern representations now accept an
+  exclusive ellipse descriptor. Sampling stays in construction, once per source
+  template; budgets count segments before allocation. No canonical write owner,
+  rendering, retained store, scheduler, limit or discovery round trip was added.
+- Permanent saved-input fixture preserves all 225 entries, names, keys, geometry,
+  materials, order and references. Input bytes: 57,630 -> 7,254 (87.4% fewer).
+  Actual selected guide: 19,948 -> 19,929 bytes, one reply. Guide plus submission:
+  77,578 -> 27,183 bytes (65.0% fewer). Existing delivery ceilings were not raised.
+  Source data and historical evidence remain immutable.
+- Geometry suite: 18 passed, including generic planes/circles/ellipses/mirrored
+  radii, source isolation, ranges, invalid inputs and pre-allocation limits.
+  Exactly 40 sample cosine evaluations plus two camera evaluations compile a
+  100-instance template; 141 projection calls include shared zero and offsets.
+- Real Core interrupted integration: six passed, including explicit and ellipse
+  variants. Cancellation retains partial membership and receipts; remaining-only
+  recovery, duplicate rejection, Undo/Redo, collaboration publication/replay and
+  durable save/load preserve the final canonical state.
+- Direct delivery runs the actual selected composition example through the
+  dispatcher and application owner. Degenerate/ambiguous inputs write nothing;
+  corrected execution writes once; refresh does not replay completed writes.
+  Existing example consumers now independently expand ellipse samples instead
+  of assuming every projected face exposes vertices.
+- Execution-flow local stages: Runtime 433 passed; preset 37 passed; final App
+  harness 1,690 passed, two existing opt-in skips (installed native registration
+  and large saved-checkpoint bootstrap), neither counted as passing. Actual native
+  image tests ran in the App harness. App/server/proof production types passed;
+  naming 15 passed; lint zero errors, one pre-existing console warning.
+- Inspector admission candidate 4a29354b-4862-4058-afc2-3504fa8fdd12 passed before
+  implementation. Final 75-case verification 231d7c45-340f-4d15-8b05-ca247640c0ad
+  passed at revision 96, source
+  50b9dbc16d384239a2eda252022c2a1e19473ee39e2205d93de7206b26b05c84.
+  The new regression suite is wired into test:server-response-harness, and the
+  sampled-ellipse product case is mapped to prepare in flow-contracts.json.
+- Generated workspace/catalog/package checks: 26 passed; this Inspector's own
+  contract checks: two passed. Broader legacy viewer checks have one unrelated
+  existing failure: canonical-projection-and-collaboration-contract-realignment
+  artifact:property-intent-result lacks a terminal route. Its source and the
+  failing test match HEAD; no out-of-scope repair or whole-suite pass is claimed.
+  A filtered legacy viewer command selected no applicable cases and is not used
+  as evidence. Logs: tmp/ellipse-generated.log and tmp/ellipse-inspector-contract.log.
+- Bounded self-review covered changed owners, schema/executable examples, budget
+  accounting, direct consumers and failure/retention paths. Initial proof capture
+  excluded test fixtures by policy; the mapped proof now uses a generic inline
+  oracle, while the formal App suite owns the immutable saved-input regression.
+- No model/101, CI inspection or push. These results prove generic deterministic
+  capability and lower delivery volume; model adoption, first-frame timing and
+  visual-quality improvement have not been observed for this change.
 
 ### Native image delivery - authorized live observation - 2026-10-24
 

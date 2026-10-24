@@ -314,8 +314,11 @@ explicitGroupElementIds)` receives the caller-resolved official Group target
 loading Core, Render, DOM or component registration. It is the same bounds owner
 used by ordinary Preset Group operations and server-side design preparation.
 The runtime root export remains available. Empty input returns zero bounds;
-nonfinite rectangle values are rejected. This helper measures rectangles only;
-it does not apply transactions, normalize hierarchy or register components.
+nonfinite geometry values are rejected. Rectangles retain their existing union
+semantics. An oval may provide its existing type and rotation (radians); the owner
+unions its analytic rotated extents while callers retain the original local
+origin. Other rotated shapes are not certified by this optional oval contract.
+This helper does not apply transactions, normalize hierarchy or register components.
 
 ## Optional shared spatial foundation
 

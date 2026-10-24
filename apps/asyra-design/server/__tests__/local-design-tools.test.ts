@@ -764,11 +764,11 @@ it('keeps representation examples on their actual geometry and layout owners', a
     return session.resolve(receipt.artifactId)
   }
   const face = await prepareExample('projected-face')
-  expect(face.entries[1].descriptor).toMatchObject({
-    type: 'vector',
-    width: 10,
-    height: 20
-  })
+  expect(face.entries[1].descriptor.type).toBe('oval')
+  expect(face.entries[1].descriptor).not.toHaveProperty('points')
+  // The native major axis may rotate; the projected footprint stays 10 by 20.
+  expect(Number(face.entries[0].descriptor.width)).toBeCloseTo(10, 10)
+  expect(Number(face.entries[0].descriptor.height)).toBeCloseTo(20, 10)
   const cards = await prepareExample('rect')
   expect(cards.entries.slice(1).map((entry) => entry.descriptor.x)).toEqual([
     0, 50

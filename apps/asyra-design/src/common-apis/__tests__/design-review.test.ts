@@ -898,3 +898,26 @@ it.each(['f', 't'])(
     f.review.dispose()
   }
 )
+
+it('checks rotated oval extents without bypassing frame overflow or unsupported rotated shapes', async () => {
+  const f = retainedFixture()
+  f.data.t = { type: 'oval', parentId: 'f' }
+  f.geometry.t = { x: 10, y: 20, width: 20, height: 10, rotation: Math.PI / 4 }
+  const inside = await f.review.capture('f')
+  expect(inside.complete).toBe(true)
+  expect(inside.findings).toEqual([])
+  f.geometry.t.x = 299
+  f.change({ elementIds: ['t'] })
+  const outside = await f.review.capture('f')
+  expect(outside.complete).toBe(true)
+  expect(outside.findings.some((f) => f.kind === 'container-overflow')).toBe(
+    true
+  )
+  f.data.t.type = 'rectangle'
+  f.change({ elementIds: ['t'] })
+  const unsupported = await f.review.capture('f')
+  expect(unsupported.complete).toBe(false)
+  expect(
+    unsupported.findings.some((f) => f.kind === 'rotated-bounds-unchecked')
+  ).toBe(true)
+})

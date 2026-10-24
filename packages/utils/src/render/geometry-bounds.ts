@@ -108,3 +108,22 @@ export const getElementGeometryWorldBounds = (
 
   return getElementGeometryLocalBounds(element)
 }
+
+/** Exact ellipse extents after rotation about its local origin, without sampling. */
+export const calculateEllipseBounds = ({
+  x,
+  y,
+  width,
+  height,
+  rotation = 0
+}: GeometryBounds & { rotation?: number }): GeometryBounds => {
+  if (![x, y, width, height, rotation].every(Number.isFinite))
+    throw new Error('Ellipse bounds require finite geometry')
+  const c = Math.cos(rotation),
+    s = Math.sin(rotation)
+  const cx = x + (c * width) / 2 - (s * height) / 2
+  const cy = y + (s * width) / 2 + (c * height) / 2
+  const rx = Math.hypot((c * width) / 2, (s * height) / 2)
+  const ry = Math.hypot((s * width) / 2, (c * height) / 2)
+  return { x: cx - rx, y: cy - ry, width: 2 * rx, height: 2 * ry }
+}

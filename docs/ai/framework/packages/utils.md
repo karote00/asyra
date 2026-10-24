@@ -40,6 +40,14 @@ Provide shared types, ids, registry primitives, and low-level helpers.
   diagnostics sink without owning phase names, product budgets, or reporting
   policy
 
+## Analytic ellipse bounds
+
+`calculateEllipseBounds({x, y, width, height, rotation})` returns an exact axis-aligned
+rectangle for an ellipse rotated about its local origin; rotation is in radians
+and defaults to zero. It rejects nonfinite values and does not sample the curve,
+read a renderer, or retain state. Preset Group normalization and Core world bounds
+consume this same calculation after their own identity/ancestor validation.
+
 ## Viewport Fit
 
 `calculateZoomFit` preserves aspect ratio using the limiting padded viewport

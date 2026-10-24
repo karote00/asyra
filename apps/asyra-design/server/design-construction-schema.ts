@@ -157,13 +157,17 @@ export const designConstructionSchema = {
       originY: scalar
     },
     description:
-      'One orthographic camera for explicit 3D faces. World Z up; azimuth/elevation in degrees; scale in pixels/world unit. Screen x=originX+scale*(cos(a)*x-sin(a)*y); screen y=originY+scale*(sin(e)*(sin(a)*x+cos(a)*y)-cos(e)*z). Viewer direction from the object is (sin(a)*cos(e), cos(a)*cos(e), sin(e)); for positive 0..90 degree azimuth/elevation the positive-X and positive-Y sides face the viewer. Draw far surfaces before near ones. No auto-fit, invented depth, perspective or hidden-face removal. Choose visible faces and painter order.'
+      'Orthographic; Z up; degrees; scale=pixels/world unit. x=originX+scale*(cos(a)*x-sin(a)*y); y=originY+scale*(sin(e)*(sin(a)*x+cos(a)*y)-cos(e)*z). Viewer=(sin(a)*cos(e),cos(a)*cos(e),sin(e)); angles 0..90 expose +X/+Y. Visible faces far-to-near; no auto-fit/invented depth/perspective/hidden-face removal.'
   }
 }
 export const projectedFaceSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['key', 'name', 'type', 'vertices'],
+  required: ['key', 'name', 'type'],
+  oneOf: [
+    { required: ['vertices'], properties: { ellipse: false } },
+    { required: ['ellipse'], properties: { vertices: false } }
+  ],
   anyOf: [
     { properties: { materialField: false } },
     { properties: { fill: false } }
@@ -174,6 +178,33 @@ export const projectedFaceSchema = {
     type: { const: 'projected-face' },
     fill: designFillSchema,
     materialField: key,
+    ellipse: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['center', 'u', 'v'],
+      properties: {
+        center: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['x', 'y', 'z'],
+          properties: { x: scalar, y: scalar, z: scalar }
+        },
+        u: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['x', 'y', 'z'],
+          properties: { x: scalar, y: scalar, z: scalar }
+        },
+        v: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['x', 'y', 'z'],
+          properties: { x: scalar, y: scalar, z: scalar }
+        }
+      },
+      description:
+        'Analytic planar ellipse: independent nonzero world radius vectors encode size/direction; equal perpendicular radii=circle. Creates an editable oval with rotation and world material phase. No segments or contour approximation. Ordinary node/extent budgets apply; edge-on projection rejects.'
+    },
     vertices: {
       type: 'array',
       minItems: 3,
@@ -187,7 +218,7 @@ export const projectedFaceSchema = {
     }
   },
   description:
-    'Explicit planar world face under shared projection and absolute root; root child or pattern member. Editable vector in caller order. Backend computes x/y/width/height/rings; do not supply them. Signed projected offsets allowed; Group normalization preserves workspace geometry, Frame overflow is reported. Reject degenerate/nonplanar/excess geometry.'
+    'Planar face, shared projection, absolute root child/pattern member. Ordered editable polygon or oval; x/y/width/height/rotation are owner-owned. Signed offsets valid; Group preserves workspace geometry; Frame reports overflow. Reject degenerate/nonplanar/excess geometry.'
 }
 
 const worldPoint = projectedFaceSchema.properties.vertices.items
@@ -293,7 +324,7 @@ export const designPatternSchema = {
         ]
       },
       description:
-        'Flat face/grid component; shared root projection, unique member keys; no nested patterns/containers. Order: instance, member, grid. Palettes restart per instance; world fields follow translations. Keys:patternKey-instanceIndex-memberOutputKey. Generated keys/names <=160 characters; no new parent.'
+        'Flat face/grid component, unique keys, shared root projection. No nested patterns/containers/new parent. Instance/member/grid order; palettes restart per instance; world fields translate. Keys:patternKey-instanceIndex-memberOutputKey; generated keys/names <=160 characters.'
     },
     faces: {
       type: 'array',
@@ -301,7 +332,8 @@ export const designPatternSchema = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['key', 'name', 'vertices'],
+        required: ['key', 'name'],
+        oneOf: projectedFaceSchema.oneOf,
         anyOf: [
           { properties: { materialField: false } },
           { properties: { fill: false } }
@@ -311,7 +343,8 @@ export const designPatternSchema = {
           name: { ...key, maxLength: 60 },
           fill: projectedFaceSchema.properties.fill,
           materialField: key,
-          vertices: projectedFaceSchema.properties.vertices
+          vertices: projectedFaceSchema.properties.vertices,
+          ellipse: projectedFaceSchema.properties.ellipse
         }
       }
     },
@@ -322,5 +355,5 @@ export const designPatternSchema = {
     }
   },
   description:
-    'Absolute root child with shared projection. Choose faces or members, never both; members forbids pattern fills. Translation only: origin + one/two axes, last axis fastest. Editable vector order: instance then member/face then grid order. faces-mode fills cycles by original instance index; otherwise member materials remain. No lighting, sorting or clipping. Count selected instances * component objects/points, plus root, against shared budgets. Omitted ranges cost no output/projection. Primitive point limits apply; windows handle larger templates/palettes/ranges without a separate 1000-item cap; application slices automatically. Keep irregular details explicit; no inferred geometry.'
+    'Absolute root, shared projection. faces or members (exclusive); members forbids fills. Translate origin + axes, last axis fastest. Order: instance, member/face, grid. faces fills cycle by original instance index; otherwise retain materials. No lighting/sorting/clipping/inference; irregulars stay explicit. Cost=root + selected instances * objects/points; omitted ranges cost zero. Primitive limits apply; windows have no 1000-item cap; apply slices automatically.'
 }

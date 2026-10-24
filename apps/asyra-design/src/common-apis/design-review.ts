@@ -78,6 +78,7 @@ const overflow = (bounds: Bounds, width: number, height: number) => ({
   bottom: Math.max(0, bounds.y + bounds.height - height)
 })
 interface NodeVerdict {
+  type?: string
   group: boolean
   constrainsChildren: boolean
   parentId?: string
@@ -148,6 +149,7 @@ export const createDesignReviewer = (
           }
         : value
     return {
+      type: node.type,
       group: node.group,
       constrainsChildren: node.constrainsChildren,
       inherited: node.inherited,
@@ -287,7 +289,7 @@ export const createDesignReviewer = (
             ) &&
             Number(computed.width) >= 0 &&
             Number(computed.height) >= 0
-          const bounds = valid
+          let bounds = valid
             ? {
                 x: Number(computed.x),
                 y: Number(computed.y),
@@ -295,7 +297,17 @@ export const createDesignReviewer = (
                 height: Number(computed.height)
               }
             : undefined
+          if (bounds && data.type === 'oval') {
+            const rotation = computed?.rotation ?? 0
+            if (typeof rotation !== 'number' || !Number.isFinite(rotation))
+              bounds = undefined
+            else
+              bounds = deriveGroupBounds([
+                { ...bounds, type: data.type, rotation }
+              ])
+          }
           node = {
+            type: data.type,
             group: data.type === EntityTypes.GROUP,
             constrainsChildren: data.type === EntityTypes.FRAME,
             parentId: parent?.id,
@@ -349,7 +361,9 @@ export const createDesignReviewer = (
             (child) =>
               !child?.bounds ||
               !child.complete ||
-              (child.rotation !== undefined && child.rotation !== 0)
+              (child.type !== 'oval' &&
+                child.rotation !== undefined &&
+                child.rotation !== 0)
           )
         ) {
           node.complete = false
@@ -374,7 +388,11 @@ export const createDesignReviewer = (
           node.parentWidth !== undefined &&
           node.parentHeight !== undefined
         ) {
-          if (node.rotation !== undefined && node.rotation !== 0) {
+          if (
+            node.type !== 'oval' &&
+            node.rotation !== undefined &&
+            node.rotation !== 0
+          ) {
             node.complete = false
             node.findings.push({ kind: 'rotated-bounds-unchecked', elementId })
           } else if (node.complete) {

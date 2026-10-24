@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  calculateEllipseBounds,
   type GeometryBoundsCarrier,
   type GeometryTransformMatrix,
   getElementGeometryLocalBounds,
@@ -108,4 +109,28 @@ describe('geometry bounds helpers', () => {
     })
     expect(toGlobal).toHaveBeenCalledTimes(4)
   })
+})
+
+it('keeps analytic ellipse bounds exact under direction reversal and rejects nonfinite inputs', () => {
+  const input = Object.freeze({
+    x: 2,
+    y: 3,
+    width: 12,
+    height: 4,
+    rotation: Math.PI / 2
+  })
+  const bounds = calculateEllipseBounds(input)
+  expect(bounds.x).toBeCloseTo(-2, 12)
+  expect(bounds.y).toBeCloseTo(3, 12)
+  expect(bounds.width).toBeCloseTo(4, 12)
+  expect(bounds.height).toBeCloseTo(12, 12)
+  expect(calculateEllipseBounds({ x: 2, y: 3, width: 12, height: 4 })).toEqual({
+    x: 2,
+    y: 3,
+    width: 12,
+    height: 4
+  })
+  expect(() =>
+    calculateEllipseBounds({ ...input, rotation: Infinity })
+  ).toThrow(/finite/)
 })

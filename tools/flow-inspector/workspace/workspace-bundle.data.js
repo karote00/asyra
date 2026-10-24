@@ -178,6 +178,7 @@
               "artifact:tool-program"
             ],
             "conditions": [
+              "Selected projected-face usage delivers explicit vertices and projected native ovals from the canonical schema/examples in the same acquisition. Preserve complete cross-field limits and recovery, and execute the actual returned example through the existing main workflow without new tools or preliminary discovery.",
               "Optional Knowledge ids scope metadata to registered roots and visible children through Runtime knowledge access; omit ids for the complete catalog. No name-prefix hierarchy, topic allowlist, eager bodies or new state. Hidden/missing roots never broaden. Selected cycles reject; unrelated graphs do not participate. Direct reads and required dependencies outside navigation remain valid. Local execution-flow validation runs existing Runtime and App consumer suites before the Inspector proof; any consumer failure blocks that local gate.",
               "Optional explicit main-workflow reviewChecks reuse review-owned capture selection and validate before writes. After successful automatic capture, compose delegates current-image binding to the existing review owner and delivers its context, exact next invocation and completion constraints. Absent selection preserves preview/defer and independent binding. No inferred scope, automatic judgment, new state, recapture or replay. Partial writes never bind later-part checks to earlier images; failed follow-ups retain receipts/images and review-only recovery. Preserve multiscale dependencies and local invalidation; reduce total selected delivery and model round trips.",
               "Compact workflow delivery projects only pure preparation work/reuse and drawing timing from known receipt locations after validation, canonical consumption and inner observations. Preserve operation results, findings, limits, image evidence, outcomes and recovery across single and parts; full bypasses projection. No arbitrary nested deletion, new state, extra calls or replay; raw diagnostics remain in existing trace records.",
@@ -487,6 +488,8 @@
               "artifact:retained-capacity-plan"
             ],
             "conditions": [
+              "Prepared oval dimensions and rotation pass through official admission without repeating world projection. The shared pure geometry owner derives current transformed bounds; world fields use local paint coordinates. Explicit vertices remain polygons.",
+              "Planar ellipse center/u/v and explicit polygon vertices are exclusive face inputs; segments is invalid. Construction prepares existing oval descriptors through shared projection once per template, preserving world extents, local paint, rotation, identities and pattern order. Public preset geometry supplies transformed bounds. Ordinary object budgets apply without sampled paths. No render access, approximation, new tool/cache or canonical writes in prepare.",
               "Budget admission precedes immutable source snapshot and compilation. Pattern face admission reads each vertex collection once to derive aggregate and largest primitive counts, independently of instance count; snapshot and template projection retain separate owners. Rejected budgets do not clone or compile. Artifact lookup does not reread caller input; preserve cancellation, isolation, release and current recovery without new cache or skipped validation.",
               "An explicit evaluation window may lower the request-local expanded-object limit to 2000; absence retains 10000 and other values reject. Existing budget inspection, preparation session and retained-source partition planning share that effective limit with delivered usage. No mutable global policy, geometry change, new store or model-controlled override; compiler/browser production ceilings and other guards remain unchanged.",
               "Pattern owns flat ordered projected-face/surface-grid members as an exclusive alternative to faces. Compile each member template once per preparation and translate ordinary vectors through existing axes/ranges. Preserve material fields, grid palettes/offsets, painter order, deterministic key mapping and parents; reject recursion, mixed forms, transforms, extent and aggregate budget excess. Preparation never executes partitions; compose owns their sequential application. No new hierarchy or cross-request cache.",
@@ -539,6 +542,12 @@
               "request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failed image acquisition remains retryable; page candidate inventory survives representative failure for explicit pagination and is superseded by a successful explicit candidate selection; original image delivery once per attachment with explicit refresh"
             ],
             "implementationBoundary": [
+              "packages/preset/src/group-bounds.ts",
+              "packages/preset/src/components/group.ts",
+              "packages/preset/src/__tests__/group-bounds.test.ts",
+              "packages/preset/src/__tests__/group-operations.test.ts",
+              "apps/asyra-design/server/design-face.ts",
+              "apps/asyra-design/server/__tests__/projected-ellipse.test.ts",
               "apps/asyra-design/server/__tests__/shared-motifs.test.ts",
               "apps/asyra-design/server/__tests__/fixtures/recorded-101/shared-motifs-20261023.json",
               "apps/asyra-design/e2e/design-construction.spec.ts",
@@ -589,6 +598,7 @@
               "apps/asyra-design/server/__tests__/design-preparation.test.ts"
             ],
             "specRefs": [
+              "#projected-ovals",
               "#shared-normalized-motifs",
               "#preparation-source-reads-and-immutable-lifetime",
               "#source-referenced-expansion-recovery",
@@ -619,6 +629,7 @@
               "artifact:execution-receipt"
             ],
             "conditions": [
+              "Original retained oval rotation is admitted; changed transforms or binding reject. Group normalization preserves world placement and material validity. Official creation and preset rendering own application, never a direct tool render call. Shared Utils analytic oval bounds feed Preset normalization and Core scene world bounds/zoom-fit; preserve ancestor translation, invalid hierarchy and other shapes.",
               "Preset projects every canonical batch synchronously to complete immutable UI snapshots. Proven fresh depth-first tail additions reuse exact current hierarchy preparation without visiting unrelated subtrees. Cold, interior, mixed or invalidated edits retain complete derivation. Preserve old snapshots, current partial results, cancellation, history and collaboration; no delayed publication, batch enlargement, second tree or replay.",
               "Resolve retained prepared artifacts into current compact delivery without repeated property-ID values or key maps. Browser admission restores only exact derivable identities once and keeps complete canonical validation before mutation. No old full-map wire branch, geometry recomputation, new cache, extra model turn or replay. Explicit full receipts, partial results, history, collaboration and persistence retain canonical identity.",
               "Interrupted prepared application captures only synchronous acknowledged members. Carry detached partial owner results through the existing Runtime failure/actionResults path; preserve cancellation and final transaction authority. Never count failed members or relabel rollback as retained writes. No replay, new History owner or persistence policy.",
@@ -688,6 +699,13 @@
               "Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only"
             ],
             "implementationBoundary": [
+              "packages/utils/src/render/geometry-bounds.ts",
+              "packages/utils/src/render/__tests__/geometry-bounds.test.ts",
+              "packages/core/src/apis/scene-bounds.ts",
+              "packages/core/src/apis/__tests__/scene-bounds.test.ts",
+              "packages/preset/src/group-bounds.ts",
+              "packages/preset/src/components/oval.ts",
+              "packages/preset/src/__tests__/oval-render-strategy.test.ts",
               "package.json",
               "apps/asyra-design/server/__tests__/local-design-tools.test.ts",
               "apps/asyra-design/src/ai/prepared-design.ts",
@@ -908,6 +926,9 @@
               "artifact:prepared-review"
             ],
             "conditions": [
+              "Current workspace overview resolves the actual scene container through Core and the existing Render snapshot owner; preserve transforms, painter order and visibility without document grouping, camera capture or new tools. Workspace detail/region and missing/empty/noncurrent targets return owner reasons, not blank proof.",
+              "Inspection owners explicitly settle completed reads even when imagery is unavailable. All failed captures are failed/completed; mixed results retain partial coverage and completed read settlement. Preserve cancellation/transport uncertainty and never normalize unknown writes. Existing image/check stores retain successes for retry, workspace subtree changes stale broad proof while unrelated local passes survive; load/switch retire old proof.",
+              "Projected oval bounds use the same public geometry as preparation and Group normalization. Do not bypass unsupported transformed containers or certify unchecked geometry.",
               "Visual receipt freshness consumes committed effective computed changes plus canonical structure and load boundaries. Raw shared source writes alone do not invalidate masked consumers. Canonical mutation-scope observation retains actual source/binding changes separately; no visual freshness rule can hide acknowledged canonical effects.",
               "Capture and binding handoffs derive acceptanceContext from the canonical current plan: one method and requirement revision plus selected criterion requirement, description and optional unit. Keep it outside executable next.arguments and at the same revision as bindings. Unbound recovery does not invent selection or readiness. No extra store, dependency, model or judgment is introduced.",
               "Canonical check receipts explicitly identify request or selected count scope without asserting visual acceptance or durability. Review capture/bind/record replies identify their operation; only committed judgments return compact exact identity, criterion/unit, origin, status and revision acknowledgements including passes. Keep committed receipts on later partial failure, preserve successful images on binding failure, and never infer readiness from capture. Optional structureAccepted is only a structural verdict; accepted remains whole-request completion.",
@@ -994,6 +1015,15 @@
               "runtime-issued visual receipt, target/subtree or local region, canonical dependency IDs and regional membership, criterion inspection bindings; request lifetime, complete immutable source recipe, explicit criterion/key coverage, deterministic findings, element count, canonical attachment context/stamp, exact requirement/reference/source assertion evidence and supplied predecessor findings/currency"
             ],
             "implementationBoundary": [
+              "packages/render/src/render.ts",
+              "packages/render/src/layers/viewport/viewport-layer.ts",
+              "packages/render/src/layers/scene/render-layer.ts",
+              "packages/render/src/__tests__/render.test.ts",
+              "apps/asyra-design/e2e/drawing-inspection.spec.ts",
+              "apps/asyra-design/server/__tests__/workspace-inspection.integration.test.ts",
+              "apps/asyra-design/server/__tests__/fixtures/recorded-101/workspace-inspection-20261024.json",
+              "apps/asyra-design/server/local-tool-invocation.ts",
+              "packages/preset/src/group-bounds.ts",
               "apps/asyra-design/src/ai/tool-contract.ts",
               "apps/asyra-design/src/ai/runtime-input.ts",
               "apps/asyra-design/server/local-image-check.ts",

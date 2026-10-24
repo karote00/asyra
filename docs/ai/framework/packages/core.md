@@ -451,6 +451,14 @@ explicit ordinary app composition.
 - Preset/default registrations are explicit via `@asyra/preset`, not implicit core side effects.
 - Load/save flow executes in documented order.
 
+## Scene world bounds
+
+`getAllElementsBounds()` uses canonical scene geometry and ancestor translation.
+Oval extents use the shared Utils analytic ellipse calculation, including local
+rotation; viewport fitting must not use the unrotated oval rectangle. Group
+snapshot dimensions do not replace descendant geometry. Invalid geometry or
+hierarchy remains unavailable. This does not add arbitrary container transforms.
+
 ## Bounded document observations
 
 - `getElementMetadata(id)` returns detached scalar identity/type/name/parent,
@@ -523,3 +531,12 @@ receipts determine actual changed scope. Existing Factory transactions own histo
 compensation and ordered delivery; document settlement owns durable acknowledgment.
 Logical paths survive owner isolation. Re-read after detachment/rebinding to refresh
 expected identities. Do not infer source editing from an element's current fan-out.
+
+### Workspace snapshots
+
+`captureElementSnapshot` accepts the actual current workspace identity for a bounded
+overview through the existing scene container. It preserves root transforms and
+order without moving canonical nodes or capturing viewport/selection overlays.
+Workspace native-resolution/region capture and an empty scene are unsupported;
+explicit element snapshots retain their existing detail behavior. Target resolution
+is local to snapshot and does not add the workspace to ordinary element lookup.

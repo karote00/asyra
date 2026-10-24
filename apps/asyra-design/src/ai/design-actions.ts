@@ -231,7 +231,7 @@ export const createPreparedDesignAction = (
         if (
           !Number.isFinite(value.x) ||
           !Number.isFinite(value.y) ||
-          ['rotation', 'skewX', 'skewY'].some(
+          ['skewX', 'skewY'].some(
             (key) => value[key] !== undefined && value[key] !== 0
           ) ||
           ['scaleX', 'scaleY'].some(
@@ -240,6 +240,13 @@ export const createPreparedDesignAction = (
         )
           throw new Error('The partition continuation placement changed.')
       }
+      if (
+        (placement.rotation ?? 0) !== 0 ||
+        (memberPlacement.rotation ?? 0) !== (anchor.rotation ?? 0)
+      )
+        throw new Error(
+          'The partition continuation rotation changed; do not replay completed work.'
+        )
       for (const axis of ['x', 'y'] as const) {
         const actual = Number(placement[axis]) + Number(memberPlacement[axis])
         const tolerance =

@@ -91,13 +91,19 @@ const sameNormalizedGeometry = (before: unknown, after: unknown): boolean => {
         !record(value) ||
         !Number.isFinite(value.x) ||
         !Number.isFinite(value.y) ||
-        ['rotation', 'skewX', 'skewY'].some(
+        ['skewX', 'skewY'].some(
           (key) => value[key] !== undefined && value[key] !== 0
         ) ||
         ['scaleX', 'scaleY'].some(
           (key) => value[key] !== undefined && value[key] !== 1
         )
     )
+  )
+    return false
+  if (
+    (original[1].rotation ?? 0) !== 0 ||
+    (current[1].rotation ?? 0) !== 0 ||
+    (original[0].rotation ?? 0) !== (current[0].rotation ?? 0)
   )
     return false
   for (const axis of ['x', 'y']) {

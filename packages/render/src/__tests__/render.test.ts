@@ -161,6 +161,58 @@ describe('Render', () => {
     expect(engine.query).toHaveBeenCalledOnce()
   })
 
+  it('captures the current workspace without changing element lookup or scene membership', async () => {
+    await render.init(800, 600, 0xffffff)
+    render.viewport.switchWorkspace({
+      label: 'sheet-a',
+      x: 20,
+      y: 30
+    } as RenderContainerData)
+    const scene = render.viewport.view.children[0] as RenderContainer
+    const child = new RenderGraphics().rect(0, 0, 80, 40)
+    scene.addChild(child)
+    Object.defineProperty(engine, 'capabilities', {
+      value: new Set([...engine.capabilities, 'snapshot'])
+    })
+    const expected = {
+      type: 'snapshot',
+      dataUrl: 'data:image/png;base64,AA==',
+      width: 80,
+      height: 40,
+      bounds: { x: 0, y: 0, width: 80, height: 40 }
+    }
+    engine.query = vi.fn(() => expected as never)
+    expect(render.viewport.getElementById('sheet-a')).toBeUndefined()
+    expect(render.captureElementSnapshot('sheet-a')).toEqual(expected)
+    expect(engine.query).toHaveBeenCalledWith({
+      type: 'snapshot',
+      object: scene.getEngineHandle(),
+      maxDimension: 1024
+    })
+    expect(scene.children).toEqual([child])
+    expect(render.viewport.getElementById('sheet-a')).toBeUndefined()
+    expect(() =>
+      render.captureElementSnapshot('sheet-a', 1024, { nativeResolution: true })
+    ).toThrow(/overview/)
+    expect(() =>
+      render.captureElementSnapshot('sheet-a', 1024, {
+        region: { x: 0, y: 0, width: 5, height: 5 }
+      })
+    ).toThrow(/overview/)
+    render.viewport.switchWorkspace({
+      label: 'sheet-b',
+      x: 0,
+      y: 0
+    } as RenderContainerData)
+    expect(() => render.captureElementSnapshot('sheet-a')).toThrow(
+      /unavailable/
+    )
+    scene.removeChild(child)
+    expect(() => render.captureElementSnapshot('sheet-b')).toThrow(/empty/)
+    expect(engine.query).toHaveBeenCalledOnce()
+    render.dispose()
+  })
+
   // Test constructor
   it('should instantiate ViewportLayer', () => {
     expect(render.viewport).toBeInstanceOf(ViewportLayerModule.ViewportLayer)

@@ -6,7 +6,9 @@
   "specPath": "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
   "testFile": "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
   "configFile": "apps/asyra-design/server/__tests__/execution-flow.config.ts",
-  "negativeCaseIds": ["compose.registered-tools"],
+  "negativeCaseIds": [
+    "compose.registered-tools"
+  ],
   "externalInputs": [
     "artifact:request-context",
     "artifact:tool-program",
@@ -34,7 +36,9 @@
     },
     {
       "name": "@asyra/core",
-      "inputs": ["src/**"],
+      "inputs": [
+        "src/**"
+      ],
       "entry": "src/index.ts"
     },
     {
@@ -50,7 +54,9 @@
     },
     {
       "name": "@asyra/design-system",
-      "inputs": ["src/**"],
+      "inputs": [
+        "src/**"
+      ],
       "entry": "src/index.tsx"
     }
   ],
@@ -119,7 +125,9 @@
           "id": "request.continuity",
           "stepId": "request",
           "testName": "execution proof validates continuity references before a successor request",
-          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation.ts"
+          ]
         },
         {
           "id": "prepare.lifetime",
@@ -191,7 +199,9 @@
           "id": "settle.partial",
           "stepId": "settle",
           "testName": "execution proof retains partial progress when a successor makes no change",
-          "implementationPaths": ["apps/asyra-design/src/ai/conversation.ts"]
+          "implementationPaths": [
+            "apps/asyra-design/src/ai/conversation.ts"
+          ]
         },
         {
           "id": "observe.accounting",
@@ -215,7 +225,9 @@
           "id": "observe.shared-invocation",
           "stepId": "observe",
           "testName": "execution proof composes a non-drawing host through shared invocation and local projection",
-          "implementationPaths": ["packages/ai-agent-runtime/src/invocation.ts"]
+          "implementationPaths": [
+            "packages/ai-agent-runtime/src/invocation.ts"
+          ]
         },
         {
           "id": "apply.region-removal",
@@ -263,7 +275,14 @@
           "stepId": "inspect",
           "testName": "execution proof composes capture and assessment without dropping unavailable targets",
           "implementationPaths": [
-            "apps/asyra-design/server/local-operation-tools.ts"
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/common-apis/inspection.ts",
+            "apps/asyra-design/src/ai/inspection.ts",
+            "apps/asyra-design/src/ai/inspection-schema.ts",
+            "apps/asyra-design/src/common-apis/inspection-evidence.ts",
+            "apps/asyra-design/server/local-design-review.ts",
+            "packages/render/src/render.ts",
+            "packages/render/src/layers/viewport/viewport-layer.ts"
           ]
         },
         {
@@ -766,18 +785,35 @@
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts"
           ]
+        },
+        {
+          "id": "prepare.sampled-ellipse",
+          "stepId": "prepare",
+          "testName": "execution proof delivers projected ovals through projection and canonical dispatch",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-face.ts",
+            "apps/asyra-design/server/design-budget.ts",
+            "apps/asyra-design/server/design-construction.ts",
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/server/design-preparation-examples.ts"
+          ]
         }
       ],
       "handoffs": [
         {
           "routeId": "capacity-plan-to-compose",
           "decision": "required",
-          "caseIds": ["compose.budget-recovery", "prepare.evaluation-budget"]
+          "caseIds": [
+            "compose.budget-recovery",
+            "prepare.evaluation-budget"
+          ]
         },
         {
           "routeId": "request-to-compose",
           "decision": "required",
-          "caseIds": ["compose.registered-tools"]
+          "caseIds": [
+            "compose.registered-tools"
+          ]
         },
         {
           "routeId": "compose-to-prepare",
@@ -792,7 +828,9 @@
         {
           "routeId": "compose-to-apply",
           "decision": "required",
-          "caseIds": ["apply.composition"]
+          "caseIds": [
+            "apply.composition"
+          ]
         },
         {
           "routeId": "prepare-to-apply",
@@ -829,32 +867,47 @@
         {
           "routeId": "apply-to-settle",
           "decision": "required",
-          "caseIds": ["settle.partial", "apply.history-intent"]
+          "caseIds": [
+            "settle.partial",
+            "apply.history-intent"
+          ]
         },
         {
           "routeId": "inspect-to-compose",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence", "inspect.current-contract"]
+          "caseIds": [
+            "inspect.current-evidence",
+            "inspect.current-contract"
+          ]
         },
         {
           "routeId": "inspect-to-settle",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence", "inspect.current-contract"]
+          "caseIds": [
+            "inspect.current-evidence",
+            "inspect.current-contract"
+          ]
         },
         {
           "routeId": "prepare-to-inspect",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         },
         {
           "routeId": "prepared-review-to-apply",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         },
         {
           "routeId": "prepared-review-to-compose",
           "decision": "required",
-          "caseIds": ["inspect.prepared-recipe"]
+          "caseIds": [
+            "inspect.prepared-recipe"
+          ]
         }
       ]
     }
@@ -869,7 +922,9 @@
     {
       "id": "omit-registered-tools",
       "title": "Omit registered tools",
-      "expectedFailedCaseIds": ["compose.registered-tools"],
+      "expectedFailedCaseIds": [
+        "compose.registered-tools"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-ai-provider.ts",
         "from": "dynamicTools: nativeDefinitions,",
@@ -879,7 +934,9 @@
     {
       "id": "misclassify-combined-tool",
       "title": "Run a canvas workflow as independent preparation",
-      "expectedFailedCaseIds": ["apply.composition"],
+      "expectedFailedCaseIds": [
+        "apply.composition"
+      ],
       "mutation": {
         "file": "apps/asyra-design/server/local-design-workflow.ts",
         "from": "executionAccess: LocalToolAccess.EXCLUSIVE,",
@@ -918,7 +975,9 @@
     {
       "id": "read-late-history-modifier",
       "title": "Read live modifier instead of issued history intent",
-      "expectedFailedCaseIds": ["apply.history-intent"],
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/features/undo-redo/index.ts",
         "from": "const direction = snapshot.detail?.historyDirection",
@@ -928,7 +987,9 @@
     {
       "id": "accept-history-during-replay",
       "title": "Accept history input while Factory is replaying",
-      "expectedFailedCaseIds": ["apply.history-intent"],
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/config/key-combinations.ts",
         "from": "if (core.isInUndoRedo()) return false",
@@ -938,7 +999,9 @@
     {
       "id": "dispatch-rejected-history",
       "title": "Dispatch rejected input into downstream consumers",
-      "expectedFailedCaseIds": ["apply.history-intent"],
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
       "mutation": {
         "file": "packages/input-system/src/input-system.ts",
         "from": "if (combo.callback?.(raw) === false) continue",
@@ -948,7 +1011,9 @@
     {
       "id": "queue-immediate-history",
       "title": "Queue an accepted history command",
-      "expectedFailedCaseIds": ["apply.history-intent"],
+      "expectedFailedCaseIds": [
+        "apply.history-intent"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/features/undo-redo/index.ts",
         "from": "executionMode: 'immediate'",
@@ -958,7 +1023,9 @@
     {
       "id": "unbounded-receipt-delivery",
       "title": "Bypass bounded receipt delivery",
-      "expectedFailedCaseIds": ["apply.bounded-receipt-delivery"],
+      "expectedFailedCaseIds": [
+        "apply.bounded-receipt-delivery"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/ai/server-action-batch-provider.ts",
         "from": "if (bytes <= AI_BATCH_MAXIMUM_REQUEST_BYTES) return body",
@@ -968,7 +1035,9 @@
     {
       "id": "drop-final-property-relationships",
       "title": "Drop final relationship arrays from property publication",
-      "expectedFailedCaseIds": ["settle.property-relationships"],
+      "expectedFailedCaseIds": [
+        "settle.property-relationships"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/collaboration/operations.ts",
         "from": "values[payload.key] = payload.after",
@@ -978,7 +1047,9 @@
     {
       "id": "retire-property-before-update",
       "title": "Retire property components before their preceding value updates",
-      "expectedFailedCaseIds": ["settle.property-relationships"],
+      "expectedFailedCaseIds": [
+        "settle.property-relationships"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/collaboration/operations.ts",
         "from": "if (isAddPropertyDelivery(delivery) || isRemovePropertyDelivery(delivery)) {\n      flush()",
@@ -988,7 +1059,9 @@
     {
       "id": "ignore-owner-unavailability",
       "title": "Promote unavailable owner results to success",
-      "expectedFailedCaseIds": ["compose.owner-result-handoff"],
+      "expectedFailedCaseIds": [
+        "compose.owner-result-handoff"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/ai/basic-api-results.ts",
         "from": "if (unavailable)\n      status =",
@@ -998,7 +1071,9 @@
     {
       "id": "lose-core-no-op",
       "title": "Treat every Core property receipt as changed",
-      "expectedFailedCaseIds": ["apply.core-owner-results"],
+      "expectedFailedCaseIds": [
+        "apply.core-owner-results"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/ai/basic-api-results.ts",
         "from": "status: result.changed ? 'complete' : 'no-change'",
@@ -1008,7 +1083,9 @@
     {
       "id": "lose-core-failure-settlement",
       "title": "Discard known Core failed-member settlement",
-      "expectedFailedCaseIds": ["apply.core-owner-results"],
+      "expectedFailedCaseIds": [
+        "apply.core-owner-results"
+      ],
       "mutation": {
         "file": "packages/ai-agent-runtime/src/runtime.ts",
         "from": "if (error.status === 'rolled-back')\n                              settlement = 'not-started'",
@@ -1018,7 +1095,9 @@
     {
       "id": "lose-non-core-no-op",
       "title": "Promote unchanged App owner receipts to completed changes",
-      "expectedFailedCaseIds": ["apply.non-core-owner-results"],
+      "expectedFailedCaseIds": [
+        "apply.non-core-owner-results"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/ai/basic-api-results.ts",
         "from": "const { acceptedIds, unavailableIds, changed } = receipt\n    let status = changed ? 'complete' : 'no-change'",
@@ -1028,7 +1107,9 @@
     {
       "id": "viewport-material-invalidation",
       "title": "Include viewport-derived coordinates in material provenance",
-      "expectedFailedCaseIds": ["apply.material-provenance"],
+      "expectedFailedCaseIds": [
+        "apply.material-provenance"
+      ],
       "mutation": {
         "file": "apps/asyra-design/src/ai/prepared-material-action.ts",
         "from": "      placements\n",

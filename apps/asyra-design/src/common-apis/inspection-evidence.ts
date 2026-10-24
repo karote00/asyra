@@ -416,12 +416,24 @@ export const createInspectionEvidence = (
       scope?: { elementId: string; region?: InspectionRegion }
     ): Promise<Record<string, unknown>> => {
       startObserving()
-      const evidence: InspectionEvidenceStamp = scope
-        ? {
-            sessionId,
-            ...dependencies.capture(scope.elementId, scope.region, revision)
-          }
-        : { sessionId, revision }
+      let evidence: InspectionEvidenceStamp
+      try {
+        evidence = scope
+          ? {
+              sessionId,
+              ...dependencies.capture(scope.elementId, scope.region, revision)
+            }
+          : { sessionId, revision }
+      } catch {
+        return {
+          available: false,
+          elementId: scope?.elementId,
+          code: 'INSPECTION_TARGET_UNAVAILABLE',
+          settlement: 'completed',
+          message:
+            'Inspection dependencies are unavailable. Select a current scene target; retain other valid images and do not replay edits.'
+        }
+      }
       let result: unknown
       try {
         result = await capture()
@@ -429,15 +441,25 @@ export const createInspectionEvidence = (
         dependencies.release(evidence)
         throw error
       }
-      if (!isCurrent(evidence))
+      if (!isCurrent(evidence)) {
+        dependencies.release(evidence)
         return {
           available: false,
+          code: 'INSPECTION_DOCUMENT_CHANGED',
+          settlement: 'completed',
           message:
-            'The document changed during inspection. Inspect the current drawing again.'
+            'The document changed during inspection. Inspect the current drawing again; retain unrelated valid images and never replay edits.'
         }
+      }
       if (!result || typeof result !== 'object' || Array.isArray(result)) {
         dependencies.release(evidence)
-        return { available: false }
+        return {
+          available: false,
+          code: 'INSPECTION_RESULT_INVALID',
+          settlement: 'completed',
+          message:
+            'Capture returned no structured image result. Retry only this inspection; do not replay edits.'
+        }
       }
       const inspected = result as Record<string, unknown>
       if (inspected.available !== true) dependencies.release(evidence)

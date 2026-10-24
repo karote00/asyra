@@ -145,6 +145,7 @@ const admitDraft = (input: unknown): DraftNode => {
     )
       return fail('unsupported component')
     const allowed = [
+      ...(type === 'oval' ? ['rotation'] : []),
       ...commonKeys.filter((key) =>
         type === 'group' ? !['width', 'height', 'fill'].includes(key) : true
       ),
@@ -265,6 +266,9 @@ const admitDraft = (input: unknown): DraftNode => {
         type === 'group' || deriveVectorDimensions
           ? 0
           : finite(source.height, 'height', Number.MIN_VALUE),
+      ...(type === 'oval' && source.rotation !== undefined
+        ? { rotation: finite(source.rotation, 'rotation', -limits.dimension) }
+        : {}),
       x: finite(source.x ?? 0, 'x', -limits.dimension),
       y: finite(source.y ?? 0, 'y', -limits.dimension),
       padding: finite(source.padding ?? 0, 'padding'),
@@ -313,8 +317,16 @@ const admitDraft = (input: unknown): DraftNode => {
       node.width = finite(bounds.width, 'group width')
       node.height = finite(bounds.height, 'group height')
       for (const child of node.children) {
-        child.x = finite(child.x - bounds.x, 'group child x')
-        child.y = finite(child.y - bounds.y, 'group child y')
+        child.x = finite(
+          child.x - bounds.x,
+          'group child x',
+          child.type === 'oval' ? -limits.dimension : 0
+        )
+        child.y = finite(
+          child.y - bounds.y,
+          'group child y',
+          child.type === 'oval' ? -limits.dimension : 0
+        )
       }
     }
     return node
@@ -448,6 +460,9 @@ function* prepareDesignSteps(
       y,
       width: node.width,
       height: node.height,
+      ...(node.type === 'oval' && node.rotation !== undefined
+        ? { rotation: node.rotation }
+        : {}),
       visible: true,
       lock: false,
       props: {
@@ -618,11 +633,21 @@ function* prepareDesignSteps(
             .slice(0, row)
             .reduce((sum, value) => sum + value + node.gap, 0)
       }
+      const extent = deriveGroupBounds([
+        {
+          x: cx,
+          y: cy,
+          width: child.width,
+          height: child.height,
+          type: child.type,
+          rotation: typeof child.rotation === 'number' ? child.rotation : 0
+        }
+      ])
       const overflow = {
-        left: Math.max(0, -cx),
-        top: Math.max(0, -cy),
-        right: Math.max(0, cx + child.width - node.width),
-        bottom: Math.max(0, cy + child.height - node.height)
+        left: Math.max(0, -extent.x),
+        top: Math.max(0, -extent.y),
+        right: Math.max(0, extent.x + extent.width - node.width),
+        bottom: Math.max(0, extent.y + extent.height - node.height)
       }
       if (
         node.type === 'frame' &&
@@ -1129,7 +1154,10 @@ export const createDesignPreparationSession = (
             anchor: {
               id: anchor.descriptor.id,
               x: Number(root.descriptor.x) + Number(anchor.descriptor.x),
-              y: Number(root.descriptor.y) + Number(anchor.descriptor.y)
+              y: Number(root.descriptor.y) + Number(anchor.descriptor.y),
+              ...(anchor.descriptor.rotation !== undefined
+                ? { rotation: Number(anchor.descriptor.rotation) }
+                : {})
             }
           },
           entries: [

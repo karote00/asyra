@@ -2177,6 +2177,33 @@ it('execution proof preserves concrete work through progress and settlement', as
 })
 
 it('execution proof composes capture and assessment without dropping unavailable targets', async () => {
+  const hadWindowForInspection = 'window' in globalThis
+  if (!hadWindowForInspection) vi.stubGlobal('window', {})
+  const { createAiInspectionAction } = await import('../../src/ai/inspection')
+  const { inspectionInputSchema } =
+    await import('../../src/ai/inspection-schema')
+  const { designActionOutcome } = await import('../../src/ai/tool-contract')
+  const { inspectionApis } = await import('../../src/common-apis/inspection')
+  const core = (await import('../../src/contexts')).default
+  const get = core.getElementData
+  try {
+    core.getElementData = () => undefined
+    const rejected = inspectionApis.inspect('missing-target')
+    expect(designActionOutcome(rejected)).toEqual({
+      status: 'failed',
+      settlement: 'completed'
+    })
+    expect(createAiInspectionAction().description).toMatch(
+      /workspace.*overview/i
+    )
+    expect(inspectionInputSchema.properties.elementId).toHaveProperty(
+      'description'
+    )
+  } finally {
+    core.getElementData = get
+    if (!hadWindowForInspection) Reflect.deleteProperty(globalThis, 'window')
+  }
+
   let detailAvailable = false
   const captures: string[] = []
   const execute = vi.fn(
@@ -8744,4 +8771,164 @@ it('execution proof retains failed image forwarding for display-only recovery', 
   expect(text.mock.calls.at(-1)?.[0].toolOutcome).toEqual(receipt.toolOutcome)
   expect(localToolResultInstructions).toContain(localToolResultRecoveryExample)
   expect(localToolResultInstructions).toContain('bindChecks')
+})
+
+it('execution proof delivers projected ovals through projection and canonical dispatch', async () => {
+  const { measureDesignBudget } = await import('../design-budget')
+  const ellipse = {
+    center: { x: 4, y: 2, z: 8 },
+    u: { x: 6, y: 1, z: 0 },
+    v: { x: 0, y: 1, z: 5 }
+  }
+  const compact = {
+    draft: {
+      type: 'group',
+      name: 'Projected details',
+      projection: {
+        azimuth: 35,
+        elevation: 25,
+        scale: 1,
+        originX: 10,
+        originY: 50
+      },
+      children: [
+        {
+          type: 'pattern',
+          key: 'repeat',
+          name: 'Details',
+          origin: { x: 0, y: 0, z: 0 },
+          axes: [{ count: 8, step: { x: 20, y: 0, z: 0 } }],
+          members: [
+            {
+              type: 'projected-face',
+              key: 'disk',
+              name: 'Disk',
+              fill: '#123456',
+              ellipse
+            }
+          ]
+        }
+      ]
+    }
+  }
+  const { ellipse: _ellipse, ...member } = compact.draft.children[0].members[0]
+  const original = {
+    draft: {
+      ...compact.draft,
+      children: [
+        {
+          ...compact.draft.children[0],
+          members: [
+            {
+              ...member,
+              vertices: Array.from({ length: 40 }, (_, i) => {
+                const angle = (2 * Math.PI * i) / 40
+                const { center, u, v } = ellipse
+                return {
+                  x: center.x + u.x * Math.cos(angle) + v.x * Math.sin(angle),
+                  y: center.y + u.y * Math.cos(angle) + v.y * Math.sin(angle),
+                  z: center.z + u.z * Math.cos(angle) + v.z * Math.sin(angle)
+                }
+              })
+            }
+          ]
+        }
+      ]
+    }
+  }
+  const fixture = {
+    compact,
+    original,
+    query: {
+      names: ['prepare_and_apply_design'],
+      view: 'usage',
+      inputScope: {
+        operation: 'draft',
+        nodeTypes: ['projected-face', 'pattern']
+      }
+    },
+    source: { selectedDeliveryBytes: 19948 }
+  }
+  const actions = [
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    },
+    {
+      name: AiActionNames.INSPECT_DRAWING,
+      description: 'Inspect',
+      inputSchema: {}
+    }
+  ]
+  const designs = createLocalDesignTools(actions)
+  const applied: PreparedDesign[] = []
+  const execute = vi.fn(async (batch: AiActionBatch) => ({
+    context: {},
+    actionResults: batch.actions.map((action) => {
+      const design = admitPreparedDesignDelivery(
+        (action.arguments as { design: unknown }).design
+      )
+      applied.push(design)
+      return {
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          status: 'complete',
+          appliedElementCount: design.entries.length,
+          compositionId: design.entries[0].descriptor.id
+        }
+      }
+    })
+  }))
+  const operations = createOperationOwner(actions, designs, execute, {
+    getNativeTools: () =>
+      main.definitions.map((d) => ({ ...d, namespace: 'design' }))
+  })
+  const main = createLocalDesignWorkflow(designs, operations),
+    signal = new AbortController().signal
+  const replies: string[] = []
+  const body = await readCompleteInformation(async (args) => {
+    const raw = await operations.call('describe_design_apis', args, signal)
+    replies.push(raw)
+    return raw
+  }, fixture.query)
+  const tool = JSON.parse(body).tools[0]
+  expect(body).toContain('ellipse')
+  expect(body).toContain('editable oval')
+  expect(replies.length).toBeLessThanOrEqual(1)
+  const bytes = replies.reduce((n, text) => n + Buffer.byteLength(text), 0)
+  expect(bytes).toBeLessThanOrEqual(fixture.source.selectedDeliveryBytes)
+  expect(
+    bytes + Buffer.byteLength(JSON.stringify(fixture.compact))
+  ).toBeLessThan(
+    fixture.source.selectedDeliveryBytes +
+      Buffer.byteLength(JSON.stringify(fixture.original))
+  )
+  const { invocation } = tool.invocationExample
+  expect(JSON.stringify(invocation.arguments)).toContain('"ellipse"')
+  const definition = main.definitions.find((d) => d.name === invocation.tool)
+  if (!definition) throw new Error('Missing workflow definition')
+  const reply = await invokeLocalTool(
+    main,
+    definition,
+    { ...invocation.arguments, inspection: 'defer' },
+    signal
+  )
+  expect(JSON.parse(reply.text).toolOutcome.settlement).toBe('completed')
+  expect(applied).toHaveLength(1)
+  expect(applied[0].entries).toHaveLength(16)
+  const input = { draft: fixture.compact.draft, inspection: 'defer' }
+  const recorded = JSON.parse(
+    (await invokeLocalTool(main, definition, input, signal)).text
+  )
+  expect(recorded.toolOutcome.settlement).toBe('completed')
+  expect(applied[1].entries).toHaveLength(9)
+  expect(
+    applied[1].entries.slice(1).every((e) => e.descriptor.type === 'oval')
+  ).toBe(true)
+  expect(measureDesignBudget(fixture.compact.draft).observed).toMatchObject({
+    expandedNodes: 9,
+    expandedPathCommands: 0
+  })
 })

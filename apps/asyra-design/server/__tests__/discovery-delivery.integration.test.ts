@@ -1,3 +1,4 @@
+import sampledEllipse from './fixtures/recorded-101/projected-ellipse-20261024.json'
 import { constructDesign } from '../design-construction'
 import { measureDesignBudget } from '../design-budget'
 import layeredPattern from './fixtures/recorded-101/layered-pattern-20261023.json'
@@ -2081,7 +2082,12 @@ it.each([false, true])(
     expect(
       pattern.members.map((member: { type: string }) => member.type)
     ).toEqual(['projected-face'])
-    expect(pattern.members[0].vertices).toEqual(grid.boundary)
+    expect(pattern.members[0].ellipse).toEqual({
+      center: { x: 5, y: 0, z: 10 },
+      u: { x: 5, y: 0, z: 0 },
+      v: { x: 0, y: 0, z: 10 }
+    })
+    expect(source.children[1].vertices).toHaveLength(3)
     expect(source.linearFields[pattern.members[0].materialField]).toBeDefined()
     expect(source.fillTemplates[source.children[1].fill.template]).toBeDefined()
     const motifs = source.motifTemplates[grid.motifs.template]
@@ -2830,7 +2836,17 @@ it.each([
             node.name = `Explicit ${child.key} ${index}`
             const field =
               member.type === 'projected-face' ? 'vertices' : 'boundary'
-            node[field] = member[field].map(
+            if (member.ellipse) {
+              const p = member.ellipse.center
+              node.ellipse.center = {
+                x: p.x + 7 + step.x * index,
+                y: p.y - 2 + step.y * index,
+                z: p.z + 5 + step.z * index
+              }
+              return node
+            }
+            const sourcePoints = member[field]
+            node[field] = sourcePoints.map(
               (point: { x: number; y: number; z: number }) => ({
                 x: point.x + 7 + step.x * index,
                 y: point.y - 2 + step.y * index,
@@ -2856,3 +2872,88 @@ it.each([
     )
   }
 )
+
+it('delivers and executes the projected oval example in one selected acquisition', async () => {
+  const run = setup()
+  const query = {
+    names: ['prepare_and_apply_design'],
+    view: 'usage',
+    inputScope: { operation: 'draft', nodeTypes: ['projected-face', 'pattern'] }
+  }
+  const response = await run.call('describe_design_apis', query)
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'ellipse-selected-delivery',
+      bytes: run.deliveries.reduce((a, b) => a + b, 0),
+      replies: run.deliveries.length
+    }) + '\n'
+  )
+  expect(run.deliveries).toHaveLength(1)
+  expect(run.deliveries.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(
+    sampledEllipse.source.selectedDeliveryBytes
+  )
+  expect(
+    run.deliveries.reduce((a, b) => a + b, 0) +
+      Buffer.byteLength(
+        JSON.stringify(sampledEllipse.compact, (key, value) =>
+          key === 'ellipse'
+            ? { center: value.center, u: value.u, v: value.v }
+            : value
+        )
+      )
+  ).toBeLessThan(
+    sampledEllipse.source.selectedDeliveryBytes +
+      sampledEllipse.source.inputBytes
+  )
+  const invocation = response.value.tools[0].invocationExample.invocation
+  expect(JSON.stringify(invocation.arguments)).toContain('"ellipse"')
+  const calls = run.replies.length
+  const outcome = await run.call(invocation.tool, {
+    ...invocation.arguments,
+    inspection: 'defer'
+  })
+  expect(outcome.value.actionResults[0].result.status).toBe('complete')
+  expect(run.replies).toHaveLength(calls + 1)
+  expect(run.execute).toHaveBeenCalledOnce()
+})
+
+it('rejects invalid projected ovals before canonical writes and executes the corrected retained geometry once', async () => {
+  const run = setup()
+  const response = await run.call('describe_design_apis', sampledEllipse.query)
+  const invocation = response.value.tools[0].invocationExample.invocation
+  const correct = { ...invocation.arguments, inspection: 'defer' }
+  for (const patch of [
+    {
+      ellipse: {
+        center: { x: 0, y: 0, z: 0 },
+        u: { x: 1, y: 0, z: 0 },
+        v: { x: 2, y: 0, z: 0 }
+      }
+    },
+    {
+      vertices: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 0 },
+        { x: 0, y: 0, z: 1 }
+      ]
+    }
+  ]) {
+    const invalid = structuredClone(correct)
+    Object.assign(invalid.draft.children[0].members[0], patch)
+    const rejected = await run.call(invocation.tool, invalid)
+    expect(rejected.success).toBe(false)
+    expect(run.created).toHaveLength(0)
+    expect(run.execute).not.toHaveBeenCalled()
+  }
+  const repaired = await run.call(invocation.tool, correct)
+  expect(repaired.value.actionResults[0].result.status).toBe('complete')
+  expect(run.execute).toHaveBeenCalledOnce()
+  const retained = structuredClone(run.created)
+  await run.call('describe_design_apis', {
+    ...sampledEllipse.query,
+    refresh: true,
+    refreshReason: 'delivery-failure'
+  })
+  expect(run.created).toEqual(retained)
+  expect(run.execute).toHaveBeenCalledOnce()
+})

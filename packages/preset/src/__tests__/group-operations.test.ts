@@ -355,7 +355,7 @@ describe('official Preset Group geometry adapters', () => {
       last: { x: 80, y: 10, width: 20, height: 15 }
     }
     const core = {
-      sceneTreeSaveData: () => structuredClone(snapshot),
+      sceneTreeSaveData: vi.fn(() => structuredClone(snapshot)),
       getElementComputedData: vi.fn(
         (elementId: keyof typeof computed) => computed[elementId]
       ),
@@ -371,6 +371,7 @@ describe('official Preset Group geometry adapters', () => {
 
     const result = groupElements(core as never, ['last', 'first'], options)
 
+    expect(core.sceneTreeSaveData).toHaveBeenCalledOnce()
     expect(core.createElementInParent).toHaveBeenCalledWith(
       {
         type: EntityTypes.GROUP,

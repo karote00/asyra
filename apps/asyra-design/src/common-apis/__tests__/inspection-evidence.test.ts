@@ -101,7 +101,11 @@ describe('canonical inspection evidence lifetime', () => {
       change()
       return { available: true, image: { dataUrl: 'mixed' } }
     })
-    expect(mixed).toMatchObject({ available: false })
+    expect(mixed).toMatchObject({
+      available: false,
+      code: 'INSPECTION_DOCUMENT_CHANGED',
+      settlement: 'completed'
+    })
     expect(mixed).not.toHaveProperty('image')
     expect(mixed).not.toHaveProperty('evidence')
     const next = await evidence.capture(() => ({ available: true }))
@@ -119,6 +123,11 @@ describe('canonical inspection evidence lifetime', () => {
     expect(
       await evidence.capture(() => ({ available: false }))
     ).not.toHaveProperty('evidence')
+    expect(await evidence.capture(() => undefined)).toMatchObject({
+      available: false,
+      code: 'INSPECTION_RESULT_INVALID',
+      settlement: 'completed'
+    })
     const unavailable = createInspectionEvidence(() => {
       throw new Error('No observer')
     })

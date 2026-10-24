@@ -295,10 +295,66 @@ const patterned = {
     }
   ]
 }
+const ovals = {
+  type: 'group',
+  name: 'Projected medallions',
+  projection: {
+    azimuth: 30,
+    elevation: 35,
+    scale: 2,
+    originX: 120,
+    originY: 200
+  },
+  linearFields: {
+    light: {
+      frame: 'world',
+      start: { x: 0, y: 0, z: 0 },
+      end: { x: 0, y: 0, z: 90 },
+      gradientStops: [
+        { position: 0, color: '#075985', opacity: 1 },
+        { position: 1, color: '#7DD3FC', opacity: 1 }
+      ]
+    }
+  },
+  children: [
+    {
+      type: 'pattern',
+      key: 'medallions',
+      name: 'Medallions',
+      origin: { x: 0, y: 0, z: 0 },
+      axes: [{ count: 3, step: { x: 105, y: 0, z: 0 } }],
+      members: [
+        {
+          type: 'projected-face',
+          key: 'rim',
+          name: 'Gold rim',
+          fill: '#F59E0B',
+          ellipse: {
+            center: { x: 35, y: 0, z: 45 },
+            u: { x: 35, y: 0, z: 0 },
+            v: { x: 8, y: 0, z: 42 }
+          }
+        },
+        {
+          type: 'projected-face',
+          key: 'inset',
+          name: 'Blue inset',
+          materialField: 'light',
+          ellipse: {
+            center: { x: 35, y: 0, z: 45 },
+            u: { x: 27, y: 0, z: 0 },
+            v: { x: 6, y: 0, z: 34 }
+          }
+        }
+      ]
+    }
+  ]
+}
 for (const [name, draft] of Object.entries({
   editorial,
   pavilion,
-  patterned
+  patterned,
+  ovals
 })) {
   test(`structured ${name} preparation renders editable geometry with one Undo`, async ({
     page
@@ -338,7 +394,8 @@ for (const [name, draft] of Object.entries({
     await page.route('**/api/ai/action-batch', (route) =>
       route.fulfill({ json: batch })
     )
-    await page.goto(createTestDocumentIdentity().url)
+    const identity = createTestDocumentIdentity()
+    await page.goto(identity.url)
     await waitForAppReady(page)
     const before = await getCoreDocumentDigest(page),
       depth = await getUndoHistoryDepth(page)
@@ -358,14 +415,18 @@ for (const [name, draft] of Object.entries({
         return {
           nodes: ids.map((id) => ({
             type: core.getElementData(id)?.type,
+            renderedRotation: core.deps.render.getElementById(id)?.rotation,
             values: core.getElementComputedData(id, [
               'x',
               'y',
               'width',
               'height',
+              'rotation',
+              'fills',
               'text'
             ])
           })),
+          sceneBounds: core.getAllElementsBounds(),
           review: await reviewDesign(ids[0])
         }
       },
@@ -373,11 +434,31 @@ for (const [name, draft] of Object.entries({
     )
     for (const [i, entry] of design.entries.entries()) {
       expect(actual.nodes[i].type).toBe(entry.descriptor.type)
+      if (entry.descriptor.type === 'oval') {
+        expect(actual.nodes[i].values?.rotation).toBe(entry.descriptor.rotation)
+        expect(actual.nodes[i].renderedRotation).toBeCloseTo(
+          Number(entry.descriptor.rotation),
+          10
+        )
+      }
       for (const property of ['width', 'height'] as const)
         expect(Number(actual.nodes[i].values?.[property])).toBeCloseTo(
           Number(entry.descriptor[property]),
           5
         )
+    }
+    if (name === 'ovals') {
+      const root = design.entries[0].descriptor
+      expect(actual.sceneBounds?.minX).toBeCloseTo(Number(root.x), 8)
+      expect(actual.sceneBounds?.minY).toBeCloseTo(Number(root.y), 8)
+      expect(actual.sceneBounds?.maxX).toBeCloseTo(
+        Number(root.x) + Number(root.width),
+        8
+      )
+      expect(actual.sceneBounds?.maxY).toBeCloseTo(
+        Number(root.y) + Number(root.height),
+        8
+      )
     }
     expect(actual.review.complete).toBe(true)
     expect(actual.review.findings).toEqual([])
@@ -393,7 +474,42 @@ for (const [name, draft] of Object.entries({
       ).selectionApis.clearSelection()
       ;(await import('../src/common-apis/viewport')).viewportApis.zoomFit()
     })
+    if (name === 'ovals') {
+      const insetIds = design.entries
+        .filter((e) => e.key.endsWith('-inset'))
+        .map((e) => e.descriptor.id)
+      await expect
+        .poll(() =>
+          page.evaluate(async (ids) => {
+            const { elementApis } =
+              await import('../src/testing/runtime-access')
+            return ids.map((id) => {
+              const bounds = elementApis.getElementClientBounds(id)
+              if (!bounds) throw new Error('Missing oval client bounds')
+              return elementApis.getRenderElementIdAtClientPos({
+                x: bounds.x + bounds.width / 2,
+                y: bounds.y + bounds.height / 2
+              })
+            })
+          }, insetIds)
+        )
+        .toEqual(insetIds)
+    }
     await page.screenshot({ path: testInfo.outputPath(`${name}.png`) })
+    if (name === 'ovals') {
+      await expect
+        .poll(() => getPersistedDocumentDigest(identity.fileId), {
+          timeout: 30000
+        })
+        .toEqual(after)
+      await page.reload()
+      await waitForAppReady(page)
+      expect(await getCoreDocumentDigest(page)).toEqual(after)
+      await page.evaluate(async () => {
+        ;(await import('../src/common-apis/viewport')).viewportApis.zoomFit()
+      })
+      await page.screenshot({ path: testInfo.outputPath('ovals-reloaded.png') })
+    }
     await testInfo.attach('construction-evidence', {
       body: JSON.stringify({
         receipt,
