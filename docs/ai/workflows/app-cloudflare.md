@@ -2,8 +2,8 @@
 
 Follow [Release Update Guidance](../framework/rules/release-update-guidance.md)
 for pending impact notes, necessary integration guides and preservation checks.
-The document check covers development declarations; publisher enforcement remains
-a separate release integration.
+The existing publication jobs enforce artifact-bound summary and guide checks.
+See that rule for candidate files, coverage gaps and per-owner recovery.
 
 Task context: standalone continuation of Cloudflare static delivery. This contract
 covers App hosting, deployment verification and the later website entry update.
@@ -59,12 +59,16 @@ policy must remain main-only. Credentials never enter the build or artifacts.
 No additional token or permission is required. The retained environment name
 also serves the primary website workflow.
 
-The helper admits only the three registry identities, creates a missing Direct
-Upload project with production branch `main`, and rejects changed identity,
-branch, subdomain or Git integration. An API error does not trigger creation.
+The helper admits only the three registry identities and rejects changed identity,
+branch, subdomain or Git integration. Its project-creation path now requires
+matching release guidance before POST; an unestablished first release is an
+explicit coverage gap, not an automatic empty baseline. An API error does not trigger creation.
 Wrangler 4.149.0 runs in an isolated npm directory, then uploads only the
 verified static directory from the same workflow run. Obsolete main revisions
-are skipped before publication. Per-App jobs report failures independently.
+are skipped before publication. Per-App jobs report failures independently. Guidance preparation reads the current
+provider deployment ID and confirms the public SHA, then admission rechecks the
+same source, downloaded bytes and online baseline immediately before upload.
+Candidate and result records are retained separately from the static output.
 
 `deployment-version.json` records the exact source SHA. Public verification
 waits for it with at most 30 read attempts (two seconds apart, ten-second request
@@ -96,5 +100,7 @@ failure is resolved. No automatic rollback or mutation retry is performed.
 Bounded readiness reads
 allow initial DNS/edge propagation, including transient 522 responses; they never
 accept an old revision or a different App.
+
+Guidance baseline authority: <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/get/" target="_blank" rel="noopener noreferrer">Cloudflare project canonical deployment</a>.
 
 API authority: <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/create/" target="_blank" rel="noopener noreferrer">Cloudflare Pages project creation</a> and <a href="https://developers.cloudflare.com/api/resources/pages/subresources/projects/methods/get/" target="_blank" rel="noopener noreferrer">project lookup</a>.

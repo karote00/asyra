@@ -101,7 +101,9 @@ export async function ensureProject(
   {
     accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
     token = process.env.CLOUDFLARE_API_TOKEN,
-    request = fetch
+    request = fetch,
+    root = path.resolve(import.meta.dirname, '..'),
+    guidanceRequest = fetch
   } = {}
 ) {
   const app = DEPLOYMENT_APPS.find((entry) => entry.id === id)
@@ -116,6 +118,14 @@ export async function ensureProject(
   const options = { headers, redirect: 'error' }
   let response = await request(`${endpoint}/${app.project}`, options)
   if (response.status === 404) {
+    const { cloudflareGuidance } =
+      await import('./cloudflare-release-guidance.mjs')
+    await cloudflareGuidance('check', id, {
+      root,
+      request: guidanceRequest,
+      accountId,
+      token
+    })
     response = await request(endpoint, {
       ...options,
       method: 'POST',

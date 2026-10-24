@@ -506,3 +506,16 @@ test('retained historical source paths do not force restored files or a new docu
   })
   assert.deepEqual(result, { mode: 'documentation-only', notes: 0 })
 })
+
+test('current release guidance routes hosted Apps and the website to Cloudflare Pages', () => {
+  const plan = fs.readFileSync(
+    path.join(root, 'docs/ai/framework/plans/release-update-guidance-plan.md'),
+    'utf8'
+  )
+  const contract = fs.readFileSync(path.join(root, rule), 'utf8')
+  assert.ok(plan.includes('.github/workflows/app-cloudflare.yml'))
+  assert.ok(plan.includes('.github/workflows/site-cloudflare.yml'))
+  assert.ok(!plan.includes('`scripts/app-release.mjs`'))
+  assert.ok(!contract.includes('(../../workflows/manual-app-release.md)'))
+  assert.ok(contract.includes('site-cloudflare.yml'))
+})

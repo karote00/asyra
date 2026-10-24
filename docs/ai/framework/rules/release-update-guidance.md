@@ -86,8 +86,9 @@ meaning. A plausible note, valid link or green test cannot replace that review.
 ## At each owner's release
 
 Follow the existing [package](../../workflows/package-release-validation.md),
-[App](../../workflows/app-cloudflare.md) or
-[Cloudflare App](../../workflows/app-cloudflare.md) workflow. Reconcile pending
+[Cloudflare App](../../workflows/app-cloudflare.md) or
+[Cloudflare website](../../../../.github/workflows/site-cloudflare.yml) workflow.
+Cloudflare Pages owns current hosted delivery. Reconcile pending
 notes against the entire actual delta since that owner's last successful release,
 including accumulated and dependency-only changes. Add omitted changes, remove
 unshipped changes and explain no-action categories. Keep shared Framework
@@ -150,3 +151,61 @@ be able to continue with that note, public guides, accessible exact source/artif
 and the current App/data, without prior chat or maintainer-only paths. Separate
 modeled fixtures, local candidate tests, registry availability and independent AI
 acceptance; preserve original evidence and label contextual reruns accurately.
+
+## Release admission commands and evidence
+
+Existing release commands now enforce the guidance boundary:
+
+- Framework: `yarn release:framework` prepares guidance with the artifact
+  handoff, then the direct tarball publisher rechecks it. The registry consumer
+  gate precedes verification recording and validation-workspace cleanup.
+- create-app: `yarn release:create-app --prod=<app>` packs the generated CLI
+  after the existing validation. Its direct publisher admits and publishes that
+  exact tarball. A published record does not claim a public consumer smoke test.
+- Cloudflare Apps and website: their existing manual workflows prepare guidance
+  after downloading the tested artifact, inside the publication job. They read
+  the provider's canonical successful production deployment and confirm its
+  public source marker. A second check precedes upload; project creation also
+  requires admission. Build jobs receive no deployment credentials.
+
+Preparation reads update notes and registered guides from the frozen Git source,
+compares each delivery's predecessor with that source, and includes old/new
+workspace dependencies and shared build inputs. The candidate contains changed
+paths, declared impacts, prerequisite package manifests, guide content hashes and
+artifact integrity. Ordinary Markdown changes retain their declaration exemption;
+referenced guide corrections are still included. Review semantic completeness:
+these checks cannot decide whether a no-action explanation is truthful.
+
+The npm predecessor is the actual `latest` registry version and integrity,
+resolved to its registry source SHA or verified local release tag. Fetch missing
+release tags before preparation. Cloudflare uses the canonical deployment ID and
+full commit SHA, not a guessed version or the latest workflow run. Missing source,
+non-ancestor history, a missing production marker/project, or an unestablished
+first-release boundary is a coverage gap and blocks delivery. Task 2 supports
+updates of existing releases; it does not invent a bootstrap baseline.
+
+Candidates live in `tmp/framework-release-guidance.json`,
+`tmp/create-app-release-evidence/<app>/guidance.json`, and
+`tmp/cloudflare-release-guidance/<app>.json`. Do not edit these to bypass a failure.
+Fix the source notes/guides, commit the correction and rerun the existing release
+preparation and validation. For a changed online baseline, prepare again against
+that baseline; an old downloaded artifact is not automatically accepted.
+The original checkout supplies Git history for npm preparation, not the isolated
+Framework validation workspace. create-app may regenerate its template as the
+existing flow requires; other tracked source must remain clean.
+
+Each direct npm publisher requires matching guidance even when invoked without
+its orchestrator. Candidate source, roots, notes, guides, artifact and baseline
+must still match before any registry write or local tag. A partial npm retry
+retains the original predecessor and skips only an identical immutable artifact
+already in the registry. Re-preparing that same candidate requires its retained
+guidance. Unknown or different bytes never count as a successful retry.
+
+Results have a candidate-specific hash in their filename and record outcomes per
+package/App. A successful upload followed by failed public verification remains
+failed with `published: true`; no whole-batch baseline is promoted. Preserve those
+records when retrying. Existing recovery and publication authorization remain in
+force. Cloudflare retains candidate/results with its workflow artifacts and links
+the summary hash in the job summary. These local/CI records are not durable public
+release history or a claim of comprehensive live acceptance. Public discovery and
+durable history remain Task 3; existing consumer adoption/data evidence is unchanged.

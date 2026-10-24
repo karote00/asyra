@@ -4,7 +4,7 @@
 
 IN PROGRESS - updated 2026-10-24. This revision replaces the Changeset-centered
 proposal with the existing App and Framework release owners. Task 1 is complete;
-Tasks 2-4 remain PLANNED. Closeout owner: the release update guidance coordinating
+Task 2 is DONE; Tasks 3-4 remain PLANNED. Closeout owner: the release update guidance coordinating
 chat.
 
 Inspected base: `5f6b0c51aa0dd3178e5a9de285b10141f4691e5e`.
@@ -37,13 +37,13 @@ authorized; this plan authorizes none of them.
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Framework packages                        | `scripts/release-framework.js`, `scripts/framework-release-artifacts.js`, `scripts/publish-framework-release.js`; exact source, package versions, tarballs and registry-only verification | Compare the previous verified release set with the frozen target; validate its summary before publication and link actual registry results afterward.                                             |
 | App templates and create-app distribution | `release-configs/`, `scripts/release-template.js`, `scripts/release-create-app.js`, `scripts/publish-create-app.js`                                                                       | Compare the same App's previously published distribution with its candidate, including Framework requirements; validate before package publication. Template generation alone is not publication. |
-| Hosted Apps                               | `scripts/app-release.mjs`, `scripts/app-release-plan.mjs`, `scripts/app-release-service.mjs`; Cloudflare workflows and `scripts/app-cloudflare.mjs`                                       | Use that App/channel's actual successful deployment and source/artifact evidence. Connect documentation checks before the existing publication boundary, preserving the provider workflow.        |
+| Hosted Apps                               | `.github/workflows/app-cloudflare.yml`, `.github/workflows/site-cloudflare.yml` and `scripts/app-cloudflare.mjs`                                                                          | Use that App/channel's actual successful deployment and source/artifact evidence. Connect documentation checks before the existing publication boundary, preserving the provider workflow.        |
 | Public documentation                      | `docs/public/updates/index.md`, public content manifest/generator, website and `llms.txt`                                                                                                 | Expose release summaries, necessary guides and applicable history through existing entries.                                                                                                       |
 
-The Vercel release planner already compares each App's successful baseline SHA
-against the dispatch SHA with old/new dependency roots. Cloudflare delivery
-records the deployed App/source SHA, but that marker alone is not a complete
-historical release inventory. Recover the previous successful baseline from the
+Hosted Apps and the website now use Cloudflare Pages. Retained Vercel scripts
+and workflows are outside this plan's integration scope; their presence does not
+make them current deployment owners. Cloudflare delivery records the deployed
+source SHA, but that marker alone is not a complete historical release inventory. Recover the previous successful baseline from the
 existing release workflow/provider evidence; if it cannot be established, report
 a coverage gap or explicitly reviewed first-release boundary. Never invent it.
 
@@ -225,7 +225,12 @@ PLANNED. No remote push or publication occurred.
 
 ## Task 2 - Connect guidance to each existing release boundary
 
-Status: PLANNED. Prerequisite: Task 1.
+Status: DONE - 2026-10-24. Prerequisite: Task 1 is complete.
+The owner confirmed Cloudflare Pages as the only current hosted deployment
+provider. Integrate both App and website workflows; no Vercel work or change to
+publication providers is authorized. Framework/create-app npm routes remain
+separate.
+
 Add summary preparation, validation and result references at the owners in the
 integration table. Keep each owner's previous successful baseline authoritative.
 Reuse `scripts/release-records.js` where applicable, but do not assume it already
@@ -243,6 +248,91 @@ summary/guide or stale evidence stops the actual publisher before mutation;
 independent App baselines, shared Framework changes, dependency-only releases,
 no-action releases, reverts, retries and partial failures are represented correctly.
 Use existing publisher/provider stubs for tests; do not publish to prove the gate.
+
+### Task 2 execution contract
+
+The current architecture is `tools/flow-inspector/inspectors/release-update-guidance.flow.json`.
+It connects preparation, admission and per-owner results. Existing Framework
+and CLI publication Inspectors retain their release-specific obligations.
+
+Step card - `prepare`: the shared release guidance owner consumes exact Git
+snapshots, the actual online predecessor for each delivery, declared owner roots,
+validated artifact checksums and current update notes. It produces a candidate
+summary and referenced guide content hashes. Compare old/new workspace dependency
+closures and shared build inputs; use the existing declaration validator. Missing
+history, uncovered changes and invalid guides stop preparation. No Changeset
+coverage oracle, persistent cache, version change or public history is introduced.
+Boundary: the shared guidance module, existing artifact preparation owners,
+their tests and release documentation. Gate: accumulated changes, independent
+baselines, old/new dependencies, no-action, revert and missing-guide fixtures.
+
+Step card - `admit`: existing npm/Cloudflare publishers consume that candidate,
+current source/artifacts and a fresh online baseline. Reject missing or stale
+inputs before any publish, project creation or tag. Exact npm artifacts already
+published in a partial attempt may be skipped only when registry integrity
+matches; do not replace the frozen predecessor. Boundary: publisher scripts,
+Cloudflare workflows and their tests. Gate: direct entrypoints, changed baseline,
+changed artifact/guide/source and zero-mutation rejection cases. No provider,
+permissions, trigger, version policy or authorization changes.
+
+Step card - `record`: existing result owners retain summary references and each
+successful publication separately from verification. Failure never promotes a
+whole batch. Boundary: the same publisher/workflow result paths and tests. Gate:
+partial failure, retry and public verification failures. Candidate/CI evidence is
+not durable public history; that remains Task 3. No original Text evidence is edited.
+
+Design review: Cloudflare publishes the same downloaded static files; npm must
+publish the same validated tarball. create-app therefore needs a packed artifact
+handoff before its existing publisher. Framework history comparisons must use the
+original checkout, not the shallow isolated validation workspace. Existing exact
+version/provider checks and manual publication authorization stay in place.
+
+### Task 2 completion record - 2026-10-24
+
+Completed on `codex/release-update-guidance-plan` from Task 1 base `246690fbd`.
+The common release owner prepares summaries from exact source deltas, old/new
+workspace dependencies and existing update notes. It records prerequisite
+manifests, guide hashes, per-delivery predecessors and candidate artifact identity.
+The existing npm and Cloudflare publication paths require matching evidence
+before mutation, including direct npm entrypoints and project creation.
+
+Framework reuses its validated tarball handoff; create-app now packs and publishes
+one identical candidate. Cloudflare reads its canonical production deployment ID
+and source marker in the existing credential-bearing publication job, then
+rechecks the downloaded artifact before upload. Existing providers, manual
+triggers, credentials, permissions, timeouts and recovery ownership are preserved.
+Only publication checkouts fetch the Git history needed for baseline comparison.
+No Vercel release path was changed or used.
+
+Partial npm publication records individual outcomes and retains the original
+predecessor on an exact-artifact retry. Framework verification recording requires
+matching registry-consumer evidence. Cloudflare retains published and verified
+outcomes separately, including upload success followed by verification failure.
+Candidate-specific result filenames preserve preceding attempts. Missing history,
+non-ancestor baselines and unestablished first releases are explicit coverage gaps.
+
+Validation: 101 release-owner, publisher, artifact, workflow and Inspector tests
+passed; 126 policy, declaration, test-registration, naming and Cloudflare tests
+passed (209 distinct cases across the two selections). Cases include omitted
+notes, missing/corrected guides, independent baselines, old/new dependency closure,
+no-action and reverted changes, stale source/artifacts/baselines, zero-mutation
+rejection, partial failure/retry and per-owner result status. Snapshot/delta read
+counts are shared within one preparation and refreshed for the next. The original
+missing-guidance direct-publisher regression failed before implementation.
+
+Scoped ESLint, naming, public generation/check/validation and whitespace checks
+passed. Public generation changes only the root manifest source hash (46 pages,
+19 package guides, 314 local links and 160 API references remain valid). The
+release checks are in the permanent root/CI test inventory. Workflow test scratch
+files use ignored project `tmp/` so concurrent naming checks cannot read deleted
+fixtures. The current Flow Inspector document records these local checks;
+publication was represented by provider/registry stubs, never performed.
+
+The prior Text guides, consumer fixtures and original independent acceptance
+records remain unchanged. No runtime, consumer data, version, remote push or
+publication changed. Task 3 durable public history/discovery and Task 4 consumer
+preservation exercises remain planned; temporary release evidence is not their
+completion or a claim of comprehensive online release acceptance.
 
 ## Task 3 - Expose release history and applicable guides
 
@@ -316,7 +406,8 @@ flow; unverified old releases remain explicitly outside the supported window.
 - `docs/public/build/persistence-migration.md`
 - `docs/ai/workflows/agent-task.md`
 - `docs/ai/workflows/package-release-validation.md`
-- `docs/ai/workflows/manual-app-release.md`
+- `.github/workflows/app-cloudflare.yml`
+- `.github/workflows/site-cloudflare.yml`
 - `docs/ai/workflows/app-cloudflare.md`
 - `docs/ai/framework/rules/release-version-topology.md`
 - `scripts/release-framework.js`
@@ -325,6 +416,4 @@ flow; unverified old releases remain explicitly outside the supported window.
 - `scripts/release-template.js`
 - `scripts/release-create-app.js`
 - `scripts/publish-create-app.js`
-- `scripts/app-release-plan.mjs`
-- `scripts/app-release-service.mjs`
 - `scripts/app-cloudflare.mjs`

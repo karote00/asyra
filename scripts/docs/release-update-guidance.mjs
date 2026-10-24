@@ -17,7 +17,7 @@ function requireValue(condition, message) {
   if (!condition) throw new Error(message)
 }
 
-function readNotes(source = '') {
+export function readNotes(source = '') {
   const notes = []
   for (const match of source.matchAll(
     /^```update-note\s*\n([\s\S]*?)^```\s*$/gm

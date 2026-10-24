@@ -83,3 +83,58 @@ These development notes are not published release summaries.
   "reason": "Development document validation only; preserve Markdown exemptions and leave consumer runtime, data and publishers unchanged."
 }
 ```
+
+```update-note
+{
+  "change": "cloudflare-release-guidance-routing",
+  "owner": "Repository development tooling",
+  "summary": "Route hosted release guidance to the current Cloudflare Pages App and website workflows.",
+  "sources": [
+    "scripts/docs/__tests__/release-update-guidance.test.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Correct project workflow routing only; publication, providers, runtime and consumer data remain unchanged."
+}
+```
+
+```update-note
+{
+  "change": "release-guidance-admission",
+  "owner": "Repository release tooling",
+  "summary": "Require artifact-bound update summaries and valid integration guides in the existing npm and Cloudflare Pages release flows.",
+  "sources": [
+    ".github/__tests__/app-cloudflare.test.mjs",
+    ".github/__tests__/site-cloudflare.test.mjs",
+    ".github/workflows/app-cloudflare.yml",
+    ".github/workflows/site-cloudflare.yml",
+    "docs/public/generated/source-map.json",
+    "package.json",
+    "scripts/__tests__/app-cloudflare.test.mjs",
+    "scripts/__tests__/fixtures/release-guidance.mjs",
+    "scripts/__tests__/framework-release-publisher.test.mjs",
+    "scripts/__tests__/release-automation.test.mjs",
+    "scripts/__tests__/release-guidance.test.mjs",
+    "scripts/app-cloudflare.mjs",
+    "scripts/ci-relationships.json",
+    "scripts/cloudflare-release-guidance.mjs",
+    "scripts/create-app-release-artifacts.mjs",
+    "scripts/docs/__tests__/release-update-guidance.test.mjs",
+    "scripts/docs/release-update-guidance.mjs",
+    "scripts/framework-release-artifacts.js",
+    "scripts/publish-create-app.js",
+    "scripts/publish-framework-release.js",
+    "scripts/release-create-app.js",
+    "scripts/release-framework.js",
+    "scripts/release-guidance.mjs",
+    "tools/flow-inspector/inspectors/__tests__/framework-package-release-flow-inspector.contract.test.cjs",
+    "tools/flow-inspector/inspectors/create-asyra-design-app-release-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/framework-package-release-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/framework-release-readiness-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/release-update-guidance.flow.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Repository release tooling only; consumer runtime, App customizations and stored data remain unchanged. Maintainers use the existing release entries and the documented guidance/recovery checks."
+}
+```

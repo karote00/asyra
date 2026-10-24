@@ -87,7 +87,10 @@
       purpose:
         'Build every frozen release package and create reviewable tarballs in an ignored project-local artifact area without mutating source manifests or publishing.',
       inputs: ['artifact:release-source-set'],
-      outputs: ['artifact:packed-package-set', 'artifact:package-build-finding'],
+      outputs: [
+        'artifact:packed-package-set',
+        'artifact:package-build-finding'
+      ],
       conditions: [
         'Every release package is built from the frozen baseline and packed exactly once with publishable internal dependency ranges.',
         'Tarball paths are project-local, ignored, deterministic by package name and version, and never committed.',
@@ -363,6 +366,7 @@
         'artifact:release-docs-finding'
       ],
       conditions: [
+        'Release preparation reconciles actual owner deltas with update notes and hashes required guides; publisher admission rechecks the frozen candidate.',
         'Every public import and documented command resolves against the validated package or generated-template route.',
         'Supported Node, Yarn, TypeScript, React, browser, 2D, and CUSTOM ranges are explicit; unavailable 3D/HYBRID and Roadmap behavior remain unavailable.',
         'Deprecated and compatibility-only surfaces name their replacement and migration window without adding new runtime ownership.',
@@ -386,6 +390,8 @@
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'scripts/release-guidance.mjs',
+        'scripts/docs/release-update-guidance.mjs',
         'README.md',
         'CHANGELOG.md',
         'RELEASE_NOTES.md',
@@ -414,10 +420,7 @@
       purpose:
         'Confirm one semantic-version candidate, aligned package versions and internal ranges, changelog inputs, and the separate actual-release-cut snapshot procedure without performing a release.',
       inputs: ['artifact:release-source-set'],
-      outputs: [
-        'artifact:versioning-evidence',
-        'artifact:versioning-finding'
-      ],
+      outputs: ['artifact:versioning-evidence', 'artifact:versioning-finding'],
       conditions: [
         'Every published package has one intentional version and all packed internal ranges resolve to the matching tarball set.',
         'Changeset, changelog, migration/deprecation, and release-note inputs are internally consistent for review.',
@@ -626,7 +629,8 @@
       from: 'verify-clean-consumer',
       to: 'decide-release-readiness',
       kind: 'failure',
-      predicate: 'Install, compile, import, runtime, or inertness proof failed.',
+      predicate:
+        'Install, compile, import, runtime, or inertness proof failed.',
       producedArtifacts: ['artifact:clean-consumer-finding']
     },
     {
@@ -751,10 +755,7 @@
       id: 'artifact:validated-package-set',
       ownerStepId: 'validate-package-artifacts',
       channel: 'detached artifact validation',
-      consumerStepIds: [
-        'verify-clean-consumer',
-        'run-formal-release-gates'
-      ]
+      consumerStepIds: ['verify-clean-consumer', 'run-formal-release-gates']
     },
     {
       id: 'artifact:package-validation-finding',
@@ -766,10 +767,7 @@
       id: 'artifact:clean-consumer-evidence',
       ownerStepId: 'verify-clean-consumer',
       channel: 'packed-only consumer result',
-      consumerStepIds: [
-        'run-formal-release-gates',
-        'decide-release-readiness'
-      ]
+      consumerStepIds: ['run-formal-release-gates', 'decide-release-readiness']
     },
     {
       id: 'artifact:clean-consumer-finding',
@@ -781,10 +779,7 @@
       id: 'artifact:generated-template-evidence',
       ownerStepId: 'verify-generated-template',
       channel: 'official generator result',
-      consumerStepIds: [
-        'run-formal-release-gates',
-        'decide-release-readiness'
-      ]
+      consumerStepIds: ['run-formal-release-gates', 'decide-release-readiness']
     },
     {
       id: 'artifact:generated-template-finding',

@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+import {
+  readGuidance,
+  admitGuidance,
+  registryCurrent,
+  recordGuidanceResult
+} from './release-guidance.mjs'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -121,13 +127,48 @@ export const publishFrameworkReleasePackages = ({
     throw new Error('Framework source commit changed after artifact validation')
   }
 
+  const guidance = readGuidance(
+    path.join(resolvedRoot, 'tmp/framework-release-guidance.json')
+  )
+  const deliveries = ordered.map((pkg) => ({
+    id: pkg.name,
+    roots: [`packages/${pkg.name.slice('@asyra/'.length)}`],
+    artifact: {
+      id: pkg.name,
+      version: pkg.version,
+      integrity: pkg.artifact.integrity
+    }
+  }))
+  const resultFile = path.join(
+    resolvedRoot,
+    'tmp/framework-release-guidance-result.json'
+  )
+
   const registryVersions = new Map()
   for (const pkg of ordered) {
     const spec = `${pkg.name}@${pkg.version}`
     try {
-      const version = runCommand('npm', ['view', spec, 'version'], {
-        cwd: resolvedRoot
-      }).trim()
+      const record = JSON.parse(
+        runCommand(
+          'npm',
+          [
+            'view',
+            spec,
+            'version',
+            'dist.integrity',
+            '--json',
+            '--cache',
+            path.join(resolvedRoot, 'tmp/npm-cache')
+          ],
+          { cwd: resolvedRoot }
+        )
+      )
+      const version = record.version
+      if (
+        (record['dist.integrity'] ?? record.dist?.integrity) !==
+        pkg.artifact.integrity
+      )
+        throw new Error(`Registry artifact differs for ${spec}`)
       if (version !== pkg.version) {
         throw new Error(
           `Registry returned unexpected version ${version} for ${spec}`
@@ -157,19 +198,53 @@ export const publishFrameworkReleasePackages = ({
     tagBySpec.set(spec, spec)
   }
 
+  admitGuidance({
+    root: resolvedRoot,
+    owner: 'framework',
+    sourceSha: sourceCommitSha,
+    deliveries,
+    evidence: guidance,
+    current: deliveries.map(({ artifact }) =>
+      registryCurrent(resolvedRoot, artifact, runCommand)
+    )
+  })
   const published = []
   const skipped = ordered.filter((pkg) =>
     registryVersions.get(`${pkg.name}@${pkg.version}`)
   )
+  for (const pkg of skipped)
+    recordGuidanceResult(resultFile, guidance, pkg.name, 'skipped-existing', {
+      version: pkg.version
+    })
   for (const pkg of publishCandidates) {
     const spec = `${pkg.name}@${pkg.version}`
-    runCommand(
-      'npm',
-      ['publish', pkg.artifact.tarballPath, '--access', 'public'],
-      {
-        cwd: resolvedRoot
-      }
-    )
+    try {
+      runCommand(
+        'npm',
+        [
+          'publish',
+          pkg.artifact.tarballPath,
+          '--access',
+          'public',
+          '--cache',
+          path.join(resolvedRoot, 'tmp/npm-cache')
+        ],
+        {
+          cwd: resolvedRoot
+        }
+      )
+    } catch (error) {
+      recordGuidanceResult(resultFile, guidance, pkg.name, 'failed', {
+        version: pkg.version,
+        phase: 'publish',
+        availability: 'unknown; recheck registry before retry'
+      })
+      throw error
+    }
+    recordGuidanceResult(resultFile, guidance, pkg.name, 'published', {
+      version: pkg.version,
+      integrity: pkg.artifact.integrity
+    })
     runCommand('git', ['tag', tagBySpec.get(spec), sourceCommitSha], {
       cwd: resolvedRoot
     })

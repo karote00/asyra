@@ -3,14 +3,17 @@
 ;(function () {
   'use strict'
 
-  const specPath =
-    'docs/ai/workflows/package-release-validation.md'
+  const specPath = 'docs/ai/workflows/package-release-validation.md'
   const inspectorPath =
     'tools/flow-inspector/inspectors/framework-package-release-flow-inspector.data.cjs'
 
   const lanes = [
     { id: 'registry', title: 'Registry History', order: 1 },
-    { id: 'versioning', title: 'Exceptional Version Materialization', order: 2 },
+    {
+      id: 'versioning',
+      title: 'Exceptional Version Materialization',
+      order: 2
+    },
     { id: 'artifacts', title: 'Artifact and Merge Proof', order: 3 },
     { id: 'publication', title: 'Public Registry Release', order: 4 },
     { id: 'decision', title: 'Recovery and Final Decision', order: 5 }
@@ -216,7 +219,10 @@
       purpose:
         'Run yarn changeset version once so the reviewed Framework selection advances to tool-derived manifest versions with generated changelogs and synchronized internal version records.',
       inputs: ['artifact:reviewed-changeset-plan'],
-      outputs: ['artifact:versioned-framework-source', 'artifact:version-finding'],
+      outputs: [
+        'artifact:versioned-framework-source',
+        'artifact:version-finding'
+      ],
       conditions: [
         'All and only the reviewed fixed-allowlist package versions change to the values produced by Changesets.',
         'Root asyra, private @asyra/asyra-design, and create-app remain at their pre-release versions.',
@@ -316,10 +322,7 @@
       purpose:
         'Require a clean exact source commit on main or a non-main feature branch whose 19-package contents and candidate checksums reproduce the validated artifacts before publication.',
       inputs: ['artifact:validated-framework-artifacts'],
-      outputs: [
-        'artifact:publication-source',
-        'artifact:source-finding'
-      ],
+      outputs: ['artifact:publication-source', 'artifact:source-finding'],
       conditions: [
         'The PR diff contains only the authorized release contract, Inspector, generator, version, changelog, record, and direct release-test changes.',
         'CI, E2E, Framework readiness, and the scoped release gates pass for the selected source commit.',
@@ -350,19 +353,17 @@
         'tmp/framework-release-artifacts',
         'tmp/framework-release-evidence'
       ],
-      specRefs: [
-        '#release-validation-and-publication-boundary'
-      ],
+      specRefs: ['#release-validation-and-publication-boundary'],
       failureOwnerStepId: 'accept-publication-source'
     },
     {
       id: 'publish-framework-packages',
       order: 8,
       laneId: 'publication',
-      title: 'Publish the reviewed Framework selection through Changesets',
-      ownerPackage: 'Changesets multi-package publication owner',
+      title: 'Publish validated Framework tarballs',
+      ownerPackage: 'Framework npm publication owner',
       purpose:
-        'After the irreversible checkpoint is accepted for the clean exact source commit, assert that the unpublished selection is exactly the fixed 19-package allowlist and run yarn changeset publish once so Changesets publishes and tags successful packages.',
+        'After the irreversible checkpoint is accepted for the clean exact source commit, assert that the unpublished selection is exactly the fixed 19-package allowlist and publish only validated tarballs and tag successful packages.',
       inputs: [
         'artifact:publication-source',
         'validated 19-package publication manifest',
@@ -373,27 +374,28 @@
         'artifact:publication-finding'
       ],
       conditions: [
-        'Workspace-only internal ranges are converted to each exact validated manifest version before Changesets runs.',
-        'Restore development workspace ranges after publication on success or failure.',
+        'Release guidance must match the frozen predecessor, source, tarballs and guide hashes before the first mutation.',
+        'Packed artifacts contain the exact validated publishable dependency ranges.',
+        'Source manifests remain unchanged during publication.',
         'The registry-diff selection is exactly the fixed 19-package allowlist before the first irreversible npm write.',
-        'Changesets creates one Git tag for every successful package publication; no tag is created for a failed package.',
+        'The publisher creates one Git tag for every successful package publication; no tag is created for a failed package.',
         'Keep successful package tags local and unpushed until all 19 public registry records verify.',
         'create-asyra-design-app, root asyra, and private @asyra/asyra-design are excluded.',
-        'Cleanup owner: publish-framework-packages owns the transient publishable range conversion, restoration, and successful local release-tag state; npm owns immutable successful publications.'
+        'Cleanup owner: publish-framework-packages owns the validated artifact selection and successful local release-tag state; npm owns immutable successful publications.'
       ],
       bypasses: [
         'Missing authorization, invalid npm identity/scope, unexpected publish selection, dirty source, or range mismatch produces artifact:publication-finding before publication.',
-        'A Changesets partial failure records the successful and unpublished package subsets without overwriting any success.'
+        'A partial publication failure records the successful and unpublished package subsets without overwriting any success.'
       ],
       allowedContributors: [
         'artifact:publication-source',
         'validated publication manifest and checksums',
         'existing workspace-version owner',
-        'Changesets publish command',
+        'Validated tarball publisher',
         'authorized npm identity'
       ],
       forbiddenContributors: [
-        'manual npm publish loop',
+        'unvalidated directory publication',
         'remote tag push before complete registry verification',
         'unvalidated package or version',
         'create-app, root, or private app publication',
@@ -406,7 +408,9 @@
         'scripts/__tests__/workspace-automation.test.mjs',
         '.changeset/config.json',
         'packages/*/package.json',
-        'yarn changeset publish'
+        'scripts/publish-framework-release.js',
+        'scripts/framework-release-artifacts.js',
+        'scripts/release-guidance.mjs'
       ],
       specRefs: ['#release-validation-and-publication-boundary'],
       failureOwnerStepId: 'publish-framework-packages'
@@ -469,7 +473,8 @@
       order: 10,
       laneId: 'decision',
       title: 'Prove registry-only use or own recovery',
-      ownerPackage: 'Registry-only consumer and partial-publication recovery owner',
+      ownerPackage:
+        'Registry-only consumer and partial-publication recovery owner',
       purpose:
         'On complete publication, run the full registry-only Framework consumer; on partial publication, preserve successful immutable versions and select same-version resume or one complete-suite patch recovery without a mixed final version.',
       inputs: [
@@ -587,9 +592,7 @@
         'scripts/__tests__/release-records.test.mjs',
         'tmp/framework-release-evidence'
       ],
-      specRefs: [
-        '#release-validation-and-publication-boundary'
-      ],
+      specRefs: ['#release-validation-and-publication-boundary'],
       failureOwnerStepId: 'decide-release'
     }
   ]
@@ -624,7 +627,8 @@
       from: 'review-scoped-changesets',
       to: 'materialize-framework-version',
       kind: 'artifact',
-      predicate: 'The scoped Changeset plan contains only authorized Framework entries and release types.',
+      predicate:
+        'The scoped Changeset plan contains only authorized Framework entries and release types.',
       producedArtifacts: ['artifact:reviewed-changeset-plan']
     },
     {
@@ -632,7 +636,8 @@
       from: 'materialize-framework-version',
       to: 'validate-framework-artifacts',
       kind: 'artifact',
-      predicate: 'The materialized manifest diff matches the reviewed Changesets plan.',
+      predicate:
+        'The materialized manifest diff matches the reviewed Changesets plan.',
       producedArtifacts: ['artifact:versioned-framework-source']
     },
     {
@@ -648,7 +653,8 @@
       from: 'accept-publication-source',
       to: 'publish-framework-packages',
       kind: 'artifact',
-      predicate: 'The clean exact source commit reproduces the validated candidate.',
+      predicate:
+        'The clean exact source commit reproduces the validated candidate.',
       producedArtifacts: ['artifact:publication-source']
     },
     {
@@ -664,7 +670,8 @@
       from: 'publish-framework-packages',
       to: 'prove-registry-consumer-and-recover',
       kind: 'evidence',
-      predicate: 'The exact successful and unsuccessful package subsets are known.',
+      predicate:
+        'The exact successful and unsuccessful package subsets are known.',
       producedArtifacts: ['artifact:changesets-publication-result']
     },
     {
@@ -725,10 +732,7 @@
       ['classify-historical-baseline', 'artifact:historical-baseline-finding'],
       ['resolve-version-topology', 'artifact:version-topology'],
       ['resolve-version-topology', 'artifact:baseline-finding'],
-      [
-        'review-scoped-changesets',
-        'artifact:reviewed-changeset-plan'
-      ],
+      ['review-scoped-changesets', 'artifact:reviewed-changeset-plan'],
       ['review-scoped-changesets', 'artifact:changeset-finding'],
       ['materialize-framework-version', 'artifact:versioned-framework-source'],
       ['materialize-framework-version', 'artifact:version-finding'],
@@ -737,20 +741,11 @@
         'artifact:validated-framework-artifacts'
       ],
       ['validate-framework-artifacts', 'artifact:artifact-validation-finding'],
-      [
-        'accept-publication-source',
-        'artifact:publication-source'
-      ],
+      ['accept-publication-source', 'artifact:publication-source'],
       ['accept-publication-source', 'artifact:source-finding'],
-      [
-        'publish-framework-packages',
-        'artifact:changesets-publication-result'
-      ],
+      ['publish-framework-packages', 'artifact:changesets-publication-result'],
       ['publish-framework-packages', 'artifact:publication-finding'],
-      [
-        'verify-public-registry',
-        'artifact:public-registry-evidence'
-      ],
+      ['verify-public-registry', 'artifact:public-registry-evidence'],
       ['verify-public-registry', 'artifact:registry-verification-finding']
     ].map(([from, artifactId]) => ({
       id: `${from}-${artifactId.replace('artifact:', '')}-to-decision`,
@@ -864,7 +859,7 @@
     {
       id: 'artifact:changesets-publication-result',
       ownerStepId: 'publish-framework-packages',
-      channel: 'Changesets publication result',
+      channel: 'Validated tarball publication result',
       consumerStepIds: [
         'verify-public-registry',
         'prove-registry-consumer-and-recover',
@@ -942,10 +937,7 @@
       title: 'Historical registry state is evidence, not a publication target',
       statement:
         'The current run records old public package versions and their source-generation differences without reconstructing, overwriting, or publishing a missing historical version from newer source.',
-      stepIds: [
-        'inventory-public-registry',
-        'classify-historical-baseline'
-      ],
+      stepIds: ['inventory-public-registry', 'classify-historical-baseline'],
       artifactIds: [
         'artifact:registry-inventory',
         'artifact:historical-baseline-classification'
@@ -967,7 +959,10 @@
         'artifact:reviewed-changeset-plan',
         'artifact:versioned-framework-source'
       ],
-      specRefs: ['#release-version-topology', '#release-validation-and-publication-boundary']
+      specRefs: [
+        '#release-version-topology',
+        '#release-validation-and-publication-boundary'
+      ]
     },
     {
       id: 'immutable-publication-invariant',
@@ -995,10 +990,7 @@
         'All fixed-allowlist names are queried directly and current present or missing registry records are captured.',
         'Expected source-generation differences are retained as history without publishing any old version from newer source.'
       ],
-      stepIds: [
-        'inventory-public-registry',
-        'classify-historical-baseline'
-      ],
+      stepIds: ['inventory-public-registry', 'classify-historical-baseline'],
       specRefs: ['#release-validation-and-publication-boundary']
     },
     {
@@ -1022,10 +1014,7 @@
         'All 19 artifacts and formal gates pass under Node.js 24.',
         'A clean exact source commit on main or a feature branch reproduces the candidate before publication.'
       ],
-      stepIds: [
-        'validate-framework-artifacts',
-        'accept-publication-source'
-      ],
+      stepIds: ['validate-framework-artifacts', 'accept-publication-source'],
       specRefs: [
         '#script-tests',
         '#release-validation-and-publication-boundary'
@@ -1049,10 +1038,7 @@
         'A partial publication follows immutable same-version resume or one complete all-package patch recovery and produces BLOCKED until complete.',
         'The final record emits only READY or BLOCKED and waits for user acceptance before closeout.'
       ],
-      stepIds: [
-        'prove-registry-consumer-and-recover',
-        'decide-release'
-      ],
+      stepIds: ['prove-registry-consumer-and-recover', 'decide-release'],
       specRefs: [
         '#script-tests',
         '#release-validation-and-publication-boundary'

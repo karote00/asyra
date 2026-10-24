@@ -133,11 +133,11 @@
       ownerPackage: 'Official create-app template generator',
       purpose:
         'Run the official release:app --prod=asyra-design transformation from canonical app source and deterministically exclude repository-only or runtime artifacts.',
-      inputs: ['artifact:canonical-app-source', 'official generator configuration'],
-      outputs: [
-        'artifact:generated-template',
-        'artifact:generator-finding'
+      inputs: [
+        'artifact:canonical-app-source',
+        'official generator configuration'
       ],
+      outputs: ['artifact:generated-template', 'artifact:generator-finding'],
       conditions: [
         'The generator rewrites @asyra workspace dependencies to the current registry-verified public manifest versions and sets the approved Node.js and Yarn contracts.',
         'The generator copies the canonical apps/asyra-design README and environment example, applying only the deterministic standalone link rewrite required by the generated project location.',
@@ -488,6 +488,7 @@
         'artifact:cli-publication-finding'
       ],
       conditions: [
+        'The current release guidance admission must match the predecessor, exact packed tarball, source and guide hashes before publication.',
         'The release source is a clean exact source commit and matches the validated candidate checksum and content.',
         'Publication may run from main or a non-main feature branch without making PR merge a prerequisite or a side effect.',
         'Root remains unchanged; private app and create-app template identity are verified; and selected CLI target is explicit before publication.',
@@ -512,6 +513,9 @@
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'scripts/publish-create-app.js',
+        'scripts/create-app-release-artifacts.mjs',
+        'scripts/release-guidance.mjs',
         'create-app/asyra-design',
         'docs/ai/framework/plans/completed/create-asyra-design-app-release-plan.md',
         'tmp/create-app-release-evidence'
@@ -625,17 +629,57 @@
   ]
 
   const successArtifacts = [
-    ['artifact:release-version-scope', 'decide-release-versions', 'own-canonical-app-source'],
-    ['artifact:canonical-app-source', 'own-canonical-app-source', 'transform-generated-template'],
-    ['artifact:generated-template', 'transform-generated-template', 'verify-template-identity'],
-    ['artifact:verified-template', 'verify-template-identity', 'materialize-cli-version'],
-    ['artifact:versioned-cli-source', 'materialize-cli-version', 'pack-cli-artifact'],
-    ['artifact:validated-cli-tarball', 'pack-cli-artifact', 'invoke-packed-cli'],
-    ['artifact:generated-clean-project', 'invoke-packed-cli', 'install-generated-app-from-registry'],
-    ['artifact:registry-installed-project', 'install-generated-app-from-registry', 'prove-generated-app-behavior'],
-    ['artifact:generated-app-behavior-proof', 'prove-generated-app-behavior', 'publish-cli'],
+    [
+      'artifact:release-version-scope',
+      'decide-release-versions',
+      'own-canonical-app-source'
+    ],
+    [
+      'artifact:canonical-app-source',
+      'own-canonical-app-source',
+      'transform-generated-template'
+    ],
+    [
+      'artifact:generated-template',
+      'transform-generated-template',
+      'verify-template-identity'
+    ],
+    [
+      'artifact:verified-template',
+      'verify-template-identity',
+      'materialize-cli-version'
+    ],
+    [
+      'artifact:versioned-cli-source',
+      'materialize-cli-version',
+      'pack-cli-artifact'
+    ],
+    [
+      'artifact:validated-cli-tarball',
+      'pack-cli-artifact',
+      'invoke-packed-cli'
+    ],
+    [
+      'artifact:generated-clean-project',
+      'invoke-packed-cli',
+      'install-generated-app-from-registry'
+    ],
+    [
+      'artifact:registry-installed-project',
+      'install-generated-app-from-registry',
+      'prove-generated-app-behavior'
+    ],
+    [
+      'artifact:generated-app-behavior-proof',
+      'prove-generated-app-behavior',
+      'publish-cli'
+    ],
     ['artifact:cli-publication-result', 'publish-cli', 'smoke-public-cli'],
-    ['artifact:public-cli-smoke-proof', 'smoke-public-cli', 'record-release-decision']
+    [
+      'artifact:public-cli-smoke-proof',
+      'smoke-public-cli',
+      'record-release-decision'
+    ]
   ]
 
   const findingArtifacts = [
@@ -646,7 +690,10 @@
     ['artifact:cli-version-finding', 'materialize-cli-version'],
     ['artifact:cli-artifact-finding', 'pack-cli-artifact'],
     ['artifact:cli-invocation-finding', 'invoke-packed-cli'],
-    ['artifact:registry-install-finding', 'install-generated-app-from-registry'],
+    [
+      'artifact:registry-install-finding',
+      'install-generated-app-from-registry'
+    ],
     ['artifact:generated-app-behavior-finding', 'prove-generated-app-behavior'],
     ['artifact:cli-publication-finding', 'publish-cli'],
     ['artifact:public-cli-smoke-finding', 'smoke-public-cli']
@@ -810,11 +857,7 @@
         'The validated candidate is reproduced from a clean exact source commit on main or a feature branch and publication waits for explicit authorization.',
         'The exact published npx command independently passes the complete generated-app behavior matrix before the single final READY or BLOCKED decision.'
       ],
-      stepIds: [
-        'publish-cli',
-        'smoke-public-cli',
-        'record-release-decision'
-      ],
+      stepIds: ['publish-cli', 'smoke-public-cli', 'record-release-decision'],
       specRefs: [
         '#6-freeze-the-create-app-publication-source',
         '#7-publish-create-asyra-design-app',

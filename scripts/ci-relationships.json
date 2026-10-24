@@ -333,13 +333,25 @@
       "patterns": [
         "scripts/release-*",
         "scripts/framework-release-*",
-        ".changeset/config.json"
+        ".changeset/config.json",
+        "scripts/publish-framework-release.js",
+        "scripts/publish-create-app.js",
+        "scripts/create-app-release-artifacts.mjs",
+        "scripts/cloudflare-release-guidance.mjs",
+        "scripts/app-cloudflare.mjs",
+        "scripts/__tests__/fixtures/release-guidance.mjs",
+        ".github/workflows/app-cloudflare.yml",
+        ".github/workflows/site-cloudflare.yml"
       ],
       "tests": [
         "scripts/__tests__/release-automation.test.mjs",
         "scripts/__tests__/release-records.test.mjs",
         "scripts/__tests__/framework-release-publisher.test.mjs",
-        "scripts/__tests__/framework-release-artifacts.test.mjs"
+        "scripts/__tests__/framework-release-artifacts.test.mjs",
+        "scripts/__tests__/release-guidance.test.mjs",
+        "scripts/__tests__/app-cloudflare.test.mjs",
+        ".github/__tests__/app-cloudflare.test.mjs",
+        ".github/__tests__/site-cloudflare.test.mjs"
       ],
       "requiresFrameworkDeclarations": false
     },
@@ -549,7 +561,10 @@
     "scripts/__tests__/cloudflare-headers.test.mjs",
     "scripts/__tests__/hosting-retirement.test.mjs",
     "scripts/__tests__/plan-flow-documents.test.mjs",
-    "scripts/docs/__tests__/release-update-guidance.test.mjs"
+    "scripts/docs/__tests__/release-update-guidance.test.mjs",
+    "scripts/__tests__/release-guidance.test.mjs",
+    ".github/__tests__/app-cloudflare.test.mjs",
+    ".github/__tests__/site-cloudflare.test.mjs"
   ],
   "contractOnlyInputs": [
     "tools/flow-inspector/control-plane/ci-script-selection.cjs",
