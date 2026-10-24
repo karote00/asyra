@@ -1952,3 +1952,30 @@ test('shared-check CLI reads a plan larger than Linux environment limits and rej
     assert.equal(fs.existsSync(output), false)
   }
 })
+
+test('plan flow documents select public Flow admission without runtime or control-plane work', () => {
+  for (const input of [
+    'docs/ai/framework/plans/preset-3d-foundation/preset-3d-foundation.flow.json',
+    'docs/ai/apps/example/plans/review/review.flow.json',
+    'docs/ai/tools/example/plans/review.flow.json'
+  ]) {
+    const scope = classifyChanges([input], manifests)
+    assert.deepEqual(scope.unknownPaths, [], input)
+    assert.deepEqual(names(scope), [], input)
+    const checks = scope.relationshipMap.executionPlan.checks
+    assert.equal(checks.repositoryScripts.mode, 'files', input)
+    assert.ok(
+      checks.repositoryScripts.tests.includes(
+        'scripts/__tests__/plan-flow-documents.test.mjs'
+      ),
+      input
+    )
+    assert.equal(checks.controlPlane.mode, 'not-selected', input)
+    assert.equal(scope.designE2ERequired, false, input)
+  }
+  for (const input of [
+    'docs/ai/framework/plans/review/runtime.json',
+    'docs/ai/framework/review.flow.json'
+  ])
+    assert.ok(classifyChanges([input], manifests).unknownPaths.includes(input))
+})

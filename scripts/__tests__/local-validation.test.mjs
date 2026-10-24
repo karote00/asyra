@@ -330,3 +330,38 @@ for (const paths of [
       local.profileFiles.flatMap((file) => ['--file', file])
     )
   })
+
+test('local plan Flow admission uses the same repository test selection as CI', () => {
+  const paths = ['docs/ai/framework/plans/example/example.flow.json']
+  const ci = classifyChanges(paths, readWorkspaceManifests(repositoryRoot))
+  const plan = selectLocalValidation({
+    repositoryRoot,
+    inputs: {
+      changedPaths: paths,
+      baseRevision: null,
+      headRevision: 'a'.repeat(40)
+    }
+  })
+  assert.deepEqual(plan.unresolved, [])
+  assert.deepEqual(
+    plan.executionPlan.checks.repositoryScripts,
+    ci.executionPlan.checks.repositoryScripts
+  )
+  const commands = localCheckCommands(
+    plan,
+    path.join(repositoryRoot, 'tmp/flow-admission')
+  )
+  const shared = commands.find(({ id }) => id === 'shared')
+  assert.ok(shared)
+  assert.ok(
+    JSON.parse(
+      shared.env.CI_EXECUTION_PLAN
+    ).checks.repositoryScripts.tests.includes(
+      'scripts/__tests__/plan-flow-documents.test.mjs'
+    )
+  )
+  assert.equal(
+    commands.some(({ id }) => id === 'control-plane-tests'),
+    false
+  )
+})

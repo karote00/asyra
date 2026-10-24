@@ -468,6 +468,16 @@
       "ownsInputs": true,
       "tests": ["scripts/__tests__/hosting-retirement.test.mjs"],
       "requiresFrameworkDeclarations": false
+    },
+    "planFlows": {
+      "ownsInputs": true,
+      "patterns": [
+        "docs/ai/**/plans/**.flow.json",
+        "scripts/__tests__/plan-flow-documents.test.mjs",
+        "tools/flow-inspector/flow-files/**"
+      ],
+      "tests": ["scripts/__tests__/plan-flow-documents.test.mjs"],
+      "requiresFrameworkDeclarations": false
     }
   },
   "productionArtifactInputs": [
@@ -524,7 +534,8 @@
     "scripts/__tests__/domain-knowledge.test.mjs",
     "scripts/__tests__/app-cloudflare.test.mjs",
     "scripts/__tests__/cloudflare-headers.test.mjs",
-    "scripts/__tests__/hosting-retirement.test.mjs"
+    "scripts/__tests__/hosting-retirement.test.mjs",
+    "scripts/__tests__/plan-flow-documents.test.mjs"
   ],
   "contractOnlyInputs": [
     "tools/flow-inspector/control-plane/ci-script-selection.cjs",
