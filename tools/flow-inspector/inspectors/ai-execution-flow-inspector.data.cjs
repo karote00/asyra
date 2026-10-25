@@ -842,6 +842,7 @@
         ],
         outputs: ['artifact:inspection-evidence', 'artifact:prepared-review'],
         conditions: [
+          'Mechanical reviewer structural reads use existing scalar Core metadata and complete ordered child queries only for nonempty containers. Never save or clone full elements or unused props for structural fields. Preserve the existing verdict cache, local invalidation, computed/text work, complete findings/coverage, cancellation, mixed-source rejection and no-replay recovery; no new cache, API, exchange or canonical write. Prove actual save/copy counts through the default adapter and real owners.',
           'Image capture target preflight consumes one current scalar Core metadata observation for existence, type and childCount; never save or clone full children/properties for eligibility. Preserve missing/noncurrent/empty/scope guards, existing snapshot framing and pixels, read-only state, evidence invalidation, partial results and failed-only retry. No cache, fallback full-data query, new exchange or replay. Count preflight copying through real canonical owners separately from necessary snapshot work.',
           'Scalar Core metadata consumes exact current canonical child counts without materializing full child snapshots, including after membership changes and for registered derived containers. The existing Group membership owner remains authoritative. Preserve complete immutable child observations and inspection invalidation; no count cache, type-name list, observer suppression, extra call or replay. Prove reduced copied identities through the live App inspection and batched creation path.',
           'Current workspace overview resolves the actual scene container through Core and the existing Render snapshot owner; preserve transforms, painter order and visibility without document grouping, camera capture or new tools. Workspace detail/region and missing/empty/noncurrent targets return owner reasons, not blank proof.',
@@ -994,6 +995,7 @@
           'packages/scene-tree/src/components/group.ts',
           'packages/core/src/__tests__/app-runtime-facade.test.ts',
           'apps/asyra-design/server/__tests__/metadata-inspection.integration.test.ts',
+          'apps/asyra-design/server/__tests__/mechanical-inspection.integration.test.ts',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/vector-delivery-20261025.json',
           'packages/core/src/index.ts',
           'packages/core/src/__tests__/element-property-api.test.ts',
@@ -1017,6 +1019,7 @@
           'apps/asyra-design/server/__tests__/local-operation-tools.test.ts'
         ],
         specRefs: [
+          '#mechanical-review-structural-reads',
           '#image-inspection-target-preflight',
           '#metadata-child-count-handoff',
           '#tool-first-correction-contract',

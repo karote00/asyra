@@ -96,6 +96,144 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Mechanical review structural reads - 2026-10-25
+
+Status: bounded implementation, formal local verification and self-review
+complete. No model, 101, CI inspection or push; first-frame effects unmeasured.
+
+Evidence: run 1792853203510, raw provider sequences 309/312, 488/491 and
+553/556, verified input/output length and SHA-256. Three captures evaluate
+2,311 / 6,164 / 641 nodes with the same metadata-read counts and no cache reuse.
+The default reviewer read adapter, its structural-field consumer and Core full
+snapshot getter match the historical source segments. Each structural read saves
+and clones complete element data although props references are not consumed.
+The three handler durations total 82.3 ms, including required work; isolated
+copying latency and first-frame improvement are not established. Scoped visual
+containment was not invoked in this run and is excluded from this slice.
+
+Step Execution Card - inspect / mechanical structural reads:
+- Objective: use existing scalar metadata and complete detached child queries
+  for the reviewer structural input, avoiding full element saves and unused
+  property-reference copies. Preserve the exact mechanical output and lifetime.
+- Inputs: current canonical target identity, metadata and ordered direct children;
+  unchanged computed geometry, text measurements and canonical change events.
+  Outputs: unchanged verdicts, full findings, coverage, receipts and store handoff.
+- Owner: existing App reviewer adapter under inspect. Core metadata and child
+  query owners supply facts; reviewer retains existing verdicts and invalidation.
+  Failure owner remains inspect; advice bypasses drawing review.
+- Conditions: query a complete child list only when metadata reports children;
+  do not turn absence, invalid hierarchy, unsupported geometry, cancellation or
+  a mixed document into a pass. Preserve leaf handling, Group/Frame distinction,
+  oval bounds, text, hidden nodes and standalone full-data queries.
+- Contributors: existing Core public metadata/children/computed APIs, reviewer,
+  registered review action, change observers and check store. No new API, cache,
+  registry, state, model call, transport turn, geometry or renderer modification.
+- Implementation boundary: apps/asyra-design/src/common-apis/design-review.ts.
+  Tests: new server/__tests__/mechanical-inspection.integration.test.ts using
+  real canonical owners and the existing recorded vector-delivery fixture;
+  existing reviewer/action/mechanical-closure tests and Inspector proof. Wire the
+  new suite into the existing server harness; architecture inventory guards it.
+- Spec references: mechanical review structural reads and existing evidence,
+  capture/reviewer responsibility and mechanical coverage-selection contracts.
+  Inspector: inspect conditions, contributors, boundaries and existing cache
+  dimensions (unchanged). Existing mapped proofs retain their product semantics;
+  the separate real-owner integration gate is mandatory, not implied by proof.
+- Naming: reuse read/getElementMetadata/getElementChildren and current wire
+  fields; no persisted identity or compatibility path. New test names describe
+  generic behavior, not a subject-specific route.
+- Gates: admission, naming, formal red, real-owner and direct-consumer integration,
+  cancellation/invalidation/recovery, production types/build, focused lint,
+  architecture inventory, update notes and final Inspector verification. Existing
+  browser inspection/reload gates cover read-only document preservation. Freeze
+  source during verification. No model, 101, CI inspection or push.
+- Stop: fixed DoD satisfied; missing existing capability or different production
+  owner required; three failed implementation corrections. Do not broaden to
+  visual scoped validation, numerical algorithms or unrelated snapshot consumers.
+
+Fixed DoD:
+1. First reproduce through actual review action, default adapter and real Core
+   owners. Count element saves, full reads, cloned property references and child
+   queries; formal fixtures never depend on ignored tmp. Existing injected-reader
+   tests alone cannot prove the adapter's copying behavior.
+2. Structural reads perform zero complete element saves and zero unused property
+   reference copies. Leaves issue no child-list query; nonempty containers return
+   all children in order, without the default 50-item page truncation. Keep
+   detached immutable observations and legitimate full-data reads.
+3. Preserve exact findings, completeness, supported-rule verdict, coverage and
+   progress for Group/Frame, rotated oval, text, hidden/missing targets and invalid
+   hierarchy. Compare actual saved-input-derived designs and generic boundaries;
+   distinguish unavoidable computed/measurement work from structural copying.
+4. Unchanged reviews reuse existing verdicts; local geometry/membership/ancestry
+   changes invalidate only the appropriate evidence. Cancellation, load/disposal
+   and mutation during cooperative yields cannot publish current mixed evidence.
+5. Exercise review action -> receipts -> existing check store/recovery; preserve
+   partial results and never replay writes. Reads do not change saved documents,
+   selection, Undo/Redo depth or collaboration publications; preserve reload
+   invalidation. No new cache or model-facing exchange. Reduced work, not model
+   adoption or first-frame timing, determines this bounded task's success.
+
+Validation and self-review:
+- Admission accepted review
+  a298544ee7d61926fab826cf4694dac70f196c3e1451ff38e4803e276ffe0824
+  after candidate 2a86d50c-ed7e-4d1f-9378-636e9cb3c333 passed 77 cases.
+  The original injected-reader reviewer/action/store suites passed 37 tests and
+  did not detect the default-adapter copies. The new real-owner suite is wired
+  into ordinary test:server-response-harness and its inventory guard.
+- Formal red (mechanical-read-red-confirmed.log): three saved-input-derived
+  cases passed semantic, coverage and read-only assertions, then failed the
+  work-count oracle. Two additional preservation/recovery cases already passed.
+  Actual Element.save/full-read counts were 2,311 / 6,164 / 641; copied props
+  reference counts were 23,104 / 61,634 / 6,068. Tests use existing permanent
+  source fixtures, official preparation/dispatcher/Runtime/transaction creation,
+  the actual review action and default reviewer adapter. No tmp input dependency.
+- The production change is confined to the existing default read adapter:
+  getElementMetadata, plus getElementChildren with the exact positive childCount.
+  Afterward all three cases perform zero full reads, zero Element saves and zero
+  unused props reference copies; each nonempty root performs one complete child
+  query, and no leaf performs one. Required geometry/text owners are unchanged.
+  This removes 9,116 saves and 90,806 unused reference-copy entries in these cases;
+  it is not a heap-byte or isolated latency measurement.
+- Real output matches a full-read reference for findings, completeness, covered
+  order, verification/progress and work decisions. Repeated capture reuses the
+  existing receipt and verdicts. More than 50 children remain complete; nested
+  Frame/Group and rotated oval behavior is preserved. Independent receipts survive
+  unrelated changes; the exact required re-evaluation targets after a local edit
+  include the leaf, ancestors and an oval whose standalone traversal context must
+  be restored when entering its Frame. That fourth read is valid containment work,
+  not a relaxed work-count expectation. Existing text/invalid-hierarchy cases pass.
+- Cancellation through the observed review action leaves the earlier successful
+  check available; retry closes the existing mechanical selection. Dispatched
+  actions remain reads/validation only. Mutation during a cooperative yield
+  produces no current receipt. Membership changes and reload invalidate evidence;
+  undo/redo, detached child observations, saved document, selection, history depth
+  and absence of read-induced shared publications remain asserted.
+- Final direct gates passed 48 cases across appropriate jsdom/Node environments:
+  reviewer, review action, mechanical store closure, new real-owner regression,
+  existing image preflight and metadata/creation integration. A combined command
+  initially put the existing file-URL metadata suite in jsdom and failed before
+  its cases loaded; its unchanged formal Node invocation then passed 2/2. No
+  assertion or production change was made for that invocation error.
+- Browser verification passed four cases in 36.4 seconds: mechanical grouping and
+  stacking receipts, server/browser freshness with history/reload and transport
+  recovery, large/native image capture and multi-root workspace preservation.
+  Test-owned ports were released; no source changed during gates. Real model
+  inference is explicitly forbidden by these fixtures.
+- Production types/build, architecture inventory 13/13, naming 15/15, update notes
+  and diff checks passed. Focused lint has zero errors and one diagnostic console
+  warning; production build retains its existing large-chunk warning.
+- Final Inspector run 80c7ff06-f550-4ae8-8769-517119db1a8d passed 77/77,
+  zero failed/pending, revision 116, source
+  a7404515b1e02b426e55d66f8b53c3a850a10fd9315dade388eb7f72f44b0ae8.
+  All 886 captured source inputs match the checkout. Workspace source collection
+  intentionally excludes ordinary __tests__ files; the new regression is executed
+  independently via the ordinary harness and is not claimed as a mapped Inspector
+  case. Inspector success alone does not establish real-owner copy counts.
+- Self-review covered the adapter, complete child-page arguments, missing/empty
+  behavior, Core capability ownership, current snapshot lifetime, reviewer cache
+  context, direct consumers, read-only state and failure/recovery paths. No API,
+  schema, tool description, cache, renderer, persistence, mutation or fallback
+  path changed. Existing full-data reads remain legitimate independent operations.
+
 ### Image preflight supplemental architecture failures - 2026-10-25
 
 Status: both supplemental failures repaired and locally verified; image

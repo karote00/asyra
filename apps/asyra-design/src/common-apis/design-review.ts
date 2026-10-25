@@ -56,7 +56,16 @@ export const observeDesignChanges = (listener: () => void): (() => void) => {
 }
 const defaultApis: ReviewApis = {
   observeChanges: observeInspectionChanges,
-  read: (id) => core.getElementData(id),
+  read: (id) => {
+    const metadata = core.getElementMetadata(id)
+    if (!metadata) return undefined
+    return {
+      ...metadata,
+      children: metadata.childCount
+        ? core.getElementChildren(id, 0, metadata.childCount).elementIds
+        : []
+    }
+  },
   computed: (id, fields) => core.getElementComputedData(id, fields),
   measure: (ids) => core.measureElementContentBounds(ids)
 }

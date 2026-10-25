@@ -1,5 +1,23 @@
 # @asyra/asyra-design
 
+## Pending mechanical review structural reads
+
+```update-note
+{
+  "change": "mechanical-review-structural-reads",
+  "owner": "Asyra Design mechanical review",
+  "summary": "Use existing metadata and complete child queries for mechanical review, proving fewer canonical saves and unused property-reference copies while preserving verdicts and evidence recovery.",
+  "sources": [
+    "apps/asyra-design/src/common-apis/design-review.ts",
+    "apps/asyra-design/server/__tests__/mechanical-inspection.integration.test.ts",
+    "apps/asyra-design/package.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Tool inputs, outputs, geometry, saved data and existing full-data APIs are unchanged; no migration, new cache or model-facing exchange."
+}
+```
+
 ## Pending architecture regression coverage
 
 ```update-note

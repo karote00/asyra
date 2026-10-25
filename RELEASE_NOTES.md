@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending mechanical review structural reads
+
+```update-note
+{
+  "change": "mechanical-review-structural-reads",
+  "owner": "Repository Flow Inspector",
+  "summary": "Use existing metadata and complete child queries for mechanical review, proving fewer canonical saves and unused property-reference copies while preserving verdicts and evidence recovery.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Tool inputs, outputs, geometry, saved data and existing full-data APIs are unchanged; no migration, new cache or model-facing exchange."
+}
+```
+
 ## Pending pure geometry backend boundary
 
 ```update-note

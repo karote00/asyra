@@ -2965,6 +2965,22 @@ pixel results are diagnostic facts; main-agent visual acceptance remains separat
 The input's request-local inspection and numeric attachment selectors are control
 plane values, not portable recipe literals or durable document identities.
 
+### Mechanical review structural reads
+
+Deterministic review obtains structural facts from current Core metadata and the
+complete ordered child query. Leaves do not request child lists; nonempty
+containers must not be truncated to a default page. Do not save or clone full
+element data and unused property references for structural inspection. Computed
+geometry and text measurements retain their existing owners and required work.
+
+The reviewer keeps its existing verdict cache, change invalidation, cooperative
+cancellation and receipt lifetime. Findings, coverage, supported-rule judgments
+and unavailable results remain equivalent; missing, mixed, stale or cancelled
+work never becomes a pass. Structural read optimization does not add transport,
+mutable state or a cache, replay writes, mutate document/history/shared state, or
+remove independently valid full-data queries. Prove actual canonical save/copy
+counts through the default adapter as well as semantic and recovery behavior.
+
 ### Mechanical inspection transport
 
 Mechanical measurements and dependency validation use bounded exchanges of at most 64 independent exact-target actions. Each target retains its own evidence and finding status. A known fail-fast action failure preserves acknowledged prefix results and may continue only the proven unexecuted read suffix; unknown outcomes remain unverified. Cancellation prevents late adoption and further dispatch. Grouping reads never replays acknowledged document writes or converts missing checks into passes.
