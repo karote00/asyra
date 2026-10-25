@@ -3,6 +3,41 @@
 This file tracks releases for Asyra. Previous releases under Asyra (v0.1.0,
 etc.) are not included here.
 
+## Pending - Asyra Office source reset
+
+This internal development checkpoint deliberately removes the previous Office
+implementation and its colocated tests. The app cannot run, build or pass its
+existing source checks until the rebuild supplies a new implementation. Approved
+asset references and specifications remain available. The replacement product
+and implementation plans are documentation only; this checkpoint is not a
+deployable update and must not replace an existing deployment.
+
+```update-note
+{
+  "change": "office-source-reset-for-rebuild",
+  "owner": "Asyra Office private app development",
+  "summary": "Remove the previous app source and colocated tests for an explicitly requested rebuild, preserving approved asset references and documenting the replacement plan.",
+  "sources": [
+    "apps/asyra-office/src/domain/__tests__/layout.test.ts",
+    "apps/asyra-office/src/domain/layout.ts",
+    "apps/asyra-office/src/main.tsx",
+    "apps/asyra-office/src/runtime/__tests__/app-environment.test.ts",
+    "apps/asyra-office/src/runtime/__tests__/office-runtime.test.ts",
+    "apps/asyra-office/src/runtime/__tests__/profile-bundle.test.ts",
+    "apps/asyra-office/src/runtime/layout-controller.ts",
+    "apps/asyra-office/src/runtime/office-runtime.ts",
+    "apps/asyra-office/src/scene/__tests__/office-scene.test.ts",
+    "apps/asyra-office/src/scene/office-scene.ts",
+    "apps/asyra-office/src/ui/OfficeApp.tsx",
+    "apps/asyra-office/src/ui/__tests__/OfficeApp.test.tsx",
+    "apps/asyra-office/src/ui/styles.css"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal, non-deployable development checkpoint only. No public package or hosted app update is being delivered, so existing consumers have no integration action. Developers must not run or deploy this empty source checkpoint as an app; runtime validation remains blocked until the separately authorized rebuild."
+}
+```
+
 ## Pending - FieldScope profile CI
 
 ```update-note
