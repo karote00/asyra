@@ -5,7 +5,10 @@ import {
 } from '@asyra/ai-agent-runtime'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { AiImageToolIds, AiReferenceToolIds } from '../ai-domain-prompt'
-import { operationInputIssue } from '../operation-input-schema'
+import {
+  operationContractIssue,
+  operationInputIssue
+} from '../operation-input-schema'
 import {
   invokeLocalTool,
   localToolOutcome,
@@ -55,7 +58,7 @@ export const withToolContractAssertions = <
         const inspected = inspectAiToolResult(
           createAiToolContract(definition),
           value,
-          { outcome, validate: operationInputIssue }
+          { outcome, validate: operationContractIssue }
         )
         expect(
           inspected.status === 'invalid' ? inspected.issue : undefined,
@@ -123,7 +126,7 @@ export const withToolContractAssertions = <
       const contract = createAiToolContract(definition)
       const inspected = inspectAiToolResult(contract, value, {
         outcome,
-        validate: operationInputIssue
+        validate: operationContractIssue
       })
       expect(
         inspected.status === 'invalid' ? inspected.issue : undefined,

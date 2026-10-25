@@ -7,7 +7,10 @@ const { isEqual } = lodash
 // again here: this consumes the advertised model-facing operation schema.
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
-export { operationInputIssue } from '../src/ai/tool-schema'
+export {
+  operationInputIssue,
+  operationContractIssue
+} from '../src/ai/tool-schema'
 
 // Native Code Mode renders union branches without their sibling constraints.
 // Distribute object constraints into each alternative before registration; local

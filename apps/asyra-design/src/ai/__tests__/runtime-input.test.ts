@@ -421,6 +421,7 @@ it.each(['frame', 'group', 'rectangle'] as const)(
       observeSharedDataChannel: core.observeSharedDataChannel,
       getElementMetadata: core.getElementMetadata,
       getElementData: core.getElementData,
+      getElementChildren: core.getElementChildren,
       getElementComputedData: core.getElementComputedData,
       getPropertyOwnerElementIds: core.getPropertyOwnerElementIds
     }
@@ -447,6 +448,15 @@ it.each(['frame', 'group', 'rectangle'] as const)(
       ...metadata(id),
       children: id === 'root' ? ['a', 'b'] : []
     })) as typeof original.getElementData
+    core.getElementChildren = vi.fn((id, offset = 0, limit = 50) => {
+      const children = id === 'root' ? ['a', 'b'] : []
+      return {
+        available: true,
+        elementIds: children.slice(offset, offset + limit),
+        total: children.length,
+        nextOffset: offset + limit < children.length ? offset + limit : null
+      }
+    })
     let x = 0
     core.getElementComputedData = vi.fn((id) => ({
       x: id === 'a' ? x : 0,
@@ -535,3 +545,35 @@ it.each(['frame', 'group', 'rectangle'] as const)(
     }
   }
 )
+
+it('labels invalid owner output without blaming arguments or replaying execution', async () => {
+  const { observeAiAction } = await import('../runtime-input')
+  const schema = {
+    type: 'object',
+    $defs: { ids: { type: 'array', items: { type: 'string' } } },
+    properties: { elementIds: { $ref: '#/$defs/ids' } }
+  }
+  const value = { available: true, elementIds: undefined }
+  const execute = vi.fn(async () => value)
+  const action = observeAiAction({
+    ...toolSemantics(schema, 'read', ['document']),
+    name: 'read-context',
+    description: 'Read retained context',
+    inputSchema: schema,
+    execute
+  })
+  const context = { signal: new AbortController().signal }
+  await expect(action.execute({}, context)).rejects.toMatchObject({
+    stage: 'output',
+    message: 'output.elementIds: expected array',
+    inspection: { settlement: 'completed', value }
+  })
+  expect(execute).toHaveBeenCalledOnce()
+  await expect(
+    action.execute({ elementIds: undefined }, context)
+  ).rejects.toMatchObject({
+    stage: 'input',
+    message: 'arguments.elementIds: expected array'
+  })
+  expect(execute).toHaveBeenCalledOnce()
+})

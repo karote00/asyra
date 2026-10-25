@@ -5,7 +5,7 @@ import {
   inspectAiToolResult,
   admitAiRecipe
 } from '@asyra/ai-agent-runtime'
-import { operationInputIssue } from '../operation-input-schema'
+import { operationContractIssue } from '../operation-input-schema'
 import { requireBatchSuccess } from '../batch-exchange'
 import { expect, it, vi } from 'vitest'
 import {
@@ -770,6 +770,7 @@ it('validates the declared native output schema even when the owner forgot a res
   expect(reply.success).toBe(false)
   expect(JSON.parse(reply.text)).toMatchObject({
     code: 'TOOL_RESULT_INVALID',
+    message: 'output.artifactId: required field is missing',
     stage: 'decoding',
     settlement: 'unknown',
     executionResult: { wrong: true }
@@ -860,7 +861,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
   expect(
     inspectAiToolResult(contract, interrupted, {
       outcome: { status: 'partial', settlement: 'partial' },
-      validate: operationInputIssue
+      validate: operationContractIssue
     }).status
   ).toBe('partial')
   expect(
@@ -869,14 +870,14 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
       { count: 1, status: 'partial' },
       {
         outcome: { status: 'partial', settlement: 'partial' },
-        validate: operationInputIssue
+        validate: operationContractIssue
       }
     ).status
   ).toBe('partial')
   expect(
     inspectAiToolResult(contract, interrupted, {
       outcome: { status: 'success', settlement: 'completed' },
-      validate: operationInputIssue
+      validate: operationContractIssue
     })
   ).toMatchObject({ status: 'invalid', settlement: 'completed' })
   const admitted = admitAiRecipe(
@@ -904,7 +905,7 @@ it('exposes only successful domain fields to recipe proof and keeps partial evid
     },
     {
       resolve: () => contract,
-      validate: operationInputIssue,
+      validate: operationContractIssue,
       limits: {
         bytes: 10000,
         steps: 4,

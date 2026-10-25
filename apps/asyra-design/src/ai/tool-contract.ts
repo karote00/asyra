@@ -1,5 +1,5 @@
 import { AiToolContractError, embedAiToolSchema } from '@asyra/ai-agent-runtime'
-import { operationInputIssue } from './tool-schema'
+import { operationContractIssue } from './tool-schema'
 import { AiActionNames } from '../constants/ai-actions'
 import type {
   AiJsonValue,
@@ -259,7 +259,9 @@ export const projectToolDelivery = (
   const issue =
     view === undefined
       ? 'Declared delivery view is unavailable.'
-      : operationInputIssue(view, contract.delivery.outputSchema)
+      : operationContractIssue(view, contract.delivery.outputSchema, {
+          stage: 'output'
+        })
   const original =
     value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
   const outcome = designActionOutcome(original.toolOutcome ?? original)

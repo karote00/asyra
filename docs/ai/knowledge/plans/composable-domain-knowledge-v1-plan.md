@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 attachment-to-reference handoff is locally verified. The one authorized 120-second live observation is complete; no further model run, implementation, CI inspection or push is authorized.**
+Status: **Task 3 - retained refinement closed; request cleanup investigation.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: attachment-to-reference mechanical preparation through the existing image owner and asynchronous selection entry. Preserve the completed Knowledge source changes. No new cache, tool, first-drawing gate, model run, CI inspection or push.
+- Current scope: close and push the validated retained-refinement and continuation work, then read-only investigation of TOOL_CLEANUP_FAILED in run 1792951863562. Compare original events, resource cleanup owners and provider settlement; propose one bounded correction and fixed DoD. No product changes, model runs, CI inspection or unrelated discovery.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,381 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Retained-refinement closeout - 2026-10-26
+
+The retained-refinement slice is closed on formal local integration and the saved
+live observation below. Actual AI snapshot filtering and material changes were
+observed; failed-mutation recovery remains unobserved in that live run. The
+unchanged production source retains the 80-case Inspector proof and focused
+247 App / 152 Runtime tests, production types, build, naming and lint evidence.
+Push preparation additionally verified conversation tests (36), Node provider and
+delivery integration tests (241), and the installed native registration probe
+without inference (1). Generated public API metadata and release-note coverage
+are synchronized. No CI inspection or additional model execution is part of this
+closeout. Cleanup investigation must not reinterpret provider completion as proof
+of successful resource release or modify saved evidence.
+
+### Authorized retained-refinement live observation - 2026-10-26
+
+Run the unchanged architecture-101 continuity scenario once on the current source
+at the production 10,000-node limit. The shared work deadline is 120 seconds;
+final reporting has at most 60 seconds and cannot dispatch drawing operations.
+Step Execution Card: observe, using the accepted multi-turn collection contract.
+Inputs are the frozen references, existing two prompts and live source; outputs
+are original provider records/payloads, per-turn documents, answers, attributed
+report and screenshots. Preserve first-frame timing and actual tool inputs/results.
+No product, prompt, runner or Knowledge edits. A failed/expired first turn cannot
+be replaced with a forced follow-up; unobserved paths remain unobserved.
+
+Check whether the second turn uses snapshot refinement, receives valid results,
+and passes the retained target to actual material modification. Distinguish legal
+alternative routes from adoption of this fix. Compare full saved documents for
+IDs, geometry, hierarchy, order and property changes; check tool events for repeated
+source queries, invalid output, replay and operations after cutoff. Verify stream
+completion and referenced bytes using existing recording readers. AI statements
+are claims to compare with raw events, not independent proof. Stop after one run,
+collect evidence, inspect the screenshots and clean up only owned processes.
+
+Observation complete: run `1792951863562`, first frame 51.551 seconds. Both turns
+settled partial; second-turn snapshot refinement returned 24 rows without rejection,
+then one batch changed only 16 intended fill records. IDs, hierarchy, order and
+geometry were preserved; no fallback requery or repeated edit. Work stopped at
+120.003 seconds and the report completed at 133.204 seconds. All nine streams and
+119 referenced payload/image assets verify. Native image-error recovery remains
+an AI claim; one tool-host cleanup failure is confirmed but not diagnosed here.
+See [the bounded report](../evaluations/2026-10-26-snapshot-refinement-continuity.md).
+No failed-mutation recovery or further model invocation is claimed.
+
+
+
+### Retained refinement result and validation-stage delivery - 2026-10-26
+
+Bounded objective: a legal children query followed by snapshot name refinement
+must deliver a schema-valid result and feed the existing retained fill consumer.
+The saved partial-continuity run 1792948625197 reports an output contract failure
+as `arguments.elementIds: expected array`. Raw JavaScript owner inspection shows
+an own `elementIds: undefined` on element-mode refinements; JSON evidence alone
+cannot retain that property. Do not weaken array validation or force another query.
+
+Fixed DoD:
+1. Execute the registered action and its real retained owner before serialization;
+   refine element-mode pages/columns, ID-only queries and empty selections. Preserve
+   order, selected fields, pagination, identities and independent leases.
+2. Reuse the retained source for filtering/paging and a real downstream fill
+   consumer; assert work counts, exact changed targets and no source requery.
+3. Validate inputs as `arguments` and results as `output`, through existing native,
+   middleware and recipe boundaries. Preserve local schema reference resolution,
+   strict invalid arrays, settlement and observed output; never retry on validation.
+4. Preserve stale/cancelled/foreign requests, expected-count checks, independent
+   parent leases and release. No synthetic success, repeated source capture or
+   mutation replay. Run direct consumers and source-matched Inspector proof.
+
+Step Execution Card - compose: shared tool contract and tool invocation contract;
+Inspector compose input/output validation route. Inputs are canonical schemas,
+call input and actual result/outcome; outputs are stage-labelled validation or
+original receipts. The existing middleware/result inspector supplies stage to
+its host validator; absent recovery schemas retain current bypass behavior.
+Allowed contributors: Runtime tool-contract and recipe invoker, App schema adapter,
+registered action wrapper and native invocation. Forbidden: parallel validator,
+JSON sanitation, relaxed undefined/array handling or message-string rewriting.
+Boundary: those owners, exports, public Runtime documentation and their direct
+consumer tests already governed by compose, plus recipe-execution's validator
+signature forwarding. Failure owner remains AiToolContractError/inspection.
+First prove stage omission with formal Runtime/App tests, then implement and run
+focused Runtime, schema and invocation tests before the apply segment.
+
+Step Execution Card - apply: retained predicate selection and query admission;
+Inspector apply retained-context route. Inputs are validated live query/snapshot,
+filter, delivery and request signal. Output includes elementIds only for identity
+mode; element-mode results omit it entirely. Reuse the existing retained source,
+leases, metadata predicates and mutation admission. Forbidden: new cache/state,
+additional query, changed fill semantics or fabricated empty ID lists. Boundary:
+retained-design-context and its formal tests, registered query-admission proof and
+real-owner consumer integration. First reproduce invalid output through the
+registered action, then correct owner assembly. Failures retain existing stale,
+foreign, cancelled and no-replay behavior; no history/persistence owner changes.
+
+Direct-consumer review identified three pre-existing reviewer fixture failures:
+fixtures mocked full getElementData but the current owner reads getElementChildren.
+Complete that fixture at the existing runtime-input suite without changing node
+counts, invalidation expectations or reviewer implementation.
+
+Gates: naming, focused regression and direct-consumer suites, production types,
+changed-file lint/format and applicable Inspector admission/verification. Stop
+if another owner defect is necessary; do not broaden to AI selection or timing.
+Self-review additionally reproduced bounded output diagnostics asking callers to
+retry; output diagnostics now only report omitted errors, while invalid-input
+repair guidance stays available. The regression covers objects and arrays.
+The source-matched full proof exposed preset state leaking from the new real-Core
+fixture into the next case; isolate its module lifetime without changing product
+owners or later assertions. Type-checking required canonical registration of test
+definitions; no validation contracts were weakened.
+
+Direct retained-context and retained-fill suites are included in the existing App
+`test:ai` gate; the mapped query-admission proof executes the complete raw owner
+to native delivery to canonical fill path. No separate test registry is added.
+
+Local closure: the fixed DoD passes 247 App direct-consumer tests, 152 Runtime
+contract/recipe tests, all three App production type projects and Runtime build.
+Naming passes 15 checks. Changed-file lint has no errors; the pre-existing console
+warning at execution-flow-proof line 1688 remains outside this slice. Formal
+red tests reproduced invalid raw refinement output, missing validation stage and
+misleading output retry guidance. Source-matched Inspector revision 133 passes
+all 80 product cases. Final source-matched verification
+`b2d42188-7701-46b7-935b-695f5816ed2b` passed after the typed browser-wire
+fixture correction and permanent test-gate binding. Review covers actual owner
+assembly, input/output adapters, native and recipe consumers, leases, stale and
+cancelled requests, exact fill targets, unchanged geometry and rejected replay.
+No model, 101, CI inspection, commit or push was performed. AI adoption and live
+recovery remain unobserved. Preserve previous dirty work and immutable reports.
+
+
+### Settled partial observation continuation - 2026-10-26
+
+Objective: the diagnostic collector must continue a saved, terminal partial initial
+result without changing artwork acceptance, reissuing the initial prompt or
+replaying any operation. Owner/Step Execution Card: observe; inputs are actual
+terminal UI outcome, captured ordinary answer/request identity, saved document
+receipt and idle App input controls. Output is eligibility for the already declared
+next prompt, with the same deadline and unchanged predecessor outcome. A completed
+partial final report is collected without being promoted to artwork success.
+
+Allowed contributors and files: existing run-consultation.mjs, its formal sequencing
+tests and README, this plan, observation spec and observe Inspector condition.
+No runtime, conversation, acceptance, Knowledge, scheduler or result-store changes.
+The existing UI remains the settlement owner; diagnostic code does not infer
+settlement from a successful tool call. Document capture failure, unsettled state,
+missing answer, non-idle input, cancelled/failed outcomes and expiry stop continuation.
+
+Fixed DoD: replay the saved partial initial-result shape through the real sequencer
+and prove the current gate rejects it; then prove exactly one unchanged follow-up,
+no predecessor replay, unchanged partial status and shared deadline. Cover every
+missing prerequisite, cancellation/failure, final partial reporting and deadline
+crossed during capture. Run local sequencing/watchdog tests, lint/naming, Inspector
+admission/verification and bounded review. After gates, one newly authorized live
+101 observation with unchanged prompts/references: 120 seconds shared work, at most
+60 seconds final report, no video, production 10,000. Do not rerun if second-turn
+work is unobserved or fails; report actual inputs, receipts, documents and timings.
+
+Completion evidence: three regressions failed before correction; all 17 focused
+collector/watchdog tests then passed, along with lint, naming and Inspector revision
+132 verification. The authorized live run `1792948625197` continued a saved partial
+predecessor, delivered exact history, and modified only 5,568 existing fill colors.
+First content: 47.665 s; work cutoff: 120.003 s; collection: 135.277 s. Both outcomes
+remain partial. Snapshot output-validation failure is a separate observed issue;
+no further implementation or live retry is included. Report:
+`docs/ai/knowledge/evaluations/2026-10-26-partial-continuity.md`.
+
+### Drawing continuity observation - 2026-10-26
+
+Run the existing bounded two-turn collector with the unchanged 101 references and
+architectural brief, explicitly scoped to an initial editable pass followed by a
+material-only follow-up preserving geometry and viewpoint. One shared 120-second
+work deadline; final reporting at most 60 seconds, production limit 10,000, no video.
+Do not force a tool or Knowledge choice. A first-turn timeout prevents follow-up;
+report that missing report/continuity evidence explicitly, without a retry.
+
+Step Execution Card - observe: inputs are the scenario, actual UI conversation,
+existing recording observer, original provider records and frozen source. Outputs
+are exact prompts, answers/report, per-turn documents/screenshots, first-content
+time and source-bound records. Reuse run-consultation, architectureScenario,
+recording observer and bounds-fit; no direct document edits, new product behavior,
+model retry or alternative result store. Failure owner remains observe. Allowed
+edits: existing runner, sequencing tests, README and this observation contract.
+
+DoD: deterministic tests retain ordinary predecessor/final-report sequencing and
+one deadline, validate explicit scenario choice and unchanged reference hashes;
+local lint/naming and Inspector admission. Run once, retain available first-turn
+ordinary I/O without labeling reconstructed native envelopes as raw evidence.
+Compare exact predecessor text to second native input, original IDs and geometry
+before/after the follow-up, mutation receipts and Knowledge choices. Missing work,
+recovery or follow-up is unobserved. First content is observed bounds plus screenshot,
+not proof of GPU timing or visual acceptance. No speedup requirement.
+
+Observation result: one live run produced first content at 51.900 seconds and
+8,006 retained objects, then settled partial. The inherited success-only collector
+gate blocked the planned follow-up; drawing continuity remains unobserved. No retry.
+See `docs/ai/knowledge/evaluations/2026-10-26-drawing-continuity.md`. Correcting that
+partial-result eligibility requires focused deterministic coverage, not weakening
+artwork acceptance or treating this run as a passed two-turn test.
+
+### Consultation continuity observation - 2026-10-26
+
+Use the existing runner and two original non-drawing prompts. Keep the first
+request ordinary so its actual answer, rather than a diagnostic self-report,
+becomes the settled predecessor. Capture that displayed answer and screenshot
+before the follow-up. Configure the existing evaluation report window only on
+the final request. Both turns share one 120-second work deadline. Protect the
+ordinary first turn with the existing process-identity watchdog at that deadline;
+a successful first settlement disarms it before arming the final work/report
+watchdog. No expired deadline, failed turn or missing capture permits a follow-up.
+
+Observe owns the runner, its permanent sequencing tests and capture documentation.
+Its inputs are actual settled UI text, original provider records and frozen source;
+its outputs distinguish ordinary answers from final attributed self-reports.
+Preserve existing report capture, browser cleanup, request identities and source
+snapshot owners. No product owner, new state store, video or automatic retry.
+
+DoD: formal tests prove first ordinary/final reporting modes, one absolute deadline,
+first-turn timeout and missing evidence stopping the sequence. Run once; retain
+complete provider input/output, before/after document state, answers, report and
+screenshots. Compare the exact first answer against the second native input and
+actual follow-up claims. Distinguish successful delivery, observed semantic use,
+Knowledge choices and elapsed time; do not claim unobserved reuse or causal speedup.
+
+### Settled conversation context delivery - 2026-10-26
+
+Objective: an ordinary follow-up receives the prior design discussion already
+held by its App conversation. The saved consultation demonstrated that a shared
+conversation ID alone did not deliver the earlier request or answer.
+
+Implementation:
+
+1. At the request owner, project the active conversation's existing settled turns
+   into chronological user/assistant pairs with turn identity and actual outcome.
+   Reuse the presentation owner's settled answer/status projection. Preserve the
+   actual request intent and original objective when a clarification/retry differs.
+   Include no action arguments, progress, raw result, image bytes, retained keys
+   or execution instructions. Do not infer decisions from tool traces.
+2. Bound this projection to the newest contiguous complete turns fitting 32 KiB
+   of serialized UTF-8 metadata, including the envelope. This is an App context
+   cost policy, not a model capacity claim. Never truncate an intent or answer.
+   Report omittedTurns explicitly; if the newest pair alone exceeds the budget,
+   deliver no pairs and the omission count. Visit only the admitted suffix and
+   the first non-fitting turn; do not serialize raw results or all old turns.
+   Empty/new conversations omit history. Switching conversations uses only the
+   selected conversation's existing state; disposal preserves its current rules.
+3. Compose forwards this projection through the existing Feature, Runtime, HTTP
+   and native input envelope. Only requests with history receive its interpretation
+   guidance; first-use instructions do not grow. Its instructions identify prior messages as
+   historical context, not current document evidence or replayable commands.
+   Current user corrections take precedence. Missing history remains missing;
+   it does not authorize guessing. Native threads and Knowledge sessions retain
+   their request lifetimes; history is not caller-held Knowledge or image proof.
+4. Add fail-first formal cases using the saved consultation's actual ordinary
+   answer, not its evaluation self-report. Exercise controller-to-native input,
+   existing transport, clarification/retry, partial/cancelled/failed outcomes,
+   conversation isolation, disposal and Unicode budget boundaries. Compare exact
+   delivered strings and outcomes, request/tool counts and encoded bytes. Preserve
+   target revalidation and existing no-replay/cancellation gates.
+
+Step execution - request: inputs are current submission, selected settled turns
+and canonical target observations; output is request metadata with bounded prior
+messages. Existing conversation/presentation own projection and failures; no
+provider session, renderer, new store or cache contributes. Boundary:
+conversation.ts, its tests, presentation consumer tests and execution-flow proof.
+New conversation bypasses history; invalid submission/navigation retains existing
+errors. The transient conversationHistory wire field and byte-policy constant
+belong to the App request owner, with no persisted schema or compatibility alias.
+
+Step execution - compose: consumes the request artifact and preserves its messages
+in actual native turn input. ai-domain-prompt.ts owns interpretation guidance;
+local-ai-provider tests exercise the public provider protocol. No new transport,
+thread reuse, automatic Knowledge lookup, replay or evaluation-runner change.
+
+Fixed DoD:
+
+- The exact saved first request and ordinary answer reach a successor native
+  request alongside the unchanged follow-up; one provider work turn per request,
+  no additional model/tool calls. Changed current requests remain authoritative.
+- No cross-conversation history, raw tool state, action program, progress, image
+  payload or session credential is projected. Failed/cancelled/partial settlement
+  remains accurate; automatic and unsafe retries stay prohibited.
+- Bounded whole-turn delivery is explicit about omissions, preserves Unicode and
+  complete included restrictions, does not scan/clone raw results, and leaves
+  stored turns and canonical targets unchanged.
+- Formal controller, presentation, HTTP/native input, existing session/recovery,
+  Inspector proofs, production types, naming and focused lint pass on the same
+  final source. Inspect direct consumers and failure paths before completion.
+  No drawing owner changes: existing transaction/load/collaboration tests remain
+  preservation evidence, not a claim that message text proves current geometry.
+- Local delivery is distinguishable from model adoption. Do not claim improved
+  Knowledge selection, repeated-read reduction or model understanding without a
+  separately authorized live observation.
+
+Stop if the existing settled answer cannot represent the ordinary product result,
+if another canonical store/session is required, or if the same owner correction
+fails three times. Update this implementation plan within the authorized scope
+before another approach; preserve immutable diagnostic evidence.
+
+### Two-turn consultation diagnostic - 2026-10-25
+
+Run one explicitly authorized live App conversation with two ordinary, non-drawing
+architecture/material requests. Use the existing browser, source capture, provider
+recording, request identities, evaluation window and report capture owners. Keep
+one absolute 120-second work deadline across both requests and at most 60 seconds
+beyond it for reporting. Early first-request reporting consumes the shared work
+clock; never reset it or force a second request after expiry or failed capture.
+No video, product change, forced Knowledge/tool selection, automatic retry or push.
+Use gpt-6-astra / medium and the unchanged production budget. Preserve prompts,
+complete provider input/output, source snapshot, reports and screenshots. Register
+permanent deterministic sequencing tests in the existing local test entry.
+
+Distinguish App conversation continuity from native-thread/session continuity.
+Analyze overlapping dependencies only when actually observed; absence of a read
+or reuse is not failure. Separate ordinary work, harness reporting and tool costs;
+this is diagnosis, not a controlled improvement or latency claim. Inspect before
+and after document state to confirm the requested non-drawing behavior.
+
+### Knowledge delivery contract and cost validation - 2026-10-25
+
+Implement the existing explicit Knowledge delivery contract without adding an
+automatic consumer wrapper. Keep the previously validated source projection and
+attachment preparation. Cross-query duplication without caller-held reuse is
+outside this implementation's success claim.
+
+Implementation - compose:
+
+1. Deliver complete selected advice by default. Accept explicit reuseFrom only
+   for advice held by the caller; Runtime validates dependency identity, context,
+   permission and generation through its existing session. Preserve ordered
+   sources, overrides, paging, repeated reads and full rehydrate recovery.
+2. Keep the published generic forwarding example independent of incidental
+   consumer bindings. Use its existing per-query load/store entry to assemble
+   exact pages and redisplay retained output. Remove the automatic read prelude,
+   optional state adapter and their obsolete instructions/tests/release claim.
+3. Preserve both experiment programs and descriptions with source hashes and
+   the original fixed DoD in a formal fixture. Execute those programs against
+   registered reads and preserved Knowledge inputs; compare reconstructed advice,
+   sources, call counts, actual arguments/replies, guidance and generated program
+   bytes. Judge cost across the whole exchange, not against a standalone historical
+   guide-length cap. Reasonable explanatory additions must preserve executable
+   reuse and complete advice. Keep strict total-cost reduction as the decision
+   criterion. Historical failure remains failure; a passing rejection replay does
+   not fix duplication.
+4. Test the published current forwarding before implementation, then verify
+   direct full reads, explicit reuse, exact page continuation, cancellation,
+   invalid keys, stale context and rehydrate through existing consumer tests.
+   Recovery must not dispatch writes or captures. No new cache, tool, registry,
+   output-limit increase, acknowledgement or mandatory parent read.
+
+Step contract: compose owns selected ids/contexts, optional caller-held keys and
+consumer forwarding. It outputs complete advice or bounded pages with explicit
+read-only recovery; server retention does not prove consumer receipt. The spec
+sections Cross-query Knowledge dependency delivery and Bounded informational
+content delivery, plus compose's existing conditions and routes, govern this work.
+Runtime remains the dependency/reuse owner; no Runtime, domain, geometry,
+persistence or model configuration changes. Implementation files are the two App
+delivery owners, their information integration and execution proof tests, the
+formal rejected-program fixture, existing mapping, active spec/Inspector and
+changelog. Preserve previously pushed behavior, reports and original evidence.
+
+Acceptance and execution order:
+
+- Update the active contract and complete Inspector admission before test and
+  implementation work; retain all existing accepted product obligations.
+- Prove the generic forwarding regression fails before removing the adapter.
+- Current guidance and forwarding require no automatic helper; execute the
+  published explicit reuse and recovery examples, including native offline tests.
+- The independent cost replay must need neither ignored tmp inputs nor removed
+  production exports. Compare equal advice and call counts, including generated
+  source cost, and preserve the rejected experiment's unchanged decision.
+- Pass task context, naming, focused App/Runtime tests, response-harness consumers,
+  production types/build, scoped lint, architecture/guidance and final Inspector
+  proof. Self-review the diff, direct consumers and these fixed gates only.
+- Stop when these checks pass. Do not add another deduplication strategy, run a
+  model or 101, inspect CI, push, create a goal or infer AI adoption or latency gains.
 
 ### Authorized attachment handoff observation - 2026-10-25
 

@@ -1,5 +1,16 @@
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
+import { createAiAgentRuntime } from '@asyra/ai-agent-runtime'
+import { getFeature, unregisterFeature } from '@asyra/feature-system'
+import {
+  registerAiAgentFeature,
+  type AiAgentFeatureApi
+} from '../../src/features/ai-agent'
+import { FeatureNames } from '../../src/constants'
+import {
+  AI_CONVERSATION_HISTORY_MAXIMUM_BYTES,
+  createAiConversationController
+} from '../../src/ai/conversation'
 import recordedAttachmentHandoff from './fixtures/recorded-101/attachment-reference-20261025.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
@@ -532,6 +543,173 @@ afterEach(() => {
 })
 
 describe('local subscription AI backend', () => {
+  it('delivers saved consultation context through Feature, Runtime, HTTP and native turn input without replay', async () => {
+    // Original ordinary answer, not the evaluation report. Run 1792943745017,
+    // native record 839ab2b8-d58b-45f4-933e-ff55574668f8, payload 10-output.json.
+    // Payload SHA-256: f445fb370c1a4a89d26245faade554b06aaf9b4e04896df5d057b2f5794e1223.
+    const savedBatch = {
+      batchId: 'proposal-01',
+      actions: [
+        {
+          id: 'outcome-01',
+          name: 'report_outcome',
+          arguments: {
+            outcome: 'completed',
+            message:
+              '建議方向：「冷色玻璃 × 霧銀金屬」，以俐落的半寫實建築插畫呈現。以下是提案，尚未繪製或變更畫布。\n\n構圖｜建議直式畫幅，採略微仰視的三分之四視角，同時看見正面與側面；維持垂直線穩定，凸顯建築高度。主體約占畫面七成，四周留白、背景透明，不加人物、植栽或文字。\n\n立面｜以修長主量體搭配較低的入口量體，建立高低層次。玻璃帷幕以細直框形成主要節奏，樓層橫框退為次要線條；入口內凹、頂部局部退縮，讓輪廓有辨識度而不過度複雜。\n\n材質｜玻璃以灰藍、青灰為主，兼具柔和反射與少量室內暗部，避免整面像不透明藍板。反射跨同一立面連續延伸，不讓每格窗戶重複相同亮斑。金屬採霧銀鋁板與深灰窗框，以較窄的亮邊、柔和明暗及克制接縫，與玻璃區分。\n\n光線與風格｜設定左上方柔光，正面較亮、側面較深，入口凹處最暗。以乾淨幾何輪廓搭配局部材質細節；先讓體積與材質讀得清楚，再決定細節密度。這是原創概念方向，並非特定建築重現或工程設計。'
+          },
+          summary: '提出構圖、立面與材質方向；不繪製、不變更畫布。'
+        }
+      ]
+    }
+    const firstIntent =
+      '我要設計一張玻璃與金屬構成的建築插畫。請先提出構圖、立面與材質方向，這一步先不要繪製。'
+    const nextIntent =
+      '沿用剛才的方向，進一步說明玻璃與金屬的反射、明暗層次，以及如何檢查材質是否一致，先不要繪製。'
+    const firstServer = fakeServer({ output: JSON.stringify(savedBatch) })
+    const secondServer = fakeServer({
+      output: JSON.stringify({
+        batchId: 'followup',
+        actions: [
+          {
+            id: 'reply',
+            name: 'report_outcome',
+            arguments: {
+              outcome: 'completed',
+              message:
+                'Continue the agreed facade, keeping continuous reflections.'
+            },
+            summary: 'Advice only'
+          }
+        ]
+      })
+    })
+    const posted: AiProviderInput[] = []
+    const transport = createServerActionBatchProvider({
+      fetch: async (_url, init) => {
+        const input = JSON.parse(String(init.body)) as AiProviderInput
+        posted.push(input)
+        const result = await requestConfiguredAiActionBatch(input, {
+          environment,
+          signal: init.signal
+        })
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+    })
+    const hadWindow = typeof window !== 'undefined'
+    if (!hadWindow) vi.stubGlobal('window', {})
+    const { createAiActions } = await import('../../src/ai/actions')
+    const report = createAiActions(undefined, {
+      confirmPersistence: async () => ({
+        status: 'durable',
+        documentId: 'consultation',
+        documentGeneration: 1,
+        sequence: 0,
+        durableSequence: 0
+      })
+    }).find((action) => action.name === AiActionNames.REPORT_OUTCOME)
+    if (!report) throw new Error('Missing canonical report action')
+    const runtime = createAiAgentRuntime({
+      provider: transport,
+      actionDefinitions: [report],
+      contextProvider: { getContext: async () => ({ elementCount: 0 }) },
+      permissionPolicy: { evaluate: () => 'allow' },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: { run: async (_label, work) => work() }
+    })
+    registerAiAgentFeature(runtime)
+    const feature = getFeature(FeatureNames.AI_AGENT) as AiAgentFeatureApi
+    const controller = createAiConversationController({
+      feature,
+      getElementType: () => undefined
+    })
+    try {
+      const first = await controller.submit(firstIntent)
+      expect(first.outcome).toBe('no-change')
+      const second = await controller.submit(nextIntent)
+      expect(second.outcome).toBe('no-change')
+      const nativeInput = (server: ReturnType<typeof fakeServer>) => {
+        const starts = server.packets.filter(
+          (packet) => packet.method === 'turn/start'
+        )
+        expect(starts).toHaveLength(1)
+        const items = starts[0].params.input as { text: string }[]
+        return JSON.parse(items[0].text).input
+      }
+      expect(nativeInput(firstServer).metadata).not.toHaveProperty(
+        'conversationHistory'
+      )
+      const expected = {
+        omittedTurns: 0,
+        turns: [
+          {
+            turnId: first.turnId,
+            intent: firstIntent,
+            message: savedBatch.actions[0].arguments.message,
+            outcome: 'no-change'
+          }
+        ]
+      }
+      expect(nativeInput(secondServer).metadata.conversationHistory).toEqual(
+        expected
+      )
+      expect(posted[1].metadata).toMatchObject({
+        conversationHistory: expected
+      })
+      expect(nativeInput(secondServer).intent).toBe(nextIntent)
+      expect(posted).toHaveLength(2)
+      expect(spawn).toHaveBeenCalledTimes(2)
+      for (const server of [firstServer, secondServer]) {
+        expect(
+          server.packets.filter((packet) => packet.method === 'thread/start')
+        ).toHaveLength(1)
+        const started = server.packets.find(
+          (packet) => packet.method === 'thread/start'
+        )
+        if (!started) throw new Error('Missing native thread start')
+        const thread = started.params
+        expect(thread.ephemeral).toBe(true)
+        if (server === secondServer) {
+          expect(thread.baseInstructions).toContain(
+            'metadata.conversationHistory'
+          )
+          expect(thread.baseInstructions).toContain(
+            'Never replay prior actions'
+          )
+        } else {
+          expect(thread.baseInstructions).not.toContain(
+            'metadata.conversationHistory'
+          )
+        }
+        expect(
+          server.packets.some((packet) => packet.method === 'item/tool/call')
+        ).toBe(false)
+      }
+      const wire = JSON.stringify(expected)
+      for (const excluded of [
+        'actionResults',
+        'progress',
+        'contextKey',
+        'imageAttachments',
+        'evaluationWindow',
+        'savedBatch'
+      ])
+        expect(wire).not.toContain(excluded)
+      expect(Buffer.byteLength(wire)).toBeLessThanOrEqual(
+        AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
+      )
+    } finally {
+      await controller.dispose()
+      unregisterFeature(FeatureNames.AI_AGENT)
+      await runtime.dispose()
+      transport.dispose()
+      if (!hadWindow) vi.unstubAllGlobals()
+    }
+  })
+
   it('authors, saves, discovers and reuses a real preparation recipe across provider requests', async () => {
     const entries = new Map<string, AiToolStoreEntry>()
     let version = 0

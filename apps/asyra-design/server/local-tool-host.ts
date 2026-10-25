@@ -29,7 +29,10 @@ import {
   type LocalToolOwner,
   type LocalToolDefinition
 } from './local-tool-invocation'
-import { operationInputIssue } from './operation-input-schema'
+import {
+  operationContractIssue,
+  operationInputIssue
+} from './operation-input-schema'
 import type { LocalToolOwnership } from './local-tool-leases'
 import { projectToolDelivery } from '../src/ai/tool-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
@@ -164,7 +167,7 @@ export const createLocalToolHost = (options: {
     capacity: options.capacity,
     receiptCapacity: options.receiptCapacity,
     limits: options.limits,
-    validate: operationInputIssue,
+    validate: operationContractIssue,
     leases,
     execute: async (call) => {
       const reply = await leaf(call)
@@ -255,7 +258,7 @@ export const createLocalToolHost = (options: {
         if (outputSchema !== undefined) {
           const outputIssue =
             validatedSchema === undefined
-              ? operationInputIssue(value, outputSchema)
+              ? operationContractIssue(value, outputSchema, { stage: 'output' })
               : undefined
           if (outputIssue) throw new Error(outputIssue)
           await leases.retain({

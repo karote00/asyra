@@ -395,6 +395,7 @@
             "AiToolSaveResult",
             "AiToolStore",
             "AiToolStoreEntry",
+            "AiToolValidator",
             "AiTransactionError",
             "AiTransactionRunner",
             "AiTransactionSettlementError",
@@ -7058,6 +7059,30 @@
             "subscribeToDiagnosticCounters",
             "transformGeometryPoint"
           ]
+        },
+        {
+          "members": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "height",
+            "tx",
+            "ty",
+            "width",
+            "x",
+            "y"
+          ],
+          "path": "./geometry-bounds",
+          "symbols": [
+            "GeometryBounds",
+            "GeometryBoundsCarrier",
+            "GeometryTransformMatrix",
+            "calculateEllipseBounds",
+            "getElementGeometryLocalBounds",
+            "getElementGeometryWorldBounds",
+            "setElementGeometryLocalBounds"
+          ]
         }
       ],
       "frameworkDependencies": [],
@@ -7065,7 +7090,8 @@
       "guidePath": "docs/public/reference/packages/utils.md",
       "name": "@asyra/utils",
       "publicEntries": [
-        "."
+        ".",
+        "./geometry-bounds"
       ],
       "version": "0.5.2"
     }

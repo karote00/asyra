@@ -314,3 +314,42 @@ remain explicit, and saved text survives screenshot failure. The permanent
 `local-ai-provider.spec.ts` body-eviction case uses a scripted response and actual
 App execution without a model; a constrained diagnostic cache reproduces eviction
 without changing product artifact or transport budgets.
+
+## Explicitly authorized two-turn consultation observation
+
+`node test-data/knowledge-evaluation/run-consultation.mjs` is a manual real-provider
+entry, never invoked by ordinary tests. It uses the existing isolated services,
+source capture, provider record sink, browser and evaluation deadline/report owners.
+The two ordinary non-drawing prompts share one 120-second work deadline; reporting
+cannot extend beyond its additional 60-second window. The first request stays ordinary and its displayed answer is captured before
+continuation; only the final request enters reporting. The existing process
+watchdog bounds the first turn at the shared work deadline, then is replaced by
+the final work/report watchdog after successful predecessor capture. Incomplete/failed capture and failed/cancelled outcomes stop the sequence; no
+model retry, forced read or second request after expiry is allowed. Video is off.
+Its deterministic sequencing tests run through the existing local test command.
+
+Same App conversation does not imply same native thread or retained Knowledge
+session. Read original inputs before attributing repeated discovery to the model.
+No overlapping body reads means reuse remains unobserved. Keep evaluation reports
+separate from ordinary work answers and account for their additional latency.
+The recorded observation and its measurement limits are in
+`docs/ai/knowledge/evaluations/2026-10-25-two-turn-consultation.md` at repository root.
+This documentation does not authorize another live invocation.
+
+
+An explicitly authorized drawing follow-up uses the same collector with
+`--scenario=architecture-101`. It retains the frozen reference hashes and brief,
+requests an initial editable pass, and then a material-only refinement preserving
+geometry and identities. The existing recording observer and bounds-fit record
+first content; each settled turn retains its document. The first ordinary turn
+still has a hard work deadline: if it expires, neither a follow-up nor a fabricated
+report is emitted. Missing final report and continuity observations remain missing.
+The request does not change production limits or force a particular tool choice.
+
+
+A terminal `partial` predecessor is eligible only after the ordinary answer and
+request identity, per-turn document and screenshot are saved and the App input is
+idle. The existing UI owns settlement; successful individual tool calls are not
+substitutes. Preserve `partial` and send only the declared follow-up before the
+shared deadline. Captured final partial reports complete evidence collection, not
+artwork acceptance. No failure/cancellation is promoted or initial work replayed.

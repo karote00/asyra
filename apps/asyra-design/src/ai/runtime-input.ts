@@ -6,7 +6,7 @@ import {
   createAiInvoker,
   AiProviderError
 } from '@asyra/ai-agent-runtime'
-import { operationInputIssue } from './tool-schema'
+import { operationContractIssue } from './tool-schema'
 import { designActionOutcome } from './tool-contract'
 import core from '../contexts'
 import { createRetainedDesignContext } from '../common-apis/retained-design-context'
@@ -70,7 +70,7 @@ export const observeAiAction = (
   const contract = createAiToolContract(definition)
   const middleware = createAiToolMiddleware({
     resolve: (name) => (name === contract.name ? contract : undefined),
-    validate: operationInputIssue,
+    validate: operationContractIssue,
     classify: designActionOutcome
   })
   return {

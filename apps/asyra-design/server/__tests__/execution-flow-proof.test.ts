@@ -908,6 +908,14 @@ it('execution proof validates continuity references before a successor request',
       intent: 'Keep its rough style and adjust the remaining shape',
       metadata: { aiTargets: { compositionId: 'root', roleToElementIds: {} } }
     })
+    expect(execute.mock.calls[1][0].metadata.conversationHistory).toMatchObject(
+      {
+        omittedTurns: 0,
+        turns: [
+          { intent: 'Create deliberately rough artwork', outcome: 'success' }
+        ]
+      }
+    )
     controller.newConversation()
     await controller.submit('Create an unrelated simple drawing')
     expect(execute.mock.calls[2][0].metadata.aiTargets).toEqual({
@@ -2576,7 +2584,7 @@ it('execution proof binds prepared recipe assessment to immutable source before 
 it('execution proof shares immutable tool contracts and preserves rejected output without replay', async () => {
   const { createAiToolContract, createAiToolMiddleware } =
     await import('@asyra/ai-agent-runtime')
-  const { operationInputIssue } = await import('../operation-input-schema')
+  const { operationContractIssue } = await import('../operation-input-schema')
   const contract = createAiToolContract({
     name: 'inventory',
     description: 'Read inventory',
@@ -2601,7 +2609,7 @@ it('execution proof shares immutable tool contracts and preserves rejected outpu
     middleware: [
       createAiToolMiddleware({
         resolve: () => contract,
-        validate: operationInputIssue,
+        validate: operationContractIssue,
         classify: () => ({ status: 'success', settlement: 'completed' })
       })
     ]
@@ -5512,6 +5520,7 @@ it('execution proof consumes repeated multi-face examples through exact native t
 })
 
 it('execution proof rejects mismatched query scopes before reads and preserves explicit refinement', async () => {
+  vi.resetModules()
   vi.stubGlobal('window', {})
   const { createRetainedDesignContext } =
     await import('../../src/common-apis/retained-design-context')
@@ -5543,24 +5552,27 @@ it('execution proof rejects mismatched query scopes before reads and preserves e
     getElementComputedData: () => ({})
   }
   const store = createRetainedDesignContext(source, () => () => undefined)
-  const action = createDocumentContextAction(store.read)
+  const { observeAiAction } = await import('../../src/ai/runtime-input')
+  const action = observeAiAction(createDocumentContextAction(store.read))
   const signal = new AbortController().signal
   try {
-    await expect(action.execute(invalid as never, { signal })).rejects.toThrow(
-      /filter.*region.*snapshot/
-    )
+    await expect(
+      createDocumentContextAction(store.read).execute(invalid as never, {
+        signal
+      })
+    ).rejects.toThrow(/filter.*region.*snapshot/)
     expect(children).not.toHaveBeenCalled()
     const parent = store.read({ scope: 'children' }, signal)
     if (!parent.snapshotId) throw new Error('Expected retained parent identity')
-    const filtered = store.read(
+    const filtered = (await action.execute(
       {
         scope: 'snapshot',
         snapshotId: parent.snapshotId,
         filter: { type: 'group' },
         delivery: 'page'
       },
-      signal
-    )
+      { signal }
+    )) as ReturnType<typeof store.read>
     expect(filtered.elements.map((row) => row.id)).toEqual(['a'])
     expect(children).toHaveBeenCalledTimes(1)
     expect(store.get(parent.snapshotId, undefined, signal).orderedIds).toEqual([
@@ -5568,6 +5580,179 @@ it('execution proof rejects mismatched query scopes before reads and preserves e
     ])
   } finally {
     store.dispose()
+  }
+
+  // Preserve the saved 1792948625197 query sequence before JSON serialization.
+  // Its provider log b15a54e4-4278-4eab-a0ab-92f22bdc8358 rejects output at 85.409s.
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const { default: core } = await import('../../src/contexts')
+  const { applyPreset, PresetProfiles, PresetDefaults } =
+    await import('@asyra/preset')
+  const { observeDesignChanges } =
+    await import('../../src/common-apis/design-review')
+  const { createRetainedFillAction } =
+    await import('../../src/ai/retained-fill-action')
+  const { fillApis } = await import('../../src/common-apis/fills')
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          children: [],
+          visible: true,
+          lock: false
+        }
+      }
+    }
+  })
+  const ids = core.createElementsInParent(
+    [
+      { type: 'rect', name: 'A玻璃窗格', x: 0, y: 0, width: 10, height: 10 },
+      { type: 'rect', name: 'B玻璃窗格', x: 100, y: 0, width: 10, height: 10 },
+      { type: 'rect', name: 'Background', x: 50, y: 0, width: 10, height: 10 }
+    ],
+    'workspace'
+  )
+  fillApis.addFills(ids)
+  const color = (id: string) =>
+    (
+      core.getElementComputedData(id, ['fills'])?.fills as { color: string }[]
+    )[0].color
+  const geometry = () =>
+    ids.map((id) =>
+      core.getElementComputedData(id, ['x', 'y', 'width', 'height', 'rotation'])
+    )
+  const beforeGeometry = geometry()
+  const unchanged = core.getElementData(ids[2])
+  const childrenReads = vi.spyOn(core, 'getElementChildren')
+  const spatialReads = vi.spyOn(core, 'getElementIdsInBounds')
+  const retained = createRetainedDesignContext(core, observeDesignChanges)
+  const readAction = observeAiAction(createDocumentContextAction(retained.read))
+  const fillAction = observeAiAction(createRetainedFillAction(retained))
+  const definitions = [readAction, fillAction]
+  const dispatched: string[] = []
+  const tools = createOperationOwner(
+    definitions.map(createAiToolContract),
+    {
+      modelActions: (a) => a,
+      resolveBatch: (b) => b
+    },
+    async (batch) => {
+      const actionResults = []
+      for (const call of batch.actions) {
+        const action = definitions.find((entry) => entry.name === call.name)
+        if (!action) throw new Error('Unexpected dispatch')
+        dispatched.push(action.name)
+        const result = await action.execute(call.arguments as never, {
+          signal,
+          runMutation: async (write) => write()
+        })
+        // Validate raw owner output before the ordinary browser wire copy.
+        actionResults.push({
+          actionId: call.id,
+          actionName: call.name,
+          result: JSON.parse(JSON.stringify(result))
+        })
+      }
+      return { context: {}, actionResults }
+    }
+  )
+  const read = async (arguments_: unknown) => {
+    const receipt = JSON.parse(
+      await tools.callInternal(
+        readAction.name,
+        { arguments: arguments_ },
+        signal
+      )
+    )
+    expect(receipt.batchFailure).toBeUndefined()
+    return receipt.actionResults[0].result
+  }
+  try {
+    const parent = await read({
+      scope: 'children',
+      parentId: 'workspace',
+      fields: ['fills', 'x', 'y'],
+      delivery: 'page',
+      limit: 12
+    })
+    const selected = await read({
+      scope: 'snapshot',
+      snapshotId: parent.snapshotId,
+      filter: { name: { suffix: '玻璃窗格' } },
+      delivery: 'page',
+      limit: 2
+    })
+    expect(selected.elements.map((row: { id: string }) => row.id)).toEqual(
+      ids.slice(0, 2)
+    )
+    expect(selected).not.toHaveProperty('elementIds')
+    expect(
+      retained.get(parent.snapshotId, parent.leaseId, signal).orderedIds
+    ).toEqual(ids)
+    const input = {
+      arguments: {
+        mappings: [
+          {
+            snapshotId: selected.snapshotId,
+            leaseId: selected.leaseId,
+            coordinateSpace: 'parent-local',
+            axis: 'x',
+            domain: [0, 100],
+            index: 0,
+            outside: 'clamp',
+            stops: [
+              { at: 0, color: '#000000' },
+              { at: 1, color: '#ffffff' }
+            ]
+          }
+        ]
+      },
+      inspection: 'defer'
+    }
+    const receipt = JSON.parse(
+      await tools.callInternal(fillAction.name, input, signal)
+    )
+    expect(receipt.batchFailure).toBeUndefined()
+    expect(receipt.actionResults[0].result).toMatchObject({
+      appliedCount: 2,
+      toolOutcome: { status: 'success', settlement: 'completed' }
+    })
+    expect(color(ids[0])).toBe('#000000')
+    expect(color(ids[1])).toBe('#ffffff')
+    expect(geometry()).toEqual(beforeGeometry)
+    expect(core.getElementData(ids[2])).toEqual(unchanged)
+    expect(childrenReads).toHaveBeenCalledOnce()
+    expect(spatialReads).not.toHaveBeenCalled()
+    const committed = core.save()
+    await expect(
+      fillAction.execute(input.arguments as never, {
+        signal,
+        runMutation: async (write) => write()
+      })
+    ).rejects.toThrow(/stale|expired|lease/i)
+    expect(core.save()).toEqual(committed)
+    expect(dispatched).toEqual([
+      readAction.name,
+      readAction.name,
+      fillAction.name
+    ])
+  } finally {
+    retained.dispose()
+    childrenReads.mockRestore()
+    spatialReads.mockRestore()
+    vi.resetModules()
   }
 })
 

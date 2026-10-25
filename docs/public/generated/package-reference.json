@@ -14,7 +14,7 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "4feeba034f77524adae18298c087f72f3c3be83ad2b10c01191f7c2cc96eb7d5",
+        "contract": "80888eeae10a1b5e9400261706b4cac43d1b7143072cf3dd68d68f49b801b8ea",
         "guide": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
         "manifest": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
       },
@@ -71,7 +71,7 @@
         "./contracts"
       ],
       "sourceDigests": {
-        "contract": "7c255d3f7e127846643a3d1d57ef7442e6add5d644681742ac99002659851333",
+        "contract": "247c1a3eb94927e80954378b87a50d980776f231007d9316606c80b2b36dab50",
         "guide": "e2ddd1a4890f404a6e3717d4b7977e5925a2880c073fa60db037f13ac0b3452e",
         "manifest": "1f45735fa7f8061c9ba450ab1b4de1d76e37b72a5284a6873ee5f96679d710a4"
       },
@@ -213,7 +213,7 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "2a73b04269eb282b07a8c72b4a4389fc82b54c45ac3fc3e414558652644e02a6",
+        "contract": "6adc550b75859b84be8051a967c11795c763a9f4f480e2893d0b093287028a7e",
         "guide": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },
@@ -348,7 +348,7 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "79e0b643b1e6df839a52a0a738c7e4b87cb74f3f38f896ca6b1fd558cb8372db",
+        "contract": "b84a90f130ce420cfab63fdb1882a7474324db60915c954456a65f32904a76e7",
         "guide": "4f8bc35fd5435934068a2ed81aa578f788edb6d866b2495cf83ba852deb74231",
         "manifest": "e46c47e2ec31a8f1a9405a0dd54e288bd2f27657ff03b13c944eb7cb623e3719"
       },
@@ -429,12 +429,13 @@
       "manifestPath": "packages/utils/package.json",
       "name": "@asyra/utils",
       "publicEntries": [
-        "."
+        ".",
+        "./geometry-bounds"
       ],
       "sourceDigests": {
-        "contract": "313ef64a3a0c0a8151a2b4b20337365a3a42cae068a9ea05c270ae0e533b9cf6",
+        "contract": "84317bf178813363cd6fdacac82787d20c7ecdfe915f64fcfaf4ac9f46d8b123",
         "guide": "ecdddc4ca47e48ab9d5c8ad2b0593d4da9e217cadb2c258c0c351e43aeb5e947",
-        "manifest": "d13130904aebc87f640dbbe3ecd21d7c3a697c354ec1a94c083445230b41a5e6"
+        "manifest": "8676cc307471ff6e85c1d9328b4609b3ae34538c1054ed2db580fa9dc58935e8"
       },
       "version": "0.5.2"
     }

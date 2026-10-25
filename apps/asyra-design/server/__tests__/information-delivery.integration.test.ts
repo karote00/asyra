@@ -955,3 +955,260 @@ it('forwards cross-query held advice and the actual reuse example through native
     owner.dispose()
   }
 }, 60000)
+
+// Rejected programs are immutable experiment evidence, never production helpers.
+it('rejects the withdrawn consumer prototype under the unchanged total-cost DoD', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const { default: experiment } =
+    await import('./fixtures/recorded-101/rejected-knowledge-consumer-20261025.json')
+  const raw = await readFile(
+    new URL(
+      './fixtures/recorded-101/knowledge-source-delivery-20261025.json',
+      import.meta.url
+    )
+  )
+  expect(createHash('sha256').update(raw).digest('hex')).toBe(
+    experiment.knowledgeFixtureSha256
+  )
+  const recorded: {
+    ordinaryQueries: Record<string, unknown>[]
+    files: {
+      id: string
+      revision: number
+      markdownBase64: string
+      sha256: string
+    }[]
+  } = JSON.parse(raw.toString())
+  const replayFiles = recorded.files.map((file) => {
+    const markdown = Buffer.from(file.markdownBase64, 'base64')
+    expect(createHash('sha256').update(markdown).digest('hex')).toBe(
+      file.sha256
+    )
+    return {
+      id: file.id,
+      revision: file.revision,
+      markdown: markdown.toString()
+    }
+  })
+  const replay = async (kind: 'baseline' | 'candidate') => {
+    const script = experiment[kind]
+    const body = `${script.prelude}\n${script.forward}`
+    expect(createHash('sha256').update(body).digest('hex')).toBe(
+      script.programSha256
+    )
+    const owner = createLocalKnowledgeTools(
+      `cost-${kind}`,
+      async () => replayFiles
+    )
+    const definition = owner.definitions.find(
+      (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
+    )
+    if (!definition) throw new Error('Missing Knowledge read definition')
+    const memory = new Map<string, ReturnType<typeof JSON.parse>>()
+    const calls: { input: Record<string, unknown>; text: string }[] = []
+    const outputs: string[] = []
+    const documents: unknown[] = []
+    const sources: unknown[] = []
+    let programBytes = 0
+    let completeProgramBytes = 0
+    try {
+      for (const [index, query] of recorded.ordinaryQueries.entries()) {
+        // Ordinary forwarding requires a query-specific key. The rejected program
+        // explicitly required one stable key across different queries.
+        const deliveryKey =
+          kind === 'baseline' ? `knowledge-${index}` : 'knowledge'
+        const code = `const query = ${JSON.stringify(query)}; const deliveryKey = ${JSON.stringify(deliveryKey)}; const read_knowledge = input => tools.design_knowledge__read_knowledge(input);\n${body}`
+        programBytes += Buffer.byteLength(body)
+        completeProgramBytes += Buffer.byteLength(code)
+        await runInNewContext(`(async () => { ${code} })()`, {
+          load: (key: string) => memory.get(key),
+          store: (key: string, value: unknown) =>
+            memory.set(key, structuredClone(value)),
+          text: (value: string) => outputs.push(value),
+          tools: {
+            design_knowledge__read_knowledge: async (
+              input: Record<string, unknown>
+            ) => {
+              const reply = await invokeLocalTool(
+                owner,
+                definition,
+                input,
+                new AbortController().signal
+              )
+              expect(reply.success, reply.text).toBe(true)
+              expect(JSON.parse(reply.text).contentDelivery).toBeUndefined()
+              calls.push({ input: structuredClone(input), text: reply.text })
+              return reply.text
+            }
+          }
+        })
+        const saved = memory.get(deliveryKey)
+        expect(saved.complete).toBe(true)
+        expect(saved.next).toBeNull()
+        expect(
+          saved.value.documents.every(
+            (doc: { text?: string }) => typeof doc.text === 'string'
+          )
+        ).toBe(true)
+        documents.push(structuredClone(saved.value.documents))
+        sources.push(structuredClone(saved.value.sources))
+      }
+      expect(outputs).toEqual(calls.map((call) => call.text))
+      return {
+        calls,
+        documents,
+        sources,
+        programBytes,
+        completeProgramBytes,
+        guideBytes:
+          Buffer.byteLength(script.description) +
+          Buffer.byteLength(script.forward),
+        exchangeBytes: calls.reduce(
+          (total, call) =>
+            total +
+            Buffer.byteLength(JSON.stringify(call.input)) +
+            Buffer.byteLength(call.text),
+          0
+        )
+      }
+    } finally {
+      owner.dispose()
+    }
+  }
+  const baseline = await replay('baseline')
+  const candidate = await replay('candidate')
+  expect(candidate.documents).toEqual(baseline.documents)
+  expect(candidate.sources).toEqual(baseline.sources)
+  expect(baseline.calls).toHaveLength(recorded.ordinaryQueries.length)
+  expect(candidate.calls).toHaveLength(baseline.calls.length)
+  expect(baseline.calls.every((call) => !call.input.reuseFrom)).toBe(true)
+  expect(candidate.calls[1].input.reuseFrom).toEqual([
+    JSON.parse(candidate.calls[0].text).contextKey
+  ])
+  expect(candidate.exchangeBytes).toBeLessThan(baseline.exchangeBytes)
+  const guideDelta = candidate.guideBytes - baseline.guideBytes
+  const before = baseline.exchangeBytes + baseline.programBytes
+  const after = candidate.exchangeBytes + candidate.programBytes + guideDelta
+  // Keep the optimization decision separate from successful rejection replay.
+  // The original strict reduction criterion remains unchanged and is NOT met.
+  const meetsFixedDoD =
+    after < before && candidate.calls.length <= baseline.calls.length
+  expect({ decision: meetsFixedDoD ? 'accepted' : 'rejected' }).toEqual({
+    decision: experiment.decision
+  })
+  const beforeComplete =
+    baseline.exchangeBytes + baseline.completeProgramBytes + baseline.guideBytes
+  const afterComplete =
+    candidate.exchangeBytes +
+    candidate.completeProgramBytes +
+    candidate.guideBytes
+  expect(afterComplete).toBeGreaterThan(beforeComplete)
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'rejected-consumer-cost',
+      before,
+      after,
+      baselineExchange: baseline.exchangeBytes,
+      candidateExchange: candidate.exchangeBytes,
+      guideDelta,
+      baselinePrograms: baseline.programBytes,
+      candidatePrograms: candidate.programBytes,
+      beforeComplete,
+      afterComplete,
+      meetsFixedDoD
+    }) + '\n'
+  )
+})
+
+it.each([
+  { label: 'registered guide', explanation: '' },
+  {
+    label: 'additional explanation',
+    explanation:
+      '\nRetain required advice until the dependent operation is complete.'
+  }
+])(
+  'keeps published forwarding independent from incidental consumer adapter bindings with $label',
+  async ({ explanation }) => {
+    const owner = createLocalKnowledgeTools(
+      'independent-forwarding',
+      async () => files
+    )
+    const definition = owner.definitions.find(
+      (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
+    )
+    if (!definition) throw new Error('Missing Knowledge read definition')
+    // A description can gain valid advice without changing its executable contract.
+    const description = definition.description + explanation
+    const memory = new Map<string, ReturnType<typeof JSON.parse>>()
+    const incidentalSave = vi.fn(() => {
+      throw new Error('Unrelated state must not intercept forwarding')
+    })
+    const forward = advertisedExample(localToolResultInstructions)
+    let input: Record<string, unknown> = { ids: ['test.advice'] }
+    try {
+      for (let pages = 0; pages < 20; pages++) {
+        const reply = await invokeLocalTool(
+          owner,
+          definition,
+          input,
+          new AbortController().signal
+        )
+        expect(reply.success).toBe(true)
+        const output: string[] = []
+        runInNewContext(forward, {
+          result: reply.text,
+          deliveryKey: 'independent-advice',
+          informationState: { previous: undefined, save: incidentalSave },
+          load: (key: string) => memory.get(key),
+          store: (key: string, value: unknown) =>
+            memory.set(key, structuredClone(value)),
+          text: (value: string) => output.push(value)
+        })
+        expect(output).toEqual([reply.text])
+        const saved = memory.get('independent-advice')
+        if (saved.complete) break
+        input = saved.next.arguments
+      }
+      expect(incidentalSave).not.toHaveBeenCalled()
+      expect(memory.get('independent-advice').value.documents[0].text).toBe(
+        advice
+      )
+      const previous = memory.get('independent-advice').value
+      const expression = description.match(/`(read_knowledge\([^`]+\))`/)?.[1]
+      if (!expression)
+        throw new Error('Missing published explicit reuse example')
+      const read = vi.fn(async (args: Record<string, unknown>) => {
+        const reply = await invokeLocalTool(
+          owner,
+          definition,
+          JSON.parse(JSON.stringify(args)),
+          new AbortController().signal
+        )
+        expect(reply.success, reply.text).toBe(true)
+        return reply.text
+      })
+      const reused = JSON.parse(
+        await runInNewContext(expression, {
+          read_knowledge: read,
+          ids: ['test.advice'],
+          contexts: undefined,
+          previous
+        })
+      )
+      expect(read).toHaveBeenCalledTimes(1)
+      expect(read.mock.calls[0][0].reuseFrom).toEqual([previous.contextKey])
+      expect(reused.documents).toHaveLength(previous.documents.length)
+      const { retainedFrom, ...document } = reused.documents[0]
+      expect(retainedFrom).toBe(previous.contextKey)
+      expect(document).not.toHaveProperty('text')
+      expect({ ...document, text: previous.documents[0].text }).toEqual(
+        previous.documents[0]
+      )
+      expect(reused.sources).toEqual(previous.sources)
+      expect(description).toContain('rehydrate')
+    } finally {
+      owner.dispose()
+    }
+  }
+)

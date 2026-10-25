@@ -12,7 +12,10 @@ import {
 } from '@asyra/ai-agent-runtime'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { BrowserBatchExecutionError } from './batch-exchange'
-import { operationInputIssue } from './operation-input-schema'
+import {
+  operationContractIssue,
+  operationInputIssue
+} from './operation-input-schema'
 import { designActionOutcome } from '../src/ai/tool-contract'
 
 export interface LocalToolDefinition extends AiToolContractInput {
@@ -341,7 +344,7 @@ export const invokeLocalTool = async (
     }
     const inspected = inspectAiToolResult(contract, value, {
       outcome: toolOutcome,
-      validate: operationInputIssue
+      validate: operationContractIssue
     })
     if (inspected.status === 'invalid') throw new Error(inspected.issue)
     const reply = {

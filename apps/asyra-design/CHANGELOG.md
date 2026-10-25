@@ -1,5 +1,78 @@
 # @asyra/asyra-design
 
+## Pending bounded continuation evaluation
+
+```update-note
+{
+  "change": "bounded-continuation-evaluation",
+  "owner": "Asyra Design evaluation",
+  "summary": "Observe ordinary two-turn continuation under one shared deadline, retain reports and documents, and keep the rejected Knowledge-consumer experiment covered by permanent cost regressions.",
+  "sources": [
+    "apps/asyra-design/package.json",
+    "apps/asyra-design/server/__tests__/information-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/rejected-knowledge-consumer-20261025.json",
+    "apps/asyra-design/test-data/knowledge-evaluation/__tests__/consultation.test.mjs",
+    "apps/asyra-design/test-data/knowledge-evaluation/run-consultation.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "These are explicitly authorized diagnostic and deterministic test entrypoints. No App consumer migration or automatic model execution is introduced."
+}
+```
+
+## Pending retained refinement delivery
+
+```update-note
+{
+  "change": "retained-refinement-delivery",
+  "owner": "Asyra Design context and tool validation",
+  "summary": "Preserve element and identity result modes through retained refinement before output validation. Label output failures accurately without asking callers to replay completed operations.",
+  "sources": [
+    "apps/asyra-design/src/common-apis/retained-design-context.ts",
+    "apps/asyra-design/src/ai/tool-schema.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/basic-api-contracts.test.ts",
+    "apps/asyra-design/server/__tests__/local-tool-invocation.test.ts",
+    "apps/asyra-design/server/__tests__/local-tool-library-tools.test.ts",
+    "apps/asyra-design/server/__tests__/local-tool-library.test.ts",
+    "apps/asyra-design/server/__tests__/operation-input-schema.test.ts",
+    "apps/asyra-design/server/__tests__/tool-contract-assertions.ts",
+    "apps/asyra-design/server/local-tool-host.ts",
+    "apps/asyra-design/server/local-tool-invocation.ts",
+    "apps/asyra-design/server/operation-input-schema.ts",
+    "apps/asyra-design/src/ai/__tests__/runtime-input.test.ts",
+    "apps/asyra-design/src/ai/runtime-input.ts",
+    "apps/asyra-design/src/ai/tool-contract.ts",
+    "apps/asyra-design/src/common-apis/__tests__/retained-design-context.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing query, paging, refinement and retained fill operations remain valid. No document format or user workflow migration is required."
+}
+```
+
+## Pending settled conversation context
+
+```update-note
+{
+  "change": "settled-conversation-context",
+  "owner": "Asyra Design conversation",
+  "summary": "Deliver bounded complete prior conversation messages to successor requests through the existing Feature and provider. Preserve actual outcomes, explicit omissions, current target validation and request-scoped tool sessions.",
+  "sources": [
+    "apps/asyra-design/src/ai/conversation.ts",
+    "apps/asyra-design/src/ai/__tests__/conversation.test.ts",
+    "apps/asyra-design/server/ai-domain-prompt.ts",
+    "apps/asyra-design/server/local-ai-provider.ts",
+    "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing conversations and tools remain in use. No new persisted format, native-thread reuse or document mutation is introduced; live model adoption remains unobserved."
+}
+```
+
 ## Pending attachment reference preparation
 
 ```update-note

@@ -232,9 +232,13 @@ export const createRetainedDesignContext = (
           elements: parent.result.elements.filter((row) =>
             selected.has(row.id)
           ),
-          elementIds: parent.result.elementIds?.filter((id) =>
-            selected.has(id)
-          ),
+          ...(parent.result.elementIds === undefined
+            ? {}
+            : {
+                elementIds: parent.result.elementIds.filter((id) =>
+                  selected.has(id)
+                )
+              }),
           missingIds: parent.result.missingIds.filter((id) => selected.has(id))
         }
       }

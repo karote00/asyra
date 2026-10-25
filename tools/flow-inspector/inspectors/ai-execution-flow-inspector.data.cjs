@@ -36,24 +36,32 @@
         inputs: [
           'brief and attachments',
           'bounded canonical context',
-          'conversation target references'
+          'conversation target references',
+          'selected conversation settled user and assistant messages'
         ],
         outputs: ['artifact:request-context'],
-        conditions: ['Resolve references against current document identity'],
-        bypasses: ['New conversations omit prior targets'],
+        conditions: [
+          'Resolve references against current document identity',
+          'Project existing settled turns with their exact request/original objective, presentation answer, identity and actual outcome. Deliver the newest contiguous whole-turn suffix in chronological order within the App UTF-8 history budget, explicitly counting omissions. Stop at the first non-fitting pair; do not serialize raw results. No raw action arguments, progress, image bytes, retained session keys, inferred decisions or new state. Preserve clarification, retry, cancellation and partial outcomes; history cannot revalidate targets or authorize replay.'
+        ],
+        bypasses: ['New conversations omit prior targets and prior messages'],
         allowedContributors: [
           'conversation lifecycle',
-          'public canonical observations'
+          'public canonical observations',
+          'settled answer presentation'
         ],
         forbiddenContributors: [
           'renderer state as authority',
-          'cross-request geometry cache'
+          'cross-request geometry cache',
+          'native thread or Knowledge session continuity'
         ],
         cacheDimensions: [],
         implementationBoundary: [
           'apps/asyra-design/server/__tests__/execution-flow-proof.test.ts',
           'apps/asyra-design/src/ai/conversation.ts',
           'apps/asyra-design/src/ai/__tests__/conversation.test.ts',
+          'apps/asyra-design/src/ai/presentation.ts',
+          'apps/asyra-design/src/ai/__tests__/presentation.test.ts',
           'apps/asyra-design/src/ai/runtime-input.ts',
           'apps/asyra-design/src/ai/action-failure.ts',
           'apps/asyra-design/src/ai/action-batch-protocol.ts'
@@ -81,6 +89,8 @@
         ],
         outputs: ['artifact:tool-program'],
         conditions: [
+          'Existing invocation middleware and direct result inspection pass input/output stage to the host validator. Recipe invocation forwards this contract; App diagnostics use arguments for inputs and output for results while preserving schema references, observed results and settlement. Validation never retries execution.',
+          'Forward settled conversation messages unchanged through existing provider input, with interpretation guidance only when history is present and no first-use guidance growth. Prior messages are historical context, not current evidence, replayable operations or caller-held Knowledge. Current instructions prevail; explicit omissions cannot be guessed. Preserve request-scoped native/Knowledge lifetimes, no extra requests, refresh and no-replay recovery.',
           'App Knowledge delivery projects document source and replacedSource to id/revision only after exact provenance equality with one same-reply source record. Complete sources remain authoritative; mismatches or ambiguity stay explicit. Runtime immutable results, advisory trust, override order, context identities and retainedFrom remain unchanged. Project before existing bounded paging with linear metadata-only work; no body scan, new state, added call, inferred model receipt or write replay. Published same-reply resolution and actual consumer tests must preserve all provenance through reuse, rehydrate and cancellation.',
           'Cross-query Knowledge reuse is explicit caller-held result input to the existing Runtime session. Retain full compositions and immutable wire responses in its existing bounded map. Only equal resolved target/source/replacedSource/text becomes retainedFrom in ordered documents; complete sources and new constraints remain. Opaque result identities isolate sessions. Recheck permission, generation, context and cancellation; missing/foreign/evicted references return read-only recovery without reuseFrom. Rehydrate restores full advice; ordinary reads stay complete. Page retries keep bytes stable, no extra calls, new store, inferred model receipt or write replay.',
           'Selected projected-face usage delivers explicit vertices and projected native ovals from the canonical schema/examples in the same acquisition. Preserve complete cross-field limits and recovery, and execute the actual returned example through the existing main workflow without new tools or preliminary discovery.',
@@ -221,6 +231,7 @@
           'apps/asyra-design/server/local-vector-artifact.ts',
           'apps/asyra-design/server/__tests__/local-vector-artifact.test.ts',
           'packages/ai-agent-runtime/src/tool-contract.ts',
+          'packages/ai-agent-runtime/src/recipe-execution.ts',
           'packages/ai-agent-runtime/src/json-value.ts',
           'packages/ai-agent-runtime/src/action-registry.ts',
           'packages/ai-agent-runtime/src/__tests__/action-registry.test.ts',
@@ -307,6 +318,7 @@
           'apps/asyra-design/server/__tests__/information-delivery.integration.test.ts',
           'apps/asyra-design/server/__tests__/local-knowledge.test.ts',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-source-delivery-20261025.json',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/rejected-knowledge-consumer-20261025.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-dependency-reuse-20261024.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-topic-selection-20261021.json',
           'packages/ai-agent-runtime/src/knowledge.ts',
@@ -589,6 +601,7 @@
           'Explicit region-query batch targets resolve complete identities once through the registered reader before writes and feed ordinary mutation admission; incomplete results cannot write. Transient complete-region identity delivery publishes no reusable handle and reserves no retained capacity. A matching retained selection can supply copied identities without changing caller leases; other page/reference/column delivery remains pinned.',
           'Canonical query admission validates scope-specific fields and complete result/page constraints before source reads, cache lookup, retention or lease allocation. Registered action and native schemas preserve these alternatives. Unsupported children filters return actionable input failure; explicit current snapshot refinement remains supported. Rejection preserves other request leases and never reinterprets selectors or replays writes.',
           'Canonical finite name/type/hierarchy/lock predicates filter workspace candidates or current retained snapshot identities before delivery. Refinement repeats no spatial query, preserves independent leases and stale rejection, returns compact references by default and rejects exact expectedCount mismatch before target use.',
+          'Refinement preserves raw result mode before output validation: element rows omit optional identity arrays entirely; identity mode preserves ordered arrays including empty selections. Page/column delivery and retained mutation consumption reuse the same source without requery. Validation failures retain stage and settlement without replay.',
           'Local bounds lookup does not enumerate a broad parent subtree; filter current spatial candidates before paging and return identity-only observations when requested, with ordinary mutation admission retaining authority',
           'Relative hierarchy placement resolves current anchor identities internally and preserves existing canonical validation and grouped geometry behavior',
           'Reject duplicate Fill-row destination IDs before reads or writes; resolve each current row and apply aligned or uniform new patches in one batch; plural visibility reports ordered changed/unchanged/unavailable outcomes in one receipt',
@@ -1177,6 +1190,7 @@
         ],
         outputs: ['artifact:execution-trace'],
         conditions: [
+          'A bounded multi-turn consultation or drawing observation preserves the ordinary predecessor answer before submitting the follow-up. Only the final request uses the existing evaluation self-report window; a first-turn process watchdog and the final report watchdog share the original work deadline. A terminal partial predecessor may continue only after its ordinary answer, request identity and document are saved and App input is idle; preserve partial status and send only the declared follow-up. Missing evidence, unsettled or non-idle input, failed/cancelled outcome or expiry stops the sequence. A captured final partial report is not artwork acceptance. Ordinary answers cannot substitute for attributed final reports; no direct diagnostic product mutation, second result store or automatic retry.',
           'E2E source drift, unplanned participant navigation or closure invalidates environment continuity separately from strict save/history/collaboration assertions. One explicit planned reload permits one runtime replacement only. Preserve named phases, original errors and unavailable evidence in existing Playwright attachments; no automatic retry, weakened assertion or product owner mutation.',
           'Record the explicit evaluation artifact limit alongside the unchanged production ceiling; obtain actual delivered policy and recovery behavior from linked provider records. A lower test budget cannot certify an untriggered overflow or recovery.',
           'Explicit evaluation work and report budgets remain separate. Capture model-authored report text and screenshot without video, close the work context before fresh-context reload; failed reports and captures remain failures with bounded external cleanup. Never infer causal latency from self-report.',
@@ -1244,6 +1258,8 @@
           'apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx',
           'apps/asyra-design/test-data/knowledge-evaluation/README.md',
           'apps/asyra-design/test-data/knowledge-evaluation/run-101.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/run-consultation.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/__tests__/consultation.test.mjs',
           'apps/asyra-design/test-data/knowledge-evaluation/capture-lifecycle.mjs',
           'apps/asyra-design/test-data/knowledge-evaluation/__tests__/capture-reliability.test.mjs',
           'apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts',

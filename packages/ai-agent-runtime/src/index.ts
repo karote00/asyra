@@ -143,7 +143,8 @@ export type {
   AiToolContract,
   AiToolContractInput,
   AiToolOutcome,
-  AiToolResultInspection
+  AiToolResultInspection,
+  AiToolValidator
 } from './tool-contract.js'
 
 export type {

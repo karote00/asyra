@@ -62,6 +62,7 @@ import { StringDecoder } from 'node:string_decoder'
 import type { AiProviderInput } from '../src/ai/action-batch-protocol'
 import {
   AI_APP_PROMPT,
+  AI_CONVERSATION_HISTORY_INSTRUCTIONS,
   AI_OPERATION_INSTRUCTIONS,
   AiImageToolIds,
   AiReferenceToolIds
@@ -1826,6 +1827,10 @@ const runLocalAiProvider = async (
         baseInstructions: options.assessmentOnly
           ? assessmentInstructions
           : AI_APP_PROMPT +
+            (isRecord(input.metadata) &&
+            isRecord(input.metadata.conversationHistory)
+              ? AI_CONVERSATION_HISTORY_INSTRUCTIONS
+              : '') +
             (operations
               ? '\n\n' + AI_OPERATION_INSTRUCTIONS + scopeInstructions
               : ''),

@@ -29,6 +29,31 @@ state stays in the App. A new request never assumes prior inspection evidence is
 current. Deleted targets, changed document identity and replacement invalidate
 continuity references; no geometry or image cache crosses requests in this slice.
 
+Successor requests also carry bounded prior messages from the selected App
+conversation's existing settled turns: exact request text, original objective
+when distinct, the existing presentation owner's assistant answer and actual
+outcome, with turn identity. These are historical messages, not current document
+facts, tool programs, valid inspection evidence or caller-held Knowledge results.
+Current instructions and corrections take precedence; never replay prior actions
+or infer omitted content. Native threads and Knowledge sessions remain scoped to
+the current request. History interpretation guidance is included only when history
+is present, without increasing first-use instructions.
+
+The App includes the newest contiguous complete turns in chronological order
+within a 32 KiB serialized UTF-8 history envelope and explicitly reports the number
+of omitted older turns. This bounds context cost, not model capacity. No message
+is sliced. An oversized newest pair yields an empty history with an omission count;
+an empty/new conversation omits history. Switching conversations restores only
+that conversation's messages. Raw results, action arguments, progress, image bytes
+and retained session credentials are excluded. Failed, partial and cancelled
+results use the same authoritative presentation as the user sees. Current target
+validation and safe retry rules remain unchanged.
+
+Formal cases must prove controller-to-native-input continuity with the saved
+ordinary consultation answer, isolation, clarification/retry, failure/cancellation,
+whole-turn Unicode bounds and unchanged tool/work-turn counts. They must retain
+session expiry and no-replay protections. Local delivery does not prove adoption.
+
 ## Capability discovery and composition
 
 Shared instructions state App-wide intent, data authority and completion rules
@@ -2596,6 +2621,15 @@ steps remain distinguishable without replaying arguments or guessing from order.
 
 ### Retained predicate selection
 
+Refinement preserves the retained result mode before serialization. Element-mode
+results omit the optional `elementIds` property; identity-mode results retain an
+ordered array, including an empty array for a valid empty selection. Page and
+column delivery must pass the registered output contract using the raw owner
+result. Refinement and paging reuse retained rows without another source query.
+Input diagnostics identify `arguments`; result diagnostics identify `output`.
+Validation stage, observed result and settlement remain available on failure;
+output rejection never authorizes replay or a different source query.
+
 Region filters and current snapshot refinements support literal name equality,
 prefix and suffix in addition to canonical type, parent, ancestor and lock filters.
 All supplied predicates are conjunctive. Refinement returns an independently owned
@@ -3861,3 +3895,16 @@ full advice with resolvable provenance; reuse and stale/foreign/cancelled recove
 remain existing read-only operations, never write/capture replay. Tests execute the
 published resolution against real composed/overridden/paged/reused results, prove
 lower total delivery and linear metadata-only work, and retain direct consumers.
+
+### Consultation observation boundary
+
+A multi-turn consultation or drawing diagnostic preserves ordinary predecessor answers in the
+App conversation. Only its final request enters the existing evaluation self-report
+phase. All work shares one absolute deadline; the existing process watchdog also
+bounds ordinary predecessor turns. A terminal partial result may continue only after
+its ordinary answer, request identity and document are saved and App input is idle.
+Preserve its partial outcome and send only the declared follow-up. Missing evidence,
+unsettled or non-idle input, failed/cancelled outcome or expiry stops the sequence
+without retry. A captured final partial report is not artwork acceptance. Capture ordinary answers separately from attributed
+final reports and compare original native inputs; historical self-report text cannot
+stand in for the actual design answer or prove causal model improvement.

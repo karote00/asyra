@@ -1,3 +1,11 @@
+import {
+  createAiInvoker,
+  createAiToolContract,
+  createAiToolMiddleware
+} from '@asyra/ai-agent-runtime'
+import { createDocumentContextAction } from '../../ai/context-action'
+import { operationContractIssue } from '../../ai/tool-schema'
+import { designActionOutcome } from '../../ai/tool-contract'
 import recordedQuery from '../../../server/__tests__/fixtures/recorded-101/context-query-20261019.json'
 import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../contexts', () => ({ default: {} }))
@@ -943,5 +951,88 @@ it.each([{ offset: -1 }, { offset: null }, { expectedCount: -1 }])(
     expect(source.getElementMetadata).not.toHaveBeenCalled()
     expect(store.get(parent.snapshotId).orderedIds).toEqual(['a', 'b', 'c'])
     store.dispose()
+  }
+)
+
+it.each(['elements', 'ids'] as const)(
+  'delivers registered %s refinements before serialization without a new source query',
+  async (mode) => {
+    const h = fixture()
+    const signal = new AbortController().signal
+    const action = createDocumentContextAction(h.store.read)
+    const contract = createAiToolContract(action)
+    const invoke = createAiInvoker({
+      execute: (call) => action.execute(call.input as never, { signal }),
+      middleware: [
+        createAiToolMiddleware({
+          resolve: () => contract,
+          validate: operationContractIssue,
+          classify: designActionOutcome
+        })
+      ]
+    })
+    const read = (input: unknown) =>
+      invoke.invoke({ name: action.name, input, signal }) as Promise<
+        ReturnType<typeof h.store.read>
+      >
+    try {
+      const parent = await read({
+        scope: 'children',
+        fields: mode === 'ids' ? [] : ['x', 'y'],
+        result: mode,
+        delivery: 'page',
+        limit: 2
+      })
+      if (!parent.snapshotId)
+        throw new Error('Expected retained parent identity')
+      const computedReads = h.source.getElementComputedData.mock.calls.length
+      for (const delivery of ['page', 'columns'] as const) {
+        const selected = await read({
+          scope: 'snapshot',
+          snapshotId: parent.snapshotId,
+          filter: { type: 'rectangle' },
+          delivery,
+          limit: 2
+        })
+        expect(selected.total).toBe(3)
+        expect(selected.nextOffset).toBe(2)
+        if (mode === 'ids') expect(selected.elementIds).toEqual(['a', 'b'])
+        else expect(Object.hasOwn(selected, 'elementIds')).toBe(false)
+        const tail = await read({
+          scope: 'snapshot',
+          snapshotId: selected.snapshotId,
+          delivery,
+          offset: 2,
+          limit: 2
+        })
+        expect(tail.nextOffset).toBeNull()
+        if (mode === 'ids') expect(tail.elementIds).toEqual(['c'])
+        else if (delivery === 'page')
+          expect(tail.elements.map((row) => row.id)).toEqual(['c'])
+        else expect(tail).toMatchObject({ columns: [{ id: 'c', x: 99, y: 0 }] })
+        const empty = await read({
+          scope: 'snapshot',
+          snapshotId: parent.snapshotId,
+          filter: { type: 'missing-type' },
+          delivery
+        })
+        expect(empty).toMatchObject({
+          total: 0,
+          elements: [],
+          nextOffset: null
+        })
+        if (mode === 'ids') expect(empty.elementIds).toEqual([])
+        else expect(Object.hasOwn(empty, 'elementIds')).toBe(false)
+      }
+      expect(h.source.getElementComputedData).toHaveBeenCalledTimes(
+        computedReads
+      )
+      expect(h.source.getElementIdsInBounds).not.toHaveBeenCalled()
+      expect(
+        h.store.get(parent.snapshotId, undefined, signal).orderedIds
+      ).toEqual(['a', 'b', 'c'])
+    } finally {
+      h.store.dispose()
+    }
   }
 )

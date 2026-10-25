@@ -130,6 +130,10 @@ Actions and action batches:
   classifier at `createAiInvoker().invoke()`. Registry declaration alone does not
   validate domain input/output. The host installs middleware at its secured
   invocation boundary; native adapters may use `inspectAiToolResult()` directly.
+  The existing validator callback receives stage context (`input` or `output`)
+  from middleware and result inspection. Hosts use it for accurate diagnostics;
+  schema authority, outcome classification and no-retry semantics stay unchanged.
+  Recipe invocation forwards the same callback; admission remains input validation.
 - `AiToolOutcome` separates success/partial/failed/unknown from settlement.
   `AiToolContractError` retains invalid output and settlement evidence. Batch
   failure receipts expose `contractStage` and redacted `observedResult`; validation

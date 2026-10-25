@@ -1,3 +1,4 @@
+import type { AiToolValidator } from '@asyra/ai-agent-runtime'
 import lodash from 'lodash'
 const { isEqual } = lodash
 const record = (v: unknown): v is Record<string, unknown> =>
@@ -6,7 +7,8 @@ const record = (v: unknown): v is Record<string, unknown> =>
 export const operationInputIssue = (
   value: unknown,
   schema: unknown,
-  referenceRoot: unknown = schema
+  referenceRoot: unknown = schema,
+  rootPath: 'arguments' | 'output' = 'arguments'
 ): string | undefined => {
   const visit = (
     v: unknown,
@@ -14,7 +16,7 @@ export const operationInputIssue = (
     path: string,
     depth = 0
   ): string[] | undefined => {
-    if (depth > 64) return [`${path}: input nesting exceeds validation depth`]
+    if (depth > 64) return [`${path}: value nesting exceeds validation depth`]
     if (s === false) return [`${path}: disallowed value`]
     if (!record(s)) return
     if (typeof s.$ref === 'string') {
@@ -129,7 +131,9 @@ export const operationInputIssue = (
         if (errors.length >= 12)
           return [
             ...errors,
-            'Correct these fields and retry for remaining diagnostics'
+            rootPath === 'output'
+              ? 'Additional output diagnostics omitted'
+              : 'Correct these fields and retry for remaining diagnostics'
           ]
       }
       if (errors.length) return errors
@@ -165,7 +169,9 @@ export const operationInputIssue = (
         if (errors.length >= 12)
           return [
             ...errors,
-            'Correct these items and retry for remaining diagnostics'
+            rootPath === 'output'
+              ? 'Additional output diagnostics omitted'
+              : 'Correct these items and retry for remaining diagnostics'
           ]
       }
       if (errors.length) return errors
@@ -191,6 +197,19 @@ export const operationInputIssue = (
         return [`${path}: string does not match its declared pattern`]
     }
   }
-  const issues = visit(value, schema, 'arguments')
+  const issues = visit(value, schema, rootPath)
   return issues ? [...new Set(issues)].join('; ').slice(0, 3000) : undefined
 }
+
+/** Keep reference resolution independent from invocation-stage diagnostics. */
+export const operationContractIssue = (
+  value: unknown,
+  schema: unknown,
+  context?: Parameters<AiToolValidator>[2]
+) =>
+  operationInputIssue(
+    value,
+    schema,
+    schema,
+    context?.stage === 'output' ? 'output' : 'arguments'
+  )

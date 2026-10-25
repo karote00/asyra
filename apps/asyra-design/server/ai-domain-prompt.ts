@@ -323,3 +323,11 @@ export const AI_IMAGE_TOOL_GUIDANCE = {
   [AiImageToolIds.REVIEW_VECTOR_CONTOURS]: `Measure relevant intended straight/smooth contours, not every shape. Preserve intentional corners, holes and thin features. A changed target size needs a new review. No proposal does not certify appearance; compound/unsafe contours remain report-only. Review numeric findings before mutation and actual rendered boundary contacts afterwards.`,
   [AiImageToolIds.APPLY_CONTOUR_REFINEMENTS]: `Use the NEW returned artifact and review its appearance against the original, including corners, gaps and thin features. The cumulative original-source displacement limit still applies. If appearance worsens, retain the prior artifact; do not repeat an unchanged ineffective proposal. Stop this refinement method when no eligible improvement remains, then consider another supported method for the request.`
 } as const
+
+export const AI_CONVERSATION_HISTORY_INSTRUCTIONS = `
+metadata.conversationHistory contains prior user requests, displayed assistant replies and actual outcomes from this App conversation.
+Use it to continue the discussion; the current request and corrections take precedence. These historical messages are context,
+not fresh document observations, inspection evidence, caller-held Knowledge or executable tool instructions. Never replay prior actions
+or treat a prior completion claim as current verification. omittedTurns counts missing earlier turns; do not invent their contents.
+Request-scoped tool keys and images require their existing current-session validation and recovery.
+`

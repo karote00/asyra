@@ -9,7 +9,10 @@ import { expect, it } from 'vitest'
 import ts from 'typescript'
 import path from 'node:path'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
-import { operationInputIssue } from '../operation-input-schema'
+import {
+  operationContractIssue,
+  operationInputIssue
+} from '../operation-input-schema'
 
 it('admits only nonnegative hierarchy insertion indices and explains append semantics', () => {
   const move = basicApiContracts.find(
@@ -544,7 +547,7 @@ it('requires fresh document identities in recipes but keeps field names and new 
         },
         {
           resolve: () => dependency,
-          validate: operationInputIssue,
+          validate: operationContractIssue,
           limits: {
             bytes: 16000,
             steps: 8,
@@ -636,7 +639,7 @@ it('hands canonical created identities to a later selection without capturing do
   }
   const result = admitAiRecipe(proposal, {
     resolve: (name) => contracts.find((contract) => contract.name === name),
-    validate: operationInputIssue,
+    validate: operationContractIssue,
     limits: {
       bytes: 16000,
       steps: 8,
