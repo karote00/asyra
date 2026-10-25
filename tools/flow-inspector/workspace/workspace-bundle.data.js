@@ -647,6 +647,7 @@
               "artifact:execution-receipt"
             ],
             "conditions": [
+              "Core owns ordinary creation input normalization and delivers ordered descriptors directly to Scene Tree without unused envelopes or a second projection. Preserve default/override ordering, supplied/generated IDs, caller isolation, empty and scalar/plural input, complete frozen results and geometry/materials/order/parentage. Scene Tree admission, transaction failure, acknowledged partial results, remaining-only recovery, history and durable collaboration/reload remain authoritative. Prove actual work counts through real owners; no cache, extra exchange, skipped validation, compatibility path or replay.",
               "Scene Tree owns the detached frozen ordered ID result of each ordinary creation batch. Core request/facade and App adapters forward the same result without further copies. Preserve all identities/order, scalar and empty semantics, invalid input/parent rejection, isolation from mutable input/membership, old snapshots, complete and compact receipts, partial failure/cancellation, history, durable reload and no-replay recovery. No new cache, transport, compatibility copy, batch enlargement or UI snapshot change; prove actual downstream copy counts through real owners.",
               "Original retained oval rotation is admitted; changed transforms or binding reject. Group normalization preserves world placement and material validity. Official creation and preset rendering own application, never a direct tool render call. Shared Utils analytic oval bounds feed Preset normalization and Core scene world bounds/zoom-fit; preserve ancestor translation, invalid hierarchy and other shapes.",
               "Preset projects every canonical batch synchronously to complete immutable UI snapshots. Proven fresh depth-first tail additions reuse exact current hierarchy preparation without visiting unrelated subtrees. Cold, interior, mixed or invalidated edits retain complete derivation. Preserve old snapshots, current partial results, cancellation, history and collaboration; no delayed publication, batch enlargement, second tree or replay.",
@@ -914,6 +915,7 @@
               "apps/asyra-design/e2e/basic-api-actions.spec.ts"
             ],
             "specRefs": [
+              "#ordinary-creation-input-normalization",
               "#ordinary-creation-result-handoff",
               "#creation-batch-ui-projection",
               "#prepared-design-delivery",

@@ -6,7 +6,6 @@ import {
 import { subscribeToAddElement } from '@asyra/reactive-events'
 import type {
   ComputedDataPatch,
-  CreateElementData,
   DataTypes,
   ElementRawData,
   PropertyComponentRawData
@@ -73,8 +72,9 @@ const createRequests = () =>
     ),
     preflightRestoreSubtree: vi.fn(),
     applyRestoreSubtree: vi.fn(),
-    createElementsInParent: vi.fn((data: readonly CreateElementData[]) =>
-      Object.freeze(data.map(({ id }, index) => id ?? `element-${index}`))
+    createElementsInParent: vi.fn<SceneTreeRequests['createElementsInParent']>(
+      (data) =>
+        Object.freeze(data.map(({ id }, index) => id ?? `element-${index}`))
     ),
     createElementsInParentFromCanonicalData: vi.fn(
       (data: readonly ElementRawData[]) =>
@@ -85,6 +85,84 @@ const createRequests = () =>
   }) satisfies SceneTreeRequests
 
 describe('createSceneTreeAPIs hierarchy facade', () => {
+  it('preserves normalization defaults, overrides, generated identities and caller isolation', () => {
+    const requests = createRequests()
+    const apis = createSceneTreeAPIs(requests)
+    const source = Object.freeze([
+      Object.freeze({ type: 'rect', x: 5, y: 0 }),
+      Object.freeze({
+        id: 'explicit',
+        type: 'oval',
+        x: 0,
+        y: 0,
+        visible: false,
+        lock: true
+      }),
+      Object.freeze({
+        type: 'rect',
+        x: 0,
+        y: 0,
+        visible: undefined,
+        lock: undefined
+      })
+    ])
+    const options = { sharedDelivery: 'immediate' as const, undoable: false }
+    const result = apis.createElementsInParent(
+      source,
+      'workspace-1',
+      2,
+      options
+    )
+    const [normalized, parent, index, forwarded] =
+      requests.createElementsInParent.mock.calls[0]
+    expect(normalized).toEqual([
+      {
+        type: 'rect',
+        x: 5,
+        y: 0,
+        visible: true,
+        lock: false,
+        id: expect.any(String)
+      },
+      { id: 'explicit', type: 'oval', x: 0, y: 0, visible: false, lock: true },
+      {
+        type: 'rect',
+        x: 0,
+        y: 0,
+        visible: undefined,
+        lock: undefined,
+        id: expect.any(String)
+      }
+    ])
+    expect(result).toEqual(normalized.map(({ id }) => id))
+    expect(new Set(result).size).toBe(3)
+    expect(result.every((id) => id.length > 0)).toBe(true)
+    expect(Object.isFrozen(result)).toBe(true)
+    expect(normalized).not.toBe(source)
+    normalized.forEach((descriptor, offset) =>
+      expect(descriptor).not.toBe(source[offset])
+    )
+    expect([parent, index, forwarded]).toEqual(['workspace-1', 2, options])
+    expect(forwarded).toBe(options)
+    expect(source[0]).toEqual({ type: 'rect', x: 5, y: 0 })
+    expect(source[2]).not.toHaveProperty('id')
+
+    const mutable = { type: 'rect', x: 17, y: 0 }
+    const scalar = apis.createElementInParent(mutable, 'workspace-1')
+    const [scalarInput] = requests.createElementsInParent.mock.calls[1]
+    mutable.x = 99
+    expect(scalarInput[0]).toEqual({
+      type: 'rect',
+      x: 17,
+      y: 0,
+      visible: true,
+      lock: false,
+      id: scalar
+    })
+    expect(mutable).not.toHaveProperty('id')
+    expect(scalar).not.toBe(result[0])
+  })
+
   it('delegates one and many descriptors through the only plural owner', () => {
     const requests = createRequests()
     const apis = createSceneTreeAPIs(requests)

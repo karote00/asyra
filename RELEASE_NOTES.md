@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending ordinary creation input normalization
+
+```update-note
+{
+  "change": "ordinary-creation-input-normalization",
+  "owner": "Repository Flow Inspector",
+  "summary": "Remove unused creation input envelopes and the second projection while retaining the existing Core normalization owner, defaults, supplied/generated IDs, input isolation and complete owner results.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Public creation inputs and output, validation, geometry, history and retained-source recovery remain unchanged. No migration, new cache or additional model exchange is required."
+}
+```
+
 ## Pending ordinary creation result handoff
 
 ```update-note

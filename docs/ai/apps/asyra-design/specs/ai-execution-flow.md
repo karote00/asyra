@@ -2965,6 +2965,20 @@ pixel results are diagnostic facts; main-agent visual acceptance remains separat
 The input's request-local inspection and numeric attachment selectors are control
 plane values, not portable recipe literals or durable document identities.
 
+### Ordinary creation input normalization
+
+Core owns ordinary creation input normalization and delivers its resulting
+ordered descriptors directly to the existing Scene Tree creation owner.
+Preserve defaults, explicit overrides, supplied/generated identities, input
+isolation, scalar/plural and inert-empty semantics. Intermediate envelopes that
+have no consumer must not require another batch traversal before owner admission.
+
+Preserve complete frozen results, geometry/materials/order/parentage, invalid
+input rejection and transactional partial-result/no-replay recovery. Existing
+constructor validation, history, collaboration and persistence remain authoritative;
+no new cache, tool exchange or caller-input mutation is permitted. Verify both
+semantic preservation and actual normalization work in the real creation flow.
+
 ### Ordinary creation result handoff
 
 The existing Scene Tree ordinary creation owner produces one detached frozen

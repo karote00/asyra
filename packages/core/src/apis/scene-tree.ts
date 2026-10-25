@@ -101,13 +101,10 @@ export const createSceneTreeAPIs = (
     const elementId = data.id ?? id(elementType)
 
     return {
-      elementId,
-      data: {
-        visible: true,
-        lock: false,
-        ...data,
-        id: elementId
-      }
+      visible: true,
+      lock: false,
+      ...data,
+      id: elementId
     }
   }
 
@@ -136,7 +133,7 @@ export const createSceneTreeAPIs = (
     }
     const prepared = data.map(prepareElementData)
     return sceneTreeRequests.createElementsInParent(
-      prepared.map(({ data: elementData }) => elementData),
+      prepared,
       parentId,
       index,
       options

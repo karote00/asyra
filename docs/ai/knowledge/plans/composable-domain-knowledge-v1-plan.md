@@ -97,6 +97,128 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 ## Task 3 - Asyra Design integration
 
 
+### Ordinary creation input normalization handoff - 2026-10-25
+
+Status: locally verified and closed for this bounded slice. No model, 101, CI
+inspection or push. No elapsed-time or AI behavior improvement is claimed.
+
+Evidence: saved run 1792853203510, raw provider sequences 307/486/551 and
+21/39/55-output.json have matching saved byte counts and SHA-256. They report
+2,311/6,164/641 created elements over 74/194/21 batches. The historical and
+current Core normalization helper wrap each normalized descriptor in an unused
+`{ elementId, data }` envelope, then map the batch again solely to take `data`.
+This implies 9,116 unnecessary envelopes, 289 intermediate arrays and 9,116
+second-pass visits; formal real-owner measurement must confirm these counts.
+No independent timing or first-frame effect is known. Necessary descriptor
+isolation, defaulting and trust-boundary validation are not redundant work.
+
+Step Execution Card - apply / ordinary creation input normalization:
+- Objective: normalize ordinary creation input directly to the descriptors
+  consumed by Scene Tree in one projection, without temporary envelopes.
+- Owner: existing Core `prepareElementData` and plural facade; Scene Tree remains
+  the creation/admission/result owner. App dispatch, transaction and retained
+  source remain the receipt/recovery owners. Failure owner: apply.
+- Input: caller descriptors, parent/index/options. Output: ordered normalized
+  descriptors, with unchanged defaults, supplied/generated ID and isolation.
+  Each completed batch still returns the complete frozen Scene Tree ID list.
+- Conditions/bypass: ordinary create, plural and scalar convenience paths only.
+  Empty input is inert. Explicit overrides and current invalid input rejection
+  remain unchanged. No bypass of constructor, parent, schema or transaction checks.
+  Canonical restore/removal and UI snapshot production are independent, unchanged.
+- Contributors: Core facade/request adapter, Scene Tree, App element adapter,
+  official dispatcher/Runtime, Factory journal and existing publication/persistence.
+  Forbidden: new cache, state, registry, compatibility branch, skipped checks,
+  changed batch size, replay of committed work or new model exchanges.
+- Implementation allowlist: `packages/core/src/apis/scene-tree.ts` only.
+  Tests: existing Core scene-tree-api and hierarchy-transaction, App
+  creation-results integration (permanent saved vector fixture), create-element,
+  interrupted-design and prepared-delivery. The existing ordinary harness already
+  includes creation-results and is enforced by the architecture inventory guard.
+- Spec references: ordinary creation input normalization in ai-execution-flow,
+  Core API_SURFACES ordinary creation, Inspector apply. No cache dimensions.
+- Feasibility/self-review: the helper has only one consumer. The envelope's
+  elementId is never read; descriptor.id retains the same value. Returning the
+  existing inner object directly preserves spread/default ordering and nested
+  ownership. Keep the required descriptor copy; do not pass caller objects through.
+- Naming: reuse existing public/private names, no persisted identity change.
+- Gates: naming baseline, Inspector admission, formal red through real owners,
+  focused Core/App tests, invalid later member and partial cancellation/recovery,
+  history/collaboration/durable reload, Core build, App production types/build,
+  lint, architecture/inventory, update notes, diff review and final Inspector.
+- Stop: fixed DoD fulfilled, out-of-scope owner required, or three failed production
+  corrections. Review only this diff, direct consumers and frozen gates.
+
+Fixed DoD:
+1. Before production edits, strengthen the permanent saved-input integration
+   to observe actual Core normalization through App/dispatcher/Runtime/Scene Tree.
+   Assert complete semantic output before rejecting intermediate work. Scope
+   probes to this boundary, excluding necessary downstream maps and snapshots.
+2. Eliminate envelopes, intermediate arrays and second projection visits. Retain
+   one normalization projection, the same descriptor count and creation batches.
+   Do not claim elapsed-time gains from allocation/visit counts.
+3. Preserve supplied and missing IDs, defaults and explicit overrides, empty and
+   scalar/plural input, source immutability and independent normalized descriptors.
+   Check equivalent geometry/materials/order/parentage through the real owner.
+4. Preserve complete frozen IDs and compact/full receipts, invalid-parent/input
+   rejection, no invalid-member prefix, acknowledged partial results, cancellation
+   and remaining-only recovery without replay. Preserve Undo/Redo, publication,
+   collaboration and saved reload through existing real-owner regressions.
+5. Keep direct consumers and ordinary verification wiring valid. No extra
+   provider turns, cache, schema preload or compatibility handling. Close only
+   after local gates and bounded self-review; AI behavior remains unmeasured.
+
+Evidence before implementation:
+- Inspector candidate `e77e3b65-35ad-466a-a361-012b243aaee4` passed all 77
+  mapped cases; review `69d6e98da9a2028aedfc67816651f952e6c837d22d5a59b8bd1775f2b4a8f26d`
+  was accepted without blockers.
+- Existing Core baseline: 45 passing; existing creation integration: five passing.
+  Neither detected the unused normalization work. The strengthened integration
+  fails exactly three saved-input work assertions after preserving semantic
+  input/result assertions: 2,311/6,164/641 envelopes, 74/194/21 intermediate
+  arrays, 2,311/6,164/641 second-pass visits. Required normalization visits equal
+  created counts. The two generic compact/full isolation/history cases still pass.
+- The added default/override/generated-ID/input-isolation case also passes before
+  production changes, bringing the Core facade suite to 21. No old expectations
+  were relaxed. Probes invoke actual map callbacks and stop at Scene Tree entry.
+
+Closure evidence and bounded self-review:
+- The only production edit is in `packages/core/src/apis/scene-tree.ts`: return
+  the existing normalized descriptor directly and pass the prepared array to the
+  existing request owner. Defaults/spread/ID order, descriptor copying and owner
+  admission are unchanged. No canonical restore/removal or downstream changes.
+- Actual saved-input flows preserve 2,311/6,164/641 normalization visits and
+  74/194/21 batches. Envelopes fall from 2,311/6,164/641 to zero, intermediate
+  arrays from 74/194/21 to zero, and second-pass visits from 2,311/6,164/641 to
+  zero. Scene Tree receives equal complete descriptors with independent object
+  identity. Existing result-list copy counts remain zero.
+- Formal gates pass: Core facade 21 and hierarchy/transaction 25; App creation
+  integration 5, direct adapter 14, interrupted-design 6 and prepared-delivery 29
+  (100 behavior/integration cases total). Existing failure and recovery cases
+  preserve invalid-member atomicity, retained partial IDs, cancelled mutation
+  boundaries, remaining-only repair, history, durable publication and reload.
+- Core build and App production types/build pass. Naming 15 and architecture /
+  ordinary test inventory 13 pass. Focused ESLint: zero errors, one existing
+  measurement-console warning. Update-note and diff checks pass. Build retains
+  its existing large-chunk warning. Prepared-delivery uses the already identified
+  15-second runner watchdog; no test assertion or product budget was relaxed.
+- Core build initially caught missing required coordinate fields in the new
+  test fixture; these were supplied as valid inputs. Lint caught a test interface
+  style and an import made unused by accurate request-mock typing; both were
+  corrected. No production workaround or changed semantic expectation.
+- Inspector final verification `e8b28968-0220-41c5-8423-ba848d7fcf71` passes all
+  77 mapped cases at revision 119; captured source
+  `b40d3001c83e8da26a5dba1da46b1289742daf7f25060c59607b32197264500c`.
+  Creation work counts are additionally proven by the ordinary server harness,
+  not inferred from Inspector success alone.
+- Self-review covered the bounded diff, direct owner consumers, default/override
+  semantics, identity generation, source isolation and failure/recovery paths.
+  The scoped map probe executes original callbacks and ends before Scene Tree
+  construction; required downstream work is not counted as waste. Existing
+  permanent fixture data and raw evidence are unchanged. No new state/cache,
+  exchange, compatibility path or replay. Work counts do not measure heap bytes,
+  provider latency or first-frame timing.
+
+
 ### Ordinary creation result identity handoff - 2026-10-25
 
 Status: locally verified and closed for this bounded slice. No model, 101, CI

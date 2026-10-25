@@ -126,11 +126,54 @@ const create = async (draft: unknown, response: 'compact' | 'full') => {
   }
 }
 
-// Observe the actual synchronous return interval. Owner construction, UI snapshots
-// and later tool-receipt aggregation are outside this interval, not counted as waste.
+// Observe normalization before Scene Tree entry and result forwarding after return.
+// Owner construction, UI snapshots and receipt aggregation are excluded from waste.
 const observeResults = () => {
   const originalScene = scene.addNewElements
   const originalApp = elementApis.createElementsInParent
+  const originalCore = core.createElementsInParent
+  const originalMap = Array.prototype.map
+  interface Normalization {
+    source: Parameters<typeof originalCore>[0]
+    delivered?: Parameters<typeof originalScene>[0]
+    maps: { source: readonly unknown[]; result: unknown[]; visits: number }[]
+  }
+  let normalization: Normalization | undefined
+  const normalizations: Normalization[] = []
+  // Track only the caller batch and arrays derived from it, before Scene Tree
+  // admission. All callbacks still run, including the actual normalization owner.
+  const mapping = vi.spyOn(Array.prototype, 'map').mockImplementation(function (
+    this: unknown[],
+    callback,
+    thisArg
+  ) {
+    const observation = normalization
+    if (
+      !observation ||
+      (this !== observation.source &&
+        !observation.maps.some(({ result }) => result === this))
+    )
+      return Reflect.apply(originalMap, this, [callback, thisArg])
+    let visits = 0
+    const result = Reflect.apply(originalMap, this, [
+      (value: unknown, index: number, source: unknown[]) => {
+        visits++
+        return Reflect.apply(callback, thisArg, [value, index, source])
+      }
+    ])
+    observation.maps.push({ source: this, result, visits })
+    return result
+  })
+  const coreCreation = vi
+    .spyOn(core, 'createElementsInParent')
+    .mockImplementation(function (...args) {
+      normalization = { source: args[0], maps: [] }
+      try {
+        return originalCore.apply(core, args)
+      } finally {
+        normalization = undefined
+      }
+    })
   const freeze = Object.freeze
   let insideApp = false
   let active: readonly string[] | undefined
@@ -141,6 +184,11 @@ const observeResults = () => {
   const owner = vi.spyOn(scene, 'addNewElements').mockImplementation(function (
     ...args
   ) {
+    if (normalization) {
+      normalization.delivered = args[0]
+      normalizations.push(normalization)
+      normalization = undefined
+    }
     const result = originalScene.apply(scene, args)
     if (insideApp) active = result
     return result
@@ -176,11 +224,37 @@ const observeResults = () => {
     })
   return {
     pairs,
+    normalizations,
+    inputCounts: () => {
+      let envelopes = 0,
+        intermediateArrays = 0,
+        secondPassVisits = 0,
+        normalizationVisits = 0
+      for (const { source, delivered, maps } of normalizations) {
+        for (const projection of maps) {
+          if (projection.source === source)
+            normalizationVisits += projection.visits
+          else secondPassVisits += projection.visits
+          if (projection.result !== delivered) {
+            intermediateArrays++
+            envelopes += projection.result.length
+          }
+        }
+      }
+      return {
+        envelopes,
+        intermediateArrays,
+        secondPassVisits,
+        normalizationVisits
+      }
+    },
     counts: () => ({ batches: pairs.length, arrays, entries }),
     restore: () => {
       app.mockRestore()
       freezing.mockRestore()
       owner.mockRestore()
+      coreCreation.mockRestore()
+      mapping.mockRestore()
     }
   }
 }
@@ -211,16 +285,39 @@ it.each(saved.cases)(
         expect(Object.isFrozen(app)).toBe(true)
       }
       const counts = work.counts()
+      for (const { source, delivered } of work.normalizations) {
+        expect(delivered).toEqual(
+          source.map((descriptor) => ({
+            visible: true,
+            lock: false,
+            ...descriptor
+          }))
+        )
+        expect(delivered).not.toBe(source)
+        delivered?.forEach((descriptor, index) => {
+          expect(descriptor).not.toBe(source[index])
+        })
+      }
+      expect(work.normalizations).toHaveLength(counts.batches)
+      const inputCounts = work.inputCounts()
+      expect(inputCounts.normalizationVisits).toBe(ids.length)
       console.info(
         JSON.stringify({
           measurement: 'creation-result-copies',
           nodes: ids.length,
-          ...counts
+          ...counts,
+          input: inputCounts
         })
       )
       expect(counts.arrays).toBe(0)
       expect(counts.entries).toBe(0)
       for (const { owner, app } of work.pairs) expect(app).toBe(owner)
+      expect(inputCounts).toEqual({
+        normalizationVisits: ids.length,
+        envelopes: 0,
+        intermediateArrays: 0,
+        secondPassVisits: 0
+      })
     } finally {
       work.restore()
       factory.transact.reset()

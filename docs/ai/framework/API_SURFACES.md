@@ -236,6 +236,9 @@ Scene/model bridge:
   - Core obtains the complete prepared Props property-graph batch and prepared
     Scene insertion before it asks either owner to apply, then returns only an
     isolated frozen ordered-ID result; an empty input is inert
+  - Core normalizes ordinary inputs directly to ordered descriptors without an
+    unused envelope or second projection; preserve default/override ordering,
+    supplied/generated IDs and caller-input isolation before Scene Tree admission
   - Scene Tree owns that result; ordinary Core request/facade and App adapters
     forward it without copying. The result remains separate from mutable input
     and membership, and later batches/history/reload cannot modify old lists
