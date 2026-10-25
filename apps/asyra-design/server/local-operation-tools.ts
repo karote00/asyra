@@ -2598,7 +2598,7 @@ export const createLocalOperationTools = (
                 'read',
                 ['tool-registry']
               ),
-              revision: 3,
+              revision: 4,
               name: AiDesignToolIds.DESCRIBE_DESIGN_APIS,
               executionAccess: LocalToolAccess.INDEPENDENT,
               description:
@@ -2628,7 +2628,7 @@ export const createLocalOperationTools = (
                   inputScope: {
                     type: 'object',
                     additionalProperties: false,
-                    required: ['operation', 'nodeTypes'],
+                    required: ['operation'],
                     properties: {
                       optionalInputs: {
                         type: 'array',
@@ -2646,7 +2646,7 @@ export const createLocalOperationTools = (
                       }
                     },
                     description:
-                      'Exact single native name only. Select operation and nodeTypes from its inputScopes; returns complete constraints for that subset with full output/recovery. Combine with view=usage for a complete actionable selected guide; omit view for full validation schemas. Cannot combine with schemaPaths. Full remains available for unrestricted composition.'
+                      'Exact single native name only. Select operation from its inputScopes and nodeTypes only when that owner publishes node choices; returns complete constraints for that subset with full output/recovery. Combine with view=usage for a complete actionable selected guide; omit view for full validation schemas. Cannot combine with schemaPaths. Full remains available for unrestricted composition.'
                   },
                   schemaPaths: {
                     type: 'array',

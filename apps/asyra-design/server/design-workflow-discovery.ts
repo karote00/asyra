@@ -25,27 +25,50 @@ const nodeTypes = (branch: Record<string, unknown>): string[] => {
     return type.enum
   return typeof type.const === 'string' ? [type.const] : []
 }
-const operation = (branch: Record<string, unknown>) =>
-  Array.isArray(branch.required) &&
-  branch.required.length === 1 &&
-  typeof branch.required[0] === 'string'
-    ? branch.required[0]
-    : undefined
+const operation = (branch: Record<string, unknown>) => {
+  if (typeof branch['x-design-operation'] === 'string')
+    return branch['x-design-operation']
+  if (
+    Array.isArray(branch.required) &&
+    branch.required.length === 1 &&
+    typeof branch.required[0] === 'string'
+  )
+    return branch.required[0]
+}
 const structure = (schema: unknown) => {
   const declaration = record(schema)
     ? schema['x-design-input-scope']
     : undefined
-  if (!record(declaration)) return undefined
-  const operations = branches(schema, declaration.operations)
-  const nodes = branches(schema, declaration.nodes)
+  if (!record(schema) || !record(declaration)) return
+  const variants =
+    declaration.operationGroups === undefined
+      ? [schema]
+      : branches(schema, declaration.operationGroups)
+  if (!variants?.length) return
+  const groups = variants.map((variant) => ({
+    schema: variant,
+    operations: branches(variant, declaration.operations)
+  }))
+  const nodes =
+    declaration.nodes === undefined ? [] : branches(schema, declaration.nodes)
   if (
-    !operations ||
     !nodes ||
-    operations.some((branch) => !operation(branch)) ||
-    nodes.some((branch) => !nodeTypes(branch).length)
+    nodes.some((branch) => !nodeTypes(branch).length) ||
+    groups.some(
+      (group) =>
+        !group.operations?.length ||
+        group.operations.some((branch) => !operation(branch)) ||
+        new Set(group.operations.map(operation)).size !==
+          group.operations.length
+    )
   )
-    return undefined
-  return { operations, nodes, declaration }
+    return
+  return {
+    operations: groups.flatMap((group) => group.operations ?? []),
+    nodes,
+    declaration,
+    groups
+  }
 }
 
 // Explicit owner opt-in, never a second capability/type registry.
@@ -53,9 +76,13 @@ export const workflowInputScopes = (schema: unknown) => {
   const source = structure(schema)
   return source
     ? {
-        operations: source.operations
-          .map(operation)
-          .filter((key): key is string => key !== undefined),
+        operations: [
+          ...new Set(
+            source.operations
+              .map(operation)
+              .filter((key): key is string => key !== undefined)
+          )
+        ],
         nodeTypes: source.nodes.flatMap(nodeTypes),
         optionalInputs: source.declaration.optionalInputs ?? [],
         ...(typeof source.declaration.selection === 'string'
@@ -132,10 +159,12 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
     ) ||
     typeof scope.operation !== 'string' ||
     !choices.operations.includes(scope.operation) ||
-    !Array.isArray(scope.nodeTypes) ||
-    !scope.nodeTypes.length ||
-    scope.nodeTypes.some((type) => !choices.nodeTypes.includes(type)) ||
-    new Set(scope.nodeTypes).size !== scope.nodeTypes.length ||
+    (choices.nodeTypes.length > 0
+      ? !Array.isArray(scope.nodeTypes) ||
+        !scope.nodeTypes.length ||
+        scope.nodeTypes.some((type) => !choices.nodeTypes.includes(type)) ||
+        new Set(scope.nodeTypes).size !== scope.nodeTypes.length
+      : scope.nodeTypes !== undefined) ||
     (scope.optionalInputs !== undefined &&
       (!Array.isArray(scope.optionalInputs) ||
         scope.optionalInputs.some(
@@ -152,6 +181,8 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
           return !choices.operations.includes(String(scope.operation))
         const values = scope[field]
         if (field === 'optionalInputs' && values === undefined) return false
+        if (field === 'nodeTypes' && !choices.nodeTypes.length)
+          return values !== undefined
         const allowed =
           field === 'nodeTypes' ? choices.nodeTypes : choices.optionalInputs
         return (
@@ -168,21 +199,35 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
       `Unsupported inputScope: ${invalid.length ? invalid.join(', ') : 'extra fields'}. Select exact owner choices; do not infer aliases.`
     )
   }
-  const selectedTypes = scope.nodeTypes
+  const selectedTypes: string[] = Array.isArray(scope.nodeTypes)
+    ? scope.nodeTypes
+    : []
   const schema = structuredClone(input) as Record<string, unknown>
   const source = structure(schema)
   if (!source) throw new Error('Missing owner scope declaration')
   const selected = source.operations.filter(
     (branch) => operation(branch) === scope.operation
   )
-  if (selected.length !== 1) throw new Error('Ambiguous inputScope operation')
-  const replace = (path: unknown, value: unknown) => {
+  if (!selected.length) throw new Error('Missing inputScope operation')
+  const replace = (path: unknown, value: unknown, root: unknown = schema) => {
     if (typeof path !== 'string') throw new Error('Invalid owner scope path')
-    const parent = at(schema, path.slice(0, path.lastIndexOf('/')))
+    const parent = at(root, path.slice(0, path.lastIndexOf('/')))
     if (!record(parent)) throw new Error('Invalid owner scope parent')
     parent[path.slice(path.lastIndexOf('/') + 1)] = value
   }
-  replace(source.declaration.operations, selected)
+  if (source.declaration.operationGroups === undefined) {
+    replace(source.declaration.operations, selected)
+  } else {
+    const variants = source.groups.flatMap((group) => {
+      const matching = (group.operations ?? []).filter(
+        (branch) => operation(branch) === scope.operation
+      )
+      if (!matching.length) return []
+      replace(source.declaration.operations, matching, group.schema)
+      return [group.schema]
+    })
+    replace(source.declaration.operationGroups, variants)
+  }
   if (!record(schema.properties))
     throw new Error('Missing owner operation properties')
   const optionalInputs = source.declaration.optionalInputs ?? []
@@ -219,28 +264,36 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
   for (const [key, constraint] of Object.entries(
     record(selected[0].properties) ? selected[0].properties : {}
   ))
-    if (constraint === false) schema.properties[key] = false
-  const repetition = projectRepetition(source, selectedTypes)
-  replace(source.declaration.nodes, [
-    ...source.nodes.flatMap((branch) => {
-      const retained = nodeTypes(branch).filter((type) =>
-        selectedTypes.includes(type)
+    if (
+      constraint === false &&
+      selected.every(
+        (branch) =>
+          record(branch.properties) && branch.properties[key] === false
       )
-      if (!retained.length) return []
-      const properties = branch.properties as Record<string, unknown>
-      const type = properties.type as Record<string, unknown>
-      return [
-        {
-          ...branch,
-          properties: {
-            ...properties,
-            type: { ...type, ...(type.enum ? { enum: retained } : {}) }
+    )
+      schema.properties[key] = false
+  const repetition = projectRepetition(source, selectedTypes)
+  if (source.declaration.nodes !== undefined)
+    replace(source.declaration.nodes, [
+      ...source.nodes.flatMap((branch) => {
+        const retained = nodeTypes(branch).filter((type) =>
+          selectedTypes.includes(type)
+        )
+        if (!retained.length) return []
+        const properties = branch.properties as Record<string, unknown>
+        const type = properties.type as Record<string, unknown>
+        return [
+          {
+            ...branch,
+            properties: {
+              ...properties,
+              type: { ...type, ...(type.enum ? { enum: retained } : {}) }
+            }
           }
-        }
-      ]
-    }),
-    ...(repetition ? [repetition] : [])
-  ])
+        ]
+      }),
+      ...(repetition ? [repetition] : [])
+    ])
   delete schema['x-design-input-scope']
   if (Array.isArray(schema.examples))
     schema.examples = schema.examples
@@ -413,7 +466,9 @@ export const workflowUsageGuide = (
     instructions: `${usage.instructions} ${usage.operations[scope.operation]}`,
     optionalInputs: source?.declaration.optionalInputs ?? [],
     selection:
-      'inputScope.optionalInputs selects full contracts; selection does not require sending them. Omit plan without rereading.',
+      typeof usage.selection === 'string'
+        ? usage.selection
+        : 'inputScope.optionalInputs selects full contracts; selection does not require sending them. Omit plan without rereading.',
     parameters: workflowUsageParameters(selected),
     results: usage.results,
     recovery: usage.recovery

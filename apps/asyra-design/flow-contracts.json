@@ -823,6 +823,16 @@
             "apps/asyra-design/e2e/test-utils.ts",
             "apps/asyra-design/e2e/fixtures/execution-continuity.json"
           ]
+        },
+        {
+          "id": "compose.selected-review-usage",
+          "stepId": "compose",
+          "testName": "execution proof delivers selected review usage to real capture binding and recording",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-workflow-discovery.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-design-review.ts"
+          ]
         }
       ],
       "handoffs": [

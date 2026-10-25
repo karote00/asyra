@@ -1,5 +1,31 @@
 # @asyra/asyra-design
 
+## Pending selected review usage
+
+```update-note
+{
+  "change": "selected-review-usage",
+  "owner": "Asyra Design tool discovery",
+  "summary": "Deliver canonical capture, bind and record contracts through existing selected usage, with owner examples and retained next-invocation recovery; preserve full and field discovery and existing review semantics.",
+  "sources": [
+    "apps/asyra-design/flow-contracts.json",
+    "apps/asyra-design/package.json",
+    "apps/asyra-design/server/__tests__/design-review-stages.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/review-usage-20261025.json",
+    "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
+    "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
+    "apps/asyra-design/server/design-workflow-discovery.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal App tool discovery now accepts owner operations without construction nodes. Existing execution inputs, evidence lifetimes, document data and independent discovery paths remain valid; no consumer migration is required."
+}
+```
+
 ## Pending ordinary creation input normalization
 
 ```update-note

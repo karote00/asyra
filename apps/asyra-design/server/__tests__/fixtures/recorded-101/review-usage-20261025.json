@@ -1,0 +1,74 @@
+{
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1792918949756",
+  "sourceRequestId": "cd6fd850-f010-4441-8a5b-a670a1fe7005",
+  "queries": [
+    {
+      "names": [
+        "review_drawing",
+        "select_design_references",
+        "validate_reference_images"
+      ],
+      "view": "usage"
+    },
+    {
+      "names": [
+        "review_drawing"
+      ],
+      "schemaPaths": [
+        "/properties/inspections",
+        "/properties/checks",
+        "/properties/bindChecks",
+        "/properties/phase",
+        "/properties/final"
+      ]
+    },
+    {
+      "names": [
+        "review_drawing"
+      ],
+      "schemaPaths": [
+        "/properties/inspections",
+        "/properties/checks",
+        "/properties/bindChecks",
+        "/properties/phase",
+        "/properties/final"
+      ],
+      "contentPage": {
+        "revision": "638640e110835648673ee6396e415a2831e76c3113bf92a7bae141ead338d52b",
+        "offset": 19888
+      }
+    }
+  ],
+  "outputReferences": [
+    {
+      "status": "queued",
+      "path": "cd6fd850-f010-4441-8a5b-a670a1fe7005.payloads/20-output.json",
+      "bytes": 17969,
+      "sha256": "165a64fd26d14e54d52bb7a90e21450bd10973e815d3b5e90d1b395fd7141d83",
+      "redactions": [],
+      "resourceIdentities": [],
+      "serializationMs": 0.1562919999996666
+    },
+    {
+      "status": "queued",
+      "path": "cd6fd850-f010-4441-8a5b-a670a1fe7005.payloads/23-output.json",
+      "bytes": 23072,
+      "sha256": "004a682c7bf618e714f43aebe1026197057ffc04a84d6bee5fe842338f794bad",
+      "redactions": [],
+      "resourceIdentities": [],
+      "serializationMs": 0.10883300000568852
+    },
+    {
+      "status": "queued",
+      "path": "cd6fd850-f010-4441-8a5b-a670a1fe7005.payloads/26-output.json",
+      "bytes": 4398,
+      "sha256": "13ee732cfccd5b760d325c80c6826c83d88ff6f0b991bc5a0c012da0cf75edd6",
+      "redactions": [],
+      "resourceIdentities": [],
+      "serializationMs": 0.036416999995708466
+    }
+  ],
+  "savedDeliveryBytes": 45439,
+  "savedReviewUsageBytes": 13767,
+  "savedFieldPageBytes": 27470
+}

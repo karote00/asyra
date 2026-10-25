@@ -9345,3 +9345,164 @@ it('execution proof preserves E2E runtime continuity and original failure attrib
     ]
   })
 })
+
+it('execution proof delivers selected review usage to real capture binding and recording', async () => {
+  vi.resetModules()
+  const hadWindow = 'window' in globalThis
+  if (!hadWindow) vi.stubGlobal('window', {})
+  const { default: core } = await import('../../src/contexts')
+  const { applyPreset, PresetProfiles, PresetDefaults } =
+    await import('@asyra/preset')
+  const { createAiInspectionAction, createInspectionValidationAction } =
+    await import('../../src/ai/inspection')
+  const { createInspectionEvidence } =
+    await import('../../src/common-apis/inspection-evidence')
+  const { observeAiAction } = await import('../../src/ai/runtime-input')
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          children: [],
+          visible: true,
+          lock: false
+        }
+      }
+    }
+  })
+  const ids = core.createElementsInParent(
+    [
+      { type: 'rect', x: 0, y: 0, width: 20, height: 20 },
+      { type: 'rect', x: 30, y: 0, width: 20, height: 20 }
+    ],
+    'workspace'
+  )
+  const captures: string[] = []
+  const capture = vi
+    .spyOn(core, 'captureElementSnapshot')
+    .mockImplementation((id) => {
+      captures.push(id)
+      return {
+        type: 'snapshot',
+        width: 1,
+        height: 1,
+        bounds: { x: 0, y: 0, width: 20, height: 20 },
+        dataUrl:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='
+      }
+    })
+  const evidence = createInspectionEvidence((listener) => {
+    void listener
+    return () => undefined
+  })
+  const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+  const actions = [
+    createAiInspectionAction(undefined, evidence),
+    createInspectionValidationAction(evidence)
+  ].map((definition) => observeAiAction(definition))
+  const dispatched: string[] = []
+  const tools = createOperationOwner(
+    actions.map((definition) => createAiToolContract(definition)),
+    { modelActions: (v) => v, resolveBatch: (v) => v },
+    async (batch) => ({
+      context: {},
+      actionResults: await Promise.all(
+        batch.actions.map(async (action) => {
+          dispatched.push(action.name)
+          const owner = actions.find((entry) => entry.name === action.name)
+          if (!owner) throw new Error('Unexpected mutation dispatch')
+          return {
+            actionId: action.id,
+            actionName: action.name,
+            result: (await owner.execute(action.arguments, {
+              signal: signals.signal
+            } as never)) as never
+          }
+        })
+      )
+    }),
+    {
+      getNativeTools: () =>
+        tools.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design_operations'
+        }))
+    }
+  )
+  const signals = new AbortController()
+
+  const call = async (name: string, input: unknown) => {
+    const definition = tools.definitions.find((entry) => entry.name === name)
+    if (!definition) throw new Error('Missing native tool')
+    return JSON.parse(
+      (await invokeLocalTool(tools, definition, input, signals.signal)).text
+    )
+  }
+  try {
+    await call('define_design_criteria', {
+      method: 'Review a selected part',
+      references: [],
+      detailRequired: false,
+      criteria: {
+        appearance: {
+          requirement: 'Requested appearance',
+          description: 'Visible appearance',
+          verification: 'visual',
+          requiredUnits: []
+        }
+      }
+    })
+    const menu = await call('describe_design_apis', { query: 'review_drawing' })
+    expect(menu.tools[0].inputScopes.operations).toEqual([
+      'record',
+      'capture',
+      'bind'
+    ])
+    let retained: string[] = []
+    for (const operation of ['capture', 'bind']) {
+      const guide = await call('describe_design_apis', {
+        names: ['review_drawing'],
+        view: 'usage',
+        inputScope: { operation }
+      })
+      expect(guide.contentDelivery).toBeUndefined()
+      const delivered = guide.tools[0]
+      expect(delivered.usageGuide.recovery).toMatch(/replay/)
+      expect(delivered.usageGuide.instructions).toContain('mechanical checks')
+      const invocation = delivered.invocationExample.invocation
+      if (operation === 'capture')
+        invocation.arguments.inspections[0].elementId = ids[0]
+      else invocation.arguments.bindChecks[0].inspectionIds = retained
+      const result = await call(invocation.tool, invocation.arguments)
+      retained = result.inspectionIds
+      expect(result.reviewOperation).toBe(operation)
+      const next = result.next
+      const recorded = await call(next.tool, {
+        ...next.arguments,
+        checks: next.arguments.checks.map((check: object) => ({
+          ...check,
+          status: 'pass',
+          evidence: 'Explicit proof judgment'
+        }))
+      })
+      expect(recorded.recordedChecks[0].status).toBe('pass')
+      expect(recorded.accepted).toBe(false)
+      expect(captures).toEqual([ids[0]])
+    }
+  } finally {
+    capture.mockRestore()
+    evidence.dispose()
+    if (!hadWindow) vi.unstubAllGlobals()
+  }
+})

@@ -3788,3 +3788,28 @@ Undo/Redo remain strict after planned reload and a new edit. Test the extra-relo
 case deterministically and retain a permanent minimal fixture of the observed
 save-pass/history-failure sequence. Models and private provider internals are not
 needed to prove this contract.
+
+### Selected review usage delivery
+
+The existing review tool exposes owner-defined capture, bind and record operations
+through the existing exact-name inputScope usage query. Review selection requires
+an operation but no construction nodeTypes. The same owner schema remains the
+execution authority for structure and visual phases; selection changes delivery,
+never execution syntax or validation. Full and field queries remain independent.
+Selected usage includes complete branch restrictions, owner invocation guidance
+and actual receipt semantics and no-replay recovery in one bounded reply for
+the ordinary review cases. Known direct calls need no lookup. Examples contain
+illustrative identities only: resolve current target/criterion/image identities
+from retained results, and consume capture/bind next.arguments for signed records.
+Capture and bind have static examples; record uses the delivered next invocation,
+with explicit judgments supplied after observation. It must not publish a static
+example containing invented credentials. Never fabricate a binding signature or a visual pass. Invalid inputs, cancellation,
+partial capture and stale evidence preserve the existing owners and recovery.
+
+Acceptance covers delivered examples through real capture/evidence/review owners,
+phase/branch rejection, independent and multiscale invalidation, partial recovery,
+full/field/refresh preservation and unchanged construction scope selection. Measure
+total bytes and required contract reads through capture/bind and record, including
+pagination, against the retained saved-query case. Do not weaken schema constraints,
+raise delivery limits or add discovery prerequisites. This is not a requirement to
+inspect before first drawing and does not establish model adoption or timing gains.

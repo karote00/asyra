@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 vector delivery identity reduction is in progress. E2E execution continuity is locally complete and pushed as f5ad084ff. No model/101, CI inspection or push is authorized for this slice.**
+Status: **Task 3 selected review usage delivery is locally verified and closed for this bounded slice. AI adoption and timing remain unobserved; no model/101, CI inspection or push.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: vector delivery identity reduction only, as bounded below. No geometry recomputation, new tools, model/101, CI or push.
+- Current scope: selected review usage delivery only, as bounded below. No execution-owner redesign, Knowledge changes, new tools, model/101, CI inspection or push.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,136 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Review purpose to executable selected contract - 2026-10-25
+
+Status: locally verified and closed under the fixed DoD; AI adoption and timing remain unobserved.
+
+Evidence: run 1792918949756 has three pre-drawing review/reference queries totaling
+45,439 bytes. Review usage reports no-valid-owner-example. Its five queried fields
+produce 6,717 bytes of fragments plus 15,771 bytes of ancestor constraints and two
+pages. Capture first occurs at 128.834 seconds, record at 137.987; bindChecks is
+unused in this run but valid in other saved runs. This establishes a delivery gap,
+not a causal attribution of model latency. Historical evidence stays immutable.
+
+Step Execution Card - compose / selected review usage:
+- Objective: discover capture, bind and record from the review owner's canonical
+  schema; deliver executable selected usage through the existing query route.
+- Inputs: exact native identity, owner-declared operation selection, canonical
+  phase/branch constraints and examples. Outputs: complete selected parameters,
+  validated invocation example, receipt interpretation and remaining-only recovery.
+- Conditions/bypass: selection is optional. Full schema, field queries, known
+  direct calls, structure/visual phases and independent flow order remain valid.
+  Construction scopes retain their node selection; review scopes need no nodes.
+- Contributors: existing review declarations, discovery projection, invocation
+  admission, inspection action/evidence and review result store. Forbidden: model
+  calls, guessed evidence/targets, new registry/state/cache, forced workflow, weaker
+  constraints, extra discovery prerequisite or replay of mutations/captures.
+- Boundary: local-design-review.ts declarations/examples; design-workflow-discovery.ts
+  owner scope projection; local-operation-tools.ts query admission/usage; ai-domain-prompt.ts
+  only if required for the existing query syntax. Runtime review semantics unchanged.
+- Failure owner: compose for invalid queries/declarations; inspect retains all
+  capture/binding/judgment failures. No new cache dimensions.
+- Spec: ai-execution-flow, Selected review usage delivery. Inspector: compose,
+  existing compose-to-inspect contract; inspect runtime boundary is preserved.
+- Feasibility: review already owns mutually exclusive capture/bind/record branches
+  in both phases. Add owner operation annotations to these branches, project the
+  selected branches through existing discovery, and reuse usage serialization.
+  Generalize the existing owner scope to grouped variants and optional node
+  schemas instead of introducing a second tool-specific selector. Examples remain
+  owner data, validated by the existing usageInvocation and execution admission.
+  Capture/bind next.arguments is the actual executable record example; static
+  capture/bind examples use illustrative identities. Never synthesize tokens.
+- Formal tests: permanent review-usage integration exercises delivered examples,
+  real inspection/evidence and review owners through invokeLocalTool; retained
+  saved-query fixture measures complete before/after delivery. Register direct
+  consumer in ordinary harness and Inspector proof; retain discovery, review,
+  image handoff, selected workflow and information-delivery regressions.
+- Gates: task context, naming before identifiers, Inspector admission, red proof,
+  focused integration and consumer suites, lint, production types/build,
+  architecture/inventory, update-note check, final Inspector and bounded review.
+- Stop: fixed DoD met, necessary out-of-scope owner change, or three failed
+  production corrections. No source changes while validation runs.
+
+Fixed DoD:
+1. Legal operation choices originate in owner declarations; no second registry or
+   menu round trip. Invalid selection returns the existing corrective query route.
+2. Execute the actual delivered capture/bind/record examples via dispatcher and
+   real inspection/evidence/review owners. Resolve illustrative identities from
+   actual receipts; model judgments remain explicit test inputs.
+3. Preserve phase and mutual-exclusion restrictions, exact criteria/units, evidence
+   bindings, multiscale dependencies, local invalidation and whole-request coverage.
+4. Fixed capture-to-record and reuse-to-record cases reduce total delivered bytes
+   and required contract-read turns against saved queries, including continuations,
+   outputs and recovery; do not measure only a helper or first page.
+5. Preserve full/field lookup, refresh, known direct calls, optional plan and
+   construction scopes. Do not require a particular first drawing or review order.
+6. Partial capture, cancellation and stale binding preserve successful evidence;
+   retry only failures, never writes or successful captures. Tool success is not
+   visual acceptance. No weakened budgets, compatibility aliases or hidden pass.
+7. Closure proves deterministic contracts only. AI adoption and first-frame timing
+   remain unobserved; no model/101 is authorized.
+
+
+Implementation evidence:
+- Admission candidate 272e0605-ed30-4e47-a323-7aba33889e15 passed 77 existing
+  cases; review c7c276275b15b5a43e1b0a99055ba6cdd5587cbadc9ee027184a2aff17873921
+  was accepted before production edits. Logs: tmp/review-usage-admission-candidate.log
+  and tmp/review-usage-admitted.json.
+- Formal red: selected capture fails because inputScope.nodeTypes is required.
+  Permanent fixture retains the three raw queries and immutable payload hashes;
+  no formal test reads ignored evidence.
+- Real-owner integration executes capture and bind examples and the actual returned
+  record invocation. Static record credentials are deliberately absent. Explicit
+  judgments are test inputs; only the pixel renderer is substituted.
+- The recovery test follows requiredInputs when retried images need rebinding;
+  it neither recaptures successful images nor invents a binding. Multiscale image
+  dependencies, independent local survival, cancellation and tampering are covered.
+- Direct-consumer review kept the size/count assertions: the workflow comparison
+  now executes the delivered selected bind example instead of treating an unscoped
+  menu as the full contract. The canonical review revision assertion follows the
+  changed discovery declaration; runtime judgment constraints are unchanged.
+
+
+Closure evidence (same production source):
+- Final candidate 3e10f2ef-7b2b-40c7-bbd4-c52d3e93b07a passed all 78 cases.
+  Accepted review ab6254af52f6c8cff0b93d00d49ad16222132ec78d061f7c85a06f42b4e138b1;
+  verify 5293692c-c5e2-4433-b1a0-65fbcafc9b56 passed at mapping revision 121.
+  Candidate and verification source: 86a60ec70ea1af0a057acb2b587932140534ba95f65a6be94db7f15468ac00d0.
+- Seven focused suites: 314 passed, zero skipped. This includes actual review
+  capture/binding/recording, multiscale dependencies, stale/tampered evidence,
+  independent local survival, partial capture recovery, cancellation, full/field/
+  refresh, construction discovery and native image forwarding.
+- Architecture/inventory: 13 passed. Naming: 15 passed. App production types and
+  production build passed. Scoped lint: zero errors; one unchanged existing
+  no-console warning in the proof file. Update guidance and diff checks passed.
+- Inspector isolation excludes auxiliary test modules. The final mapped proof is
+  self-contained and executes real inspection/evidence owners; the full ordinary
+  integration suite remains registered in test:server-response-harness. No
+  Inspector snapshot expansion or production test-helper dependency was added.
+- The retained raw payloads independently match all three saved SHA-256 values.
+  Baseline review contract delivery is 41,237 bytes, excluding unrelated reference
+  usage. For conservative whole-flow comparisons, add identical current operation
+  requests/replies to that saved contract-only baseline; historical query request
+  bytes are not added. These are deterministic comparisons, not historical timing
+  comparisons or a replay of model decisions.
+  * Purpose menu + selected capture + record: 17,667 versus 47,857 bytes.
+  * Purpose menu + selected bind + record: 16,438 versus 46,762 bytes.
+  * Capture flow plus partial failure, remaining capture and rebinding recovery:
+    28,751 versus 58,941 bytes. Successful images are not recaptured.
+  * Contract reads: two including the menu, one for a known operation, versus
+    three saved reads including the field continuation. No extra record lookup.
+- Bounded self-review covered the diff, canonical phase/branch and reference
+  closure, owner examples, direct consumers, receipt interpretation, restoration
+  and failure paths. No runtime review state, mutation owner, Knowledge content,
+  persisted data, Undo/Redo or collaboration behavior changed. The document stays
+  identical across the tested read-only review flow. Pixel rendering is substituted
+  in the new integration; visual correctness and AI judgment are not certified.
+- Evidence logs: tmp/review-usage-red.log, tmp/review-usage-final-focused.log,
+  tmp/review-usage-final-candidate.log, tmp/review-usage-inspector-verify.log,
+  tmp/review-usage-types.log, tmp/review-usage-build.log,
+  tmp/review-usage-architecture.log and tmp/review-usage-lint.log.
+
 
 
 ### Ordinary creation input normalization handoff - 2026-10-25

@@ -2623,16 +2623,17 @@ it('executes the delivered review-selection example and next invocation with few
     if (!selected) {
       const review = await discover({
         names: ['review_drawing'],
-        view: 'usage'
+        view: 'usage',
+        inputScope: { operation: 'bind' }
       })
+      const delivered = review.tools[0].invocationExample.invocation
       const route = review.tools[0].execution
       const inspectionId = value.actionResults.find(
         (entry: { actionName: string }) =>
           entry.actionName === 'inspect_drawing'
       ).result.inspectionId
       handoff = await invoke(route.namespace, route.tool, {
-        phase: 'visual',
-        final: false,
+        ...delivered.arguments,
         bindChecks: [
           { criterionId: 'appearance', inspectionIds: [inspectionId] }
         ]
