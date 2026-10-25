@@ -1,6 +1,6 @@
 # Asyra Office
 
-A local-first implementation slice of the [Office product plan](../../docs/ai/apps/asyra-office/asyra-office-product-plan.md). The complete plan remains open.
+A local-first implementation slice of the [Office product plan](../../docs/ai/apps/asyra-office/plans/office-rebuild-plan.md). The complete plan remains open.
 
 ## Run
 

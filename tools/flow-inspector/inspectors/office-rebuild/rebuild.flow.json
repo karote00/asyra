@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra-office",
+  "flowId": "rebuild",
+  "revision": 0,
+  "definition": {
+    "title": "Asyra Office rebuild",
+    "purpose": "Implement the approved office in small visually accepted asset stages.",
+    "nodes": [
+      {
+        "id": "wall",
+        "title": "Wall asset harness",
+        "objective": "Validate the first procedural wall through the real provider.",
+        "owner": "Asyra Office",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "technical",
+            "title": "Geometry, lifecycle, app and browser gates pass",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "wall-harness-gates"
+            }
+          },
+          {
+            "id": "visual",
+            "title": "User accepts wall model views",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-office/implementation.md#stage-1---wall-asset-harness"
+        ],
+        "implementationRefs": [
+          "apps/asyra-office/src/assets/",
+          "apps/asyra-office/src/preview/"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "product",
+        "title": "Complete office requirements and later asset stages accepted",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [],
+    "notes": [],
+    "progress": [],
+    "sources": [],
+    "warnings": []
+  }
+}

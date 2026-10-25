@@ -3,6 +3,23 @@
 This file tracks releases for Asyra. Previous releases under Asyra (v0.1.0,
 etc.) are not included here.
 
+## Pending - Asyra Office rebuild architecture
+
+```update-note
+{
+  "change": "office-rebuild-architecture",
+  "owner": "Asyra Office development",
+  "summary": "Replace the retired Office flow with the reviewed rebuild ownership map and first asset review criteria.",
+  "sources": [
+    "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/office-rebuild/rebuild.flow.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal architecture and review contract only; no package API or hosted app release is introduced."
+}
+```
+
 ## Pending - Asyra Office source reset
 
 This internal development checkpoint deliberately removes the previous Office

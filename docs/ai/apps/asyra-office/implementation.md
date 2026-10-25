@@ -1,6 +1,6 @@
 # Office rebuild - Technical proposal
 
-Status: planning only, 2026-10-25. The [product plan](asyra-office-product-plan.md)
+Status: rebuild implementation authorized on 2026-10-25; first asset slice in progress. The [product plan](plans/office-rebuild-plan.md)
 owns intended experience and acceptance. This replaces claims about the deleted
 Office implementation. No App runtime, new model, connector or accepted rebuild
 baseline exists from this planning task. Existing shared Preset capabilities
@@ -283,5 +283,67 @@ as implementation admission, add a self-certifying ledger, or silently bypass it
 The principal unresolved proofs are textured/skinned asset delivery, profile
 fit/rigging, bounded durable source history and full task feed, exact persistence
 and economy atomicity, live-provider capabilities and target-device budgets.
-The next action is owner review of the product plan. No coding starts from this
-proposal without a separate instruction.
+The owner subsequently authorized implementation. The bounded first slice below
+is active; later asset subgroups still require their visual review checkpoints.
+
+## Stage 1 - Wall asset harness
+
+Task association: the product plan's Delivery sequence and acceptance, Stage 1.
+The user authorized implementation on 2026-10-25. The user remains the design
+acceptance and whole-plan closeout owner. This first slice stops at one wall
+segment and its real renderer review; it does not implement the complete office.
+
+Scope: app-owned procedural wall construction, a disposable read-only asset
+harness, permanent geometry/lifecycle/browser checks, and the corresponding
+Inspector contract. Preserve CI scheduling, approved asset inputs and shared
+packages. No new dependencies, Blender jobs, provider connectors or save format.
+The harness is a review tool, not the final Office UI. Its local view controls
+change presentation only and cannot create layout, membership or rewards.
+
+The current Flow Inspector public flow-file path supports this App without
+Factory-specific proof admission. Use the supported schema validator and current
+flow document, retaining unfulfilled automated/manual criteria until real
+results or user approval exist. The static architecture remains an ownership
+map, not an execution record. No dynamic Factory evidence is reused.
+
+Owner segment `construct-asset`: consume architecture spec 2.0.5 wall-segment
+and optional whole-unit local XYZ extents/appearance. Produce two closed,
+outward-facing triangle meshes with named body/top-cap regions, UVs, physical
+bounds and a distant shape. Reject nonfinite/nonpositive extents and invalid
+appearance before publication. The canonical asset specification is immutable;
+these are detached generated review inputs, not editable Office document state.
+Default body is 1 x .24 x 2.42 m; cap is 1 x .27 x .08 m, resting at Z=2.42.
+Both X end planes are exactly +/- .5 m. Only top edges parallel to X have
+inward .004 m radii with two segments; no end bevel, lower lip or decorative seam.
+Convert authored (X,Y,Z) to renderer (X,Z,-Y), preserving handedness. Whole-unit
+nonuniform scale is applied after construction, including radii and overhangs.
+Default colors/roughness come from the existing material entries. Optional group
+or per-region color/material overrides retain that precedence without modifying
+other outputs. UVs use metres before requested scaling; whole-unit dimensions
+update physical repeat distances. No baked lighting or texture generation.
+
+Owner segment `preview-asset`: consume admitted wall descriptors once per
+preview session; publish them to SpatialLayer and submit camera changes through
+its camera-only API. Core owns official 3D startup, renderer resize and disposal.
+View buttons use one registered Feature/API route; no direct engine imports.
+Core's supported runtime system-property invalidation requests rendering. No
+per-frame canonical reads, topology rebuilds or React frame broadcasts. This
+slice has no document mutations, so save, Undo and rewards are inapplicable.
+Dispose the observer, layer and Core even after startup failure; retired
+callbacks cannot touch a successor. Presentation exceptions remain visible.
+
+First-slice cases: exact dimensions and joins; outward winding/closed topology;
+4 mm profile and radius segment count; replacement appearance isolation; XYZ
+scaling and invalid sizes; physical UV repeat; distant error bound; five camera
+views of the same asset; camera-only updates cause zero geometry rebuilds;
+retired-session rejection and cleanup. The regular wall uses a two-tier LoD:
+near preserves edge profile, distant drops only the 4 mm bevel under the shared
+projected-error threshold/hysteresis. The two named parts remain separate.
+
+Gates: naming baseline and final; static Inspector and public flow validation;
+focused Vitest; app typecheck/lint/build; real-browser desktop/mobile review and
+five-view captures including a magnified cap join. Technical pass does not grant
+user visual acceptance. The provider currently exposes perspective cameras only;
+record that limitation and do not call near-orthographic captures exact
+orthographic calibration. Stop if geometry, public rendering support, or tested
+lifecycle contradicts the approved contract. Do not expand to the next asset.

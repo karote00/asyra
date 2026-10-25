@@ -1,8 +1,8 @@
 # Asyra Office - Product and Experience Plan
 
-Status: rebuild proposal for owner review, 2026-10-25. Planning only; no model,
-asset generation, application implementation, or dependency change is authorized
-by this document. Product slug: `asyra-office`; display name: `Asyra Office`.
+Status: product plan approved; implementation authorized on 2026-10-25.
+Stage 1 begins with one wall asset and a minimal renderer harness. Later asset
+subgroups retain user visual acceptance checkpoints; no new dependencies are authorized. Product slug: `asyra-office`; display name: `Asyra Office`.
 
 ## Rebuild planning task
 
@@ -11,7 +11,7 @@ requested a fresh App after clearing `apps/asyra-office/src` in commit
 `4cd49875a4ea9b9386c64ff9a350270490bd6b91` (PR #361). Its non-runnable reset
 exception does not authorize later implementation or waive future validation.
 The reviewed references/specifications from PR #354 remain construction inputs.
-This task updates only this plan and [the technical proposal](implementation.md).
+This task updates only this plan and [the technical proposal](../implementation.md).
 The user owns product/design approval and whole-plan acceptance; the executing
 agent owns the bounded planning update and must report missing proof.
 
@@ -25,13 +25,13 @@ commit, push, or implementation.
 
 ## Source authority
 
-- [Approved complete office image](../../../../assets/asyra-office/models/architecture/review/approved-office-reference.jpg)
+- [Approved complete office image](../../../../../assets/asyra-office/models/architecture/review/approved-office-reference.jpg)
   owns the intended overall composition and visual style. The central office is
   primary; neighboring shops are secondary. It is not merely a mood board.
-- [Asset catalog and shared contracts](../../../../assets/asyra-office/models/README.md)
+- [Asset catalog and shared contracts](../../../../../assets/asyra-office/models/README.md)
   identify current per-part drawings, numeric specifications, assembly rules,
   defaults, and exceptions. Use those exact links, not the newest filename.
-- [Asset types](../../../../assets/asyra-office/models/ASSET-TYPES.md) distinguish
+- [Asset types](../../../../../assets/asyra-office/models/ASSET-TYPES.md) distinguish
   geometry, material, decal, and procedural-path inputs.
 - A later explicitly approved per-part revision controls that part's geometry;
   the full image still controls the scene's identity and composition. Numeric
