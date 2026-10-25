@@ -39,7 +39,12 @@ def discover_profile_groups(app=APP):
     all_profiles = sorted(set(discovered))
     if HEAVY_PROFILE not in all_profiles:
         raise RuntimeError("Missing required heavy profile")
-    heavy = [HEAVY_PROFILE]
+    heavy = [
+        path for path in all_profiles
+        if path == HEAVY_PROFILE or path.startswith(
+            "src/domain/__tests__/walking-constrained-kinematics-midpoint-"
+        )
+    ]
     source = [
         path for path in all_profiles
         if path not in heavy and path.endswith(SOURCE_PROFILE_SUFFIX)

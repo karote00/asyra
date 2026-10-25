@@ -1593,11 +1593,15 @@ test('mixed material delivery retains shared spatial consumers without unrelated
       'src/runtime/__tests__/bootstrap.profile.test.ts'
     )
   )
-  assert.ok(
-    owner.profileSelection.files.includes(
-      'src/domain/__tests__/walking-constrained-kinematics.profile.test.ts'
+  for (const file of [
+    'walking-constrained-kinematics-midpoint-profile-one.profile.test.ts',
+    'walking-constrained-kinematics-midpoint-profile-two-phase-zero.profile.test.ts',
+    'walking-constrained-kinematics-midpoint-profile-two-phase-one.profile.test.ts'
+  ])
+    assert.ok(
+      owner.profileSelection.files.includes('src/domain/__tests__/' + file),
+      file
     )
-  )
   assert.ok(
     !owner.profileSelection.files.includes(
       'src/domain/__tests__/kinematic-trigonometry.profile.test.ts'

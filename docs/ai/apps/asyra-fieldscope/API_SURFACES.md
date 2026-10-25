@@ -24,7 +24,8 @@ Cross-package imports use public `@asyra/*` facades. Do not import another app's
 `test:local` and `test:ci` run ordinary tests through
 `scripts/supervise-tests.py`. `test:profiles` discovers the exact
 `src/**/__tests__/**/*.profile.test.ts` class and partitions it into the
-walking-constrained-kinematics owner, every nested
+walking-constrained-kinematics owner (three independent midpoint files and one
+envelope/projection file), every nested
 `*.source.profile.test.ts`, and every remaining profile, then runs those groups
 sequentially through the same supervisor and serial one-worker
 `vitest.profile.config.ts`. The partition must be complete and disjoint; a new
@@ -36,7 +37,12 @@ The repository classifier selects exact files; unknown relationships retain full
 coverage. `test:affected --file <path>` runs selected ordinary files through the
 same supervisor. `run-profile-groups.py --file <path>` runs selected profile files;
 `--group` restricts their group and `--list` returns the discovered partition.
-CI groups use separate runners; local execution stays sequential. `--file`, optional
+CI groups use separate runners. Heavy files each receive an independent matrix
+job, with at most two concurrent jobs and no sibling fail-fast cancellation;
+source and remaining groups keep their existing batched execution. Artifacts
+include the matrix index to prevent upload collisions. The outer job allows
+30 minutes for setup, the guarded process and evidence upload. Local execution
+stays sequential. `--file`, optional
 `--title` for one file, and finite `--hard-stop-ms` remain the supervisor's
 only selection/deadline controls. Each mode rejects the other test class.
 Each group retains the default 20-minute process wall deadline, owned

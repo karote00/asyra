@@ -634,3 +634,17 @@ owner.run_profile_groups(Path(sys.argv[2]), selected_files=json.loads(sys.argv[3
     assert.match(checked.stderr, /Selected profiles must/)
   }
 })
+
+test('discovers split constrained midpoint profiles in the heavy group without dropping exact selections', (t) => {
+  const root = fixture()
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const split =
+    'src/domain/__tests__/walking-constrained-kinematics-midpoint-phase.profile.test.ts'
+  writeProfile(root, split)
+  assert.deepEqual(discover(root).heavy, [split, heavy].sort())
+  assert.ok(!discover(root).remaining.includes(split))
+  const result = run(root, writeFakeSupervisor(root), 'pass', 'heavy', [split])
+  assert.deepEqual(result.calls, [[split]])
+  assert.equal(result.result.outcome, 'passed')
+  assert.deepEqual(result.result.selection.files, [split])
+})

@@ -1404,7 +1404,15 @@ test('Asyra FieldScope selected profile groups are independent and each blocks v
   const profile = yaml.load(
     readText('.github/workflows/fieldscope-profile.yml')
   )
-  assert.equal(profile.jobs.profile['timeout-minutes'], 20)
+  assert.match(
+    readText('apps/asyra-fieldscope/scripts/supervise-tests.py'),
+    /DEFAULT_HARD_STOP_MS = 20 \* 60 \* 1000/u
+  )
+  assert.ok(
+    profile.jobs.profile['timeout-minutes'] > 20 &&
+      profile.jobs.profile['timeout-minutes'] <= 30,
+    'The bounded job must reserve setup and artifact time around the unchanged 20-minute supervisor deadline'
+  )
   assert.equal(profile.on.workflow_call.inputs.files.required, true)
   assert.equal(profile.on.workflow_call.inputs.group.required, true)
   assert.ok(
@@ -1435,7 +1443,10 @@ test('Asyra FieldScope profile failures retain complete bounded supervision arti
   )
   assert.ok(upload, 'profile diagnostics must survive the ephemeral runner')
   assert.equal(upload.if, 'always()')
-  assert.equal(upload.with.name, 'fieldscope-profile-${{ inputs.group }}')
+  assert.equal(
+    upload.with.name,
+    'fieldscope-profile-${{ inputs.group }}-${{ strategy.job-index }}'
+  )
   assert.equal(
     upload.with.path,
     'apps/asyra-fieldscope/.artifacts/test-supervision/'
@@ -1478,4 +1489,64 @@ test('shared CI downloads the scope plan instead of putting large JSON in the en
     0,
     'Generated CI evidence must not be scanned as authored source'
   )
+})
+
+test('heavy profile files run in bounded independent jobs without cancelling sibling evidence', () => {
+  const profile = yaml.load(
+    readText('.github/workflows/fieldscope-profile.yml')
+  )
+  assert.deepEqual(profile.jobs.profile.strategy, {
+    'fail-fast': false,
+    'max-parallel': 2,
+    matrix: {
+      file: "${{ fromJSON(inputs.group == 'heavy' && inputs.files || '[\"\"]') }}"
+    }
+  })
+  const run = profile.jobs.profile.steps.find(
+    (step) => step.name === 'Run selected profile group'
+  )
+  assert.equal(run.env.PROFILE_FILE, '${{ matrix.file }}')
+  const script = run.run.split("python3 - <<'PYTHON'\n")[1].split('\nPYTHON')[0]
+  for (const selected of [
+    '',
+    'src/first.profile.test.ts',
+    'src/second.profile.test.ts',
+    'src/unselected.profile.test.ts'
+  ]) {
+    const result = spawnSync(
+      'python3',
+      [
+        '-c',
+        'import subprocess, json\nsubprocess.run = lambda args, **kwargs: print(json.dumps(args))\n' +
+          script
+      ],
+      {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PROFILE_GROUP: 'heavy',
+          PROFILE_FILES: JSON.stringify([
+            'src/first.profile.test.ts',
+            'src/second.profile.test.ts'
+          ]),
+          PROFILE_FILE: selected
+        }
+      }
+    )
+    if (selected.includes('unselected')) {
+      assert.notEqual(result.status, 0)
+      continue
+    }
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(JSON.parse(result.stdout), [
+      'python3',
+      'apps/asyra-fieldscope/scripts/run-profile-groups.py',
+      '--group',
+      'heavy',
+      ...(selected
+        ? [selected]
+        : ['src/first.profile.test.ts', 'src/second.profile.test.ts']
+      ).flatMap((file) => ['--file', file])
+    ])
+  }
 })
