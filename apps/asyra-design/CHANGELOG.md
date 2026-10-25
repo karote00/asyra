@@ -1,5 +1,42 @@
 # @asyra/asyra-design
 
+## Pending architecture regression coverage
+
+```update-note
+{
+  "change": "architecture-regression-coverage",
+  "owner": "Asyra Design validation",
+  "summary": "Verify the exact pure Group bounds bundle and run every maintained server regression through ordinary validation, including offline native handoff cases.",
+  "sources": [
+    "apps/asyra-design/__tests__/framework-runtime-boundary.test.mjs",
+    "apps/asyra-design/package.json",
+    "apps/asyra-design/server/__tests__/execution-flow.config.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Validation coverage and captured-source resolution change; App tools, execution, cancellation and persisted data do not. Existing pinned offline native prerequisites remain enforced."
+}
+```
+
+## Pending inspection target preflight
+
+```update-note
+{
+  "change": "inspection-target-preflight",
+  "owner": "Asyra Design inspection",
+  "summary": "Use one canonical metadata observation for capture eligibility instead of copying complete target data; preserve framing, evidence and failed-only capture recovery.",
+  "sources": [
+    "apps/asyra-design/src/common-apis/inspection.ts",
+    "apps/asyra-design/src/ai/__tests__/inspection.test.ts",
+    "apps/asyra-design/server/__tests__/workspace-inspection.integration.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing tool inputs, image outputs, snapshot behavior and full-data APIs remain unchanged; no persisted data or consumer migration."
+}
+```
+
 ## Pending metadata child counts
 
 ```update-note

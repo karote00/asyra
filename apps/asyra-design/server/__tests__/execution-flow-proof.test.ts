@@ -2227,13 +2227,19 @@ it('execution proof composes capture and assessment without dropping unavailable
   const { inspectionApis } = await import('../../src/common-apis/inspection')
   const core = (await import('../../src/contexts')).default
   const get = core.getElementData
+  const getMetadata = core.getElementMetadata
   try {
-    core.getElementData = () => undefined
+    const fullReads = vi.fn(() => undefined)
+    const metadataReads = vi.fn(() => undefined)
+    core.getElementData = fullReads
+    core.getElementMetadata = metadataReads
     const rejected = inspectionApis.inspect('missing-target')
     expect(designActionOutcome(rejected)).toEqual({
       status: 'failed',
       settlement: 'completed'
     })
+    expect(fullReads).not.toHaveBeenCalled()
+    expect(metadataReads).toHaveBeenCalledExactlyOnceWith('missing-target')
     expect(createAiInspectionAction().description).toMatch(
       /workspace.*overview/i
     )
@@ -2242,6 +2248,7 @@ it('execution proof composes capture and assessment without dropping unavailable
     )
   } finally {
     core.getElementData = get
+    core.getElementMetadata = getMetadata
     if (!hadWindowForInspection) Reflect.deleteProperty(globalThis, 'window')
   }
 

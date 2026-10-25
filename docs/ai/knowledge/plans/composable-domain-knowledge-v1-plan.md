@@ -96,6 +96,238 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Image preflight supplemental architecture failures - 2026-10-25
+
+Status: both supplemental failures repaired and locally verified; image
+preflight retained. No model, 101, CI inspection or push.
+
+Evidence and classification: the architecture gate fails on the unchanged baseline
+as well as the image-preflight checkout. The single-module assertion predates the
+shared analytic oval dependency, but the current utils root import also brings
+unrelated modules and lodash into the pure backend entry. Preserve shared geometry
+ownership and replace that dependency edge, not the geometry calculation. Four
+maintained server suites are absent from ordinary validation; two delivery suites
+have a dedicated command but that does not satisfy ordinary validation coverage.
+Native cases use version-pinned local Codex with loopback fixed responses, isolated
+project-local state and cleanup receipts; they do not invoke a real model.
+
+Step Execution Card - prepare / pure geometry dependency:
+- Inputs: existing finite rectangles and typed rotated ovals. Outputs: unchanged
+  analytic Group bounds and prepared artifacts; no new persisted or wire fields.
+- Owner: Preset Group bounds consumes the existing Utils geometry calculation.
+  Expose the existing geometry-bounds module through a narrow public subpath;
+  retain the independently valid Utils root exports. No copied math or new owner.
+- Conditions: preserve empty, invalid, reversed rectangle and rotated oval cases;
+  no Core, Render, DOM, registration, lodash or unrelated Utils module in this
+  entry graph. Advice/direct edits bypass preparation. Failure owner is prepare.
+- Allowed contributors: existing public pure geometry; no canonical writes,
+  model calls, additional caches, state or rendering changes.
+- Implementation: packages/utils/package.json, packages/preset/src/group-bounds.ts;
+  exact graph regression in the App architecture suite; the existing proof
+  configuration maps the public subpath to captured source, not workspace dist. Existing geometry tests
+  and projected-ellipse/shared-pattern consumers verify numerical equivalence.
+- Contracts: projected ovals in the execution spec; prepare condition and allowlist;
+  Utils/Preset package docs, App backend boundary and this Task 3 section.
+- Naming: reuse geometry-bounds and its existing exports; new public subpath only,
+  no persisted identity migration. The package maps the same declaration for
+  the repository current Node type resolver and export-aware consumers.
+  Run naming before and after implementation.
+
+Validation segment - maintained server suite reachability:
+- Owner: existing App package validation scripts and architecture guard. Add the
+  four omitted suites to the existing server harness; keep standalone native
+  delivery invocation and the all-maintained-suite assertion. No skips or new
+  runner/registry. No product-flow step is introduced for package script wiring.
+- Boundary: apps/asyra-design/package.json and its architecture regression suite;
+  App workflow documents the no-model native prerequisites. Production owner
+  behavior and retained fixture/source evidence remain unchanged.
+
+Fixed DoD and closure:
+1. Preserve the two original failing gate results. Before production edits,
+   prove the exact pure-geometry graph test fails on the existing barrel import.
+   Do not replace it with a general permission for all Utils dependencies.
+2. Public packaged Group bounds contains only its entry and the existing pure
+   geometry-bounds calculation, with no external or dynamic imports; unused
+   point-transform code is tree-shaken from this consumer. Verify
+   the compiled export against reversed rectangles, empty input, nonfinite input
+   and analytic rotated oval expectations; retain one mathematical owner.
+3. Every maintained server suite remains required by ordinary validation, and
+   all four newly included files actually execute without a real model. Preserve
+   version checks, captured next requests, cancellation, source/page invalidation,
+   observation limits, test budgets, cleanup and evidence assertions.
+4. Preserve the image-preflight diff and rerun its focused real-owner regressions.
+   Run exact architecture suite, affected geometry/preparation tests, production
+   types/build, naming/lint/docs checks and final Inspector proof. Review the diff
+   and direct consumers only. No full local CI, model/101 or CI inspection.
+5. Stop after bounded gates and self-review; report any unavailable native
+   prerequisite instead of skipping or inventing success. No push in this slice.
+
+Validation and self-review:
+- Original architecture run failed the two unchanged baseline checks. The revised
+  exact-graph regression and unchanged inventory assertion both failed before
+  production edits (architecture-handoff-red-final.log); the graph failure showed
+  unrelated Utils modules and lodash, not a numerical mismatch.
+- Contract admission accepted review
+  a93f67bb29bd9b1b31b929a0be94896c31647aace4ad914e23c9023c78ed217d
+  after candidate 81951af2-80ca-4ec6-96a0-c2edd77d6bc1 passed. Captured-source
+  subpath resolution was subsequently accepted under review
+  6b7280de153d5ab0fd0fe5216a7d158af55bb44d6a5f0de8c1b420e551751b3d.
+- Production changes are the Utils public export/declaration mapping and one
+  Preset import. No geometry implementation changed. The packaged bundle retains
+  exactly Group bounds and geometry-bounds, with zero external/dynamic imports;
+  root and subpath resolve the identical calculation function. The compiled
+  output passes empty, reversed rectangle, invalid and analytic rotated oval
+  assertions. Utils/Preset builds validate the existing Node type resolver too.
+- The four omitted suites are in the existing ordinary server harness; the full
+  inventory assertion and standalone native-delivery command remain intact.
+  Actual newly connected suites passed 20/20, zero skips, using local Codex
+  0.160.0 against fixed loopback responses only. Their native request observations,
+  disconnected-output evidence, cleanup, paging/recovery and budget assertions
+  passed; this is deterministic handoff evidence, not model adoption evidence.
+- Final architecture suite passed 13/13. Utils geometry and Preset Group tests
+  passed 27/27; projected oval and image-preflight/evidence/dependency tests passed
+  57/57. Both browser inspection cases passed in 28.4 seconds, preserving large
+  overview/native region, independent workspace roots, rotation/order/occlusion,
+  read-only history/publication and strict save/reload evidence. Test-owned ports
+  3027, 4127 and 4227 were released. No source edits occurred during those gates.
+- App production types and build passed; build has its existing chunk-size
+  warning. Focused ESLint has zero errors and two retained diagnostic console
+  warnings. A missing explicit Node Buffer import in the new bundle assertion
+  was fixed before final lint/architecture verification. Naming passed 15 checks;
+  update guidance, pending changeset policy and diff checks passed.
+- Final Inspector run 15ead56e-1576-445d-a36a-ac0c5bd1e03c passed 77/77,
+  zero failures/pending, accepted revision 115, captured source
+  953268c551ae5a1d9fe2893e4559732323914eff8d230d76a3ec46b492cacb33.
+  All 886 captured inputs match the checkout, including actual Utils geometry,
+  Preset Group bounds and the explicit source alias. The separate architecture
+  and browser gates ran against the final working tree; they are not implied by
+  Inspector success. No whole-App/local-CI or live-model completion is claimed.
+- Bounded review covered the package export and current compiler resolution,
+  exact bundle closure, unchanged shared mathematics, production backend import
+  restrictions, test inventory reachability, native isolation/cleanup, direct
+  preparation consumers and preservation of the original image-preflight diff.
+  No duplicate owner, calculation, cache, registry, persisted identity or recovery
+  route was introduced. Existing root imports remain legitimate independent APIs.
+
+### Image inspection target preflight - 2026-10-25
+
+Status: bounded implementation and required local verification complete. The
+two supplemental architecture failures recorded below were subsequently repaired
+and verified in the authorized section above; no whole-App green claim.
+
+Evidence: run 1792853203510, provider sequences 315/318, 500/503 and 583/586
+capture two groups and the workspace. Input/output lengths and SHA-256 match the
+raw receipts. The group creation inputs and checkpoint contain identical ordered
+child lists of 2,310 and 6,163 IDs; workspace contains three roots. Inspection
+preflight calls Core.getElementData, which saves and clones the complete element,
+then consumes only existence/type. The workspace branch additionally queries
+metadata for childCount. The inspection implementation and full-data getter are
+unchanged from the saved source. Historical handler times include actual capture;
+they cannot establish the isolated copying cost or expected first-frame benefit.
+
+Step Execution Card - inspect / target preflight:
+- Objective: obtain target existence, type and child count once through the
+  existing scalar metadata facade; do not serialize full children or properties
+  merely to decide whether and how the current snapshot owner may capture.
+- Inputs: target ID, overview/detail and optional local region; current canonical
+  metadata and current workspace identity. Outputs: unchanged capture arguments,
+  image/receipt or precise unavailable result. Read-only advice remains a bypass.
+- Owner: App inspection common API within inspect; Core metadata supplies facts,
+  snapshot owner produces pixels, evidence owner controls freshness. Failure owner
+  remains inspect. No cache or retained state is introduced.
+- Conditions: keep missing/noncurrent/empty workspace and unsupported workspace
+  region/detail guards; preserve ordinary element capture, native region framing,
+  overview size, partial capture and failure-only retry. Full-data queries remain
+  supported independently. No silent fallback to complete snapshots.
+- Allowed implementation: apps/asyra-design/src/common-apis/inspection.ts only.
+  Formal tests: existing workspace-inspection integration, inspection action and
+  execution-flow proof; existing drawing-inspection browser cases. Existing Core,
+  Group and snapshot source are read-only contributors. No schema/public API,
+  Knowledge, renderer, persistence, mutation, UI or scoped-validation changes.
+- Contracts: this Task 3 section, App execution spec, inspect condition/spec refs,
+  existing capture-handoff mapping and generated bundle; App/root update notes.
+- Naming: reuse getElementMetadata, root and childCount; no new public/persisted
+  identity, registry or compatibility path. Formal fixture names are generic.
+- Gates: admission; naming baseline; formal red real-owner copying and mapped
+  preflight tests; focused inspection/evidence/integration tests; browser pixel,
+  read-only history/shared-state and reload preservation; production types/build,
+  focused lint, docs/changeset checks and final Inspector proof. Freeze source
+  while validating; preserve historical evidence. No model, 101 or CI inspection.
+- Stop: fixed DoD satisfied, no observed reduction in preflight work, a different
+  owner required, or three failed implementation corrections. Do not expand to
+  scoped containment validation or optimize required snapshot traversal.
+
+Fixed DoD:
+1. Before implementation, reproduce full snapshot creation through the formal
+   inspection entry using actual Core/Group owners. Existing mocked tests alone
+   cannot prove this property. Formal fixtures do not depend on ignored tmp.
+2. After implementation, target preflight performs zero complete element saves,
+   zero copied child/property records and one scalar target lookup per attempt.
+   Increasing child count cannot increase preflight data volume. Count the actual
+   getter/clone work; separate necessary capture work. No new tool/dispatcher turn.
+3. Keep identical overview/detail/region arguments and results. Existing browser
+   source-space/pixel checks preserve bounds, size, order, rotation, hidden content
+   and occlusion; full element data and detached child queries remain valid.
+4. Preserve missing/noncurrent/empty/unsupported-scope/render/cancellation failures,
+   truthful settlement, mixed partial results and retained successful image IDs.
+   Execute recovery from the actual reply; retry only failed captures without
+   recapturing successes, replaying edits or inventing target identities.
+5. Preserve local versus whole-view invalidation, stale evidence rejection and
+   load invalidation; no document/selection/history/shared-publication mutations.
+   Existing persistence/reload checks remain strict. No renderer fallback, cache,
+   extra state or compatibility branch. Timing improvement requires measurement.
+
+Validation and self-review:
+- Admission accepted review
+  0d9834b712cb6d4e2a4e0c6eee90decfb09d14a3a184517db20970c7e5982501
+  after candidate 6db21d26-27fa-49e5-8010-a64a24a7549c passed 77 cases.
+  The existing inspect.capture-handoff mapping already covers the changed App
+  owner and proof; no new case registry or runtime scope was required.
+- Before implementation, three real-owner formal cases failed their work-count
+  assertion after passing output and read-only-state assertions. Each group
+  preflight copied its 2 / 2,310 / 6,163 child IDs and four property references.
+  Workspace preflight also copied its full member list and performed a second
+  metadata read. The mapped missing-target proof failed on the full-data read.
+- The production diff replaces the full-data lookup with metadata and reuses its
+  childCount in the existing workspace guard. Every target attempt now performs
+  one scalar lookup, zero full-data reads, zero Group saves and zero copied child
+  or property records. Real Group/Core are exercised; only the pixel boundary is
+  substituted in the work-count test. Three group sizes each exercise overview,
+  detail, local region, workspace overview and a leaf. No cache/extra call exists.
+- Existing full element and detached child-list reads remain ordered and mutable
+  only in their returned copy. Complete document, selection, history depth and
+  shared-publication assertions remain unchanged after inspection. Native reply
+  tests execute returned failure recovery while retaining successful image IDs.
+- Focused verification passed 45 cases (4 workspace integration, 7 inspection,
+  27 evidence, 7 dependencies); naming passed 15 checks. App production types
+  (three configurations), production build, update-note check and diff check
+  passed. ESLint: zero errors, two console warnings (one pre-existing proof report,
+  one formal work-count report). Build retained its existing large-chunk warning.
+- Both drawing-inspection browser cases passed in 26.5 seconds: large overview
+  and native region pixels, multi-root order/occlusion/rotation/hidden content,
+  precise capture failures, independent local invalidation, history/shared-state
+  immutability, persistence and reload. Test-owned server ports were released.
+  Source was frozen during verification. No model, 101, recording or CI inspection.
+- Final Inspector run 0770d9dc-4d5d-4947-86f9-0d3144d3c5ae passed 77/77 without
+  pending cases, accepted revision 113, source
+  d4661354f03ee6fe5a5142980c5c11e6ef77f564e546579d2f44c726e774a11c.
+  All 886 captured inputs still match the checkout.
+- Supplemental test:framework-runtime-boundary passed 11 of 13 checks. Two
+  unrelated failures remain: the public Preset group-bounds entry imports utils
+  runtime modules, and ordinary validation omits evaluation-budget.test.ts,
+  information-delivery.integration.test.ts, local-information-delivery.test.ts
+  and native-output-observation.integration.test.ts. The boundary test, App
+  package scripts, Preset entry source and package manifest match baseline
+  e298e1e12; reconstructing the baseline test list produces the same four omissions.
+  This diff changes none of those paths or dependency edges. Do not weaken these
+  checks. Their repair is now separately authorized in the supplemental section
+  above; this original image-preflight run was not a whole-App green result.
+- Self-review covered the two-line production change, direct consumers, real
+  copying boundary, existing unavailable/cancelled/partial outcomes and recovery,
+  capture inputs, current metadata lifetime, snapshot/evidence ownership and
+  independently valid full-data reads. No public/wire/persisted contract changed.
+  Exact elapsed-time savings and live AI/first-frame effects remain unmeasured.
+
 ### Metadata child-count handoff - 2026-10-25
 
 Status: locally verified and closed for this bounded handoff; model behavior and

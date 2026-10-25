@@ -21,6 +21,13 @@ if (!scenario) throw new Error('Unknown execution proof scenario')
 // isolated execution on source even when workspace dist output is available.
 const sourceAliases = [
   {
+    find: /^@asyra\/utils\/geometry-bounds$/,
+    replacement: resolve(
+      sourceRoot,
+      'packages/utils/src/render/geometry-bounds.ts'
+    )
+  },
+  {
     find: /^@asyra\/core\/contracts$/,
     replacement: resolve(sourceRoot, 'packages/core/src/contracts/index.ts')
   },

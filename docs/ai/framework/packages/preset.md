@@ -313,6 +313,8 @@ explicitGroupElementIds)` receives the caller-resolved official Group target
 `@asyra/preset/group-bounds` exports `deriveGroupBounds` and `GroupBounds` without
 loading Core, Render, DOM or component registration. It is the same bounds owner
 used by ordinary Preset Group operations and server-side design preparation.
+The entry depends only on `@asyra/utils/geometry-bounds` and its pure point
+transform dependency; no Utils barrel or unrelated helpers may enter this graph.
 The runtime root export remains available. Empty input returns zero bounds;
 nonfinite geometry values are rejected. Rectangles retain their existing union
 semantics. An oval may provide its existing type and rotation (radians); the owner

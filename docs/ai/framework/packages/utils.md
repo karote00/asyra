@@ -40,6 +40,14 @@ Provide shared types, ids, registry primitives, and low-level helpers.
   diagnostics sink without owning phase names, product budgets, or reporting
   policy
 
+## Pure geometry bounds entry
+
+`@asyra/utils/geometry-bounds` exposes the existing geometry-bounds exports without
+loading the Utils barrel or unrelated helpers. Its runtime graph is limited to
+geometry-bounds and its pure point-transform module. It contains no external
+dependencies, DOM, registration or runtime instances. The root exports remain
+independently supported and share the same implementation.
+
 ## Analytic ellipse bounds
 
 `calculateEllipseBounds({x, y, width, height, rotation})` returns an exact axis-aligned

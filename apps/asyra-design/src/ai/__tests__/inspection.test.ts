@@ -1,14 +1,24 @@
 const core = vi.hoisted(() => ({
   getElementData: vi.fn(),
   getCurrentWorkspaceId: vi.fn(() => 'sheet-a'),
-  getElementMetadata: vi.fn(() => ({ parentId: undefined })),
+  getElementMetadata: vi.fn(),
   getElementComputedData: vi.fn(),
   captureElementSnapshot: vi.fn()
 }))
 vi.mock('../../contexts', () => ({ default: core }))
 import { inspectionApis } from '../../common-apis/inspection'
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { createAiInspectionAction } from '../inspection'
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  core.getElementMetadata.mockImplementation((id: string) => ({
+    id,
+    type: 'group',
+    parentId: undefined,
+    childCount: 0
+  }))
+})
 
 it('returns fresh rendered evidence for every inspection without caching or writing', async () => {
   const inspect = vi
@@ -57,11 +67,11 @@ it('does not capture after cancellation and preserves explicit unavailable resul
 })
 
 it('captures fresh images without querying unrelated subtree metadata', () => {
-  core.getElementData.mockImplementation((id: string) =>
+  core.getElementMetadata.mockImplementation((id: string) =>
     id === 'group'
       ? {
           type: 'group',
-          children: Array.from({ length: 300 }, (_, i) => `shape-${i}`)
+          childCount: 300
         }
       : { type: 'oval', name: id }
   )
@@ -91,7 +101,8 @@ it('captures fresh images without querying unrelated subtree metadata', () => {
     image: { dataUrl: 'second' }
   })
   expect(core.captureElementSnapshot).toHaveBeenCalledTimes(2)
-  expect(core.getElementData).toHaveBeenCalledTimes(2)
+  expect(core.getElementData).not.toHaveBeenCalled()
+  expect(core.getElementMetadata).toHaveBeenCalledTimes(2)
   expect(core.getElementComputedData).not.toHaveBeenCalled()
   core.captureElementSnapshot.mockImplementation(() => {
     throw new Error('Unsupported renderer')
@@ -119,7 +130,7 @@ it('forwards an explicit native region without describing it as the whole drawin
 })
 
 it('keeps overview and native detail capture separate without mutating source geometry', async () => {
-  core.getElementData.mockReturnValue({ type: 'group', children: [] })
+  core.getElementMetadata.mockReturnValue({ type: 'group', childCount: 0 })
   core.getElementComputedData.mockReturnValue({
     x: 0,
     y: 0,
@@ -189,14 +200,15 @@ it('binds action output to canonical evidence and validates it without another s
 })
 
 it('settles workspace overview and explicit unavailable captures at the actual read owner', () => {
-  core.getElementMetadata.mockImplementation((id: string) => ({
-    parentId: undefined,
-    childCount: id === 'empty' ? 0 : 1
-  }))
-  core.getElementData.mockImplementation((id: string) =>
+  core.getElementMetadata.mockImplementation((id: string) =>
     id === 'missing'
       ? undefined
-      : { id, type: 'workspace', children: id === 'empty' ? [] : ['part'] }
+      : {
+          id,
+          type: 'workspace',
+          parentId: undefined,
+          childCount: id === 'empty' ? 0 : 1
+        }
   )
   core.captureElementSnapshot
     .mockReset()

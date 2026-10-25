@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
-import { expect, it, vi } from 'vitest'
+import { beforeAll, expect, it, vi } from 'vitest'
+import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
+import { Group } from '@asyra/scene-tree'
+import factory from '@asyra/factory'
 import fixture from './fixtures/recorded-101/workspace-inspection-20261024.json'
 import core from '../../src/contexts'
 import {
@@ -10,6 +13,18 @@ import { createInspectionEvidence } from '../../src/common-apis/inspection-evide
 import { observeAiAction } from '../../src/ai/runtime-input'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { invokeLocalTool } from '../local-tool-invocation'
+
+beforeAll(() => {
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [
+      PresetDefaults.BASIC_SHAPES,
+      PresetDefaults.CONTAINERS,
+      PresetDefaults.SELECTION,
+      PresetDefaults.UI_CONTEXT
+    ]
+  })
+})
 
 it('uses actual inspection owners through native review and retries only failed captures', async () => {
   const original = {
@@ -243,3 +258,160 @@ it('uses actual inspection owners through native review and retries only failed 
     Object.assign(core, original)
   }
 })
+
+it.each([2, 2310, 6163])(
+  'preflights actual canonical targets without full snapshots for %i children',
+  async (childCount) => {
+    factory.transact.reset()
+    core.load({
+      version: '1.0.0',
+      props: {},
+      sceneTree: {
+        workspace: 'workspace',
+        workspaceList: ['workspace'],
+        elements: {
+          workspace: {
+            id: 'workspace',
+            type: 'workspace',
+            name: 'Workspace',
+            parentId: '',
+            children: [],
+            visible: true,
+            lock: false
+          }
+        }
+      }
+    })
+    const { transactionApis } = await import('../../src/common-apis')
+    const { rootId, childIds } = transactionApis.runTransaction(() => {
+      const rootId = core.createElementInParent(
+        { type: 'group', name: 'Inspection target' },
+        'workspace'
+      )
+      const childIds = core.createElementsInParent(
+        Array.from({ length: childCount }, (_, index) => ({
+          type: 'rect',
+          name: 'Member ' + index,
+          x: index * 5,
+          y: 0,
+          width: 4,
+          height: 5
+        })),
+        rootId
+      )
+      return { rootId, childIds }
+    })
+    const document = await core.save()
+    const history = core.getUndoHistoryDepth()
+    const selected = core.getSelectedElementIds()
+    const published = vi.fn()
+    const stop = core.subscribeToSharedPublication(published)
+    const saved = vi.spyOn(Group.prototype, 'save')
+    const full = vi.spyOn(core, 'getElementData')
+    const metadata = vi.spyOn(core, 'getElementMetadata')
+    const clone = vi.spyOn(globalThis, 'structuredClone')
+    const image = {
+      type: 'snapshot' as const,
+      width: 2,
+      height: 2,
+      bounds: { x: 0, y: 0, width: 2, height: 2 },
+      dataUrl: 'data:image/png;base64,AA=='
+    }
+    // Only the pixel boundary is substituted; browser cases exercise its real owner.
+    const capture = vi
+      .spyOn(core, 'captureElementSnapshot')
+      .mockReturnValue(image)
+    const measurements: {
+      fullReads: number
+      groupSaves: number
+      metadataReads: number
+      copiedChildIds: number
+      copiedPropertyRecords: number
+    }[] = []
+    const region = { x: 1, y: 2, width: 4, height: 5 }
+    const attempts = [
+      { elementId: rootId },
+      { elementId: rootId, view: 'detail' as const },
+      { elementId: rootId, region },
+      { elementId: 'workspace', view: 'overview' as const },
+      { elementId: childIds[0] }
+    ]
+    try {
+      const action = createAiInspectionAction()
+      for (const args of attempts) {
+        saved.mockClear()
+        full.mockClear()
+        metadata.mockClear()
+        clone.mockClear()
+        capture.mockClear()
+        const result = await action.execute(args, {
+          signal: new AbortController().signal
+        } as never)
+        expect(result).toMatchObject({
+          available: true,
+          settlement: 'completed',
+          image,
+          partial: !!('region' in args && args.region),
+          imageScope: 'region' in args ? 'region' : (args.view ?? 'overview')
+        })
+        expect(capture).toHaveBeenCalledExactlyOnceWith(args.elementId, 1024, {
+          nativeResolution:
+            !!('region' in args && args.region) || args.view === 'detail',
+          ...('region' in args ? { region: args.region } : {})
+        })
+        const copiedChildIds = clone.mock.calls.reduce(
+          (count, [value]) =>
+            count +
+            (Array.isArray(value?.children) ? value.children.length : 0),
+          0
+        )
+        measurements.push({
+          fullReads: full.mock.calls.length,
+          groupSaves: saved.mock.calls.length,
+          metadataReads: metadata.mock.calls.length,
+          copiedChildIds,
+          copiedPropertyRecords: clone.mock.calls.reduce(
+            (count, [value]) => count + Object.keys(value?.props ?? {}).length,
+            0
+          )
+        })
+      }
+    } finally {
+      capture.mockRestore()
+      clone.mockRestore()
+      metadata.mockRestore()
+      full.mockRestore()
+      saved.mockRestore()
+      stop()
+    }
+    expect(await core.save()).toEqual(document)
+    expect(core.getUndoHistoryDepth()).toBe(history)
+    expect(core.getSelectedElementIds()).toEqual(selected)
+    expect(published).not.toHaveBeenCalled()
+    // Complete independent reads remain ordered and detached after inspection.
+    const complete = core.getElementData(rootId) as { children: string[] }
+    expect(complete.children).toEqual(childIds)
+    complete.children.reverse()
+    expect(core.getElementChildren(rootId, 0, childCount).elementIds).toEqual(
+      childIds
+    )
+    factory.transact.reset()
+    console.info(
+      JSON.stringify({
+        measurement: 'inspection-target-preflight',
+        childCount,
+        measurements
+      })
+    )
+    expect(measurements).toEqual(
+      attempts.map(() => ({
+        fullReads: 0,
+        groupSaves: 0,
+        metadataReads: 1,
+        copiedChildIds: 0,
+        copiedPropertyRecords: 0
+      }))
+    )
+  },
+  60000
+)

@@ -293,7 +293,10 @@ proof establishes contract execution, not model adoption or visual quality.
 Analytic oval bounds are owned by the existing Utils geometry module and consumed
 by Preset Group normalization and Core scene world bounds, including zoom-fit.
 Canonical creation, review and viewport consumers must agree on rotated extents;
-no direct render lookup or replacement viewport state is allowed.
+no direct render lookup or replacement viewport state is allowed. The backend
+Group-bounds entry consumes the public Utils geometry-bounds subpath, retaining
+only pure geometry modules; it must not load the Utils barrel, lodash, framework
+runtime, DOM or registration. Both paths use the same analytic calculation.
 
 A projected-face or pattern face chooses vertices (an explicit polygon) or
 ellipse:{center,u,v} (a planar ellipse), exclusively. The nonzero independent
@@ -3658,6 +3661,21 @@ Follow actual owner results through Runtime, native delivery and report input. V
 saved/reloaded canonical values and hierarchy, ordered collaboration publication and
 remote application, no echo/remote History, one intended local Undo/Redo entry and no
 replay. Neither an error label nor presence of a result alone establishes settlement.
+
+### Image inspection target preflight
+
+The App inspection common API obtains target existence, type and childCount from
+one current scalar Core metadata observation per capture attempt. Preflight must
+not save or clone complete element data, children or properties merely to decide
+capture eligibility. Its work does not grow with target membership. Full-data
+queries remain independently available; required snapshot traversal is unchanged.
+Use the existing snapshot owner with identical target, size, native-resolution and
+region inputs. Missing/noncurrent/empty workspace, unsupported scope and capture
+failures retain their specific results. Preserve cancellation, partial captures,
+failed-only recovery, local/whole-view invalidation and read-only document/history/
+shared-state behavior. No count cache, fallback snapshot read or extra exchange.
+Formal verification must exercise actual canonical owners and count copying before
+capture, alongside existing pixel and native reply/recovery preservation tests.
 
 ### Workspace overview and inspection receipts
 

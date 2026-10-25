@@ -47,6 +47,10 @@
   Other `@asyra/*` imports, including type-only imports and
   `@asyra/core/contracts`, remain prohibited. These entries do not create Core,
   Factory, rendering or framework lifecycle instances in the backend.
+- The public Group-bounds entry may consume the narrow Utils geometry-bounds
+  module and its pure point-transform dependency. The bundle guard requires this
+  exact geometry graph without unrelated Utils helpers, lodash, runtime or DOM.
+  This does not authorize direct backend imports of other Framework entries.
 - The frontend is the sole adapter between those App protocols and the
   framework. It subscribes to Core-provided publication/event surfaces and
   submits validated remote data only through Core facades.

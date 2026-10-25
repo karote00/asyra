@@ -6,7 +6,7 @@ export const inspectionApis = {
     region?: { x: number; y: number; width: number; height: number },
     view: 'overview' | 'detail' = 'overview'
   ) => {
-    const root = core.getElementData(elementId)
+    const root = core.getElementMetadata(elementId)
     if (
       !root ||
       (root.type === 'workspace' && elementId !== core.getCurrentWorkspaceId())
@@ -29,7 +29,7 @@ export const inspectionApis = {
           message:
             'Workspace supports overview only. For native detail, select a concrete child and its local region; do not substitute overview for required detail or regroup the document.'
         }
-      if (core.getElementMetadata(elementId)?.childCount === 0)
+      if (root.childCount === 0)
         return {
           available: false,
           elementId,

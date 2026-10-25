@@ -399,6 +399,7 @@
           'artifact:retained-capacity-plan'
         ],
         conditions: [
+          'The backend Group-bounds entry consumes only the existing public Utils geometry-bounds module and its pure point-transform dependency. No Utils barrel, unrelated helpers, lodash, Core, Render, DOM or registration enters this graph; preserve the single analytic bounds owner.',
           'Prepared oval dimensions and rotation pass through official admission without repeating world projection. The shared pure geometry owner derives current transformed bounds; world fields use local paint coordinates. Explicit vertices remain polygons.',
           'Planar ellipse center/u/v and explicit polygon vertices are exclusive face inputs; segments is invalid. Construction prepares existing oval descriptors through shared projection once per template, preserving world extents, local paint, rotation, identities and pattern order. Public preset geometry supplies transformed bounds. Ordinary object budgets apply without sampled paths. No render access, approximation, new tool/cache or canonical writes in prepare.',
           'Budget admission precedes immutable source snapshot and compilation. Pattern face admission reads each vertex collection once to derive aggregate and largest primitive counts, independently of instance count; snapshot and template projection retain separate owners. Rejected budgets do not clone or compile. Artifact lookup does not reread caller input; preserve cancellation, isolation, release and current recovery without new cache or skipped validation.',
@@ -452,6 +453,10 @@
           'request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failed image acquisition remains retryable; page candidate inventory survives representative failure for explicit pagination and is superseded by a successful explicit candidate selection; original image delivery once per attachment with explicit refresh'
         ],
         implementationBoundary: [
+          'packages/utils/package.json',
+          'packages/utils/src/render/geometry-bounds.ts',
+          'packages/utils/src/render/geometry.ts',
+          'apps/asyra-design/__tests__/framework-runtime-boundary.test.mjs',
           'packages/preset/src/group-bounds.ts',
           'packages/preset/src/components/group.ts',
           'packages/preset/src/__tests__/group-bounds.test.ts',
@@ -837,6 +842,7 @@
         ],
         outputs: ['artifact:inspection-evidence', 'artifact:prepared-review'],
         conditions: [
+          'Image capture target preflight consumes one current scalar Core metadata observation for existence, type and childCount; never save or clone full children/properties for eligibility. Preserve missing/noncurrent/empty/scope guards, existing snapshot framing and pixels, read-only state, evidence invalidation, partial results and failed-only retry. No cache, fallback full-data query, new exchange or replay. Count preflight copying through real canonical owners separately from necessary snapshot work.',
           'Scalar Core metadata consumes exact current canonical child counts without materializing full child snapshots, including after membership changes and for registered derived containers. The existing Group membership owner remains authoritative. Preserve complete immutable child observations and inspection invalidation; no count cache, type-name list, observer suppression, extra call or replay. Prove reduced copied identities through the live App inspection and batched creation path.',
           'Current workspace overview resolves the actual scene container through Core and the existing Render snapshot owner; preserve transforms, painter order and visibility without document grouping, camera capture or new tools. Workspace detail/region and missing/empty/noncurrent targets return owner reasons, not blank proof.',
           'Inspection owners explicitly settle completed reads even when imagery is unavailable. All failed captures are failed/completed; mixed results retain partial coverage and completed read settlement. Preserve cancellation/transport uncertainty and never normalize unknown writes. Existing image/check stores retain successes for retry, workspace subtree changes stale broad proof while unrelated local passes survive; load/switch retire old proof.',
@@ -1011,6 +1017,7 @@
           'apps/asyra-design/server/__tests__/local-operation-tools.test.ts'
         ],
         specRefs: [
+          '#image-inspection-target-preflight',
           '#metadata-child-count-handoff',
           '#tool-first-correction-contract',
           '#evidence-and-completion',

@@ -1,4 +1,4 @@
-import { calculateEllipseBounds } from '@asyra/utils'
+import { calculateEllipseBounds } from '@asyra/utils/geometry-bounds'
 // Pure geometry shared by Preset operations and server-side preparation.
 export interface GroupBounds {
   readonly x: number

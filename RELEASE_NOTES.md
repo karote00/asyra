@@ -1,5 +1,39 @@
 # Asyra Release Notes
 
+## Pending pure geometry backend boundary
+
+```update-note
+{
+  "change": "pure-geometry-backend-boundary",
+  "owner": "Framework Utils and Preset",
+  "summary": "Keep the Group bounds backend entry on the canonical pure geometry module without loading unrelated Utils helpers.",
+  "sources": [
+    "packages/utils/package.json",
+    "packages/preset/src/group-bounds.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "The narrow public export uses the same calculation and declaration as the existing root export. Geometry, runtime composition and saved data are unchanged; existing consumers need no migration."
+}
+```
+
+## Pending inspection target preflight
+
+```update-note
+{
+  "change": "inspection-target-preflight",
+  "owner": "Repository Flow Inspector",
+  "summary": "Require scalar target preflight and real-owner copy-count verification while preserving existing snapshot and inspection failure contracts.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing tool inputs, image outputs, snapshot behavior and full-data APIs remain unchanged; no persisted data or consumer migration."
+}
+```
+
 ## Pending metadata child counts
 
 ```update-note
