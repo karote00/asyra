@@ -1,5 +1,23 @@
 # @asyra/core
 
+## Pending computed snapshot selection
+
+```update-note
+{
+  "change": "computed-snapshot-selection",
+  "owner": "Core computed reads",
+  "summary": "Carry computed field selection to the existing snapshot owner before materialization, avoiding omitted-field copies while retaining detached full reads and mechanical evidence behavior.",
+  "sources": [
+    "packages/core/src/apis/scene-tree.ts",
+    "packages/core/src/apis/create-apis.ts",
+    "packages/core/src/__tests__/scene-tree-api.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing Core query inputs and outputs, persistence and transaction behavior are unchanged. No new cache, model exchange or migration is required."
+}
+```
+
 ## Pending metadata child counts
 
 ```update-note

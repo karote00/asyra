@@ -76,11 +76,15 @@ class Computed<T extends ComputedAttrs>
     // Computed owns no subscriptions; Element cleanup retains this lifecycle hook.
   }
 
-  save() {
-    // Save all keys in data except id?
-    // Original save was explicit: x, y, width, height.
-    // Now it should be dynamic?
-    return { ...this.data }
+  save(fields?: readonly string[]) {
+    if (fields === undefined) return { ...this.data }
+    return Object.fromEntries(
+      [...new Set(fields)]
+        .filter((field) =>
+          Object.prototype.propertyIsEnumerable.call(this.data, field)
+        )
+        .map((field) => [field, (this.data as Record<string, unknown>)[field]])
+    )
   }
 }
 

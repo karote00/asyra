@@ -1,5 +1,23 @@
 # @asyra/scene-tree
 
+## Pending computed snapshot selection
+
+```update-note
+{
+  "change": "computed-snapshot-selection",
+  "owner": "Scene Tree computed snapshots",
+  "summary": "Carry computed field selection to the existing snapshot owner before materialization, avoiding omitted-field copies while retaining detached full reads and mechanical evidence behavior.",
+  "sources": [
+    "packages/scene-tree/src/components/element.ts",
+    "packages/scene-tree/src/components/computed.ts",
+    "packages/scene-tree/src/__tests__/computed-selection.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing Core query inputs and outputs, persistence and transaction behavior are unchanged. No new cache, model exchange or migration is required."
+}
+```
+
 ## 0.5.4
 
 ### Patch Changes

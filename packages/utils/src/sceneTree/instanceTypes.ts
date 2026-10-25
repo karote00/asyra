@@ -49,7 +49,7 @@ export interface IElement<
   load(data: Partial<ElementRawData>): void
   save(): ElementRawData
   cleanup(options?: EvnetOptions): void
-  getAllComputedData(): ComputedAttrs | {}
+  getAllComputedData(fields?: readonly string[]): ComputedAttrs | {}
   updateComputedData<K extends keyof ComputedAttrs>(
     key: K,
     data: ComputedAttrs[K]

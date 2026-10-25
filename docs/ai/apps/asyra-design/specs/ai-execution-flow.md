@@ -2965,6 +2965,20 @@ pixel results are diagnostic facts; main-agent visual acceptance remains separat
 The input's request-local inspection and numeric attachment selectors are control
 plane values, not portable recipe literals or durable document identities.
 
+### Computed snapshot selection
+
+Mechanical review's selected geometry fields must reach the existing computed
+snapshot owner before any full-field projection is materialized. Read only
+requested own enumerable values; deduplicate names without reading omitted
+fields. Core retains input validation and detached snapshot isolation. Full
+reads remain available independently, while empty selections, missing elements,
+missing fields and workspace observations retain their existing results.
+
+No new cache, query or transport exchange is introduced. Preserve fresh reads,
+mechanical verdicts, coverage, local invalidation, cancellation and partial
+no-replay recovery. Prove work counts through the real owner and default review
+adapter together with unchanged document, history and shared-state behavior.
+
 ### Mechanical review structural reads
 
 Deterministic review obtains structural facts from current Core metadata and the

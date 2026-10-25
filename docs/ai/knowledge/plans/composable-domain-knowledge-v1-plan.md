@@ -96,6 +96,131 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+
+### Computed field selection at the snapshot owner - 2026-10-25
+
+Status: bounded implementation, formal local verification and self-review
+complete. No model, 101, CI inspection or push; first-frame effects unmeasured.
+
+Evidence: run 1792853203510, raw provider sequences 309/312, 488/491 and
+553/556 (verified lengths and SHA-256) reports 2,311 / 6,164 / 641 computed
+reads. The reviewer requests x/y/width/height/rotation. Core drops fields at
+its request handoff; Element calls Computed.save, which spreads all top-level
+values before Core selects fields. These owner segments match the saved source.
+This is 9,116 full shallow projections, not deep geometry copies. The combined
+82.3 ms handler time includes necessary work; isolated latency is unmeasured.
+
+Step Execution Card - inspect / computed snapshot selection:
+- Objective and boundary: carry existing optional fields through Core requests
+  and Element to Computed.save; select once when creating the owner snapshot.
+  Core validates first and detaches the selected result. Remove post-snapshot
+  selection. Keep full reads as independent valid operations, without fallback.
+- Inputs: current local computed projection and optional flat field names.
+  Outputs: same detached own-enumerable values, or undefined for a missing node.
+  No fields means full projection; an empty list means an empty existing result.
+- Owner: existing Computed snapshot owner under the inspect contributor path;
+  Core owns validation/isolation; App reviewer owns verdicts and receipts.
+  Conditions: deduplicate selected names, omit absent/nonenumerable/inherited
+  values, preserve explicit undefined and safe special-key handling. Invalid
+  input fails before owner access. Workspace remains an empty projection.
+  Read-only advice bypasses review. Failure owner remains inspect.
+- Contributors: Core scene-tree facade/request adapter, Element/Computed, shared
+  IElement contract, reviewer and existing check store. Forbidden: new caches,
+  direct App internal reads, canonical writes, geometry changes, exchanges,
+  alternate tools, fixture-specific branches or changes to model/Knowledge.
+- Files: packages/core/src/apis/{scene-tree,create-apis}.ts;
+  packages/scene-tree/src/components/{element,computed}.ts;
+  packages/utils/src/sceneTree/instanceTypes.ts; their direct tests and
+  apps/asyra-design/server/__tests__/mechanical-inspection.integration.test.ts.
+  Contracts: Framework API_SURFACES, App computed snapshot selection spec,
+  inspect conditions/contributors/boundary, existing plan and update notes.
+- Naming: reuse fields, getElementComputedData, getAllComputedData and save;
+  optional selection refines the existing snapshot path, default full reads
+  remain valid. No persisted identity, runtime alias or schema migration.
+- Feasibility: the current Computed owner already owns dynamic data keys;
+  selection can access requested own enumerable values without enumerating
+  the rest. Core can detach exactly once. No asynchronous or lifecycle change.
+  Existing mock-only facade tests cannot establish underlying work counts.
+- Gates: naming, Inspector admission, formal failing regression, real-owner
+  work/equivalence tests, Core/Scene Tree direct consumers, reviewer/action/store
+  recovery, affected production builds/types, focused lint, architecture test
+  inventory, update notes and final Inspector. Existing browser inspection,
+  edit/history/reload gates verify unchanged read-only consumers on frozen source.
+- Stop: fixed DoD satisfied, necessary out-of-scope owner change, or three failed
+  implementation corrections; replan within scope if formal evidence contradicts
+  the design. Do not expand into other snapshot consumers or new caching.
+
+Fixed DoD:
+1. Formal saved-input fixtures run through actual review action, Core, Element
+   and Computed. Reproduce full-field enumeration and omitted reads before fix;
+   semantic/state assertions must pass before the failing work assertion.
+2. Selected reads enumerate no complete computed object and read no omitted
+   values. Duplicate selected names read once; adding unrelated fields does not
+   increase selected work. Count owner reads and produced keys, not just calls.
+3. Preserve full detached reads, selected nested-value isolation, empty selection,
+   missing elements/fields, own-enumerable semantics, invalid-input rejection and
+   current values after edits. No new cache or provider exchange.
+4. Preserve exact findings, completeness, coverage, receipts and check store;
+   test local invalidation, cooperative cancellation and partial/no-replay
+   recovery. Read-only work preserves saved documents, history and publications;
+   edits, Undo/Redo and reload must expose fresh computed values.
+5. Direct-consumer tests are connected to existing formal gates. Reduced owner
+   work with preserved output closes this slice; no model adoption, heap-byte
+   savings or first-frame latency claim follows from local verification.
+
+
+Validation and bounded self-review:
+- Admission candidate 334718a2-f3db-4fd2-a292-1ef66edca09a passed the 77 existing
+  mapped cases. Review e1baa4b3ae6b043d2901cb7b1a3f5d274c975d66056f59809211cb00f6a411f7
+  was accepted with no blockers, advancing revision 116 to 117. These cases
+  preserve the existing flow; separate real-owner tests prove field work counts.
+- Existing Core facade/runtime tests passed 32 cases without detecting the
+  full shallow projection. Strengthened real App tests (computed-selection-red-app.log)
+  failed three work assertions after their semantic, coverage and state checks
+  passed; the two lifetime/recovery cases already passed. Full enumeration counts
+  were 2,311 / 6,164 / 641; omitted reads 20,793 / 55,470 / 5,427; produced keys
+  32,348 / 86,290 / 8,632. The owner tests additionally failed on ignored selected
+  fields and empty selection (computed-selection-red-owner-ready.log). Earlier
+  unit fixture initialization failures were not counted as product reproduction;
+  the corrected fixture uses an official dynamic component without properties.
+- The implementation carries fields through the existing request/Element path
+  into Computed.save. Only the requested own enumerable keys are read; full
+  snapshots retain their independent default. Core still validates before owner
+  access and detaches output. Removed the downstream whole-snapshot selection
+  and obsolete Computed.save comments; no fallback, new state or transport path.
+- On the same three real App inputs, full enumerations and omitted reads are zero;
+  produced snapshot keys are 11,555 / 30,820 / 3,205: 127,270 to 45,580 total.
+  Thus 9,116 full enumerations and 81,690 omitted top-level value/reference reads
+  are removed. This is not deep geometry copying, heap bytes or latency savings.
+  Adding 1,000 unrelated keys does not increase selected owner work. Duplicate
+  fields read once; inherited/nonenumerable/absent keys remain absent and special
+  own keys plus explicit undefined remain correctly represented.
+- Formal final tests: Scene Tree 146, Core 74, App reviewer/action/closure/real-owner
+  42, all passed. Core facade isolation tests now exercise real Element/Computed
+  contributors. Full reads, selected nested isolation, empty/missing/invalid
+  selections and fresh values retain their contracts. App equivalence uses an
+  independent full-query projection; edits, Undo/Redo, reload, local evidence,
+  mutation during cooperative yields and partial read recovery remain verified.
+  No read changes canonical documents, selection, history or shared publication.
+- Cross-package tests initially read old dist outputs; rebuilt Utils, Scene Tree
+  and Core before final validation. Fixed test-only typings; all three package
+  builds and App production type configurations/build passed. Ordinary App test
+  inventory/architecture 13, naming 15 and update notes passed. Focused lint has
+  zero errors and one retained diagnostic-console warning; App build retains its
+  large-chunk warning. No assertions were relaxed to hide a failed owner result.
+- Frozen-source browser gate: four passed (computed-selection-browser.log), covering
+  mechanical receipts, edited measurement freshness with history/reload, complete
+  overview and workspace read-only evidence. Owned ports 3027/4127/4227 released.
+- Final Inspector run 3271143f-0866-4ead-9e51-1d43f003988a passed 77/77 with no
+  pending cases at revision 117, source badfab1d9cf2b5a0b015024eb97194b5ff623bacde52bce39c2a1ae231f8e4c8.
+  All 886 captured sources match. Ordinary tests are independently executed;
+  Inspector's source capture does not include every ordinary test file.
+- Self-review checked the bounded production diff, internal request signatures,
+  direct full-read consumers, schema validation, isolation, dynamic components,
+  work scaling and cancellation/reload handoffs. No in-scope unresolved finding.
+  Existing getAllComputedData() full calls remain valid; selected reads use the
+  same owner. No model adoption or new live-101 timing observation is claimed.
+
 ### Mechanical review structural reads - 2026-10-25
 
 Status: bounded implementation, formal local verification and self-review

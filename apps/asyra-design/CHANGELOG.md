@@ -1,5 +1,21 @@
 # @asyra/asyra-design
 
+## Pending computed snapshot selection
+
+```update-note
+{
+  "change": "computed-snapshot-selection",
+  "owner": "Asyra Design mechanical inspection",
+  "summary": "Carry computed field selection to the existing snapshot owner before materialization, avoiding omitted-field copies while retaining detached full reads and mechanical evidence behavior.",
+  "sources": [
+    "apps/asyra-design/server/__tests__/mechanical-inspection.integration.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing Core query inputs and outputs, persistence and transaction behavior are unchanged. No new cache, model exchange or migration is required."
+}
+```
+
 ## Pending mechanical review structural reads
 
 ```update-note

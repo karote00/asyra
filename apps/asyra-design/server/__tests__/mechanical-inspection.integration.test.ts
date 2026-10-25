@@ -130,7 +130,36 @@ const create = async (draft: unknown) => {
 const observeReads = () => {
   // Group directly extends the shared Element save owner. Spy without replacing
   // its implementation; both leaf saves and super.save calls remain real.
-  const element = vi.spyOn(Object.getPrototypeOf(Group.prototype), 'save')
+  const owner = Object.getPrototypeOf(Group.prototype) as Group
+  const element = vi.spyOn(owner, 'save')
+  const original = owner.getAllComputedData
+  const needed = new Set(['x', 'y', 'width', 'height', 'rotation'])
+  let fullProjectionEnumerations = 0
+  let omittedComputedReads = 0
+  let producedComputedKeys = 0
+  const computed = vi
+    .spyOn(owner, 'getAllComputedData')
+    .mockImplementation(function (this: Group, ...args) {
+      const source = this.computed.data
+      this.computed.data = new Proxy(source, {
+        ownKeys(target) {
+          fullProjectionEnumerations++
+          return Reflect.ownKeys(target)
+        },
+        get(target, key, receiver) {
+          if (typeof key === 'string' && !needed.has(key))
+            omittedComputedReads++
+          return Reflect.get(target, key, receiver)
+        }
+      })
+      try {
+        const snapshot = original.apply(this, args)
+        producedComputedKeys += Object.keys(snapshot).length
+        return snapshot
+      } finally {
+        this.computed.data = source
+      }
+    })
   const full = vi.spyOn(core, 'getElementData')
   const metadata = vi.spyOn(core, 'getElementMetadata')
   const children = vi.spyOn(core, 'getElementChildren')
@@ -139,6 +168,9 @@ const observeReads = () => {
     targets: () =>
       [...full.mock.calls, ...metadata.mock.calls].map(([id]) => id),
     counts: () => ({
+      fullProjectionEnumerations,
+      omittedComputedReads,
+      producedComputedKeys,
       fullReads: full.mock.calls.length,
       elementSaves: element.mock.calls.length,
       metadataReads: metadata.mock.calls.length,
@@ -150,7 +182,7 @@ const observeReads = () => {
       )
     }),
     restore: () =>
-      [element, full, metadata, children, clone].forEach((spy) =>
+      [computed, element, full, metadata, children, clone].forEach((spy) =>
         spy.mockRestore()
       )
   }
@@ -175,7 +207,17 @@ it.each(saved.cases)(
     const reference = createDesignReviewer(
       {
         read: (id) => core.getElementData(id),
-        computed: (id, fields) => core.getElementComputedData(id, fields),
+        computed: (id, fields) => {
+          const all = core.getElementComputedData(id)
+          return (
+            all &&
+            Object.fromEntries(
+              fields
+                .filter((key) => Object.hasOwn(all, key))
+                .map((key) => [key, all[key]])
+            )
+          )
+        },
         measure: (ids) => core.measureElementContentBounds(ids),
         observeChanges: observeInspectionChanges
       },
@@ -246,7 +288,12 @@ it.each(saved.cases)(
           ...counts
         })
       )
-      expect(counts).toEqual({
+      expect(counts.producedComputedKeys).toBeLessThanOrEqual(
+        canonical.entries.length * 5
+      )
+      expect(counts).toMatchObject({
+        fullProjectionEnumerations: 0,
+        omittedComputedReads: 0,
         fullReads: 0,
         elementSaves: 0,
         metadataReads: canonical.entries.length,
@@ -308,7 +355,7 @@ it('preserves complete membership, local validity and read-only state through un
   )
   const reviewer = createDesignReviewer(undefined, async () => undefined, true)
   try {
-    const initial = await reviewer.capture(root.rootId)
+    let initial = await reviewer.capture(root.rootId)
     expect(initial).toMatchObject({
       complete: true,
       findings: [],
@@ -322,6 +369,22 @@ it('preserves complete membership, local validity and read-only state through un
       )
     ).toEqual(new Set(ids))
     const independent = await reviewer.capture(oval)
+    const initialGeometry = core.getElementComputedData(leaf, ['x', 'y'])
+    transactionApis.runTransaction(() =>
+      core.updateElementProperties([{ elementId: leaf, values: { x: 2 } }])
+    )
+    expect(core.getElementComputedData(leaf, ['x', 'y'])).toMatchObject({
+      x: 2
+    })
+    factory.undo()
+    expect(core.getElementComputedData(leaf, ['x', 'y'])).toEqual(
+      initialGeometry
+    )
+    factory.redo()
+    expect(core.getElementComputedData(leaf, ['x', 'y'])).toMatchObject({
+      x: 2
+    })
+    initial = await reviewer.capture(root.rootId)
     const beforeEdit = await core.save()
     transactionApis.runTransaction(() =>
       core.updateElementData(leaf, { visible: false })
@@ -373,6 +436,9 @@ it('preserves complete membership, local validity and read-only state through un
       ids.length + 1
     )
     core.load(changed)
+    expect(core.getElementComputedData(leaf, ['x', 'y'])).toMatchObject({
+      x: 2
+    })
     expect((await reviewer.validate(evidenceOf(old))).current).toBe(false)
     expect((await core.save()).sceneTree).toEqual(changed.sceneTree)
     expect((await reviewer.capture(root.rootId)).checkedElements).toBe(

@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending computed snapshot selection
+
+```update-note
+{
+  "change": "computed-snapshot-selection",
+  "owner": "Repository Flow Inspector",
+  "summary": "Carry computed field selection to the existing snapshot owner before materialization, avoiding omitted-field copies while retaining detached full reads and mechanical evidence behavior.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing Core query inputs and outputs, persistence and transaction behavior are unchanged. No new cache, model exchange or migration is required."
+}
+```
+
 ## Pending mechanical review structural reads
 
 ```update-note

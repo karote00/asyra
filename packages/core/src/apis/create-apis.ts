@@ -179,8 +179,8 @@ export const createAPIs = (
   const sceneTreeRequests: SceneTreeRequests = {
     sceneTreeSaveData: () => sceneTree.save(),
     getCurrentWorkspaceId: () => sceneTree.workspace,
-    getElementComputedData: (elementId: string) =>
-      sceneTree.getElementById(elementId)?.getAllComputedData() as
+    getElementComputedData: (elementId: string, fields?: readonly string[]) =>
+      sceneTree.getElementById(elementId)?.getAllComputedData(fields) as
         Record<string, unknown> | undefined,
     moveElements: (request: MoveHierarchyRequest, options?: EVENT_OPTIONS) =>
       sceneTree.moveElements(request, options),

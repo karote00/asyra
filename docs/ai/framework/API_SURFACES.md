@@ -262,7 +262,11 @@ Scene/model bridge:
     observer evidence is released before Factory owner commit
 - `getElementComputedData(elementId: string, fields?: readonly string[]): Record<string, unknown> | undefined`
   - omitted `fields` preserves the detached whole projection; explicit fields
-    clone only requested own values, avoiding omitted geometry payloads
+    clone only requested own enumerable values, avoiding omitted geometry payloads
+  - forward explicit selection to the existing computed snapshot owner before
+    materialization; selected reads neither enumerate all projection keys nor
+    create a complete shallow projection before filtering. Core validates first
+    and detaches the owner result; no additional cache or query is introduced
   - accepts at most 64 nonempty flat names of at most 128 characters; duplicate
     names are read once and invalid selections fail before reading the owner
   - missing elements return `undefined`; empty selection for an existing element

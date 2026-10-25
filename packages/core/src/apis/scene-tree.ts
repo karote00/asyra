@@ -30,7 +30,8 @@ export interface SceneTreeRequests {
   sceneTreeSaveData: () => SceneTreeRawData
   getCurrentWorkspaceId: () => string
   getElementComputedData: (
-    elementId: string
+    elementId: string,
+    fields?: readonly string[]
   ) => Record<string, unknown> | undefined
   updateLocalComputedData: (updates: readonly LocalComputedDataUpdate[]) => void
   patchLocalComputedData: (
@@ -209,24 +210,12 @@ export const createSceneTreeAPIs = (
           'Computed field selection requires at most 64 nonempty field names of at most 128 characters.'
         )
       }
-      const data = sceneTreeRequests.getElementComputedData(elementId)
-      if (!data) {
-        return undefined
-      }
-      const selected =
-        fields === undefined
-          ? data
-          : Object.fromEntries(
-              [...new Set(fields)]
-                .filter((field) =>
-                  Object.prototype.hasOwnProperty.call(data, field)
-                )
-                .map((field) => [field, data[field]])
-            )
+      const data = sceneTreeRequests.getElementComputedData(elementId, fields)
+      if (!data) return
       if (typeof globalThis.structuredClone === 'function') {
-        return globalThis.structuredClone(selected)
+        return globalThis.structuredClone(data)
       }
-      return JSON.parse(JSON.stringify(selected)) as Record<string, unknown>
+      return JSON.parse(JSON.stringify(data)) as Record<string, unknown>
     },
     sceneTreeInit() {
       sceneTreeInit()

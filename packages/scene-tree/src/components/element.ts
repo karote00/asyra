@@ -198,9 +198,9 @@ class Element<T extends ElementAttrs = ElementAttrs>
     }
   }
 
-  getAllComputedData() {
+  getAllComputedData(fields?: readonly string[]) {
     if (this.get('type') !== EntityTypes.WORKSPACE) {
-      return this.computed.save()
+      return this.computed.save(fields)
     }
 
     return {}

@@ -945,6 +945,7 @@
               "artifact:prepared-review"
             ],
             "conditions": [
+              "Selected computed fields flow from the Core facade through its request adapter and Element to the existing Computed snapshot owner before materialization. Read only requested own enumerable values once; never enumerate or copy omitted fields. Core validates before access and detaches the owner result. Full reads remain independently valid. Preserve current values, workspace/empty/missing semantics, verdicts, coverage, local invalidation, cancellation and no-replay recovery; no new cache, exchange or canonical write. Prove counts through real owners and the default reviewer.",
               "Mechanical reviewer structural reads use existing scalar Core metadata and complete ordered child queries only for nonempty containers. Never save or clone full elements or unused props for structural fields. Preserve the existing verdict cache, local invalidation, computed/text work, complete findings/coverage, cancellation, mixed-source rejection and no-replay recovery; no new cache, API, exchange or canonical write. Prove actual save/copy counts through the default adapter and real owners.",
               "Image capture target preflight consumes one current scalar Core metadata observation for existence, type and childCount; never save or clone full children/properties for eligibility. Preserve missing/noncurrent/empty/scope guards, existing snapshot framing and pixels, read-only state, evidence invalidation, partial results and failed-only retry. No cache, fallback full-data query, new exchange or replay. Count preflight copying through real canonical owners separately from necessary snapshot work.",
               "Scalar Core metadata consumes exact current canonical child counts without materializing full child snapshots, including after membership changes and for registered derived containers. The existing Group membership owner remains authoritative. Preserve complete immutable child observations and inspection invalidation; no count cache, type-name list, observer suppression, extra call or replay. Prove reduced copied identities through the live App inspection and batched creation path.",
@@ -1024,6 +1025,7 @@
               "existing App inspection and measurement",
               "primary drawing agent findings bound to current inspection evidence",
               "public Scene Tree and Props observations",
+              "Core selected-field validation and isolation with Element/Computed snapshot ownership",
               "Preset pure rectangle union for read-only Group content geometry",
               "document load lifecycle"
             ],
@@ -1038,6 +1040,13 @@
               "runtime-issued visual receipt, target/subtree or local region, canonical dependency IDs and regional membership, criterion inspection bindings; request lifetime, complete immutable source recipe, explicit criterion/key coverage, deterministic findings, element count, canonical attachment context/stamp, exact requirement/reference/source assertion evidence and supplied predecessor findings/currency"
             ],
             "implementationBoundary": [
+              "packages/core/src/apis/scene-tree.ts",
+              "packages/core/src/apis/create-apis.ts",
+              "packages/core/src/__tests__/scene-tree-api.test.ts",
+              "packages/scene-tree/src/components/element.ts",
+              "packages/scene-tree/src/components/computed.ts",
+              "packages/scene-tree/src/__tests__/computed-selection.test.ts",
+              "packages/utils/src/sceneTree/instanceTypes.ts",
               "packages/render/src/render.ts",
               "packages/render/src/layers/viewport/viewport-layer.ts",
               "packages/render/src/layers/scene/render-layer.ts",
@@ -1124,6 +1133,7 @@
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts"
             ],
             "specRefs": [
+              "#computed-snapshot-selection",
               "#mechanical-review-structural-reads",
               "#image-inspection-target-preflight",
               "#metadata-child-count-handoff",

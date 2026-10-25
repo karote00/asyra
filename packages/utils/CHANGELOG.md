@@ -1,5 +1,21 @@
 # @asyra/utils
 
+## Pending computed snapshot selection
+
+```update-note
+{
+  "change": "computed-snapshot-selection",
+  "owner": "Shared element observation contract",
+  "summary": "Carry computed field selection to the existing snapshot owner before materialization, avoiding omitted-field copies while retaining detached full reads and mechanical evidence behavior.",
+  "sources": [
+    "packages/utils/src/sceneTree/instanceTypes.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing Core query inputs and outputs, persistence and transaction behavior are unchanged. No new cache, model exchange or migration is required."
+}
+```
+
 ## Pending - Office input and spatial materials
 
 ```update-note

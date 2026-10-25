@@ -5,6 +5,13 @@
 Own the canonical document entity graph, raw entity state,
 element-slot-to-property relations, and local computed projection.
 
+Computed snapshots use the existing Element/Computed owner. The optional field
+selection on `getAllComputedData(fields?)` and `Computed.save(fields?)` selects
+own enumerable values before materialization, without enumerating omitted keys.
+The default remains a full shallow snapshot. Core validates selections and owns
+the detached deep copy for App consumers; these observations remain local
+projections, not canonical persistence or collaboration records.
+
 ## Owns
 
 - entity create/remove/update operations

@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { CanonicalElementRemoval } from '@asyra/scene-tree'
+import {
+  createDynamicComponent,
+  type CanonicalElementRemoval
+} from '@asyra/scene-tree'
 import { subscribeToAddElement } from '@asyra/reactive-events'
 import type {
   ComputedDataPatch,
@@ -22,6 +25,14 @@ interface LocalComputedDataPatchEntry {
   readonly elementId: string
   readonly patch: ComputedDataPatch
 }
+
+const SnapshotElement = createDynamicComponent(
+  'snapshot-selection',
+  'snapshot-selection',
+  'Snapshot selection',
+  [],
+  {}
+)
 
 const createRequests = () =>
   ({
@@ -308,7 +319,10 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
 
     const snapshot = apis.getElementComputedData('element-1')
 
-    expect(requests.getElementComputedData).toHaveBeenCalledWith('element-1')
+    expect(requests.getElementComputedData).toHaveBeenCalledWith(
+      'element-1',
+      undefined
+    )
     expect(snapshot).toEqual(source)
     expect(snapshot).not.toBe(source)
     expect(snapshot?.fills).not.toBe(source.fills)
@@ -324,7 +338,12 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
       get: geometryRead
     })
     const requests = createRequests()
-    vi.mocked(requests.getElementComputedData).mockReturnValue(source)
+    const element = new SnapshotElement()
+    element.computed.data = source as unknown as typeof element.computed.data
+    requests.getElementComputedData = vi.fn(
+      (_id, fields?: readonly string[]) =>
+        element.getAllComputedData(fields) as Record<string, unknown>
+    )
     const apis = createSceneTreeAPIs(requests)
     const first = apis.getElementComputedData('element-1', ['x', 'fills', 'x'])
     expect(first).toEqual({ x: 10, fills: [{ color: '#ffffff' }] })
@@ -344,8 +363,11 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
     const requests = createRequests(),
       apis = createSceneTreeAPIs(requests)
     expect(apis.getElementComputedData('missing', [])).toBeUndefined()
-    vi.mocked(requests.getElementComputedData).mockReturnValue(
-      Object.create({ inherited: 42 })
+    const element = new SnapshotElement()
+    element.computed.data = Object.create({ inherited: 42 })
+    requests.getElementComputedData = vi.fn(
+      (_id, fields?: readonly string[]) =>
+        element.getAllComputedData(fields) as Record<string, unknown>
     )
     expect(
       apis.getElementComputedData('present', ['inherited', 'missing'])
