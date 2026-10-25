@@ -1,5 +1,23 @@
 # @asyra/core
 
+## Pending ordinary creation result handoff
+
+```update-note
+{
+  "change": "ordinary-creation-result-handoff",
+  "owner": "Core creation results",
+  "summary": "Forward the existing Scene Tree frozen ordered creation result through Core and App without redundant ID array copies; verify actual saved-input flows and immutable receipts.",
+  "sources": [
+    "packages/core/src/apis/create-apis.ts",
+    "packages/core/src/apis/scene-tree.ts",
+    "packages/core/src/__tests__/scene-tree-api.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Creation inputs, ordered IDs, frozen isolation, history and retained-source recovery are unchanged. No migration or new model exchange is required."
+}
+```
+
 ## Pending computed snapshot selection
 
 ```update-note

@@ -232,9 +232,7 @@ export const createAPIs = (
       sceneTree.applyRestoreSubtree(preparedRestore, options),
     createElementsInParent: (data, parentId, index, options) => {
       const parent = requireContainerParent(parentId)
-      return freezeOrderedElementIds(
-        sceneTree.addNewElements(data, parent, index ?? -1, options)
-      )
+      return sceneTree.addNewElements(data, parent, index ?? -1, options)
     },
     createElementsInParentFromCanonicalData: (
       elements,

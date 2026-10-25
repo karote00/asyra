@@ -97,6 +97,132 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 ## Task 3 - Asyra Design integration
 
 
+### Ordinary creation result identity handoff - 2026-10-25
+
+Status: locally verified and closed for this bounded slice. No model, 101, CI
+inspection or push. AI behavior and latency impact were not measured.
+
+Evidence: saved run 1792853203510, verified raw provider outputs 307/486/551,
+contains 2,311/6,164/641 created IDs across 74/194/21 slices. Scene Tree already
+returns a detached frozen ordered string array. Core request adapter, Core facade
+and App element adapter each copy and freeze it again. These exact source
+segments match the saved snapshot. The source-derived estimate of 867 extra
+arrays and 27,348 copied ID entries is confirmed by the formal real-owner
+regression. No isolated latency or first-frame impact is known.
+
+Step Execution Card - apply / ordinary creation result handoff:
+- Objective: retain the existing Scene Tree frozen result unchanged through the
+  ordinary Core request/facade and App element adapter. Remove only redundant
+  ordinary-result wrapping; preserve independent canonical restore/removal paths.
+- Owner: Scene Tree owns completed ordered identities and their detached frozen
+  result; Core owns input preparation/parent admission and scalar adaptation;
+  App owns tool receipts and recovery. No ownership transfer or new API.
+- Inputs: admitted ordinary descriptors, parent/index/options and owner result.
+  Output: the complete same frozen ordered ID array. Empty input remains inert;
+  scalar creation still enforces exactly one result; invalid input/parent and
+  owner errors retain their existing rejection and transaction semantics.
+- Conditions/bypass: only ordinary creation follows this handoff; no mutation
+  bypass, no canonical-data/removal helper cleanup, no array cast standing in
+  for actual freezing. IDs remain strings and snapshots never alias mutable
+  membership or caller input. Distinct batches retain independent snapshots.
+- Contributors: existing Scene Tree, Core and App creation adapters, transaction
+  journal, local dispatcher, Runtime and current receipt/retained-source recovery.
+  Forbidden: new cache/state/registry, copy-on-failure compatibility, UI snapshot
+  changes, batch enlargement, deferred publication or replay of successful writes.
+  Failure owner is apply; spec references ordinary creation result handoff and
+  existing partial-result/no-replay contracts. Existing cache dimensions unchanged.
+- Implementation: packages/core/src/apis/{scene-tree,create-apis}.ts and
+  apps/asyra-design/src/common-apis/element/apis.ts. Tests: Core scene-tree-api
+  and hierarchy-transaction; App create-element, new server creation-results
+  integration using the permanent vector-delivery fixture, and existing
+  interrupted-design integration. Add the new file to the ordinary server gate.
+- Feasibility/self-review: Scene Tree creates a new array of primitive IDs after
+  successful owner settlement and freezes it. Passing that value through requires
+  no extra cloning for isolation. Existing App mock supplies a mutable array and
+  demands different identity; replace that assumption only after real-owner red
+  evidence, retaining explicit frozen/output/input/history assertions. Core's
+  other freeze helper consumers remain independently valid and are out of scope.
+- Naming: retain existing result variables/APIs and persisted identities; only
+  neutral test instrumentation is added. No product-schema migration.
+- Gates: task/naming baseline, Inspector admission, real-owner red, focused
+  consumers, saved inputs and compact/full receipts, cancellation/partial recovery,
+  Undo/Redo and durable collaboration/reload, Core build, App production types/
+  build, lint, ordinary test inventory, update notes and final Inspector.
+- Stop: fixed DoD met, out-of-scope capability needed, or three failed production
+  corrections. Do not expand into descriptor preparation or UI projection.
+
+Fixed DoD:
+1. Use actual preparation/dispatcher/Runtime/Scene Tree/Core/App creation with
+   permanent saved fixtures. Preserve semantic results before asserting work;
+   count only array wrappers after owner return, not necessary owner construction
+   or full tool receipt aggregation. Formal red precedes production edits.
+2. Downstream adapters return the actual owner's frozen array without allocating
+   or iterating a copy. Prove arrays/ID-entry counts fall to zero across recorded
+   slices and ordinary generic batches; do not merely rename the operation.
+3. Preserve every ID and order, frozen/isolated output, empty and scalar routes,
+   invalid-parent/input rejection, and independent old snapshots after later
+   creation, caller-input mutation, Undo/Redo and durable reload.
+4. Compact/full receipts and partial failure/cancellation report exactly committed
+   identities. Existing retained-source recovery does not replay acknowledged
+   modifications. Preserve publication and save/reload behavior through existing
+   real owner and document-materialization tests.
+5. Keep direct consumers and complete results valid; no new cache, exchange or
+   compatibility branch. Success is reduced work with preserved semantics, not
+   model adoption or a promised first-frame improvement.
+
+Evidence before implementation:
+- Admission candidate `003a21dd-d340-4165-b2b2-a7f4692ffbea` passed all
+  77 mapped cases; review `a6247c4d39c5a77749ebec442b8728accf2698fee080550ab0d865251e853991`
+  was accepted without blockers.
+- Permanent real-owner regression measured 222/582/63 redundant arrays and
+  6,933/18,492/1,923 copied entries across the three saved inputs. All identity,
+  order and frozen-value assertions passed before the zero-copy assertion failed.
+  Generic compact/full cases also passed history/reload/isolation assertions
+  before failing on six redundant arrays per creation.
+- Core baseline: 45 passing. App direct-consumer baseline: 11 passing and three
+  pre-existing property-update mock failures (undefined instead of acceptedIds /
+  changed). Only those fixture returns are corrected; existing geometry and
+  dispatch assertions remain. They are not evidence of the ID-copy defect.
+
+Closure evidence and bounded self-review:
+- Only the ordinary Core request adapter, Core facade and App adapter stopped
+  wrapping the result. Scene Tree still constructs and freezes the detached ID
+  array. Parent admission, input preparation, scalar validation and independent
+  canonical restore/removal copying are unchanged.
+- Recorded flows preserve 74/194/21 batches and 2,311/6,164/641 ordered IDs.
+  Redundant arrays decrease from 222/582/63 to 0/0/0; copied entries decrease
+  from 6,933/18,492/1,923 to 0/0/0. This excludes required owner construction,
+  full receipt aggregation and complete immutable UI projections.
+- Five new real-owner cases pass, including compact/full receipts, distinct
+  frozen snapshots, caller input mutation, subsequent membership changes,
+  invalid parent and inert empty inputs, Undo/Redo and reload. Runtime disposal
+  and awaited history operations were checked during self-review. The ordinary
+  server response harness now includes this permanent test file and saved fixture.
+- Direct-consumer tests: Core scene-tree-api/hierarchy-transaction 45; App
+  create-element 14; interrupted-design 6; prepared-delivery 29. Total with the
+  five new cases: 99 passing. The existing interruption cases exercise real
+  partial rollback/cancellation, exact retained identities, remaining-only
+  recovery, duplicate replay refusal, durable document materialization and
+  remote publication without echoes or a second undo owner.
+- The existing saved-vector-delivery-483 pack/restore measurement exceeded
+  Vitest's default 5-second watchdog, both in the initial file run and isolated.
+  No value/work assertion failed. The unchanged 29-case file passes with a
+  command-line 15-second watchdog; this is a runner limitation, not evidence of
+  a production fix or a promise that the default watchdog now passes.
+- Naming 15, architecture/inventory 13, Core build, App production typechecks,
+  production build and update-note validation pass. Focused ESLint has zero
+  errors and one intentional measurement-console warning; production build
+  retains its existing large-chunk warning. Diff whitespace check passes.
+- Inspector final verification `eb61be3d-c1f9-48f2-9e00-782ec412b152` passes
+  77 mapped cases at revision 118, captured source
+  `6226341cdb62c16f0ed95a6eaf3358d6e2e87ce13f9946c36d4b63a63f12144e`.
+  The new creation test is additionally enforced by the ordinary harness and
+  its architecture inventory guard; Inspector passing alone does not prove it.
+- Reviewed the three production changes, direct consumers, old mock assumptions,
+  partial-failure routes and fixed gates. No new state/cache, compatibility path,
+  model exchange, replay logic or UI snapshot changes. Saved raw evidence remains
+  unchanged. No claim about provider time, first frame or Knowledge adoption.
+
 ### Computed field selection at the snapshot owner - 2026-10-25
 
 Status: bounded implementation, formal local verification and self-review

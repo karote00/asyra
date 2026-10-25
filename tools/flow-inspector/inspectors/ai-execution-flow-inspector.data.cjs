@@ -545,6 +545,7 @@
         ],
         outputs: ['artifact:execution-receipt'],
         conditions: [
+          'Scene Tree owns the detached frozen ordered ID result of each ordinary creation batch. Core request/facade and App adapters forward the same result without further copies. Preserve all identities/order, scalar and empty semantics, invalid input/parent rejection, isolation from mutable input/membership, old snapshots, complete and compact receipts, partial failure/cancellation, history, durable reload and no-replay recovery. No new cache, transport, compatibility copy, batch enlargement or UI snapshot change; prove actual downstream copy counts through real owners.',
           'Original retained oval rotation is admitted; changed transforms or binding reject. Group normalization preserves world placement and material validity. Official creation and preset rendering own application, never a direct tool render call. Shared Utils analytic oval bounds feed Preset normalization and Core scene world bounds/zoom-fit; preserve ancestor translation, invalid hierarchy and other shapes.',
           'Preset projects every canonical batch synchronously to complete immutable UI snapshots. Proven fresh depth-first tail additions reuse exact current hierarchy preparation without visiting unrelated subtrees. Cold, interior, mixed or invalidated edits retain complete derivation. Preserve old snapshots, current partial results, cancellation, history and collaboration; no delayed publication, batch enlargement, second tree or replay.',
           'Resolve retained prepared artifacts into the sole current compact delivery without repeated property-ID values, key maps or vector record IDs. Check point/segment/network id equality with map keys before omission; browser admission rejects redundant IDs, restores exact keys once and retains complete canonical validation before mutation. Preserve graph references and immutable canonical source. No prior wire branch, geometry recomputation, new cache, extra model turn or replay. Measure pack/restore costs separately from unchanged canonical work. Explicit full receipts, partial results, history, collaboration and persistence retain canonical identity.',
@@ -614,6 +615,7 @@
           'Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only'
         ],
         implementationBoundary: [
+          'apps/asyra-design/server/__tests__/creation-results.integration.test.ts',
           'packages/utils/src/render/geometry-bounds.ts',
           'packages/utils/src/render/__tests__/geometry-bounds.test.ts',
           'packages/core/src/apis/scene-bounds.ts',
@@ -812,6 +814,7 @@
           'apps/asyra-design/e2e/basic-api-actions.spec.ts'
         ],
         specRefs: [
+          '#ordinary-creation-result-handoff',
           '#creation-batch-ui-projection',
           '#prepared-design-delivery',
           '#source-referenced-expansion-recovery',

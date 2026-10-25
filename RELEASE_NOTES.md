@@ -1,5 +1,22 @@
 # Asyra Release Notes
 
+## Pending ordinary creation result handoff
+
+```update-note
+{
+  "change": "ordinary-creation-result-handoff",
+  "owner": "Repository Flow Inspector",
+  "summary": "Forward the existing Scene Tree frozen ordered creation result through Core and App without redundant ID array copies; verify actual saved-input flows and immutable receipts.",
+  "sources": [
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Creation inputs, ordered IDs, frozen isolation, history and retained-source recovery are unchanged. No migration or new model exchange is required."
+}
+```
+
 ## Pending computed snapshot selection
 
 ```update-note

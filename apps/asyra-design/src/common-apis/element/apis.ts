@@ -519,13 +519,12 @@ export const elementApis = {
       return null
     }
 
-    const orderedElementIds = core.createElementsInParent(
+    return core.createElementsInParent(
       descriptors,
       parentId,
       undefined,
       options
     )
-    return Object.freeze([...orderedElementIds])
   },
 
   createElements: (

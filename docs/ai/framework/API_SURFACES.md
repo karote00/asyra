@@ -236,6 +236,9 @@ Scene/model bridge:
   - Core obtains the complete prepared Props property-graph batch and prepared
     Scene insertion before it asks either owner to apply, then returns only an
     isolated frozen ordered-ID result; an empty input is inert
+  - Scene Tree owns that result; ordinary Core request/facade and App adapters
+    forward it without copying. The result remains separate from mutable input
+    and membership, and later batches/history/reload cannot modify old lists
 - `createElementsInParentFromCanonicalData(elements: readonly ElementRawData[], properties: readonly PropertyComponentRawData[], parentId: string, index?: number, options?: EVENT_OPTIONS): readonly string[]`
   - Scene validates the detached canonical elements and issues the exact
     element-slot-to-property relations; Core passes those relations unchanged

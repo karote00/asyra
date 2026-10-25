@@ -2965,6 +2965,21 @@ pixel results are diagnostic facts; main-agent visual acceptance remains separat
 The input's request-local inspection and numeric attachment selectors are control
 plane values, not portable recipe literals or durable document identities.
 
+### Ordinary creation result handoff
+
+The existing Scene Tree ordinary creation owner produces one detached frozen
+ordered ID list per completed batch. Core and App adapters forward that same
+read-only result without allocating another ID list. This is result forwarding,
+not suppression of complete batch output or necessary tool receipt aggregation.
+
+Preserve scalar and inert-empty behavior, invalid-input/parent rejection, order,
+isolation from mutable inputs/membership, old snapshots, partial committed
+results and remaining-only recovery. Later edits, history replay and reload do
+not modify returned lists. No new cache, transport turn, delayed publication,
+batch enlargement, compatibility copy or change to UI snapshots is permitted.
+Prove actual downstream copy counts through the real creation flow with full
+and compact receipts, failure/cancellation and persistence preservation.
+
 ### Computed snapshot selection
 
 Mechanical review's selected geometry fields must reach the existing computed

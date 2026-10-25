@@ -174,7 +174,8 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
 
   it('returns an isolated frozen ordered-id array and keeps empty plural input inert', () => {
     const requests = createRequests()
-    const ownerResult = ['first', 'second']
+    const sourceIds = ['first', 'second']
+    const ownerResult = Object.freeze([...sourceIds])
     vi.mocked(requests.createElementsInParent).mockReturnValueOnce(ownerResult)
     const apis = createSceneTreeAPIs(requests)
 
@@ -185,7 +186,9 @@ describe('createSceneTreeAPIs hierarchy facade', () => {
       ],
       'workspace-1'
     )
-    ownerResult[0] = 'mutated'
+    sourceIds[0] = 'mutated'
+    expect(result).toBe(ownerResult)
+    expect(() => (result as string[]).push('forbidden')).toThrow()
 
     expect(result).toEqual(['first', 'second'])
     expect(Object.isFrozen(result)).toBe(true)

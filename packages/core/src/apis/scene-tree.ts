@@ -135,13 +135,11 @@ export const createSceneTreeAPIs = (
       return Object.freeze([])
     }
     const prepared = data.map(prepareElementData)
-    return freezeOrderedElementIds(
-      sceneTreeRequests.createElementsInParent(
-        prepared.map(({ data: elementData }) => elementData),
-        parentId,
-        index,
-        options
-      )
+    return sceneTreeRequests.createElementsInParent(
+      prepared.map(({ data: elementData }) => elementData),
+      parentId,
+      index,
+      options
     )
   }
 
