@@ -6,6 +6,10 @@ import {
   toolSemantics
 } from '../src/ai/tool-contract'
 import sharp from 'sharp'
+import {
+  observeLocalToolExecution,
+  type LocalToolObservation
+} from './local-tool-invocation'
 import { LocalToolAccess } from './local-tool-scheduler'
 import type { LocalToolOwnership } from './local-tool-leases'
 import {
@@ -115,7 +119,8 @@ const readImageRegion = (value: unknown) => {
 export const createLocalImageTools = (
   input: Pick<AiProviderInput, 'metadata'>,
   convert: (input: ConversionInput) => Promise<string> = convertImage,
-  ownership?: LocalToolOwnership
+  ownership?: LocalToolOwnership,
+  observation: LocalToolObservation = {}
 ) => {
   const metadata = input.metadata
   const attachments =
@@ -203,6 +208,71 @@ export const createLocalImageTools = (
       return source
     })
   const validations = new Map<string, Promise<unknown>>()
+  const prepareReferences = (indexes: number[], signal: AbortSignal) =>
+    observeLocalToolExecution(
+      AiImageToolIds.VALIDATE_REFERENCE_IMAGES,
+      { attachmentIndexes: indexes },
+      async () => {
+        signal.throwIfAborted()
+        // Resolve the entire identity set before starting any expensive work.
+        validateReferences(indexes)
+        const results = await Promise.all(
+          indexes.map(async (index) => {
+            const identity = referenceIdentity(index as number)
+            let pending = validations.get(identity.referenceId)
+            const reused = !!pending
+            if (!pending) {
+              pending = (async () => {
+                const attachment = attachments[index as number] as {
+                  dataUrl: string
+                }
+                const bytes = Buffer.from(
+                  attachment.dataUrl.split(',')[1],
+                  'base64'
+                )
+                const decoder = sharp(bytes, { failOn: 'warning' }).timeout({
+                  seconds: 10
+                })
+                const metadata = await decoder.metadata()
+                await decoder.stats()
+                return {
+                  width: metadata.autoOrient.width,
+                  height: metadata.autoOrient.height,
+                  encoding: metadata.format,
+                  validity: 'decoded',
+                  suitability: 'requires-visual-assessment'
+                }
+              })()
+              validations.set(identity.referenceId, pending)
+            }
+            try {
+              const validation = (await pending) as {
+                width: number
+                height: number
+              }
+              admittedDimensions.set(identity.referenceId, validation)
+              return { ...identity, reused, validation }
+            } catch (error) {
+              if (validations.get(identity.referenceId) === pending)
+                validations.delete(identity.referenceId)
+              return {
+                ...identity,
+                reused,
+                validation: {
+                  validity: 'invalid',
+                  reason:
+                    error instanceof Error ? error.message : 'Decode failed'
+                }
+              }
+            }
+          })
+        )
+        signal.throwIfAborted()
+        return JSON.stringify({ references: results })
+      },
+      observation,
+      'Decode only needed retained references; retain successful validation without judging visual suitability'
+    )
   const artifacts = new Map<string, LocalVectorArtifact>()
   const converted = new Map<string, string>()
   const analyses = new Map<string, ReturnType<typeof analyzeVectorComponents>>()
@@ -525,6 +595,7 @@ export const createLocalImageTools = (
         return 'Component analysis omitted its retained analysis or paths'
     },
     validateReferences,
+    prepareReferences,
     resolveSources,
     referenceImages: (indexes?: number[]) => {
       const selected =
@@ -720,58 +791,7 @@ export const createLocalImageTools = (
           throw new Error(
             'Provide unique existing reference attachmentIndexes.'
           )
-        const results = await Promise.all(
-          args.attachmentIndexes.map(async (index) => {
-            const identity = referenceIdentity(index as number)
-            let pending = validations.get(identity.referenceId)
-            const reused = !!pending
-            if (!pending) {
-              pending = (async () => {
-                const attachment = attachments[index as number] as {
-                  dataUrl: string
-                }
-                const bytes = Buffer.from(
-                  attachment.dataUrl.split(',')[1],
-                  'base64'
-                )
-                const decoder = sharp(bytes, { failOn: 'warning' }).timeout({
-                  seconds: 10
-                })
-                const metadata = await decoder.metadata()
-                await decoder.stats()
-                return {
-                  width: metadata.autoOrient.width,
-                  height: metadata.autoOrient.height,
-                  encoding: metadata.format,
-                  validity: 'decoded',
-                  suitability: 'requires-visual-assessment'
-                }
-              })()
-              validations.set(identity.referenceId, pending)
-            }
-            try {
-              const validation = (await pending) as {
-                width: number
-                height: number
-              }
-              admittedDimensions.set(identity.referenceId, validation)
-              return { ...identity, reused, validation }
-            } catch (error) {
-              validations.delete(identity.referenceId)
-              return {
-                ...identity,
-                reused,
-                validation: {
-                  validity: 'invalid',
-                  reason:
-                    error instanceof Error ? error.message : 'Decode failed'
-                }
-              }
-            }
-          })
-        )
-        signal.throwIfAborted()
-        return JSON.stringify({ references: results })
+        return prepareReferences(args.attachmentIndexes as number[], signal)
       }
       if (name === AiImageToolIds.REVIEW_VECTOR_CONTOURS) {
         if (

@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto'
 import { expect, it } from 'vitest'
 import {
   createLocalKnowledgeTools,
   createDesignKnowledge,
-  parseKnowledgeFile
+  parseKnowledgeFile,
+  projectKnowledgeSources
 } from '../local-knowledge'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { withToolContractAssertions } from './tool-contract-assertions'
@@ -1178,4 +1180,305 @@ it('reduces recorded cross-query dependency bytes through the actual read contra
     baseline.owner.dispose()
     candidate.owner.dispose()
   }
+})
+
+it('delivers saved Knowledge source identities without duplicated provenance through real invocation and paging', async () => {
+  const fixture = (
+    await import('./fixtures/recorded-101/knowledge-source-delivery-20261025.json')
+  ).default
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const { deliverInformation } = await import('../local-information-delivery')
+  // Preserve exact captured UTF-8 bodies without treating saved prose as code identifiers.
+  const files = fixture.files.map(({ markdownBase64, sha256, ...identity }) => {
+    const body = Buffer.from(markdownBase64, 'base64')
+    expect(createHash('sha256').update(body).digest('hex')).toBe(sha256)
+    return { ...identity, markdown: body.toString('utf8') }
+  })
+  const canonical = createDesignKnowledge('source-baseline', true)
+  for (const file of files) canonical.install(file)
+  const owner = createLocalKnowledgeTools('source-delivery', async () => files)
+  const definition = owner.definitions.find(
+    (entry) => entry.name === 'read_knowledge'
+  )
+  if (!definition) throw new Error('Missing Knowledge read definition')
+  expect(definition.revision).toBeGreaterThan(3)
+  const guide = definition.description.slice(
+    definition.description.indexOf('After assembling all pages'),
+    definition.description.indexOf('For complete advice')
+  )
+  const resolve = sourceResolver(definition.description)
+  const size = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
+  const read = async (input: Record<string, unknown>, baseline: boolean) => {
+    let query = input,
+      text = '',
+      bytes = 0,
+      calls = 0
+    for (;;) {
+      const selected = baseline
+        ? {
+            call: async (
+              _name: string,
+              args: unknown,
+              requestSignal: AbortSignal
+            ) =>
+              deliverInformation(
+                JSON.stringify(
+                  await canonical.session.retrieve(
+                    args as { ids: string[] },
+                    requestSignal
+                  )
+                ),
+                definition.name,
+                args as Record<string, unknown>,
+                'source-baseline'
+              )
+          }
+        : owner
+      const reply = await invokeLocalTool(selected, definition, query, signal())
+      expect(reply.success, reply.text).toBe(true)
+      bytes += size(query) + Buffer.byteLength(reply.text)
+      calls++
+      const parsed = JSON.parse(reply.text)
+      if (!parsed.contentDelivery) return { value: parsed, bytes, calls }
+      text += parsed.contentDelivery.text
+      if (parsed.contentDelivery.lastPage)
+        return { value: JSON.parse(text), bytes, calls }
+      query = parsed.contentDelivery.next.arguments
+    }
+  }
+  try {
+    for (const queries of [fixture.ordinaryQueries, [fixture.combinedQuery]]) {
+      let before = 0,
+        after = Buffer.byteLength(guide),
+        beforeCalls = 0,
+        afterCalls = 0
+      for (const input of queries) {
+        const old = await read(input, true)
+        const current = await read(input, false)
+        const resolveCurrent = resolve(current.value)
+        before += old.bytes
+        after += current.bytes
+        beforeCalls += old.calls
+        afterCalls += current.calls
+        expect(
+          current.value.documents.every(
+            (doc: { source: object }) => !('provenance' in doc.source)
+          )
+        ).toBe(true)
+        expect(current.value.sources).toEqual(old.value.sources)
+        expect(
+          current.value.documents.map((document: Record<string, unknown>) => ({
+            ...document,
+            source: resolveCurrent(document.source),
+            ...(document.replacedSource
+              ? {
+                  replacedSource: resolveCurrent(document.replacedSource)
+                }
+              : {})
+          }))
+        ).toEqual(old.value.documents)
+        for (const field of ['trust', 'generation', 'alreadyDelivered'])
+          expect(current.value[field]).toEqual(old.value[field])
+      }
+      expect(after).toBeLessThan(before)
+      expect(afterCalls).toBeLessThanOrEqual(beforeCalls)
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'source-delivery',
+          queries: queries.length,
+          before,
+          after,
+          guideBytes: Buffer.byteLength(guide),
+          beforeCalls,
+          afterCalls
+        }) + '\n'
+      )
+    }
+  } finally {
+    canonical.dispose()
+    owner.dispose()
+  }
+})
+
+// Execute the resolver actually published to the provider, not a second recipe.
+function sourceResolver(description: string) {
+  const expression = description.match(/`(const sources = new Map[^`]+)`/)?.[1]
+  if (!expression)
+    throw new Error('Missing delivered source resolution example')
+  return new Function('result', `${expression} return source;`) as (
+    result: unknown
+  ) => (identity: unknown) => unknown
+}
+
+it('preserves exact override sources through delivery, reuse, rehydrate and invalidated recovery', async () => {
+  const files = [
+    fixtureFile(),
+    {
+      id: 'page',
+      revision: 2,
+      markdown: `---\n${JSON.stringify({ description: 'Page guidance', provenance: ['App', 'https://example.com/guide?version=2'], references: ['button'], extends: ['button'], overrides: [{ target: 'button', priority: 1, text: 'Targeted replacement' }] })}\n---\nIndependent page advice`
+    }
+  ]
+  let loads = 0
+  const owner = createLocalKnowledgeTools('source-override', async () => {
+    loads++
+    return files
+  })
+  const canonical = createDesignKnowledge('source-override', true)
+  files.forEach((file) => canonical.install(file))
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const definition = owner.definitions.find(
+    (entry) => entry.name === AiDesignToolIds.READ_KNOWLEDGE
+  )
+  if (!definition) throw new Error('Missing read definition')
+  const resolve = sourceResolver(definition.description)
+  const read = async (input: Record<string, unknown>) => {
+    const reply = await invokeLocalTool(owner, definition, input, signal())
+    expect(reply.success, reply.text).toBe(true)
+    return JSON.parse(reply.text)
+  }
+  try {
+    const input = { ids: ['page'] }
+    const result = await read(input)
+    const resolveCurrent = resolve(result)
+    const original = await canonical.session.retrieve(input, signal())
+    expect(
+      result.documents.map((doc: Record<string, unknown>) => ({
+        ...doc,
+        source: resolveCurrent(doc.source),
+        ...(doc.replacedSource
+          ? { replacedSource: resolveCurrent(doc.replacedSource) }
+          : {})
+      }))
+    ).toEqual(original.documents)
+    expect(original.documents[0].replacedSource).toBeDefined()
+    expect(result.sources).toEqual(original.sources)
+    expect(await read(input)).toEqual(result)
+    const reused = await read({ ...input, reuseFrom: [result.contextKey] })
+    expect(
+      reused.documents.every(
+        (doc: { retainedFrom: string }) =>
+          doc.retainedFrom === result.contextKey
+      )
+    ).toBe(true)
+    expect(reused.sources).toEqual(result.sources)
+    const refreshed = await read({
+      ...input,
+      rehydrate: true,
+      reuseFrom: [result.contextKey]
+    })
+    expect(refreshed.documents).toEqual(result.documents)
+    owner.invalidateContext()
+    const invalid = await invokeLocalTool(
+      owner,
+      definition,
+      { ...input, reuseFrom: [result.contextKey] },
+      signal()
+    )
+    expect(invalid.success).toBe(false)
+    expect(invalid.text).toContain('Never replay completed writes or captures')
+    const recovery = invalid.text.match(/`(read_knowledge\([^`]+\))`/)?.[1]
+    expect(recovery).toBeDefined()
+    const recovered = await new Function(
+      'read_knowledge',
+      'ids',
+      'contexts',
+      `return ${recovery}`
+    )(read, input.ids, [])
+    expect(recovered.documents).toEqual(result.documents)
+    const cancelled = new AbortController()
+    cancelled.abort()
+    await expect(
+      owner.call(definition.name, input, cancelled.signal)
+    ).rejects.toThrow()
+    expect((await read(input)).documents).toEqual(result.documents)
+    expect(loads).toBe(1)
+  } finally {
+    owner.dispose()
+    canonical.dispose()
+  }
+})
+
+it('keeps unresolvable source metadata explicit and projects metadata without touching body contents', () => {
+  const source = Object.freeze({
+    id: 'example',
+    revision: 7,
+    provenance: Object.freeze(['Origin', 'https://example.com/source'])
+  })
+  const result = Object.freeze({
+    trust: 'untrusted-advice' as const,
+    generation: 1,
+    contextKey: 'context',
+    alreadyDelivered: false,
+    sources: Object.freeze([source]),
+    documents: Object.freeze([
+      Object.freeze({ target: 'example', source, text: 'Advice' })
+    ])
+  })
+  for (const sources of [
+    [],
+    [source, source],
+    [{ ...source, revision: 8 }],
+    [{ ...source, provenance: ['Other origin'] }]
+  ]) {
+    const projected = projectKnowledgeSources({ ...result, sources })
+    expect(projected.documents[0].source).toBe(source)
+  }
+  const projected = projectKnowledgeSources(result)
+  expect(projected.documents[0].source).toEqual({ id: 'example', revision: 7 })
+  expect(projected.contextKey).toBe(result.contextKey)
+  expect(projected.sources).toBe(result.sources)
+  expect(result.documents[0].source.provenance).toEqual([
+    'Origin',
+    'https://example.com/source'
+  ])
+  const owner = createLocalKnowledgeTools('resolution-cost')
+  const definition = owner.definitions.find(
+    (entry) => entry.name === AiDesignToolIds.READ_KNOWLEDGE
+  )
+  if (!definition) throw new Error('Missing read definition')
+  const resolve = sourceResolver(definition.description)
+  owner.dispose()
+  const observations = [16, 256].map((count) => {
+    let provenanceReads = 0,
+      bodyReads = 0
+    const sources = Array.from({ length: count }, (_, index) => ({
+      id: `topic-${index}`,
+      revision: index + 1,
+      get provenance() {
+        provenanceReads++
+        return ['Provenance']
+      }
+    }))
+    const documents = sources.map((source) => ({
+      target: source.id,
+      source,
+      get text() {
+        bodyReads++
+        return 'x'.repeat(100000)
+      }
+    }))
+    const value = projectKnowledgeSources({ ...result, sources, documents })
+    expect(value.sources).toBe(sources)
+    expect(bodyReads).toBe(count)
+    expect(value.documents).toHaveLength(count)
+    let indexed = 0
+    const delivered = {
+      ...value,
+      sources: new Proxy(value.sources, {
+        get(target, property, receiver) {
+          if (typeof property === 'string' && /^\d+$/.test(property)) indexed++
+          return Reflect.get(target, property, receiver)
+        }
+      })
+    }
+    const resolved = resolve(delivered)
+    for (let index = 0; index < count; index++)
+      expect(resolved(value.documents[index].source)).toBe(sources[index])
+    expect(indexed).toBe(count)
+    return { count, provenanceReads }
+  })
+  expect(
+    observations[1].provenanceReads / observations[0].provenanceReads
+  ).toBe(observations[1].count / observations[0].count)
 })

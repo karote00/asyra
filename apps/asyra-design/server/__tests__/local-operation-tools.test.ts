@@ -9673,3 +9673,284 @@ it('keeps union navigation compact while fragments preserve escaped references a
   }
   expect(dispatch).not.toHaveBeenCalled()
 })
+
+it('prepares only explicit reference uses and preserves selection through failed-source recovery without drawing replay', async () => {
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const attachments = await Promise.all(
+    ['red', 'blue'].map(async (background) => ({
+      dataUrl: `data:image/png;base64,${(
+        await sharp({
+          create: { width: 8, height: 5, channels: 3, background }
+        })
+          .png()
+          .toBuffer()
+      ).toString('base64')}`
+    }))
+  )
+  const trace = vi.fn()
+  const images = createLocalImageTools(
+    { metadata: { imageAttachments: attachments } },
+    undefined,
+    undefined,
+    { trace }
+  )
+  const identities = images.validateReferences([0, 1])
+  const dispatch = vi.fn()
+  const tools = createOwner(
+    [
+      {
+        name: AiActionNames.INSPECT_DRAWING,
+        description: 'Inspect',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (value) => value, resolveBatch: (value) => value },
+    dispatch,
+    {
+      validateReferences: images.validateReferences,
+      prepareReferences: images.prepareReferences,
+      resolveSources: images.resolveSources
+    }
+  )
+  const signal = new AbortController().signal
+  const call = async (name: string, args: unknown, current = signal) => {
+    const definition = tools.definitions.find((item) => item.name === name)
+    if (!definition) throw new Error('Missing registered operation')
+    return invokeLocalTool(tools, definition, args, current)
+  }
+  const plan = await call('define_design_criteria', {
+    phase: 'plan',
+    method: 'Compare supplied evidence',
+    references: [],
+    criteria: {
+      surface: {
+        requirement: 'Surface',
+        description: 'Surface',
+        verification: 'visual',
+        requiredUnits: []
+      }
+    },
+    detailRequired: false
+  })
+  expect(plan.success).toBe(true)
+  const originalStats = sharp.prototype.stats
+  const stats = vi.spyOn(sharp.prototype, 'stats')
+  const timeout = vi.spyOn(sharp.prototype, 'timeout')
+  const selection = (
+    status: 'accepted' | 'pending' | 'rejected',
+    indexes = [0, 1]
+  ) => ({
+    referenceImageIndexes: indexes,
+    requirementRevision: 1,
+    referenceDecisions: indexes.map((index) => ({
+      referenceId: identities[index].referenceId,
+      status,
+      reason: 'Explicit source assessment',
+      uses:
+        status === 'accepted'
+          ? [
+              {
+                id: `surface-${index}`,
+                criterionId: 'surface',
+                purpose: 'visual',
+                region: 'whole',
+                limitations: []
+              }
+            ]
+          : []
+    }))
+  })
+  try {
+    const facts = await call('record_design_facts', {
+      phase: 'facts',
+      facts: [
+        {
+          id: 'source-note',
+          statement: 'Source assertion',
+          scope: 'surface',
+          sources: [identities[0].referenceId],
+          dependencies: [{ key: 'source', version: '1' }],
+          verification: 'Observed from source'
+        }
+      ]
+    })
+    expect(facts.success, facts.text).toBe(true)
+    expect(JSON.parse(facts.text).facts[0].sources).toEqual([
+      identities[0].referenceId
+    ])
+    expect(stats).not.toHaveBeenCalled()
+    const prior = await call('select_design_references', selection('pending'))
+    expect(prior.success).toBe(true)
+    expect(stats).not.toHaveBeenCalled()
+    // One new successful decode and one transient decoder failure in the same selection.
+    stats
+      .mockImplementationOnce(originalStats)
+      .mockRejectedValueOnce(new Error('Injected decoder timeout'))
+    const failed = await call('select_design_references', selection('accepted'))
+    expect(failed.success).toBe(false)
+    expect(failed.text).toContain('Retry failed attachmentIndexes')
+    const failedSources = JSON.parse(
+      JSON.parse(failed.text).message.match(
+        /^Reference preparation failed: (.*?)\. Selection/
+      )[1]
+    )
+    expect(
+      failedSources.map(
+        (source: { attachmentIndex: number }) => source.attachmentIndex
+      )
+    ).toEqual([1])
+    expect(stats).toHaveBeenCalledTimes(2)
+    expect(timeout).toHaveBeenCalledWith({ seconds: 10 })
+    expect(images.validateReferences([0])[0].validation).toMatchObject({
+      width: 8,
+      height: 5
+    })
+    expect(images.validateReferences([1])[0]).not.toHaveProperty('validation')
+    const unchanged = JSON.parse(
+      (
+        await call('select_design_references', {
+          referenceImageIndexes: [0, 1]
+        })
+      ).text
+    )
+    expect(unchanged.changed).toBe(false)
+    expect(
+      unchanged.referenceDecisions.every(
+        (entry: { status: string }) => entry.status === 'pending'
+      )
+    ).toBe(true)
+    const recoveryArguments = {
+      attachmentIndexes: failedSources.map(
+        (source: { attachmentIndex: number }) => source.attachmentIndex
+      )
+    }
+    const validationDefinition = images.definitions.find(
+      (definition) => definition.name === 'validate_reference_images'
+    )
+    if (!validationDefinition) throw new Error('Missing recovery tool')
+    const recoveryReply = await invokeLocalTool(
+      images,
+      validationDefinition,
+      recoveryArguments,
+      signal
+    )
+    expect(recoveryReply.success, recoveryReply.text).toBe(true)
+    const recovered = JSON.parse(recoveryReply.text)
+    expect(recovered.references[0].validation.validity).toBe('decoded')
+    expect(stats).toHaveBeenCalledTimes(3)
+    const accepted = await call(
+      'select_design_references',
+      selection('accepted')
+    )
+    expect(accepted.success, accepted.text).toBe(true)
+    expect(stats).toHaveBeenCalledTimes(3)
+    const recoveryBytes = [
+      JSON.stringify(selection('accepted')),
+      failed.text,
+      JSON.stringify(recoveryArguments),
+      recoveryReply.text,
+      JSON.stringify(selection('accepted')),
+      accepted.text
+    ].reduce((bytes, text) => bytes + Buffer.byteLength(text), 0)
+    process.stdout.write(
+      'Attachment recovery bytes ' +
+        JSON.stringify({
+          recoveryBytes,
+          sourceRetries: recoveryArguments.attachmentIndexes,
+          decoderCalls: stats.mock.calls.length
+        }) +
+        '\n'
+    )
+    const priorUses = JSON.parse(accepted.text).referenceDecisions
+    const oversized = selection('accepted')
+    oversized.referenceDecisions[0].uses[0].region = {
+      x: 0,
+      y: 0,
+      width: 9,
+      height: 5
+    } as never
+    expect((await call('select_design_references', oversized)).success).toBe(
+      false
+    )
+    const current = JSON.parse(
+      (
+        await call('select_design_references', {
+          referenceImageIndexes: [0, 1]
+        })
+      ).text
+    )
+    expect(current.referenceDecisions).toEqual(priorUses)
+    const cancelled = new AbortController()
+    cancelled.abort()
+    await expect(
+      call('select_design_references', selection('rejected'), cancelled.signal)
+    ).rejects.toThrow()
+    const unknown = selection('accepted')
+    unknown.referenceDecisions[0].referenceId = 'reference:foreign'
+    expect((await call('select_design_references', unknown)).success).toBe(
+      false
+    )
+    expect(stats).toHaveBeenCalledTimes(3)
+    const extraBytes = await sharp({
+      create: { width: 8, height: 5, channels: 3, background: 'green' }
+    })
+      .png()
+      .toBuffer()
+    const extra = images.addReference({
+      dataUrl: `data:image/png;base64,${extraBytes.toString('base64')}`,
+      mediaType: 'image/png',
+      size: extraBytes.length
+    })
+    identities.push(images.validateReferences([extra])[0])
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    stats.mockImplementationOnce(async function (
+      this: ReturnType<typeof sharp>
+    ) {
+      const value = await originalStats.call(this)
+      await gate
+      return value
+    })
+    const interrupted = new AbortController()
+    const selecting = call(
+      'select_design_references',
+      selection('accepted', [extra]),
+      interrupted.signal
+    )
+    const rejected = expect(selecting).rejects.toThrow()
+    try {
+      await vi.waitFor(() => expect(stats).toHaveBeenCalledTimes(4))
+      interrupted.abort()
+    } finally {
+      release()
+    }
+    await rejected
+    const afterCancel = JSON.parse(
+      (
+        await call('select_design_references', {
+          referenceImageIndexes: [0, 1]
+        })
+      ).text
+    )
+    expect(afterCancel.referenceDecisions).toEqual(priorUses)
+    const resumed = await call(
+      'select_design_references',
+      selection('accepted', [extra])
+    )
+    expect(resumed.success, resumed.text).toBe(true)
+    expect(stats).toHaveBeenCalledTimes(4)
+    expect(dispatch).not.toHaveBeenCalled()
+    expect(
+      trace.mock.calls.some(
+        ([stage, evidence]) =>
+          stage === 'action_completed' &&
+          typeof evidence.executionMs === 'number'
+      )
+    ).toBe(true)
+  } finally {
+    stats.mockRestore()
+    timeout.mockRestore()
+  }
+})

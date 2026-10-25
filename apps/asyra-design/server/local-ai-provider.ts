@@ -53,6 +53,7 @@ import {
   localToolResultInstructions,
   type NativeToolDescriptor
 } from './local-operation-tools'
+import { observeLocalToolExecution } from './local-tool-invocation'
 import { createLocalImageTools } from './local-image-tools'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { homedir } from 'node:os'
@@ -210,14 +211,19 @@ const providerErrorDiagnostic = (error: unknown, willRetry?: unknown) => {
   }
 }
 
-const turnInput = (input: AiProviderInput): Record<string, unknown>[] => {
+const turnInput = (
+  input: AiProviderInput,
+  references: ReturnType<
+    ReturnType<typeof createLocalImageTools>['validateReferences']
+  >
+): Record<string, unknown>[] => {
   const metadata: unknown = isRecord(input.metadata)
     ? { ...input.metadata }
     : input.metadata
   const images: Record<string, unknown>[] = []
   if (isRecord(metadata) && Array.isArray(metadata.imageAttachments)) {
     metadata.imageAttachments = metadata.imageAttachments.map(
-      (attachment: unknown) => {
+      (attachment: unknown, index: number) => {
         if (
           !isRecord(attachment) ||
           typeof attachment.dataUrl !== 'string' ||
@@ -229,7 +235,15 @@ const turnInput = (input: AiProviderInput): Record<string, unknown>[] => {
         }
         const { dataUrl, ...description } = attachment
         images.push({ type: 'image', url: dataUrl })
-        return description
+        // Caller metadata cannot assert mechanical admission or source identity.
+        delete description.referenceId
+        delete description.validation
+        const reference = references[index]
+        return {
+          ...description,
+          referenceId: reference.referenceId,
+          ...(reference.validation ? { validation: reference.validation } : {})
+        }
       }
     )
   }
@@ -403,7 +417,12 @@ const runLocalAiProvider = async (
     })
   )
   const buildGroups = (ownership?: LocalToolOwnership) => {
-    const imageTools = createLocalImageTools(input, undefined, ownership)
+    const imageTools = createLocalImageTools(
+      input,
+      undefined,
+      ownership,
+      ownerObservation
+    )
     const references = createLocalReferenceTools(
       (image) => {
         const index = imageTools.addReference(image)
@@ -503,6 +522,7 @@ const runLocalAiProvider = async (
               requestSignal: options.signal,
               resolveSources: imageTools.resolveSources,
               validateReferences: imageTools.validateReferences,
+              prepareReferences: imageTools.prepareReferences,
               referenceImages: imageTools.referenceImages,
               getNativeTools: (): NativeToolDescriptor[] =>
                 host?.definitions() ?? [],
@@ -586,6 +606,7 @@ const runLocalAiProvider = async (
     return {
       preparation,
       operations,
+      imageTools,
       groups: toolGroups.flatMap(({ owner, ...group }) =>
         owner ? [{ ...group, owner }] : []
       ) as LocalToolGroup[]
@@ -724,7 +745,7 @@ const runLocalAiProvider = async (
     throw failure('AI_MODEL_BACKEND_ABORTED')
   }
   if (!localTools) throw new Error('Native tool owners were not initialized')
-  const { preparation, operations } = localTools
+  const { preparation, operations, imageTools } = localTools
   const activeToolGroups = host?.groups ?? []
   const mainDefinition = activeToolGroups
     .find((group) => group.name === 'design_workflow')
@@ -793,12 +814,45 @@ const runLocalAiProvider = async (
     )
   )
   const operationNames = new Set(operations?.actionNames)
-  const inputItems = turnInput({
-    ...input,
-    actions: preparation
-      .modelActions(input.actions)
-      .filter((action) => !operationNames.has(action.name))
-  })
+  let inputItems: Record<string, unknown>[]
+  try {
+    const attachmentIndexes =
+      isRecord(input.metadata) && Array.isArray(input.metadata.imageAttachments)
+        ? input.metadata.imageAttachments.map((_, index) => index)
+        : []
+    const attachmentReferences = attachmentIndexes.length
+      ? JSON.parse(
+          await observeLocalToolExecution(
+            'reference_attachment_context',
+            { attachmentIndexes },
+            async () => {
+              options.signal?.throwIfAborted()
+              return JSON.stringify({
+                references: imageTools.validateReferences(attachmentIndexes)
+              })
+            },
+            ownerObservation,
+            'Retained attachment identities without decoding unused images'
+          )
+        ).references
+      : []
+    options.signal?.throwIfAborted()
+    inputItems = turnInput(
+      {
+        ...input,
+        actions: preparation
+          .modelActions(input.actions)
+          .filter((action) => !operationNames.has(action.name))
+      },
+      attachmentReferences
+    )
+  } catch (error) {
+    await host?.dispose()
+    await storage.close()
+    if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
+    throw error
+  }
+
   const toolTasks = new Map<Promise<void>, string>()
   const toolCalls = new Set<string>()
 

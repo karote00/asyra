@@ -752,6 +752,10 @@ export const createLocalOperationTools = (
       indexes: number[],
       referenceIds?: string[]
     ) => ReferenceIdentity[]
+    prepareReferences?: (
+      indexes: number[],
+      signal: AbortSignal
+    ) => Promise<string>
     onInspection?: (status: 'running' | 'completed', tool?: string) => void
   } = {}
 ) => {
@@ -3494,6 +3498,51 @@ export const createLocalOperationTools = (
         }
         const reviewArgs = {
           ...designEvidenceInput(name, args as Record<string, unknown>)
+        }
+        if (
+          name === AiDesignToolIds.SELECT_DESIGN_REFERENCES &&
+          options.prepareReferences
+        ) {
+          const decisions = Array.isArray(reviewArgs.referenceDecisions)
+            ? reviewArgs.referenceDecisions
+            : []
+          const neededIds = decisions
+            .filter(
+              (decision) => Array.isArray(decision.uses) && decision.uses.length
+            )
+            .map((decision) => decision.referenceId as string)
+          try {
+            // Resolve every selected/declared identity before decoding or mutating review state.
+            options.validateReferences?.(
+              reviewArgs.referenceImageIndexes as number[],
+              decisions.map((decision) => decision.referenceId as string)
+            )
+            const needed = options.validateReferences?.([], neededIds) ?? []
+            if (needed.length) {
+              const prepared = JSON.parse(
+                await options.prepareReferences(
+                  needed.map((reference) => reference.attachmentIndex),
+                  signal
+                )
+              )
+              const failed = prepared.references.filter(
+                (reference: { validation: { validity: string } }) =>
+                  reference.validation.validity !== 'decoded'
+              )
+              if (failed.length)
+                throw new Error(
+                  `Reference preparation failed: ${JSON.stringify(failed)}. Selection and prior evidence are unchanged. Retry failed attachmentIndexes with validate_reference_images or replace invalid sources, then resubmit the selection; successful preparations are retained. Do not redraw.`
+                )
+            }
+            signal.throwIfAborted()
+          } catch (error) {
+            signal.throwIfAborted()
+            throw new LocalOperationPreparationError(
+              error instanceof Error
+                ? error.message
+                : 'Reference preparation failed'
+            )
+          }
         }
         const candidate =
           isRecord(reviewArgs) &&

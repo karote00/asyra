@@ -1150,3 +1150,154 @@ it('preserves selected original reference bytes and excludes unselected research
   expect(tools.referenceImages([])).toEqual([])
   expect(() => tools.referenceImages([2])).toThrow(/existing/)
 })
+
+it('prepares reference uses lazily through the same retained validation as standalone calls', async () => {
+  const bytes = await sharp({
+    create: { width: 8, height: 5, channels: 3, background: 'red' }
+  })
+    .png()
+    .toBuffer()
+  const image = {
+    dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+    mediaType: 'image/png',
+    size: bytes.length
+  }
+  const tools = createLocalImageTools({
+    metadata: { imageAttachments: [image] }
+  })
+  const stats = vi.spyOn(sharp.prototype, 'stats')
+  try {
+    const identity = tools.validateReferences([0])[0]
+    expect(identity).not.toHaveProperty('validation')
+    expect(stats).not.toHaveBeenCalled()
+    const signal = new AbortController().signal
+    await tools.prepareReferences([0], signal)
+    expect(
+      tools.validateReferences([], [identity.referenceId])[0].validation
+    ).toMatchObject({ width: 8, height: 5 })
+    await tools.prepareReferences([0], signal)
+    const explicit = JSON.parse(
+      await tools.call(
+        'validate_reference_images',
+        { attachmentIndexes: [0] },
+        signal
+      )
+    )
+    expect(explicit.references[0]).toMatchObject({
+      referenceId: identity.referenceId,
+      reused: true,
+      validation: {
+        validity: 'decoded',
+        suitability: 'requires-visual-assessment'
+      }
+    })
+    expect(stats).toHaveBeenCalledOnce()
+  } finally {
+    stats.mockRestore()
+  }
+})
+
+it('shares reference decoding across concurrent callers without allowing cancellation to discard a peer result', async () => {
+  const bytes = await sharp({
+    create: { width: 3, height: 7, channels: 3, background: 'blue' }
+  })
+    .jpeg()
+    .toBuffer()
+  const tools = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        { dataUrl: `data:image/jpeg;base64,${bytes.toString('base64')}` }
+      ]
+    }
+  })
+  const original = sharp.prototype.stats
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const stats = vi
+    .spyOn(sharp.prototype, 'stats')
+    .mockImplementationOnce(async function (this: ReturnType<typeof sharp>) {
+      const value = await original.call(this)
+      await gate
+      return value
+    })
+  const cancelled = new AbortController()
+  try {
+    const first = tools.prepareReferences([0], cancelled.signal)
+    const checked = expect(first).rejects.toThrow()
+    const second = tools.prepareReferences([0], new AbortController().signal)
+    await vi.waitFor(() => expect(stats).toHaveBeenCalledOnce())
+    cancelled.abort()
+    release()
+    await checked
+    const result = JSON.parse(await second)
+    expect(result.references[0]).toMatchObject({
+      reused: true,
+      validation: { width: 3, height: 7, validity: 'decoded' }
+    })
+    await tools.prepareReferences([0], new AbortController().signal)
+    expect(stats).toHaveBeenCalledOnce()
+  } finally {
+    release()
+    stats.mockRestore()
+  }
+})
+
+it('reuses imported admission and rejects foreign identities before decoding any selected source', async () => {
+  const bytes = await sharp({
+    create: { width: 2, height: 5, channels: 3, background: 'green' }
+  })
+    .png()
+    .toBuffer()
+  const image = {
+    dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
+    mediaType: 'image/png',
+    size: bytes.length
+  }
+  const tools = createLocalImageTools({ metadata: {} })
+  tools.addReference({
+    ...image,
+    validation: {
+      width: 2,
+      height: 5,
+      encoding: 'png',
+      validity: 'decoded',
+      suitability: 'requires-visual-assessment'
+    }
+  })
+  const stats = vi.spyOn(sharp.prototype, 'stats')
+  try {
+    const result = JSON.parse(
+      await tools.prepareReferences([0], new AbortController().signal)
+    )
+    expect(result.references[0]).toMatchObject({
+      reused: true,
+      validation: { validity: 'decoded' }
+    })
+    expect(stats).not.toHaveBeenCalled()
+    const fresh = createLocalImageTools({ metadata: {} })
+    expect(() =>
+      fresh.validateReferences([], [result.references[0].referenceId])
+    ).toThrow(/Unknown retained reference/)
+    await expect(
+      tools.prepareReferences([0, 99], new AbortController().signal)
+    ).rejects.toThrow(/existing reference/)
+    expect(stats).not.toHaveBeenCalled()
+    const broken = createLocalImageTools({
+      metadata: {
+        imageAttachments: [{ dataUrl: 'data:image/png;base64,YQ==' }]
+      }
+    })
+    const invalid = JSON.parse(
+      await broken.prepareReferences([0], new AbortController().signal)
+    )
+    expect(invalid.references[0].validation).toMatchObject({
+      validity: 'invalid',
+      reason: expect.any(String)
+    })
+    expect(broken.validateReferences([0])[0]).not.toHaveProperty('validation')
+  } finally {
+    stats.mockRestore()
+  }
+})

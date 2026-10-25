@@ -119,7 +119,7 @@ subject information. A missing subject word in the tool catalog says nothing abo
 For existing subjects, inspect useful visual evidence for identifying features. Exact reproductions need
 the correct reference/version. A source-local failure is not a task-level blocker: change sources, queries
 or acquisition methods and continue. Do not send the user to find public material because one source failed.
-Use validate_reference_images to check retained image bytes and dimensions without downloading again. Keep its referenceId for image facts; visual subject/viewpoint suitability remains your responsibility.
+Attachment metadata already supplies referenceId for source facts. select_design_references prepares pixels for explicit uses; no prior validation is required. Use validate_reference_images only for explicit diagnostics or failed-source recovery. You judge suitability and limitations.
 Use import_reference_image with references:[{sourceUrl,imageUrl?}]. If a relevant page URL is known,
 omit imageUrl and let the tool resolve declared images internally; provide a known original image URL to
 skip this step. Imported images still need your suitability judgment. Never reduce source-image resolution

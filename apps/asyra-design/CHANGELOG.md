@@ -1,5 +1,52 @@
 # @asyra/asyra-design
 
+## Pending attachment reference preparation
+
+```update-note
+{
+  "change": "attachment-reference-preparation",
+  "owner": "Asyra Design image owner",
+  "summary": "Deliver retained attachment identity initially and prepare oriented pixels only when explicit reference uses consume them; reuse admitted results and preserve AI suitability judgments and failed-source recovery.",
+  "sources": [
+    "apps/asyra-design/server/local-image-tools.ts",
+    "apps/asyra-design/server/local-ai-provider.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "apps/asyra-design/server/ai-domain-prompt.ts",
+    "apps/asyra-design/server/__tests__/local-image-tools.test.ts",
+    "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+    "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/flow-contracts.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing App tools and request-local image ownership remain in use. Model-facing guidance describes automatic preparation and independent diagnostics; no new tool, persistent format or migration is required."
+}
+```
+
+## Pending Knowledge source delivery
+
+```update-note
+{
+  "change": "knowledge-source-delivery",
+  "owner": "Asyra Design Knowledge delivery",
+  "summary": "Deliver exact source identities with one complete same-reply provenance catalog; preserve overrides, canonical retained results, paging and read-only recovery.",
+  "sources": [
+    "apps/asyra-design/server/local-knowledge.ts",
+    "apps/asyra-design/server/__tests__/local-knowledge.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/knowledge-source-delivery-20261025.json",
+    "apps/asyra-design/flow-contracts.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "The revised App read tool ships same-reply resolution guidance. Framework source results, document state and execution inputs remain unchanged; no additional query or migration is required."
+}
+```
+
 ## Pending selected review usage
 
 ```update-note

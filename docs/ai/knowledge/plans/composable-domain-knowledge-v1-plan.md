@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 selected review usage delivery is locally verified and closed for this bounded slice. AI adoption and timing remain unobserved; no model/101, CI inspection or push.**
+Status: **Task 3 attachment-to-reference handoff is locally verified. The one authorized 120-second live observation is complete; no further model run, implementation, CI inspection or push is authorized.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: selected review usage delivery only, as bounded below. No execution-owner redesign, Knowledge changes, new tools, model/101, CI inspection or push.
+- Current scope: attachment-to-reference mechanical preparation through the existing image owner and asynchronous selection entry. Preserve the completed Knowledge source changes. No new cache, tool, first-drawing gate, model run, CI inspection or push.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,267 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Authorized attachment handoff observation - 2026-10-25
+
+One 101 run is explicitly authorized after local closure: 120 seconds of work,
+at most 60 seconds of reporting, no video, production 10,000-node limit. Preserve
+complete input/output, source snapshot, report and screenshots. Freeze product
+sources throughout execution. Analyze actual pre-drawing decisions and variation
+in required/early/repeated information; first-frame time is a timeline fact, not
+an improvement or regression criterion. One run cannot establish stability or
+causal latency effects. No automatic retry, implementation, CI inspection or push.
+
+Observation complete: run `1792933490279`, first visible frame 68.003 seconds
+(timeline only), work cutoff 120.003 seconds, report complete 137.124 seconds,
+UI/report capture 138.177 seconds. Partial result with 1,719 elements; visual detail
+failed explicitly. Initial source identities were delivered once in 1.347 ms;
+no separate image validation or selection was requested. Automatic on-use
+preparation and live failure recovery remain unobserved. Five pre-drawing reads
+include one repeated 1,964-byte parent body; selection variability is not claimed
+resolved. Original records/payloads/assets verify and reload receipt matches 55/55.
+See [the bounded observation report](../evaluations/2026-10-25-attachment-reference-101.md).
+No further run or correction is started.
+
+### Attachment-to-reference mechanical preparation - 2026-10-25
+
+Status: locally verified under the fixed DoD. Admission revision 124 used candidate 9e0c782c-4acf-4723-b77b-e87c1e2e3c7f; executable proof mapping was reviewed and accepted at revision 125. No live observation is authorized.
+
+Evidence: run 1792929336384 delivered attachment names/type/size without retained
+reference identities. Raw payloads 19/20 and 22/23 queried validation/selection
+usage and schemas; 25/26 validated two already retained attachments at
+43.535-43.554 seconds. Validation-specific entries cost 5,634 bytes, followed by
+27 input and 770 output bytes. These totals exclude unrelated selected tools.
+The first draft did not consume reference IDs; their first actual selection was
+272.758 seconds. This proves unnecessary mechanical coordination, not a measured
+first-frame delay attribution. Immutable evidence and prior conclusions remain.
+
+Step Execution Card - compose / attachment-to-reference handoff:
+- Spec: AI execution flow, Attachment-to-reference preparation. Inspector:
+  compose conditions, implementationBoundary and failureOwner.
+- Inputs: current request attachment bytes, canonical retained identities and
+  available admitted dimensions, selected reference decisions and abort signal.
+- Outputs: initial metadata with owner-derived referenceId; selected-use receipts
+  with real oriented dimensions; observed preparation and explicit source-local
+  failure with successful preparation retained. No automatic suitability decision.
+- Owner: existing local-image-tools identity/validation maps. Provider composes
+  initial metadata; the existing asynchronous operation entry prepares only
+  sources needed by explicit uses before the synchronous review owner consumes
+  them. Standalone validation remains available. No second cache/store/scheduler.
+- Conditions/bypass: initial identity hashing is synchronous and never decodes;
+  no attachments means no image work. Pending/rejected/no-use decisions do not
+  require full decoding. Imported/admitted sources reuse existing validation.
+  Unknown IDs reject before preparation. Decode errors or cancellation cannot
+  commit selection; successful validations survive failed sibling preparation.
+- Contributors: existing image owner, provider delivery, operation dispatcher,
+  synchronous review/reference owner and existing observation. Forbidden: model
+  inference, auto-acceptance, source-specific rules, eager full-image gate, new
+  state, replay of drawings, changes to Knowledge/paging/geometry/persistence.
+- Boundary: local-image-tools.ts, local-ai-provider.ts, local-operation-tools.ts,
+  local-design-review.ts (published description/revision only), ai-domain-prompt.ts;
+  existing image/provider/operation tests, recorded attachment-reference fixture, self-contained execution proof and
+  mapping; this plan/spec/Inspector/task context and release note.
+- Feasibility: current reference-use owner requires admitted dimensions before
+  creating use receipts. Its synchronous mutation/invalidations remain unchanged;
+  only the existing async entry awaits image preparation. Source facts only need
+  identity, and pixel/visual consumers already require signed use receipts.
+- Gates: task context, naming, Inspector admission, fail-first formal tests,
+  image/provider/operation/reference direct consumers, ordinary response harness,
+  production types/build, scoped lint, architecture/guidance, final Inspector.
+- Stop: fixed DoD satisfied or correction requires a different owner boundary.
+  No model/101/CI/push; do not infer live adoption or latency improvements.
+
+Fixed DoD:
+1. Formal actual provider-input regression fails before implementation; execute
+   delivered guidance through the registered dispatcher and real image/review
+   owners, including region validation, use receipts and downstream image check.
+2. Initial referenceId matches retained bytes; untrusted metadata cannot claim
+   validation. No separate AI validation call is necessary for explicit uses.
+   Source-only facts and unselected images incur no full decode.
+3. Count actual decoder work: imported/previously validated sources reuse; repeated
+   and concurrent preparation share existing work. Include initial metadata,
+   guide, query/reply and recovery overhead in total-byte/call comparisons.
+4. Preserve visual purpose, restrictions and decisions as AI-owned. Decoding
+   alone cannot accept a source or pass any visual criterion.
+5. Invalid bytes, cancellation/timeout, unknown/current-request identities and
+   mixed success are explicit. Failed-only retry reuses successful preparations,
+   leaves previous selections/evidence intact and never replays canvas writes.
+6. Standalone validation, source facts, regions, review binding and reference-free
+   drawing remain valid; observation records internal preparation and duration.
+   No new first-frame waiting gate. State is request-local and no new cache exists.
+
+Local closure and bounded self-review:
+- Reproduced missing provider referenceId and absent preparation handoff before
+  production edits. An additional cancellation test exposed a native process
+  starting after attachment preparation was cancelled; startup now checks abort
+  and disposes the existing host/store before spawning. Its regression passes.
+- Initial provider metadata carries the exact bytes' SHA-256 identity and strips
+  caller-forged identity/validation; image bytes remain unchanged. Facts and
+  pending/rejected candidates use identity without decoding. Invalid unused image
+  bytes do not prevent initial turn delivery. Explicit uses prepare real oriented
+  dimensions through the existing owner before recording synchronous decisions.
+- Existing standalone validation and automatic preparation share the same pending
+  and completed promises. No new cache/state/registry. Imported admission, repeats,
+  concurrent callers, cancellation of one consumer and a surviving peer are tested.
+- Actual dispatcher recovery preserves prior selection and use receipts across
+  decoder failure, invalid regions, foreign identities and cancellation during
+  decode. Recovery extracts failed indexes from the delivered failure and invokes
+  the registered validation tool: two sources plus one failed-source retry perform
+  exactly three decodes. Cancellation/resumption of an additional source retains
+  its completed preparation. No canvas action is dispatched by these paths.
+- Provider contract-query/capture/pixel-check integration consumes initial identity,
+  real preparation, selected-use receipt and current inspection. Pixel pass remains
+  appearance-unverified; source suitability and visual checks remain AI decisions.
+- Recorded original inputs/outputs were verified against provider-record SHA-256
+  before extracting the permanent fixture. Equivalent initial handoff falls from
+  16,098 to 10,361 bytes (5,737 bytes / 35.64% reduction), including the +182-byte
+  metadata and +80-byte startup guidance delta; queries/validation fall from three
+  calls to two. Other shared tool information is retained, not counted as removed.
+  Injected failure, source-only recovery and successful resubmission additionally
+  measure 5,172 bytes across all their inputs/outputs. This is a separately measured
+  failure path, not a historical observed latency or failure-rate comparison.
+- Same-source server response harness: 1,770 passed, two opt-in skips. Installed
+  native registration was then enabled separately and passed without inference;
+  the remaining large-document bootstrap case is unrelated to this non-document
+  change. Direct review/reference suites pass (366 tests), and the strengthened
+  recovery suite passes (197 tests). Inspector proof includes all 80 cases.
+- Production types and build pass; scoped lint has zero errors (four pre-existing
+  console warnings). Naming and architecture/update-guidance checks pass (15 and
+  32 cases respectively). Existing direct-consumer suites are already included in
+  the ordinary response harness; the new proof is mapped to compose.
+- Reviewed actual provider text, async entry, synchronous selection/invalidation,
+  existing validation lifetime, failure/cancellation cleanup and direct consumers.
+  No geometry, persistence, Undo/Redo, collaboration, Knowledge content or model
+  configuration changed; the prior uncommitted Knowledge slice remains preserved.
+- Production-source Inspector verification passed as
+  922f1477-e6d6-4bd4-8a4d-4ac61e9e6e6c at revision 125/source
+  2925bad57857de8580dbcbb47b8d9e36004fc02e224363f81f063609edafb6c0.
+  The final ordinary recovery test additionally exercises the registered recovery
+  boundary and reports complete exchange bytes. Closure verification
+  06d6b6fc-f5f0-42e9-b1a2-c03ca7a69950 passed on the identical production source
+  and mapping revision 125; final test lint and task-context checks also pass.
+- Actual AI adoption, avoided live rereads and first-frame timing remain unobserved.
+  No model, 101, CI inspection or push was performed. This bounded item is complete;
+  Task 3 remains active and no subsequent issue is started.
+
+### Knowledge source metadata delivery - 2026-10-25
+
+Status: locally verified under the fixed DoD; single bounded live observation complete.
+
+Evidence: the six retained runs ending 1792830831162, 1792834534052,
+1792839882487, 1792847647272, 1792853203510 and 1792918949756 deliver identical
+source records in documents and sources. All twelve pre-drawing read payloads
+match original provider events and SHA-256. The first five deliver seven duplicate
+source records across two reads; the latest delivers nine in one paged composition.
+Metadata-only projection estimates savings of 941 and 1,275 bytes respectively;
+this is not a measured latency improvement or a promise to remove a page.
+
+Step Execution Card - compose / Knowledge delivery:
+- Objective: remove duplicate provenance from document source identities at the
+  existing App delivery boundary, retaining complete sources in the same reply.
+- Inputs: the existing Runtime immutable result, source catalog and read query.
+  Outputs: ordered documents with source/replacedSource IDs and revisions;
+  complete source catalog, body or retainedFrom, trust/generation/contextKey and
+  existing bounded continuation. Unmatched/ambiguous/different provenance stays
+  explicit; no inferred match or discarded source information.
+- Owner/boundary: App local-knowledge.ts before existing deliverInformation.
+  Runtime result and retained state remain authoritative and unchanged. No new
+  registry, cache, tool, read prerequisite or Knowledge content changes.
+- Conditions/bypass: omit only exactly equal provenance under an unambiguous
+  id/revision. Direct reads, dependency composition, overrides, explicit reuse,
+  rehydrate, permissions, cancellation and disposal preserve their owners.
+- Failure owner: compose for delivery; Runtime still owns authorization and stale
+  results. Recovery reads only; never replay document writes or captures.
+- Contributors: local Knowledge owner, existing Runtime session and information
+  delivery. Forbidden: semantic content pruning, model receipt inference, changed
+  budgets, compatibility aliases and new persistent source indexes.
+- Implementation allowlist: local-knowledge.ts; existing local-knowledge and
+  information-delivery integration suites; one retained recorded-input fixture;
+  self-contained execution-flow-proof case and mapping; ordinary harness if needed;
+  this plan, ai-execution-flow spec, existing Inspector and App release note.
+- Feasibility/self-review: sources already contains the complete authoritative
+  records; preserving id/revision on each document permits same-reply resolution.
+  Projection compares only source metadata, never document bodies. A per-delivery
+  index provides linear work; it has no lifetime beyond the call. Canonical public
+  Runtime types and source semantics are unchanged. App guidance must describe
+  same-reply resolution and tests must execute that delivered instruction.
+- Gates: task context, naming, Inspector admission, fail-first regression, focused
+  Runtime/App/information delivery and provider consumers, production types/build,
+  scoped lint, architecture/inventory, update guidance, final Inspector and review.
+- Stop: fixed DoD satisfied or necessary out-of-scope correction. Multiple failed
+  production iterations require bounded replan. No live test before local closure.
+
+Fixed DoD:
+1. Permanent saved-input regression reproduces duplicate source delivery before
+   implementation; ordinary tests never depend on ignored tmp evidence.
+2. Execute actual delivery and published same-reply resolution: exact source,
+   revision, provenance, override/replacedSource, text, order and retainedFrom
+   reconstruct the canonical result, including different and ambiguous sources.
+3. Only provably equal metadata is elided; do not hide mismatches, invent sources
+   or change permission/advisory semantics.
+4. Verify pagination, repeated reads, reuseFrom, rehydrate, invalid/foreign/stale
+   references, cancellation and disposal through existing owners. Recovery never
+   invokes drawing or capture. No new request or increased delivery limit.
+5. Total bytes decrease on fixed ordinary and combined reads; count full pages,
+   request/reply envelopes and recovery. Prove bounded projection/resolution work
+   without scanning or copying text; canonical retained results remain unchanged.
+6. Direct consumers, full Runtime reads and existing valid behavior pass on the
+   same source. Local evidence establishes delivery correctness, not AI adoption.
+
+Local closure and self-review:
+- Admission candidate 27069c6b-cf14-4a96-bfde-5210a9b90d84 passed; contract
+  5ceadb94ddc62056031da124c33aed15a4ed4f399487e4575a720fa2a24b538f
+  was accepted before tests/production changes. The saved-input regression failed
+  on repeated document provenance (tmp/knowledge-source-red.log).
+- The App projects only exact same-reply source metadata. Framework results and
+  retained content remain unchanged. Published resolution runs in integration
+  tests, including overrides, read-only recovery and linear indexing. Mismatched,
+  missing and ambiguous identities remain explicit. No application state changes.
+- Eight consumer suites: 391 passed; the opt-in installed native registration
+  probe was then enabled separately and passed without inference (392 total).
+  Runtime Knowledge: 47 passed. Final source delivery suite: 29 passed. Inspector:
+  79 cases passed; final verify 04409d9a-9093-48ba-9167-be9781a31977, revision 123,
+  source eccd1d1771ced800d3eb38d40da0e2c351dbdb2c1ebbdee8706045151891ee1f.
+- Naming: 15 passed. Architecture/update-guidance: 32 passed. Production types,
+  App build, document/collaboration builds and scoped lint passed (one existing
+  console warning in the proof file). Evaluation preflight: 18 passed.
+- Total request/page/reply bytes including 365 bytes of new guidance: saved two-read
+  case 25,499 -> 24,923 (576 saved); combined case 34,419 -> 33,473 (946 saved).
+  Both retain two calls. Complete source reconstruction is exact. A tiny isolated
+  read can cost more after guidance; this is not a universal latency/page claim.
+- Self-review covered the diff, direct provider consumers, canonical retention,
+  paging, cancellation, permissions, reuse/rehydrate and invalid-reference recovery.
+  One test compared random context IDs from separate sessions; it was corrected
+  to test unchanged identity on the same canonical result. Captured Markdown is
+  stored losslessly with SHA-256 to keep historical prose separate from identifier
+  linting. No naming assertion or production protection was relaxed.
+- Logs: tmp/knowledge-source-{consumers,final-focused,runtime,native,types,build,
+  lint,naming,architecture,verify}.log. No live model, CI or push was used for
+  deterministic closure. AI source consumption/recovery remains unobserved here.
+
+Executed follow-up authorization after local closure: run the existing 101 evaluator exactly
+once with gpt-6-astra/medium, production expanded-node limit 10,000, no video,
+540 seconds of work and at most 60 seconds of reporting within a hard 600-second
+wall-clock guard. Save all input/output, source, images, report and screenshots.
+Stop immediately at the total deadline; do not retry the model. Report first frame,
+phase timings, actual Knowledge selections/source delivery and observed recovery;
+unobserved behavior stays unverified. This authorization does not include CI or push.
+
+
+Observation result: run `1792929336384`, without video, actual model gpt-6-astra /
+medium and production ceiling 10,000. First frame 131.483 s; work ended naturally
+at 498.301 s, report took 20.475 s, UI settled partial at 519.221 s. The source
+projection appeared on all three Knowledge reads (two pages plus one reuse read),
+retaining complete sources and prior constraints without source retries. Logical
+content saved 1,939 bytes, or 1,574 after new guidance, excluding envelope effects.
+No first-frame speedup was established. Final visual acceptance remained false.
+288 evidence files and 10 image payloads verify; both provider records are complete.
+Root order and durable receipt 418/418 survived reload. No App tools ran during
+reporting. Live Knowledge failure recovery was not triggered. Review supersession
+still returned unknown on conflict; nonplanar geometry correctly rejected and was
+repaired through the retained draft. No additional implementation was attempted.
+See [the complete bounded report](../evaluations/2026-10-25-knowledge-source-delivery-101.md).
+
 
 ### Review purpose to executable selected contract - 2026-10-25
 

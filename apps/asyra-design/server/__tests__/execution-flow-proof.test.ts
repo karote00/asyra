@@ -9506,3 +9506,180 @@ it('execution proof delivers selected review usage to real capture binding and r
     if (!hadWindow) vi.unstubAllGlobals()
   }
 })
+
+it('execution proof resolves compact Knowledge sources through the delivered example without another read', async () => {
+  const { createLocalKnowledgeTools, createDesignKnowledge } =
+    await import('../local-knowledge')
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const files = [
+    {
+      id: 'base',
+      revision: 1,
+      markdown:
+        '---\n{"description":"Base","provenance":["Shared origin"]}\n---\nRequired constraint'
+    },
+    {
+      id: 'selected',
+      revision: 2,
+      markdown:
+        '---\n{"description":"Selected","provenance":["App origin"],"references":["base"],"extends":["base"],"overrides":[{"target":"base","priority":1,"text":"Specific constraint"}]}\n---\nSelected advice'
+    }
+  ]
+  const owner = createLocalKnowledgeTools('source-proof', async () => files)
+  const canonical = createDesignKnowledge('source-proof')
+  files.forEach((file) => canonical.install(file))
+  try {
+    const definition = owner.definitions.find(
+      (entry) => entry.name === 'read_knowledge'
+    )
+    if (!definition) throw new Error('Missing Knowledge read definition')
+    const input = { ids: ['selected'] }
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      input,
+      new AbortController().signal
+    )
+    expect(reply.success).toBe(true)
+    const result = JSON.parse(reply.text)
+    const expression = definition.description.match(
+      /`(const sources = new Map[^`]+)`/
+    )?.[1]
+    if (!expression) throw new Error('Missing delivered source example')
+    const resolve = new Function('result', `${expression} return source;`)(
+      result
+    )
+    const full = await canonical.session.retrieve(
+      input,
+      new AbortController().signal
+    )
+    expect(
+      result.documents.map(
+        (doc: { source: unknown; replacedSource?: unknown }) => ({
+          ...doc,
+          source: resolve(doc.source),
+          ...(doc.replacedSource
+            ? { replacedSource: resolve(doc.replacedSource) }
+            : {})
+        })
+      )
+    ).toEqual(full.documents)
+    expect(result.sources).toEqual(full.sources)
+    expect(result.documents[0].source.provenance).toBeUndefined()
+    expect(result.documents[0].replacedSource.provenance).toBeUndefined()
+    expect(Buffer.byteLength(reply.text)).toBeLessThan(
+      Buffer.byteLength(JSON.stringify(full))
+    )
+  } finally {
+    owner.dispose()
+    canonical.dispose()
+  }
+})
+
+it('execution proof prepares explicit attachment uses through the existing owner without prerequisite validation', async () => {
+  const bytes = await sharp({
+    create: { width: 8, height: 5, channels: 3, background: 'red' }
+  })
+    .png()
+    .toBuffer()
+  const images = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        { dataUrl: `data:image/png;base64,${bytes.toString('base64')}` },
+        { dataUrl: 'data:image/png;base64,YQ==' }
+      ]
+    }
+  })
+  const references = images.validateReferences([0, 1])
+  const dispatch = vi.fn()
+  const owner = createOperationOwner(
+    [
+      {
+        name: AiActionNames.INSPECT_DRAWING,
+        description: 'Inspect',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (value) => value, resolveBatch: (value) => value },
+    dispatch,
+    {
+      validateReferences: images.validateReferences,
+      prepareReferences: images.prepareReferences
+    }
+  )
+  const signal = new AbortController().signal
+  const invoke = (name: string, input: unknown) => {
+    const definition = owner.definitions.find((item) => item.name === name)
+    if (!definition) throw new Error('Missing registered operation')
+    return invokeLocalTool(owner, definition, input, signal)
+  }
+  const stats = vi.spyOn(sharp.prototype, 'stats')
+  try {
+    expect(references[0]).not.toHaveProperty('validation')
+    expect(
+      (
+        await invoke('define_design_criteria', {
+          phase: 'plan',
+          method: 'Use supplied visual evidence',
+          references: [],
+          criteria: reviewCriteria(['surface']),
+          detailRequired: false
+        })
+      ).success
+    ).toBe(true)
+    expect(
+      (
+        await invoke('select_design_references', {
+          referenceImageIndexes: [0, 1]
+        })
+      ).success
+    ).toBe(true)
+    expect(stats).not.toHaveBeenCalled()
+    const decision = (index: number) => ({
+      referenceId: references[index].referenceId,
+      status: 'restricted',
+      reason: 'Only the selected region is applicable',
+      uses: [
+        {
+          id: `region-${index}`,
+          criterionId: 'surface',
+          purpose: 'visual',
+          region: { x: 1, y: 1, width: 3, height: 2 },
+          limitations: ['Region only']
+        }
+      ]
+    })
+    const selected = await invoke('select_design_references', {
+      referenceImageIndexes: [0],
+      requirementRevision: 1,
+      referenceDecisions: [decision(0)]
+    })
+    expect(selected.success, selected.text).toBe(true)
+    const current = JSON.parse(selected.text).referenceDecisions
+    expect(current[0].uses[0]).toMatchObject({
+      pixels: { width: 3, height: 2 },
+      receipt: { referenceId: references[0].referenceId }
+    })
+    expect(stats).toHaveBeenCalledOnce()
+    const failed = await invoke('select_design_references', {
+      referenceImageIndexes: [0, 1],
+      requirementRevision: 1,
+      referenceDecisions: [decision(0), decision(1)]
+    })
+    expect(failed.success).toBe(false)
+    expect(JSON.parse(failed.text)).toMatchObject({
+      settlement: 'not-started',
+      message: expect.stringContaining(
+        'Selection and prior evidence are unchanged'
+      )
+    })
+    const retained = await invoke('select_design_references', {
+      referenceImageIndexes: [0]
+    })
+    expect(JSON.parse(retained.text).referenceDecisions).toEqual(current)
+    expect(stats).toHaveBeenCalledOnce()
+    expect(dispatch).not.toHaveBeenCalled()
+  } finally {
+    stats.mockRestore()
+  }
+})

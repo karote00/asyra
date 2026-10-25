@@ -850,6 +850,35 @@ with final=false. They never approve completion and do not require evidence for
 yet-unbuilt detail. Final assessment remains the default and requires all
 criteria, current overall evidence and requested native detail.
 
+### Attachment-to-reference preparation
+
+Initial attachment metadata delivers the existing image owner's retained
+referenceId alongside the unchanged image payload. Available admitted dimensions
+come only from that owner, never caller-supplied validation. Identity availability
+is not evidence of decoding or visual suitability. Initial delivery must not
+fully decode unused attachments or gate first drawing on source selection.
+
+When explicit reference uses require oriented pixel bounds, the existing async
+selection entry prepares those sources through the image owner before the
+synchronous reference/review owner records decisions. Existing in-flight and
+completed validation is reused, including imported images. No new cache,
+reference registry, AI call or required standalone validation is introduced.
+Pending/rejected candidates and source-only facts need identity, not decoding.
+Independent validate_reference_images remains a supported diagnostic/recovery API.
+
+Unknown identities, invalid bytes, decode timeout and cancellation remain honest
+failures; failed preparation does not commit selection or clear prior evidence.
+Successful sibling preparation is retained for retry. Recovery targets failed
+sources only and never repeats drawing or image download. Internal preparation
+uses existing owner observation with actual duration/results. AI alone decides
+subject/viewpoint suitability, accepted/restricted/rejected status, exact uses
+and limitations; decoding cannot approve a source or a visual check.
+
+Formal provider/dispatcher/real-owner tests must prove identity and pixel-use
+continuity, deferred work, failure isolation, reuse work counts and lower total
+handoff bytes/calls including initial metadata and guidance. Live AI adoption and
+first-frame improvement remain unobserved until separately authorized.
+
 ### Primary-agent visual comparison
 
 The primary drawing agent compares original request, retained criteria, applicable
@@ -3813,3 +3842,22 @@ total bytes and required contract reads through capture/bind and record, includi
 pagination, against the retained saved-query case. Do not weaken schema constraints,
 raise delivery limits or add discovery prerequisites. This is not a requirement to
 inspect before first drawing and does not establish model adoption or timing gains.
+
+
+### Knowledge source identity delivery
+
+App read_knowledge delivers complete provenance once in the existing sources
+catalog. A document source or replacedSource may contain only id/revision when
+its full record exactly matches one unambiguous catalog record. Resolve absent
+provenance from that same reply, without another read. Explicit provenance remains
+when equality or uniqueness cannot be established. IDs and revisions alone never
+justify dropping different provenance. All text, ordering, override relations,
+retainedFrom, trust, generation and context identities remain unchanged.
+
+The Runtime public and retained results remain complete and immutable. Projection
+belongs to existing App delivery before bounded pagination; it does not prune
+Knowledge, infer model receipt, add state or increase limits. Rehydrate restores
+full advice with resolvable provenance; reuse and stale/foreign/cancelled recovery
+remain existing read-only operations, never write/capture replay. Tests execute the
+published resolution against real composed/overridden/paged/reused results, prove
+lower total delivery and linear metadata-only work, and retain direct consumers.

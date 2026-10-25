@@ -669,10 +669,10 @@ export const designEvidenceDefinitions = [
       'prepare',
       ['request-artifacts']
     ),
-    revision: 2,
+    revision: 3,
     name: AiDesignToolIds.SELECT_DESIGN_REFERENCES,
     description:
-      'Select imported reference attachment indexes for primary-agent visual comparison. Identical selection preserves approval; changed uses reopen only their dependent checks. An empty selection clears it. Download success does not establish suitability. Record referenceDecisions with the current requirementRevision in this call; select candidates by index and declare exact uses with id, criterionId/unitId, purpose, original-pixel region (or whole) and limitations. Use returned receipts explicitly in downstream referenceUses; omitted receipts mean reference-free work. Rejected and undecided images are retained but excluded from comparison.',
+      'Select retained attachment indexes for primary-agent visual comparison. Use referenceId from attachment metadata or import; this call prepares pixel bounds for explicit uses, reusing admitted images. No prior validation call is required. Preparation failure leaves selection unchanged; retry failed sources only, never redraw. Identical selection preserves approval; changed uses reopen only their dependent checks. An empty selection clears it. Download success does not establish suitability. Record referenceDecisions with the current requirementRevision in this call; select candidates by index and declare exact uses with id, criterionId/unitId, purpose, original-pixel region (or whole) and limitations. Use returned receipts explicitly in downstream referenceUses; omitted receipts mean reference-free work. Rejected and undecided images are retained but excluded from comparison.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,

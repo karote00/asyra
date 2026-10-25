@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
+import recordedAttachmentHandoff from './fixtures/recorded-101/attachment-reference-20261025.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
 import { admitPreparedDesignDelivery } from '../../src/ai/prepared-design-admission'
@@ -5004,7 +5005,7 @@ it.each(['active', 'settled'] as const)(
   }
 )
 
-it('dispatches capture then deterministic image checking in the same provider turn without another model', async () => {
+it('delivers attachment identity and prepares selected uses before capture and checking without a validation round trip', async () => {
   const png = `data:image/png;base64,${(
     await sharp({
       create: { width: 4, height: 4, channels: 4, background: 'white' }
@@ -5018,7 +5019,20 @@ it('dispatches capture then deterministic image checking in the same provider tu
     {
       ...input,
       metadata: {
-        imageAttachments: [{ dataUrl: png, mediaType: 'image/png', size: 100 }]
+        imageAttachments: [
+          {
+            dataUrl: png,
+            mediaType: 'image/png',
+            size: 100,
+            referenceId: 'forged',
+            validation: { width: 999, height: 999 }
+          },
+          {
+            dataUrl: 'data:image/png;base64,YQ==',
+            mediaType: 'image/png',
+            size: 1
+          }
+        ]
       },
       actions: ['inspect_drawing', 'validate_inspection_evidence'].map(
         (name) => ({ name, description: name, inputSchema: { type: 'object' } })
@@ -5056,6 +5070,9 @@ it('dispatches capture then deterministic image checking in the same provider tu
   )
   await untilTurn(server.packets)
   let id = 200
+  let discoveryBytes = 0
+  let discoveryCalls = 0
+  const stats = vi.spyOn(sharp.prototype, 'stats')
   const call = async (tool: string, args: unknown) => {
     const current = ++id
     server.send({
@@ -5077,11 +5094,34 @@ it('dispatches capture then deterministic image checking in the same provider tu
     ) as unknown as {
       result: { success: boolean; contentItems: { text: string }[] }
     }
-    const value = JSON.parse(packet.result.contentItems[0].text)
+    const text = packet.result.contentItems[0].text
+    if (tool === 'describe_design_apis') {
+      discoveryCalls++
+      discoveryBytes +=
+        Buffer.byteLength(JSON.stringify(args)) + Buffer.byteLength(text)
+    }
+    const value = JSON.parse(text)
     expect(packet.result.success, JSON.stringify(value)).toBe(true)
     return value
   }
   try {
+    for (const previous of recordedAttachmentHandoff.calls.slice(0, 2)) {
+      const query = {
+        ...previous.input.value,
+        names: (previous.input.value.names ?? []).filter(
+          (name) => name !== 'validate_reference_images'
+        )
+      }
+      const delivered = await call('describe_design_apis', query)
+      expect(
+        delivered.tools.some(
+          (tool: { name: string }) => tool.name === 'select_design_references'
+        )
+      ).toBe(true)
+      expect(JSON.stringify(delivered)).toContain(
+        'No prior validation call is required'
+      )
+    }
     await call('define_design_criteria', {
       phase: 'plan',
       method: 'Compare selected region',
@@ -5089,15 +5129,73 @@ it('dispatches capture then deterministic image checking in the same provider tu
       criteria: reviewCriteria(['surface']),
       detailRequired: false
     })
-    const validated = await call('validate_reference_images', {
-      attachmentIndexes: [0]
-    })
+    const turn = server.packets.find((packet) => packet.method === 'turn/start')
+    if (!turn) throw new Error('Missing initial turn')
+    const items = turn.params.input as {
+      type: string
+      text?: string
+      url?: string
+    }[]
+    if (!items[0].text) throw new Error('Missing initial text')
+    const attachment = JSON.parse(items[0].text).input.metadata
+      .imageAttachments[0]
+    expect(attachment.referenceId).toBe(
+      `reference:${createHash('sha256')
+        .update(Buffer.from(png.split(',')[1], 'base64'))
+        .digest('hex')}`
+    )
+    expect(attachment).not.toHaveProperty('validation')
+    expect(stats).not.toHaveBeenCalled()
+    const attachments = JSON.parse(items[0].text).input.metadata
+      .imageAttachments as Record<string, unknown>[]
+    const metadataDelta = attachments.reduce((bytes, item) => {
+      const { referenceId: _identity, validation: _validation, ...prior } = item
+      return (
+        bytes +
+        Buffer.byteLength(JSON.stringify(item)) -
+        Buffer.byteLength(JSON.stringify(prior))
+      )
+    }, 0)
+    expect(items[1]).toEqual({ type: 'image', url: png })
+    const thread = server.packets.find(
+      (packet) => packet.method === 'thread/start'
+    )
+    if (!thread) throw new Error('Missing thread instructions')
+    const instructions = thread.params.baseInstructions as string
+    expect(instructions).toContain('select_design_references prepares')
+    const guidance = instructions
+      .split('\n')
+      .find((line) => line.startsWith('Attachment metadata already'))
+    if (!guidance) throw new Error('Missing attachment guidance')
+    const baselineBytes = recordedAttachmentHandoff.calls.reduce(
+      (bytes, call) => bytes + call.input.bytes + call.output.bytes,
+      0
+    )
+    const totalBytes =
+      discoveryBytes +
+      metadataDelta +
+      Buffer.byteLength(guidance) -
+      Buffer.byteLength(recordedAttachmentHandoff.priorGuidance)
+    expect(discoveryCalls).toBe(2)
+    expect(totalBytes).toBeLessThan(baselineBytes)
+    process.stdout.write(
+      'Attachment handoff bytes ' +
+        JSON.stringify({
+          baselineBytes,
+          totalBytes,
+          discoveryBytes,
+          metadataDelta,
+          baselineCalls: 3,
+          discoveryCalls
+        }) +
+        '\n'
+    )
     const selected = await call('select_design_references', {
       referenceImageIndexes: [0],
       requirementRevision: 1,
       referenceDecisions: [
         {
-          referenceId: validated.references[0].referenceId,
+          referenceId: attachment.referenceId,
           status: 'accepted',
           reason: 'Explicit aligned fixture',
           uses: [
@@ -5111,6 +5209,11 @@ it('dispatches capture then deterministic image checking in the same provider tu
           ]
         }
       ]
+    })
+    expect(stats).toHaveBeenCalledOnce()
+    expect(selected.referenceDecisions[0].uses[0].pixels).toEqual({
+      width: 4,
+      height: 4
     })
     const captured = await call('inspect_drawing', {
       arguments: {
@@ -5139,6 +5242,7 @@ it('dispatches capture then deterministic image checking in the same provider tu
     ).toHaveLength(1)
     expect(spawn).toHaveBeenCalledTimes(1)
   } finally {
+    stats.mockRestore()
     server.finish()
     await running
   }
@@ -7617,3 +7721,25 @@ it('delivers real interrupted Core results through Runtime and the native report
     vi.unstubAllGlobals()
   }
 }, 10000)
+
+it('cancels attachment identity preparation before starting the native provider', async () => {
+  fakeServer({})
+  const controller = new AbortController()
+  await expect(
+    requestConfiguredAiActionBatch(
+      { ...input, metadata: { imageAttachments: [await rasterAttachment()] } },
+      {
+        environment,
+        signal: controller.signal,
+        onProgress: (event) => {
+          if (
+            event.tool === 'reference_attachment_context' &&
+            event.status === 'running'
+          )
+            controller.abort()
+        }
+      }
+    )
+  ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_ABORTED' })
+  expect(spawn).not.toHaveBeenCalled()
+})
