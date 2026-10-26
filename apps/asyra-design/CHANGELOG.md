@@ -108,6 +108,7 @@
     "apps/asyra-design/server/local-design-review.ts",
     "apps/asyra-design/server/ai-domain-prompt.ts",
     "apps/asyra-design/server/__tests__/local-image-tools.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/attachment-reference-20261025.json",
     "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
     "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
     "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
