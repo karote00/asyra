@@ -1,3 +1,7 @@
+import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
+import { createRetainedFillAction } from '../../src/ai/retained-fill-action'
+import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
+import { observeDesignChanges } from '../../src/common-apis/design-review'
 // @vitest-environment jsdom
 import { beforeAll, expect, it, vi } from 'vitest'
 import { applyPreset, PresetDefaults, PresetProfiles } from '@asyra/preset'
@@ -559,4 +563,256 @@ it('keeps successful mechanical results while retrying an interrupted read witho
     reviewer.dispose()
     factory.transact.reset()
   }
+})
+
+it('bounds material follow-up exchange and saved payloads by actual coverage instead of prior targets', async () => {
+  // Saved run 1792955260315: one position-based fill mapping acknowledged 5,908
+  // sibling leaves. Each subsequent leaf capture received accumulating siblings
+  // but covered none. Smaller generic scenes reproduce that same owner path.
+  const samples: {
+    count: number
+    bytes: number
+    payloadBytes: number
+    legacyBytes: number
+  }[] = []
+  for (const count of [64, 256]) {
+    reset()
+    const root = await create({
+      type: 'group',
+      name: 'Material coverage',
+      children: Array.from({ length: count }, (_, i) => ({
+        type: 'rect',
+        key: `member-${i}`,
+        name: `Member ${i}`,
+        x: i * 5,
+        width: 4,
+        height: 5,
+        fill: '#224455'
+      }))
+    })
+    const ids = root.entries.slice(1).map((entry) => entry.descriptor.id)
+    const queries = createRetainedDesignContext(core, observeDesignChanges)
+    const reviewer = createDesignReviewer(
+      undefined,
+      async () => undefined,
+      true
+    )
+    const visual = createInspectionEvidence()
+    const checks = createDesignCheckResults()
+    const actions = [
+      createRetainedFillAction(queries),
+      createDesignReviewAction(reviewer.capture, reviewer.isCurrent),
+      createInspectionValidationAction(visual, reviewer)
+    ].map((action) => observeAiAction(action))
+    let pending: AiActionBatch
+    let receipt: AiBatchReceipt | undefined
+    const runtime = createAiAgentRuntime({
+      provider: {
+        requestActionBatch: async (_input, options) => {
+          receipt = await options.executeBatch?.(pending)
+          return { batchId: 'report', actions: [] }
+        }
+      },
+      actionDefinitions: actions,
+      contextProvider: { getContext: async () => ({}) },
+      permissionPolicy: { evaluate: () => 'allow' },
+      confirmationHandler: { confirm: async () => true },
+      transactionRunner: createAiTransactionRunner()
+    })
+    const exchanges: { request: AiActionBatch; reply: AiBatchReceipt }[] = []
+    const owner = createLocalOperationTools(
+      actions,
+      {
+        modelActions: (a) => a,
+        resolveBatch: (a) => a,
+        checkResults: checks
+      },
+      async (batch) => {
+        pending = batch
+        receipt = undefined
+        await runtime.run({
+          intent: 'Refine existing materials',
+          signal: new AbortController().signal
+        })
+        if (!receipt) throw new Error('Missing actual Runtime receipt')
+        exchanges.push({ request: batch, reply: receipt })
+        return receipt
+      }
+    )
+    let retainedKeyVisits = 0
+    const keys = Map.prototype.keys
+    const scan = vi.spyOn(Map.prototype, 'keys').mockImplementation(function (
+      this: Map<string, unknown>
+    ) {
+      const stamp = this.get(ids[0])
+      if (
+        stamp &&
+        typeof stamp === 'object' &&
+        'sessionId' in stamp &&
+        'receiptId' in stamp
+      )
+        retainedKeyVisits += this.size
+      return keys.call(this)
+    })
+    try {
+      const geometryFields = ['x', 'y', 'width', 'height', 'rotation']
+      const geometry = ids.map((id) =>
+        core.getElementComputedData(id, geometryFields)
+      )
+      const before = await core.save()
+      const history = core.getUndoHistoryDepth()
+      const response = JSON.parse(
+        await owner.call(
+          AiDesignToolIds.EXECUTE_DESIGN_BATCH,
+          {
+            inspection: 'defer',
+            operations: [
+              {
+                name: AiActionNames.MAP_RETAINED_FILLS,
+                arguments: {
+                  mappings: [
+                    {
+                      query: { scope: 'ids', elementIds: ids },
+                      coordinateSpace: 'parent-local',
+                      axis: 'x',
+                      domain: [0, count * 5],
+                      index: 0,
+                      outside: 'clamp',
+                      stops: [
+                        { at: 0, color: '#6E9198' },
+                        { at: 1, color: '#45636D' }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          new AbortController().signal
+        )
+      )
+      scan.mockRestore()
+      expect(response.status, JSON.stringify(response)).not.toBe('failed')
+      expect(exchanges[0].reply.actionResults[0].result).toMatchObject({
+        status: 'complete',
+        appliedCount: count,
+        mutationScope: {
+          complete: true,
+          elementIds: ids,
+          removedElementIds: []
+        }
+      })
+      const captures = exchanges.filter(
+        (e) => e.request.actions[0].name === AiActionNames.REVIEW_DESIGN
+      )
+      expect(captures).toHaveLength(Math.ceil(count / 64))
+      expect(exchanges).toHaveLength(captures.length + 1)
+      const outputs = captures
+        .flatMap((e) => e.reply.actionResults)
+        .map((a) => a.result)
+      expect(outputs).toHaveLength(count)
+      for (const result of outputs)
+        expect(result).toMatchObject({
+          complete: true,
+          checkedElements: 1,
+          findings: [],
+          coveredMeasurementTargets: [],
+          observation: {
+            evaluatedNodes: 1,
+            computedReads: 1,
+            textMeasurements: 0
+          }
+        })
+      expect(
+        checks.read({ includePassed: true, limit: count }).counts.pass
+      ).toBe(count)
+      const after = await core.save()
+      expect(after.sceneTree).toEqual(before.sceneTree)
+      expect(
+        ids.map((id) => core.getElementComputedData(id, geometryFields))
+      ).toEqual(geometry)
+      expect(after.props).not.toEqual(before.props)
+      expect(core.getUndoHistoryDepth()).toBe(history + 1)
+      const bytes = Buffer.byteLength(JSON.stringify(exchanges))
+      const payloadBytes = exchanges.reduce(
+        (n, e) =>
+          n +
+          e.request.actions.reduce(
+            (sum, a) => sum + serializeToolPayload(a.arguments).bytes,
+            0
+          ) +
+          e.reply.actionResults.reduce(
+            (sum, a) => sum + serializeToolPayload(a.result).bytes,
+            0
+          ),
+        0
+      )
+      // Compare complete envelopes with the observed cumulative-candidate rule,
+      // keeping identical IDs, results, receipts and material mutation input.
+      const legacy = structuredClone(exchanges)
+      const prior: string[] = []
+      for (const exchange of legacy) {
+        if (exchange.request.actions[0].name !== AiActionNames.REVIEW_DESIGN)
+          continue
+        const batchIds = exchange.request.actions.map((a) =>
+          String(a.arguments.elementId)
+        )
+        const candidates = [...prior, ...batchIds]
+        for (const action of exchange.request.actions)
+          action.arguments.measurementTargets = candidates.filter(
+            (id) => id !== action.arguments.elementId
+          )
+        prior.push(...batchIds)
+      }
+      const legacyBytes = Buffer.byteLength(JSON.stringify(legacy))
+      const legacyPayloadBytes = legacy.reduce(
+        (n, e) =>
+          n +
+          e.request.actions.reduce(
+            (sum, a) => sum + serializeToolPayload(a.arguments).bytes,
+            0
+          ) +
+          e.reply.actionResults.reduce(
+            (sum, a) => sum + serializeToolPayload(a.result).bytes,
+            0
+          ),
+        0
+      )
+      expect.soft(payloadBytes).toBeLessThan(legacyPayloadBytes)
+      process.stdout.write(
+        JSON.stringify({
+          measurement: 'automatic-mechanical-coverage',
+          count,
+          bytes,
+          payloadBytes,
+          legacyBytes,
+          legacyPayloadBytes,
+          retainedKeyVisits
+        }) + '\n'
+      )
+      samples.push({ count, bytes, payloadBytes, legacyBytes })
+      expect.soft(bytes).toBeLessThan(legacyBytes)
+      expect.soft(retainedKeyVisits).toBeLessThanOrEqual(count)
+      expect
+        .soft(
+          captures
+            .flatMap((e) => e.request.actions)
+            .every(
+              (action) => action.arguments.measurementTargets === 'descendants'
+            )
+        )
+        .toBe(true)
+    } finally {
+      scan.mockRestore()
+      queries.dispose()
+      reviewer.dispose()
+      visual.dispose()
+      factory.transact.reset()
+    }
+  }
+  const [small, large] = samples
+  const ratio = large.count / small.count
+  // Equal-width identities and equal-sized batches make a linear envelope bound.
+  expect(large.bytes).toBeLessThanOrEqual(small.bytes * ratio)
+  expect(large.payloadBytes).toBeLessThanOrEqual(small.payloadBytes * ratio)
 })

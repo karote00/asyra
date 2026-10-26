@@ -62,10 +62,17 @@ it('delivers requested measurement scope and withdraws selection with stale evid
     'child',
     'outside'
   ])
+  expect(
+    await action.execute(
+      { elementId: 'root', measurementTargets: 'descendants' },
+      context
+    )
+  ).toMatchObject({ coveredMeasurementTargets: ['child'] })
+  expect(review).toHaveBeenLastCalledWith('root', context.signal, 'descendants')
   current = false
   expect(
     await action.execute(
-      { elementId: 'root', measurementTargets: ['child'] },
+      { elementId: 'root', measurementTargets: 'descendants' },
       context
     )
   ).toMatchObject({

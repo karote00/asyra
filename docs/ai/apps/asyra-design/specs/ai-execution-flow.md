@@ -2799,7 +2799,7 @@ counts even when a stable concrete stage produces no visible text change.
 ### Mechanical verification in reusable tasks
 
 The registered deterministic review action publishes domain-owned verification
-paths. Its revision 4 target is a document runtime reference, supplied by current
+paths. Its registered target is a document runtime reference, supplied by current
 input or acknowledged output when composing; saved recipes cannot capture a
 request-specific target as a literal. Its mechanical verdict is pass only when supported checks are complete and
 no findings remain; known text/container overflow may enter an explicitly declared
@@ -2812,21 +2812,32 @@ applicable stored checks through their actual dependencies.
 
 ### Mechanical coverage selection
 
-A deterministic review may receive optional unique measurementTargets IDs from
-retained checks. The browser reviewer returns coveredMeasurementTargets selected
-from the exact successful capture coverage, with the same receipt. Selection adds
-no geometry reads and exposes only requested IDs, never the complete subtree.
-This selection certifies scope only: it does not certify compatible rule context,
-prior receipt freshness, findings or visual quality. Incomplete/cancelled captures
-do not authorize reconciliation.
+A deterministic review accepts optional unique `measurementTargets` IDs or the
+`descendants` selection. Explicit IDs return only requested captured identities;
+an explicit empty list stays empty. Automatic selection returns actual captured
+descendants, excluding the root, in the same successful capture reply and receipt.
+Selection consumes completed reviewer coverage without more geometry reads. It
+certifies scope only, not compatible rule context, freshness, findings or visual
+quality. Incomplete/cancelled captures never authorize reconciliation.
 
-The operation owner supplies its existing retained targets in the original review
-exchange, including relevant targets of the same ordered read batch. It reconciles
-only current retained obligations selected by the captured coverage, using the
-existing bounded validation action. Empty or absent selection triggers no extra
-exchange and leaves unrelated results unchanged. Explicit selected review remains
-legal. Object count and server-inferred ancestry cannot select coverage; no
-all-target fallback, added query prerequisite, state store or write replay is allowed.
+The operation owner requests `descendants` for automatic review and omitted
+explicit review selection when retained or same-batch obligations can consume it;
+otherwise it omits scope selection. It never sends an accumulating candidate list. It
+intersects returned identities with current retained obligations by membership,
+without scanning all historical targets, and uses existing bounded validation and
+revision guards. Empty/absent coverage sends no extra exchange and preserves
+unrelated results. Explicit selected review remains legal. Actual traversal alone
+certifies scope: no inferred ancestry, all-target fallback, extra query, new store,
+paint-only bypass or write replay. Scope metadata stays internal to automatic
+checking; ordinary replies omit owner-injected coverage after reconciliation.
+Explicit selections and full diagnostic replies preserve their requested scope.
+
+For disjoint targets, complete request/reply and saved-payload work must grow
+linearly with actual checked targets, even as prior obligations accumulate. Tests
+exercise the material owner through automatic checking and result retention,
+including actual payload serialization. Parent-to-child reconciliation, geometry
+and text findings, independent invalidation, cancellation and no-replay recovery
+remain required; reduced call counts alone do not establish this contract.
 
 Canonical canvas measurement results are retained in the same check store per
 checked target, alongside prepared-source and primary-agent evidence. Complete

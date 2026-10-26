@@ -859,6 +859,16 @@
             "apps/asyra-design/server/local-operation-tools.ts",
             "apps/asyra-design/server/local-design-review.ts"
           ]
+        },
+        {
+          "id": "inspect.automatic-coverage-delivery",
+          "stepId": "inspect",
+          "testName": "execution proof delivers automatic mechanical scope without accumulating candidates",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/src/ai/review-action.ts",
+            "apps/asyra-design/src/common-apis/design-review.ts"
+          ]
         }
       ],
       "handoffs": [

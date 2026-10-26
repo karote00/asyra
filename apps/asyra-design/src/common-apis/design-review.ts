@@ -8,6 +8,8 @@ import {
   subscribeToFileLoadComplete
 } from '@asyra/core'
 import { EntityTypes, SharedDataChannelNames } from '@asyra/utils'
+export type MechanicalCoverageSelection = readonly string[] | 'descendants'
+
 interface Bounds {
   x: number
   y: number
@@ -537,9 +539,12 @@ export const createDesignReviewer = (
   const capture = async (
     rootId: string,
     signal?: AbortSignal,
-    measurementTargets?: readonly string[]
+    measurementTargets?: MechanicalCoverageSelection
   ) => {
-    const candidates = new Set(measurementTargets)
+    const candidates =
+      measurementTargets === 'descendants'
+        ? undefined
+        : new Set(measurementTargets)
     const start = generation
     const { measurement, coverage } = await runReview(rootId, signal)
     const unavailable = () => ({
@@ -592,7 +597,9 @@ export const createDesignReviewer = (
       ...(measurementTargets
         ? {
             coveredMeasurementTargets: coverage
-              .filter(({ elementId }) => candidates.has(elementId))
+              .filter(({ elementId }) =>
+                candidates ? candidates.has(elementId) : elementId !== rootId
+              )
               .map(({ elementId }) => elementId)
           }
         : {}),

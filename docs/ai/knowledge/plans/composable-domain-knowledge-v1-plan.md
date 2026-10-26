@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: close and push the verified work-deadline cleanup slice, preserving the unobserved live failed-release retry limitation. Recommend one next handoff from saved evidence only; no new implementation, model run, CI inspection or historical evidence edit.
+- Current scope: implement automatic mechanical coverage delivery under the bounded Task 3 contract below. No model run, 101, CI inspection, push or historical evidence edit.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,107 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Automatic mechanical coverage delivery - 2026-10-26
+
+Implement the existing reviewer-to-operation-owner handoff. Saved run
+1792955260315 proves 5,908 distinct leaf checks, 17,634,940 candidate ID
+occurrences and 893,857,084 input bytes; every returned coverage selection is
+empty. Input serialization totals 2,790.493 ms. These are internal exchange and
+preservation costs, not model input. Preserve the original evidence unchanged.
+
+Step Execution Card - inspect:
+- Authority: ai-execution-flow.md, Mechanical coverage selection; Inspector
+  inspect conditions, implementationBoundary and inspection-evidence output.
+- Inputs: acknowledged mutation targets, actual reviewer traversal and receipt,
+  explicit target selection, current request check obligations and revisions.
+- Outputs: exact completed capture descendants in the same reply when automatic
+  selection is requested; explicit selections remain exact, including empty.
+  Coverage alone never grants a pass. Existing validation commits compatible
+  independent successors only while revisions and receipt ownership match.
+- Change the existing measurementTargets selection to accept `descendants` for
+  automatic capture scope, excluding the captured root. Do not construct caller
+  candidate lists. Omit automatic selection when only the root or no target is
+  retained; preserve explicit selections and full diagnostics while ordinary
+  replies omit owner-injected scope after reconciliation. Intersect returned
+  identities by retained Map membership,
+  deduplicate only that returned set, and perform no retained-map enumeration.
+- Owner files: src/common-apis/design-review.ts, src/ai/review-action.ts and
+  server/local-operation-tools.ts under apps/asyra-design; direct owner tests,
+  mechanical-closure and mechanical-inspection integrations, execution proof,
+  flow-contracts.json and the existing App changelog. No new state/cache/registry.
+- Allowed contributors: existing reviewer, evidence validator, results store,
+  retained-fill owner and formal Runtime/record serialization in tests.
+  Forbidden: inferred ancestry, object-count certification, paint-only bypass,
+  widened review roots, full model-facing scope payloads and write replay.
+- Preserve explicit IDs/empty selection, geometry/text checks, parent coverage,
+  hidden/standalone containment rules, local invalidation, partial/cancelled
+  reads, guarded result updates and existing recovery without mutation replay.
+- First update contracts and admit the Inspector mapping. Then establish failing
+  formal coverage/work regressions before production edits. Re-read inspect
+  before implementation and verification; self-review its direct consumers.
+- Fixed DoD: actual material owner -> receipt -> automatic checks -> reviewer ->
+  store integration; exact findings and scope preservation; linear total request,
+  reply and serialized-payload growth for disjoint targets, not moving cost to
+  output; no added exchanges or geometry reads; no historical-key scans; retained
+  parent reconciliation and no-replay interrupted-read recovery. Include the
+  growth regression in existing direct-consumer validation and a mapped proof.
+- Gates: focused owner/consumer integrations, relevant action/schema/discovery
+  tests, naming, scoped lint, production App/server types, Inspector admission,
+  mapped verification, generated Inspector/document checks and bounded diff review.
+- Stop if owner coverage cannot preserve semantics, required work exceeds these
+  owners, or a focused correction fails three times. Do not weaken the fixed DoD.
+  No model/101/CI, first-frame promise, batching-limit change or new persistence work.
+
+Design review: the capture already owns immutable exact traversal coverage;
+selecting its descendants adds no second traversal of canonical geometry. The
+operation owner already owns obligation membership and bounded reconciliation.
+Explicit scope remains distinct from automatic selection. Parent coverage still
+passes through inherited-visibility/standalone normalization, current evidence
+and revision guards. The same exchange can carry this selection without an extra
+query or new lifetime. Large sibling workloads must be measured end to end;
+previous small-root byte comparisons and exchange counts alone miss this defect.
+
+
+Local completion - automatic mechanical coverage delivery:
+- Admission candidate 21acb217-ae15-4f6e-82f1-8b668e88bdd1 passed the 80
+  accepted cases before production edits; reviewed contract accepted at revision
+  135. The final mapped case was admitted at revision 136. Final verification
+  a320fb76-0cf3-4382-8788-35fe8c12703f passes all 81 mapped obligations, source
+  f83fc5a17576e1b6edb0616989b4f0e7d6edfc68eedfbff736f2c9a8999534a2.
+- Formal regressions failed before implementation: the real material/Runtime/
+  reviewer path delivered 265,748 bytes for 64 targets and 2,281,812 for 256;
+  retained-key traversal visited 2,080 and 33,280 entries. Red evidence:
+  tmp/mechanical-coverage-red-confirmed.log. No test depends on ignored evidence.
+- Final 256-target same-envelope comparison: 2,281,869 -> 275,041 bytes (87.95%
+  less); actual record serializer payloads 2,228,555 -> 221,727 bytes (90.05%
+  less). Retained-key visits are zero. All 256 real leaf checks still execute,
+  with one material exchange plus four review exchanges. Geometry, hierarchy,
+  exact mutation scope, fill application and one Undo commit are preserved.
+  The 64/256 complete-envelope and payload growth assertions both pass.
+- Self-review added failing cases for unnecessary first/root-only scope and
+  automatic scope leaking into ordinary replies. These now pass while explicit
+  arrays, empty selection and full follow-up diagnostics retain their scope.
+  Direct review remains outside write batches; tests use its actual legal route.
+- Focused final gate: 300 tests across nine owner/consumer files pass. The 64
+  discovery consumer cases pass. Existing test:server-response-harness already
+  includes mechanical-inspection and mechanical-closure integrations, and the
+  root test:design-execution-flow invokes that gate before mapped verification.
+  The node-only mapped proof verifies orchestration; it is not substituted for
+  the real Runtime/material/browser-owner integration.
+- App/server/proof production types, naming, scoped ESLint (zero errors; two
+  unchanged console warnings), Inspector structure, public-doc currency, release
+  update coverage, task context and diff checks pass. Evidence logs use the
+  tmp/mechanical-coverage-* prefix. Source was frozen during verification.
+- Bounded review covered the three production files, their direct consumers,
+  default/explicit/full delivery, true geometry/text findings, parent coverage,
+  incomplete/hidden/incompatible receipts, independent invalidation, cancellation
+  and acknowledged-prefix/no-replay recovery. No write/persistence owner, budget,
+  cache, registry or provider policy changed. No unresolved in-scope finding.
+- No model/101 run or CI query. These deterministic results do not measure live
+  latency, provider behavior or a new complete saved-run directory size. Historical
+  raw records remain unchanged. No push is authorized for this slice.
+
 
 ### Cleanup closeout and next-step review - 2026-10-26
 

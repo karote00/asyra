@@ -3391,9 +3391,7 @@ it('execution proof checks all acknowledged parts before returning deferred capt
         if (action.name === AiActionNames.APPLY_PREPARED_DESIGN)
           result = { status: 'complete', compositionId: 'part-' + ++writes }
         else if (action.name === AiActionNames.REVIEW_DESIGN) {
-          expect(input.measurementTargets).toEqual(
-            ['part-1', 'part-2'].filter((id) => id !== input.elementId)
-          )
+          expect(input.measurementTargets).toBe('descendants')
           result = {
             complete: true,
             checkedElements: 2,
@@ -10364,4 +10362,78 @@ it('execution proof prepares explicit attachment uses through the existing owner
   } finally {
     stats.mockRestore()
   }
+})
+
+it('execution proof delivers automatic mechanical scope without accumulating candidates', async () => {
+  // This node-only proof checks the server boundary. The registered direct
+  // consumer integration runs actual Runtime, material and browser reviewer owners.
+  const ids = Array.from({ length: 128 }, (_, i) => `leaf-${i}`)
+  const review = {
+    name: AiActionNames.REVIEW_DESIGN,
+    description: 'Review',
+    inputSchema: {}
+  }
+  const checks = createDesignCheckResults()
+  const mutations = {
+    name: AiActionNames.UPDATE_DESIGN_ELEMENT,
+    description: 'Update',
+    inputSchema: {}
+  }
+  let writes = 0
+  let exchanges = 0
+  let reads = 0
+  const owner = createOperationOwner(
+    [mutations, review],
+    {
+      modelActions: (a) => a,
+      resolveBatch: (a) => a,
+      checkResults: checks
+    },
+    async (batch) => {
+      exchanges++
+      const actionResults = batch.actions.map((action) => {
+        let result: unknown
+        if (action.name === mutations.name) {
+          writes++
+          result = {
+            status: 'complete',
+            mutationScope: {
+              complete: true,
+              elementIds: ids,
+              removedElementIds: []
+            }
+          }
+        } else {
+          expect(action.name).toBe(review.name)
+          expect(action.arguments).toMatchObject({
+            measurementTargets: 'descendants'
+          })
+          reads++
+          result = {
+            complete: true,
+            checkedElements: 1,
+            findings: [],
+            coveredMeasurementTargets: [],
+            evidence: { sessionId: 'proof', revision: 1, receiptId: action.id }
+          }
+        }
+        return { actionId: action.id, actionName: action.name, result }
+      })
+      return { context: {}, actionResults } as AiBatchReceipt
+    }
+  )
+  await owner.call(
+    mutations.name,
+    { arguments: { elementId: ids[0] }, inspection: 'defer' },
+    new AbortController().signal
+  )
+  expect(writes).toBe(1)
+  expect(reads).toBe(ids.length)
+  expect(exchanges).toBe(1 + ids.length / 64)
+  expect(checks.summary(ids.map((id) => `measurement:${id}`)).counts).toEqual({
+    pass: ids.length,
+    fail: 0,
+    stale: 0,
+    unverified: 0
+  })
 })

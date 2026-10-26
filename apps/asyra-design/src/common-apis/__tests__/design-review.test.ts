@@ -957,3 +957,27 @@ it('checks rotated oval extents without bypassing frame overflow or unsupported 
     unsupported.findings.some((f) => f.kind === 'rotated-bounds-unchecked')
   ).toBe(true)
 })
+
+it('selects completed descendants without caller candidates and preserves explicit scope', async () => {
+  const f = retainedFixture()
+  f.data.f.children?.push('leaf')
+  f.data.leaf = { type: 'rectangle', parentId: 'f' }
+  f.geometry.leaf = { x: 0, y: 0, width: 5, height: 5, rotation: 0 }
+  const selected = await f.review.capture('f', undefined, 'descendants')
+  expect(selected.coveredMeasurementTargets).toEqual(['t', 'leaf'])
+  const reads = f.apis.read.mock.calls.length
+  expect(await f.review.capture('f', undefined, [])).toMatchObject({
+    evidence: selected.evidence,
+    coveredMeasurementTargets: []
+  })
+  expect(
+    await f.review.capture('f', undefined, ['outside', 't', 't'])
+  ).toMatchObject({
+    coveredMeasurementTargets: ['t']
+  })
+  expect(f.apis.read).toHaveBeenCalledTimes(reads)
+  expect(await f.review.capture('t', undefined, 'descendants')).toMatchObject({
+    coveredMeasurementTargets: []
+  })
+  f.review.dispose()
+})

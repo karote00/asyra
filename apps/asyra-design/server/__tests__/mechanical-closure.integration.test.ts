@@ -339,6 +339,12 @@ it('selects recorded mechanical coverage before reconciliation without probing u
       controller.signal
     )
   expect(exchanges).toHaveLength(roots.length)
+  expect
+    .soft(
+      (exchanges[0].request as { actions: { arguments: object }[] }).actions[0]
+        .arguments
+    )
+    .not.toHaveProperty('measurementTargets')
   expect(checks.read({ includePassed: true }).items).toHaveLength(roots.length)
   expect(
     checks
@@ -440,10 +446,15 @@ it('selects recorded mechanical coverage before reconciliation without probing u
   data.parent = { type: 'frame', children: descendants }
   for (const id of descendants) data[id].parentId = 'parent'
   change()
-  await owner.call(
-    AiActionNames.REVIEW_DESIGN,
-    { arguments: { elementId: 'parent' } },
-    controller.signal
+  const parentReply = JSON.parse(
+    await owner.call(
+      AiActionNames.REVIEW_DESIGN,
+      { arguments: { elementId: 'parent' } },
+      controller.signal
+    )
+  )
+  expect(parentReply.actionResults[0].result).not.toHaveProperty(
+    'coveredMeasurementTargets'
   )
   expect(exchanges).toHaveLength(roots.length + 74)
   expect(exchanges.at(-2)?.request).toMatchObject({
@@ -465,4 +476,79 @@ it('selects recorded mechanical coverage before reconciliation without probing u
     expect(reviewer.isCurrent(stamp)).toBe(true)
   }
   reviewer.dispose()
+})
+
+it('omits automatic scope when only the root is retained but preserves explicit and full delivery', async () => {
+  const data = {
+    root: { type: 'frame', children: ['child'] },
+    child: { type: 'rectangle', parentId: 'root' }
+  }
+  const reviewer = createDesignReviewer(
+    {
+      read: (id) => data[id as keyof typeof data],
+      computed: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: 0 }),
+      measure: () => [],
+      observeChanges: () => () => undefined
+    },
+    async () => undefined,
+    true
+  )
+  const action = createDesignReviewAction(reviewer.capture, reviewer.isCurrent)
+  const inputs: unknown[] = []
+  const owner = createLocalOperationTools(
+    [action],
+    {
+      modelActions: (a) => a,
+      resolveBatch: (a) => a
+    },
+    async (batch) => ({
+      context: {},
+      actionResults: await Promise.all(
+        batch.actions.map(async (item) => {
+          inputs.push(item.arguments)
+          return {
+            actionId: item.id,
+            actionName: item.name,
+            result: await action.execute(item.arguments as never, {
+              signal: new AbortController().signal
+            })
+          }
+        })
+      )
+    })
+  )
+  const call = async (args: object) =>
+    JSON.parse(
+      await owner.call(action.name, args, new AbortController().signal)
+    )
+  try {
+    await call({ arguments: { elementId: 'root' } })
+    await call({ arguments: { elementId: 'root' } })
+    expect
+      .soft(inputs.slice(0, 2))
+      .toEqual([{ elementId: 'root' }, { elementId: 'root' }])
+    for (const selection of [[], ['child'], 'descendants']) {
+      const reply = await call({
+        arguments: { elementId: 'root', measurementTargets: selection }
+      })
+      expect(reply.actionResults[0].result.coveredMeasurementTargets).toEqual(
+        selection.length ? ['child'] : []
+      )
+    }
+    // Retain a separate root without permitting it to certify this subtree.
+    await call({ arguments: { elementId: 'missing' } })
+    const full = await owner.finishInspection(
+      new Set(['root']),
+      'root',
+      true,
+      new AbortController().signal,
+      false,
+      true
+    )
+    expect(full.actionResults[0].result.coveredMeasurementTargets).toEqual([
+      'child'
+    ])
+  } finally {
+    reviewer.dispose()
+  }
 })

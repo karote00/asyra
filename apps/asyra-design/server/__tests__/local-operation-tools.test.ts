@@ -2402,7 +2402,7 @@ it('does not reuse layout results across edits without canonical revision eviden
       .filter(([b]) => b.actions[0].name === AiActionNames.REVIEW_DESIGN)
       .map(([b]) => b.actions[0].arguments)
   expect(reviews()).toMatchObject([
-    { elementId: 'text', measurementTargets: ['root'] }
+    { elementId: 'text', measurementTargets: 'descendants' }
   ])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
@@ -2410,8 +2410,8 @@ it('does not reuse layout results across edits without canonical revision eviden
     signal
   )
   expect(reviews()).toMatchObject([
-    { elementId: 'text', measurementTargets: ['root'] },
-    { elementId: 'root', measurementTargets: ['text'] }
+    { elementId: 'text', measurementTargets: 'descendants' },
+    { elementId: 'root', measurementTargets: 'descendants' }
   ])
   expect(
     tools.settleOutcome({
@@ -2439,7 +2439,7 @@ it('does not reuse layout results across edits without canonical revision eviden
     signal
   )
   expect(reviews()).toMatchObject([
-    { elementId: 'text', measurementTargets: ['root'] }
+    { elementId: 'text', measurementTargets: 'descendants' }
   ])
   await tools.call(
     AiActionNames.REVIEW_DESIGN,
@@ -2447,8 +2447,8 @@ it('does not reuse layout results across edits without canonical revision eviden
     signal
   )
   expect(reviews()).toMatchObject([
-    { elementId: 'text', measurementTargets: ['root'] },
-    { elementId: 'root', measurementTargets: ['text'] }
+    { elementId: 'text', measurementTargets: 'descendants' },
+    { elementId: 'root', measurementTargets: 'descendants' }
   ])
   expect(
     tools.settleOutcome({

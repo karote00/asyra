@@ -8,13 +8,16 @@ import {
 } from './tool-contract'
 import type { InspectionEvidenceStamp } from './inspection-evidence'
 import type { AiActionDefinition } from '@asyra/ai-agent-runtime'
-import { reviewDesign } from '../common-apis/design-review'
+import {
+  reviewDesign,
+  type MechanicalCoverageSelection
+} from '../common-apis/design-review'
 import { AiActionNames } from '../constants'
 type ReviewResult = Awaited<ReturnType<typeof reviewDesign>>
 type ReviewHandler = (
   elementId: string,
   signal?: AbortSignal,
-  measurementTargets?: readonly string[]
+  measurementTargets?: MechanicalCoverageSelection
 ) => Promise<
   Omit<ReviewResult, 'observation'> &
     Partial<Pick<ReviewResult, 'observation'>> & {
@@ -27,7 +30,7 @@ export const createDesignReviewAction = (
   isCurrent?: (stamp: InspectionEvidenceStamp) => boolean
 ): AiActionDefinition<{
   elementId: string
-  measurementTargets?: string[]
+  measurementTargets?: MechanicalCoverageSelection
 }> => ({
   ...actionToolSemantics(
     AiActionNames.REVIEW_DESIGN,
@@ -71,7 +74,7 @@ export const createDesignReviewAction = (
       ]
     )
   ),
-  revision: 6,
+  revision: 7,
   composition: 'allowed',
   verification: {
     statusPath: '/verification/status',
@@ -91,11 +94,16 @@ export const createDesignReviewAction = (
         maxLength: 256
       },
       measurementTargets: {
-        type: 'array',
-        uniqueItems: true,
-        items: { type: 'string', minLength: 1, maxLength: 256 },
+        anyOf: [
+          {
+            type: 'array',
+            uniqueItems: true,
+            items: { type: 'string', minLength: 1, maxLength: 256 }
+          },
+          { type: 'string', const: 'descendants' }
+        ],
         description:
-          'Optional existing measurement targets to select from captured coverage. Returned coveredMeasurementTargets identifies scope only; validate the receipt to reconcile findings and independent evidence. Uncovered targets remain unchanged.'
+          'Select explicit target IDs (empty means none), or descendants for actual captured descendants excluding the root. Returned coveredMeasurementTargets identifies scope only; validate the receipt to reconcile compatible current obligations. Uncovered targets remain unchanged. No caller candidate list is needed for automatic checking.'
       }
     }
   },

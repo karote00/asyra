@@ -1,5 +1,31 @@
 # @asyra/asyra-design
 
+## Pending automatic mechanical coverage delivery
+
+```update-note
+{
+  "change": "automatic-mechanical-coverage-delivery",
+  "owner": "Asyra Design inspection",
+  "summary": "Select actual captured descendants in the existing review exchange instead of repeating cumulative candidate IDs; retain exact scope, validation and partial recovery.",
+  "sources": [
+    "apps/asyra-design/src/common-apis/design-review.ts",
+    "apps/asyra-design/src/ai/review-action.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/__tests__/mechanical-inspection.integration.test.ts",
+    "apps/asyra-design/server/__tests__/mechanical-closure.integration.test.ts",
+    "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
+    "apps/asyra-design/src/ai/__tests__/review-action.test.ts",
+    "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/flow-contracts.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing explicit and empty review selections remain valid. The App composes the new selection from the current registered contract; document data, mutation owners and recovery entrypoints are unchanged."
+}
+```
+
 ## Pending request cleanup after work cutoff
 
 ```update-note

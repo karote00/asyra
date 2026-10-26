@@ -1561,6 +1561,9 @@ export const createLocalOperationTools = (
     options.reviewTargetId ? [options.reviewTargetId] : []
   )
   const measuredTargets = new Map<string, InspectionEvidenceStamp | undefined>()
+  const hasOtherMeasuredTargets = (elementId: unknown) =>
+    measuredTargets.size >
+    (typeof elementId === 'string' && measuredTargets.has(elementId) ? 1 : 0)
   let inspectionUnavailable = false
   let measurementPending = false
   const mutationScopeId = 'mutation-scope:request'
@@ -1689,9 +1692,9 @@ export const createLocalOperationTools = (
     signal?: AbortSignal
   ) => {
     if (!Array.isArray(coveredMeasurementTargets)) return
-    const covered = new Set(coveredMeasurementTargets)
-    const targets = [...measuredTargets.keys()].filter(
-      (id) => id !== elementId && covered.has(id)
+    const targets = [...new Set(coveredMeasurementTargets)].filter(
+      (id): id is string =>
+        typeof id === 'string' && id !== elementId && measuredTargets.has(id)
     )
     for (let offset = 0; offset < targets.length; offset += 64) {
       signal?.throwIfAborted()
@@ -2063,15 +2066,15 @@ export const createLocalOperationTools = (
       for (let offset = 0; offset < elementIds.length;) {
         signal?.throwIfAborted()
         const ids = elementIds.slice(offset, offset + measurementBatchSize)
-        const candidates = [...new Set([...measuredTargets.keys(), ...ids])]
         const actions = ids.map((elementId) => {
-          const measurementTargets = candidates.filter((id) => id !== elementId)
           return {
             id: randomUUID(),
             name: AiActionNames.REVIEW_DESIGN,
             arguments: {
               elementId,
-              ...(measurementTargets.length ? { measurementTargets } : {})
+              ...(hasOtherMeasuredTargets(elementId) || ids.length > 1
+                ? { measurementTargets: 'descendants' }
+                : {})
             },
             summary: 'Checking the layout'
           }
@@ -3964,9 +3967,31 @@ export const createLocalOperationTools = (
         )
       }
       const serializeReceipt = <T extends AiBatchReceipt>(value: T) => {
-        const submittedIds = new Set(batchActions.map((action) => action.id))
+        const submitted = new Map(
+          batchActions.map((action) => [action.id, action])
+        )
+        if (args.response !== 'full' && operationArguments.response !== 'full')
+          value = {
+            ...value,
+            actionResults: value.actionResults.map((entry) => {
+              const original = submitted.get(entry.actionId)?.arguments
+              if (
+                entry.actionName !== AiActionNames.REVIEW_DESIGN ||
+                (isRecord(original) &&
+                  original.measurementTargets !== undefined) ||
+                !isRecord(entry.result) ||
+                !('coveredMeasurementTargets' in entry.result)
+              )
+                return entry
+              // Automatic reconciliation has already consumed this internal scope.
+              // The observed browser receipt retains it for diagnostics/recovery.
+              const { coveredMeasurementTargets: _coverage, ...result } =
+                entry.result
+              return { ...entry, result }
+            })
+          }
         const followupActionCount = value.actionResults.filter(
-          (entry) => !submittedIds.has(entry.actionId)
+          (entry) => !submitted.has(entry.actionId)
         ).length
         const { context: _context, ...rest } = value
         const output = batchMode
@@ -4032,23 +4057,13 @@ export const createLocalOperationTools = (
           explanation: message,
           actions: batchActions.map((action) => {
             const args = action.arguments
-            const measurementTargets =
-              action.name === AiActionNames.REVIEW_DESIGN &&
-              isRecord(args) &&
-              args.measurementTargets === undefined
-                ? [...measuredTargets.keys()].filter(
-                    (id) => id !== args.elementId
-                  )
-                : []
             return {
               ...action,
-              ...(measurementTargets.length && isRecord(args)
-                ? {
-                    arguments: {
-                      ...args,
-                      measurementTargets
-                    }
-                  }
+              ...(action.name === AiActionNames.REVIEW_DESIGN &&
+              isRecord(args) &&
+              hasOtherMeasuredTargets(args.elementId) &&
+              args.measurementTargets === undefined
+                ? { arguments: { ...args, measurementTargets: 'descendants' } }
                 : {}),
               summary: message
             }
