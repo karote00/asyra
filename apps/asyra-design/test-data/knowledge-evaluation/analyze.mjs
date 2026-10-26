@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { parseExecutionRecord } from '@asyra/ai-agent-runtime'
 import { observeKnowledgeUse } from './representation.mjs'
 import { assessRecordedChanges } from './assessment.mjs'
+import { restorePublicActivity } from './public-activity.mjs'
 
 export function summarizeCalls(rows) {
   const starts = new Map()
@@ -164,45 +165,58 @@ export function restoreToolImages(directory, rows) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2)
+  const activityOnly = args.length === 2 && args[1] === '--activities'
   if (
     !args[0] ||
-    ![1, 3].includes(args.length) ||
-    (args.length === 3 && args[1] !== '--assessment')
+    (!activityOnly &&
+      (![1, 3].includes(args.length) ||
+        (args.length === 3 && args[1] !== '--assessment')))
   )
     throw new Error(
-      'Usage: analyze.mjs <run-directory> [--assessment <assessment.json>]'
+      'Usage: analyze.mjs <run-directory> [--activities | --assessment <assessment.json>]'
     )
   const directory = path.resolve(args[0])
   const run = JSON.parse(fs.readFileSync(path.join(directory, 'run.json')))
   if (
     !Array.isArray(run.sourceRequestIds) ||
-    run.sourceRequestIds.length === 0 ||
+    !run.sourceRequestIds.length ||
     run.sourceRequestIds.some((id) => typeof id !== 'string' || !id) ||
-    typeof run.recordingDirectory !== 'string' ||
-    [
-      'final-view',
-      'persistence',
-      'checkpoint',
-      'recording',
-      'reload',
-      'source-verification',
-      'cleanup-browser',
-      'cleanup-browser-server'
-    ].some((name) => run.evidence?.[name]?.status !== 'complete') ||
-    run.failure ||
-    run.stopFailure ||
-    run.cleanupStopFailure ||
-    Object.values(run.evidence ?? {}).some(
-      (stage) => stage.status !== 'complete'
-    ) ||
-    !Number.isFinite(Date.parse(run.sentAt)) ||
-    !Number.isFinite(run.elapsedMs) ||
-    run.elapsedMs < 0 ||
-    !['success', 'no-change'].includes(run.outcome)
+    typeof run.recordingDirectory !== 'string'
+  )
+    throw new Error('Missing execution source identities')
+  if (
+    !activityOnly &&
+    (!Array.isArray(run.sourceRequestIds) ||
+      run.sourceRequestIds.length === 0 ||
+      run.sourceRequestIds.some((id) => typeof id !== 'string' || !id) ||
+      typeof run.recordingDirectory !== 'string' ||
+      [
+        'final-view',
+        'persistence',
+        'checkpoint',
+        'recording',
+        'reload',
+        'source-verification',
+        'cleanup-browser',
+        'cleanup-browser-server'
+      ].some((name) => run.evidence?.[name]?.status !== 'complete') ||
+      run.failure ||
+      run.stopFailure ||
+      run.cleanupStopFailure ||
+      Object.values(run.evidence ?? {}).some(
+        (stage) => stage.status !== 'complete'
+      ) ||
+      !Number.isFinite(Date.parse(run.sentAt)) ||
+      !Number.isFinite(run.elapsedMs) ||
+      run.elapsedMs < 0 ||
+      !['success', 'no-change'].includes(run.outcome))
   )
     throw new Error(
       'Incomplete evaluation capture; retain raw evidence without a quality report'
     )
+  const nativeBoundaries = run.nativeBoundaryEvidence
+    ? readPayload(directory, run.nativeBoundaryEvidence)
+    : undefined
   const recordingDirectory = path.resolve(run.recordingDirectory)
   const streams = []
   const expectedAttempts = new Map()
@@ -239,11 +253,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   for (const { file, text, first } of records) {
     if (!reachable.has(first.sourceRequestId)) continue
     const parsed = parseExecutionRecord(text)
-    if (!parsed.complete)
+    if (!activityOnly && !parsed.complete)
       throw new Error(
         `Incomplete execution record ${file}: ${parsed.issues.join('; ')}`
       )
     if (
+      !activityOnly &&
       expectedAttempts.has(first.sourceRequestId) &&
       first.purpose === 'drawing' &&
       parsed.outcome !== 'completed'
@@ -270,25 +285,47 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       )
     const rows = parsed.records
     const summary = summarizeCalls(rows)
-    for (const call of summary.calls) {
-      call.inputValue = readPayload(recordingDirectory, call.input)
-      call.outputValue = readPayload(recordingDirectory, call.output)
-      call.payloadAvailability = {
-        input: call.input !== null,
-        output: call.output !== null
+    if (!activityOnly)
+      for (const call of summary.calls) {
+        call.inputValue = readPayload(recordingDirectory, call.input)
+        call.outputValue = readPayload(recordingDirectory, call.output)
+        call.payloadAvailability = {
+          input: call.input !== null,
+          output: call.output !== null
+        }
       }
-    }
+    const nativeStream = nativeBoundaries?.streams.find(
+      (stream) => stream.requestId === parsed.requestId
+    )
+    if (
+      nativeStream &&
+      (nativeStream.startedAt !== first.startedAt ||
+        nativeStream.sourceRequestId !== first.sourceRequestId)
+    )
+      throw new Error('Native diagnostic stream provenance mismatch')
     streams.push({
+      nativeDiagnostics: nativeStream ?? {
+        status: 'unavailable',
+        reason: 'not-captured'
+      },
       file,
       requestId: parsed.requestId,
       sourceRequestId: first.sourceRequestId,
       recordComplete: parsed.complete,
+      recordIssues: parsed.issues,
+      activityTimeline: restorePublicActivity(
+        rows,
+        (ref) => readPayload(recordingDirectory, ref),
+        nativeStream?.diagnostics.length === 1
+          ? nativeStream.diagnostics[0]
+          : undefined
+      ),
       providerOutcome: parsed.outcome,
       purpose: first.purpose,
       model: first.model,
       effort: first.effort,
       ...summary,
-      images: restoreToolImages(recordingDirectory, rows),
+      images: activityOnly ? [] : restoreToolImages(recordingDirectory, rows),
       knowledgeUse: observeKnowledgeUse(summary.calls)
     })
   }
@@ -302,7 +339,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     firstContentMs: run.firstContentMs,
     streams
   }
-  if (run.seed) {
+  if (!activityOnly && run.seed) {
     const before = JSON.parse(
         fs.readFileSync(path.join(directory, 'before.json'))
       ),
@@ -315,9 +352,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       run.arm === 'transfer' ? 110 : 140
     )
   }
-  analysis.attribution = assessRecordedChanges(directory, args[2])
+  if (!activityOnly)
+    analysis.attribution = assessRecordedChanges(directory, args[2])
   fs.writeFileSync(
-    path.join(directory, 'analysis.json'),
+    path.join(
+      directory,
+      activityOnly ? 'activity-analysis.json' : 'analysis.json'
+    ),
     JSON.stringify(analysis, null, 2)
   )
   console.log(

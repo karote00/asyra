@@ -181,6 +181,62 @@ describe('reference use downstream integration', () => {
     select()
     return { review, results, select, receipts }
   }
+  it('preserves exact reference uses in scope recovery and rejects later source changes', () => {
+    const { review, select, receipts } = setupReview()
+    const first = review.inspect('entrance', true, true)?.inspectionId
+    if (!first) throw new Error('Expected retained first inspection')
+    const selection = {
+      criterionId: 'detail',
+      unitId: 'entrance',
+      inspectionIds: [first],
+      referenceUses: [receipts()[0]]
+    }
+    const bound = review.bindReview('visual', [selection])
+    review.recordBoundReview({
+      ...bound,
+      final: false,
+      checks: bound.checks.map((check) => ({
+        ...check,
+        status: 'pass',
+        evidence: 'Observed the selected source'
+      }))
+    })
+    const second = review.inspect('entrance', true, false, {
+      x: 1,
+      y: 1,
+      width: 10,
+      height: 10
+    })?.inspectionId
+    if (!second) throw new Error('Expected retained second inspection')
+    const requested = [{ ...selection, inspectionIds: [second] }]
+    const saved = structuredClone(requested)
+    const before = review.readChecks({ includePassed: true })
+    const recovery = JSON.parse(
+      JSON.stringify(review.judgmentHandoff([second], 'visual', requested))
+    )
+    expect(requested).toEqual(saved)
+    expect(review.readChecks({ includePassed: true })).toEqual(before)
+    expect(recovery.next.arguments.bindChecks[0]).toMatchObject(saved[0])
+    const retry = recovery.next.arguments.bindChecks
+    retry[0].supersedes.reason = 'Review the newly requested local scope'
+    expect(review.bindReview('visual', retry).checks[0].referenceUses).toEqual(
+      selection.referenceUses
+    )
+    select([
+      { ...use(), region: { x: 11, y: 20, width: 30, height: 40 } },
+      use('crown')
+    ])
+    const rejected = review.judgmentHandoff([second], 'visual', retry)
+    expect(rejected).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
+    expect(
+      review
+        .readChecks({ includePassed: true })
+        .items.find((item) => item.unitId === 'entrance')?.status
+    ).toBe('stale')
+  })
   it('invalidates only the selected local use and rejects a late bound judgment without clearing independent passes', () => {
     const { review, select, receipts } = setupReview()
     const whole = review.inspect('tower', true, true)?.inspectionId

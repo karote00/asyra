@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import type { InspectionDependencyChange } from '../../src/common-apis/inspection-dependencies'
 import recorded from './fixtures/recorded-101/review-usage-20261025.json'
+import recordedRecovery from './fixtures/recorded-101/binding-recovery-20261026.json'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { invokeLocalTool } from '../local-tool-invocation'
 import { operationInputIssue } from '../operation-input-schema'
@@ -124,6 +125,7 @@ async function verifySelectedReviewFlow() {
     }
     return JSON.parse(reply.text)
   }
+  const guideReplyBytes: Record<string, number> = {}
   const guide = async (operation: string) => {
     const result = await call('describe_design_apis', {
       names: ['review_drawing'],
@@ -132,6 +134,7 @@ async function verifySelectedReviewFlow() {
     })
     expect(result.toolOutcome?.status, JSON.stringify(result)).toBe('success')
     expect(result.contentDelivery).toBeUndefined()
+    guideReplyBytes[operation] = Buffer.byteLength(JSON.stringify(result))
     const selected = result.tools[0]
     if (operation !== 'record')
       expect(selected.invocationExample.invocation).toBeDefined()
@@ -450,6 +453,126 @@ async function verifySelectedReviewFlow() {
     const surviving = await judge(recoveredBinding.next)
     expect(surviving.recordedChecks[0].status).toBe('pass')
     expect(surviving.accepted).toBe(false)
+
+    // Exercise the published recovery through real evidence and dispatcher owners.
+    // Both declared units change scope; a separate whole-view pass must survive.
+    const stable = await call(invocation.tool, {
+      phase: 'visual',
+      final: false,
+      inspections: [{ elementId: ids[1], checks: [{ criterionId: 'overall' }] }]
+    })
+    await judge(stable.next)
+    const beforeScopeChange = await call('read_design_checks', {
+      view: 'details',
+      includePassed: true
+    })
+    const savedLookup = await call(
+      'describe_design_apis',
+      recordedRecovery.bindLookup
+    )
+    const lookupBytes = Buffer.byteLength(JSON.stringify(savedLookup))
+    const readCount = reads
+    const beforeScopeBytes = bytes
+    const changed = await call(invocation.tool, {
+      phase: 'visual',
+      final: false,
+      inspections: ids.map((elementId, index) => ({
+        elementId,
+        view: 'detail',
+        checks: [
+          { criterionId: 'appearance', unitId: ['left', 'right'][index] }
+        ]
+      }))
+    })
+    expect(changed.toolOutcome.status, JSON.stringify(changed)).toBe('partial')
+    expect(changed.recordedChecks).toEqual([])
+    expect(
+      operationInputIssue(
+        changed,
+        (text ? JSON.parse(text) : fullValue).tools[0].partialOutputSchema
+      )
+    ).toBeUndefined()
+    expect(changed.next.requiredInputs).toEqual([
+      'bindChecks[0].supersedes.reason',
+      'bindChecks[1].supersedes.reason'
+    ])
+    expect(changed.next.arguments.bindChecks).toEqual(
+      ['left', 'right'].map((unitId, index) => ({
+        criterionId: 'appearance',
+        unitId,
+        inspectionIds: [changed.inspectionIds[index]],
+        supersedes: {
+          revision: beforeScopeChange.items.find(
+            (item: { unitId?: string }) => item.unitId === unitId
+          ).revision
+        }
+      }))
+    )
+    const recoveryStartBytes = bytes
+    const captureCount = captures.length
+    const retry = structuredClone(changed.next.arguments)
+    expect(operationInputIssue(retry, canonical)).toBeTruthy()
+    for (const check of retry.bindChecks)
+      check.supersedes.reason = 'Inspect the changed local region explicitly'
+    expect(operationInputIssue(retry, canonical)).toBeUndefined()
+    const aborted = new AbortController()
+    aborted.abort()
+    await expect(
+      call(changed.next.tool, retry, aborted.signal)
+    ).rejects.toThrow()
+    const retryBinding = await call(changed.next.tool, retry)
+    expect(retryBinding.reviewOperation).toBe('bind')
+    const recoveryCommitted = await judge(retryBinding.next)
+    expect(recoveryCommitted.recordedChecks).toHaveLength(2)
+    expect(captures).toHaveLength(captureCount)
+    expect(reads).toBe(readCount)
+    // The complete retry plus record costs less than the old extra lookup alone.
+    const retryBytes = bytes - recoveryStartBytes
+    expect(retryBytes).toBeLessThan(lookupBytes)
+    // Include the enlarged initial response contract, not only the avoided lookup.
+    // The old route also needs the same successful bind/record exchange; omitting
+    // its failed capture entirely makes this a conservative baseline lower bound.
+    const recoveryDeliveryBytes =
+      guideReplyBytes.capture +
+      recoveryStartBytes -
+      beforeScopeBytes +
+      retryBytes
+    const recordedRecoveryLowerBoundBytes =
+      recordedRecovery.captureUsageReplyBytes +
+      recordedRecovery.bindLookupReplyBytes +
+      retryBytes
+    expect(recoveryDeliveryBytes).toBeLessThan(recordedRecoveryLowerBoundBytes)
+    const afterScopeChange = await call('read_design_checks', {
+      view: 'details',
+      includePassed: true
+    })
+    expect(
+      afterScopeChange.items.find(
+        (item: { criterionId: string }) => item.criterionId === 'overall'
+      )
+    ).toEqual(
+      beforeScopeChange.items.find(
+        (item: { criterionId: string }) => item.criterionId === 'overall'
+      )
+    )
+    // A stale reason is not silently reused; each conflicting current revision is delivered.
+    const staleRetry = await call(changed.next.tool, retry)
+    expect(staleRetry.toolOutcome).toMatchObject({
+      status: 'failed',
+      settlement: 'not-started'
+    })
+    expect(staleRetry.next.requiredInputs).toEqual(changed.next.requiredInputs)
+    expect(staleRetry.next.arguments.bindChecks[0].supersedes).toEqual({
+      revision: recoveryCommitted.recordedChecks[0].revision
+    })
+    invalidate?.({ elementIds: [ids[0]] })
+    const expired = await call(changed.next.tool, {
+      ...retry,
+      bindChecks: [retry.bindChecks[0]]
+    })
+    expect(expired.toolOutcome.status).not.toBe('success')
+    expect(captures).toHaveLength(captureCount)
+    expect(bytes - beforeScopeBytes).toBeGreaterThan(retryBytes)
     expect(await core.save()).toEqual(document)
     expect(
       dispatched.every((name) =>
@@ -472,7 +595,17 @@ async function verifySelectedReviewFlow() {
           savedContractBytes: baselineContractBytes,
           contractReads: 2,
           knownOperationContractReads: 1,
-          savedContractReads: recorded.queries.length
+          savedContractReads: recorded.queries.length,
+          bindingRecovery: {
+            recoveryDeliveryBytes,
+            recordedRecoveryLowerBoundBytes,
+            captureAndRetryBytes:
+              recoveryStartBytes - beforeScopeBytes + retryBytes,
+            retryAndRecordBytes: retryBytes,
+            avoidedLookupBytes: lookupBytes,
+            contractReads: reads - readCount,
+            repeatedCaptures: captures.length - captureCount
+          }
         }
       })
     )

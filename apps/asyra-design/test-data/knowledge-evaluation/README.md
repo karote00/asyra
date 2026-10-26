@@ -12,6 +12,16 @@ This runner uses a real local subscription and actual Design UI/tools. It is not
 an automated model-quality test and is never run by ordinary tests or CI. The
 analysis tests are deterministic and included in Design's `test:local` command.
 
+Native diagnostic boundaries are collected once after work into a digest-bound
+`native-boundaries.json`, linked from `run.json.nativeBoundaryEvidence`. The
+existing `analyze.mjs --activities` mode merges the selected metadata with public
+arrival events. Collection uses the exact recorded thread and unique native
+process in the run window, with read-only access to Codex diagnostics. It is
+version-sensitive supplemental evidence, not a supported parameter-progress API.
+Missing databases, ambiguous ownership and unsupported formats stay unavailable.
+Unmatched item starts never imply completion; no private diagnostic bodies are
+saved. This adds no model request, tool round trip or product status controller.
+
 ## Current evidence-only verification
 
 Run the permanent, deterministic suite without sending a model request:
@@ -353,3 +363,13 @@ idle. The existing UI owns settlement; successful individual tool calls are not
 substitutes. Preserve `partial` and send only the declared follow-up before the
 shared deadline. Captured final partial reports complete evidence collection, not
 artwork acceptance. No failure/cancellation is promoted or initial work replayed.
+
+### Public activity timeline
+
+Run `node test-data/knowledge-evaluation/analyze.mjs <run-directory> --activities`
+to restore saved public Codex messages, reasoning summaries and plans through
+verified payload references. This read-only mode accepts interrupted executions,
+retains their incomplete status and does not certify artwork or capture quality.
+The timeline includes lifecycle, transport and tool events; gaps mean no recorded
+event, with no inferred cause. `firstContentMs` remains a separate UI observation.
+Private reasoning and unexposed argument progress are not reconstructed.

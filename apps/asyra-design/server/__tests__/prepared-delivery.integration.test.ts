@@ -1,3 +1,5 @@
+import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
+import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { readFileSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
 import { expect, it, vi } from 'vitest'
@@ -564,6 +566,59 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     expect(reloaded.sceneTree).toEqual(created.sceneTree)
     expect(core.getUIProperty('flattenedElementIds')).toEqual(expectedIds)
     expect(uiSnapshots).toEqual(savedSnapshots)
+    const recoveryDesigns = createLocalDesignTools(definitions)
+    const recoveryOperations = createLocalOperationTools(
+      definitions,
+      recoveryDesigns,
+      dispatch
+    )
+    const workflow = createLocalDesignWorkflow(
+      recoveryDesigns,
+      recoveryOperations
+    )
+    const signal = new AbortController().signal
+    const rejected = JSON.parse(
+      await workflow.call(
+        AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
+        {
+          draft: {
+            type: 'group',
+            name: 'Additional fin',
+            projection: nonplanar.projection,
+            children: [nonplanar.face]
+          },
+          inspection: 'defer'
+        },
+        signal
+      )
+    )
+    expect(rejected.settlement).toBe('not-started')
+    expect(dispatch).toHaveBeenCalledTimes(1)
+    expect(await core.save()).toEqual(reloaded)
+    const request = { ...rejected.repairGuide.arguments, inspection: 'defer' }
+    request.repair.replacements[0].value = nonplanar.replacement
+    const repaired = JSON.parse(
+      await workflow.call(
+        AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
+        request,
+        signal
+      )
+    )
+    expect(repaired.failedStep).toBeUndefined()
+    expect(dispatch).toHaveBeenCalledTimes(2)
+    const withFin = await core.save()
+    for (const id of expectedIds)
+      expect(withFin.sceneTree.elements[id]).toEqual(
+        reloaded.sceneTree.elements[id]
+      )
+    for (const [id, value] of Object.entries(reloaded.props))
+      expect(withFin.props[id]).toEqual(value)
+    factory.undo()
+    expect(await core.save()).toEqual(reloaded)
+    factory.redo()
+    expect(await core.save()).toEqual(withFin)
+    core.load(withFin)
+    expect(await core.save()).toEqual(withFin)
   } finally {
     uiSubscription?.unsubscribe()
     await runtime.dispose()

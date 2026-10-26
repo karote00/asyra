@@ -755,6 +755,7 @@ export const createAiExecutionProfiler = (
           }
           if (
             (stage === 'provider_item_completed' ||
+              stage === 'provider_notification' ||
               stage === 'orchestration_completed') &&
             isRecord(evidence.nativeOutput)
           ) {

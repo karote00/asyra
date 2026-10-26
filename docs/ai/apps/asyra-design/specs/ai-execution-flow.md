@@ -1158,6 +1158,36 @@ boundaries remain incomplete. Native wait duration comes from lifecycle events,
 not the requested sleep duration. Older v2 records remain readable with unknown
 input/output utility and unavailable execution starts.
 
+Public native activities are retained through the existing redacting payload
+sink: agent message deltas and completed text, readable reasoning summary deltas
+and completed summaries, proposed-plan text and turn plan step/status updates.
+Request concise public summaries without changing model effort or adding turns.
+Private reasoning content and raw reasoning text deltas remain excluded. Attribute
+content to its exact thread/turn/item; a turn-scoped plan notification may omit
+threadId only when its turnId matches the active turn. Save each delta once, not
+cumulative prefixes; completed values are authoritative and are not concatenated
+with their deltas. Empty, missing, malformed and failed retention stay distinct.
+Activity capture cannot reject a tool, replay a mutation or change settlement.
+
+Offline activity analysis verifies retained payload hashes, merges public activity
+with existing lifecycle/tool events in record order, and exposes intervals with no
+recorded activity. It also works on interrupted/partial records without certifying
+completion. Preserve first-content timing separately. Arrival times are activity
+evidence; no-event intervals have no inferred cause. Missing historical payloads
+remain missing. Tests cover the actual adapter/recorder/analyzer handoff, foreign
+turns, partial streams, recording failures and linear delta preservation cost.
+
+Offline evaluation may supplement public activity with selected native diagnostic
+boundaries from a read-only database query. Bind extraction to an exact thread,
+unique native process and run window; preserve row identities and raw-body digests
+but save only allowed item/call/timing metadata, never raw text. Missing databases,
+unsupported formats, ambiguous processes and interrupted items stay unavailable or
+incomplete. Native start, dispatch and host completion are separate facts, not
+parameter progress or a network diagnosis. Never pair events lacking a shared
+identity by temporal proximity. This supplement is version-sensitive diagnostic
+evidence, not a runtime status API. Collection runs after work, cannot change
+settlement, and is consumed by the existing activity analyzer.
+
 The App-server recording sink queues events in order and drains at request
 settlement. Recording errors are reported separately and cannot reject, roll
 back or modify drawing results. Interrupted records have no terminal success;
@@ -3347,6 +3377,21 @@ compensation and save/reload use their existing canonical owners.
 
 ### Retained recovery and review guidance
 
+Nonplanar projected-face rejection preserves its exact source-relative JSON Pointer,
+measured maximum deviation and the existing world-unit tolerance. This applies to
+standalone faces and pattern face/member templates. The retained-draft receipt
+provides the existing repair route and replacement shape without supplying guessed
+geometry. Failure remains not-started; earlier committed work is untouched. The
+consumer uses the supplied pointer and retained draft, not a key-to-index search or
+whole-source retransmission. Invalid/expired repairs and cancellation remain errors.
+When the main workflow publishes that repair template, it supplies its registered
+entry and the original admitted non-draft options, including parent, review plan,
+inspection policy and material source. The model supplies corrected field values;
+it need not reconstruct workflow context. Neither old draft nor previous replacement
+values are copied into the template. Standalone preparation keeps its own route.
+
+
+
 Structural mutation receipts and materialized queries share the retained-context
 owner and bounded byte storage. There is no fixed query-count quota. Historical receipts remain recoverable while retained, never current edit
 authority. Pinned data cannot be evicted to admit unrelated work.
@@ -3386,8 +3431,19 @@ retains successful images but cannot issue a binding for an incomplete check.
 A rejected binding after capture returns a partial handoff with successful image
 receipts and explicit bindChecks recovery. It records no judgments, retains
 independent passes and does not classify settled capture as an unknown canvas
-write. The caller reads affected current revisions before rebinding; no implicit
-supersession, recapture or edit replay.
+write. When declared selections are available, recovery returns those ordered
+checks, their exact image assignments and reference uses in next.arguments.bindChecks.
+The canonical scope validator supplies current revisions for recoverable scope
+conflicts together, including stale supersession attempts; requiredInputs identifies
+the missing redesign reasons. Reasons remain the primary agent's decision. The
+template is revalidated through the ordinary bind route and cannot record judgments,
+silently supersede scope, discard independent passes or authorize stale evidence.
+No contract lookup, recapture or edit replay is needed to reconstruct known inputs.
+Capture followed by binding failure is partial; a binding-only rejection remains
+failed/not-started while returning the same recovery template. A retained image
+from an earlier call does not make the new binding successful or partially applied.
+If no complete selection is known, retain explicit bindChecks selection; never infer
+it from successful subsets of incomplete captures. Other errors remain explicit.
 
 ### Explicit reference uses
 

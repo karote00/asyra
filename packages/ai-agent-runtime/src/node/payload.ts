@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 
-/** Local App-tool diagnostics only. Never call with provider prompts or thought events. */
+/** Local tool/public-activity diagnostics. Never pass prompts or raw reasoning. */
 export const serializeToolPayload = (value: unknown) => {
   const redactions: string[] = []
   const resourceIdentities: { path: string; sha256: string }[] = []

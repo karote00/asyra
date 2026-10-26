@@ -1,3 +1,4 @@
+import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import { projectWorkflowInput } from '../design-workflow-discovery'
 import { informationDeliveryExample } from '../local-information-delivery'
@@ -3263,5 +3264,112 @@ it.each([true, false])(
     expect(
       f.events.filter((e) => e.startsWith('inspect_drawing:'))
     ).toHaveLength(1)
+  }
+)
+
+it.each(['direct', 'faces', 'members'] as const)(
+  'delivers measured nonplanarity and source repair through the real workflow for %s',
+  async (kind) => {
+    const { workflow, execute } = setup()
+    const signal = new AbortController().signal
+    const prior = JSON.parse(
+      await workflow.call('prepare_and_apply_design', { draft }, signal)
+    )
+    expect(prior.failedStep).toBeUndefined()
+    const sourceFace = structuredClone(nonplanar.face)
+    const { type: _type, ...patternFace } = sourceFace
+    const source = {
+      type: 'group',
+      name: 'Independent fins',
+      projection: nonplanar.projection,
+      children:
+        kind === 'direct'
+          ? [sourceFace]
+          : [
+              {
+                type: 'pattern',
+                key: 'fins',
+                name: 'Fins',
+                origin: { x: 0, y: 0, z: 0 },
+                axes: [{ count: 2, step: { x: 0, y: 500, z: 0 } }],
+                [kind]: [kind === 'faces' ? patternFace : sourceFace]
+              }
+            ]
+    }
+    const before = JSON.stringify(source)
+    const rejected = JSON.parse(
+      await workflow.call(
+        'prepare_and_apply_design',
+        {
+          draft: source,
+          parentId: 'existing-parent',
+          inspection: 'defer',
+          response: 'full',
+          message: 'Add fins'
+        },
+        signal
+      )
+    )
+    expect(rejected).toMatchObject({
+      available: false,
+      settlement: 'not-started',
+      failedStep: 'prepare_design',
+      completedSteps: []
+    })
+    expect(execute).toHaveBeenCalledTimes(1)
+    const path =
+      kind === 'direct'
+        ? '/children/0/vertices'
+        : `/children/0/${kind}/0/vertices`
+    expect(rejected.geometryIssue).toMatchObject({
+      code: 'NONPLANAR_FACE',
+      path,
+      key: sourceFace.key,
+      unit: 'world'
+    })
+    expect(rejected.geometryIssue.deviation).toBeCloseTo(4.761041159293034, 10)
+    expect(rejected.geometryIssue.tolerance).toBeCloseTo(
+      0.000010608487168300672,
+      12
+    )
+    expect(rejected.repairGuide.arguments.repair).toEqual({
+      draftId: rejected.draftId,
+      replacements: [{ path }]
+    })
+    expect(rejected.repairGuide.instructions).toContain('value')
+    expect(rejected.repairGuide.tool).toBe('prepare_and_apply_design')
+    expect(rejected.repairGuide.arguments).toMatchObject({
+      parentId: 'existing-parent',
+      inspection: 'defer',
+      response: 'full',
+      message: 'Add fins'
+    })
+    expect(rejected.repairGuide.arguments).not.toHaveProperty('draft')
+
+    const request = structuredClone(rejected.repairGuide.arguments)
+    request.repair.replacements[0].value = nonplanar.replacement
+    const repaired = JSON.parse(
+      await workflow.call(rejected.repairGuide.tool, request, signal)
+    )
+    expect(repaired.failedStep).toBeUndefined()
+    expect(repaired.completedSteps).toContain('prepare_design')
+    expect(execute).toHaveBeenCalledTimes(2)
+    expect(execute.mock.calls.at(-1)?.[0].actions[0].arguments).toMatchObject({
+      parentId: 'existing-parent'
+    })
+    expect(JSON.stringify(source)).toBe(before)
+    expect(prior.failedStep).toBeUndefined()
+    await expect(
+      workflow.call('prepare_and_apply_design', request, AbortSignal.abort())
+    ).rejects.toThrow()
+    expect(execute).toHaveBeenCalledTimes(2)
+    const expired = JSON.parse(
+      await setup().workflow.call('prepare_and_apply_design', request, signal)
+    )
+    expect(expired).toMatchObject({
+      available: false,
+      settlement: 'not-started',
+      failedStep: 'prepare_design'
+    })
   }
 )

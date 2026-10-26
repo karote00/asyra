@@ -5421,7 +5421,7 @@ describe('capture-to-review handoff', () => {
     expect(result).toMatchObject({
       status: 'partial',
       accepted: false,
-      next: { requiredInputs: ['bindChecks'] }
+      next: { requiredInputs: ['bindChecks[0].supersedes.reason'] }
     })
     expect(result.message).toContain('supersession revision')
     expect(result.inspectionIds).toHaveLength(1)
@@ -5441,21 +5441,15 @@ describe('capture-to-review handoff', () => {
         .filter((action) => action.name === AiActionNames.INSPECT_DRAWING)
         .length
     const count = captureCount()
-    const rebound = await f.call(AiDesignToolIds.REVIEW_DRAWING, {
-      phase: 'visual',
-      final: false,
-      bindChecks: [
-        {
-          criterionId: 'view',
-          unitId: 'tiers',
-          inspectionIds: result.inspectionIds,
-          supersedes: {
-            revision: before.items[0].revision,
-            reason: 'Use the current requested crop'
-          }
-        }
-      ]
+    expect(result.next.arguments.bindChecks[0]).toEqual({
+      criterionId: 'view',
+      unitId: 'tiers',
+      inspectionIds: result.inspectionIds,
+      supersedes: { revision: before.items[0].revision }
     })
+    const retry = structuredClone(result.next.arguments)
+    retry.bindChecks[0].supersedes.reason = 'Use the current requested crop'
+    const rebound = await f.call(result.next.tool, retry)
     expect(captureCount()).toBe(count)
     await f.call(AiDesignToolIds.REVIEW_DRAWING, {
       ...rebound.next.arguments,

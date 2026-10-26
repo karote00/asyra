@@ -491,8 +491,17 @@ export const createLocalDesignWorkflow = (
       })
       if (prepared.available && prepared.retainedDraft?.partitions)
         return deliver(prepared)
-      if (!prepared.available || !prepared.applicable)
+      if (!prepared.available || !prepared.applicable) {
+        if (prepared.repairGuide) {
+          const { draft: _draft, repair: _repair, ...context } = input
+          prepared.repairGuide = {
+            ...prepared.repairGuide,
+            tool: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
+            arguments: { ...context, ...prepared.repairGuide.arguments }
+          }
+        }
         return deliver(stoppedAt(prepared, preparation.name))
+      }
       signal.throwIfAborted()
       if (input.plan !== undefined && review) {
         const planned = await runStep(operations, review, input.plan)

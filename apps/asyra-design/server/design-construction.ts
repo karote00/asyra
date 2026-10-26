@@ -32,6 +32,23 @@ export class DesignKeyConflictError extends Error {
     this.name = 'DesignKeyConflictError'
   }
 }
+export class DesignGeometryError extends Error {
+  constructor(
+    readonly issue: {
+      code: 'NONPLANAR_FACE'
+      key: string
+      path: string
+      deviation: number
+      tolerance: number
+      unit: 'world'
+    }
+  ) {
+    super(
+      `Projected face ${issue.key}.vertices: Invalid design construction: nonplanar face. Maximum deviation ${issue.deviation} exceeds tolerance ${issue.tolerance} in world units. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera.`
+    )
+    this.name = 'DesignGeometryError'
+  }
+}
 interface Point3 {
   x: number
   y: number
@@ -137,7 +154,7 @@ const camera = (value: unknown) => {
     y: oy + scale * (se * (sa * p.x + ca * p.y) - ce * p.z)
   })
 }
-const planar = (points: Point3[]) => {
+const planar = (points: Point3[], source?: { key: string; path: string }) => {
   const a = points[0]
   const diff = (b: Point3) => ({ x: b.x - a.x, y: b.y - a.y, z: b.z - a.z })
   let normal: Point3 | undefined
@@ -160,13 +177,25 @@ const planar = (points: Point3[]) => {
     1,
     ...points.map((p) => Math.hypot(...Object.values(diff(p))))
   )
+  const tolerance = extent * 1e-8
+  let deviation = 0
   for (const point of points) {
     const d = diff(point)
-    if (
-      Math.abs(normal.x * d.x + normal.y * d.y + normal.z * d.z) >
-      extent * 1e-8
+    deviation = Math.max(
+      deviation,
+      Math.abs(normal.x * d.x + normal.y * d.y + normal.z * d.z)
     )
-      fail('nonplanar face')
+  }
+  if (deviation > tolerance) {
+    if (source)
+      throw new DesignGeometryError({
+        code: 'NONPLANAR_FACE',
+        ...source,
+        deviation,
+        tolerance,
+        unit: 'world'
+      })
+    fail('nonplanar face')
   }
 }
 
@@ -231,7 +260,8 @@ export function* constructDesignSteps(
     key: string,
     parent?: string,
     template = false,
-    worldBounds?: { min: Point3; max: Point3 }
+    worldBounds?: { min: Point3; max: Point3 },
+    sourcePath = ''
   ): Node => {
     fields(
       node,
@@ -290,8 +320,9 @@ export function* constructDesignSteps(
       }
     })
     try {
-      planar(vertices)
+      planar(vertices, { key, path: `${sourcePath}/vertices` })
     } catch (error) {
+      if (error instanceof DesignGeometryError) throw error
       throw new Error(
         `Projected face ${key}.vertices: ${error instanceof Error ? error.message : 'invalid plane'}. Keep every vertex on the intended plane; split genuinely different planes into separate faces. Reuse the shared camera.`
       )
@@ -353,7 +384,11 @@ export function* constructDesignSteps(
       z: number(v.z, 'pattern z')
     }
   }
-  function* expand(value: Node, parent: string): Generator<void, Node[], void> {
+  function* expand(
+    value: Node,
+    parent: string,
+    sourcePath: string
+  ): Generator<void, Node[], void> {
     fields(
       value,
       [
@@ -453,7 +488,7 @@ export function* constructDesignSteps(
       bounds: { min: Point3; max: Point3 }
       faceKey: string
     }[] = []
-    for (const member of members) {
+    for (const [memberIndex, member] of members.entries()) {
       if (!record(member)) return fail('pattern member')
       if (mixed && member.type === 'surface-grid') {
         const memberKey = label(member.key, 'pattern grid key', 80)
@@ -528,7 +563,9 @@ export function* constructDesignSteps(
         },
         faceKey,
         parent,
-        true
+        true,
+        undefined,
+        `${sourcePath}/${mixed ? 'members' : 'faces'}/${memberIndex}`
       )
       vertexCount += (count - 1) * points.length
       if (vertexCount > limits.expandedPathCommands)
@@ -859,7 +896,8 @@ export function* constructDesignSteps(
       delete node.fillTemplates
       delete node.motifTemplates
     }
-    if (node.type === 'projected-face') node = face(node, key, parent)
+    if (node.type === 'projected-face')
+      node = face(node, key, parent, false, undefined, path)
     nodes.set(key, { node, parent })
     if (node.children !== undefined) {
       if (
@@ -878,7 +916,7 @@ export function* constructDesignSteps(
           for (const item of yield* expandGrid(child, key))
             children.push(yield* copy(item, key, depth + 1, true, childPath))
         } else if (record(child) && child.type === 'pattern') {
-          for (const item of yield* expand(child, key))
+          for (const item of yield* expand(child, key, childPath))
             children.push(yield* copy(item, key, depth + 1, true, childPath))
         } else
           children.push(yield* copy(child, key, depth + 1, false, childPath))

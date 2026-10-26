@@ -1,3 +1,4 @@
+import { selectPublicActivity } from './local-provider-activity'
 import { workflowQueryGuidance } from './design-workflow-discovery'
 import {
   readEvaluationWindow,
@@ -1394,7 +1395,12 @@ const runLocalAiProvider = async (
       )
       return
     }
-    if (params.threadId !== threadId || !threadId) return
+    const matchingTurnPlan =
+      value.method === 'turn/plan/updated' &&
+      params.threadId == null &&
+      turnId &&
+      params.turnId === turnId
+    if (!threadId || (params.threadId !== threadId && !matchingTurnPlan)) return
     if (/^[A-Za-z0-9_/.:-]{1,120}$/.test(value.method)) {
       const itemId = isRecord(params.item) ? params.item.id : undefined
       let errorDiagnostic:
@@ -1410,12 +1416,21 @@ const runLocalAiProvider = async (
         params.turn.error
       )
         errorDiagnostic = providerErrorDiagnostic(params.turn.error)
+      const publicActivity =
+        !turnId || !params.turnId || params.turnId === turnId
+          ? selectPublicActivity(value.method, { ...params, threadId })
+          : undefined
       usage?.trace('provider_notification', {
         method: value.method,
-        nativeThreadId: params.threadId,
+        ...(publicActivity
+          ? { phase: 'public-activity', nativeOutput: publicActivity }
+          : {}),
+        nativeThreadId: threadId,
         nativeTurnId: params.turnId,
         kind: isRecord(params.item) ? params.item.type : undefined,
-        callId: typeof params.itemId === 'string' ? params.itemId : itemId,
+        callId:
+          (typeof params.itemId === 'string' ? params.itemId : itemId) ??
+          (publicActivity ? params.turnId : undefined),
         ...(errorDiagnostic ? { diagnostic: errorDiagnostic } : {})
       })
       notificationCounts.set(
@@ -1904,6 +1919,7 @@ const runLocalAiProvider = async (
       options.retainEvaluationExchange?.('evaluation-work', 'input', {
         threadId,
         input: inputItems,
+        ...(!options.assessmentOnly ? { summary: 'concise' } : {}),
         effort: 'medium'
       })
     await request(
@@ -1911,6 +1927,7 @@ const runLocalAiProvider = async (
       {
         threadId,
         input: inputItems,
+        ...(!options.assessmentOnly ? { summary: 'concise' } : {}),
         effort: 'medium'
       },
       (started) => {

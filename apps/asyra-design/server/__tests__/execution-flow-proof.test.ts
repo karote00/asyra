@@ -212,6 +212,52 @@ it('execution proof resolves batched semantic identities and applies ordered rea
   expect(result.measurementIssues).toHaveLength(1)
   expect(result.measurementIssues[0].targetCount).toBe(2)
   expect(order).toEqual(['prepare', 'apply', 'prepare', 'apply'])
+  const rejection = JSON.parse(
+    await workflow.call(
+      'prepare_and_apply_design',
+      {
+        draft: {
+          type: 'group',
+          name: 'Fin',
+          projection: {
+            azimuth: 35,
+            elevation: 25,
+            scale: 1,
+            originX: 0,
+            originY: 0
+          },
+          children: [
+            {
+              key: 'fin',
+              name: 'Fin',
+              type: 'projected-face',
+              vertices: [
+                { x: 0, y: 0, z: 0 },
+                { x: 10, y: 0, z: 0 },
+                { x: 10, y: 10, z: 0 },
+                { x: 0, y: 10, z: 1 }
+              ]
+            }
+          ]
+        },
+        parentId: 'actual-2',
+        inspection: 'defer',
+        message: 'Add a fin'
+      },
+      signal
+    )
+  )
+  expect(rejection.repairGuide).toMatchObject({
+    tool: 'prepare_and_apply_design',
+    arguments: {
+      parentId: 'actual-2',
+      inspection: 'defer',
+      message: 'Add a fin'
+    }
+  })
+  expect(rejection.repairGuide.arguments).not.toHaveProperty('draft')
+  expect(order).toEqual(['prepare', 'apply', 'prepare', 'apply', 'prepare'])
+
   expect(execute.mock.calls[1][0].actions[0].arguments).toMatchObject({
     parentId: 'actual-2'
   })
@@ -302,6 +348,67 @@ it('execution proof repairs rejected source through the same request preparation
     })
   ).toHaveLength(2)
   expect(source.children[1].key).toBe('part')
+  const nonplanarRecovery = {
+    projection: {
+      azimuth: 35,
+      elevation: 25,
+      scale: 1,
+      originX: 0,
+      originY: 0
+    },
+    face: {
+      type: 'projected-face',
+      key: 'fin',
+      name: 'Fin',
+      vertices: [
+        { x: 0, y: 0, z: 0 },
+        { x: 10, y: 0, z: 0 },
+        { x: 10, y: 10, z: 0 },
+        { x: 0, y: 10, z: 1 }
+      ]
+    },
+    replacement: [
+      { x: 0, y: 0, z: 0 },
+      { x: 10, y: 0, z: 0 },
+      { x: 10, y: 10, z: 0 },
+      { x: 0, y: 10, z: 0 }
+    ]
+  }
+  const invalid = JSON.parse(
+    await tools.call(
+      AiDesignToolIds.PREPARE_DESIGN,
+      {
+        draft: {
+          type: 'group',
+          name: 'Fins',
+          projection: nonplanarRecovery.projection,
+          children: [nonplanarRecovery.face]
+        }
+      },
+      signal
+    )
+  )
+  expect(invalid.geometryIssue).toMatchObject({
+    code: 'NONPLANAR_FACE',
+    path: '/children/0/vertices',
+    unit: 'world'
+  })
+  expect(invalid.repairGuide.tool).toBe(AiDesignToolIds.PREPARE_DESIGN)
+  expect(invalid.geometryIssue.deviation).toBeGreaterThan(
+    invalid.geometryIssue.tolerance
+  )
+  const correction = structuredClone(invalid.repairGuide.arguments)
+  correction.repair.replacements[0].value = nonplanarRecovery.replacement
+  const corrected = JSON.parse(
+    await tools.call(AiDesignToolIds.PREPARE_DESIGN, correction, signal)
+  )
+  expect(corrected.available).toBe(true)
+  expect(
+    tools.resolveTargets({
+      artifactId: repaired.artifactId,
+      keys: ['part', 'second']
+    })
+  ).toHaveLength(2)
 })
 
 it('execution proof preserves partial lookup full recovery and declaration constraints', async () => {
@@ -3036,9 +3143,15 @@ const exerciseMultiscaleEvidence = async () => {
   expect(await bind('appearance', ['foreign-image'], 'combined')).toMatchObject(
     { status: 'partial', recordedChecks: [] }
   )
-  await expect(
-    bind('appearance', [check.inspectionIds[0]], 'combined')
-  ).rejects.toThrow(/scope changed/)
+  expect(
+    await bind('appearance', [check.inspectionIds[0]], 'combined')
+  ).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started',
+    recordedChecks: [],
+    message: expect.stringContaining('scope changed'),
+    next: { requiredInputs: ['bindChecks[0].supersedes.reason'] }
+  })
   const overall = await bind('Overall', [check.inspectionIds[0]])
   expect((await submit(overall, true)).accepted).toBe(true)
   let active = combined
@@ -3360,6 +3473,43 @@ it('execution proof retains regional units without requiring global coverage for
       .read({ includePassed: true })
       .items.filter((item) => item.origin === 'main-agent')
   ).toEqual(beforeRecovery)
+  const scopeFailure = await call(AiDesignToolIds.REVIEW_DRAWING, {
+    phase: 'visual',
+    final: false,
+    inspections: [0, 1].map((index) => ({
+      elementId: `tier-${index}`,
+      region: { x: 1, y: 1, width: 10, height: 10 },
+      checks: [{ criterionId: 'windows', unitId: `tier-${index}` }]
+    }))
+  })
+  expect(scopeFailure.status).toBe('partial')
+  expect(scopeFailure.next.requiredInputs).toEqual([
+    'bindChecks[0].supersedes.reason',
+    'bindChecks[1].supersedes.reason'
+  ])
+  const capturesBeforeBinding = captured.length
+  const retryArguments = structuredClone(scopeFailure.next.arguments)
+  retryArguments.bindChecks.forEach(
+    (selection: { supersedes: { reason: string } }) => {
+      selection.supersedes.reason = 'The requested regional view changed'
+    }
+  )
+  const rebound = await call(scopeFailure.next.tool, retryArguments)
+  const recovered = await call(rebound.next.tool, {
+    ...rebound.next.arguments,
+    checks: rebound.next.arguments.checks.map((selection: object) => ({
+      ...selection,
+      status: 'pass',
+      evidence: 'Observed the explicit new region'
+    }))
+  })
+  expect(recovered.recordedChecks).toHaveLength(2)
+  expect(captured).toHaveLength(capturesBeforeBinding)
+  expect(
+    checkResults
+      .read({ includePassed: true })
+      .items.find((item) => item.unitId === 'tier-3')
+  ).toEqual(beforeRecovery.find((item) => item.unitId === 'tier-3'))
 })
 
 it('execution proof checks all acknowledged parts before returning deferred capture without another model', async () => {
@@ -7269,7 +7419,40 @@ async function readKnowledgeTopic(id: string): Promise<string> {
 }
 
 it('execution proof distinguishes native output observation from tool execution and unavailable argument progress', async () => {
+  const boundaryModule = new URL(
+    '../../test-data/knowledge-evaluation/native-boundaries.mjs',
+    import.meta.url
+  ).href
+  const activityModule = new URL(
+    '../../test-data/knowledge-evaluation/public-activity.mjs',
+    import.meta.url
+  ).href
+  const { collectNativeBoundaries } = await import(boundaryModule)
+  const { restorePublicActivity } = await import(activityModule)
+  const unavailable = collectNativeBoundaries({
+    databasePath: new URL('./missing-native.sqlite', import.meta.url).pathname,
+    threadId: 'thread',
+    startMs: 0,
+    endMs: 1000
+  })
+  expect(unavailable.status).toBe('unavailable')
+  expect(unavailable.argumentProgress).toBe('unavailable')
+  const observed = restorePublicActivity(
+    [
+      {
+        elapsedMs: 0,
+        stage: 'provider_started',
+        evidence: { nativeThreadId: 'thread' }
+      }
+    ],
+    () => null,
+    unavailable
+  )
+  expect(observed.events).toHaveLength(1)
+  expect(observed.completionInferred).toBe(false)
   const { nativeOutputVisibility } = await import('../local-ai-provider')
+  const { selectPublicActivity } = await import('../local-provider-activity')
+  const payloads: unknown[] = []
   const records: ExecutionRecord[] = []
   const profile = createAiExecutionProfiler(
     { intent: 'private', context: {}, actions: [], attempt: 1 },
@@ -7277,12 +7460,57 @@ it('execution proof distinguishes native output observation from tool execution 
     {
       sink: {
         write: (record) => records.push(record),
+        writePayload: (_requestId, _callId, _phase, value) => {
+          payloads.push(value)
+          return {
+            status: 'queued',
+            path: 'public.json',
+            bytes: 0,
+            sha256: 'proof',
+            redactions: []
+          }
+        },
         flush: async () => ({ status: 'saved', path: null })
       }
     }
   )
   profile.trace('provider_notification', nativeOutputVisibility)
   profile.recordTransport('received', 64000, 'diagnostic')
+  profile.trace('provider_notification', {
+    phase: 'public-activity',
+    method: 'item/completed',
+    callId: 'summary',
+    nativeThreadId: 'thread',
+    nativeTurnId: 'turn',
+    nativeOutput: selectPublicActivity('item/completed', {
+      threadId: 'thread',
+      turnId: 'turn',
+      item: {
+        id: 'summary',
+        type: 'reasoning',
+        summary: ['Prepare the facade'],
+        content: ['PRIVATE']
+      }
+    })
+  })
+  expect(payloads).toEqual([
+    expect.objectContaining({
+      summary: ['Prepare the facade'],
+      status: 'available'
+    })
+  ])
+  expect(JSON.stringify(payloads)).not.toContain('PRIVATE')
+  expect(
+    records.find(
+      (r) =>
+        r.stage === 'provider_notification' &&
+        (r.evidence as { phase?: string })?.phase === 'public-activity'
+    )
+  ).toMatchObject({
+    diagnostic: {
+      output: { payload: { status: 'queued', path: 'public.json' } }
+    }
+  })
   const visibility = records.find(
     (r) =>
       r.stage === 'provider_notification' &&

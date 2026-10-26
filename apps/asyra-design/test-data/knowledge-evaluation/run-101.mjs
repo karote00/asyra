@@ -13,6 +13,7 @@ import { loadEnvironment, resolveEnvironment } from '../../app-environment.mjs'
 import { createLiveTestDeadline } from '../ai-drawing/live-test-deadline.mjs'
 
 import { captureCheckpoint } from './checkpoint.mjs'
+import { captureNativeBoundaries } from './native-boundaries.mjs'
 import {
   boundedCapture,
   collectEvidenceStage,
@@ -491,6 +492,10 @@ try {
         : boundedCapture(name, () => resource.close(), 5000)
     )
   }
+  await stage('native-diagnostic-boundaries', async () => {
+    meta.nativeBoundaryEvidence = captureNativeBoundaries(meta, directory)
+    return meta.nativeBoundaryEvidence
+  })
   if (
     Object.values(meta.evidence ?? {}).some(
       (value) => value.status === 'failed'

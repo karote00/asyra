@@ -1,5 +1,23 @@
 # @asyra/ai-agent-runtime
 
+## Pending public provider activity recording
+
+```update-note
+{
+  "change": "public-provider-activity-recording",
+  "owner": "AI Agent Runtime",
+  "summary": "Retain host-selected public provider notification payloads with the existing sanitized diagnostic sink and explicit storage failure accounting.",
+  "sources": [
+    "packages/ai-agent-runtime/src/node/payload.ts",
+    "packages/ai-agent-runtime/src/profiler/recorder.ts",
+    "packages/ai-agent-runtime/src/profiler/__tests__/records.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Public profiler APIs and execution outcomes are unchanged. Hosts retain responsibility for selecting public activity; raw reasoning and provider prompts must not be passed to this diagnostic sink."
+}
+```
+
 ## Pending tool validation stage
 
 ```update-note

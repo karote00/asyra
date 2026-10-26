@@ -70,6 +70,14 @@ interface ReviewSelection {
   supersedes?: { revision: number; reason: string }
 }
 
+class ReviewScopeConflictError extends Error {
+  constructor(
+    readonly conflicts: { index: number; revision: number; message: string }[]
+  ) {
+    super(conflicts.map((conflict) => conflict.message).join(' '))
+  }
+}
+
 interface DesignCriterion {
   requirement: string
   description: string
@@ -805,14 +813,41 @@ export const designEvidenceDefinitions = [
                     phase: { enum: ['structure', 'visual'] },
                     final: { const: false },
                     inspectionIds: { ...toolResultIds, minItems: 1 },
-                    checks: { type: 'array', items: reviewSubmissionSchema }
+                    checks: { type: 'array', items: reviewSubmissionSchema },
+                    bindChecks: {
+                      type: 'array',
+                      minItems: 1,
+                      items: {
+                        ...reviewSelectionSchema,
+                        properties: {
+                          ...reviewSelectionSchema.properties,
+                          supersedes: {
+                            ...checkIdentityProperties.supersedes,
+                            required: ['revision']
+                          }
+                        }
+                      }
+                    }
                   },
                   ['phase', 'inspectionIds']
                 ),
                 requiredInputs: {
                   type: 'array',
                   items: {
-                    enum: ['bindChecks', 'checks[].status', 'checks[].evidence']
+                    anyOf: [
+                      {
+                        enum: [
+                          'bindChecks',
+                          'checks[].status',
+                          'checks[].evidence'
+                        ]
+                      },
+                      {
+                        type: 'string',
+                        pattern:
+                          '^bindChecks\\[[0-9]+\\]\\.supersedes\\.reason$'
+                      }
+                    ]
                   },
                   minItems: 1
                 },
@@ -1536,26 +1571,70 @@ export const createLocalDesignReview = (
               'Define request-linked criteria before binding image evidence.'
           }
         }
-      const boundArguments = selections
-        ? this.bindReview(phase, selections)
-        : {
-            phase,
-            ...(phase === 'visual' ? { final: false } : {}),
-            inspectionIds
-          }
       const criteria = plan.criteria
+      const acceptanceContext = {
+        method: planDeclaration?.method,
+        requirementRevision: references.revision(),
+        checks: (selections ?? []).flatMap(({ criterionId, unitId }) =>
+          criteria[criterionId]
+            ? [
+                {
+                  criterionId,
+                  ...(unitId === undefined ? {} : { unitId }),
+                  requirement: criteria[criterionId].requirement,
+                  description: criteria[criterionId].description
+                }
+              ]
+            : []
+        )
+      }
+      let boundArguments
+      try {
+        boundArguments = selections
+          ? this.bindReview(phase, selections)
+          : {
+              phase,
+              ...(phase === 'visual' ? { final: false } : {}),
+              inspectionIds
+            }
+      } catch (error) {
+        // Preserve admitted selections, never infer them from the enclosing images.
+        const bindChecks: (Omit<ReviewSelection, 'supersedes'> & {
+          supersedes?: { revision: number; reason?: string }
+        })[] = structuredClone(selections ?? [])
+        const requiredInputs: string[] = []
+        if (error instanceof ReviewScopeConflictError) {
+          for (const { index, revision } of error.conflicts) {
+            bindChecks[index].supersedes = { revision }
+            requiredInputs.push(`bindChecks[${index}].supersedes.reason`)
+          }
+        }
+        if (!requiredInputs.length) requiredInputs.push('bindChecks')
+        return {
+          status: 'failed',
+          settlement: 'not-started',
+          coverage: reviewState().coverage,
+          acceptanceContext,
+          next: {
+            tool: AiDesignToolIds.REVIEW_DRAWING,
+            arguments: {
+              phase,
+              ...(phase === 'visual' ? { final: false } : {}),
+              inspectionIds,
+              bindChecks
+            },
+            requiredInputs,
+            instruction:
+              'Keep the returned check identities, image assignments and reference uses. Fill the named missing fields with your explicit redesign reasons, or correct the reported invalid selection, then call this tool with next.arguments. Revalidation is mandatory. Binding records no judgments. Do not recapture images, replay edits or resend unrelated passed checks.'
+          },
+          message:
+            `Check binding failed: ${error instanceof Error ? error.message : 'Invalid check binding.'} ` +
+            'No judgments were recorded. Successful images and selected checks are retained in next.arguments; complete requiredInputs before rebinding.'
+        }
+      }
       return {
         coverage: reviewState().coverage,
-        acceptanceContext: {
-          method: planDeclaration?.method,
-          requirementRevision: references.revision(),
-          checks: (selections ?? []).map(({ criterionId, unitId }) => ({
-            criterionId,
-            ...(unitId === undefined ? {} : { unitId }),
-            requirement: criteria[criterionId].requirement,
-            description: criteria[criterionId].description
-          }))
-        },
+        acceptanceContext,
         ...(inspectionIds.length
           ? {
               next: {
@@ -2279,7 +2358,12 @@ export const createLocalDesignReview = (
             'Each check.inspectionIds must be a nonempty unique subset of the current review images.'
           )
       }
-      for (const check of value.checks) {
+      const scopeConflicts: {
+        index: number
+        revision: number
+        message: string
+      }[] = []
+      for (const [index, check] of value.checks.entries()) {
         if (
           check.supersedes !== undefined &&
           (check.unitId === undefined ||
@@ -2325,23 +2409,36 @@ export const createLocalDesignReview = (
             previous.evidence === check.evidence &&
             JSON.stringify(previous.scope) ===
               JSON.stringify(check.inspectionIds)
-          if (
-            !previous ||
-            (previous.revision !== check.supersedes.revision && !exactReplay)
-          )
+          if (!previous)
             throw new Error(
               'Unit supersession revision is stale or unavailable.'
             )
+          if (previous.revision !== check.supersedes.revision && !exactReplay) {
+            scopeConflicts.push({
+              index,
+              revision: previous.revision,
+              message: 'Unit supersession revision is stale or unavailable.'
+            })
+            continue
+          }
         }
-        if (changedScope && !check.supersedes)
-          throw new Error(
-            `Check unit scope changed for ${check.criterionId}/${check.unitId}; provide supersedes with the current result revision ${previous?.revision} and redesign reason. No judgments were recorded.`
-          )
+        if (changedScope && !check.supersedes) {
+          if (!previous)
+            throw new Error('Unit scope has no current result revision.')
+          scopeConflicts.push({
+            index,
+            revision: previous.revision,
+            message: `Check unit scope changed for ${check.criterionId}/${check.unitId}; provide supersedes with the current result revision ${previous.revision} and redesign reason. No judgments were recorded.`
+          })
+          continue
+        }
         submittedScopes.set(
           key,
           check.supersedes || !originalScope ? scope : originalScope
         )
       }
+      if (scopeConflicts.length)
+        throw new ReviewScopeConflictError(scopeConflicts)
       const submittedDeferred = value.deferredChecks ?? []
       const deferredChecks = submittedDeferred
       if (

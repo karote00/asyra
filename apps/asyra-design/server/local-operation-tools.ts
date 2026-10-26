@@ -3778,31 +3778,11 @@ export const createLocalOperationTools = (
               actionResults: capturedResults
             })
           signal.throwIfAborted()
-          let handoff
-          try {
-            handoff = designReview.judgmentHandoff(
-              inspectionIds,
-              phase,
-              hasReusedImages ? undefined : [...selections.values()]
-            )
-          } catch (error) {
-            signal.throwIfAborted()
-            // Captures have settled independently of check binding. Preserve
-            // their actual receipts; rejected bindings never record a verdict.
-            return JSON.stringify({
-              status: 'partial',
-              phase,
-              accepted: designReview.isAccepted(),
-              reviewOperation,
-              recordedChecks: [],
-              inspectionIds,
-              actionResults: capturedResults,
-              ...designReview.judgmentHandoff(inspectionIds, phase),
-              message:
-                `Check binding failed: ${error instanceof Error ? error.message : 'Invalid check binding.'} ` +
-                'No judgments were recorded. Keep these captured images; read the affected current check revisions, then bindChecks with these inspectionIds. Do not repeat settled edits or successful captures.'
-            })
-          }
+          const handoff = designReview.judgmentHandoff(
+            inspectionIds,
+            phase,
+            hasReusedImages ? undefined : [...selections.values()]
+          )
           return JSON.stringify({
             phase: reviewArgs.phase,
             accepted: designReview.isAccepted(),
@@ -3811,7 +3791,11 @@ export const createLocalOperationTools = (
             inspectionIds,
             actionResults: capturedResults,
             ...handoff,
+            ...(handoff.status === 'failed'
+              ? { status: 'partial', settlement: 'partial' }
+              : {}),
             message:
+              handoff.message ??
               'Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.'
           })
         }

@@ -340,7 +340,11 @@ assessment transmits its documented bounded diagnostic summary to the host's
 chosen provider; this is not an automatic background upload.
 
 Host-selected public native result diagnostics use the existing
-`provider_item_completed` or `orchestration_completed` trace with `nativeOutput`.
+`provider_item_completed`, `orchestration_completed`, or `provider_notification`
+trace with `nativeOutput`. Public progress, plan and reasoning-summary fields may
+use the notification path; private reasoning content must never enter it. Each
+delta is retained once, without accumulating and resaving prefixes. Completed
+public items remain distinct authoritative values.
 The recorder writes that structured value through the same sanitized payload sink,
 not the bounded trace summary. A throwing payload sink leaves a failed receipt
 where record storage remains available. Hosts must select public results and decode

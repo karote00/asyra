@@ -1,5 +1,75 @@
 # @asyra/asyra-design
 
+## Pending public provider activity
+
+```update-note
+{
+  "change": "public-provider-activity",
+  "owner": "Asyra Design provider diagnostics",
+  "summary": "Request concise public activity summaries and retain selected public events through the existing diagnostic sink; expose provenance and incomplete spans in offline analysis.",
+  "sources": [
+    "apps/asyra-design/server/local-ai-provider.ts",
+    "apps/asyra-design/server/local-provider-activity.ts",
+    "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+    "apps/asyra-design/test-data/knowledge-evaluation/public-activity.mjs",
+    "apps/asyra-design/test-data/knowledge-evaluation/__tests__/public-activity.test.mjs",
+    "apps/asyra-design/package.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "No consumer migration, new model request or change to editing, tool settlement or cleanup ownership is required. Only public activity is retained; unavailable content and recording failures remain explicit."
+}
+```
+
+## Pending review binding recovery
+
+```update-note
+{
+  "change": "review-binding-recovery",
+  "owner": "Asyra Design inspection",
+  "summary": "Preserve selected checks, images, reference uses and current conflict revisions in executable binding recovery templates without another contract lookup.",
+  "sources": [
+    "apps/asyra-design/server/local-design-review.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+    "apps/asyra-design/server/__tests__/local-reference-decisions.test.ts",
+    "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/binding-recovery-20261026.json",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/flow-contracts.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing bindChecks and supersedes inputs remain authoritative; missing redesign reasons require explicit caller judgment. No new stored state, image recapture or mutation path is introduced."
+}
+```
+
+## Pending geometry recovery and native boundary evidence
+
+```update-note
+{
+  "change": "geometry-recovery-native-boundaries",
+  "owner": "Asyra Design",
+  "summary": "Retain measured nonplanarity and exact source repair pointers; collect sanitized native diagnostic boundaries offline with evidence provenance.",
+  "sources": [
+    "apps/asyra-design/server/design-construction.ts",
+    "apps/asyra-design/server/local-design-tools.ts",
+    "apps/asyra-design/test-data/knowledge-evaluation/native-boundaries.mjs",
+    "apps/asyra-design/test-data/knowledge-evaluation/run-101.mjs",
+    "apps/asyra-design/server/local-design-workflow.ts",
+    "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
+    "apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/nonplanar-recovery-20261026.json",
+    "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-boundaries.test.mjs",
+    "apps/asyra-design/test-data/knowledge-evaluation/analyze.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing geometry, repair admission, mutation owners and public runtime activities are unchanged. The optional offline supplement never supplies hidden model progress or changes product settlement."
+}
+```
+
 ## Pending automatic mechanical coverage delivery
 
 ```update-note

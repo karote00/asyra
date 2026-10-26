@@ -6,7 +6,10 @@ import {
   toolSemantics
 } from '../src/ai/tool-contract'
 import { inspectDesignBudget } from './design-budget'
-import { DesignKeyConflictError } from './design-construction'
+import {
+  DesignKeyConflictError,
+  DesignGeometryError
+} from './design-construction'
 import { LocalToolInputError } from './local-tool-invocation'
 import {
   designPreparationExamples,
@@ -948,11 +951,32 @@ export const createLocalDesignTools = (
         })
       } catch (error) {
         signal.throwIfAborted()
+        const retained = draft === undefined ? undefined : retainDraft(draft)
         return JSON.stringify({
           available: false,
           settlement: 'not-started',
           recovery: 'correct_input',
-          ...(draft === undefined ? {} : retainDraft(draft)),
+          ...retained,
+          ...(error instanceof DesignGeometryError
+            ? {
+                geometryIssue: error.issue,
+                ...(retained?.draftId
+                  ? {
+                      repairGuide: {
+                        tool: AiDesignToolIds.PREPARE_DESIGN,
+                        arguments: {
+                          repair: {
+                            draftId: retained.draftId,
+                            replacements: [{ path: error.issue.path }]
+                          }
+                        },
+                        instructions:
+                          'Set each replacement value to your corrected complete field value, then call the returned tool with arguments. Keep the returned workflow options unchanged. Revalidation is mandatory. Do not resend geometry or replay earlier completed parts. This source remains request-local; an expired reference requires the source again.'
+                      }
+                    }
+                  : {})
+              }
+            : {}),
           ...(error instanceof DesignKeyConflictError
             ? { conflicts: error.conflicts }
             : {}),

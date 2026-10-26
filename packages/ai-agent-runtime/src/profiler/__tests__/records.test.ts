@@ -1386,9 +1386,15 @@ it('retains owner phase correlation, source work and definition delivery scope w
   }
 })
 
-it.each(['saved', 'failed', 'throws'] as const)(
-  'preserves native result provenance and isolated sink %s',
-  async (mode) => {
+it.each(
+  (['saved', 'failed', 'throws'] as const).flatMap((mode) =>
+    (['provider_item_completed', 'provider_notification'] as const).map(
+      (stage) => ({ mode, stage })
+    )
+  )
+)(
+  'preserves native/public provenance and isolated sink $mode for $stage',
+  async ({ mode, stage }) => {
     const records: Record<string, unknown>[] = []
     const payloads: ReturnType<typeof serializeToolPayload>[] = []
     const usage = createProfiler(
@@ -1409,7 +1415,7 @@ it.each(['saved', 'failed', 'throws'] as const)(
         }
       }
     )
-    usage.trace('provider_item_completed', {
+    usage.trace(stage, {
       callId: 'item:one',
       nativeOutput: {
         stage: 'native-completed-result',
@@ -1426,7 +1432,7 @@ it.each(['saved', 'failed', 'throws'] as const)(
       }
     })
     expect(records[records.length - 1]).toMatchObject({
-      stage: 'provider_item_completed',
+      stage,
       diagnostic: {
         output: { payload: { status: mode === 'saved' ? 'queued' : 'failed' } }
       }

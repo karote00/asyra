@@ -163,6 +163,7 @@
           'Initial attachment metadata uses existing image-owner identities and only owner-admitted dimensions, without full decoding. Async reference selection prepares only explicit-use sources through that owner before synchronous review mutation; reuse existing validation promises and imported evidence. Pending/rejected candidates and source-only facts need no decode. Preserve independent validation, AI suitability decisions, exact uses/regions and existing observation. Unknown IDs, decode failure/timeout and cancellation cannot commit selection; retain successful preparations and prior evidence for failed-only recovery without download or canvas replay. No new cache, tool, AI prerequisite or first-drawing gate.',
           'Review owner branches expose capture/bind/record choices through existing scoped usage and validated canonical examples. Compose projects grouped phase variants without requiring construction nodes, preserves every selected restriction and existing full/field/refresh paths, and returns receipt/recovery guidance. Inspect retains capture, signed binding, judgments, invalidation and partial recovery. Consume returned next.arguments; no fabricated evidence, extra menu prerequisite, new state, forced order or mutation replay. Prove lower total delivery and contract reads through actual consumers.',
           'Startup guidance defers stage procedures to tool contracts; a ready first part requires no model-authored plan, and chosen spatial projection uses the existing preparation owner without prescribing a viewpoint',
+          'When preparation returns a retained repair template, compose supplies its own registered entry and admitted non-draft workflow options; preserve parent, plan, review and material context without copying original geometry or previous replacements. Model supplies corrected values; no replay or extra discovery.',
           'The existing combined workflow owns deterministic handoffs, preserves prepared identities and completed step outcomes on later failure, observes each internal call and never replays uncertain writes',
           'Export typed single/ordered/partial and validated recovery resources through the common host before cleanup. A fresh consumer must resolve the returned handle without recomputation; failed/unknown settlement never becomes successful execution or durable eligibility.',
           'The combined preparation route accepts complete source, explicit retained-draft field repair or owner-computed partition repair. Consume successful retained-source capacity plans through the existing ordered parts executor in the same invocation, including the first part. Preserve explicit sequence links, one continuation root and truthful child progress; offer remaining-only invocations after real failure from actual receipts. Invalid or uncertain work never automatically retries',
@@ -446,6 +447,7 @@
           'Admit signed curve controls against measured curve bounds and report malformed pairs by semantic node and edge',
           'Draft keys are optional root selectors, never canonical IDs; unnamed roots use the generated element ID and no root name is reserved',
           'Resolve exact keys directly and repeated prefixes through an immutable artifact-owned index; preserve source order, reject misses and release index state with the artifact',
+          'Nonplanar projected faces retain the exact source-relative pointer, maximum deviation and existing tolerance through preparation failure into the existing retained-draft replacement route; include pattern templates. Never guess geometry, alter tolerance, apply rejected output or replay completed work.',
           'Rejected source drafts identify exact conflict paths; explicit bounded request-local field repairs re-enter the same admission without canonical writes or mutation of prepared artifacts. Publish diagnostics with request ownership, reject new retention at capacity without eviction, and remove actual source on terminal cleanup. Prepared and target handles declare request lifetimes; release is control-plane.',
           'Reference reuse preserves current source attribution and structured failure stage, reason, HTTP status, transient classification and attempts; retry a classified transient read at most once within the original deadline, never permanent failure or cancellation; retain candidate failure evidence during failover',
           'Acquire candidate image URLs in one batch with bounded concurrent I/O, ordered per-source receipts, original images and request-local in-flight reuse; one source failure does not discard siblings; cancellation prevents attachment admission',
@@ -503,6 +505,9 @@
           'apps/asyra-design/server/design-draft-repair.ts',
           'apps/asyra-design/server/__tests__/design-target-index.test.ts',
           'apps/asyra-design/server/__tests__/design-draft-repair.test.ts',
+          'apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts',
+          'apps/asyra-design/server/__tests__/local-design-workflow.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/nonplanar-recovery-20261026.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101',
           'apps/asyra-design/src/ai/prepared-design.ts',
           'apps/asyra-design/src/ai/design-fill.ts',
@@ -913,7 +918,7 @@
           'Return structured unresolved criteria with complete evidence, known bound IDs and actual inspection targets/regions; keep inspection-local coordinates explicit, infer no workspace bounds and require fresh final review',
           'Return completed visual findings with their freshness or coverage failure when evidence changes during assessment; stale findings remain diagnostic only and never authorize detail or completion',
           'Primary-agent reference decisions supply exact criterion roles and limitations; pixel tools require explicit source regions and never infer alignment or purpose. Changed reference selection invalidates dependent criteria only, preserving unrelated passes.',
-          'Review handoffs describe delivered image target/region and declared unit bindings with exact existing revisions. A rejected binding after capture retains actual successful images in a partial handoff with bindChecks recovery and records no judgments. Never infer judgments, supersede scopes automatically, replay edits or weaken evidence-menu admission.',
+          'Review handoffs describe delivered image target/region and declared unit bindings with exact existing revisions. A rejected binding retains actual successful images and declared ordered selections in a partial bindChecks template. Canonical scope validation supplies current revisions for all recoverable scope conflicts; requiredInputs names missing redesign reasons. Ordinary bind admission revalidates the completed template, with no query, capture or write needed to reconstruct known inputs. Unknown selections remain explicit. Never infer judgments, supersede scopes automatically, replay edits or weaken evidence-menu admission.',
           'Expose self-contained phase schemas with only applicable inputs; retain cross-field and current-evidence checks without repairing model arguments',
           'Retain request-linked named criterion descriptions through structure and final review; bind facts and checks by criterion ID',
           'Return images and evidence without implicit subtree summaries; explicit context queries own object retrieval',
@@ -1079,7 +1084,10 @@
           'ordered public tool progress and execution summaries',
           'settled work, request cancellation and owned retained-query identities'
         ],
-        outputs: ['artifact:visible-outcome', 'observed request resource release or explicit cleanup failure'],
+        outputs: [
+          'artifact:visible-outcome',
+          'observed request resource release or explicit cleanup failure'
+        ],
         conditions: [
           'Keep request objective, stage intent and call purpose separate. Primary-agent public commentary supplies concrete stage intent before input preparation; retire it at the next principal start; fresh idle commentary may replace settled context. Completed call identities cannot rejoin a purpose through replayed or late start events. Tool completion records only its canonical outcome, never an inferred model stage. Never copy inherited text as authored call purpose.',
           'Every ordered invocation start/end updates canonical activity even when its projected text is unchanged. Completion removes live call ownership and retains its canonical receipt in existing closed-call metadata as explicitly settled context. Explicit request-commentary completion retires that purpose. With no active root or fresh commentary show the latest group settlement as completed, partial, failed or outcome-unconfirmed. Generic end events cannot prove success; preserve every root identity until the group settles. Never use the original objective as idle fallback. Genuinely live common principal invocation purpose takes presentation precedence over retained stage context. Display meaningful observed work separately from authored purpose; queued/admission events identify preparation for the known operation until execution starts; repeated admission does not revive queued wording after execution. Diagnostics preserve every phase. With no active calls, identify retained prose as stage context rather than ongoing execution. Independent concurrent principal work uses shared purpose rather than the latest sibling; descendant purposes remain diagnostic. Reducer decisions record selected purpose identity/source, accepted live-leaf phase label and active-call count. Rejected events cannot change diagnostic phase; completion removes the finished phase and exposes surviving leaves or the provider. Raw incoming phases remain separate event evidence.',
@@ -1195,6 +1203,7 @@
           'saved execution records, explicit period filters and optional user feedback',
           'explicit post-run assessment request and named criteria',
           'explicit post-run diagnostic assessment identity, separate from drawing checks',
+          'exact-thread, unique-process native diagnostic rows in a bounded evaluation window',
           'explicit offline scripted executions and permanent saved-reply fixtures'
         ],
         outputs: ['artifact:execution-trace'],
@@ -1229,6 +1238,8 @@
           'Retain process and matching-thread MCP startup names, states, structured failure reasons and classified warnings before inference; explicitly omit private diagnostic text',
           'Retain public native retry/error kinds, willRetry and numeric HTTP/RPC status without free text; observations never alter native retry or turn settlement',
           'Record required-stream failure and optional diagnostic-stream loss as bounded transport metadata; raw error text stays omitted and diagnostics cannot change drawing settlement',
+          'Offline evaluation supplements public events with read-only exact-thread, unique-process, bounded-window native diagnostic item and host boundaries. Save allowed metadata with row/body provenance, no private text; missing or ambiguous evidence stays unavailable, unmatched items stay incomplete, and no temporal pairing implies identity or parameter progress. No runtime polling or settlement influence.',
+          'Retain matching public message, readable reasoning summary and plan deltas/final values through the existing redacting native-output payload sink; concise summary request adds no turn. Preserve exact turn/item identity, empty/missing/malformed/failed content, interrupted activity and linear delta writes; never retain raw reasoning or infer missing work. Offline analysis verifies hashes and merges activities with tool/lifecycle events and no-recorded-activity intervals, separately from first content and quality acceptance.',
           'Distinguish wire bytes, eager schema bytes and reported usage',
           'Persist ordered sanitized records locally; incomplete streams never imply success',
           'Offline native delivery proofs may script loopback Responses events and retain actual subsequent native requests through the existing sink; preserve native version, fixture identity, default limits, bounded process cleanup and explicit unobserved boundaries. No model inference or product refresh changes.',
@@ -1246,6 +1257,7 @@
           'bounded receipt timings',
           'read-only record projection and separately attributed feedback',
           'isolated native provider transport for an explicit post-run assessment',
+          'offline read-only evaluation collector with sanitized diagnostic provenance',
           'fixed loopback native handoff verification without model inference'
         ],
         forbiddenContributors: [
@@ -1272,6 +1284,11 @@
           'apps/asyra-design/test-data/knowledge-evaluation/capture-lifecycle.mjs',
           'apps/asyra-design/test-data/knowledge-evaluation/__tests__/capture-reliability.test.mjs',
           'apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts',
+          'apps/asyra-design/server/local-provider-activity.ts',
+          'apps/asyra-design/test-data/knowledge-evaluation/public-activity.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/native-boundaries.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-boundaries.test.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/__tests__/public-activity.test.mjs',
           'packages/ai-agent-runtime/src/profiler/record-outbox.ts',
           'packages/ai-agent-runtime/src/node/file-record-collector.ts',
           'packages/ai-agent-runtime/src/node/__tests__/record-collector.test.ts',

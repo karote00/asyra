@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 - work deadline cleanup closed on local integration and live observation; failed-release retry remains locally verified only.**
+Status: **Task 3 - retained geometry recovery and offline native boundary handoffs verified locally; authorized eight-minute observation pending.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: implement automatic mechanical coverage delivery under the bounded Task 3 contract below. No model run, 101, CI inspection, push or historical evidence edit.
+- Current scope: complete the verified retained geometry recovery and offline native boundary handoffs, then run exactly one authorized eight-minute 101 observation with a separate 60-second report phase, no video and production limits. Keep legal full-query behavior and unobserved upstream wait cause explicit. No push or CI inspection.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,325 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Binding failure recovery - 2026-10-26
+
+Step Execution Card - inspect. Evidence: run 1793007650398, capture call 26
+preserved four images but lost the selected checks from next.arguments; call 27
+fetched 8,900 bytes of bind usage before rebuilding the selection. Existing tests
+only require a generic bindChecks prompt and do not detect that missing handoff.
+
+Objective: make the existing review owner's failed binding response directly
+recoverable without another contract lookup, recapture, mutation or judgment.
+Inputs: admitted capture selections, exact retained inspection IDs, criteria,
+reference-use receipts and current result revisions. Outputs: truthful partial
+receipt and existing review_drawing bindChecks template, preserving check order,
+image assignments and source uses. The canonical scope validator supplies current
+revisions for all recoverable scope conflicts; the AI supplies explicit redesign
+reasons. No automatic supersession, fabricated reason, pass or new retained state.
+
+Boundary: local-design-review.ts and local-operation-tools.ts, direct review tests,
+execution-flow-proof.test.ts and existing flow mapping; spec sections Retained
+recovery and review guidance / Explicit visual judgment bindings. The inspect
+owner owns validation failures. Generic reuse with no declared selection remains
+explicit; incomplete captures cannot infer a complete check. Missing/stale evidence,
+reference changes, invalid input and cancellation retain existing guards. No UI,
+geometry, persistence, Knowledge, lookup, scheduler or runtime ownership change.
+Internal scope-conflict diagnostics stay local to the review owner; public fields
+reuse next.arguments, bindChecks, supersedes and requiredInputs.
+
+Fixed DoD: formal failing regression before production edits; execute the returned
+template through the actual dispatcher by filling only the named missing fields.
+Cover multiple conflicting units, preserved independent passes, same-scope reuse,
+stale versions, explicit bind retry, incomplete capture, cancellation and expired
+image evidence. Compare complete recovery exchanges against the old contract-read
+route; prove lower bytes and no new query/capture/write. Preserve atomic validation
+and unchanged saved Core state. Run direct review/integration consumers, Inspector,
+production types, scoped lint and naming. Stop for an unresolved owner conflict or
+three failed corrections; do not weaken the requirements. After self-review and
+passing gates, freeze sources and run exactly one 480-second work / at-most-60-second
+report 101 without video, production limit 10,000, gpt-6-astra/medium. Preserve I/O,
+report, images, screenshot timeline including first frame, and cleanup evidence.
+No push, CI inspection, extra model run or unrelated repair.
+
+Local implementation and self-review: the canonical validator now returns every
+recoverable scope conflict without committing a judgment. Capture failures retain
+ordered check/image/reference selections and exact revisions; bind-only rejection
+remains failed/not-started. Formal consumers execute the returned template with
+only caller-authored reasons, preserving independent passes, stale-image/source
+rejection and unchanged Core save output. The fixed recovery comparison includes
+initial contract growth: 21,758 bytes versus a conservative recorded-route lower
+bound of 24,900 bytes, with zero extra lookup or capture. Focused owner/proof suite:
+396 passing cases; direct-consumer suite: 131 passing cases; final changed integration
+and reference tests: 12 passing cases. Production types and naming pass. Scoped
+lint has no errors and one pre-existing proof logging warning. Inspector candidate
+80db7d81-1057-4730-8a79-2a40b8808715 passes all 81 mapped cases. Live behavior remains
+unobserved until the authorized run below; deterministic recovery is not AI adoption.
+
+Live closure: run 1793010611909 used gpt-6-astra/medium, 480 seconds work plus
+19.339 seconds to recorded report output, no video and production limit 10,000.
+First content appeared at 98.810 seconds. At 472.771 seconds, a real scope rejection
+returned four selected checks, eight retained images and exact reference uses.
+The next call changed only bindChecks[0].supersedes.reason and bound successfully
+at 479.238 seconds: no intervening query, capture or mutation. Final visual judgments
+were not submitted; retained coverage stayed 2/6 and App outcome partial. No drawing
+after cutoff. Report, 13 restored tool images, checkpoint, new-context reload and
+cleanup evidence were saved. The bounded handoff is closed by formal tests and
+observed adoption; final visual acceptance remains incomplete. Two unavailable
+ornament captures are a separate unresolved observation, not folded into this fix.
+See evaluations/2026-10-26-binding-recovery-eight-minute-101.md for exact timing,
+raw-payload verification, limitations and the complete 42-call table.
+
+Push closeout authorized after live observation. Fetched main is already an
+ancestor; no rebase is needed. The pending Task 3 public/native observation,
+geometry repair and binding repair are one validated delivery. Pre-push checks:
+483 App owner cases pass (the initial native-protocol skip was explicitly enabled
+in the full provider suite, all 228 passing without inference); runtime 451 cases
+and build pass; evidence gate Node/browser/batch cases, production types, naming,
+placement/plan contracts and Turbo synchronization pass. Scoped lint has zero
+errors and eight existing logging warnings. Updated existing owner notes to cover
+all changed code and formal tests; release update guidance passes. Prior exact-source
+binding and Inspector proofs remain applicable. No CI inspection or model rerun.
+
+### Verified handoff repairs and eight-minute observation - 2026-10-26
+
+Bounded root-cause review uses run 1793002315768, its original provider payloads,
+source snapshot, exact-process native diagnostics, current direct owners and their
+formal consumers. Earlier material corrections survived and were reused. Crown
+rejection protects a genuinely nonplanar face; it is not a lost material change.
+The verified defect is loss of source location and measured validation facts on
+that rejection. The public stream never emitted the pending native custom-call
+boundary; additional App spans cannot recover it. Preserve supplemental native
+boundaries offline without claiming argument progress or a cause of upstream wait.
+
+Full review queries were explicit and pages did not overlap. Full and partial
+schemas are independently executable contracts; replacing their repeated branches
+with cross-schema references would change valid consumers. No delivery override,
+Knowledge removal or forced tool choice is justified by this evidence. Keep this
+as an observed acquisition cost, not a proven lookup bug. No new plane modeling
+capability, tolerance change or automatic geometry correction is in this slice.
+
+Step Execution Card - prepare:
+- Spec: Retained recovery and review guidance; Inspector prepare conditions and
+  source repair boundary. Inputs are admitted projected-face source and existing
+  retained draft references. Construction owns source-relative JSON Pointer and
+  measured nonplanarity; preparation publishes them with the retained repair
+  route. Existing workflow forwards the receipt without replay or invented values.
+- Allowed contributors/files: design-construction.ts, local-design-tools.ts,
+  existing preparation/repair/workflow owners, direct formal tests and fixture.
+  No canonical state, render, new store, cache, inferred repair or model call.
+- Outputs: failed/not-started receipt, unchanged source, offending source path,
+  deviation and tolerance in world units, self-contained replacement instructions
+  using the existing repair schema. The AI chooses replacement geometry.
+- Fixed DoD: direct face and pattern faces/members identify actual retained source,
+  valid planes and degeneracy preserve behavior; real workflow rejects before
+  apply, consumes returned repair instructions, preserves prior completed receipts,
+  and never replays rejected writes. Invalid/expired repair and cancellation retain
+  existing protections. Do not claim this diagnoses every invalid field at once.
+
+Admission correction: the isolated proof excludes general test fixtures, so its
+geometry case is self-contained; the recorded numeric fixture remains in direct
+integration tests. The first recapture omitted that fixture; formatting also
+invalidated one reviewed candidate. Freeze the source until candidate, diff review
+and acceptance finish. No Inspector engine change or relaxed assertion is needed.
+
+Step Execution Card - observe (after prepare verification):
+- Spec: Execution observation; Inspector observe. Existing evaluation capture and
+  activity analysis accept read-only native diagnostic metadata for the exact
+  thread, unique process and bounded wall-clock window. This is supplemental
+  version-sensitive evidence, not a public product API or runtime polling.
+- Boundary: existing evaluation family (native-boundaries.mjs and formal tests),
+  run-101.mjs, public-activity.mjs/analyze.mjs and existing proof/mapping. No
+  Runtime scheduler, status owner, private text, diagnostic database writes or
+  extra inference. Public App event evidence remains separately attributable.
+- Fixed DoD: actual read-only database extraction with strict process/time/thread
+  isolation, sanitized metadata and original row hashes; pending item start,
+  dispatch and host completion are distinct; ambiguous/missing/interrupted data
+  cannot be paired by guess. Parameter bytes/progress and wait cause remain
+  unavailable. Collector failure cannot change drawing settlement. Saved analyzer
+  consumes the collected metadata with provenance and first-content separate.
+
+Step Execution Card - compose (bounded self-review correction):
+- The main workflow must complete the preparation repair template with its actual
+  execution entry and admitted non-draft options, including parentId, plan,
+  reviewChecks, inspection, response and material source. Preparation cannot know
+  these caller-owned options. Do not require the model to reconstruct them.
+- Owner/boundary: local-design-workflow.ts and existing direct workflow integration
+  tests; prepare supplies the unchanged repair arguments and measurements.
+- DoD: returned route/arguments, after the model supplies only corrected field
+  values, dispatch through the registered main entry with the original parent and
+  policy. No original draft or prior repair geometry is copied; failed preparation
+  has no applied step to replay. Existing parts preserve failed-part scope.
+- Add the missing-option failing regression, then preserve all prior prepare,
+  parts, inspection and Core recovery gates. No new tool, state or request.
+
+Sequence: admit changed contracts, prove formal failures before each owner fix,
+then focused integration suites, evidence-consumer tests, naming, production types,
+scoped lint and Inspector verification; bounded self-review includes direct
+consumers and failed/partial paths. Stop for an unresolved owner mismatch or three
+failed corrections; do not weaken DoD. Only after gates, freeze sources and run
+one 480-second work / at-most-60-second report 101, no video, production 10,000,
+gpt-6-astra/medium. Preserve full I/O, exact images, report, screenshots and first
+frame timeline. No push, CI inspection or additional model experiment.
+
+
+Local closeout before the authorized observation: exact recorded face regression
+failed before implementation; source-pointer/measurement and retained-context
+regressions now pass through actual preparation, dispatcher and main workflow.
+The real Core integration preserves 4,114 prior entries through rejection,
+repair, Undo/Redo and save/reload. Direct suites cover 256 unique tests; the
+existing evidence command passes 58 Node, 29 browser-adapter and 19 batch tests.
+Inspector revision 141 verification 7e125d9a-1f6d-412f-a50f-18ed46380375 passes
+81 mapped cases on captured source
+a6efb925a143b054d9ddc691de069e9b96f77cb302564318e9c8ebb26d523779.
+Production types, naming, runtime/service builds and scoped lint pass (four
+existing console warnings). A filtered test command passed the three new cases
+but failed the suite-wide advertised-tool coverage hook; the complete 108-case
+workflow suite was then run and passed without changing that hook.
+Offline native extraction recovered the old run's 96 selected boundary records,
+including the three independently checked gap boundaries with matching hashes.
+The original evidence was unchanged. No continuous parameter progress or cause
+of upstream delay is established. No live behavior is claimed before observation.
+
+Authorized observation completed in run 1793007650398: 480-second work window,
+19.007-second report phase, no video, gpt-6-astra/medium and production 10,000.
+First frame was 136.589 seconds after Send. Native capture collected 96 selected
+boundaries in 33 ms after work; the saved 58,636-byte supplement passes digest
+verification. The combined timeline still has a 48.923-second event-free interval
+before first dispatch, so argument progress and the waiting cause remain unknown.
+No nonplanar rejection occurred; AI adoption of the new repair route is unobserved.
+The locally verified repair DoD is not replaced by that absence of live failure.
+
+Live review recorded one partial capture/binding result after a detail-scope
+change. AI reused the four successful images for superseding bind and record,
+without redraw or repeated capture. Final coverage remained 2/4: detail failed
+and scale was stale. Work interruption was observed at 480.011 seconds; no App
+tool call occurred afterward. The report, full recorded I/O, nine delivered image
+occurrences, screenshots, checkpoint and source snapshot were preserved. Fresh
+reload matched root order and durable sequence 480. Browser and owned services
+were cleaned up; no second model run, push or CI inspection was performed.
+See [the detailed observation and root-cause review](../evaluations/2026-10-26-recovery-native-boundaries-eight-minute-101.md).
+This slice is locally verified and observed within those limits. Broad prework
+selection and the cause of silent upstream intervals remain unresolved.
+
+### Public activity recording and timeline - 2026-10-26
+
+Step Execution Card - observe. Fix the provider public-event -> existing payload
+sink -> saved evidence -> evaluation timeline handoff. Prior run 1792997354886
+contains activity metadata that the report omitted; the adapter drops public
+summary/plan/delta bodies. Do not alter immutable evidence or infer missing text.
+
+- Inputs: matching native thread/turn/item public messages, readable reasoning
+  summaries, plan updates, lifecycle events and existing payload references.
+- Outputs: attributed public activity payloads with explicit available, empty,
+  malformed or unavailable content; ordered event timeline with verified hashes,
+  actual tool boundaries and no-event intervals, including interrupted runs.
+- Owners: existing local provider adapter, ai-agent-runtime recorder/sink and
+  knowledge-evaluation analyzer. Request concise public summaries through the
+  supported turn option; keep gpt-6-astra/medium, tools and work admission intact.
+- Boundary: local-ai-provider.ts and a focused local-provider-activity.ts selector;
+  profiler/recorder.ts; evaluation/analyze.mjs and activity analysis/CLI in that
+  existing evaluation family; direct formal tests, existing proof/mapping, App
+  and framework recording specs/impact notes. No UI scheduler, new store or cache.
+- Conditions: reject foreign turn attribution for retained activities; support
+  turn-scoped plan notifications without threadId only for the current exact turn.
+  Save delta bodies once through the existing redacting payload sink, never a
+  growing prefix. Final public items remain authoritative, separate from deltas.
+- Exclusions: private reasoning content/textDelta, prompts, arbitrary native
+  outputs, hidden compute inference, changes to refresh/Knowledge/drawing, extra
+  model calls or changing production limits. Diagnostics cannot replay mutations
+  or change provider outcome; unknown/malformed content stays explicit.
+- Fixed DoD: actual provider-notification callback -> real recorder -> payload
+  references -> restored timeline regression; message/summary/plan deltas and
+  final values, empty/missing/malformed, Unicode, overlapping items, foreign turn,
+  interrupted output, sink failure, hash failure and linear saved-delta volume.
+  Timeline must include tool events and first-frame separately; idle ranges mean
+  no recorded activity, not model thought. Preserve existing native metadata and
+  receipt semantics; no extra model/tool round trip.
+- Sequence: update spec/Inspector, candidate admission on accepted cases; prove
+  new formal regressions fail; implement this observe slice; run focused provider,
+  recorder and analyzer tests, mapped proof, naming, scoped lint, production types
+  and framework build; bounded self-review and final Inspector verification.
+- Stop for unresolved owner/contract conflicts or three failed corrections; do
+  not weaken the DoD. After all gates, run one full 101 with 480 seconds work,
+  at most 60 seconds report-only, no video, complete I/O/images/report/screenshots
+  and source freeze. Report actual activities and unknown intervals explicitly.
+
+Design review: native public activities already arrive through the adapter. The
+recorder's nativeOutput payload path provides redaction, ordered writes and failure
+isolation; extend its accepted notification stage, not its storage model. The
+analyzer consumes those references and existing lifecycle/tool timestamps. No
+canonical document, persistence, Undo/Redo or collaboration path changes.
+
+Local implementation and self-review completed: public native notification bodies
+now use the existing sanitized payload sink, and the existing analyzer has an
+activity-only mode for partial streams without quality certification. Regression
+failures are retained in `tmp/public-activity-app-red-body.log`,
+`tmp/public-activity-runtime-red.log` and `tmp/public-activity-analysis-red.log`.
+Runtime 451 tests, direct App suites 309 passed / one opt-in native registration
+case skipped, three final activity/foreign-turn cases, and the existing knowledge
+evidence consumer command passed. Production App/server/proof types, runtime and
+service builds, naming and scoped lint passed (five existing console warnings).
+Admission revision 138 and verification 15e23fdd-024f-46ac-91f8-5e02307a187b passed.
+No product mutation or recovery owner changed. Live public-summary availability
+and actual recording cost remain to be observed in the one authorized run.
+
+Live observation completed in run 1793002315768: first frame 122.773 s, work
+stopped at 480 s, partial report/UI settlement at 503.031 s. Captured 589 public
+activities (21 completed summary items, five completed messages), 169,337 payload
+bytes, 36.403 ms serialization and 377.000 ms aggregate file writes. Six native
+images restored; report/checkpoint/reload/source verification completed. The
+interrupted reasoning item has no completion event, so the drawing stream remains
+incomplete despite zero recording failures. No post-cutoff drawing; only two
+context releases. All owned services cleaned up. See the detailed timeline and
+limits in docs/ai/knowledge/evaluations/2026-10-26-public-activity-eight-minute-101.md.
+No model rerun, CI inspection or push. Public plan emission was not observed live;
+formal integration coverage remains the evidence for that route. Mechanical review
+volume (6,953 starts) is recorded separately, not attributed to activity storage.
+
+### Authorized eight-minute full 101 observation - 2026-10-26
+
+Observe the committed automatic mechanical coverage slice a669266a1 once with
+run-101.mjs quality-knowledge --deadline-ms=480000. Use the unchanged full
+architecture-101 brief and two frozen reference attachments, one fresh document
+and empty tool library, production expanded-node limit 10,000 and effective
+gpt-6-astra / medium. No video. This authorization supersedes the preceding
+slice's no-model restriction for this one observation only.
+
+Step Execution Card - observe, with inspect and settle as result owners: freeze
+product sources before Send; existing browser/provider admission stops work at
+480 seconds, with at most 60 seconds of report-only settlement. The independent
+process watchdog retains its existing capture/cleanup allowance, never extending
+write admission. Preserve full raw input/output and exact submitted image assets,
+source snapshot, first/final/reload screenshots, document checkpoint and report.
+Verify event/payload integrity and actual configuration. Report first-content time
+explicitly alongside phase timings, actual coverage metadata, mechanical work,
+partial failures and no-replay recovery. Unexercised bulk material work or failure
+recovery stays unobserved; do not force a second turn or retry. Inspect final pixels
+separately from tool success and AI self-assessment. Use only owned services and
+clean them up with verified process identities. No source mutation during the run,
+CI inspection or remote push.
+
+Observation completed: run `1792997354886`, partial artwork. First visible
+content was 146.691 seconds after Send. Work stopped at 480 seconds; report/UI
+settlement finished at 504.094 seconds. Last drawing owner completion was
+463.390 seconds; only three successful retained-query releases followed cutoff.
+Fourteen leaf checks use bounded descendant selection, with 1,382 total input
+bytes and no cumulative candidate arrays. Five subtree checks preserve actual
+geometry review and parent coverage; the 1,637-node post-removal check reuses its
+existing results without fresh metadata/computed reads. The earlier 5,908-target
+workload was not repeated, so live scaling is not inferred from these counts.
+
+All 32 App tool call pairs, 68 owner action pairs and five exact submitted images
+are preserved; eleven streams parse complete, and 219 payload references verify.
+The final image correction lacks a subsequent AI visual check. Durable generation
+0 and sequence 667/667 plus root order match after fresh-context reload. Product
+source verification passes. The original immediate service-exit assertion failure
+is retained; later PID/port checks confirm release. Full evidence, timing, costs,
+observed query/capture failures and unobservable native error details are recorded
+in [the eight-minute observation report](../evaluations/2026-10-26-eight-minute-mechanical-coverage-101.md).
+No model retry, product changes, CI query or push was performed.
+
 
 ### Automatic mechanical coverage delivery - 2026-10-26
 

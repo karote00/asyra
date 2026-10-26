@@ -93,7 +93,10 @@ vi.mock('@asyra/ai-agent-runtime/node', async (importOriginal) => ({
       value: unknown
     ) => {
       retainedPayloads.push({ callId, value })
-      return { status: 'queued', path: 'fixture.json' }
+      return {
+        status: 'queued',
+        path: `fixture-${retainedPayloads.length - 1}.json`
+      }
     },
     flush: async () => ({ status: 'saved', path: null })
   })
@@ -4359,6 +4362,166 @@ it('attributes overlapping tool intervals once and leaves provider gaps unattrib
   }
 })
 
+it('retains public activity from native notifications through the recorder into an ordered timeline', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true })
+  spawn.mockReturnValue(server.child)
+  const completion = requestConfiguredAiActionBatch(input, { environment })
+  await untilTurn(server.packets)
+  server.notify('item/started', {
+    item: { id: 'public-message', type: 'agentMessage' }
+  })
+  for (const delta of ['Preparing ', 'the facade.'])
+    server.notify('item/agentMessage/delta', {
+      itemId: 'public-message',
+      delta
+    })
+  server.notify('item/completed', {
+    item: {
+      id: 'public-message',
+      type: 'agentMessage',
+      phase: 'commentary',
+      text: 'Preparing the facade.'
+    }
+  })
+  server.notify('item/reasoning/summaryPartAdded', {
+    itemId: 'summary',
+    summaryIndex: 0
+  })
+  server.notify('item/reasoning/summaryTextDelta', {
+    itemId: 'summary',
+    summaryIndex: 0,
+    delta: 'Choose reusable components.'
+  })
+  server.notify('item/reasoning/textDelta', {
+    itemId: 'summary',
+    delta: 'PRIVATE_CONTENT'
+  })
+  server.notify('item/completed', {
+    item: {
+      id: 'summary',
+      type: 'reasoning',
+      summary: ['Choose reusable components.'],
+      content: ['PRIVATE_CONTENT']
+    }
+  })
+  server.notify('turn/plan/updated', {
+    threadId: undefined,
+    plan: [{ step: 'Build facade', status: 'inProgress' }],
+    explanation: 'References are ready.'
+  })
+  server.notify('item/plan/delta', {
+    itemId: 'plan',
+    delta: 'Build the facade.'
+  })
+  server.notify('item/completed', {
+    item: { id: 'plan', type: 'plan', text: 'Build and inspect.' }
+  })
+  server.notify('item/completed', {
+    item: { id: 'empty', type: 'reasoning', summary: [] }
+  })
+  server.notify('item/completed', {
+    item: { id: 'missing', type: 'reasoning' }
+  })
+  server.notify('item/reasoning/summaryTextDelta', {
+    itemId: 'bad',
+    summaryIndex: -1,
+    delta: 3
+  })
+  server.notify('item/agentMessage/delta', {
+    threadId: 'foreign',
+    itemId: 'foreign',
+    delta: 'FOREIGN_TEXT'
+  })
+  // Preserve partial streamed messages without inventing a completed item.
+  for (let i = 0; i < 128; i++)
+    server.notify('item/agentMessage/delta', { itemId: 'partial', delta: 'x' })
+  server.finish()
+  await expect(completion).resolves.toMatchObject(batch)
+  const payloads = retainedPayloads
+    .map((p) => p.value)
+    .filter(
+      (v): v is Record<string, unknown> =>
+        !!v && (v as Record<string, unknown>).stage === 'native-public-activity'
+    )
+  expect(payloads).toContainEqual(
+    expect.objectContaining({
+      method: 'turn/plan/updated',
+      status: 'available',
+      plan: [{ step: 'Build facade', status: 'inProgress' }]
+    })
+  )
+  expect(
+    server.packets.find((p) => p.method === 'turn/start')?.params.summary
+  ).toBe('concise')
+  expect(payloads).toContainEqual(
+    expect.objectContaining({
+      itemId: 'summary',
+      summary: ['Choose reusable components.']
+    })
+  )
+  expect(payloads).toContainEqual(
+    expect.objectContaining({ itemId: 'empty', status: 'empty' })
+  )
+  expect(payloads).toContainEqual(
+    expect.objectContaining({ itemId: 'missing', status: 'unavailable' })
+  )
+  expect(payloads).toContainEqual(
+    expect.objectContaining({ itemId: 'bad', status: 'malformed' })
+  )
+  expect(JSON.stringify(payloads)).not.toMatch(/PRIVATE_CONTENT|FOREIGN_TEXT/)
+  const deltas = payloads.filter((p) => p.itemId === 'partial')
+  expect(deltas).toHaveLength(128)
+  expect(deltas.reduce((n, p) => n + String(p.delta).length, 0)).toBe(128)
+  const module = new URL(
+    '../../test-data/knowledge-evaluation/public-activity.mjs',
+    import.meta.url
+  ).href
+  const { restorePublicActivity } = await import(/* @vite-ignore */ module)
+  const timeline = restorePublicActivity(
+    retainedRecords,
+    (ref: { path: string }) =>
+      retainedPayloads[Number(ref.path.match(/fixture-(\d+)/)?.[1])].value
+  )
+  expect(
+    timeline.activities.find(
+      (p: { itemId: string; method: string }) =>
+        p.itemId === 'plan' && p.method === 'item/completed'
+    ).text
+  ).toBe('Build and inspect.')
+  expect(
+    timeline.activities.filter(
+      (p: { itemId: string }) => p.itemId === 'partial'
+    )
+  ).toHaveLength(128)
+  expect(
+    timeline.events.some((e: { kind: string }) => e.kind === 'reasoning')
+  ).toBe(true)
+})
+
+it('rejects foreign-turn activity without retaining its content or replaying a tool', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const server = fakeServer({ hold: true })
+  spawn.mockReturnValue(server.child)
+  const executeBatch = vi.fn()
+  const completion = requestConfiguredAiActionBatch(input, {
+    environment,
+    executeBatch
+  })
+  const rejected = expect(completion).rejects.toMatchObject({
+    code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+  })
+  await untilTurn(server.packets)
+  server.notify('item/agentMessage/delta', {
+    turnId: 'foreign-turn',
+    itemId: 'foreign-item',
+    delta: 'FOREIGN_TEXT'
+  })
+  await rejected
+  expect(JSON.stringify(retainedPayloads)).not.toContain('FOREIGN_TEXT')
+  expect(executeBatch).not.toHaveBeenCalled()
+})
+
 it('records reported provider item intervals without retaining reasoning content', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({ hold: true })
@@ -4372,7 +4535,7 @@ it('records reported provider item intervals without retaining reasoning content
           id: 'reasoning-1',
           type: 'reasoning',
           content: 'PRIVATE REASONING',
-          summary: ['PRIVATE REASONING']
+          summary: ['Public progress summary']
         }
       })
     server.finish()
@@ -4396,6 +4559,7 @@ it('records reported provider item intervals without retaining reasoning content
       })
     ])
     expect(JSON.stringify(records)).not.toContain('PRIVATE REASONING')
+    expect(JSON.stringify(retainedPayloads)).not.toContain('PRIVATE REASONING')
   } finally {
     log.mockRestore()
   }
