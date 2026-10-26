@@ -515,28 +515,6 @@
           "radius": 0.005
         },
         {
-          "partId": "door-1",
-          "primitive": "rounded-box",
-          "size": [0.427, 0.023, 0.51],
-          "centre": [0.2175, -0.2365, 0.323],
-          "material": "oak",
-          "radius": 0.004,
-          "panelRecess": {
-            "innerWidth": 0.357,
-            "innerHeight": 0.44,
-            "depth": 0.004,
-            "border": 0.035
-          }
-        },
-        {
-          "partId": "handle-1",
-          "primitive": "rounded-box",
-          "size": [0.018, 0.013, 0.065],
-          "centre": [0.036, -0.265, 0.51],
-          "material": "dark",
-          "radius": 0.005
-        },
-        {
           "partId": "faucet",
           "primitive": "bezier-tube",
           "radius": 0.012,
@@ -591,31 +569,100 @@
           "material": "dark"
         },
         {
-          "partId": "handle-mount-lower-1",
+          "partId": "drawer-front-lower",
           "primitive": "rounded-box",
-          "size": [0.012, 0.018, 0.012],
-          "centre": [0.036, -0.2515, 0.4875],
-          "radius": 0.002,
-          "material": "dark"
+          "size": [0.2075, 0.023, 0.251],
+          "centre": [0.10975, -0.2365, 0.1935],
+          "radius": 0.004,
+          "material": "oak"
         },
         {
-          "partId": "handle-mount-upper-1",
+          "partId": "handle-drawer-lower",
           "primitive": "rounded-box",
-          "size": [0.012, 0.018, 0.012],
-          "centre": [0.036, -0.2515, 0.5325],
+          "size": [0.07, 0.013, 0.012],
+          "centre": [0.10975, -0.265, 0.2685],
+          "radius": 0.003,
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-lower-mount--1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.08474999999999999, -0.2515, 0.2685],
           "radius": 0.002,
-          "material": "dark"
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-lower-mount-1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.13475, -0.2515, 0.2685],
+          "radius": 0.002,
+          "material": "grey"
+        },
+        {
+          "partId": "drawer-front-upper",
+          "primitive": "rounded-box",
+          "size": [0.2075, 0.023, 0.251],
+          "centre": [0.10975, -0.2365, 0.4525],
+          "radius": 0.004,
+          "material": "oak"
+        },
+        {
+          "partId": "handle-drawer-upper",
+          "primitive": "rounded-box",
+          "size": [0.07, 0.013, 0.012],
+          "centre": [0.10975, -0.265, 0.5275],
+          "radius": 0.003,
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-upper-mount--1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.08474999999999999, -0.2515, 0.5275],
+          "radius": 0.002,
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-upper-mount-1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.13475, -0.2515, 0.5275],
+          "radius": 0.002,
+          "material": "grey"
+        },
+        {
+          "partId": "end-panel",
+          "primitive": "rounded-box",
+          "size": [0.2075, 0.023, 0.51],
+          "centre": [0.32725, -0.2365, 0.323],
+          "radius": 0.004,
+          "material": "oak"
         }
       ],
       "nominalSize": [0.9, 0.5215, 0.87],
       "source": "Wooden sink cabinet below the poster on the right of the pantry",
       "decisions": [
         "single centred basin",
-        "two front cabinet doors",
+        "one left front door, two stacked right drawers and a narrow right end panel",
         "plain rear and underside",
         "no plumbing interior"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "frontAuthority": {
+        "reference": "../architecture/review/approved-office-reference.jpg",
+        "sourceRegionPixels": [885, 328, 983, 390],
+        "rule": "The approved complete-office image takes precedence over the former two-door recipe for the active reconstruction. Keep the left door, split the former right half into two stacked drawer fronts and a narrow end panel. Image spans determine the visible subdivision; retained hidden cabinet depth and lower extents are authored construction.",
+        "defaultFrontIntervalsX": {
+          "leftDoor": [-0.431, -0.004],
+          "drawers": [0.006, 0.2135],
+          "endPanel": [0.2235, 0.431]
+        },
+        "defaultDrawerGapMetres": 0.008,
+        "defaultColumnGapMetres": 0.01,
+        "replaceableAppearance": true
+      }
     },
     {
       "moduleId": "coffee-machine",

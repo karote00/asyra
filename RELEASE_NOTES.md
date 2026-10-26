@@ -3,6 +3,182 @@
 This file tracks releases for Asyra. Previous releases under Asyra (v0.1.0,
 etc.) are not included here.
 
+## Pending - Approved office structure
+
+```update-note
+{
+  "change": "office-approved-structure",
+  "owner": "Asyra Office development",
+  "summary": "Apply owner-approved shared-floor and stepped-wall construction, complete entrance and white pantry floor finish; retain independent numeric and hardware visual evidence. Retire rejected room-layout fixtures while retaining reusable asset recipes.",
+  "sources": [
+    "apps/asyra-office/.env.example",
+    "assets/asyra-office/models/pantry/pantry-model-spec.json",
+    "apps/asyra-office/e2e/structure-hardware.spec.ts",
+    "apps/asyra-office/src/assets/__tests__/clock.test.ts",
+    "apps/asyra-office/src/assets/pantry-smallware.ts",
+    "apps/asyra-office/src/scene/__tests__/approved-structure.test.ts",
+    "apps/asyra-office/src/scene/__tests__/artwork.test.ts",
+    "apps/asyra-office/src/scene/__tests__/entrance-structure.test.ts",
+    "apps/asyra-office/src/scene/__tests__/structure-circulation.test.ts",
+    "apps/asyra-office/src/scene/__tests__/structure-stage.test.ts",
+    "apps/asyra-office/src/scene/__tests__/wall-joins.test.ts",
+    "apps/asyra-office/src/scene/artwork.ts",
+    "apps/asyra-office/src/scene/entry-frame.ts",
+    "apps/asyra-office/src/scene/interior-plants.ts",
+    "apps/asyra-office/src/scene/lettering.ts",
+    "apps/asyra-office/src/scene/reference/office-structure.json",
+    "apps/asyra-office/src/scene/wall-joins.ts",
+    "assets/asyra-office/models/architecture/review/draw_office_structure_proposal.py",
+    "assets/asyra-office/models/architecture/review/live-approved-structure-close.png",
+    "assets/asyra-office/models/architecture/review/live-approved-structure-overview.png",
+    "assets/asyra-office/models/architecture/review/live-approved-structure-record.json",
+    "assets/asyra-office/models/architecture/review/lounge-proportion-measurements.json",
+    "assets/asyra-office/models/architecture/review/lounge-proportion-source.png",
+    "assets/asyra-office/models/architecture/review/lounge-wall-proportions-review.png",
+    "assets/asyra-office/models/architecture/review/lounge_proportion_geometry.py",
+    "assets/asyra-office/models/architecture/review/office-single-floor-structure-proposal-v1.json",
+    "assets/asyra-office/models/architecture/review/office-single-floor-structure-proposal-v1.png",
+    "assets/asyra-office/models/architecture/review/test_office_structure_proposal.py",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Private app review milestone. No public API, hosted deployment or consumer migration. Furniture admission follows separately."
+}
+```
+
+## Pending - Asyra Office reference scene preview
+
+```update-note
+{
+  "change": "office-reference-scene-preview",
+  "owner": "Asyra Office development",
+  "summary": "Render the owner-approved single-floor office structure and complete fixed-left/operable-right entrance through the official spatial provider. Preserve outdoor scenery, varied vegetation and smooth camera controls. Remove the rejected furnished-layout branch so factory defaults match the live stage; admit new furniture separately. Keep standalone asset review and reusable appearance/size recipes. Lighting banding, furnishings and full product behavior remain pending.",
+  "sources": [
+    "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/office-rebuild/rebuild.flow.json",
+    "apps/asyra-office/src/assets/__tests__/construction.test.ts",
+    "apps/asyra-office/src/assets/__tests__/companions.test.ts",
+    "apps/asyra-office/src/assets/__tests__/plants.test.ts",
+    "apps/asyra-office/src/assets/plants.ts",
+    "apps/asyra-office/src/assets/plant-growth.ts",
+    "assets/asyra-office/models/small-plants/small-plants-model-spec.json",
+    "assets/asyra-office/models/small-plants/GEOMETRY-SUPPLEMENT.md",
+    "assets/asyra-office/models/small-plants/README.md",
+    "apps/asyra-office/src/assets/plant-vessels.ts",
+    "apps/asyra-office/src/assets/__tests__/vegetation-contract.test.ts",
+    "apps/asyra-office/src/assets/__tests__/canopy.test.ts",
+    "apps/asyra-office/src/assets/tree-growth.ts",
+    "apps/asyra-office/src/assets/tree-branching.ts",
+    "apps/asyra-office/src/assets/__tests__/tree-branching.test.ts",
+    "apps/asyra-office/src/assets/__tests__/tree-growth.test.ts",
+    "assets/asyra-office/models/street/BARE-TREE.md",
+    "assets/asyra-office/models/street/TREE-CONSTRUCTION.md",
+    "assets/asyra-office/models/street/tree-construction-spec.json",
+    "assets/asyra-office/models/street/review/06-street-tree-review.md",
+    "apps/asyra-office/src/preview/vegetation-controller.ts",
+    "apps/asyra-office/src/preview/__tests__/vegetation-controller.test.ts",
+    "apps/asyra-office/e2e/vegetation.spec.ts",
+    "apps/asyra-office/e2e/foliage.spec.ts",
+    "apps/asyra-office/e2e/tree.spec.ts",
+    "apps/asyra-office/e2e/camera.spec.ts",
+    "apps/asyra-office/src/ui/camera-keyboard.ts",
+    "apps/asyra-office/src/ui/__tests__/camera-keyboard.test.ts",
+    "apps/asyra-office/src/assets/__tests__/vegetation.test.ts",
+    "apps/asyra-office/src/assets/__tests__/wall.test.ts",
+    "apps/asyra-office/src/assets/catalog.ts",
+    "apps/asyra-office/src/assets/furnishings.ts",
+    "apps/asyra-office/src/assets/desk-items.ts",
+    "apps/asyra-office/src/assets/__tests__/desk-items.test.ts",
+    "apps/asyra-office/src/assets/geometry.ts",
+    "apps/asyra-office/src/assets/instances.ts",
+    "apps/asyra-office/src/assets/lantern.ts",
+    "apps/asyra-office/src/assets/puppets.ts",
+    "apps/asyra-office/src/assets/specification.ts",
+    "apps/asyra-office/src/assets/upholstered-panel.ts",
+    "assets/asyra-office/models/furniture/furniture-model-spec.json",
+    "apps/asyra-office/e2e/asset-catalog.spec.ts",
+    "apps/asyra-office/src/assets/__tests__/architecture-detail.test.ts",
+    "apps/asyra-office/src/assets/__tests__/awning.test.ts",
+    "apps/asyra-office/src/assets/__tests__/furniture-reference.test.ts",
+    "apps/asyra-office/src/assets/__tests__/pillow.test.ts",
+    "apps/asyra-office/src/assets/__tests__/placement-lod.test.ts",
+    "apps/asyra-office/src/assets/__tests__/street-detail.test.ts",
+    "apps/asyra-office/src/assets/awning.ts",
+    "apps/asyra-office/src/assets/bench.ts",
+    "apps/asyra-office/src/assets/chalkboard.ts",
+    "apps/asyra-office/src/assets/clock.ts",
+    "apps/asyra-office/src/assets/manhole.ts",
+    "apps/asyra-office/src/assets/pantry-details.ts",
+    "apps/asyra-office/src/assets/pillow.ts",
+    "apps/asyra-office/src/assets/profile-extrusion.ts",
+    "apps/asyra-office/src/assets/puppet-garments.ts",
+    "apps/asyra-office/src/assets/radial-solid.ts",
+    "apps/asyra-office/src/assets/recessed-panel.ts",
+    "apps/asyra-office/src/assets/road-opening.ts",
+    "apps/asyra-office/src/assets/rounded-turning.ts",
+    "apps/asyra-office/src/assets/solid-subtraction.ts",
+    "apps/asyra-office/src/assets/tea-chair.ts",
+    "apps/asyra-office/src/assets/vegetation.ts",
+    "apps/asyra-office/src/assets/wall.ts",
+    "apps/asyra-office/src/scene/__tests__/runtime.test.ts",
+    "apps/asyra-office/src/scene/__tests__/scene.test.ts",
+    "apps/asyra-office/src/scene/__tests__/surfaces.test.ts",
+    "apps/asyra-office/src/scene/controller.ts",
+    "apps/asyra-office/src/scene/reference-scene.ts",
+    "apps/asyra-office/src/scene/runtime.ts",
+    "apps/asyra-office/src/scene/surfaces.ts",
+    "apps/asyra-office/src/ui/Icons.tsx",
+    "apps/asyra-office/src/ui/OfficeScene.tsx",
+    "apps/asyra-office/src/ui/office.css",
+    "apps/asyra-office/src/main.tsx",
+    "apps/asyra-office/e2e/scene.spec.ts",
+    "apps/asyra-office/e2e/office.spec.ts",
+    "apps/asyra-office/README.md",
+    "apps/asyra-office/src/scene/office-layout.ts",
+    "apps/asyra-office/src/scene/office-interior.ts",
+    "apps/asyra-office/src/scene/office-details.ts",
+    "apps/asyra-office/src/scene/__tests__/office-interior.test.ts",
+    "apps/asyra-office/src/scene/__tests__/__snapshots__/office-interior.test.ts.snap",
+    "apps/asyra-office/e2e/interior.spec.ts",
+    "apps/asyra-office/scripts/fit-interior.py",
+    "apps/asyra-office/scripts/export-interior-meshes.ts",
+    "apps/asyra-office/scripts/compare-interior.py",
+    "apps/asyra-office/src/scene/reference/interior-landmarks.json",
+    "apps/asyra-office/src/scene/reference/interior-fit.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Private local rebuild preview only, without live provider work or a deployment. Asset fidelity and manual visual acceptance remain open; app README documents current limitations."
+}
+```
+
+## Pending - Asyra Office first wall review
+
+```update-note
+{
+  "change": "office-first-wall-review",
+  "owner": "Asyra Office development",
+  "summary": "Add the first procedural wall and an official Preset 3D review harness with five views, detail inspection, replaceable appearance and bounded LoD.",
+  "sources": [
+    "tools/flow-inspector/inspectors/office-rebuild/rebuild.flow.json",
+    "apps/asyra-office/src/assets/__tests__/wall.test.ts",
+    "apps/asyra-office/src/assets/wall.ts",
+    "apps/asyra-office/src/main.tsx",
+    "apps/asyra-office/src/preview/AssetPreview.tsx",
+    "apps/asyra-office/src/preview/__tests__/controller.test.ts",
+    "apps/asyra-office/src/preview/__tests__/runtime.test.ts",
+    "apps/asyra-office/src/preview/controller.ts",
+    "apps/asyra-office/src/preview/runtime.ts",
+    "apps/asyra-office/src/styles.css",
+    "apps/asyra-office/e2e/office.spec.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Private rebuild checkpoint only, pending user visual acceptance. No public package contract or hosted deployment is changed; see apps/asyra-office/README.md for local review."
+}
+```
+
 ## Pending - Asyra Office rebuild architecture
 
 ```update-note

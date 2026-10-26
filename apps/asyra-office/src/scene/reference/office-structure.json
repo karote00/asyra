@@ -1,0 +1,324 @@
+{
+  "approval": "Owner accepted building structure on 2026-10-26",
+  "approvedSnapshotSha256": "d86f7e7b55db77a90a75bf4ff7449581d8cd53c0aa58753722a89c93b239cd5d",
+  "parameters": {
+    "azimuth": 38.41091408711091,
+    "elevation": 30.992159101961988,
+    "distance": 36.90551109120839,
+    "targetX": -0.008607084959898259,
+    "targetY": 0.10735398802096796,
+    "targetZ": 0.379999999999999,
+    "rearTop": 2.992672772401046,
+    "pantryTop": 2.878262867675208,
+    "creamTop": 2.3395045793007845,
+    "greenTop": 2.1435541213707063,
+    "loungeTop": 1.5771608580828143,
+    "returnTop": 1.705174098353056,
+    "facadeTop": 1.7428581921662738,
+    "pantryX": 0.09769322070160588,
+    "creamY": -0.6070371312101217,
+    "creamEnd": -1.5038033714710735,
+    "greenStart": -1.1909684622865548,
+    "greenEnd": -0.18136489173651738,
+    "loungeX": 0.13479691378046768,
+    "loungeY": -0.8164636351722607,
+    "returnLength": 0.684667097281489,
+    "pantryFront": 1.0862561746681618,
+    "discussionFront": 0.09209763018356132,
+    "facadeEnd": 0.2047969137804677,
+    "doorX": -0.38715148069634353,
+    "doorWidth": 0.8238967889536225,
+    "doorHeight": 1.0770217060417837,
+    "discussionEnd": -0.34330106617014944,
+    "rearY": 2.702099517721014,
+    "loungeSplit": 1.3483293890410468,
+    "loungeRightTop": 1.8341284372629167,
+    "fov": 13.345241665720485
+  },
+  "shell": {
+    "westX": -3.02,
+    "eastX": 3.02,
+    "frontY": -2.42,
+    "exteriorThickness": 0.16,
+    "facadeThickness": 0.18,
+    "partitionThickness": 0.14,
+    "capDepthRatio": 1.1250000000000002,
+    "provenance": "Existing normalized shell dimensions, centralized without changing values. Width fixes similarity scale; these are not recovered absolute building dimensions. Foundation bounds follow body faces, not foreground occluders."
+  },
+  "floors": {
+    "lounge": 0.38,
+    "work": 0.38,
+    "discussion": 0.38,
+    "pantry": 0.38
+  },
+  "foundation": {
+    "outline": [
+      [-3.1, -2.51],
+      [3.1, -2.51],
+      [3.1, 2.782099517721014],
+      [-3.1, 2.782099517721014]
+    ],
+    "bottom": 0.03,
+    "top": 0.355
+  },
+  "walls": [
+    {
+      "id": "left-wall",
+      "start": -2.42,
+      "end": 0.09209763018356132,
+      "cross": -3.02,
+      "base": 0.38,
+      "top": 2.992672772401046,
+      "endTop": 2.992672772401046,
+      "thickness": 0.16,
+      "alongY": true,
+      "ends": {
+        "start": {
+          "offset": -0.09
+        }
+      }
+    },
+    {
+      "id": "discussion-left-wall",
+      "start": 0.09209763018356132,
+      "end": 2.702099517721014,
+      "cross": -3.02,
+      "base": 0.38,
+      "top": 2.992672772401046,
+      "endTop": 2.992672772401046,
+      "thickness": 0.16,
+      "alongY": true,
+      "ends": {
+        "end": {
+          "slope": 1
+        }
+      }
+    },
+    {
+      "id": "back-wall",
+      "start": -3.02,
+      "end": -0.34330106617014944,
+      "cross": 2.702099517721014,
+      "base": 0.38,
+      "top": 2.992672772401046,
+      "endTop": 2.992672772401046,
+      "thickness": 0.16,
+      "alongY": false,
+      "ends": {
+        "start": {
+          "slope": -1
+        }
+      }
+    },
+    {
+      "id": "pantry-back-wall",
+      "start": 0.09769322070160588,
+      "end": 3.1,
+      "cross": 2.702099517721014,
+      "base": 0.38,
+      "top": 2.878262867675208,
+      "endTop": 2.878262867675208,
+      "thickness": 0.16,
+      "alongY": false,
+      "ends": {
+        "start": {
+          "slope": -1
+        }
+      }
+    },
+    {
+      "id": "work-back-partition",
+      "start": -3.02,
+      "end": -1.5038033714710735,
+      "cross": -0.6070371312101217,
+      "base": 0.38,
+      "top": 2.3395045793007845,
+      "endTop": 2.3395045793007845,
+      "thickness": 0.16,
+      "alongY": false,
+      "ends": {
+        "start": {
+          "offset": 0.08
+        }
+      }
+    },
+    {
+      "id": "work-divider",
+      "start": -1.1909684622865548,
+      "end": -0.18136489173651738,
+      "cross": -0.6070371312101217,
+      "base": 0.38,
+      "top": 2.1435541213707063,
+      "endTop": 2.1435541213707063,
+      "thickness": 0.14,
+      "alongY": false,
+      "ends": {}
+    },
+    {
+      "id": "pantry-divider",
+      "start": 1.0862561746681618,
+      "end": 2.702099517721014,
+      "cross": 0.09769322070160588,
+      "base": 0.38,
+      "top": 2.878262867675208,
+      "endTop": 2.878262867675208,
+      "thickness": 0.16,
+      "alongY": true,
+      "ends": {
+        "end": {
+          "slope": 1
+        }
+      }
+    },
+    {
+      "id": "lounge-divider",
+      "start": 0.13479691378046768,
+      "end": 1.3483293890410468,
+      "cross": -0.8164636351722607,
+      "base": 0.38,
+      "top": 1.5771608580828143,
+      "endTop": 1.5771608580828143,
+      "thickness": 0.14,
+      "alongY": false,
+      "ends": {
+        "start": {
+          "offset": 0.07
+        }
+      }
+    },
+    {
+      "id": "lounge-middle-wall",
+      "start": 1.3483293890410468,
+      "end": 1.805160428776189,
+      "cross": -0.8164636351722607,
+      "base": 0.38,
+      "top": 1.7097128145770428,
+      "endTop": 1.7097128145770428,
+      "thickness": 0.14,
+      "alongY": false,
+      "ends": {}
+    },
+    {
+      "id": "lounge-right-wall",
+      "start": 1.805160428776189,
+      "end": 3.1,
+      "cross": -0.8164636351722607,
+      "base": 0.38,
+      "top": 1.8341284372629167,
+      "endTop": 1.8341284372629167,
+      "thickness": 0.14,
+      "alongY": false,
+      "ends": {}
+    },
+    {
+      "id": "lounge-rear-return",
+      "start": -0.8164636351722607,
+      "end": -0.3431972613123588,
+      "cross": 1.9029785866895716,
+      "base": 0.38,
+      "top": 1.8341284372629167,
+      "endTop": 1.8341284372629167,
+      "thickness": 0.19563631582676494,
+      "alongY": true,
+      "ends": {
+        "start": {
+          "offset": 0.07,
+          "capOffset": 0.07875000000000003
+        }
+      }
+    },
+    {
+      "id": "lounge-left-low",
+      "start": -2.33,
+      "end": -1.5011307324537497,
+      "cross": 0.13479691378046768,
+      "base": 0.38,
+      "top": 1.131485132697529,
+      "endTop": 1.131485132697529,
+      "thickness": 0.14,
+      "alongY": true,
+      "ends": {}
+    },
+    {
+      "id": "lounge-left-return",
+      "start": -1.5011307324537497,
+      "end": -0.8164636351722607,
+      "cross": 0.13479691378046768,
+      "base": 0.38,
+      "top": 1.705174098353056,
+      "endTop": 1.705174098353056,
+      "thickness": 0.14,
+      "alongY": true,
+      "ends": {
+        "end": {
+          "offset": 0.07
+        }
+      }
+    },
+    {
+      "id": "front-thin-wall",
+      "start": -2.94,
+      "end": -2.2520756751105226,
+      "cross": -2.42,
+      "base": 0.38,
+      "top": 1.7428581921662738,
+      "endTop": 1.7428581921662738,
+      "thickness": 0.09,
+      "alongY": false,
+      "ends": {}
+    },
+    {
+      "id": "front-facade",
+      "start": -2.2520756751105226,
+      "end": -0.7990998751731548,
+      "cross": -2.42,
+      "base": 0.38,
+      "top": 1.7428581921662738,
+      "endTop": 1.7428581921662738,
+      "thickness": 0.18,
+      "alongY": false,
+      "ends": {}
+    },
+    {
+      "id": "entry-pier",
+      "start": 0.024796913780467722,
+      "end": 0.2047969137804677,
+      "cross": -2.42,
+      "base": 0.38,
+      "top": 1.7428581921662738,
+      "endTop": 1.7428581921662738,
+      "thickness": 0.18,
+      "alongY": false,
+      "ends": {}
+    },
+    {
+      "id": "entry-header",
+      "start": -0.7990998751731548,
+      "end": 0.024796913780467722,
+      "cross": -2.42,
+      "base": 1.4570217060417838,
+      "top": 1.7428581921662738,
+      "endTop": 1.7428581921662738,
+      "thickness": 0.18,
+      "alongY": false,
+      "ends": {}
+    }
+  ],
+  "floorBand": [
+    [2.94, 3.1],
+    [-0.7464636351722607, 2.622099517721014],
+    [0.355, 0.38]
+  ],
+  "doorScale": 0.49632336683953165,
+  "loungeRearBranch": {
+    "centerX": 1.9029785866895716,
+    "length": 0.47326637385990195,
+    "thickness": 0.19563631582676494,
+    "top": 1.8341284372629167
+  },
+  "camera": {
+    "position": [22.59336815399516, -24.00642180031182, 16.80234092421001],
+    "target": [-0.008607084959898259, 0.10735398802096796, 0.379999999999999],
+    "fov": 13.345241665720485
+  }
+}

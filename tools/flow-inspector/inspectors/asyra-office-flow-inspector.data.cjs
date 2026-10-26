@@ -36,7 +36,8 @@
         ownerPackage: '@asyra/asyra-office',
         inputs: [
           'approved asset specification',
-          'requested extents and appearance'
+          'requested extents and appearance',
+          'deterministic vegetation variation seed'
         ],
         outputs: ['artifact:asset'],
         conditions: [
@@ -81,7 +82,8 @@
           'apps/asyra-office/src/main.tsx'
         ],
         specRefs: [
-          'docs/ai/apps/asyra-office/implementation.md#stage-1---wall-asset-harness'
+          'docs/ai/apps/asyra-office/implementation.md#stage-1---wall-asset-harness',
+          'docs/ai/apps/asyra-office/implementation.md#vegetation-specification-reconciliation---bounded-model-iteration'
         ],
         failureOwnerStepId: 'preview-asset'
       },
@@ -324,11 +326,14 @@
           'artifact:members',
           'artifact:pose',
           'artifact:awards',
-          'place or agent camera intent'
+          'place, agent or manual camera intent',
+          'presentation frame clock (manual camera input only)',
+          'explicit synthetic reference scene (preview only)',
+          'owner-approved building construction specification'
         ],
         outputs: ['artifact:spatial-scene'],
         conditions: [
-          'Full reference composition; task click only follows its agent. Simulation and work stay separate; hidden presentation does not stop canonical work.'
+          'Reference composition omits rejected assets instead of retaining placeholders; task click only follows its agent. Manual camera movement preserves ground height and does not rebuild assets. Held keys produce elapsed-time movement with smooth start and release; focus loss cancels movement and idle presentation schedules no movement frames. An explicitly synthetic preview supplies frozen layout, actors and work without live membership or rewards. Structural authoring review consumes the owner-approved building construction specification: one shared office floor, individually identified stepped walls, coplanar west dividers, a flush white pantry floor band and the complete fixed-left/operable-right entrance assembly at uniform scale. It omits indoor furnishings, decorations and occupants while preserving exterior geometry. Do not refit approved construction from historical image landmarks. Room furnishing waits for structural review. Simulation and work stay separate; hidden presentation does not stop canonical work.'
         ],
         bypasses: ['No invalid input bypasses this owner.'],
         allowedContributors: ['@asyra/asyra-office'],
@@ -340,7 +345,8 @@
         cacheDimensions: [],
         implementationBoundary: [
           'apps/asyra-office/src/scene/',
-          'apps/asyra-office/src/ui/'
+          'apps/asyra-office/src/ui/',
+          'apps/asyra-office/src/main.tsx'
         ],
         specRefs: [
           'docs/ai/apps/asyra-office/implementation.md#office-interaction'

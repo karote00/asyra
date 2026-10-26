@@ -30,3 +30,11 @@ Recognizable source colours, contours, and layout guide appearance. Faucet detai
 Images/documents only. No Blender, GLB, or feature implementation. These are static closed exteriors with visible recesses only, excluding fridge/cabinet interiors, plumbing, and appliance mechanisms. Future app requirements determine door opening, pouring, and coffee effects. Snack cabinet and other pantry objects remain a later batch.
 
 Generated images are not calibrated projections. Slight view-tone/position differences must not become materials or separate geometry. Future actual models need comparison; complete documentation does not establish 100% reconstruction.
+
+
+The active office reconstruction uses the full reference ahead of conflicting
+older recipe dimensions. See the geometry supplement's cabinet-front correction:
+the sink front has one left door, two stacked drawers and one narrow end panel.
+Its placed three-axis extents are derived from countertop landmarks in the app's
+`interior-landmarks.json` / `interior-fit.json`, not from the faucet-inclusive
+whole-object bounding box. The table above remains the reusable default scale.

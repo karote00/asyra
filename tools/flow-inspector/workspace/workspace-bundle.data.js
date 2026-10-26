@@ -19135,7 +19135,7 @@
     {
       "id": "asyra-office",
       "slug": "asyra-office",
-      "title": "Asyra Office interaction flow",
+      "title": "Asyra Office rebuild",
       "kind": "flow-v2",
       "group": "Framework",
       "subgroup": "Architecture and Runtime",
@@ -19156,8 +19156,8 @@
         "target": {
           "id": "asyra-office",
           "kind": "application",
-          "title": "Asyra Office interaction flow",
-          "subtitle": "Source evidence, canonical layout, transient spatial presentation"
+          "title": "Asyra Office rebuild",
+          "subtitle": "Modular assets, retained work, canonical growth and independent presentation"
         },
         "authority": {
           "specPath": "docs/ai/apps/asyra-office/implementation.md",
@@ -19169,43 +19169,120 @@
         "lanes": [
           {
             "id": "product",
-            "title": "Office owners",
+            "title": "Product owners",
             "order": 1
           }
         ],
         "steps": [
           {
-            "id": "admit-source",
+            "id": "construct-asset",
             "order": 1,
             "laneId": "product",
-            "title": "Validate source evidence and retain accepted activity",
-            "purpose": "Validate source evidence and retain accepted activity",
-            "ownerPackage": "@asyra/preset",
+            "title": "Construct approved modular assets",
+            "purpose": "Construct approved modular assets",
+            "ownerPackage": "@asyra/asyra-office",
             "inputs": [
-              "versioned provider events",
-              "connection fidelity",
+              "approved asset specification",
+              "requested extents and appearance",
+              "deterministic vegetation variation seed"
+            ],
+            "outputs": [
+              "artifact:asset"
+            ],
+            "conditions": [
+              "Validate complete geometry before publication; retain named regions, physical UVs and LoD error. Unsupported capability stops production."
+            ],
+            "bypasses": [
+              "No invalid input bypasses this owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/assets/"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#asset-construction-boundary"
+            ],
+            "failureOwnerStepId": "construct-asset"
+          },
+          {
+            "id": "preview-asset",
+            "order": 2,
+            "laneId": "product",
+            "title": "Review one asset through Core",
+            "purpose": "Review one asset through Core",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "artifact:asset",
+              "review camera intent"
+            ],
+            "outputs": [
+              "artifact:preview-scene"
+            ],
+            "conditions": [
+              "Read-only asset session; camera updates reuse completed meshes. Core startup, resize and cleanup are owned here."
+            ],
+            "bypasses": [
+              "No invalid input bypasses this owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/preview/",
+              "apps/asyra-office/src/main.tsx"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#stage-1---wall-asset-harness",
+              "docs/ai/apps/asyra-office/implementation.md#vegetation-specification-reconciliation---bounded-model-iteration"
+            ],
+            "failureOwnerStepId": "preview-asset"
+          },
+          {
+            "id": "admit-source",
+            "order": 3,
+            "laneId": "product",
+            "title": "Retain validated provider evidence",
+            "purpose": "Retain validated provider evidence",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "provider events",
+              "connection identity and fidelity",
               "archive acknowledgement"
             ],
             "outputs": [
               "artifact:activity"
             ],
             "conditions": [
-              "Reject invalid batches atomically; source sequence deduplicates replay; archive failure publishes no state."
+              "Admit whole batches atomically; explicit gaps do not prove streaks or rewards. Requires durable archive proof before execution."
             ],
             "bypasses": [
-              "No unvalidated input may bypass the owner."
+              "No invalid input bypasses this owner."
             ],
             "allowedContributors": [
-              "@asyra/preset"
+              "@asyra/asyra-office"
             ],
             "forbiddenContributors": [
-              "React editable copies",
-              "raw provider tokens in scene",
-              "renderer-owned document writes"
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "packages/preset/src/agent-activity.ts"
+              "apps/asyra-office/src/connections/"
             ],
             "specRefs": [
               "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
@@ -19214,34 +19291,34 @@
           },
           {
             "id": "project-agent",
-            "order": 2,
+            "order": 4,
             "laneId": "product",
-            "title": "Publish bounded per-agent semantic projections",
-            "purpose": "Publish bounded per-agent semantic projections",
-            "ownerPackage": "@asyra/preset",
+            "title": "Project keyed tasks and work",
+            "purpose": "Project keyed tasks and work",
+            "ownerPackage": "@asyra/asyra-office",
             "inputs": [
               "artifact:activity"
             ],
             "outputs": [
-              "artifact:agent-projection"
+              "artifact:work"
             ],
             "conditions": [
-              "New attempts supersede old attempts; unrelated agents receive zero notifications; history remains retained."
+              "Keep full task assignment separate from last activity. Updates notify only affected keys."
             ],
             "bypasses": [
-              "No unvalidated input may bypass the owner."
+              "No invalid input bypasses this owner."
             ],
             "allowedContributors": [
-              "@asyra/preset"
+              "@asyra/asyra-office"
             ],
             "forbiddenContributors": [
-              "React editable copies",
-              "raw provider tokens in scene",
-              "renderer-owned document writes"
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "packages/preset/src/agent-activity.ts"
+              "apps/asyra-office/src/work/"
             ],
             "specRefs": [
               "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
@@ -19249,38 +19326,113 @@
             "failureOwnerStepId": "project-agent"
           },
           {
-            "id": "validate-layout",
-            "order": 3,
+            "id": "membership",
+            "order": 5,
             "laneId": "product",
-            "title": "Admit attributed human or agent layout proposal",
-            "purpose": "Admit attributed human or agent layout proposal",
+            "title": "Maintain stable membership and work anchors",
+            "purpose": "Maintain stable membership and work anchors",
             "ownerPackage": "@asyra/asyra-office",
             "inputs": [
-              "user intent",
-              "expected revision",
-              "canonical room"
+              "validated membership intent",
+              "canonical membership"
             ],
             "outputs": [
-              "artifact:layout-intent"
+              "artifact:members"
             ],
             "conditions": [
-              "Use one Feature/API path; invalid placement or stale proposal rejects before mutation."
+              "Retain identity on departure; first join produces attributable onboarding evidence. Preview actors cannot earn grants."
             ],
             "bypasses": [
-              "No unvalidated input may bypass the owner."
+              "No invalid input bypasses this owner."
             ],
             "allowedContributors": [
               "@asyra/asyra-office"
             ],
             "forbiddenContributors": [
-              "React editable copies",
-              "raw provider tokens in scene",
-              "renderer-owned document writes"
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "apps/asyra-office/src/domain/layout.ts",
-              "apps/asyra-office/src/runtime/layout-controller.ts"
+              "apps/asyra-office/src/membership/"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#office-interaction"
+            ],
+            "failureOwnerStepId": "membership"
+          },
+          {
+            "id": "life",
+            "order": 6,
+            "laneId": "product",
+            "title": "Choose bounded ambient routes",
+            "purpose": "Choose bounded ambient routes",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "artifact:work",
+              "artifact:members",
+              "artifact:layout"
+            ],
+            "outputs": [
+              "artifact:pose"
+            ],
+            "conditions": [
+              "Work is immediate even during walking. Validate traversal and occupancy; no provider completion from animation."
+            ],
+            "bypasses": [
+              "No invalid input bypasses this owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/life/"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#office-interaction"
+            ],
+            "failureOwnerStepId": "life"
+          },
+          {
+            "id": "validate-layout",
+            "order": 7,
+            "laneId": "product",
+            "title": "Validate decorate, dress and expand intent",
+            "purpose": "Validate decorate, dress and expand intent",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "human or agent Feature intent",
+              "expected revision",
+              "canonical layout",
+              "configured authority and balance"
+            ],
+            "outputs": [
+              "artifact:layout-intent"
+            ],
+            "conditions": [
+              "Validate complete candidate, fit, contact, passages and funds before mutation; invalid or stale input commits nothing."
+            ],
+            "bypasses": [
+              "No invalid input bypasses this owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/layout/"
             ],
             "specRefs": [
               "docs/ai/apps/asyra-office/implementation.md#layout-and-persistence"
@@ -19289,10 +19441,10 @@
           },
           {
             "id": "commit-layout",
-            "order": 4,
+            "order": 8,
             "laneId": "product",
-            "title": "Commit canonical layout and project publication",
-            "purpose": "Commit canonical layout and project publication",
+            "title": "Commit canonical layout and local spending",
+            "purpose": "Commit canonical layout and local spending",
             "ownerPackage": "@asyra/core",
             "inputs": [
               "artifact:layout-intent"
@@ -19301,23 +19453,23 @@
               "artifact:layout"
             ],
             "conditions": [
-              "One accepted finite edit has one Undo boundary; load and history use canonical apply."
+              "Core transaction owns layout writes; spending and acquired benefits settle atomically. Undo cannot replay external rewards."
             ],
             "bypasses": [
-              "No unvalidated input may bypass the owner."
+              "No invalid input bypasses this owner."
             ],
             "allowedContributors": [
               "@asyra/core"
             ],
             "forbiddenContributors": [
-              "React editable copies",
-              "raw provider tokens in scene",
-              "renderer-owned document writes"
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "packages/core/src/core.ts",
-              "apps/asyra-office/src/runtime/layout-controller.ts"
+              "packages/core/src/",
+              "apps/asyra-office/src/document/"
             ],
             "specRefs": [
               "docs/ai/apps/asyra-office/implementation.md#layout-and-persistence"
@@ -19326,34 +19478,35 @@
           },
           {
             "id": "retain-layout",
-            "order": 5,
+            "order": 9,
             "laneId": "product",
-            "title": "Acknowledge versioned local layout checkpoint",
-            "purpose": "Acknowledge versioned local layout checkpoint",
+            "title": "Persist ordered publications and recover",
+            "purpose": "Persist ordered publications and recover",
             "ownerPackage": "@asyra/asyra-office",
             "inputs": [
-              "artifact:layout"
+              "artifact:layout",
+              "canonical publication"
             ],
             "outputs": [
               "artifact:saved-layout"
             ],
             "conditions": [
-              "Explicit snapshot storage; reject malformed load and failed writes without claiming saved."
+              "Acknowledge only durable source-bound writes. Invalid restore preserves the previous valid document."
             ],
             "bypasses": [
-              "No unvalidated input may bypass the owner."
+              "No invalid input bypasses this owner."
             ],
             "allowedContributors": [
               "@asyra/asyra-office"
             ],
             "forbiddenContributors": [
-              "React editable copies",
-              "raw provider tokens in scene",
-              "renderer-owned document writes"
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "apps/asyra-office/src/runtime/layout-controller.ts"
+              "apps/asyra-office/src/persistence/"
             ],
             "specRefs": [
               "docs/ai/apps/asyra-office/implementation.md#layout-and-persistence"
@@ -19361,38 +19514,85 @@
             "failureOwnerStepId": "retain-layout"
           },
           {
-            "id": "compose-office",
-            "order": 6,
+            "id": "reward",
+            "order": 10,
             "laneId": "product",
-            "title": "Compose room, chibi, pet and waypoint presentation",
-            "purpose": "Compose room, chibi, pet and waypoint presentation",
+            "title": "Grant attributed personal and office achievements",
+            "purpose": "Grant attributed personal and office achievements",
             "ownerPackage": "@asyra/asyra-office",
             "inputs": [
-              "artifact:layout",
-              "artifact:agent-projection",
-              "camera and waypoint intent"
+              "artifact:activity",
+              "artifact:members",
+              "artifact:pose",
+              "accepted grant identities"
             ],
             "outputs": [
-              "artifact:spatial-scene"
+              "artifact:awards"
             ],
             "conditions": [
-              "Camera and interpolation never write layout; task working returns to anchor; ambient movement remains simulated."
+              "First-agent recognition is immediate. Qualify and deduplicate evidence; learning achievements never farm currency."
             ],
             "bypasses": [
-              "No unvalidated input may bypass the owner."
+              "No invalid input bypasses this owner."
             ],
             "allowedContributors": [
               "@asyra/asyra-office"
             ],
             "forbiddenContributors": [
-              "React editable copies",
-              "raw provider tokens in scene",
-              "renderer-owned document writes"
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
-              "apps/asyra-office/src/scene/office-scene.ts",
-              "apps/asyra-office/src/ui/OfficeApp.tsx"
+              "apps/asyra-office/src/progression/"
+            ],
+            "specRefs": [
+              "docs/ai/apps/asyra-office/implementation.md#office-interaction"
+            ],
+            "failureOwnerStepId": "reward"
+          },
+          {
+            "id": "compose-office",
+            "order": 11,
+            "laneId": "product",
+            "title": "Compose full office and focused UI",
+            "purpose": "Compose full office and focused UI",
+            "ownerPackage": "@asyra/asyra-office",
+            "inputs": [
+              "artifact:asset",
+              "artifact:layout",
+              "artifact:work",
+              "artifact:members",
+              "artifact:pose",
+              "artifact:awards",
+              "place, agent or manual camera intent",
+              "presentation frame clock (manual camera input only)",
+              "explicit synthetic reference scene (preview only)",
+              "owner-approved building construction specification"
+            ],
+            "outputs": [
+              "artifact:spatial-scene"
+            ],
+            "conditions": [
+              "Reference composition omits rejected assets instead of retaining placeholders; task click only follows its agent. Manual camera movement preserves ground height and does not rebuild assets. Held keys produce elapsed-time movement with smooth start and release; focus loss cancels movement and idle presentation schedules no movement frames. An explicitly synthetic preview supplies frozen layout, actors and work without live membership or rewards. Structural authoring review consumes the owner-approved building construction specification: one shared office floor, individually identified stepped walls, coplanar west dividers, a flush white pantry floor band and the complete fixed-left/operable-right entrance assembly at uniform scale. It omits indoor furnishings, decorations and occupants while preserving exterior geometry. Do not refit approved construction from historical image landmarks. Room furnishing waits for structural review. Simulation and work stay separate; hidden presentation does not stop canonical work."
+            ],
+            "bypasses": [
+              "No invalid input bypasses this owner."
+            ],
+            "allowedContributors": [
+              "@asyra/asyra-office"
+            ],
+            "forbiddenContributors": [
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
+            ],
+            "cacheDimensions": [],
+            "implementationBoundary": [
+              "apps/asyra-office/src/scene/",
+              "apps/asyra-office/src/ui/",
+              "apps/asyra-office/src/main.tsx"
             ],
             "specRefs": [
               "docs/ai/apps/asyra-office/implementation.md#office-interaction"
@@ -19401,30 +19601,31 @@
           },
           {
             "id": "render-spatial",
-            "order": 7,
+            "order": 12,
             "laneId": "product",
-            "title": "Render shared spatial scene through CUSTOM provider",
-            "purpose": "Render shared spatial scene through CUSTOM provider",
+            "title": "Render through the official 3D provider",
+            "purpose": "Render through the official 3D provider",
             "ownerPackage": "@asyra/preset",
             "inputs": [
+              "artifact:preview-scene",
               "artifact:spatial-scene"
             ],
             "outputs": [
               "artifact:visible-office"
             ],
             "conditions": [
-              "Optional shared Three.js adapter retains lifecycle, resource disposal and app-selected lighting/capability."
+              "Accept preview OR office scene through Core. Shared descriptor admission, projected-error LoD and resource lifecycle remain authoritative."
             ],
             "bypasses": [
-              "No unvalidated input may bypass the owner."
+              "Preview needs only preview-scene; full Office needs spatial-scene."
             ],
             "allowedContributors": [
               "@asyra/preset"
             ],
             "forbiddenContributors": [
-              "React editable copies",
-              "raw provider tokens in scene",
-              "renderer-owned document writes"
+              "renderer-owned canonical writes",
+              "raw provider tokens in geometry",
+              "independent React document copies"
             ],
             "cacheDimensions": [],
             "implementationBoundary": [
@@ -19438,13 +19639,63 @@
         ],
         "routes": [
           {
+            "id": "construct-asset-to-preview-asset",
+            "from": "construct-asset",
+            "to": "preview-asset",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:asset"
+            ]
+          },
+          {
+            "id": "construct-asset-to-compose-office",
+            "from": "construct-asset",
+            "to": "compose-office",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:asset"
+            ]
+          },
+          {
+            "id": "preview-asset-to-render-spatial",
+            "from": "preview-asset",
+            "to": "render-spatial",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:preview-scene"
+            ]
+          },
+          {
             "id": "admit-source-to-project-agent",
             "from": "admit-source",
             "to": "project-agent",
             "kind": "required",
-            "predicate": "The producing owner has admitted the input and completed its output.",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
             "producedArtifacts": [
               "artifact:activity"
+            ]
+          },
+          {
+            "id": "admit-source-to-reward",
+            "from": "admit-source",
+            "to": "reward",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:activity"
+            ]
+          },
+          {
+            "id": "project-agent-to-life",
+            "from": "project-agent",
+            "to": "life",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:work"
             ]
           },
           {
@@ -19452,9 +19703,59 @@
             "from": "project-agent",
             "to": "compose-office",
             "kind": "required",
-            "predicate": "The producing owner has admitted the input and completed its output.",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
             "producedArtifacts": [
-              "artifact:agent-projection"
+              "artifact:work"
+            ]
+          },
+          {
+            "id": "membership-to-life",
+            "from": "membership",
+            "to": "life",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:members"
+            ]
+          },
+          {
+            "id": "membership-to-reward",
+            "from": "membership",
+            "to": "reward",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:members"
+            ]
+          },
+          {
+            "id": "membership-to-compose-office",
+            "from": "membership",
+            "to": "compose-office",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:members"
+            ]
+          },
+          {
+            "id": "life-to-reward",
+            "from": "life",
+            "to": "reward",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:pose"
+            ]
+          },
+          {
+            "id": "life-to-compose-office",
+            "from": "life",
+            "to": "compose-office",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:pose"
             ]
           },
           {
@@ -19462,9 +19763,19 @@
             "from": "validate-layout",
             "to": "commit-layout",
             "kind": "required",
-            "predicate": "The producing owner has admitted the input and completed its output.",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
             "producedArtifacts": [
               "artifact:layout-intent"
+            ]
+          },
+          {
+            "id": "commit-layout-to-life",
+            "from": "commit-layout",
+            "to": "life",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
+            "producedArtifacts": [
+              "artifact:layout"
             ]
           },
           {
@@ -19472,7 +19783,7 @@
             "from": "commit-layout",
             "to": "retain-layout",
             "kind": "required",
-            "predicate": "The producing owner has admitted the input and completed its output.",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
             "producedArtifacts": [
               "artifact:layout"
             ]
@@ -19482,18 +19793,19 @@
             "from": "commit-layout",
             "to": "compose-office",
             "kind": "required",
-            "predicate": "The producing owner has admitted the input and completed its output.",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
             "producedArtifacts": [
               "artifact:layout"
             ]
           },
           {
-            "id": "retain-layout-complete",
-            "from": "retain-layout",
-            "kind": "terminal",
-            "predicate": "The exact output is available; no broader completion is implied.",
+            "id": "reward-to-compose-office",
+            "from": "reward",
+            "to": "compose-office",
+            "kind": "required",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
             "producedArtifacts": [
-              "artifact:saved-layout"
+              "artifact:awards"
             ]
           },
           {
@@ -19501,35 +19813,64 @@
             "from": "compose-office",
             "to": "render-spatial",
             "kind": "required",
-            "predicate": "The producing owner has admitted the input and completed its output.",
+            "predicate": "Consumer receives completed admitted output; preview and full scene are alternative render inputs.",
             "producedArtifacts": [
               "artifact:spatial-scene"
-            ]
-          },
-          {
-            "id": "render-spatial-complete",
-            "from": "render-spatial",
-            "kind": "terminal",
-            "predicate": "The exact output is available; no broader completion is implied.",
-            "producedArtifacts": [
-              "artifact:visible-office"
             ]
           }
         ],
         "artifacts": [
           {
+            "id": "artifact:asset",
+            "ownerStepId": "construct-asset",
+            "channel": "projection",
+            "consumerStepIds": [
+              "preview-asset",
+              "compose-office"
+            ]
+          },
+          {
+            "id": "artifact:preview-scene",
+            "ownerStepId": "preview-asset",
+            "channel": "projection",
+            "consumerStepIds": [
+              "render-spatial"
+            ]
+          },
+          {
             "id": "artifact:activity",
             "ownerStepId": "admit-source",
             "channel": "projection",
             "consumerStepIds": [
-              "project-agent"
+              "project-agent",
+              "reward"
             ]
           },
           {
-            "id": "artifact:agent-projection",
+            "id": "artifact:work",
             "ownerStepId": "project-agent",
             "channel": "projection",
             "consumerStepIds": [
+              "life",
+              "compose-office"
+            ]
+          },
+          {
+            "id": "artifact:members",
+            "ownerStepId": "membership",
+            "channel": "projection",
+            "consumerStepIds": [
+              "life",
+              "reward",
+              "compose-office"
+            ]
+          },
+          {
+            "id": "artifact:pose",
+            "ownerStepId": "life",
+            "channel": "projection",
+            "consumerStepIds": [
+              "reward",
               "compose-office"
             ]
           },
@@ -19546,6 +19887,7 @@
             "ownerStepId": "commit-layout",
             "channel": "projection",
             "consumerStepIds": [
+              "life",
               "retain-layout",
               "compose-office"
             ]
@@ -19556,6 +19898,14 @@
             "channel": "projection",
             "consumerStepIds": [],
             "terminal": true
+          },
+          {
+            "id": "artifact:awards",
+            "ownerStepId": "reward",
+            "channel": "projection",
+            "consumerStepIds": [
+              "compose-office"
+            ]
           },
           {
             "id": "artifact:spatial-scene",
@@ -19575,48 +19925,57 @@
         ],
         "invariants": [
           {
-            "id": "independent-authority",
-            "statement": "Runtime task evidence, canonical layout and transient movement have separate owners.",
+            "id": "separate-authority",
+            "statement": "Asset preview, external work, canonical layout and ambient simulation have distinct authority.",
             "stepIds": [
+              "construct-asset",
+              "preview-asset",
               "admit-source",
               "project-agent",
+              "membership",
+              "life",
               "validate-layout",
               "commit-layout",
               "retain-layout",
+              "reward",
               "compose-office",
               "render-spatial"
             ],
             "artifactIds": [
+              "artifact:asset",
+              "artifact:preview-scene",
               "artifact:activity",
-              "artifact:agent-projection",
+              "artifact:work",
+              "artifact:members",
+              "artifact:pose",
               "artifact:layout-intent",
               "artifact:layout",
               "artifact:saved-layout",
+              "artifact:awards",
               "artifact:spatial-scene",
               "artifact:visible-office"
             ],
             "specRefs": [
-              "docs/ai/apps/asyra-office/implementation.md#integration-and-projections"
+              "docs/ai/apps/asyra-office/implementation.md"
             ]
           }
         ],
         "acceptanceContracts": [
           {
-            "id": "office-path",
-            "assertions": [
-              "A retained semantic event updates only its agent; one validated layout edit supports Undo, save/load; scene motion never becomes document state."
-            ],
+            "id": "wall-harness",
+            "title": "First wall asset acceptance",
             "stepIds": [
-              "admit-source",
-              "project-agent",
-              "validate-layout",
-              "commit-layout",
-              "retain-layout",
-              "compose-office",
+              "construct-asset",
+              "preview-asset",
               "render-spatial"
             ],
+            "assertions": [
+              "Numeric wall joins, winding, scaling, appearance isolation and LoD agree with approved specifications.",
+              "Camera changes reuse generated geometry; disposal retires the full session.",
+              "User accepts same-object multiviews and enlarged cap joins before the next asset."
+            ],
             "specRefs": [
-              "docs/ai/apps/asyra-office/implementation.md#cases-and-verification"
+              "docs/ai/apps/asyra-office/implementation.md#stage-1---wall-asset-harness"
             ]
           }
         ]

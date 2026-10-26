@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`accepted structural composition > preserves every exterior assembly and label from before the interior refactor 1`] = `
+{
+  "count": 404,
+  "digest": "80813db1260c607ae83dcb757d7ad60c8ddad9c3dd33c7566417f080265a3076",
+}
+`;

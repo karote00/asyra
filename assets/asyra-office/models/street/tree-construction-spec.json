@@ -1,8 +1,8 @@
 {
   "moduleId": "street-tree-leafy",
-  "revision": 1,
+  "revision": 4,
   "units": "metres",
-  "status": "Construction values authored under user delegation, finalized 2026-10-08; selected pictures unchanged. Numeric contract defined; not a rendered-model approval.",
+  "status": "Irregular two-level branch additions and distributed fixed-budget foliage, 2026-10-25; replaces fixed spoke-and-tip-only assembly.",
   "references": {
     "leaf": "review/06-single-leaf-v1.png",
     "cluster": "review/06-leaf-cluster-v2.png",
@@ -19,12 +19,12 @@
   "maximumEnvelope": {
     "min": [
       -1.5,
-      -0.95,
+      -1.5,
       0
     ],
     "max": [
       1.5,
-      0.95,
+      1.5,
       3.55
     ],
     "role": "validation bound, never a scaling or clipping instruction"
@@ -176,8 +176,6 @@
   },
   "branches": {
     "maximumDepth": 2,
-    "primaryCount": 7,
-    "secondaryCount": 13,
     "entries": [
       {
         "id": "B1",
@@ -444,7 +442,10 @@
     "rootRadius": "level1=min(0.055,0.82*parentRadius); level2=0.58*parentRadius",
     "tipRadius": "level1=min(0.007,0.22*rootRadius); level2=min(0.004,0.28*rootRadius)",
     "radius": "r(t)=tipRadius+(rootRadius-tipRadius)*(1-t)^1.2; t is Bezier parameter, not arc length",
-    "attachment": "Level1 samples trunk at attachmentZ. Level2 samples parent Q(parentT). Evaluate parents before children; no cycles. Endpoints are rounded-cap centres."
+    "attachment": "Level1 samples trunk at attachmentZ. Level2 samples parent Q(parentT). Evaluate parents before children; no cycles. Endpoints are rounded-cap centres.",
+    "scaffoldPrimaryCount": 7,
+    "scaffoldSecondaryCount": 13,
+    "entriesRole": "Core scaffold before radial transforms and bounded random additions. Actual branch count varies by seed; maximumDepth applies to the full result."
   },
   "woodSurface": {
     "construction": "implicit swept-ball union, locally smoothed only at actual parent-child roots; see TREE-CONSTRUCTION.md",
@@ -463,7 +464,7 @@
   },
   "foliage": {
     "seed": 606,
-    "sampling": "8 LCG values per leaf; cluster-local independent streams. Full formulas in TREE-CONSTRUCTION.md.",
+    "sampling": "Eight LCG draws per leaf. Five overlapping filled ellipsoid subgroups with bounded orientation variation. See TREE-CONSTRUCTION.md.",
     "subgroups": [
       [
         -0.45,
@@ -491,327 +492,326 @@
         -0.18
       ]
     ],
-    "jitterRadiusFraction": 0.35,
     "clusters": [
       {
         "id": "C1",
         "branch": "B1",
-        "branchT": 0.9,
+        "branchT": 0.72,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.24,
-          0.19,
-          0.26
+          0.65,
+          0.65,
+          0.72
         ],
-        "count": 96
+        "count": 160
       },
       {
         "id": "C2",
         "branch": "B2",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C3",
         "branch": "B3",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C4",
         "branch": "B4",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C5",
         "branch": "B5",
-        "branchT": 0.9,
+        "branchT": 0.72,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.24,
-          0.19,
-          0.26
+          0.65,
+          0.65,
+          0.72
         ],
-        "count": 96
+        "count": 160
       },
       {
         "id": "C6",
         "branch": "B6",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C7",
         "branch": "B7",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C8",
         "branch": "B8",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C9",
         "branch": "B9",
-        "branchT": 0.9,
+        "branchT": 0.72,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.24,
-          0.19,
-          0.26
+          0.65,
+          0.65,
+          0.72
         ],
-        "count": 96
+        "count": 160
       },
       {
         "id": "C10",
         "branch": "B10",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C11",
         "branch": "B11",
-        "branchT": 0.9,
+        "branchT": 0.72,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.24,
-          0.19,
-          0.26
+          0.65,
+          0.65,
+          0.72
         ],
-        "count": 96
+        "count": 160
       },
       {
         "id": "C12",
         "branch": "B12",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C13",
         "branch": "B13",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C14",
         "branch": "B14",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C15",
         "branch": "B15",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C16",
         "branch": "B16",
-        "branchT": 0.9,
+        "branchT": 0.72,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.24,
-          0.19,
-          0.26
+          0.65,
+          0.65,
+          0.72
         ],
-        "count": 96
+        "count": 160
       },
       {
         "id": "C17",
         "branch": "B17",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C18",
         "branch": "B18",
-        "branchT": 0.9,
+        "branchT": 0.72,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.24,
-          0.19,
-          0.26
+          0.65,
+          0.65,
+          0.72
         ],
-        "count": 96
+        "count": 160
       },
       {
         "id": "C19",
         "branch": "B19",
-        "branchT": 0.9,
+        "branchT": 0.72,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.24,
-          0.19,
-          0.26
+          0.65,
+          0.65,
+          0.72
         ],
-        "count": 96
+        "count": 160
       },
       {
         "id": "C20",
         "branch": "B20",
-        "branchT": 0.9,
+        "branchT": 0.8,
         "localOffset": [
           0,
           0,
           0.025
         ],
         "radii": [
-          0.18,
-          0.15,
-          0.2
+          0.56,
+          0.58,
+          0.6
         ],
-        "count": 64
+        "count": 128
       },
       {
         "id": "C21",
@@ -823,11 +823,11 @@
           0.04
         ],
         "radii": [
-          0.25,
-          0.23,
-          0.25
+          0.75,
+          0.75,
+          0.7
         ],
-        "count": 80
+        "count": 160
       },
       {
         "id": "C22",
@@ -839,11 +839,11 @@
           0.04
         ],
         "radii": [
-          0.25,
-          0.23,
-          0.25
+          0.75,
+          0.75,
+          0.7
         ],
-        "count": 80
+        "count": 160
       },
       {
         "id": "C23",
@@ -855,41 +855,41 @@
           0.04
         ],
         "radii": [
-          0.25,
-          0.23,
-          0.25
+          0.75,
+          0.75,
+          0.7
         ],
-        "count": 80
+        "count": 160
       }
     ],
-    "totalInstances": 1744,
+    "totalInstances": 3264,
     "sizeMixture": [
       {
-        "probability": 0.45,
+        "probability": 0.25,
         "scale": [
-          0.3,
-          0.5
+          0.65,
+          1.0
         ]
       },
       {
-        "probability": 0.4,
+        "probability": 0.5,
         "scale": [
-          0.5,
-          0.85
+          1.0,
+          1.6
         ]
       },
       {
-        "probability": 0.15,
+        "probability": 0.25,
         "scale": [
-          0.85,
-          1.2
+          1.6,
+          2.2
         ]
       }
     ],
     "budSubgroupIndex": 2,
     "budScale": [
-      0.3,
-      0.55
+      0.65,
+      1.1
     ],
     "dominantColourProbability": 0.75,
     "rollLimitDegrees": 80,
@@ -903,7 +903,45 @@
       0.3,
       0.2
     ],
-    "attachmentRule": "Cluster frame follows owner curve tangent; subgroup volumes are invisible arrangement guides. No extra twigs or visible support meshes are generated."
+    "attachmentRule": "Cluster centres remain attached to owner curves; five filled world-oriented subgroups overlap to form each crown lobe. Guides are never rendered; no extra branch level.",
+    "frame": "World XYZ for lobe axes; localOffset retains the owner tangent frame.",
+    "subgroupOffsetFraction": 0.65,
+    "normalPerturbation": 0.65,
+    "jitterRadiusFraction": 0.24,
+    "distribution": {
+      "seedOffset": 130363,
+      "coreWeight": 0.55,
+      "interiorAttachment": [
+        0.35,
+        0.55
+      ],
+      "terminalAttachment": [
+        0.72,
+        0.9
+      ],
+      "interiorWeight": 48,
+      "primaryWeight": 48,
+      "secondaryWeight": 32,
+      "interiorRadii": [
+        0.42,
+        0.42,
+        0.45
+      ],
+      "primaryRadii": [
+        0.42,
+        0.42,
+        0.45
+      ],
+      "secondaryRadii": [
+        0.34,
+        0.34,
+        0.36
+      ],
+      "rule": "Retain core lobe anchors with reduced weight; add one interior lobe to every primary and one outer lobe to every added branch. Apportion totalInstances by largest remainder, preserving the total budget.",
+      "coreProjectedDensityRatio": 1.25,
+      "coreRadiusRule": "Scale each core radius by sqrt(allocatedCount / scaffoldCount / coreProjectedDensityRatio) after budget apportionment."
+    },
+    "clustersRole": "Core anchor/reference-count table. Revision 4 redistributes totalInstances across these anchors and generated interior/outer clusters using foliage.distribution."
   },
   "materials": {
     "bark": {
@@ -933,5 +971,63 @@
     "bakedHighlights": false,
     "owner": "app scene"
   },
-  "scope": "Authoring master geometry and deterministic assembly. Runtime LoD, exporter and performance implementation are outside this document task; master is not a runtime performance approval."
+  "scope": "Authoring master geometry and deterministic assembly. Runtime LoD, exporter and performance implementation are outside this document task; master is not a runtime performance approval.",
+  "growth": {
+    "defaultSeed": 606,
+    "azimuthStepDegrees": 137.507764,
+    "azimuthOffsetDegrees": 25,
+    "azimuthJitterDegrees": 12,
+    "horizontalReachRange": [
+      0.9,
+      1.1
+    ],
+    "verticalReachRange": [
+      0.94,
+      1.06
+    ],
+    "rule": "Transform each primary subtree around its trunk attachment. Children retain their parent and attach to the transformed analytic parent curve. Scene size is a uniform whole-unit transform.",
+    "additions": {
+      "seedOffset": 104729,
+      "primaryCount": [
+        4,
+        7
+      ],
+      "secondaryPerPrimary": [
+        1,
+        2
+      ],
+      "attachmentHeight": [
+        0.95,
+        2.3
+      ],
+      "primaryReach": [
+        0.55,
+        0.95
+      ],
+      "primaryRise": [
+        0.32,
+        0.68
+      ],
+      "childAttachment": [
+        0.35,
+        0.82
+      ],
+      "childReach": [
+        0.22,
+        0.45
+      ],
+      "childRise": [
+        -0.04,
+        0.24
+      ],
+      "childAngleDegrees": [
+        28,
+        78
+      ],
+      "controlLift": [
+        0.03,
+        0.12
+      ]
+    }
+  }
 }

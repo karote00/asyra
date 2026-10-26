@@ -12,7 +12,7 @@ Shapes in subtract are Boolean cutters only, not visible parts. Bevel the outer 
 
 Cream-grey body, black plinth, small freezer door, larger fridge door, and two grey handles. Body Z=0.04–1.15; upper door Z=0.77–1.14, lower Z=0.06–0.758, meeting gap 0.012. Door front Y=-0.26. Both handles at X=-0.207; mounts connect door faces to grip bars.
 
-Body width/depth 0.52/0.52; depth including handles 0.557. Rear is the same cream-grey, with no vents, cord, or compressor. Add no side pivots or mechanisms; interiors are not modeled. Image door proportions may differ slightly; use the fixed smaller-upper/larger-lower dimensions. Do not turn this into side-by-side doors or an attached cabinet.
+Body width/depth 0.52/0.52; depth including handles 0.557. Rear is the same cream-grey, with no vents, cord, or compressor. Add no side pivots or mechanisms; interiors are not modeled. These are reusable default dimensions. For the office reconstruction, independently measured source corners control instance proportions; update the scene recipe when an old default disagrees with the approved full reference. Do not turn this into side-by-side doors or an attached cabinet.
 
 ## Water dispenser
 
@@ -26,9 +26,9 @@ Tray grooves use the Cartesian product of xCentres and yCentres: 6 slots, each l
 
 ## Sink cabinet
 
-One wooden cabinet, pale-grey countertop, single basin, two doors, and faucet. Counter height 0.64, width 0.90, depth 0.50. Cut basin clearance from the cabinet itself so a solid cabinet does not fill the basin. Subtract the inner cavity from the outer basin box, retaining bottom thickness. Drain disc is at basin-floor Z=0.5275, not an opening into model internals. No pipes.
+One wooden cabinet, pale-grey countertop, single basin, one left door, two stacked right drawers, a narrow end panel, and faucet. Counter height 0.64, width 0.90, depth 0.50. Cut basin clearance from the cabinet itself so a solid cabinet does not fill the basin. Subtract the inner cavity from the outer basin box, retaining bottom thickness. Drain disc is at basin-floor Z=0.5275, not an opening into model internals. No pipes.
 
-Door centres X=±0.2175, width 0.427, centre gap 0.008; front Y=-0.248. Each centred inner field is 0.357 wide, 0.44 high, recessed 0.004 toward +Y, with 0.035 border. A 0.002-wide slope transitions from opening edge to recessed floor, reducing floor width/height by another 0.004 each. Each handle is a U-shaped assembly: one grip bar (18 x 13 x 65 mm, centre X=+/-36, Y=-265, Z=510 mm, inward radius 5 mm) and two mounts (12 x 18 x 12 mm, same X, Y=-251.5, Z=487.5/532.5 mm, inward radius 2 mm). Mounts overlap the bar and enter the door frame/recess floor, while the middle remains open behind the bar. Union the three handle inputs, trim hidden door intersections and retain the handle region. Its front Y=-0.2715 preserves total assembly depth 0.5215. Do not replace the visible U-shaped grip with a solid plate.
+The retained left door centre is X=-0.2175, width 0.427; front Y=-0.248. Its centred inner field is 0.357 wide, 0.44 high, recessed 0.004 toward +Y, with 0.035 border. A 0.002-wide slope transitions from opening edge to recessed floor, reducing floor width/height by another 0.004 each. Its door handle is a U-shaped assembly: one grip bar (18 x 13 x 65 mm, centre X=-36, Y=-265, Z=510 mm, inward radius 5 mm) and two mounts (12 x 18 x 12 mm, same X, Y=-251.5, Z=487.5/532.5 mm, inward radius 2 mm). Mounts overlap the bar and enter the door frame/recess floor, while the middle remains open behind the bar. Union the three handle inputs, trim hidden door intersections and retain the handle region. Its front Y=-0.2715 preserves total assembly depth 0.5215. Do not replace the visible U-shaped grip with a solid plate.
 
 Faucet uses two cubic Bézier tube segments, each sampled in 32 intervals: B(t)=(1−t)³P0+3(1−t)²tP1+3(1−t)t²P2+t³P3. Circular section radius 0.012 with 12 segments. Curves lie in YZ; one section basis is fixed X, the other normalize(T×X), where T is the tangent, maintaining continuity. Centreline max Z=0.858 plus tube radius gives approximately 0.87. Cap outlet flat; no water flow. Base and small lever follow JSON.
 
@@ -65,3 +65,24 @@ Refrigerator door gap is 12 mm. Sink door gap is 8 mm; field border is 35 mm and
 LoD reduces roundovers and circular sampling while preserving ground contacts, handles and their voids, door separation, basin/cup bays and outlets. These closed appliance exteriors do not authorize opening a solid refrigerator or sink cabinet into an invented interior. Opening behavior requires its separately specified model state later.
 
 LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.
+
+
+## Full-reference cabinet-front correction
+
+The full-office reference is the active authority when the older multiview recipe
+conflicts with it. The source region X=885..983, Y=328..390 shows one left door,
+two stacked drawers to its right, and a narrow end panel under the plant.
+The former two-equal-door front is superseded for this module. The 880 mm closed
+cabinet body, 900 x 500 mm countertop and its existing basin remain the default
+construction; placed scene XYZ size comes from named source counter corners.
+
+Default front X intervals are -431..-4 mm for the retained recessed door,
+6..213.5 mm for both drawers, and 223.5..431 mm for the end panel. Both drawers
+are 207.5 x 23 x 251 mm, with Z centers 193.5 and 452.5 mm and an 8 mm gap.
+Each has a horizontal 70 x 13 x 12 mm handle, two connected mounts, and the
+existing replaceable metal appearance. The end panel is 207.5 x 23 x 510 mm.
+All fronts retain Y center -236.5 mm and the existing closed-body attachment.
+Visible subdivisions come from the full image; exact hidden seams and hardware
+sizes remain authored construction. This update does not claim drawer animation
+or interior storage geometry. Older images are not dimensional authority for the
+superseded equal-door subdivision.

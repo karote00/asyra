@@ -58,15 +58,12 @@ witnesses are in the sofa contract; no actual model is verified.
 
 ## Orange lounge armchair
 
-Base, separate seat cushion, enclosing U-shaped back/arm shell, and four splayed round wooden legs. Seat max Z=0.34, back max Z=0.69, front arms max Z=0.45.
-
-Horizontal U-shell outer contour follows JSON: half-width a=0.31, front f=-0.305, back b=0.305, rear corner radius r=0.11. Start left-front (-a,f), line to (-a,b-r), quarter-circle centred at (-a+r,b-r) from 180°→90° to (-a+r,b), rear line to (a-r,b), arc centred at (a-r,b-r) from 90°→0° to (a,b-r), then line to right-front (a,f). Use 12 intervals per corner and at least one interval per 0.025 m on straight segments.
-
-The inner contour is an inward parallel offset by thickness=0.075, with inner rear radius 0.035. Opening faces -Y; cap both front ends across the section. Bottom Z=0.21. At each contour point, u=clamp((y-f)/(b-f),0,1), topZ=0.45+0.24×(3u²−2u³). Corresponding inner/outer points share height; connect and close tops, bottoms, and sides.
-
-Bevel upper edges, front ends, and bottom edges by 0.022 with 3 circular-arc segments, cutting both inner/outer edges inward. No extra rear cushion. This recipe fixes the shell/back shape; sheet curvature is for appearance comparison. If the model differs from approved sheets, revise the recipe rather than inventing hidden patches.
-
-Offset leg centres create splay. Tops Z=0.17 intersect the base spanning Z=0.145–0.285 for attachment. No wheels or swivel disc underneath.
+The earlier U-shell recipe is superseded by the user-approved widened revision.
+Use [the reference reconciliation](ARMCHAIR-REFERENCE-RECONCILIATION.md) and the
+current numeric module: 713 x 610 x 690 mm, two rounded side panels, reclining
+backrest, base, cushion and four substantial splayed feet. Do not restore the
+old 620 mm width, upright shell or thin legs. The approved wider reference
+remains unchanged. Independent appearance regions and whole-unit sizing apply.
 
 ## Round wooden coffee table
 

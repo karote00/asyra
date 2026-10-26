@@ -68,3 +68,9 @@ Sheets guide appearance and numeric documents define reproducible construction. 
 - Work and everyday objects: laptops, mugs, and similar items.
 
 This batch contains images/documents only, with no Blender, GLB, rigging, animation, or app features. The app owns counts, placement, lighting, seat usage, and interaction. Animals and Group 5 small plants are excluded.
+
+## Widened lounge armchair
+
+The [reference reconciliation](ARMCHAIR-REFERENCE-RECONCILIATION.md) supersedes
+the earlier 620 mm width and U-shell geometry. The approved default is now
+713 x 610 x 690 mm. The existing widened image remains the visual authority.

@@ -1,3 +1,8 @@
+> Historical revision 1 numeric audit. Its 1,744-leaf counts, size range and sampled
+> envelope are superseded by foliage revision 2 in TREE-CONSTRUCTION.md and
+> tree-construction-spec.json. Reference images remain unchanged. This historical
+> audit is not the current assembly recipe or a rendered-model approval.
+
 # Street Tree - Document Review
 
 Updated 2026-10-08. Scope: tree-only construction data, its mathematical guide,
