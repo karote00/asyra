@@ -51,6 +51,7 @@ import {
   localOperationNamespace,
   localToolContent,
   localToolResultInstructions,
+  type LocalOperationDispatch,
   type NativeToolDescriptor
 } from './local-operation-tools'
 import { observeLocalToolExecution } from './local-tool-invocation'
@@ -451,66 +452,75 @@ const runLocalAiProvider = async (
         designs.resolveBatch(imageTools.resolveBatch(value))
     }
     const executeBatch = options.executeBatch
-    const executeObservedBatch: ExecuteAiBatch | undefined = executeBatch
-      ? async (batch) => {
-          if (
-            evaluation &&
-            (workStopped || Date.now() >= evaluation.workDeadlineAt)
-          )
-            throw new Error(
-              'The evaluation work deadline has expired; do not replay completed work.'
+    const executeObservedBatch: LocalOperationDispatch | undefined =
+      executeBatch
+        ? async (batch, phase) => {
+            // Work cutoff does not end the request's owned-resource lifetime.
+            // Only the internal release callback supplies this phase; native calls
+            // still pass admission and the browser retains its mutation deadline.
+            if (
+              phase !== 'cleanup' &&
+              evaluation &&
+              (workStopped || Date.now() >= evaluation.workDeadlineAt)
             )
-          const started = performance.now()
-          const receipt = await observeActionBatch(
-            batch,
-            async (batch) => {
-              const parentCallId = callContext.getStore()?.id
-              const effects = new Set(
-                batch.actions.map((action) => actionEffects.get(action.name))
+              throw new Error(
+                'The evaluation work deadline has expired; do not replay completed work.'
               )
-              let effect: ExecutionActivity['effect']
-              if (effects.size && !effects.has(undefined))
-                effect = effects.size === 1 ? [...effects][0] : 'mixed'
-              const activity = {
-                effect,
-                kind: 'system' as const,
-                callId: batch.batchId,
-                parentCallId,
-                sequence: 0,
-                phase:
-                  effect === 'mutation'
-                    ? ('applying' as const)
-                    : ('executing' as const)
-              }
-              reportProgress({ tool: 'app-batch', status: 'running', activity })
-              try {
-                const receipt = await executeBatch(batch)
-                // A child contributes to its causal ancestors, never to siblings.
-                let context = callContext.getStore()
-                while (context) {
-                  context.receipts.push(receipt)
-                  context = context.parent
+            const started = performance.now()
+            const receipt = await observeActionBatch(
+              batch,
+              async (batch) => {
+                const parentCallId = callContext.getStore()?.id
+                const effects = new Set(
+                  batch.actions.map((action) => actionEffects.get(action.name))
+                )
+                let effect: ExecutionActivity['effect']
+                if (effects.size && !effects.has(undefined))
+                  effect = effects.size === 1 ? [...effects][0] : 'mixed'
+                const activity = {
+                  effect,
+                  kind: 'system' as const,
+                  callId: batch.batchId,
+                  parentCallId,
+                  sequence: 0,
+                  phase:
+                    effect === 'mutation'
+                      ? ('applying' as const)
+                      : ('executing' as const)
                 }
-                return receipt
-              } finally {
                 reportProgress({
                   tool: 'app-batch',
-                  status: 'completed',
+                  status: 'running',
                   activity
                 })
-              }
-            },
-            input.actions,
-            callContext.getStore()?.id,
-            (stage, evidence) => usage?.trace(stage, evidence)
-          )
-          return requireBatchSuccess(
-            batch,
-            receipt,
-            Math.max(0, performance.now() - started)
-          )
-        }
-      : undefined
+                try {
+                  const receipt = await executeBatch(batch)
+                  // A child contributes to its causal ancestors, never to siblings.
+                  let context = callContext.getStore()
+                  while (context) {
+                    context.receipts.push(receipt)
+                    context = context.parent
+                  }
+                  return receipt
+                } finally {
+                  reportProgress({
+                    tool: 'app-batch',
+                    status: 'completed',
+                    activity
+                  })
+                }
+              },
+              input.actions,
+              callContext.getStore()?.id,
+              (stage, evidence) => usage?.trace(stage, evidence)
+            )
+            return requireBatchSuccess(
+              batch,
+              receipt,
+              Math.max(0, performance.now() - started)
+            )
+          }
+        : undefined
     const operations: ReturnType<typeof createLocalOperationTools> | undefined =
       executeObservedBatch
         ? createLocalOperationTools(

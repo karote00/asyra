@@ -16,6 +16,7 @@ import {
   basicApiDeliverySchema
 } from '../../src/ai/basic-api-results'
 import { toolRequestReference } from '../../src/ai/tool-contract'
+import { createDesignReviewAction } from '../../src/ai/review-action'
 
 const object = (properties: Record<string, unknown>) => ({
   type: 'object',
@@ -25,6 +26,26 @@ const receiptSchema = object({
   snapshotId: toolRequestReference,
   leaseId: toolRequestReference
 })
+// These recipe fixtures include the current mandatory mechanical follow-up.
+// Geometry correctness belongs to the review owner tests; this fixture supplies
+// an explicit measurement and stamp, never infers completion from a write.
+const measuredReview = () => {
+  const evidence = { sessionId: 'recipe-query-review', revision: 0 }
+  const review = vi.fn(async () => ({
+    complete: true,
+    truncated: false,
+    checkedElements: 1,
+    measuredTextCount: 0,
+    measuredTextIds: [],
+    findings: [],
+    evidence
+  }))
+  return {
+    review,
+    action: createDesignReviewAction(review, (stamp) => stamp === evidence)
+  }
+}
+
 const fixture = () => {
   const signal = new AbortController().signal
   const queries = createRetainedDesignContext(
@@ -329,6 +350,7 @@ it.each([
     const { createRetainedFillAction } =
       await import('../../src/ai/retained-fill-action')
     const update = vi.fn()
+    const measurement = measuredReview()
     const observed: ReturnType<typeof app.read>[] = []
     const read = createDocumentContextAction((query, signal) => {
       const result = app.queries.read(query, signal)
@@ -336,6 +358,7 @@ it.each([
       return result
     })
     const actions = [
+      measurement.action,
       read,
       createDocumentContextReleaseAction(app.queries.read),
       createRetainedFillAction(app.queries, {
@@ -526,6 +549,10 @@ it.each([
         execution: { status: 'success', value: 1 },
         storage: { status: 'saved' }
       })
+      expect(measurement.review).toHaveBeenCalledExactlyOnceWith(
+        'part',
+        app.signal
+      )
       expect(update).toHaveBeenCalledExactlyOnceWith([
         { elementId: 'part', fillId: 'fill-part', patch: { color: '#1a1a1a' } }
       ])
@@ -816,7 +843,9 @@ it.each(['recipe', 'native', 'partial'] as const)(
         {
           id: 'edit',
           tool: 'design_operations.api_element_setElementsVisible',
-          revision: 4,
+          revision: actions.find(
+            (action) => action.name === 'api_element_setElementsVisible'
+          )?.revision,
           input: {
             kind: 'object',
             fields: {

@@ -1076,9 +1076,10 @@
           'artifact:inspection-evidence',
           'artifact:execution-receipt',
           'clarification or classified failure',
-          'ordered public tool progress and execution summaries'
+          'ordered public tool progress and execution summaries',
+          'settled work, request cancellation and owned retained-query identities'
         ],
-        outputs: ['artifact:visible-outcome'],
+        outputs: ['artifact:visible-outcome', 'observed request resource release or explicit cleanup failure'],
         conditions: [
           'Keep request objective, stage intent and call purpose separate. Primary-agent public commentary supplies concrete stage intent before input preparation; retire it at the next principal start; fresh idle commentary may replace settled context. Completed call identities cannot rejoin a purpose through replayed or late start events. Tool completion records only its canonical outcome, never an inferred model stage. Never copy inherited text as authored call purpose.',
           'Every ordered invocation start/end updates canonical activity even when its projected text is unchanged. Completion removes live call ownership and retains its canonical receipt in existing closed-call metadata as explicitly settled context. Explicit request-commentary completion retires that purpose. With no active root or fresh commentary show the latest group settlement as completed, partial, failed or outcome-unconfirmed. Generic end events cannot prove success; preserve every root identity until the group settles. Never use the original objective as idle fallback. Genuinely live common principal invocation purpose takes presentation precedence over retained stage context. Display meaningful observed work separately from authored purpose; queued/admission events identify preparation for the known operation until execution starts; repeated admission does not revive queued wording after execution. Diagnostics preserve every phase. With no active calls, identify retained prose as stage context rather than ongoing execution. Independent concurrent principal work uses shared purpose rather than the latest sibling; descendant purposes remain diagnostic. Reducer decisions record selected purpose identity/source, accepted live-leaf phase label and active-call count. Rejected events cannot change diagnostic phase; completion removes the finished phase and exposes surviving leaves or the provider. Raw incoming phases remain separate event evidence.',
@@ -1087,6 +1088,7 @@
           'Current activity consumes the turn-owned incremental projection; raw progress and collapsed history are not replayed on each publication. Historical snapshots remain point-in-time reads.',
           'Preserve successful work and intended Undo commits',
           'Terminal host and store cleanup are separately observed after active calls settle. Attempt each owner and record errors and duration without replacing the original product result/failure, replaying writes or claiming successful cleanup.',
+          'Work cutoff closes model operation admission but not request-owned resource cleanup. Only the internal retained-query release owner selects lifecycle cleanup through the existing observed browser dispatcher; no model flag or action-name bypass. Preserve real request cancellation, permissions, borrow ownership and synchronous mutation cutoff. Browser request-finally releases request data on cancellation/transport loss. Failed release remains retryable while work stays closed; successful releases and completed writes are never replayed.',
           'Show settled explanations in the conversation without a duplicate canvas completion/Undo overlay; ordinary toolbar and keyboard history actions remain available',
           'Project scoped request and call purposes in their authored language separately from observed owner phases; preserve parent and active sibling purposes, remove completed child phases, reject stale events, deduplicate history by authored purpose identity/revision while actual semantic operation changes immediately; admission alone does not claim execution; each principal invocation owns its public status, descendants never replace it, and independent roots retain concurrent ownership without dropping diagnostic events; preserve historical snapshots and let lifecycle state override current work',
           'The App activity state machine owns legal lifecycle transitions: saving and stopping accept settlement, settled rejects late progress, approval resumes on admitted running progress, and authoritative conversation outcomes remain distinct from provider evidence',
@@ -1132,6 +1134,7 @@
           'apps/asyra-design/src/collaboration/protocol.ts',
           'apps/asyra-design/src/collaboration/collaboration-transport-worker.ts',
           'apps/asyra-design/src/ai/runtime-input.ts',
+          'apps/asyra-design/src/ai/evaluation-window.ts',
           'apps/asyra-design/src/collaboration/websocket-provider.ts',
           'apps/asyra-design/src/collaboration/lifecycle.ts',
           'apps/asyra-design/src/init/__tests__/collaboration-protocol.test.ts',
@@ -1143,6 +1146,11 @@
           'apps/asyra-design/src/ai/__tests__/startup.test.ts',
           'apps/asyra-design/server/__tests__/execution-flow-proof.test.ts',
           'apps/asyra-design/server/local-ai-provider.ts',
+          'apps/asyra-design/server/local-operation-tools.ts',
+          'apps/asyra-design/server/local-query-artifacts.ts',
+          'apps/asyra-design/server/local-tool-host.ts',
+          'apps/asyra-design/server/local-tool-leases.ts',
+          'apps/asyra-design/src/common-apis/retained-design-context.ts',
           'apps/asyra-design/src/ai/conversation.ts',
           'apps/asyra-design/src/ai/__tests__/conversation.test.ts',
           'packages/ai-agent-runtime/src/provider.ts',
@@ -1163,6 +1171,7 @@
           'apps/asyra-design/src/ai/__tests__/document-interaction-lock.integration.test.ts'
         ],
         specRefs: [
+          '#work-deadline-and-resource-cleanup',
           '#purpose-lifetime',
           '#evidence-and-completion',
           '#material-relationship-publication'

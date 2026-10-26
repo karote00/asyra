@@ -1,5 +1,26 @@
 # @asyra/asyra-design
 
+## Pending request cleanup after work cutoff
+
+```update-note
+{
+  "change": "request-cleanup-after-cutoff",
+  "owner": "Asyra Design request lifecycle",
+  "summary": "Release owned query snapshots through the existing observed browser dispatcher after work cutoff, while preserving model-operation rejection, actual cancellation and original product outcomes.",
+  "sources": [
+    "apps/asyra-design/server/local-ai-provider.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/local-query-artifacts.test.ts",
+    "apps/asyra-design/flow-contracts.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "The dispatch phase is internal owner wiring. Model schemas, editing operations, document formats and existing release entrypoints are unchanged; no consumer migration is required."
+}
+```
+
 ## Pending bounded continuation evaluation
 
 ```update-note

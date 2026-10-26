@@ -663,12 +663,18 @@
         },
         {
           "id": "compose.evaluation-report",
-          "stepId": "compose",
+          "stepId": "settle",
           "testName": "execution proof separates bounded work from same-thread self-report without replay",
           "implementationPaths": [
             "apps/asyra-design/server/local-ai-provider.ts",
             "apps/asyra-design/src/ai/evaluation-window.ts",
-            "apps/asyra-design/src/ai/server-action-batch-provider.ts"
+            "apps/asyra-design/src/ai/server-action-batch-provider.ts",
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-query-artifacts.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-leases.ts",
+            "apps/asyra-design/src/ai/runtime-input.ts",
+            "apps/asyra-design/src/common-apis/retained-design-context.ts"
           ]
         },
         {

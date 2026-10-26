@@ -734,11 +734,17 @@ const checkResultsDefinition = {
   }
 }
 
+/** Internal owner lifetime, never an argument accepted from a model tool call. */
+export type LocalOperationDispatch = (
+  batch: AiActionBatch,
+  phase?: 'cleanup'
+) => Promise<AiBatchReceipt>
+
 /** Tool-specific preparation stays on the server; only canonical receipts return to the model. */
 export const createLocalOperationTools = (
   actions: AiProviderInput['actions'],
   preparation: LocalActionPreparation,
-  dispatchBatch: (batch: AiActionBatch) => Promise<AiBatchReceipt>,
+  dispatchBatch: LocalOperationDispatch,
   options: {
     observation?: LocalToolObservation
     ownership?: LocalToolOwnership
@@ -768,17 +774,20 @@ export const createLocalOperationTools = (
           // transport loss. Do not send a cleanup action through an aborted request.
           if (options.requestSignal?.aborted) return
           const id = randomUUID()
-          const receipt = await dispatchBatch({
-            batchId: randomUUID(),
-            actions: [
-              {
-                id,
-                name: AiActionNames.RELEASE_DESIGN_CONTEXT,
-                arguments: { snapshotId },
-                summary: 'Release retained query data'
-              }
-            ]
-          })
+          const receipt = await dispatchBatch(
+            {
+              batchId: randomUUID(),
+              actions: [
+                {
+                  id,
+                  name: AiActionNames.RELEASE_DESIGN_CONTEXT,
+                  arguments: { snapshotId },
+                  summary: 'Release retained query data'
+                }
+              ]
+            },
+            'cleanup'
+          )
           const acknowledged = receipt.actionResults.find(
             (entry) =>
               entry.actionId === id &&

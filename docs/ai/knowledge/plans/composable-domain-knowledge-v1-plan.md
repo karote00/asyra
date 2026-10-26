@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 - retained refinement closed; request cleanup investigation.**
+Status: **Task 3 - work deadline cleanup closed on local integration and live observation; failed-release retry remains locally verified only.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -37,7 +37,7 @@ shared-property contract and fixed evaluation rubric below remain authoritative.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: close and push the validated retained-refinement and continuation work, then read-only investigation of TOOL_CLEANUP_FAILED in run 1792951863562. Compare original events, resource cleanup owners and provider settlement; propose one bounded correction and fixed DoD. No product changes, model runs, CI inspection or unrelated discovery.
+- Current scope: close and push the verified work-deadline cleanup slice, preserving the unobserved live failed-release retry limitation. Recommend one next handoff from saved evidence only; no new implementation, model run, CI inspection or historical evidence edit.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +95,208 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Cleanup closeout and next-step review - 2026-10-26
+
+Close this bounded cleanup slice using the source-matched local tests and the
+single live observation below. Normal deadline cleanup is observed; failed-release
+retry, true cancellation and transport-loss cleanup retain deterministic proof and
+were not induced in the live run. The user authorizes pushing this slice only.
+Keep unfinished illustration quality separate from completed cleanup correctness.
+
+The next recommendation is read-only: inspect the handoff from recorded visual
+findings to a scoped correction and fresh verification. The latest first turn
+records finish=fail, while the second explicitly requests material-only refinement
+and changes only existing fill colors. Its unfinished glass and detail work under
+a two-minute deadline is not proof of a defective correction owner. Establish any
+concrete App/framework gap before authorizing another implementation; do not
+force more checks before first content or a fixed model strategy.
+
+Push preparation: the current source matches all 886 files captured by Inspector
+run 7a07c78e-687c-40ee-b82d-b7b30320b2b1. Earlier focused tests and production types
+remain applicable to unchanged code. The production App build, release-update
+coverage and public-documentation checks pass on this version. Remote main is an
+ancestor of the task branch; no rebase is required at this checkpoint.
+
+For the next read-only review, prioritize mutation scope to mechanical follow-up
+inside the existing correction cycle before adding iteration or final-validation
+work. The saved material mapping changes only 5,908 fill colors; its follow-up
+issues 5,908 review_design actions. Current finishInspection checks each changed
+target lacking a current measurement through the existing reviewer. The recording
+volume is about 975 MB, not model input size. Determine which checks/dependencies
+are necessary and which work or delivery is repeated before choosing a fix.
+Preserve current evidence invalidation, real geometry/text checks and honest final
+acceptance. This recommendation does not authorize another implementation or run.
+
+### Authorized cleanup live observation - 2026-10-26
+
+Run the existing architecture-101 continuity collector once on the unchanged
+locally verified implementation. Keep the two ordinary prompts, reference images,
+10,000-node production limit and gpt-6-astra / medium. Work across both turns is
+limited to 120 seconds, with at most 60 seconds for the final report; no video.
+Step Execution Card: observe, with settle as the cleanup result owner. Preserve
+full provider input/output, source snapshot, per-turn documents, report and images.
+Inspect actual retained-query release actions and acknowledgements after cutoff,
+late mutation events, cleanup failure and original product settlement separately.
+Keep first-content time in the timeline without treating latency as the success
+criterion. If the first turn exhausts the deadline or the model creates no retained
+queries, mark the corresponding path unobserved; do not retry or force a tool call.
+Historical resource residue cannot be inferred from this new run. Keep the source
+frozen until collection ends and stop only the verified task-owned services.
+
+Live observation result: `knowledge-taipei-101-continuity-1792955260315` completed
+both turns without video, at the unchanged 10,000-node limit and effective
+`gpt-6-astra` / `medium`. Source capture remained unchanged. Both App outcomes are
+partial, reflecting unfinished material/visual work; provider completion does not
+certify artwork acceptance.
+
+| Time from initial Send | Observed handoff |
+| --- | --- |
+| 0.000-16.633 s | Initial references, capability and Knowledge acquisition |
+| 16.633-46.950 s | No App tool submission; do not infer hidden reasoning duration |
+| 46.950-50.728 s | Main preparation/application tool |
+| 50.629 s | First nonempty drawing bounds and saved first-frame screenshot |
+| 54.828-68.631 s | Review and ordinary first-turn partial answer |
+| 73.182 s | Second turn submitted after saving predecessor evidence |
+| 84.512-91.504 s | Parent query and refined snapshot acquired |
+| 99.387-100.056 s | One material mapping changes 5,908 existing fills |
+| 100.056-110.197 s | Mechanical follow-up and final image capture |
+| 120.005 s | Work interrupted at the common deadline |
+| 120.019-134.431 s | Reporting turn, then internal cleanup begins |
+| 134.432-134.454 s | Three real browser releases, all released=true |
+| 134.455 s | Provider settles completed, separately from partial App result |
+| 139.113 s | Per-turn report/document/screenshot collection completed |
+
+Native second stream `4a391379-4863-40f5-8a6c-d034aaafbf33`, sequences
+13065-13076, contains actual release input/output. The three owned resources are
+parent snapshot `3146bad6-72db-4498-8175-c962a1f3e91a`, refined snapshot
+`d3068b56-dd7d-4a4f-9c3b-9abf4d104f38`, and mutation receipt snapshot
+`adf1187f-592b-44c2-a8d8-0afbc1420ace`. Sequence 13077 records tool-host cleanup
+completed in 23.201 ms. No TOOL_CLEANUP_FAILED or tool/action failure occurred.
+After cutoff, Runtime dispatch contains only the three releases and report_outcome;
+there is no drawing/material mutation. The model does not request cleanup.
+
+The saved documents contain the same 5,973 elements and identical scene tree.
+No property identities were added/removed. Exactly 5,908 existing fill properties
+changed only color; all other properties, including geometry, remain equal.
+One material mapping occurred and no second-turn creation/rebuild was dispatched.
+This directly observes normal deadline cleanup and preservation, not failure retry.
+Cancellation, disconnect, release-failure retry, capacity reuse and foreign-request
+isolation retain their deterministic integration evidence; they were not forced
+into this live run.
+
+Evidence under the run directory includes run.json, full preserved-provider data,
+provider-preservation.json, cleanup-analysis.json, document-comparison.json,
+image-verification.json, both turn documents, ordinary answer, final report and
+screenshots. All eight event streams pass the public parser with zero issues;
+11,906 referenced payload/assets pass byte/hash checks, and both tool images are
+restorable. The preserved evidence is 974,689,269 bytes; this is stored diagnostic
+volume, not model input volume. It includes 5,909 mechanical review actions across
+both turns; this observation is not a newly established root cause or an authorized
+follow-up fix.
+
+The existing service-stop guard terminated all three verified task-owned services.
+Its immediate process check briefly observed two terminating PIDs; the original
+receipt remains preserved. service-cleanup-verification.json independently confirms
+no remaining process after exit. Do not confuse this external test-service exit
+sampling with App query cleanup. No additional model run, implementation or push.
+
+### Work deadline to resource cleanup - 2026-10-26
+
+Evidence: run 1792951863562, native sequence 838 and original service log line
+1038. Two retained query releases fail in the evaluation work admission gate
+after reporting. Work cancellation and request lifetime are different: reporting
+keeps the request alive. Provider completion preserves the returned product result;
+it does not certify resource release. Saved owner sources match the current base.
+
+Bounded design: keep one observed browser batch dispatcher. Its internal dispatch
+phase distinguishes ordinary work from owner-created cleanup; it is not a model
+argument, schema field, new tool, action-name allowlist or general deadline bypass.
+Only the existing query-release callback selects cleanup. Keep request cancellation,
+permissions, request ownership, remote acknowledgement and actual mutation deadline
+checks intact. On transport loss or true cancellation, browser request-finally
+remains responsible. Preserve host release retry and the independently attempted
+store closure. Existing action observation supplies cleanup identity and real
+receipt/failure; do not replace product outcomes or fabricate cleanup success.
+
+Fixed DoD:
+1. Through scripted native protocol (no inference), actual host leases, registered
+   query actions, retained browser owner and Runtime dispatcher, create parent and
+   refined snapshots, finish bounded work/report, and acknowledge both releases.
+   Assert old snapshots/leases cannot resolve, capacity is reusable, unrelated
+   request state remains live, and no query or mutation is replayed.
+2. Reject model tool calls after cutoff, including attempted cleanup flags. Preserve
+   the synchronous browser mutation deadline. Keep completed/partial changes and
+   their original receipt/report; cleanup creates no document or history change.
+3. Real cancellation and disconnected transport release request data in browser
+   finally, including failed report settlement. No cleanup through an aborted
+   transport and no false remote acknowledgement.
+4. Inject a release failure: other resources are still attempted, failed release
+   remains retryable while the host stays closed, and retry touches only failures.
+   Preserve explicit no-op release and request/borrow ownership protections.
+5. Original provider result/error and teardown evidence remain separate. Observe
+   actual release actions/results, not only disposal calls or absence of errors.
+   Run focused consumers, production types, lint/naming, source-bound Inspector
+   verification and one bounded self-review before closing this slice.
+
+Step Execution Card - settle / request cleanup: sources are the specification's
+"Work deadline and resource cleanup" and Inspector settle cleanup condition,
+with compose evaluation-report admission and apply retained query owners as direct
+handoffs. Inputs: settled work, live/aborted request signal, owned snapshot IDs;
+outputs: acknowledged release or truthful cleanup failure and unchanged product
+result. Allowed contributors: local provider, operation owner, query-artifact and
+host lease owners, existing Runtime/browser request-finally. Forbidden: model
+cleanup authority, new scheduler/store, fresh signals hiding cancellation, silent
+success, requery/replay or weakened mutation cutoff. Implementation boundary:
+local-ai-provider.ts and local-operation-tools.ts; existing host/lease and retained
+owners remain unchanged unless the formal failure requires an in-scope correction.
+Tests: expand the existing mapped evaluation-report proof through actual retained
+owners, provider protocol tests and host/lease cancellation/retry consumers. The
+existing mapping captures these handoffs; no new registry. Internal dispatch phase
+is brand-neutral and non-persisted. Stop if the owner boundary or fixed DoD cannot
+be met; revise this bounded design before changing implementation scope.
+
+Direct-consumer gate alignment: the query-artifact recipe fixtures omitted the
+mandatory mechanical reviewer and pinned a superseded visibility action revision.
+Keep their success, intermediate-release and single-write assertions; supply the
+review dependency explicitly and resolve the revision from the registered action.
+This changes only the existing direct-consumer test setup, not review behavior or
+production ownership. The missing-review partial result and stale-revision rejection
+are valid protections and must not be weakened.
+
+Local result: admission candidate `db7780fe-4267-4e73-8c1d-05371cdf0bd3`
+was accepted at revision 134 with no contract blockers before implementation.
+The strengthened mapped proof first failed because both snapshots remained live
+and no release reached the browser before request-finally (saved red log:
+`tmp/deadline-cleanup-red.log`). Production changes are limited to the internal
+cleanup dispatch phase in the two declared server owners; existing host leases,
+browser retention, cancellation, history and result owners are unchanged.
+
+Final source-bound Inspector run `7a07c78e-687c-40ee-b82d-b7b30320b2b1` passed all
+80 cases, source `f18388b7ba126d4b7838ae60bc18ac5c07310600b41fe3d43d591a4d07fb6688`.
+The mapped report proof executes five real Runtime/retention integrations: normal
+cutoff, request cancellation, disconnected transport, invalid report and one
+failed release followed by retry. It verifies actual release receipts, unresolved
+old handles, reusable capacity, live foreign-request resources, unchanged saved
+document, retained partial report and no late/repeated mutation. The existing lost
+acknowledgement/idempotent release and borrow protections pass in query/lease tests.
+
+Direct-consumer validation: 458 tests passed across provider, operations, host,
+leases and batch exchange; all 15 query-artifact tests passed after the bounded
+fixture alignment above. Browser Runtime, retained context, context actions,
+transactions and interrupted drawing integration passed 84 tests. Production
+TypeScript checks, naming (15 checks) and scoped lint pass; lint retains three
+pre-existing console warnings. The installed native registration protocol probe
+ran without inference as part of provider tests. No model, 101, CI or remote push.
+
+Bounded self-review covered the diff, dispatcher consumers, model cutoff admission,
+real cancellation, acknowledgement checks, release retry and browser-finally.
+Internal cleanup authority is not delivered in tool schemas or accepted from a
+model argument. Original product failures and cleanup failures remain separate.
+These deterministic proofs establish the repaired owner handoff, not a new live
+AI recovery observation. Historical resource residue remains unconfirmed; the old
+recording did not contain per-resource post-cleanup evidence. No broader issue is
+closed by this slice.
 
 ### Retained-refinement closeout - 2026-10-26
 

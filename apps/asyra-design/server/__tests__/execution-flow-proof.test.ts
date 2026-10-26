@@ -7650,10 +7650,499 @@ it('execution proof distinguishes inspection lookup coverage from completed read
   expect(dispatch).not.toHaveBeenCalled()
 })
 
+interface CleanupProofObservation {
+  stage?: string
+  evidence?: {
+    executor?: string
+    phase?: string
+    status?: string
+    outcome?: string
+  }
+}
+
+// Replay the saved cleanup ordering through real Runtime/browser owners, without inference.
+const proveDeadlineQueryCleanup = async (
+  directory: string,
+  mode:
+    'deadline' | 'cancel' | 'disconnect' | 'report-failure' | 'release-failure',
+  observations: CleanupProofObservation[]
+) => {
+  vi.resetModules()
+  vi.stubGlobal('window', {})
+  const { requestLocalAiActionBatch } = await import('../local-ai-provider')
+  const { createAiAgentRuntime } = await import('@asyra/ai-agent-runtime')
+  const { createAiRuntimeInput } = await import('../../src/ai/runtime-input')
+  const { createAiTransactionRunner } = await import('../../src/ai/transaction')
+  const { default: core } = await import('../../src/contexts')
+  const { applyPreset, PresetProfiles, PresetDefaults } =
+    await import('@asyra/preset')
+  const hostModule = await import('../local-tool-host')
+  const retainedModule =
+    await import('../../src/common-apis/retained-design-context')
+  const { createRetainedDesignContext } = retainedModule
+  const createQueries = vi
+    .spyOn(retainedModule, 'createRetainedDesignContext')
+    .mockImplementation((source, observe) =>
+      createRetainedDesignContext(source, observe, { maxBytes: 4000 })
+    )
+  const eventOffset = observations.length
+  applyPreset(core, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
+  const initial = await core.save()
+  core.load({
+    version: '1.0.0',
+    props: {},
+    sceneTree: {
+      workspace: 'workspace',
+      workspaceList: ['workspace'],
+      elements: {
+        workspace: {
+          id: 'workspace',
+          type: 'workspace',
+          name: 'Workspace',
+          parentId: '',
+          children: [],
+          visible: true,
+          lock: false
+        }
+      }
+    }
+  })
+  const ids = core.createElementsInParent(
+    [
+      { type: 'rect', name: 'Panel A', x: 0, y: 0, width: 10, height: 10 },
+      { type: 'rect', name: 'Panel B', x: 20, y: 0, width: 10, height: 10 }
+    ],
+    'workspace'
+  )
+  const controller = new AbortController()
+  const siblingSignal = new AbortController().signal
+  const pressureSignal = new AbortController().signal
+  let blockedQuery: Parameters<typeof queries.read>[0] | undefined
+  let pressureLease: { snapshotId: string; leaseId: string } | undefined
+  const readFreedCapacity = () => {
+    if (!blockedQuery) throw new Error('Missing capacity rejection')
+    return queries.read(blockedQuery, pressureSignal)
+  }
+  const deadline = Date.now() + 700
+  let turns = 0
+  const retained: { snapshotId: string; leaseId: string }[] = []
+  const releaseAttempts: string[] = []
+  const releaseReceipts: unknown[] = []
+  const dispatched: string[] = []
+  let finishProvider!: () => void
+  const providerSettled = new Promise<void>((resolve) => {
+    finishProvider = resolve
+  })
+  let capturedHost: ReturnType<typeof createLocalToolHost> | undefined
+  const originalHost = hostModule.createLocalToolHost
+  const hostSpy = vi
+    .spyOn(hostModule, 'createLocalToolHost')
+    .mockImplementation((options) => {
+      capturedHost = originalHost(options)
+      return capturedHost
+    })
+  const packets: {
+    id?: number
+    method?: string
+    params?: Record<string, unknown>
+    result?: { success?: boolean; contentItems?: { text?: string }[] }
+  }[] = []
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    stdin: new Writable(),
+    kill: () => {
+      queueMicrotask(() => child.emit('close', null, 'SIGTERM'))
+      return true
+    }
+  })
+  const send = (packet: unknown) =>
+    child.stdout.write(JSON.stringify(packet) + '\n')
+  const notify = (method: string, params: Record<string, unknown>) =>
+    send({
+      method,
+      params: { threadId: 'cleanup-thread', turnId: `turn-${turns}`, ...params }
+    })
+  const call = (id: number, tool: string, args: unknown) =>
+    send({
+      id,
+      method: 'item/tool/call',
+      params: {
+        threadId: 'cleanup-thread',
+        turnId: `turn-${turns}`,
+        callId: `cleanup-${id}`,
+        namespace: 'design_operations',
+        tool,
+        arguments: args
+      }
+    })
+  const finishReport = () => {
+    notify('item/completed', {
+      item: {
+        type: 'agentMessage',
+        phase: 'final_answer',
+        text:
+          mode === 'report-failure'
+            ? 'invalid report'
+            : JSON.stringify({
+                batchId: 'cleanup-report',
+                actions: [
+                  {
+                    id: 'report',
+                    name: AiActionNames.REPORT_OUTCOME,
+                    arguments: {
+                      outcome: 'unsupported',
+                      message:
+                        'Completed visibility change; visual review incomplete.'
+                    },
+                    summary: 'Report partial work'
+                  }
+                ]
+              })
+      }
+    })
+    notify('turn/completed', {
+      turn: { id: `turn-${turns}`, status: 'completed' }
+    })
+  }
+  child.stdin = new Writable({
+    write(chunk, _encoding, done) {
+      const packet = JSON.parse(String(chunk)) as (typeof packets)[number]
+      packets.push(packet)
+      queueMicrotask(() => {
+        if (packet.method && packet.id !== undefined) {
+          let result: unknown = {}
+          if (packet.method === 'config/read') result = { config: {} }
+          if (packet.method === 'account/read')
+            result = { account: { type: 'chatgpt' } }
+          if (packet.method === 'thread/start')
+            result = {
+              thread: { id: 'cleanup-thread' },
+              model: 'gpt-6-astra',
+              reasoningEffort: 'medium',
+              instructionSources: [],
+              runtimeWorkspaceRoots: []
+            }
+          if (packet.method === 'turn/start')
+            result = { turn: { id: `turn-${++turns}` } }
+          send({ id: packet.id, result })
+          if (packet.method === 'turn/start' && turns === 1)
+            call(800, AiActionNames.READ_DESIGN_CONTEXT, {
+              arguments: {
+                scope: 'children',
+                parentId: 'workspace',
+                fields: ['fills'],
+                delivery: 'reference'
+              }
+            })
+          if (packet.method === 'turn/interrupt')
+            notify('turn/completed', {
+              turn: { id: 'turn-1', status: 'interrupted' }
+            })
+          if (packet.method === 'turn/start' && turns === 2)
+            // A model cannot smuggle an internal cleanup phase across cutoff.
+            call(802, AiDesignToolIds.EXECUTE_DESIGN_BATCH, {
+              phase: 'cleanup',
+              operations: [
+                {
+                  id: 'late',
+                  name: 'api_element_setElementsVisible',
+                  arguments: { elementIds: [ids[0]], visible: true }
+                }
+              ]
+            })
+        } else if (packet.id === 800) {
+          const value = JSON.parse(
+            packet.result?.contentItems?.[0]?.text ?? '{}'
+          )
+          const parent = value.actionResults?.[0]?.result
+          if (parent) {
+            retained.push(parent)
+            call(801, AiActionNames.READ_DESIGN_CONTEXT, {
+              arguments: {
+                scope: 'snapshot',
+                snapshotId: parent.snapshotId,
+                filter: { name: { equals: 'Panel A' } },
+                delivery: 'reference'
+              }
+            })
+          } else finishReport()
+        } else if (packet.id === 801) {
+          const value = JSON.parse(
+            packet.result?.contentItems?.[0]?.text ?? '{}'
+          )
+          if (value.actionResults?.[0]?.result)
+            retained.push(value.actionResults[0].result)
+          if (mode === 'cancel') controller.abort()
+          if (mode === 'disconnect') child.emit('close', 1, null)
+        } else if (packet.id === 802) finishReport()
+      })
+      done()
+    }
+  })
+  spawn.mockReturnValueOnce(child)
+  let beforeCleanup: Awaited<ReturnType<typeof core.save>> | undefined
+  const input = createAiRuntimeInput({
+    permissionRules: {},
+    transactionRunner: createAiTransactionRunner({
+      getMutationDeadline: () => deadline
+    }),
+    provider: {
+      requestActionBatch: async (input, options) => {
+        const executeBatch = options.executeBatch
+        if (!executeBatch) throw new Error('Missing Runtime dispatcher')
+        // A real existing mutation is committed before the query/report lifetime.
+        await executeBatch({
+          batchId: 'initial-edit',
+          actions: [
+            {
+              id: 'edit',
+              name: 'api_element_setElementsVisible',
+              arguments: { elementIds: [ids[0]], visible: false },
+              summary: 'Hide one panel'
+            }
+          ]
+        })
+        expect(core.getElementData(ids[0])?.visible).toBe(false)
+        beforeCleanup = await core.save()
+        sibling = queries.read(
+          { scope: 'ids', elementIds: [ids[1]], delivery: 'reference' },
+          siblingSignal
+        )
+        try {
+          return (await requestLocalAiActionBatch(
+            {
+              ...input,
+              metadata: {
+                evaluationWindow: {
+                  workDeadlineAt: deadline,
+                  reportTimeoutMs: 1500
+                }
+              }
+            },
+            {
+              executable: 'scripted-protocol',
+              model: 'gpt-6-astra',
+              toolLibraryDirectory: directory,
+              signal: options.signal,
+              executeBatch: async (batch) => {
+                const action = batch.actions[0]
+                dispatched.push(action.name)
+                if (action.name === AiActionNames.RELEASE_DESIGN_CONTEXT) {
+                  const id = (action.arguments as { snapshotId: string })
+                    .snapshotId
+                  releaseAttempts.push(id)
+                  if (mode === 'disconnect')
+                    throw new Error('Browser transport disconnected')
+                  if (
+                    mode === 'release-failure' &&
+                    releaseAttempts.length === 1
+                  )
+                    throw new Error('Injected release transport failure')
+                }
+                const receipt = await executeBatch(batch)
+                if (
+                  action.name === AiActionNames.READ_DESIGN_CONTEXT &&
+                  dispatched.filter(
+                    (name) => name === AiActionNames.READ_DESIGN_CONTEXT
+                  ).length === 2
+                ) {
+                  // Fill the same real owner with independently pinned request data.
+                  for (let index = 0; index < 64; index++) {
+                    const query = {
+                      scope: 'ids' as const,
+                      elementIds: [`pressure-${index}`],
+                      delivery: 'reference' as const
+                    }
+                    try {
+                      const retained = queries.read(query, pressureSignal)
+                      if (!retained.snapshotId || !retained.leaseId)
+                        throw new Error('Missing pressure lease')
+                      pressureLease ??= {
+                        snapshotId: retained.snapshotId,
+                        leaseId: retained.leaseId
+                      }
+                    } catch (error) {
+                      expect(String(error)).toMatch(/capacity/)
+                      blockedQuery = query
+                      break
+                    }
+                  }
+                  expect(blockedQuery).toBeDefined()
+                }
+                if (action.name === AiActionNames.RELEASE_DESIGN_CONTEXT)
+                  releaseReceipts.push(receipt)
+                return receipt
+              }
+            }
+          )) as AiActionBatch
+        } finally {
+          finishProvider()
+          // This point precedes browser transaction-finally; it cannot conceal a host failure.
+          if (mode === 'deadline' || mode === 'report-failure') {
+            expect
+              .soft(releaseAttempts)
+              .toEqual(retained.map((r) => r.snapshotId))
+            for (const r of retained)
+              expect
+                .soft(() => queries.get(r.snapshotId))
+                .toThrow(/missing|evicted/)
+            expect(() => readFreedCapacity()).not.toThrow()
+          }
+          if (mode === 'release-failure') {
+            expect
+              .soft(releaseAttempts)
+              .toEqual(retained.map((r) => r.snapshotId))
+            expect(() => queries.get(retained[1].snapshotId)).toThrow(
+              /missing|evicted/
+            )
+            expect(queries.get(retained[0].snapshotId).orderedIds).toEqual(ids)
+            expect(capturedHost).toBeDefined()
+            await expect(
+              capturedHost?.invoke({
+                name: 'design_operations.read_design_context',
+                input: {}
+              })
+            ).rejects.toThrow(/closing/)
+            await capturedHost?.dispose()
+            expect(releaseAttempts).toEqual([
+              retained[0].snapshotId,
+              retained[1].snapshotId,
+              retained[0].snapshotId
+            ])
+          }
+        }
+      }
+    }
+  })
+  const queries = input.ownedResources?.find(
+    (resource) => 'retainReceipt' in resource
+  ) as ReturnType<typeof createRetainedDesignContext>
+  let sibling!: ReturnType<typeof queries.read>
+  const runtime = createAiAgentRuntime({
+    ...input,
+    permissionPolicy: { evaluate: () => 'allow' }
+  })
+  try {
+    const result = await runtime.run({
+      intent: 'Adjust one panel and report remaining review',
+      signal: controller.signal
+    })
+    if (capturedHost) await providerSettled
+    expect(
+      retained,
+      JSON.stringify({ mode, result, dispatched, packets: packets.slice(-3) })
+    ).toHaveLength(2)
+    expect(
+      dispatched.filter((name) => name === AiActionNames.READ_DESIGN_CONTEXT)
+    ).toHaveLength(2)
+    expect(dispatched).not.toContain('api_element_setElementsVisible')
+    for (const r of retained) {
+      expect(() => queries.get(r.snapshotId)).toThrow(/missing|evicted/)
+      expect(() => queries.get(r.snapshotId, r.leaseId)).toThrow(/lease/)
+    }
+    if (!sibling.snapshotId || !sibling.leaseId)
+      throw new Error('Missing sibling lease')
+    expect(
+      queries.get(sibling.snapshotId, sibling.leaseId, siblingSignal).orderedIds
+    ).toEqual([ids[1]])
+    if (!pressureLease) throw new Error('Missing pressure lease')
+    expect(
+      queries.get(
+        pressureLease.snapshotId,
+        pressureLease.leaseId,
+        pressureSignal
+      )
+    ).toBeDefined()
+    expect(() => readFreedCapacity()).not.toThrow()
+    queries.releaseFor(pressureSignal)
+    const freshSignal = new AbortController().signal
+    const fresh = queries.read(
+      {
+        scope: 'children',
+        parentId: 'workspace',
+        fields: ['fills'],
+        delivery: 'reference'
+      },
+      freshSignal
+    )
+    expect(retained.some((r) => r.snapshotId === fresh.snapshotId)).toBe(false)
+    queries.releaseFor(freshSignal)
+    expect(await core.save()).toEqual(beforeCleanup)
+    if (mode === 'deadline' || mode === 'release-failure') {
+      expect(result.status).toBe('executed')
+      expect(result.actionResults?.at(-1)?.result).toMatchObject({
+        outcome: 'unsupported'
+      })
+      expect(releaseReceipts).toHaveLength(2)
+      expect(releaseReceipts).toEqual(
+        expect.arrayContaining(
+          retained.map(({ snapshotId }) =>
+            expect.objectContaining({
+              actionResults: [
+                expect.objectContaining({
+                  result: expect.objectContaining({
+                    snapshotId,
+                    released: true
+                  })
+                })
+              ]
+            })
+          )
+        )
+      )
+      expect(
+        packets.find((p) => p.id === 802 && p.result)?.result?.success
+      ).toBe(false)
+    }
+    const events = observations.slice(eventOffset)
+    const cleanup = events.find(
+      (event) =>
+        event.evidence?.executor === 'tool-host' &&
+        event.evidence?.phase === 'cleanup'
+    )
+    expect(cleanup?.evidence?.status).toBe(
+      ['disconnect', 'release-failure'].includes(mode) ? 'failed' : 'completed'
+    )
+    if (mode === 'deadline')
+      expect(
+        events.find((event) => event.stage === 'settlement')?.evidence?.outcome
+      ).toBe('completed')
+    if (mode === 'report-failure' || mode === 'disconnect') {
+      expect(result.status).toBe('failed')
+      expect(
+        events.find((event) => event.stage === 'settlement')?.evidence?.outcome
+      ).toBe('failed')
+    }
+    if (mode === 'cancel') {
+      expect(result.status).toBe('cancelled')
+      expect(releaseAttempts).toHaveLength(0)
+    }
+    if (mode === 'disconnect') {
+      expect(releaseAttempts).toHaveLength(2)
+      expect(releaseReceipts).toHaveLength(0)
+    }
+  } finally {
+    controller.abort()
+    await runtime.dispose()
+    hostSpy.mockRestore()
+    createQueries.mockRestore()
+    core.load(initial)
+    vi.unstubAllGlobals()
+  }
+}
+
 it('execution proof separates bounded work from same-thread self-report without replay', async ({
   onTestFinished
 }) => {
-  const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+  const observations: CleanupProofObservation[] = []
+  const log = vi.spyOn(console, 'info').mockImplementation((line) => {
+    if (typeof line === 'string' && line.startsWith('{'))
+      observations.push(JSON.parse(line))
+  })
   onTestFinished(() => log.mockRestore())
   const parent = resolve('tmp/flow-evaluation-tests')
   await mkdir(parent, { recursive: true })
@@ -7778,7 +8267,15 @@ it('execution proof separates bounded work from same-thread self-report without 
   ).toEqual(['evaluation-thread', 'evaluation-thread'])
   expect(packets.some((p) => p.method === 'turn/interrupt')).toBe(true)
   expect(executeBatch).not.toHaveBeenCalled()
-})
+  for (const mode of [
+    'deadline',
+    'cancel',
+    'disconnect',
+    'report-failure',
+    'release-failure'
+  ] as const)
+    await proveDeadlineQueryCleanup(directory, mode, observations)
+}, 15000)
 
 const proveBudgetRecovery = async (limit: number, withBrief = false) => {
   const hadWindow = 'window' in globalThis

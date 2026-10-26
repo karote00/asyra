@@ -2585,6 +2585,23 @@ Provider teardown attempts host disposal and storage closure separately after
 active calls settle. Each records duration and outcome using host observations;
 a cleanup error cannot replace the original product outcome or its error.
 
+### Work deadline and resource cleanup
+
+The work deadline closes model operation admission, not the lifetime of resources
+needed for final reporting. After active work settles, the existing host releases
+its retained queries through the observed browser dispatcher and checks real
+acknowledgements. Owner-created cleanup is internal lifecycle work; the model
+cannot select it or use it to execute late operations. Actual mutation deadlines,
+permissions and request/borrow ownership remain enforced.
+
+True cancellation or disconnected transport leaves request-data release with the
+browser transaction-finally owner. Completion, partial work, failed reports and
+cancellation all release only their own request data. Cleanup must not requery,
+redraw or change history. Release failures remain explicit and retryable without
+reopening work or repeating successful releases. Provider result settlement and
+resource cleanup outcome remain separate; neither a completed provider nor an
+aborted transport is evidence of acknowledged remote cleanup.
+
 ### Saved tool management in the conversation panel
 
 The existing panel exposes an on-demand saved-tool list with description, revision
