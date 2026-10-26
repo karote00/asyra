@@ -2,6 +2,45 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import approved from '../../../../../assets/asyra-office/models/architecture/review/office-single-floor-structure-proposal-v1.json'
 import { createReferenceScene } from '../reference-scene'
 import type { AssetPart } from '../../assets/catalog'
+import depthReference from '../reference/lower-room-measurements.json'
+
+// The owner reopened only lower-room depth; all other accepted coordinates remain.
+const run = depthReference.eastFloorRun
+const direction = run.rear.map((n, k) => n - run.front[k])
+const fraction =
+  run.partition.reduce(
+    (sum, n, k) => sum + (n - run.front[k]) * direction[k],
+    0
+  ) / direction.reduce((sum, n) => sum + n * n, 0)
+const datum = depthReference.baseline
+const shift =
+  (datum.rearInnerY - datum.frontInnerY) * fraction -
+  (datum.loungeRearInnerY - datum.frontInnerY)
+function revisedVertices(name: string, vertices: number[][]) {
+  return vertices.map(([x, y, z]) => {
+    if (
+      [
+        'A - cream divider',
+        'B - green divider',
+        'lounge rear left',
+        'lounge rear middle',
+        'lounge rear right',
+        'lounge T return'
+      ].includes(name)
+    )
+      return [x, y + shift, z]
+    if (['lounge left low', 'lounge left return'].includes(name)) {
+      const oldEnd = approved.parameters.loungeY
+      const ratio =
+        (oldEnd - datum.frontInnerY + shift) / (oldEnd - datum.frontInnerY)
+      // Keep the terminal abutment depth unchanged; only the clear wall run grows.
+      if (y >= oldEnd) return [x, y + shift, z]
+      return [x, datum.frontInnerY + (y - datum.frontInnerY) * ratio, z]
+    }
+    if (name === 'white pantry floor band' && y < 0) return [x, y + shift, z]
+    return [x, y, z]
+  })
+}
 
 const ids: Record<string, string[]> = {
   'west wall': ['left-wall', 'discussion-left-wall'],
@@ -65,7 +104,10 @@ describe('owner-approved building construction', () => {
           )
           for (let axis = 0; axis < 3; axis++) {
             const bounds = extent(positions, axis)
-            const wanted = extent(expected.vertices.flat(), axis)
+            const wanted = extent(
+              revisedVertices(name, expected.vertices).flat(),
+              axis
+            )
             expect(bounds[0]).toBeCloseTo(wanted[0], 6)
             expect(bounds[1]).toBeCloseTo(wanted[1], 6)
           }
@@ -108,11 +150,18 @@ describe('owner-approved building construction', () => {
           axis
         )
       ).toEqual(
-        extent(band.vertices.flat(), axis).map((v) => expect.closeTo(v, 10))
+        extent(
+          revisedVertices('white pantry floor band', band.vertices).flat(),
+          axis
+        ).map((v) => expect.closeTo(v, 10))
       )
     }
-    const x = extent(band.vertices.flat(), 0),
-      y = extent(band.vertices.flat(), 1)
+    const revisedBand = revisedVertices(
+      'white pantry floor band',
+      band.vertices
+    ).flat()
+    const x = extent(revisedBand, 0),
+      y = extent(revisedBand, 1)
     for (const [id, group] of parts) {
       if (!id.startsWith('floor-')) continue
       for (const p of group) {

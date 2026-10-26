@@ -1062,3 +1062,52 @@ These development notes are not published release summaries.
   "reason": "Documentation discovery and retained consumer test assets only; no consumer runtime API or saved-data format changes. Original independent acceptance, contextual reruns and permanent fixture evidence remain distinct."
 }
 ```
+
+## Office tables and chairs review
+
+```update-note
+{
+  "change": "office-tables-and-chairs-review",
+  "owner": "asyra-office",
+  "summary": "Add the owner-requested deeper lower rooms and three proportion-preserving tables; omit the source-mismatched green work chair and rejected complex upholstery pending reference-specific asset review.",
+  "reason": "Preserve approved furniture proportions instead of deforming them to fit image envelopes; keep the accepted building and exterior unchanged.",
+  "impact": "no-action",
+  "sources": [
+    "assets/asyra-office/models/furniture/WORK-CHAIR-SPEC.md",
+    "assets/asyra-office/models/furniture/furniture-model-spec.json",
+    "apps/asyra-office/src/scene/__tests__/seating-shape.test.ts",
+    "apps/asyra-office/src/scene/__tests__/seating-pose.test.ts",
+    "apps/asyra-office/src/scene/reference/office-structure.json",
+    "apps/asyra-office/src/scene/reference/lower-room-measurements.json",
+    "apps/asyra-office/src/scene/__tests__/lower-room-depth.test.ts",
+    "apps/asyra-office/src/scene/__tests__/approved-structure.test.ts",
+    "apps/asyra-office/src/scene/__tests__/wall-joins.test.ts",
+    "apps/asyra-office/scripts/export-seating-measurement-input.ts",
+    "apps/asyra-office/scripts/fit-room-seating.py",
+    "apps/asyra-office/scripts/measure-seating-placement.ts",
+    "apps/asyra-office/scripts/review-seating-placement.py",
+    "apps/asyra-office/src/scene/__tests__/seating-reference.test.ts",
+    "apps/asyra-office/src/scene/reference/office-seating.json",
+    "apps/asyra-office/src/scene/reference/seating-measurements.json",
+    "apps/asyra-office/e2e/interior.spec.ts",
+    "apps/asyra-office/e2e/structure-hardware.spec.ts",
+    "apps/asyra-office/scripts/export-armchair-panels.ts",
+    "apps/asyra-office/scripts/refine-armchair-panels.py",
+    "apps/asyra-office/src/assets/__tests__/seating-microscope.test.ts",
+    "apps/asyra-office/src/assets/catalog.ts",
+    "apps/asyra-office/src/assets/generated/armchair-panels.json",
+    "apps/asyra-office/src/assets/tea-chair.ts",
+    "apps/asyra-office/src/scene/__tests__/office-seating.test.ts",
+    "apps/asyra-office/src/scene/__tests__/seating-construction.test.ts",
+    "apps/asyra-office/src/scene/__tests__/structure-stage.test.ts",
+    "apps/asyra-office/src/scene/office-interior.ts",
+    "apps/asyra-office/src/scene/office-seating.ts",
+    "apps/asyra-office/src/scene/reference-scene.ts",
+    "apps/asyra-office/src/ui/OfficeScene.tsx",
+    "assets/asyra-office/models/tea-furniture/tea-furniture-model-spec.json",
+    "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "guides": []
+}
+```

@@ -18,6 +18,17 @@ clarifications, not a factory implementation. The two back posts are shortened
 from their lower ends to match the reference. Other component dimensions,
 reference pixels and other furniture inputs are preserved.
 
+## Scene identity restriction
+
+This standalone green four-legged chair remains a reviewed catalog design. It is
+not approved as the lower-left chair in `architecture/review/approved-office-reference.jpg`:
+the visible source chair behind the actor is dark and its silhouette differs.
+Do not infer a scene assignment from the generic `work-chair` name. That scene
+position remains empty until a reference-specific chair is reviewed. The source
+crop occludes much of the seat and base; wheels, armrests and hidden supports
+are not established by this observation. No geometry or default appearance of
+this standalone asset is changed by the scene rejection.
+
 ## Coordinates and component dimensions
 
 Metres; +Z up, -Y front, +X right. The authored root remains (0,0,0). Final default

@@ -1,7 +1,12 @@
+import { composeOfficeSeating } from './office-seating'
 import { OFFICE_FIT, OFFICE_FLOORS, referencePoint } from './office-layout'
 import type { ArtworkRegion } from './artwork'
 import { indoorPlant } from './interior-plants'
-import { composeOfficeInterior, type InteriorStage } from './office-interior'
+import {
+  composeOfficeInterior,
+  INTERIOR_REVIEW_STAGE,
+  type InteriorStage
+} from './office-interior'
 import { awning } from '../assets/awning'
 import { chalkboard } from '../assets/chalkboard'
 import { manhole } from '../assets/manhole'
@@ -124,7 +129,7 @@ export const PLACES = [
     name: 'Work room',
     description: 'Desk, shelves, ideas',
     icon: 'table',
-    target: referencePoint([441, 337], 2, OFFICE_FLOORS.work + 0.55)
+    target: [-2, -1.45, OFFICE_FLOORS.work + 0.55] as Vec
   },
   {
     id: 'trees',
@@ -145,14 +150,14 @@ export const PLACES = [
     name: 'Lounge',
     description: 'Room to slow down',
     icon: 'sofa',
-    target: referencePoint([747, 468], 2, OFFICE_FLOORS.lounge + 0.4)
+    target: [1.55, -1.75, OFFICE_FLOORS.lounge + 0.4] as Vec
   },
   {
     id: 'table',
     name: 'Meeting corner',
     description: 'Small room, big ideas',
     icon: 'table',
-    target: referencePoint([618, 244], 2, OFFICE_FLOORS.discussion + 0.55)
+    target: [-1.48, 1.78, OFFICE_FLOORS.discussion + 0.55] as Vec
   },
   {
     id: 'park',
@@ -166,7 +171,9 @@ export type ReferenceScene = Pick<
   ReturnType<typeof createReferenceScene>,
   'assemblies' | 'parts' | 'labels'
 >
-export function createReferenceScene(stage: InteriorStage = 'structure') {
+export function createReferenceScene(
+  stage: InteriorStage = INTERIOR_REVIEW_STAGE
+) {
   const assemblies: SceneAssembly[] = [],
     all: AssetPart[] = [],
     labels: Label[] = []
@@ -297,6 +304,7 @@ export function createReferenceScene(stage: InteriorStage = 'structure') {
   const interiorStart = assemblies.length
   const interiorLabelStart = labels.length
   composeOfficeInterior({ add, block, asset, plant, label, labels })
+  if (stage === 'tables-and-chairs') composeOfficeSeating({ add })
   const interiorLabels = new Set(labels.slice(interiorLabelStart))
   const interiorAssemblyIds = new Set(
     assemblies
@@ -316,7 +324,7 @@ export function createReferenceScene(stage: InteriorStage = 'structure') {
       [3.45, -0.85, 0.2]
     ] as Vec[]
   ).entries())
-    if (stage === 'structure' && i < 4) continue
+    if (i < 4) continue
     else if (i === 2) {
       const fitted = indoorPlant('room-edge-plant-2')
       add('room-edge-plant-2', 'planter', fitted.parts, fitted.position)
@@ -523,7 +531,7 @@ export function createReferenceScene(stage: InteriorStage = 'structure') {
   for (const actor of ACTORS) {
     const indoors = ['mina', 'leo', 'sage'].includes(actor.id)
     if (indoors) interiorAssemblyIds.add(`actor-${actor.id}`)
-    if (stage === 'structure' && indoors) continue
+    if (indoors) continue
     add(
       `actor-${actor.id}`,
       'modular-puppet',

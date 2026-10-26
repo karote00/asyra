@@ -1677,3 +1677,408 @@ structure/exterior. Compare component geometry to accepted asset specifications
 and positions to the full image. Complex upholstered seats require Blender
 background construction when the procedural route cannot reproduce them; no
 rejected substitutes. No new dependencies or furniture-stage push is authorized.
+
+### Tables and chairs - composition execution card
+
+Owner: compose-office (step 11), construct-asset-to-compose-office route.
+Sources: approved building snapshot; full office image; writing-desk, work-chair,
+round-tea-table, tea-chair, round-coffee-table and widened lounge-armchair specs.
+Inputs: existing catalog geometry, requested instance extents/appearance and an
+explicit room-relative seating layout. Output: seven named table/chair instances
+in the normal scene. The structural checkpoint remains available for inspection.
+No bypass, renderer-local placement, image projection at runtime or new cache.
+Only the app scene owner contributes; providers and React must not own geometry.
+Boundary: scene layout/composition, its UI caption, direct tests and review docs.
+Failure owner: compose-office. Existing asset factories remain authoritative.
+
+Cases: default scene admits three tables and four chairs; explicit structure
+stage admits none. Both stages have identical structural and exterior geometry.
+Every foot reaches the shared floor; furniture clears the actual wall body and
+cap bounds. The work chair faces the desk; two differently coloured tea chairs
+face the round table; the orange lounge chair faces the coffee table. No indoor
+actors, sofa, decorations, pantry equipment or outdoor modifications are admitted.
+
+Placement uses room-relative relationships from the full image, constrained by
+accepted physical room bounds. Historical source-camera box fits are invalid for
+this accepted construction: they put the desk across the west wall and the tea
+chairs beyond the rear wall. Do not move walls to accommodate these old fits.
+Record the measured relationships and normalized construction in the layout doc;
+retain uncertainty rather than claiming exact recovered metric dimensions.
+
+Gates: formal admission and contact/clearance tests first, unchanged-geometry
+comparison, app unit suite, naming, lint/typecheck/build, selected real-app room
+and asset multi-view browser cases. Inspect both overview and enlarged joints.
+Stop on collision, unsupported geometry or visible broken topology. Reopen the
+asset owner with a separate card if asset correction is required. No furniture
+push is authorized by this slice.
+
+### Upholstered-seat microscope correction
+
+Owner: construct-asset (step 1), before completing composition admission.
+Inputs: approved tea-chair five-view sheet and widened armchair reference/spec.
+Output: closed component meshes with a broad tea-chair crown and smooth armchair
+side-panel surfaces. The tea-chair source exponent 1.6 produces a pointed front
+crown, unlike the broad crown in the approved sheet; reconcile that single curve
+parameter against the reference. Preserve the intentionally documented 2 mm
+source-space cushion clearance, every leg contact and replaceable region.
+
+Boundary: these two asset factories, their direct geometry tests, production
+mesh preparation script and the referenced tea-chair recipe. Blender may run in
+background mode to remesh the armchair side panels, exporting app-owned geometry;
+no Blender process may remain after generation. No scene or renderer patch.
+Allowed contributor: app asset owner; forbidden: renderer reconstruction or
+camera-dependent mesh changes. Failure owner: construct-asset; no bypass/cache.
+Gates: crown-height regression, closed-mesh/extent/triangle checks, five-view live
+asset screenshots and magnified side-panel inspection. Preserve numerical recipe
+contracts except the documented crown correction. Stop on changed feet, new
+underside layers, silhouette loss or broken topology.
+
+The first Blender remesh inherited folded offset rims from the old analytic
+panel tessellation; triangle decimation also made rim shading uneven. A second
+quadrilateral remesh reported invalid manifold input and was rejected before
+export. Revised bounded method: rebuild the closed extrusion directly from the
+approved cubic outline, establish manifold winding, round the closed extrusion
+on a 3 mm voxel grid with 25 relaxation passes (factor 0.8), then simplify before
+applying the approved inward taper. Do not keep iterating
+on the damaged triangle soup or change renderer normals to conceal it.
+
+Local seating checkpoint: 179 unit tests pass; app lint, TypeScript/build, naming,
+Inspector checks and declared update guidance pass. The interior browser suite
+passes ten cases; its opt-in hardware case separately passes on Apple M3 Max
+Metal. The live route is `http://127.0.0.1:5194/`, at 1440 x 960 for browser
+evidence. Commands: `yarn workspace @asyra/asyra-office test:e2e
+e2e/interior.spec.ts e2e/structure-hardware.spec.ts
+--output=test-results/seating-final` and `OFFICE_HARDWARE_REVIEW=1 yarn workspace
+@asyra/asyra-office test:e2e e2e/structure-hardware.spec.ts
+--output=test-results/seating-hardware-final`.
+
+Inspected work/discussion/lounge captures, oblique lounge, the live hardware
+close view, and enlarged chair views. Current tables/chairs clear walls, contact
+the floor and preserve the approved structural/exterior meshes. The facade
+partially occludes the desk and the unchanged street lamp occludes the lounge
+chair from the default viewpoint; room/oblique views provide inspection. Do not
+move the accepted building or exterior to conceal these occlusions. Upholstery
+seams/roundovers and final materials are not certified as identical to the source
+image. Lighting banding and the existing large-bundle warning remain unresolved.
+The new furniture is local and awaits owner review; only the earlier structural
+stage and its portable snapshot correction were pushed. Blender has exited.
+
+### Seating placement correction - reference measurement
+
+The owner rejected the seven-instance placement and sizing. The previous
+containment-only oracle cannot establish reference fidelity. Its authored room
+positions and uniform scales are superseded by this correction. Work remains
+in compose-office (step 11 / construct-asset-to-compose-office), with the accepted
+structure, exterior, geometry factories, lighting and camera frozen. Inputs are
+approved asset geometry, the full source image, actual accepted camera and floor.
+Output is seven measured instance transforms. No renderer correction, per-view
+geometry, asset redesign, new furniture or publication is authorized.
+
+Measure visible furniture bounds and identifiable tabletop/ground features in
+the original image. Use the actual camera position/target, not historical fit
+angles that no longer describe the live camera. Preserve occlusion uncertainty;
+do not identify actors or furniture shadows as geometry. First record baseline
+pixel residuals and strengthen formal composition tests to fail on them. Solve
+translation and whole-unit sizing offline, record trace provenance and residuals,
+then consume the resulting transforms at composition. No image fitting per frame.
+
+Allowed edits: seating composition/data, directly affected focus targets, formal
+geometry tests, offline measurement/review scripts and existing task docs. The
+failure owner is compose-office; no bypass and no retained runtime cache. Reuse
+the existing local construction map. Gates: source-space projection residuals,
+floor/wall contact and unchanged-building checks, focused unit tests, app lint /
+build, naming and real-app calibrated captures with enlarged room comparisons.
+Stop if a measured feature cannot fit the accepted building; report the residual
+rather than moving a wall or silently replacing evidence with a guessed layout.
+Self-review: scope and downstream tests match the existing composition contract;
+this replaces the prior placement approach rather than altering asset geometry.
+
+Measurement checkpoint (no production placement changes): the calibrated live
+canvas is 845 x 756 at `http://127.0.0.1:5194/`. The formal measured-reference
+browser case passes, but its screenshots expose rejected placement. The added
+offline audit reads actual composed furniture and the accepted camera, and
+projects complete mesh bounds without changing runtime data. The comparison
+uses the source image's historical visible envelopes; substantial work-chair
+occlusion makes its envelope unsuitable for reconstructing full dimensions.
+
+| Instance | Projected centre delta X/Y, px | Projected width ratio |
+| --- | --- | --- |
+| Desk | -31.5 / +38.4 | 0.999 |
+| Work chair | -1.9 / +33.6 | 1.095 |
+| Tea table | +36.4 / +57.8 | 0.827 |
+| Left tea chair | +58.1 / +43.0 | 0.799 |
+| Right tea chair | +41.7 / +59.6 | 1.025 |
+| Coffee table | -119.5 / +7.1 | 0.865 |
+| Lounge armchair | -113.3 / +10.8 | 1.047 |
+
+These are image-space differences, not isolated world-space translation or
+physical-size corrections. The accepted building correction also changes room
+projections. An unconstrained uniform-scale fit to the historical envelopes
+puts tea furniture beyond west/rear wall bounds; this demonstrates that this
+particular fitting method is invalid, not a proof that all reconstruction
+methods are impossible. A room-relative correction can instead reuse the
+accepted lounge reconstruction's source projection, and independently measured
+west-room anchors. The owner's choice between preserving this accepted structure
+and reopening global structural alignment remains pending. Do not apply a
+replacement layout before resolving that choice.
+
+Reproduce the read-only evidence with
+`node_modules/.bin/tsx apps/asyra-office/scripts/measure-seating-placement.ts`,
+the existing measured-reference E2E case, and
+`python3 apps/asyra-office/scripts/review-seating-placement.py <canvas.png>`.
+The review scripts pass lint / execution checks. Their annotated bounds are
+diagnostic only and never enter the production scene. No furniture placement,
+asset geometry, camera, building or exterior changed in this checkpoint.
+
+### Seating placement correction - approved room-relative execution
+
+The owner selected preservation of the accepted structure and correction of
+room-relative furniture placement/proportions. This resolves the pending choice
+above. Continue compose-office, step 11, through construct-asset-to-compose-office.
+Consume approved geometry and an offline measured layout; output seven whole-unit
+transforms on the existing floor. Structure, camera, exterior, asset topology and
+lighting remain unchanged. No runtime pixel fitting or view-dependent geometry.
+
+Use the previously accepted lounge source projection for lounge measurements;
+use west-room crown correspondences for the two west rooms. These are local
+measurement frames, not replacement render cameras. Trace visible table/seat
+features; retain uncertainty for the occluded work chair and keep its dimensions
+proportional to its desk's reference-derived width/height. Whole-unit XYZ sizing
+is allowed by the approved asset contract. Do not fit actor pixels as chair bounds.
+
+Before production edits, add failing reference-feature projection assertions to
+the formal seating tests, alongside floor, wall and unchanged-structure checks.
+A local frame is only a measurement tool: the resulting world geometry must also
+pass actual-app overview, three room views, near detail and oblique inspection.
+Allowed contributors and failure owner remain the app composition owner. No
+bypass or retained cache. Files are seating data/composer, its direct tests,
+offline measurement tools, focus targets and existing docs. Stop on penetrating
+geometry or unexplained feature residuals; do not move accepted walls to hide them.
+Self-review: this is the approved room-relative alternative, with explicit
+uncertainty rather than the rejected global absolute-pixel fit.
+
+
+Room-relative correction evidence: all six source-feature cases failed against
+the previous layout before the canonical transforms changed. A later actual-app
+review rejected the flattened lounge chair despite passing envelope checks.
+The cause was its inherited -65 degree heading: an underconstrained box fit
+absorbed the wrong orientation into height. The bounded correction adds a
+visible support-baseline direction constraint (source contacts 1010/976 and
+1135/1038 in the approved lounge enlargement; 6 degree picking tolerance).
+Its formal assertion failed by 18.08 degrees on the prior layout. Refit the
+same composition owner with that constraint; do not change asset topology,
+structural geometry, lighting or camera. This is a source-measurement correction,
+not an exception for the renderer. Desk detail review also requires an elevated
+orbit because the unchanged front wall occludes the normal focused view.
+
+
+Validation of the corrected layout: 185 app unit tests passed, including the
+six room-relative feature cases, actual floor/wall clearance, seated clearance
+and exact retained-structure/exterior equality. App lint/typecheck/build,
+15 naming checks, measurement-script lint and update-guidance coverage passed.
+The build retains its existing large-chunk warning. No deployment or push.
+
+Actual-app review at http://127.0.0.1:5194 used the work/discussion/lounge cases,
+the 845 x 756 overview and the hardware review (Apple M3 Max Metal). Inspected
+the elevated work view to expose the table footprint behind the facade, the two
+tea-chair/table arrangement, and the lounge oblique view after heading repair.
+Screenshot directories are test-results/seating-relative, seating-direction and
+seating-final under the app. The first directory's lounge image predates the
+heading repair; use seating-direction for the final lounge close view and
+seating-final for the final work/hardware views. Automated browser passes prove
+runtime health, not visual equality. The scope is ready for owner review of
+relative placement; it does not certify 100% original-image fidelity. Existing
+lighting banding and the original source's occluded work-chair geometry remain
+explicit limitations. No accepted wall, exterior, render camera or asset topology
+was changed by this placement correction.
+
+
+### Lower-room depth correction - owner-requested structural revision
+
+Owner request reopens the work/lounge room extents. Compose-office (step 11,
+construct-asset-to-compose-office) owns the correction. Inputs are the original
+complete reference, the new lounge crop, existing wall topology and floor.
+Output remains one canonical structural specification plus seven seating poses.
+Preserve shell frontage/width, entrance, exterior, camera, wall heights/thickness,
+stepped topology, asset meshes and appearance. Enlarge lower rooms inward by
+moving their rear partitions; their shared boundaries necessarily reduce the
+rear rooms' unused foreground area. Extend contiguous left lounge segments and
+adjust the flush pantry floor band. No raised floor or extra facade.
+
+Use the original visible east floor run to estimate the lower-room share of
+building depth. The rear/partition/front contacts are partly occluded and are
+picked as 1000/401, 860/503, 724/573 in the 1280 x 800 source. Projection along
+that run gives the target ratio, with 10 px contact uncertainty. Preserve the
+existing work/lounge rear offset so both lower rooms gain the same depth.
+This is an explicit reference-guided structural interpretation, not an exact
+metric recovery. Do not introduce another camera fit or alter the exterior.
+
+Allowed files: composition-owned structural/seating data, their tests and source
+measurement records, direct structural/room docs and the compose-office condition.
+Failure owner remains compose-office; renderer-owned writes and compensating mesh
+patches are forbidden. Test the floor-depth ratio before production edits, retain
+old acceptance checks for unchanged geometry, then verify all wall joins, floor
+coverage, contacts, seven seating instances, and exterior snapshot. Inspect both
+lower rooms at overview and elevated detail in the actual app. Stop on an
+unresolved wall intersection or required exterior change. No commit or push in
+this review slice. Existing plan closeout stays with this chat.
+
+
+Implemented depth revision: common inward boundary shift 0.877807; clear work
+and lounge depths 2.520770 and 2.321343. Default render camera, building perimeter,
+foundation, entrance, floor height, wall crown heights/thickness and exterior are
+unchanged. Updated adjoining wall runs, pantry floor-band extent and the work
+seating translation. The canonical data records the revision as pending owner
+visual acceptance; the historical approved snapshot is not overwritten.
+
+Review correction: old source-camera ray visibility is superseded by this
+owner-authorized wall relocation. A wall may legitimately occlude a former
+source-camera floor sample. Keep the independent source-floor containment tests;
+replace that visibility assertion with vertical clearance of all four current
+room centres at both mesh detail levels. The west joint test now includes both
+contiguous west-wall segments, since the partition attaches to the upper segment.
+The lounge end-plane offset stays at its original thickness instead of scaling
+with the extended wall run. These changes preserve physical checks without
+inventing a renderer visibility exception or shrinking a wall to pass a ray test.
+
+Inspected actual-app overview, work elevated detail, lounge oblique and discussion
+views in test-results/room-depth; also inspected the Metal hardware overview in
+test-results/room-depth-hardware. The work floor now has clear foreground space;
+the lounge retains its rectangular floor and has additional rear seating space.
+No new furniture, filters, asset meshes, camera presets or exterior changes.
+The source floor contacts remain approximate because plants and furnishings
+occlude their junctions; this revision does not claim exact metric reconstruction.
+
+Final bounded gates: 186 app tests pass, four interior browser cases and one
+hardware browser case pass, app lint/typecheck/build pass, 15 naming checks pass,
+update-guidance coverage and diff whitespace checks pass. Build retains the
+existing large-chunk warning. Current in-app tab reports Demo scene ready at
+http://127.0.0.1:5194/. Changes remain local for visual review; no commit or push.
+
+
+### Seating pose correction in accepted deeper rooms
+
+The owner accepted the increased room depth and requested table/chair positions
+and headings next. Compose-office step 11 consumes the accepted structural JSON,
+seven current meshes/scales and source-relative seating evidence. Output is seven
+updated static XY/yaw poses. Preserve the whole structure, camera, exterior,
+asset topology, colours, scales, floor height and existing instance identities.
+Map each table's original clear-room depth fraction into the accepted room and
+translate its seating group rigidly; do not stretch chair spacing or reclamp the
+work chair against the rear wall. The two tea chairs face their common table;
+desk, work chair and lounge chair retain their source-backed heading. Round
+surfaces do not need arbitrary yaw changes.
+
+Boundary: seating measurement/canonical layout JSON, offline layout generator,
+direct composition tests and existing docs. Failure owner compose-office; no
+renderer-side fitting or extra furnishings. First prove original-anchor fraction
+and facing regressions fail, then retain source projection tolerances after
+undoing only the room translation, wall/floor clearance and unchanged-structure
+checks. Inspect all three occupied rooms in actual-app detail plus overview.
+Stop on intersecting solids or a requirement to change accepted structure/scales.
+No push or commit in this visual review slice; plan closeout remains here.
+
+Pose correction validation: the new regression suite failed on all three old
+group anchors and both old tea-chair headings before the canonical pose update.
+All 192 app unit tests now pass, including six pose regressions and unchanged
+source-projection tolerances. App lint, TypeScript/build, naming and declared
+documentation impact checks pass. The accepted structure SHA-256 remains
+`0e7da49b9bc6dcb89cc6f49fa4a69f7c9bb38500fd1fb38b4d44e746e5e156f7`.
+
+Actual-app review used `http://127.0.0.1:5194/`, a 1440 by 960 viewport, normal
+room navigation and orbit controls, with no selection overlays. The four
+`e2e/interior.spec.ts` cases passed; the final discussion view and hardware
+case also passed with `OFFICE_HARDWARE_REVIEW=1` and the grep scope
+`interior reference review - discussion|structural review records` over
+`e2e/interior.spec.ts e2e/structure-hardware.spec.ts`. Artifacts are under the
+app's `test-results/seating-pose` and `test-results/seating-pose-final` folders.
+The hardware record identifies Apple M3 Max through ANGLE Metal. Agent review
+inspected elevated work/discussion views, the oblique lounge view and hardware
+overview: current chairs face their tables and the groups remain inside their
+rooms. This is pose acceptance for the seven existing objects, not a claim of
+complete reference-image fidelity. Asset shapes, deferred shadow banding and
+the missing furnishings remain outside this slice.
+
+### Seating shape correction and rejected upholstery removal
+
+Compose-office step 11 owns this correction. Inputs are the approved furniture
+review sheets/specifications, existing source-relative positions and accepted
+structure. Output is the writing desk, work chair, round tea table and round
+coffee table with their specified component proportions preserved. Retain each
+existing X scale as the source-width anchor and apply it uniformly to XYZ; the
+previous independent silhouette fit stretched the desk depth and compressed
+heights. The 1.20 by 0.60 desk must remain 2:1, including round rather than
+elliptical chair/table legs. Keep positions, headings, architecture, exterior,
+materials, camera and lighting unchanged. The two wraparound tea chairs and
+lounge armchair are visually rejected and must be absent pending reviewed
+Blender assets. No substitutes, hidden placeholders or new furniture.
+
+Boundary: scene seating layout/evidence/generator, direct tests and docs, plus
+the existing compose-office admission condition and its generated workspace
+bundle. Contributor is the app composition owner; renderer corrections and
+asset-geometry rewrites are forbidden in this slice. Failure owner is
+compose-office. First add failing mesh-proportion and rejected-asset admission
+regressions; retain structural equality, grounding, wall and desk-chair clearance
+checks. Then run app unit/lint/build, naming, docs-impact, Inspector contract
+checks and live work/discussion/lounge visual reviews with enlarged detail.
+Source pixel envelopes from the rejected independent-axis fit are historical
+measurements, not an oracle that may deform the approved asset shapes.
+Stop if preserving proportions requires moving approved structure or constructing
+complex upholstery. This is a partial furniture stage, not full-scene fidelity.
+No commit or push is requested.
+
+Validation for this correction: all five new admission/proportion regressions
+failed before implementation. After correction, 192 app tests in 38 files pass,
+including source-width anchors on actual meshes, geometric proportions, room
+placement, wall/ground clearance and unchanged structural SHA-256. Build and
+TypeScript, app lint, naming, docs-impact and 25 Inspector contract tests pass.
+Build retains the existing large-bundle warning.
+
+Live review used APP_URL `http://127.0.0.1:5194/`, viewport 1440 by 960, normal
+place selection/orbit and three zoom-in actions for detail. Command:
+`OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e e2e/interior.spec.ts e2e/structure-hardware.spec.ts --grep 'interior reference review - (work|discussion|lounge)|structural review records' --output=test-results/seating-shape-final`.
+All four cases pass. Agent inspection covered work/discussion/lounge oblique
+and enlarged screenshots, plus the hardware overview and close view. Evidence
+is in the app's `test-results/seating-shape-final/`; renderer metadata identifies
+the actual backend. No selection overlays or replacement meshes were used.
+The source-width anchors and approved component proportions now agree; this does
+not certify material appearance, upholstery or full-scene similarity. The three
+rejected upholstered chairs remain absent. Structure, exterior and poses remain
+unchanged. No commit or push was performed.
+
+### Work-room chair identity correction
+
+Compose-office step 11: the owner rejects the lower-left chair. The full office
+reference and supplied enlarged work-room crop show a dark chair behind the
+actor; the approved standalone green four-legged work-chair sheet does not
+establish that it is the same object. Its hidden support/base geometry cannot
+be recovered from this crop. Remove the desk-chair instance without substituting
+or recolouring another asset. Preserve the three tables and every other scene
+object, pose, scale, appearance, structure and camera. Keep the standalone asset
+and its approved construction specification; explicitly mark it as unsuitable
+for automatic admission at this reference-scene position. Replacement remains
+pending reference-specific asset review, not a claim that removing it completes
+the room.
+
+Boundary: existing seating layout/measurement data, direct admission tests,
+app/reference documentation, compose-office admission condition and generated
+Inspector bundle. Only app composition contributes; renderer-side hiding and
+replacement geometry are forbidden. Failure owner is compose-office. First
+prove a full-scene regression rejects the current desk-chair, then remove it
+from the canonical layout/generator inputs. Run affected scene tests, app
+lint/typecheck, Inspector contract checks, docs-impact and one live work-room
+visual review with enlarged screenshot. No identifiers are introduced or renamed.
+Stop if repair requires new geometry or modification of accepted tables/structure.
+No commit or push is requested.
+
+Validation: the new full-scene identity regression failed before removal. All
+24 affected tests across six scene files now pass, as do app lint/typecheck,
+25 Inspector contract checks and docs-impact validation. The accepted structure
+SHA-256 is unchanged. The numeric work-chair specification's misleading source
+claim has been corrected without changing its components or dimensions.
+Live visual scope: `e2e/interior.spec.ts --grep 'interior reference review - work'`
+at APP_URL `http://127.0.0.1:5194/`, 1440 by 960, normal orbit and three zoom-in
+actions. One E2E passed; the agent inspected `work-detail.png` under the app's
+`test-results/work-chair-removal/` and confirmed the incorrect chair is absent
+while the desk remains. This completes removal, not replacement-chair modeling.
+No commit or push.

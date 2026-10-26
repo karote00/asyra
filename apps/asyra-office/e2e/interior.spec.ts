@@ -17,7 +17,7 @@ for (const [name, button, view] of [
       .filter({ hasText: /^Demo scene ready$/ })
       .waitFor()
     await expect(page.getByLabel('Composition stage')).toHaveText(
-      'Structure review - one floor'
+      'Tables and chairs review'
     )
     await page.getByRole('button', { name: button, exact: true }).click()
     await expect(page.getByLabel('Current view')).toHaveText(view)
@@ -47,7 +47,12 @@ for (const [name, button, view] of [
       })
       await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
     }
-    if (name === 'lounge' || name === 'pantry') {
+    if (
+      name === 'work' ||
+      name === 'discussion' ||
+      name === 'lounge' ||
+      name === 'pantry'
+    ) {
       // Orbit through the normal UI to inspect furniture behind the unchanged streetlamp.
       const canvas = await page
         .getByLabel('Office 3D scene')
@@ -58,7 +63,12 @@ for (const [name, button, view] of [
         y = canvas.y + canvas.height / 2
       await page.mouse.move(x, y)
       await page.mouse.down()
-      await page.mouse.move(x + 110, y - 35, { steps: 8 })
+      let rise = -35
+      if (name === 'work') rise = 150
+      if (name === 'discussion') rise = 90
+      await page.mouse.move(x + 110, y + rise, {
+        steps: 8
+      })
       await page.mouse.up()
       await page.evaluate(
         () =>
@@ -70,6 +80,29 @@ for (const [name, button, view] of [
         path: info.outputPath(`${name}-oblique.png`),
         animations: 'disabled'
       })
+      if (name !== 'pantry') {
+        // Inspect table edges/supports at a readable size through normal controls.
+        if (name === 'work') {
+          await page.mouse.move(x, y)
+          await page.mouse.down()
+          await page.mouse.move(x, y - 65, { steps: 8 })
+          await page.mouse.up()
+        }
+        for (let i = 0; i < 3; i++)
+          await page
+            .getByRole('button', { name: 'Zoom in', exact: true })
+            .click()
+        await page.evaluate(
+          () =>
+            new Promise<void>((done) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => done()))
+            )
+        )
+        await page.screenshot({
+          path: info.outputPath(`${name}-detail.png`),
+          animations: 'disabled'
+        })
+      }
     }
     await info.attach('review-state', {
       body: JSON.stringify({
@@ -77,7 +110,8 @@ for (const [name, button, view] of [
         viewport: page.viewportSize(),
         initialView: view,
         currentView: await page.getByLabel('Current view').innerText(),
-        scope: 'single-storey office structure only; room furnishings deferred',
+        scope:
+          'approved single-storey structure with three admitted tables; source-mismatched chairs omitted',
         geometry: 'production scene',
         reference: 'approved-office-reference.jpg',
         acceptance: 'requires image inspection'
@@ -190,7 +224,7 @@ test('interior whole structure from above and rear', async ({ page }, info) => {
     .filter({ hasText: /^Demo scene ready$/ })
     .waitFor()
   await expect(page.getByLabel('Composition stage')).toHaveText(
-    'Structure review - one floor'
+    'Tables and chairs review'
   )
   await page
     .getByRole('button', { name: 'Office Home base', exact: true })

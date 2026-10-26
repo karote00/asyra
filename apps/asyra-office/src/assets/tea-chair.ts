@@ -8,8 +8,20 @@ import { radialSolid } from './radial-solid'
 const a = (2 * Math.PI) / 3,
   R = 0.2,
   bottom = 0.235
+const shell = requiredSpecValue(
+  tea.modules
+    .find((m) => m.moduleId === 'tea-chair')
+    ?.components.find((c) => c.partId === 'wraparound-shell'),
+  'tea chair shell'
+)
+const shellHeight = requiredSpecValue(
+  'height' in shell ? shell.height : undefined,
+  'tea chair crown'
+)
 const height = (theta: number) =>
-  0.39 + 0.26 * (1 - Math.pow(Math.abs(theta) / a, 1.6))
+  shellHeight.end +
+  (shellHeight.rear - shellHeight.end) *
+    (1 - Math.pow(Math.abs(theta) / a, shellHeight.exponent))
 function roundedBoxField(p: Vec, half: Vec, radius: number) {
   const q = p.map((v, i) => Math.abs(v) - half[i] + radius)
   return (

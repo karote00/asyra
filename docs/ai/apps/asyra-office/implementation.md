@@ -1281,3 +1281,85 @@ whole-case guard. The focused rerun and complete seven-case rerun pass without
 extending timeouts or stopping the held motion. This is capture overhead evidence,
 not a hardware-independent runtime FPS claim. Vite retains its existing large
 chunk warning. All reference fidelity limitations above remain open.
+
+### Tables and chairs admission
+
+The accepted structural checkpoint remains unchanged. The default scene admits
+three objects: the writing desk, round tea table and round coffee
+table. The two wraparound tea chairs and lounge armchair have been visually
+rejected and are absent pending reviewed Blender assets. The standalone green
+work-chair asset is also absent: its approved sheet is a different design from
+the dark chair visible behind the work-room actor. Catalog approval does not
+prove reference-scene identity. Do not recolour or substitute it; its mostly
+occluded replacement requires separate source-specific review. Existing exploratory
+upholstery files are not approved scene assets. Other indoor furniture, actors
+and decorations remain deferred. Explicit `structure` composition has no indoor
+furniture.
+
+`reference/office-seating.json` owns the admitted poses. The placement generator
+consumes `reference/seating-measurements.json` and the current accepted room
+bounds. Work, discussion and lounge table anchors retain respectively 52.17%,
+69.05% and 47.40% of source clear depth measured from the front boundary. All headings and XY
+positions remain those accepted for the deeper rooms; all origins are Z=0.38.
+
+Per-asset review sheets and numeric specifications own component proportions.
+The former independent-axis source-image fit stretched the desk depth from
+0.60 to 1.11 scene units and compressed furniture heights. It is superseded.
+Keep each admitted object's recorded X scale as its source-width anchor and
+apply that factor uniformly to XYZ: desk 1.0294345669971572, tea
+table 1.385086825168228, coffee table 1.1648233314304999. This preserves the
+2:1 desk top, specified tabletop thickness/height ratios and leg cross-sections.
+It does not disable the general app's configurable XYZ extents contract.
+
+The source image's historical pixel observations and old local frames remain
+in the measurement file, explicitly marked as rejected independent-axis-fit
+acceptance criteria. Do not refit them by distorting reviewed component shapes.
+`deferredInstances` records removed chairs' source placement evidence;
+it is never consumed by scene composition or the pose generator.
+
+Regenerate admitted poses from the repository root:
+
+```sh
+python3 apps/asyra-office/scripts/fit-room-seating.py --apply
+```
+
+The standard-library generator is deterministic and performs no runtime fitting.
+Composition builds each requested asset once per construction call; camera
+updates reuse the completed scene. No rejected upholstery factory is invoked
+by this stage. Source-width tests inspect the actual composed meshes; independent
+shape tests check XYZ component ratios against approved drawing dimensions.
+Room fractions, wall clearance, grounding and unchanged
+structure/exterior checks remain required. Actual-app enlarged table/leg views
+are separate visual evidence, not proof of full-scene fidelity. Lighting banding
+and material appearance remain deferred.
+
+### Lower-room depth revision
+
+The owner reopened work/lounge room proportions after the seating review.
+`reference/lower-room-measurements.json` records the original east floor run,
+partially occluded contact picks and uncertainty. Projecting the divider contact
+along the front-to-rear run estimates a 46.88% lower-room share. Applying it to
+the fixed shell interior depth shifts both lower-room rear boundaries inward by
+0.877807 scene units, preserving their stagger. Clear work depth changes from
+1.642963 to 2.520770; clear lounge depth from 1.443536 to 2.321343. These are
+normalized scene dimensions and a reference-guided interpretation, not surveyed
+metres or a claim of exact recovery of obscured floor corners.
+
+The shell, front facade, entrance, foundation outline, common floor, exterior,
+wall heights/thickness, camera and lighting remain unchanged. Lounge left low/high
+wall runs grow at their retained length ratio; terminal abutment thickness stays
+constant. All three rear steps and the short rear return translate together.
+The flush pantry floor band follows that boundary and wood coverage is regenerated.
+The shared boundaries reduce the rear rooms' foreground space; wall and seating
+clearance checks cover those rooms too. The initial depth-revision checkpoint translated the work desk/chair with their
+rear wall and retained lounge seating positions. The subsequent owner-requested
+pose correction above replaces those provisional placements with room-relative
+anchors. The later shape correction above replaces nonuniform scales without
+changing those anchors. No new furnishings are added by the depth revision.
+
+The old approved structural snapshot is retained as historical acceptance evidence.
+Formal geometry checks apply the source-derived authorized depth change to only
+the affected coordinates, while preserving every other accepted coordinate.
+The current JSON explicitly marks this new depth revision as awaiting visual review.
+The offline work seating frame follows the same translation, so rerunning its
+solver cannot silently restore the rejected shallow-room placement.

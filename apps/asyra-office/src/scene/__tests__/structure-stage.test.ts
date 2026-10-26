@@ -9,11 +9,12 @@ import {
 import source from '../reference/interior-landmarks.json'
 
 describe('single-storey structural review', () => {
-  it('defaults to the live stage instead of resurrecting rejected furnishings', () => {
+  it('defaults to the admitted seating stage without resurrecting rejected furnishings', () => {
     const scene = createReferenceScene()
     const ids = new Set(scene.assemblies.map((a) => a.id))
     expect(ids.has('office-slab')).toBe(true)
-    for (const id of ['desk', 'lounge-sofa', 'fridge', 'actor-mina'])
+    expect(ids.has('desk')).toBe(true)
+    for (const id of ['lounge-sofa', 'fridge', 'actor-mina'])
       expect(ids.has(id), id).toBe(false)
   })
   it('keeps the fitted overview orbit pivot on the shared office floor', () => {
@@ -205,9 +206,8 @@ describe('source-visible room floor coverage', () => {
   }
 })
 
-it('leaves source-visible floor samples unobstructed by structural wall meshes at both LoDs', () => {
+it('keeps all four current room floor centres physically clear at both LoDs', () => {
   const scene = createReferenceScene('structure')
-  const origin = OFFICE_FIT.camera.position
   const subtract = (a: readonly number[], b: readonly number[]) =>
     a.map((v, i) => v - b[i])
   const dot = (a: readonly number[], b: readonly number[]) =>
@@ -217,8 +217,24 @@ it('leaves source-visible floor samples unobstructed by structural wall meshes a
     a[2] * b[0] - a[0] * b[2],
     a[0] * b[1] - a[1] * b[0]
   ]
-  for (const sample of source.visibleFloorSamples.samples) {
-    const target = referencePoint(sample.pixel, 2, OFFICE_FLOORS.work)
+  const p = OFFICE_FIT.parameters
+  const west = (OFFICE_SHELL.westX + p.pantryX) / 2
+  const east = (p.loungeX + OFFICE_SHELL.eastX) / 2
+  const centres = [
+    { id: 'work', x: west, y: (OFFICE_SHELL.frontY + p.creamY) / 2 },
+    { id: 'lounge', x: east, y: (OFFICE_SHELL.frontY + p.loungeY) / 2 },
+    { id: 'discussion', x: west, y: (p.creamY + p.rearY) / 2 },
+    { id: 'pantry', x: east, y: (p.loungeY + p.rearY) / 2 }
+  ]
+  for (const sample of centres) {
+    const target = [sample.x, sample.y, OFFICE_FLOORS.work]
+    // The owner moved shared partitions: old-camera visibility is no longer a
+    // contract. Preserve physical floor clearance without hiding occluding walls.
+    const origin = [
+      target[0],
+      target[1],
+      OFFICE_FIT.parameters.rearTop + OFFICE_SHELL.exteriorThickness
+    ]
     const direction = subtract(target, origin)
     let offset = 0
     for (const assembly of scene.assemblies) {

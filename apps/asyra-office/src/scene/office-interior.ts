@@ -55,8 +55,8 @@ export interface OfficeComposer {
 }
 
 /** Compose one source-derived single-storey office. No per-frame layout work. */
-export type InteriorStage = 'structure'
-export const INTERIOR_REVIEW_STAGE: InteriorStage = 'structure'
+export type InteriorStage = 'structure' | 'tables-and-chairs'
+export const INTERIOR_REVIEW_STAGE: InteriorStage = 'tables-and-chairs'
 
 export function composeOfficeInterior(composer: OfficeComposer) {
   const { add, block, asset } = composer

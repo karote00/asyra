@@ -60,7 +60,7 @@ boundary, including both angular end caps:
 
 ```text
 theta=s/R
-h(theta)=.39+.26*(1-(abs(theta)/a)^1.6)
+h(theta)=.39+.26*(1-(abs(theta)/a)^4)
 u=(zs-.235)/.415
 X=(.17+v)*sin(theta)
 Y=(.18+v)*cos(theta)
@@ -89,9 +89,8 @@ Its Jacobian determinant is:
 ```
 
 Preserve outward source triangle winding. Transform normals using the inverse
-transpose Jacobian, not source normals. The height function is C1 at theta=0,
-but its second derivative is unbounded there; do not assume uniform angular
-sampling alone satisfies a curvature/error bound. Refine against the analytic
+transpose Jacobian, not source normals. The quartic height function has a broad, smooth centre crown; do not assume
+uniform angular sampling alone satisfies a curvature/error bound. Refine against the analytic
 surface and preserve the centre sample. No convex hull across the open front.
 
 ## Seat base and conforming cushion
@@ -269,3 +268,13 @@ stronger topology, seam distance, material and budget checks above.
 Future visual review uses matched five-view cameras, then enlarged arm ends,
 back rim, cushion seam, underside contacts and feet. Numeric consistency cannot
 replace comparison with the original image or the user's model approval.
+
+## Front-crown reconciliation - 2026-10-27
+
+The approved FRONT/BACK sheet has a broad crown rather than the pointed centre
+produced by exponent 1.6. The revised height law uses exponent 4, retaining
+650 mm rear height, 390 mm end height and the original elliptical shell radii.
+Across X=+-120 mm the crown remains above 640 mm. This is a reference-guided
+curve correction, not a newly surveyed measurement. The documented cushion
+clearance remains intentional and must not be erased by unioning the cushion
+into the shell. Other default sizes, foot contacts and replaceable regions stay.

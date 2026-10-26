@@ -292,7 +292,7 @@
           "height": {
             "rear": 0.65,
             "end": 0.39,
-            "exponent": 1.6
+            "exponent": 4
           },
           "mapping": {
             "referenceRadius": 0.2,

@@ -1,3 +1,4 @@
+import armchairPanels from './generated/armchair-panels.json'
 import {
   bottleSurface,
   cutTrayGrooves,
@@ -264,7 +265,12 @@ export function catalogAsset(id: string): AssetPart[] {
     return module.components.map((c) => {
       const mat = batch.materials[c.material]
       if (!mat) throw new Error(`Missing material ${c.material}`)
-      let mesh = componentMesh(c)
+      const prepared =
+        id === 'lounge-armchair' &&
+        (c.partId === 'left-arm' || c.partId === 'right-arm')
+          ? armchairPanels.panels[c.partId]
+          : undefined
+      let mesh = prepared?.mesh ?? componentMesh(c)
       if (back?.parts.includes(c.partId))
         for (let i = 0; i < mesh.positions.length; i += 3)
           for (let k = 0; k < 3; k++) mesh.positions[i + k] += translation[k]
@@ -292,7 +298,8 @@ export function catalogAsset(id: string): AssetPart[] {
         mesh,
         color: parseInt(mat.baseColorSRGB.slice(1), 16),
         roughness: mat.roughness,
-        material: materialKind(c.material)
+        material: materialKind(c.material),
+        ...(prepared ? { distant: prepared.distant } : {})
       }
     })
   }

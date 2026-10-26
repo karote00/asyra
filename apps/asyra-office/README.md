@@ -20,9 +20,13 @@ The workbench uses the URL in `.env` (default port 5194). Preserve an existing
 
 The default route assembles the accepted single-floor structure, complete
 entrance, planted sidewalks, street, outdoor seating, canal and neighboring
-facades. Indoor furnishings and occupants are not admitted yet. Rejected prior
-room composition is removed; asset specifications and factories remain for
-individual admission. These are real meshes through Core and the official
+facades. The tables-and-chairs stage adds a writing desk, a tea
+table and a lounge coffee table, using uniform scales that preserve their
+approved proportions. The two wraparound tea chairs and lounge armchair are
+omitted pending reviewed Blender assets. The standalone green work chair also
+remains absent because it is not the dark chair in the original office image. Other indoor
+furnishings and occupants remain deferred. The explicit structure composition
+retains the accepted unfurnished checkpoint. These are real meshes through Core and the official
 Preset 3D profile, not a reference image projected over the scene.
 
 Places focus the camera. Agents and assigned tasks select a rear-follow view;

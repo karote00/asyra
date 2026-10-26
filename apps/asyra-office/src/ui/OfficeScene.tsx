@@ -249,7 +249,7 @@ export function OfficeScene() {
             <span aria-label="Composition stage">
               {INTERIOR_REVIEW_STAGE === 'structure'
                 ? 'Structure review - one floor'
-                : 'Room review'}
+                : 'Tables and chairs review'}
             </span>
             <span role="status" aria-label="Scene status">
               {runtime ? 'Demo scene ready' : 'Preparing demo scene'}

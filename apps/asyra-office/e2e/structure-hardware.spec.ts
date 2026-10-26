@@ -17,7 +17,7 @@ test('structural review records the actual hardware renderer and enlarged walls'
     .filter({ hasText: /^Demo scene ready$/ })
     .waitFor()
   await expect(page.getByLabel('Composition stage')).toHaveText(
-    'Structure review - one floor'
+    'Tables and chairs review'
   )
   const canvas = page.getByLabel('Office 3D scene').locator('canvas')
   const graphics = await canvas.evaluate((node) => {
@@ -67,7 +67,8 @@ test('structural review records the actual hardware renderer and enlarged walls'
         viewport: page.viewportSize(),
         graphics,
         closeView: 'Overview followed by two normal Zoom in actions',
-        scene: 'Production structural composition; lighting unchanged',
+        scene:
+          'Production tables/chairs composition; structure and lighting unchanged',
         acceptance:
           'Backend and runtime checks only; inspect both images before any visual acceptance'
       },

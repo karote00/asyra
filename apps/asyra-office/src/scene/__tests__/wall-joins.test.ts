@@ -104,12 +104,12 @@ describe('partition wall abutments', () => {
       },
       {
         name: 'work body',
-        ids: ['left-wall', 'work-back-partition'],
+        ids: ['left-wall', 'discussion-left-wall', 'work-back-partition'],
         points: [-0.04, 0.04, 0.12].map((x) => [-3.02 + x, p.creamY + 0.02])
       },
       {
         name: 'work cap against taller body',
-        ids: ['left-wall', 'work-back-partition-cap'],
+        ids: ['left-wall', 'discussion-left-wall', 'work-back-partition-cap'],
         points: [-0.04, 0.04, 0.12].map((x) => [-3.02 + x, p.creamY + 0.02])
       },
       {

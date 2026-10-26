@@ -1,0 +1,255 @@
+{
+  "authority": "Original local source measurements plus rigid room-relative group placement; current accepted deeper structure is not refitted.",
+  "frames": {
+    "west": {
+      "image": "assets/asyra-office/models/architecture/review/approved-office-reference.jpg",
+      "matrix": [
+        [66.98360412354347, 23.852266375255528],
+        [56.63410886103491, -28.58498212300785],
+        [-7.755846276812191, -57.13987514479614],
+        [652.0608575211454, 391.0975239648825]
+      ],
+      "anchors": [
+        {
+          "id": "rear-left-top",
+          "world": [-3.02, 2.702099517721014, 2.992672772401046],
+          "pixel": [578, 74]
+        },
+        {
+          "id": "discussion-rear-end-top",
+          "world": [-0.34330106617014944, 2.702099517721014, 2.992672772401046],
+          "pixel": [758, 132]
+        },
+        {
+          "id": "work-left-front-top",
+          "world": [-3.02, -2.42, 2.992672772401046],
+          "pixel": [287, 218]
+        },
+        {
+          "id": "discussion-left-front-top",
+          "world": [-3.02, 0.09209763018356132, 2.992672772401046],
+          "pixel": [437, 145]
+        },
+        {
+          "id": "work-partition-left-top",
+          "world": [-3.02, -0.6070371312101217, 2.3395045793007845],
+          "pixel": [397, 200]
+        },
+        {
+          "id": "work-partition-right-top",
+          "world": [
+            -1.5038033714710735, -0.6070371312101217, 2.3395045793007845
+          ],
+          "pixel": [498, 238]
+        },
+        {
+          "id": "green-partition-left-top",
+          "world": [
+            -1.1909684622865548, -0.6070371312101217, 2.1435541213707063
+          ],
+          "pixel": [520, 257]
+        },
+        {
+          "id": "green-partition-right-top",
+          "world": [
+            -0.18136489173651738, -0.6070371312101217, 2.1435541213707063
+          ],
+          "pixel": [591, 285]
+        }
+      ],
+      "maximumAnchorResidualPixels": 5.242145402086063
+    },
+    "lounge": {
+      "image": "assets/asyra-office/models/architecture/review/lounge-proportion-source.png",
+      "matrix": [
+        [343.67191881493903, 143.34054905346702],
+        [322.12558777865604, -152.92830934946298],
+        [0.0, -421.8313659274903],
+        [915.1696711979577, 630.3748319600255]
+      ],
+      "basis": "office-single-floor-structure-proposal-v1.json loungeReconstruction.projection; approved local reconstruction, not a global pixel match"
+    }
+  },
+  "cases": [
+    {
+      "id": "desk",
+      "frame": "west",
+      "rotation": 0,
+      "kind": "points",
+      "points": [
+        [
+          [-0.6, -0.3, 0.65],
+          [357, 334]
+        ],
+        [
+          [0.6, -0.3, 0.65],
+          [443, 365]
+        ],
+        [
+          [0.6, 0.3, 0.65],
+          [503, 332]
+        ],
+        [
+          [0.54, -0.24, 0],
+          [439, 387]
+        ],
+        [
+          [0.54, 0.24, 0],
+          [497, 369]
+        ]
+      ],
+      "tolerance": 8,
+      "note": "Three tabletop corner intersections, excluding the laptop. Two right support contacts have 8 px uncertainty from occlusion and perspective; hidden rear-left top excluded.",
+      "status": "historical-independent-axis-fit; not a current shape acceptance oracle"
+    },
+    {
+      "id": "meeting-table",
+      "frame": "west",
+      "rotation": 0,
+      "kind": "top-and-ground",
+      "part": "top",
+      "box": [570, 221, 655, 253],
+      "groundCentre": [614, 278],
+      "tolerance": 5,
+      "note": "Tabletop only; excludes cups, plant and actor. Ground centre is inferred from visible pedestal contact with 5 px uncertainty; source pedestal differs from approved four-leg asset.",
+      "status": "historical-independent-axis-fit; not a current shape acceptance oracle"
+    },
+    {
+      "id": "meeting-chair-left",
+      "frame": "west",
+      "rotation": 65,
+      "kind": "bounds",
+      "box": [537, 209, 600, 282],
+      "tolerance": 5,
+      "note": "Visible outer shell and lowest visible feet; occupant excluded. Maximum picking uncertainty 5 px.",
+      "status": "historical-independent-axis-fit; not a current shape acceptance oracle"
+    },
+    {
+      "id": "meeting-chair-right",
+      "frame": "west",
+      "rotation": -65,
+      "kind": "bounds",
+      "box": [630, 224, 682, 294],
+      "tolerance": 5,
+      "note": "Visible orange silhouette and support contacts, excluding adjacent plant.",
+      "status": "historical-independent-axis-fit; not a current shape acceptance oracle"
+    },
+    {
+      "id": "lounge-coffee-table",
+      "frame": "lounge",
+      "rotation": 0,
+      "kind": "bounds",
+      "box": [704, 740, 1044, 972],
+      "tolerance": 20,
+      "note": "Source enlargement used for accepted lounge: tabletop and feet only, not plant, book or rug. 20 px equals approximately four full-image pixels.",
+      "status": "historical-independent-axis-fit; not a current shape acceptance oracle"
+    },
+    {
+      "id": "lounge-side-chair",
+      "frame": "lounge",
+      "rotation": -94.95686388552072,
+      "kind": "bounds",
+      "box": [994, 752, 1340, 1041],
+      "tolerance": 20,
+      "note": "Orange body and visible feet. Foreground plants partly occlude rear feet; bounds carry 20 px uncertainty. Heading follows the visible support baseline; do not retain the prior arbitrary -65 degree yaw and flatten height to absorb its projection error.",
+      "planDirection": {
+        "from": [1010, 976],
+        "to": [1135, 1038],
+        "localAxis": [0, 1, 0],
+        "toleranceDegrees": 6,
+        "note": "Visible right-side front and rear support contacts in the lounge enlargement. Rear contact partly occluded; direction is a constraint, not an exact recovered camera."
+      },
+      "status": "historical-independent-axis-fit; not a current shape acceptance oracle"
+    }
+  ],
+  "workChair": {
+    "rule": "Actor-occluded dimensions and source desk offset remain fixed. Translate the desk/chair as one group using the original desk clear-room depth fraction. Do not reclamp the chair to the enlarged room rear wall.",
+    "gapSource": "Measured source group offset in roomPlacement.rooms.work; clearance checked on composed mesh.",
+    "note": "This is an explicit constrained completion of hidden geometry, not a claimed pixel measurement."
+  },
+  "roomPlacement": {
+    "rule": "Keep accepted room fractions and source widths; preserve approved geometry through uniform XYZ scale. Omit rejected complex upholstery pending Blender review.",
+    "rooms": {
+      "work": {
+        "anchor": "desk",
+        "sourceBoundsY": [-2.33, -0.6870371312101217],
+        "sourceAnchor": [-1.9748772133676151, -1.4728636165192155],
+        "members": {
+          "desk": {
+            "offset": [0.0, 0.0],
+            "scale": [
+              1.0294345669971572, 1.0294345669971572, 1.0294345669971572
+            ],
+            "asset": "writing-desk",
+            "rotation": 0
+          }
+        }
+      },
+      "discussion": {
+        "anchor": "meeting-table",
+        "sourceBoundsY": [-0.5270371312101217, 2.622099517721014],
+        "sourceAnchor": [-1.8776982187021827, 1.6474886302592386],
+        "members": {
+          "meeting-table": {
+            "offset": [0.0, 0.0],
+            "scale": [1.385086825168228, 1.385086825168228, 1.385086825168228],
+            "asset": "round-tea-table",
+            "rotation": 0
+          }
+        }
+      },
+      "lounge": {
+        "anchor": "lounge-coffee-table",
+        "sourceBoundsY": [-2.33, -0.8864636351722608],
+        "sourceAnchor": [1.4227498581729694, -1.6457210015685397],
+        "members": {
+          "lounge-coffee-table": {
+            "offset": [0.0, 0.0],
+            "scale": [
+              1.1648233314304999, 1.1648233314304999, 1.1648233314304999
+            ],
+            "asset": "round-coffee-table",
+            "rotation": 0
+          }
+        }
+      }
+    }
+  },
+  "deferredInstances": [
+    {
+      "id": "meeting-chair-left",
+      "offset": [-0.5514802372806766, -0.16963976287255078],
+      "scale": [1.3763443876606947, 1.3763443876606947, 1.3182548641457477],
+      "asset": "tea-chair",
+      "rotation": 65,
+      "color": 6846813,
+      "faceTarget": "meeting-table",
+      "reason": "Rejected upholstery geometry; requires reviewed Blender asset before scene admission."
+    },
+    {
+      "id": "meeting-chair-right",
+      "offset": [0.49805778082748664, 0.18404979961174028],
+      "scale": [1.2128712116596494, 1.2128712116596494, 1.4743297688240469],
+      "asset": "tea-chair",
+      "rotation": -65,
+      "faceTarget": "meeting-table",
+      "reason": "Rejected upholstery geometry; requires reviewed Blender asset before scene admission."
+    },
+    {
+      "id": "lounge-side-chair",
+      "offset": [0.6310840079140363, 0.24553219334305498],
+      "scale": [0.802396138593817, 0.802396138593817, 0.7693737652153603],
+      "asset": "lounge-armchair",
+      "rotation": -94.95686388552072,
+      "reason": "Rejected upholstery geometry; requires reviewed Blender asset before scene admission."
+    },
+    {
+      "id": "desk-chair",
+      "offset": [0.0, 0.5032795422770472],
+      "scale": [1.0294345669971572, 1.0294345669971572, 1.0294345669971572],
+      "asset": "work-chair",
+      "rotation": 0,
+      "reason": "Wrong source identity: standalone green four-legged work chair is not the dark chair visible behind the work-room actor. Replacement requires source-specific review; hidden base geometry is unresolved."
+    }
+  ]
+}
