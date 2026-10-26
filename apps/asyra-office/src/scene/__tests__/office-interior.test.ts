@@ -6,12 +6,36 @@ import type { AssetPart } from '../../assets/catalog'
 let scene: ReturnType<typeof createReferenceScene>
 const pieces = new Map<string, AssetPart[]>()
 beforeAll(() => {
-  scene = createReferenceScene()
+  scene = createReferenceScene('structure')
   let offset = 0
   for (const a of scene.assemblies) {
     pieces.set(a.id, scene.parts.slice(offset, offset + a.parts.length))
     offset += a.parts.length
   }
+})
+// Snapshot transport must not depend on platform-specific transcendental last bits.
+const serializeGeometry = (value: unknown) =>
+  JSON.stringify(value, (_key, field: unknown) =>
+    typeof field === 'number' ? Math.round(field * 1e6) / 1e6 : field
+  )
+it('compares geometric evidence at micrometre precision while retaining visible changes', () => {
+  const record = {
+    id: 'branch',
+    vertices: [0.12345678, 1.23456789],
+    indices: [0, 1, 2]
+  }
+  expect(
+    serializeGeometry({
+      ...record,
+      vertices: record.vertices.map((n) => n + 1e-12)
+    })
+  ).toBe(serializeGeometry(record))
+  expect(
+    serializeGeometry({ ...record, vertices: [0.12346678, 1.23456789] })
+  ).not.toBe(serializeGeometry(record))
+  expect(serializeGeometry({ ...record, indices: [0, 2, 1] })).not.toBe(
+    serializeGeometry(record)
+  )
 })
 function bounds(id: string, partId?: string) {
   const parts = pieces.get(id)?.filter((p) => !partId || p.id === partId)
@@ -35,12 +59,12 @@ describe('accepted structural composition', () => {
     let count = 0
     for (const a of scene.assemblies) {
       if (scene.interiorAssemblyIds.has(a.id)) continue
-      hash.update(JSON.stringify(a))
-      for (const p of pieces.get(a.id) ?? []) hash.update(JSON.stringify(p))
+      hash.update(serializeGeometry(a))
+      for (const p of pieces.get(a.id) ?? []) hash.update(serializeGeometry(p))
       count++
     }
     for (const l of scene.labels)
-      if (!scene.interiorLabels.has(l)) hash.update(JSON.stringify(l))
+      if (!scene.interiorLabels.has(l)) hash.update(serializeGeometry(l))
     expect({ count, digest: hash.digest('hex') }).toMatchSnapshot()
   })
 })

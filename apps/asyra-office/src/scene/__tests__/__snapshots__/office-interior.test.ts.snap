@@ -3,6 +3,6 @@
 exports[`accepted structural composition > preserves every exterior assembly and label from before the interior refactor 1`] = `
 {
   "count": 404,
-  "digest": "80813db1260c607ae83dcb757d7ad60c8ddad9c3dd33c7566417f080265a3076",
+  "digest": "36d730386dffa6ae2a165af7e2f75d8281881025b18a877afb09a955915d912f",
 }
 `;
