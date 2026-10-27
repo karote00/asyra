@@ -13,7 +13,11 @@ const keyboardEvent = () =>
     target: document.createElement('div'),
     preventDefault: vi.fn()
   }) as unknown as KeyboardEvent
-const host = () => ({ addEventListener: vi.fn(), removeEventListener: vi.fn() })
+const host = () => ({
+  document: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn()
+})
 
 describe('Input full runtime reset', () => {
   afterEach(() => vi.useRealTimers())
@@ -70,12 +74,12 @@ describe('Input full runtime reset', () => {
     callback(keyboardEvent())
     expect(vi.getTimerCount()).toBe(1)
     input.resetRuntime()
-    expect(browser.removeEventListener).toHaveBeenCalledTimes(3)
+    expect(browser.removeEventListener).toHaveBeenCalledTimes(6)
     expect(target.removeEventListener).toHaveBeenCalledTimes(5)
     expect(input.registry.getEventNames()).toEqual([])
     expect(vi.getTimerCount()).toBe(0)
     input.resetRuntime()
-    expect(browser.removeEventListener).toHaveBeenCalledTimes(3)
+    expect(browser.removeEventListener).toHaveBeenCalledTimes(6)
     expect(target.removeEventListener).toHaveBeenCalledTimes(5)
   })
 
@@ -117,7 +121,7 @@ describe('Input full runtime reset', () => {
     })
     expect(() => input.resetRuntime()).toThrow('detach failed')
     expect(target.removeEventListener).toHaveBeenCalledTimes(5)
-    expect(browser.removeEventListener).toHaveBeenCalledTimes(3)
+    expect(browser.removeEventListener).toHaveBeenCalledTimes(6)
     expect(input.registry.getEventNames()).toEqual([])
   })
 

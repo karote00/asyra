@@ -1,4 +1,4 @@
-import { createPlantGrowth } from './plant-growth'
+import { createPlantGrowth, createShrubSprigs } from './plant-growth'
 import { requiredSpecValue } from './specification'
 import spec from '../../../../assets/asyra-office/models/small-plants/small-plants-model-spec.json'
 import { emptyMesh, tube, type Vec } from './geometry'
@@ -39,14 +39,18 @@ export function planter(
   scale = 1,
   color = 0xe8dbc3,
   seed = requiredSpecValue(source.growth, 'plant growth recipe').defaultSeed,
-  form: 'stemmed' | 'rosette' = 'stemmed'
+  form: 'stemmed' | 'rosette' | 'shrub' | 'lanceolate' = 'stemmed'
 ): AssetPart[] {
   if (!Number.isFinite(scale) || scale <= 0)
     throw new Error('Invalid plant scale')
   const variant =
-    form === 'rosette'
-      ? requiredSpecValue(source.growthVariants, 'plant growth variants')
-          .rosette
+    form !== 'stemmed'
+      ? requiredSpecValue(source.growthVariants, 'plant growth variants')[form]
+      : undefined
+  const crown =
+    form === 'shrub'
+      ? requiredSpecValue(source.growthVariants, 'plant growth variants').shrub
+          .crown
       : undefined
   const leaves = createPlantGrowth(
     seed,
@@ -57,6 +61,7 @@ export function planter(
       ),
     variant?.growth ?? requiredSpecValue(source.growth, 'plant growth recipe')
   )
+  const sprigs = crown ? createShrubSprigs(leaves) : undefined
   const profile = roundedProfile(
     requiredSpecValue(pot.profileRZ, 'pot profile'),
     requiredSpecValue(pot.edgeBevel, 'pot bevel'),
@@ -67,7 +72,8 @@ export function planter(
       'pot',
       revolveProfile(
         profile,
-        requiredSpecValue(pot.radialSegments, 'pot segments')
+        crown?.radialSegments ??
+          requiredSpecValue(pot.radialSegments, 'pot segments')
       ),
       color,
       'ceramic',
@@ -82,7 +88,8 @@ export function planter(
           requiredSpecValue(soil.zMin, 'soil bottom'),
           requiredSpecValue(soil.zMax, 'soil top')
         ),
-        requiredSpecValue(soil.radialSegments, 'soil segments')
+        crown?.radialSegments ??
+          requiredSpecValue(soil.radialSegments, 'soil segments')
       ),
       0x554432,
       'plain',
@@ -112,44 +119,93 @@ export function planter(
       spec.materials.stem.roughness
     )
   ]
+  if (sprigs && crown)
+    for (const [index, path] of sprigs.branches.entries()) {
+      parts.push(
+        part(
+          `sprig-${index}`,
+          tube(
+            path.map((p) => p as Vec),
+            [crown.sprigRadius, crown.sprigRadius * 0.65, crown.petioleRadius],
+            crown.petioleSegments
+          ),
+          0x526c3c,
+          'leaf',
+          spec.materials.stem.roughness
+        )
+      )
+    }
   leaves.forEach((entry, index) => {
+    const origin = sprigs?.origins[index] ?? [0, 0, entry.attachZ]
     const a = (entry.azimuthDegrees * Math.PI) / 180
     const er: Vec = [Math.cos(a), Math.sin(a), 0]
     const et: Vec = [-Math.sin(a), Math.cos(a), 0]
+    const archFraction = variant
+      ? (entry.archScale - variant.growth.archScale[0]) /
+        (variant.growth.archScale[1] - variant.growth.archScale[0])
+      : 0
+    const pitch = crown
+      ? ((crown.pitchDegrees[0] +
+          archFraction * (crown.pitchDegrees[1] - crown.pitchDegrees[0])) *
+          Math.PI) /
+        180
+      : 0
+    const normalR = -Math.sin(pitch),
+      normalZ = Math.cos(pitch)
     const mesh = emptyMesh()
+    const longitudinal = crown?.longitudinalSteps ?? 24,
+      lateral = crown?.lateralSteps ?? 8
     const rows: number[][][] = []
     for (const sign of [1, -1]) {
       const skin: number[][] = []
-      for (let i = 0; i <= 24; i++) {
-        const t = i / 24
-        const r = 0.009 + (entry.tipRadius - 0.009) * t
+      for (let i = 0; i <= longitudinal; i++) {
+        const t = i / longitudinal
+        const r = crown
+          ? 0.009 + Math.cos(pitch) * entry.tipRadius * t
+          : 0.009 + (entry.tipRadius - 0.009) * t
         const z =
-          entry.attachZ +
+          origin[2] +
           0.005 +
-          (entry.tipZ - entry.attachZ - 0.005) * t +
-          0.008 * entry.archScale * Math.sin(Math.PI * t)
+          (crown
+            ? Math.sin(pitch) * entry.tipRadius
+            : entry.tipZ - entry.attachZ - 0.005) *
+            t +
+          normalZ *
+            (variant?.bladeArchMetres ?? 0.008) *
+            entry.archScale *
+            Math.sin(Math.PI * t)
         const width = (entry.width / 2) * Math.sin(Math.PI * t) ** 0.85
         const row: number[] = []
-        for (let j = 0; j <= 8; j++) {
-          if ((i === 0 || i === 24) && j > 0) {
+        for (let j = 0; j <= lateral; j++) {
+          if ((i === 0 || i === longitudinal) && j > 0) {
             row.push(row[0])
             continue
           }
-          const q = j / 4 - 1
+          const q = j / (lateral / 2) - 1
           row.push(mesh.positions.length / 3)
+          const bend =
+            q * width * Math.sin(entry.roll) +
+            0.003 * (1 - Math.abs(q)) * Math.sin(Math.PI * t) +
+            sign * 0.0003
+          const radius =
+            r +
+            normalR *
+              (bend +
+                (variant?.bladeArchMetres ?? 0.008) *
+                  entry.archScale *
+                  Math.sin(Math.PI * t))
           mesh.positions.push(
-            r * er[0] +
+            origin[0] +
+              radius * er[0] +
               (entry.lateralBend * Math.sin(Math.PI * t) +
                 q * width * Math.cos(entry.roll)) *
                 et[0],
-            r * er[1] +
+            origin[1] +
+              radius * er[1] +
               (entry.lateralBend * Math.sin(Math.PI * t) +
                 q * width * Math.cos(entry.roll)) *
                 et[1],
-            z +
-              q * width * Math.sin(entry.roll) +
-              0.003 * (1 - Math.abs(q)) * Math.sin(Math.PI * t) +
-              sign * 0.0003
+            z + normalZ * bend
           )
           mesh.uvs.push(t, (q + 1) / 2)
         }
@@ -159,8 +215,8 @@ export function planter(
         if (a === b || b === c || c === a) return
         mesh.indices.push(...(sign > 0 ? [a, b, c] : [a, c, b]))
       }
-      for (let i = 0; i < 24; i++)
-        for (let j = 0; j < 8; j++) {
+      for (let i = 0; i < longitudinal; i++)
+        for (let j = 0; j < lateral; j++) {
           tri(skin[i][j], skin[i + 1][j], skin[i + 1][j + 1])
           tri(skin[i][j], skin[i + 1][j + 1], skin[i][j + 1])
         }
@@ -168,17 +224,17 @@ export function planter(
     }
     const boundary = [
       rows[0][0][0],
-      ...rows[0].slice(1).map((r) => r[8]),
+      ...rows[0].slice(1).map((r) => r[lateral]),
       ...rows[0]
-        .slice(1, 24)
+        .slice(1, longitudinal)
         .reverse()
         .map((r) => r[0])
     ]
     const lower = [
       rows[1][0][0],
-      ...rows[1].slice(1).map((r) => r[8]),
+      ...rows[1].slice(1).map((r) => r[lateral]),
       ...rows[1]
-        .slice(1, 24)
+        .slice(1, longitudinal)
         .reverse()
         .map((r) => r[0])
     ]
@@ -199,13 +255,14 @@ export function planter(
         b = rim + ((i + 1) % boundary.length) * 2
       mesh.indices.push(a, a + 1, b + 1, a, b + 1, b)
     }
+    let leafColor = variant ? variant.leafColorSRGB : '#718752'
+    if (crown)
+      leafColor = crown.leafColorsSRGB[index % crown.leafColorsSRGB.length]
     parts.push(
       part(
         `leaf-${index}`,
         mesh,
-        variant
-          ? Number.parseInt(variant.leafColorSRGB.slice(1), 16)
-          : 0x718752,
+        Number.parseInt(leafColor.slice(1), 16),
         'leaf',
         spec.materials.leaf.roughness
       )
@@ -215,11 +272,17 @@ export function planter(
         `petiole-${index}`,
         tube(
           [
-            [0, 0, entry.attachZ],
-            [0.009 * er[0], 0.009 * er[1], entry.attachZ + 0.005]
+            origin as Vec,
+            [
+              origin[0] + 0.009 * er[0],
+              origin[1] + 0.009 * er[1],
+              origin[2] + 0.005
+            ]
           ],
-          requiredSpecValue(petioles.radius, 'petiole radius'),
-          requiredSpecValue(petioles.radialSegments, 'petiole segments')
+          crown?.petioleRadius ??
+            requiredSpecValue(petioles.radius, 'petiole radius'),
+          crown?.petioleSegments ??
+            requiredSpecValue(petioles.radialSegments, 'petiole segments')
         ),
         0x526c3c,
         'leaf',

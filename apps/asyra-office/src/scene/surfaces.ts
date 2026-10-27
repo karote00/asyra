@@ -1,3 +1,5 @@
+import { ingredientSurface } from './ingredient-surface'
+import { porcelainSurface } from './porcelain-surface'
 import {
   readSpatialSurface,
   type SpatialSurface,
@@ -12,7 +14,14 @@ import { sampleArtwork, type ArtworkPixels } from './artwork'
 
 export function createSurfaces(): Partial<Record<SurfaceKind, SpatialSurface>> {
   const result: Partial<Record<SurfaceKind, SpatialSurface>> = {}
-  for (const kind of ['wood', 'fabric', 'plaster', 'stone', 'water'] as const) {
+  for (const kind of [
+    'wood',
+    'fabric',
+    'plaster',
+    'stone',
+    'water',
+    'cork'
+  ] as const) {
     const size = 64,
       albedo: number[] = [],
       normals: number[] = []
@@ -26,6 +35,7 @@ export function createSurfaces(): Partial<Record<SurfaceKind, SpatialSurface>> {
           grain = Math.sin(x * 0.6 + Math.sin(y * 0.12) * 0.55) * 6
         else if (kind === 'fabric') grain = ((x + y) % 2) * 8
         else if (kind === 'water') grain = Math.sin(y * 0.5 + x * 0.12) * 7
+        if (kind === 'cork') grain = noise < -0.3 ? -75 : noise * 65
         const value = Math.max(
           0,
           Math.min(
@@ -43,6 +53,14 @@ export function createSurfaces(): Partial<Record<SurfaceKind, SpatialSurface>> {
       normals
     })
   }
+  result['porcelain-floral'] = porcelainSurface()
+  for (const kind of [
+    'granulated',
+    'ground-spice',
+    'dried-herbs',
+    'peppercorns'
+  ] as const)
+    result[kind] = ingredientSurface(kind)
   return result
 }
 /** Artwork is a surface on a real scene object, not an image of the environment. */

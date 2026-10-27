@@ -49,6 +49,12 @@ export type SpatialDescriptor =
       surface?: SpatialSurface
       roughness?: number
       metalness?: number
+      /** Opt-in shared studio reflection intensity; zero keeps the environment disabled. */
+      environmentIntensity?: number
+      /** sRGB self-emission color; zero is non-emissive. Does not cast light. */
+      emissive?: number
+      /** Finite nonnegative self-emission multiplier; defaults to zero. */
+      emissiveIntensity?: number
       color: number
       opacity: number
       wireframe: boolean

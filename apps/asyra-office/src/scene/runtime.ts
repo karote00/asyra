@@ -1,4 +1,5 @@
 import core from '@asyra/core'
+import { bindCameraKeyboard } from '../ui/camera-keyboard'
 import { applyPreset, PresetProfiles } from '@asyra/preset'
 import { SpatialLayer } from '@asyra/preset/spatial'
 import { createReferenceScene, buildSpatialMeshes } from './reference-scene'
@@ -16,12 +17,14 @@ export async function startReferenceScene(host: HTMLElement) {
   let stopped = false,
     revision = 0,
     observer: ResizeObserver | undefined,
+    stopKeyboard: (() => void) | undefined,
     layer: SpatialLayer | undefined,
     controller: ReturnType<typeof createSceneController> | undefined,
     cleanup: Promise<void> | undefined
   const dispose = () => {
     if (cleanup) return cleanup
     stopped = true
+    stopKeyboard?.()
     observer?.disconnect()
     controller?.dispose()
     if (layer) {
@@ -43,6 +46,7 @@ export async function startReferenceScene(host: HTMLElement) {
       profile: PresetProfiles['3D'],
       defaults: [],
       spatial: {
+        bloom: { strength: 0.315, radius: 8 },
         lighting: {
           hemisphere: [0xfff4df, 0xb0aa8e, 0.95],
           keyPosition: [-3, 12, 4],
@@ -102,6 +106,9 @@ export async function startReferenceScene(host: HTMLElement) {
       sceneTree: { workspace: '', workspaceList: [], elements: {} }
     })
     await owner.start(host, { ...size(), backgroundColor: 0xc9c5b5 })
+    const browser = host.ownerDocument.defaultView
+    if (!browser) throw new Error('Scene host requires a browser window')
+    stopKeyboard = bindCameraKeyboard(browser, api.move, owner)
     observer = new ResizeObserver(() => {
       if (stopped) return
       const next = size()

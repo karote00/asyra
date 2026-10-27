@@ -4,7 +4,8 @@ Status: product plan approved; implementation authorized on 2026-10-25.
 The owner clarified on 2026-10-25 that implementation must deliver the complete
 approved reference composition and UI together. This supersedes the one-wall
 stop and sequential subgroup checkpoints for this visual implementation. Numeric
-asset specifications remain authoritative. No new dependencies are authorized.
+asset specifications are construction inputs subordinate to the approved visual
+reference and later explicit owner corrections. No new dependencies are authorized.
 Product slug: `asyra-office`; display name: `Asyra Office`.
 
 ## Rebuild planning task
@@ -37,10 +38,14 @@ commit, push, or implementation.
 - [Asset types](../../../../../assets/asyra-office/models/ASSET-TYPES.md) distinguish
   geometry, material, decal, and procedural-path inputs.
 - A later explicitly approved per-part revision controls that part's geometry;
-  the full image still controls the scene's identity and composition. Numeric
-  specifications control authored dimensions and hidden construction. If an
-  approved sheet and numeric geometry conflict, isolate the conflict before
-  modeling; do not silently distort a part to fit a screenshot.
+  the full image still controls the scene's identity and composition. A later
+  explicit owner correction supersedes the affected reference detail, such as
+  the refrigerator's smaller upper freezer. Numeric specifications describe
+  construction; when their visible result conflicts with the approved reference,
+  correct the dimensions from the image and update the specifications together.
+  Do not use stale numbers to justify a different visible result. Hidden or
+  unreadable details must be identified as unresolved reconstruction, not
+  presented as verified source detail.
 - Keep existing Markdown/JSON specifications and generation rules. No OpenUSD
   conversion is planned. Export format is a delivery decision after geometry
   validation, not a substitute for construction specifications.
@@ -56,8 +61,17 @@ share this world. Agents do not have to stand in rows or remain at their desks.
 The final quality target is the approved image. Do not replace its furniture,
 characters, layered environment, or lighting with generic primitives and call
 the result visually complete. Simple geometry is appropriate when it matches
-the approved part. Performance reductions must preserve the silhouette and
-composition visible at the actual review distance.
+the approved part. Do not simplify, substitute, omit visible details or change geometry, materials,
+proportions or placement for optimization. An existing resource budget is not
+permission to degrade the reference. If both fidelity and an applicable budget
+cannot be met, report the conflict; do not silently weaken either acceptance
+condition. This applies to the entire app and every future task, not just the
+currently discussed room. Code generation and Blender are construction methods,
+not different fidelity standards. Unit tests and successful builds are necessary
+engineering evidence, never visual acceptance. Before claiming completion,
+compare each affected item at the source angle and close range, including
+silhouette, component details, appearance, proportions, relative position and
+contacts. A concrete remaining difference means the item is unfinished.
 
 Functionality can arrive in stages. The complete visual direction and UI are
 reviewed together before functional delivery; later stages activate behavior
@@ -1801,15 +1815,15 @@ projects complete mesh bounds without changing runtime data. The comparison
 uses the source image's historical visible envelopes; substantial work-chair
 occlusion makes its envelope unsuitable for reconstructing full dimensions.
 
-| Instance | Projected centre delta X/Y, px | Projected width ratio |
-| --- | --- | --- |
-| Desk | -31.5 / +38.4 | 0.999 |
-| Work chair | -1.9 / +33.6 | 1.095 |
-| Tea table | +36.4 / +57.8 | 0.827 |
-| Left tea chair | +58.1 / +43.0 | 0.799 |
-| Right tea chair | +41.7 / +59.6 | 1.025 |
-| Coffee table | -119.5 / +7.1 | 0.865 |
-| Lounge armchair | -113.3 / +10.8 | 1.047 |
+| Instance        | Projected centre delta X/Y, px | Projected width ratio |
+| --------------- | ------------------------------ | --------------------- |
+| Desk            | -31.5 / +38.4                  | 0.999                 |
+| Work chair      | -1.9 / +33.6                   | 1.095                 |
+| Tea table       | +36.4 / +57.8                  | 0.827                 |
+| Left tea chair  | +58.1 / +43.0                  | 0.799                 |
+| Right tea chair | +41.7 / +59.6                  | 1.025                 |
+| Coffee table    | -119.5 / +7.1                  | 0.865                 |
+| Lounge armchair | -113.3 / +10.8                 | 1.047                 |
 
 These are image-space differences, not isolated world-space translation or
 physical-size corrections. The accepted building correction also changes room
@@ -1857,7 +1871,6 @@ geometry or unexplained feature residuals; do not move accepted walls to hide th
 Self-review: this is the approved room-relative alternative, with explicit
 uncertainty rather than the rejected global absolute-pixel fit.
 
-
 Room-relative correction evidence: all six source-feature cases failed against
 the previous layout before the canonical transforms changed. A later actual-app
 review rejected the flattened lounge chair despite passing envelope checks.
@@ -1870,7 +1883,6 @@ same composition owner with that constraint; do not change asset topology,
 structural geometry, lighting or camera. This is a source-measurement correction,
 not an exception for the renderer. Desk detail review also requires an elevated
 orbit because the unchanged front wall occludes the normal focused view.
-
 
 Validation of the corrected layout: 185 app unit tests passed, including the
 six room-relative feature cases, actual floor/wall clearance, seated clearance
@@ -1891,7 +1903,6 @@ relative placement; it does not certify 100% original-image fidelity. Existing
 lighting banding and the original source's occluded work-chair geometry remain
 explicit limitations. No accepted wall, exterior, render camera or asset topology
 was changed by this placement correction.
-
 
 ### Lower-room depth correction - owner-requested structural revision
 
@@ -1923,7 +1934,6 @@ lower rooms at overview and elevated detail in the actual app. Stop on an
 unresolved wall intersection or required exterior change. No commit or push in
 this review slice. Existing plan closeout stays with this chat.
 
-
 Implemented depth revision: common inward boundary shift 0.877807; clear work
 and lounge depths 2.520770 and 2.321343. Default render camera, building perimeter,
 foundation, entrance, floor height, wall crown heights/thickness and exterior are
@@ -1954,7 +1964,6 @@ hardware browser case pass, app lint/typecheck/build pass, 15 naming checks pass
 update-guidance coverage and diff whitespace checks pass. Build retains the
 existing large-chunk warning. Current in-app tab reports Demo scene ready at
 http://127.0.0.1:5194/. Changes remain local for visual review; no commit or push.
-
 
 ### Seating pose correction in accepted deeper rooms
 
@@ -2082,3 +2091,1007 @@ actions. One E2E passed; the agent inspected `work-detail.png` under the app's
 `test-results/work-chair-removal/` and confirmed the incorrect chair is absent
 while the desk remains. This completes removal, not replacement-chair modeling.
 No commit or push.
+
+### Procedural room furnishing - 2026-10-27
+
+Owner request: continue non-Blender furnishings room by room against the original
+1280 x 800 approved office reference. Order: work, discussion, pantry, lounge.
+Keep the accepted shell, room depths, entrance, camera and exterior unchanged.
+Use the existing catalog for regular assets and measured reference-relative
+placement. Keep rejected chairs, sofa, people and animals absent for later
+Blender review; do not substitute primitive placeholders. No lighting/filter work.
+
+Step execution: `compose-office`; input is the approved building, catalog and
+original reference, output is the ordinary spatial scene. Office owns authored
+placement and room composition under `src/scene/`; no renderer writes, provider
+tokens, alternate renderer, reference-image backdrop or independent React model.
+No bypass. `compose-office` owns failures. Existing catalog constructors are
+consumed without changing the asset-authoring contract. Meshes are constructed
+once per scene composition and camera movement consumes the completed scene.
+Names are app-local assembly identities, not persisted schema changes.
+
+Cases: floor items rest on the common floor; desktop items rest on the actual
+tabletop; shelves and art attach to inside wall faces; regular pantry appliances
+face into the room; striped wallpaper stops before the right framed print.
+Validate actual mesh bounds, nonintersection with walls, stable structure and
+exterior, and omission of rejected assets. Run focused tests, full app tests,
+typecheck/lint/build, naming and Inspector contracts, plus live overview and
+enlarged room captures at APP_URL. Inspect every room against the source before
+closure; passing tests is not visual acceptance. Stop for an actual unsupported
+capability or an unresolved source identity, and preserve the missing item.
+
+The low stool requires a bounded `construct-asset` segment before composition:
+consume the approved accent-furniture numeric parts, emit five named material
+regions forming one closed exterior, preserve all support planes, and include a
+bounded distant representation. No new rendering path or dependency. Check
+welded edge incidence, underside openings, exact bounds and triangle budgets;
+then resume `compose-office`. The stool is regular rounded-box/prism geometry,
+not a substitute for any rejected curved chair. Construction is app-owned under
+`src/assets/`; unsupported topology remains a failure of `construct-asset`.
+
+The source-priority fridge correction is bounded to its door split and handle
+heights; a failing catalog-mesh test first demonstrated the inverted proportions.
+The existing wall-sconce constructor is extracted for reuse without inventing
+another lamp head. Composition owns its source-relative placement. Table support
+planes are returned by the existing construction call, with no duplicate table
+factory invocation or persistent cache. Printed lounge art uses the existing
+small-surface artwork path only.
+
+Validation and visual iteration: 202 app tests passed across 41 files; final
+focused reruns also covered explicit missing-input guards and the new counter
+join regression. Lint, typecheck/build, naming and 100 Inspector contract tests
+passed. The first full interior browser batch passed eight cases but hit a pantry
+screenshot deadline and the 150-second suite guard. The two incomplete cases
+passed in a bounded two-case run with unchanged timeout guards. Visual review
+caught a sink cup inside the basin, an unsupported print above a low return, and
+coplanar overlap between the coffee and sink countertops. Each geometry issue
+received a failing mesh oracle before correction. The final coffee worktop is
+0.75 m wide, ends at X=1.7700 and has a 7.5 mm joint before the sink at X=1.7775.
+
+Reviewed live overview, room views and enlarged details from the production app.
+Printed photo detail remains limited by the small source image; lighting banding
+and complex upholstered seating remain deferred. This is a regular-furnishing
+review milestone, not owner acceptance or complete reference parity. No commit
+or push for this slice.
+
+### Pantry left-to-right correction - 2026-10-27
+
+Bounded task: compare the enlarged original pantry crop, then correct the dispenser,
+fridge-top objects, shelf vessels, preparation counter and sink accessories in
+that order. Preserve the accepted shell, all other rooms, exterior and camera.
+The crop is visual authority; incompatible numeric proportions must be corrected
+at their asset owner. Do not add occupants or Blender-dependent substitutes.
+
+Step execution: `construct-asset` owns the dispenser recipe and regular smallware;
+`compose-office` owns pantry placement and named appearance regions. Inputs are
+the original crop, approved support planes and existing closed catalog geometry.
+Outputs are complete reusable meshes and the production pantry composition.
+Neither step may change renderer state, lighting, accepted walls or unrelated
+assets. No bypass or new dependency. The failing step owns any failure.
+
+Before edits, add failing actual-mesh/source-identity regressions for the bottle
+ratio, six shelf vessels, fridge-top jar, unsupported coffee machine and wood
+sink worktop. Then validate support, overlap and preserved-room cases, app tests,
+lint/typecheck/build, naming and focused live pantry captures including enlarged
+left/right details. Inspect images after tests; screenshots alone do not establish
+numeric correctness. Stop at a reviewable pantry correction without push.
+
+Bounded visual iteration: the first shrub layout exposed an open ring of radial
+petioles instead of the source's compact crown. Retain the same closed blade
+owner, move leaf origins inward and fill the crown with smaller overlapping
+blades. Use an 8 by 4 blade grid with 32 radial pot segments and 6 petiole segments for this small-leaf form and cap the assembled
+shrub below 22,000 triangles. Default stemmed and rosette forms stay unchanged.
+A new accessory-envelope regression also caught an incorrect cylinder argument
+before delivery; the pump neck now uses an explicit 7 mm top radius.
+
+Validation outcome: 211 app tests across 42 files pass, including the revised
+tray/ring dimensions and unchanged scene draw-group budget (fewer than 160).
+App lint/typecheck/build, naming (15 cases), and Inspector contracts (51 cases)
+pass. Inspector discovery initially lacked the existing ai-agent-runtime build;
+building that declared workspace resolved it without source changes. The accepted
+structure SHA-256 remains
+`0e7da49b9bc6dcb89cc6f49fa4a69f7c9bb38500fd1fb38b4d44e746e5e156f7`.
+
+Visual scope: `OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e
+e2e/pantry.spec.ts --output=test-results/pantry-reviewed`, using the project
+APP_URL `http://127.0.0.1:5194`, 1800 x 1200 viewport, production room-furnishings
+scene. One E2E passed. Inspected source-angle, appliance-front and high worktop
+captures under the app's `test-results/pantry-reviewed/`; then verified the same
+scene in the user's existing IAB tab and selected Tea point. Live server PID
+16927 remains available. Review confirmed shelf/counter support, distinct vessel
+sizes, dense shrub silhouette, closed tray/pump parts and clear sink opening.
+Lighting banding, source typography nuances and Blender-dependent occupants
+remain outside this correction; this is not a claim of pixel-identical source
+rendering. No commit or push.
+
+### Inverted transparent water jug - 2026-10-27
+
+Task contract: replace only the pantry dispenser jug with the owner's new bottle
+photo silhouette: narrow neck, sloping rounded shoulder, straight barrel, four
+wide ribs and rounded base. Install neck down, retain the current 0.48 m jug
+height and dispenser footprint, omit labels and expose translucent blue plastic.
+The photo owns visible shape; hidden thickness and exact alpha are reconstruction
+defaults. Preserve all other pantry objects, rooms, architecture and lighting.
+
+Step card: `construct-asset` consumes the revised numeric radial profile and
+material alpha, emitting the complete bottle/cap and reusable appearance regions.
+`compose-office` must propagate alpha to the existing public spatial descriptor
+and keep translucent parts sortable separately from opaque batches. The existing
+`render-spatial` alpha contract already enables transparency and disables depth
+writes. No framework renderer change, new dependency or new render path.
+Failing silhouette/alpha tests precede implementation. Validate profile stations,
+attachment, batch separation, focused and full app tests, lint/typecheck/build,
+naming, relevant Inspector contract and hardware pantry screenshots. Inspect the
+bottle enlarged in the live app; do not equate a passing screenshot test with
+visual fidelity. No commit/push.
+
+Owner extension: add static water occupying 70% of the jug cavity volume, with
+a level surface and visible air above. Derive the cavity from the same radial
+profile with a 2 mm radial clearance and inset bottom, rather than guessing the
+water height as 70% of overall height. Construction remains in `construct-asset`;
+there is no animation, simulation, frame callback or renderer extension. Verify
+closed-mesh volume, a horizontal top and containment before app visual review.
+The enlarged review also identified false ledges caused by independently easing
+each shoulder interval to a zero slope. Replace that interpolation with monotone
+cubic tangents shared at each station; retain the numeric source stations and
+ring relief dimensions. A regression records the incorrectly flattened slope.
+
+Validation: the original silhouette/alpha tests failed before the change; a
+second regression measured the false shoulder ledge at slope 0.607 before the
+shared-tangent correction. Static fill initially failed because no water region
+existed. The final mesh-volume test verifies a 0.70000 capacity fraction and a
+horizontal cap with visible air space. All 216 app tests in 44 files pass;
+app lint, typecheck/build, naming (15 cases) and the focused Office Inspector
+architecture contract (1 case) pass. The pre-existing large-bundle warning
+remains. Structure SHA-256 is unchanged from the preceding pantry review.
+
+Visual review uses APP_URL `http://127.0.0.1:5194/` and the production asset and
+room-furnishings scene. Commands:
+
+- `yarn workspace @asyra/asyra-office test:e2e e2e/asset-catalog.spec.ts --grep water-dispenser --output=test-results/bottle-water-detail`
+- `OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e e2e/pantry.spec.ts --output=test-results/bottle-water-pantry`
+
+Both E2E cases pass. Inspected the front and three-quarter asset captures at
+1200 x 1000 viewport and the 1800 x 1200 hardware pantry capture; then inspected
+the same updated scene in the user's IAB at Tea point. Artifacts are under the
+app's two test-results directories above. The neck/shoulder transition is now
+continuous, four ribs remain distinct, the sticker is absent, and the liquid
+has a visible horizontal boundary below the empty top. This is alpha-based
+translucency rather than refraction. The static water adds no animation or
+frame simulation. Deferred lighting banding is unchanged. No commit or push.
+
+### Pantry remaining vessel detail - 2026-10-27
+
+Continue the owner's left-to-right pantry review, using the original enlarged
+crop as visible-shape authority. The approved 70%-full dispenser, shell,
+appliance bounds, counter join, plants, other rooms, exterior and lighting stay
+unchanged. Current failure: every shelf/fridge/floor vessel uses the same straight
+canister profile, hiding the source's jar shoulders, lid knobs, narrow bottle,
+open utensil crock and rounded blue-white floor jar. Correct these regular
+revolved objects and their supported placement; do not add Blender occupants or
+invent unreadable source text.
+
+Step card - `construct-asset`: consume source-relative vessel profiles from the
+existing pantry-smallware specification, emit independently recolorable closed
+regions and hollow openings under `src/assets/`. Retain the approved default
+canister for its existing consumers; source variants are different objects, not
+legacy compatibility. A jar/crock is regular lathe geometry. Use the existing
+material opacity and spatial path. Then `compose-office` consumes those parts
+in `src/scene/pantry-furnishings.ts`, preserving support surfaces and the six
+shelf positions. `preview-asset` may expose these same factories for microscope
+review; it must not construct different review-only geometry. No framework changes.
+
+Discovery is limited to the original pantry crop, current pantry factories,
+smallware/appliance specifications, placement tests and current production
+captures. Validate failing source-shape/contents oracles first, support bounds,
+closed region topology, budget, retained dispenser and structure, full app tests,
+lint/typecheck/build, naming and focused Office Inspector contract. Capture the
+live production pantry and enlarged new vessels; iterate on concrete mismatches.
+No commit/push. Shapes hidden in the source use documented reconstruction
+assumptions, not a claim of uniquely measured geometry.
+
+Completion of this bounded vessel slice: eight source variants replace the
+repeated straight canister in the pantry; a ninth placed object reuses the
+narrow bottle at the counter's source-relative scale/colour. Fridge/dispenser
+orientation, sink/faucet/drawers, plants and worktop joins were checked against
+the source and their existing support tests, without changing the accepted
+bounds. The tiny porcelain painted motif remains represented by blue-white
+material regions; no claim of exact painted-detail reproduction is made.
+
+Visual iteration found two concrete issues. First, near-identical new colours
+produced 170 draw groups, failing the existing <160 budget. Reusing the pantry
+palette fixed that failure without relaxing the budget or changing the batching
+owner. Second, the rounded porcelain body crossed its foot-band geometry;
+a failing clearance regression preceded re-fitting the band 0.25-0.40 mm outside
+the actual source section. The final microscope image has no intersection dots.
+
+Final gates: 228 app tests across 45 files pass; lint, typecheck/build, naming
+(15 cases), and the focused Office Inspector architecture contract (1 case) pass.
+The pre-existing bundle-size advisory remains. `git diff --check` passes. The
+accepted building hash remains
+`0e7da49b9bc6dcb89cc6f49fa4a69f7c9bb38500fd1fb38b4d44e746e5e156f7`.
+The original smallware modules are semantically unchanged; only `sourceVariants`
+was added to that specification. No commit/push.
+
+Visual scope uses APP_URL `http://127.0.0.1:5194/`:
+
+- `yarn workspace @asyra/asyra-office test:e2e e2e/pantry-vessels.spec.ts --output=test-results/pantry-vessels-complete`: eight cases pass, 1200 x 1000 viewport, production factories at front/top/three-quarter.
+- `OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e e2e/pantry.spec.ts --output=test-results/pantry-finish-final`: one case passes, 1800 x 1200 viewport, source-angle/appliance/worktop views of the production room.
+
+Inspected all eight vessel three-quarter captures, open-crock top, the revised
+porcelain foot band, and the full hardware pantry. Verified the latest live IAB
+scene and returned the camera to the pantry. E2E capture success is separate
+from this agent image inspection. Lighting banding and Blender-dependent
+occupants remain outside this slice, as previously directed by the owner.
+
+### Refrigerator door split correction - 2026-10-27
+
+The owner explicitly overrides the original drawing: exchange the door heights
+to give a 0.428 m upper freezer and 0.640 m lower refrigerator. Scope is the
+existing pantry catalog specification, its direct geometry test and this
+documentation. Preserve appliance bounds, placement, materials, door gap,
+other pantry items and building structure. Both handle assemblies move up
+0.212 m with the split. This updates numeric input to the existing construct-asset
+step; no flow ownership, rendering path or API change. The existing fridge test
+encoded the superseded image; its new exact-height oracle failed before the
+specification change. Validate fridge geometry and room consumers, app types/lint,
+and the production pantry hardware captures. No commit or push requested.
+
+Validation: the corrected fridge oracle and 18 room-furnishing tests pass
+(19 total), app typecheck/lint and diff whitespace checks pass. The hardware
+pantry E2E passes at APP_URL http://127.0.0.1:5194/. Inspected the production
+appliance-front capture in `apps/asyra-office/test-results/fridge-split/`: the
+upper freezer is smaller, the lower refrigerator is taller, and both handles
+remain on their respective doors. The image split is intentionally superseded.
+
+### Pantry remaining visual corrections - 2026-10-27
+
+Owner request: correct all remaining pantry differences enumerated in review.
+Scope: source-derived vessel shoulders/lids, supported counter composition,
+pantry foliage, sink/front proportions, porcelain decoration, and the striped
+shadow artefact. Preserve the newly approved small-upper freezer, 70% static
+water, building geometry, other room/exterior geometry and deferred Blender
+occupants. Shared shadow correction may change lighting on other surfaces; do
+not alter their geometry or apply a pantry-only rendering workaround.
+
+Discovery is limited to existing pantry recipes/factories, their direct scene
+consumers, shared spatial shadow setup and formal tests. Acceptance uses failing
+geometry/appearance/shadow regression oracles first, followed by app and affected
+preset tests, naming, lint/typecheck, budget and hardware pantry/microscope
+captures from APP_URL. Compare each enumerated item, retaining geometry already
+consistent with the source rather than inventing changes. No commit/push.
+
+Step card - render-spatial: the existing Inspector owner is @asyra/preset,
+implementation boundary packages/preset/src/spatial/. Consume the admitted
+lighting/frustum and completed meshes; emit a shaded scene with stable contact
+shadows and without self-shadow stripes. Correct shadow sampling bias in the
+provider, never canonical geometry, application-specific exceptions or disabled
+shadows. Failure stays with render-spatial. Formal regression covers the shadow
+map footprint and finite configured light, then hardware image inspection.
+
+Following cards - construct-asset and compose-office retain the existing
+Inspector contracts: numeric approved recipes and replaceable appearance produce
+closed bounded assets; the pantry composer attaches them to existing supports.
+Only these owners may change their output, not the renderer. Preview consumes
+the same factories. Each segment runs its focused oracle before advancing;
+unknown geometry is explicitly documented construction, not measured certainty.
+
+Bounded microscope replan: two shrub arrangement attempts still expose stacked
+radial petioles at side views. The root cause is the construct-asset blade basis:
+a radial horizontal strip cannot cover an ellipsoidal crown's front surface.
+Replace only the shrub blade basis with the ellipsoid meridian/tangent basis;
+leaf skins offset along the local outward normal, and short connected petioles
+terminate at that surface. Retain small unequal leaves, seeded azimuth/roll,
+closed topology, pot, total envelope and <22k triangles. Other leaf forms retain
+their established basis. Review front/top/oblique, not just the room overview.
+This supersedes the radial-core oracle, whose premise did not prove visible
+surface coverage. New oracles verify outward skin normals and all-view crown
+coverage; no new scope or rendering exception is introduced.
+
+Final pantry validation - 2026-10-27: 239 app tests in 45 files, 44 affected
+Preset spatial/light tests, app lint and typecheck/build, Preset build, 15 naming
+checks and the Office Inspector contract pass. The existing bundle-size advisory
+remains. Source geometry for the accepted building and other rooms is unchanged.
+No commit or push was requested.
+
+Shrub review rejected the first two images despite capture success: front-facing
+leaf coverage initially failed, then top view exposed a hollow crown. The final
+recipe uses 184-192 leaves, a 75 mm radial crown, 132-299 mm root height range,
+46-63 mm scaffold widths and a 4 by 4 grid under the existing 22k triangle cap.
+Front/side/oblique and top coverage exceed 90% over the specified central region.
+The skin-normal oracle includes the vertical component at the crown poles;
+ignoring it incorrectly rejects correctly outward-facing top leaves. The final
+front/top/oblique images were inspected, not accepted solely from test results.
+
+Visual evidence: APP_URL http://127.0.0.1:5194/; command
+`OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e e2e/pantry.spec.ts e2e/pantry-vessels.spec.ts --output=test-results/pantry-complete`.
+All 12 cases pass. Artifact directory is
+`apps/asyra-office/test-results/pantry-complete/`. Eleven production asset previews
+use 1200 x 1000 viewports at front/top/three-quarter; the production pantry uses
+1800 x 1200 hardware rendering at source/appliance/worktop angles. The visible
+IAB at the same URL was also inspected and left at Tea point. Captures retain
+normal app overlays, without selection/debug geometry.
+
+Agent image review: full-width cream cap and differentiated vessel heights,
+supported separate smallware, left-shifted sink assembly, outward leafy crowns,
+narrow arching sink/preparation leaves, continuous blue porcelain motif and
+removed diagonal shadow acne are visible. Real cast shadows remain. The accepted
+small upper freezer and large lower fridge, transparent jug and static 70% water
+remain covered by their existing regressions. The porcelain motif is an authored
+interpretation of indistinct source artwork, not a recovered exact painting;
+Blender-dependent occupants remain deferred. No claim of complete pixel identity
+with the original illustration is made.
+
+### Pantry leafy plant and wall contact correction - 2026-10-27
+
+The owner rejected the dense spherical foliage despite the previous coverage
+oracle passing. This bounded revision belongs to construct-asset (small-plants
+recipe/factory and direct tests) and compose-office (pantry shelf, two distinct
+cabinet assemblies and their supported contents). Keep building geometry,
+appliances, static water, other rooms, exterior and shared rendering unchanged.
+Wall direction is awaiting clarification; foliage work is independent. No push.
+
+The previous oracle optimized a filled ellipsoid instead of the source's visible
+individual leaves. Replace it with bounded small-blade dimensions, unequal
+branch reach/pitch, multiple radial layers, supported pot and a lower triangle
+budget. Branches terminate at leaf roots inside a loose crown volume; blades
+must not tile an ellipsoid surface. Preserve deterministic growth and closed
+thin leaves, and review front/top/oblique plus the actual pantry. Exact leaf
+positions hidden in the source remain authored rather than measurable.
+
+The matching Inspector steps and handoffs remain unchanged: construct-asset
+produces the completed geometry, compose-office places it, preview-asset uses
+the same factory, render-spatial performs no canonical changes. Test the new
+source-derived bounds before geometry changes. After wall clarification, test
+actual contact planes and separate cabinets before placement changes. Gates:
+focused plants/room tests, app tests/lint/typecheck/build, naming and Inspector
+contract, then hardware pantry and production microscope captures at APP_URL.
+Completion requires agent image inspection, not test success alone.
+
+Foliage microscope refinement: reducing the leaf size exposed the second cause:
+every petiole still connected to one central stem. Replace that spoke layout
+with nine seeded sprigs carrying leaves at staggered positions along each sprig.
+The leaf factory stays shared; the shrub growth owner provides branch paths and
+leaf origins. Prove connected leaf origins, branch count and short petioles before
+reviewing the source-like loose leafy silhouette. Do not add a filled core.
+
+Foliage checkpoint: the final nine-sprig construction passes 238 app tests in
+45 files, app lint/typecheck/build, 15 naming checks and the Office Inspector
+contract. The first full run detected 160 draw groups at the <160 budget;
+reusing the existing stem/leaf greens repaired it without increasing the limit.
+The rerun passes. Existing bundle-size advice remains. No commit/push.
+
+Visual scope is the production shrub preview (front/top/three-quarter) plus the
+hardware pantry, APP_URL http://127.0.0.1:5194/:
+`OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e e2e/pantry.spec.ts e2e/pantry-vessels.spec.ts --grep 'plant-shrub|pantry source' --output=test-results/pantry-leafy-budget`.
+Two cases pass. Images under `apps/asyra-office/test-results/pantry-leafy-budget/`
+show separate unequal leaves, real sprigs, irregular outline and retained pot.
+Agent inspected the close-ups and live IAB Tea point; capture success alone was
+not used as acceptance. Source artwork is not claimed to be pixel-identical.
+
+Shelf and counter placement remains pending the owner's clarification of
+"the other wall": the white divider at the left or the wallpaper wall behind
+the units. Existing countertop and shelf backs already lie at/near the rear
+wall. No shelf/cabinet coordinates were changed while this direction is pending.
+
+### Pantry left-wall contact - 2026-10-27
+
+The owner's close crop resolves the placement: the shelf and preparation
+worktop extend to the white divider behind the refrigerator. Scope is the
+compose-office pantry shelf/work cabinet and direct geometry tests/docs; retain
+the separate sink cabinet, supported contents, appliances, plants, accepted
+structure, other rooms and exterior. Derive the left contact from the accepted
+wall inside face, not new wall geometry. Derive worktop depth from the stationary
+fridge rear extent plus clearance so extending left does not intersect it.
+
+Step card: compose-office consumes approved structure and completed pantry
+assets and emits supported, non-intersecting assemblies. Owner and implementation
+boundary remain apps/asyra-office/src/scene/. No render or construct-asset repair
+is needed. First prove missing wall contact in formal room tests; then extend
+the existing complete shelf/cabinet construction, preserving the distinct sink
+worktop and its 7.5 mm join. Check contact, fridge clearance, supported smallware,
+scene budgets, lint/type/build, naming and Inspector contract; inspect production
+pantry source and higher-angle captures. No commit or push requested.
+
+The new regression first failed with a 0.5223 m shelf gap at the white wall.
+After extending the units, review identified clustered shelf contents; a second
+regression failed with a 0.5377 m corner-to-pot gap. Both now pass. Contents
+use fractions of the extended shelf span, with the plant nearest the corner.
+The preparation top is 1.5923067793 m wide and 0.5510995177 m deep; cabinet
+fronts and plinth follow those dimensions. The separate sink join remains
+7.5 mm. Geometry supplement and implementation notes reflect the actual layout.
+
+Validation: 240 app tests across 45 files, 21 focused room tests included,
+app lint, TypeScript/Vite build, 15 naming checks and the Office Inspector
+contract pass. Vite retains its existing chunk-size advisory. Hardware visual
+command: `OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e e2e/pantry.spec.ts --output=test-results/pantry-wall-contact`
+passes one case against http://127.0.0.1:5194/, viewport 1800 x 1200.
+Production Tea point and higher worktop images under
+`apps/asyra-office/test-results/pantry-wall-contact/` were inspected for both
+wall contacts, refrigerator clearance and the independent sink joint. The live
+IAB was returned to Tea point on the same source. Automated checks and visual
+inspection are separate evidence; no whole-illustration parity claim is made.
+No commit or push.
+
+### Pantry source-item reconstruction - 2026-10-27
+
+The owner rejected the previous generic vessel/tray appearances and the unequal
+worktop depths. Reference-visible silhouettes, bands, caps, contents, sizes and
+ordering are required; no substitution for visual convenience or optimization.
+The previous plan failed because wall contact was treated independently from
+front alignment, and existing generic accessory shapes were accepted without
+checking enlarged source details. Replace that approach with two owner slices:
+
+1. construct-asset: reconstruct the visible pantry vessel regions and the gray
+   tray with its upright central piece (the source does not show two plates).
+   Use current lathe/tube/box constructors and editable material regions. Exact
+   hidden surfaces and unreadable writing cannot be inferred from the source.
+2. compose-office: equal 0.625 m worktop depths and front/back alignment, retaining
+   separate cabinets; move the whole refrigerator assembly forward by the needed
+   clearance, including its attached notes and supported objects. Reposition and
+   size every shelf/preparation-counter object against the enlarged source.
+
+Scope: pantry asset recipes/constructors, pantry composition, direct formal tests,
+current pantry docs and live pantry review. Exclude shell, other rooms, exterior,
+renderer, unrelated asset families, commit and push. Existing Inspector owners
+and handoffs remain valid. Before each implementation slice, prove the reported
+mismatch with failing geometry/appearance regressions. Verify closed profiles,
+support/contact/collision, unmodified other scene geometry, app tests, lint,
+build, naming, Inspector and hardware pantry captures. Review source-angle and
+close-up shelf/worktop images against the original, not just green tests.
+
+The owner reiterated that reference fidelity is a whole-project requirement, not
+one-room feedback. The opening numeric-authority sentence and Source authority
+section contradicted that later instruction; both are corrected. App-local
+AGENTS.md, README and technical proposal now carry the persistent contract.
+This does not authorize an unbounded rewrite of unaffected assets.
+
+Current pantry correction: aligned 0.625 m worktops, refrigerator and attachments
+moved forward 73.9004823 mm for clearance, larger source-shaped shelf vessels,
+separate collars/caps/bands, thick varied crock contents, larger preparation mug
+and dark-pot plant, and the source-visible tray upright replacing invented plates.
+The gray caps use the reference's metal appearance, not the old plain finish.
+Magnified hardware inspection exposed coplanar label-band faces; a failing formal
+clearance regression now requires 0.2 mm inner-face separation and the recipe is
+corrected. No visual detail or test budget was removed to meet a performance gate.
+
+Engineering evidence: full app run passed 245 tests / 45 files before the final
+band-clearance regression; all 15 vessel tests then pass on the final profile.
+App lint, TypeScript/Vite build, naming (15) and Inspector (1) pass. The initial
+full run detected 160 draw groups against the <160 gate; correcting the gray
+cap material also removed its separate plain-material batch, and the next full
+run passed unchanged budgets. A removed lathe import broke the intermediate
+build/browser startup; it was restored and both were rerun. These failures are
+not visual acceptance evidence.
+
+Visual evidence uses production APP_URL http://127.0.0.1:5194/, viewport
+1800 x 1200 with deviceScaleFactor 2, and the pantry E2E command above under
+`test-results/pantry-source-items`. Review captures include source angle, an
+appliance-front angle and a higher worktop angle; enlarged shelf and preparation
+crops are inspected separately. This does not claim whole-reference acceptance.
+Unreadable source markings and exact obscured profiles remain unresolved; no
+invented legible labels or claim of exact source reconstruction is permitted.
+No commit/push or whole-plan completion.
+
+The first band-spacing correction was insufficient in hardware review: a distant
+24-interval band could still cross a near 64-interval body. Formal tests now
+require full-detail construction for every region of the six shelf vessels,
+selected by their source recipe. Their unverified distant variants are withheld;
+no renderer patches, camera tricks or inflated body geometry were introduced.
+
+Final engineering rerun: 247 tests across 45 files, lint, build and 15 naming
+checks pass; hardware pantry capture passes. Enlarged final shelf capture confirms
+that the unintended segmented label stripes are gone. Live IAB is at Tea point.
+This records the bounded corrections and persistent contract update, not owner
+visual approval or a claim that the entire app reproduces the reference exactly.
+
+### Shelf-only source reconstruction - 2026-10-27
+
+The newly supplied enlarged shelf crop rejects the last reconstruction. The visible
+objects are not a family of identical ring-labeled canisters. Read left to right:
+a low ochre pot with a tapered leafy crown; a small open brown vessel; a tall pale
+canister with localized pale/yellow front labels and a shallow lid; a shorter pale
+canister with a large green front label; a brown jar with dark neck/lid and a thin
+light rim; a tall shaped wooden/ochre mill-like object; a blue-gray open crock
+with green rim and differently shaped utensil heads. These are visual inferences,
+not claims of product identity or readable text.
+
+Scope is shelf recipes, their pantry asset constructors and scene instances,
+direct tests/docs and production shelf review. Preserve shelf board, worktops,
+appliances, room/exterior, other plants and counter bottle. construct-asset owns
+closed geometry/appearance, compose-office owns scale/placement. These existing
+Inspector steps and handoffs remain unchanged. No renderer change, dependencies,
+Blender, commit or push. Replace full ring labels with local curved rectangular
+labels, distinguish individual lid/shoulder profiles and utensil heads, reconstruct
+the shelf plant separately from accepted fridge foliage. Fail formal regressions
+first; run focused geometry/support tests then app gates and hardware close views.
+Compare each of seven objects with this crop, not just overall shelf presence.
+
+Shelf correction evidence: the supplied enlarged crop is preserved as
+`assets/asyra-office/models/pantry-smallware/review/shelf-enlarged-reference.png`.
+The actual production source-angle capture and shelf close-up are under
+`apps/asyra-office/test-results/shelf-detail-final/`. Enlarged inspection found
+collar/lid side overlap on sage and brown jars; the new formal regression failed
+before their collar endpoints were corrected. Elliptical utensil poles now use
+exact zero radii, removing degenerate triangles without changing the silhouette.
+The cream upper label was shortened and changed from dark brown to ochre.
+
+Focused asset/composition tests: 42 pass. Full app suite: 249 pass, one fails
+because the scene now has 161 draw groups against the existing <160 gate.
+Lint, build, 15 naming checks, Inspector contract and hardware pantry capture pass.
+Do not lower visual detail or relax the gate to hide this failure. Shared renderer
+batching is outside this shelf-only scope. No commit/push; no full-scene or owner
+visual approval claim. The visible label blocks, distinct vessel proportions and
+three utensil silhouettes have been inspected at 1070 x 580 shelf-crop resolution;
+the source's blurred label artwork and hidden profiles are still inferred.
+
+### Shelf flower correction - 2026-10-27
+
+Owner clarification: the leftmost shelf object is a flowering plant, not a
+foliage-only shrub. Within construct-asset, retain the existing pot/support and
+other shelf objects; add source-relative pale-yellow/gold blooms and connected
+stems to the shelf-only recipe. Individual petal shape/species cannot be resolved
+from the source. Formal scene/mesh regression precedes implementation; validate
+focused plant/composition tests, lint/typecheck/naming and production pantry
+screenshots with enlarged flower review. The existing draw-group gate failure
+remains visible; no renderer changes or lowered fidelity are authorized here.
+
+The owner additionally identified the second item as a small leafy plant and
+rejected the yellow lower label on the third cream jar. This extends the same
+bounded shelf correction to those two existing instances; no other vessels move.
+Regressions failed for absent flowers, absent second-pot foliage and the unwanted
+cream label before implementation. Hardware close review then reduced exposed
+flower stem heights from 380 mm maximum to 290 mm, keeping blooms among leaves.
+
+Validation: 44 focused tests pass, including production second-pot composition,
+flower geometry and removal of the rejected label. Lint, typecheck and 15 naming
+checks pass. Hardware pantry capture passes and the 590 x 570 crop has been
+inspected. The unchanged whole-scene budget gate still fails: 163 draw groups,
+required <160. No appearance was removed to satisfy it and no commit/push occurs.
+
+### Framework-owned office shortcuts - 2026-10-27
+
+Scope: migrate every implemented office keyboard shortcut (WASD, arrows, Shift
+speed) to Core.registerInputKeyCombinations. No object, camera speed, renderer,
+mouse/touch gesture, dependency or publication changes. Existing API discovery
+found exact-set chord matching only, no reliable held-key release/cancel output.
+Introduce opt-in keyboardMode: held at InputSystem, with normalized down/up/cancel
+metadata in RawInputEvent. The registered keys are the tracked alternatives;
+normal chord mappings keep their existing semantics. Held state has no repeat
+expiry; release bookkeeping survives stopped propagation; blur, focus changes,
+composition and hidden document cancel it. App owns editable-target/modifier
+admission and elapsed-time movement, not raw keyboard listeners.
+
+Segment 1 - input normalization owner: packages/input-system and the utils raw
+input type, public input docs and formal tests. Inputs: browser keyboard/lifecycle
+events and explicit Core registrations. Output: one normalized held snapshot per
+matching registration; no camera or app-specific policy. Prove aliases, multiple
+held keys, keyup capture, modifiers, cancellation, detach/reset and ordinary chord
+preservation. Public names are additive runtime contracts, not persisted IDs.
+
+Segment 2 - compose-office camera intent: current Inspector compose-office owns
+manual camera intent and frame-clock integration. Consume the normalized output
+through the existing Core registration facade; scene runtime owns registration
+and cleanup, UI only invokes public scene APIs. Preserve smooth start/release,
+diagonal normalization, repeat independence, text/IME/browser shortcuts and
+no idle frames. Regression tests must fail before replacing the direct window
+keyboard binding. Gates: input package tests/build, office input/lifecycle tests,
+app lint/typecheck, naming, Inspector contract and real browser keyboard checks.
+Existing unrelated shelf draw-budget failure is excluded from this input fix.
+
+Validation: 41 InputSystem tests, 10 office keyboard/runtime tests, three live
+browser camera cases, 15 naming checks and the Inspector contract pass. Utils
+and InputSystem builds, office typecheck/build and office lint pass. Scoped
+framework lint reports no errors and retains one existing console warning.
+Browser moving/release/text-focus captures were inspected; the current user tab
+returns to Demo scene ready after module updates. A failing cancellation-cleanup
+regression preceded the reset correction; reset now completes cleanup before
+reporting a consumer cancellation error. No commit or push was performed.
+
+### Refrigerator night-light correction - 2026-10-27
+
+Owner correction: the object right of the refrigerator plant is a night-light,
+not a storage jar. First owner `construct-asset` consumes the supplied crop and
+numeric smallware recipe; `compose-office` replaces only that refrigerator item.
+Keep the plant, refrigerator, shelf, room geometry and controls unchanged.
+Reuse existing lathe/tube/part constructors and public Spatial material alpha;
+no renderer changes, dependencies, commit or push. Construct a dark rounded base,
+transparent cylindrical enclosure, pale cap and top loop, with a warm central
+diffuser. The crop resolves these silhouettes but not exact manufacturing detail.
+Dimensions are reference-derived defaults, with replaceable colors. Existing
+Spatial materials do not expose emission; this slice supplies the warm diffuser
+appearance, not real light casting or bloom. Do not simulate glow with overlays.
+
+Test the production assembly for the named lamp regions, base/enclosure/diffuser
+bounds and absence of contents, label and jar lid before changing production.
+Then validate topology/appearance, scene placement, naming, lint/typecheck and
+hardware pantry screenshots at APP_URL, including a magnified refrigerator crop.
+Stop at this bounded correction; unrelated draw-budget failure remains excluded.
+
+Validation: the new production-assembly test failed against the jar before the
+replacement. All 45 focused smallware/light/composition tests now pass; app lint,
+typecheck and 15 naming checks pass. Hardware pantry review passes at
+http://127.0.0.1:5194/ (1800 x 1200 viewport, device scale 2, Tea point camera).
+The production source-angle image and 554 x 480 refrigerator crop were inspected
+for the clear enclosure, separate warm diffuser, rounded base, cap and attached
+loop. Screenshots remain under app test-results/night-light. The unimplemented
+emission/light-casting capability remains explicit above. No commit/push.
+
+### Night-light emission - 2026-10-27
+
+The owner requests an actually luminous light core. This supersedes the prior
+appearance-only limitation. Freeze scope to optional engine-neutral emissive
+color/intensity, Preset admission and material application, Office asset/frame
+transport and the existing night-light recipe. Preserve geometry, placement,
+lighting setup, all unrelated materials and prior keyboard changes. No bloom,
+point lights, glTF import expansion, dependencies, commits or pushes.
+
+Step 1 - `render-spatial`: Office Inspector inputs preview/scene descriptors,
+output visible scene; shared admission/resource lifetime remains authoritative.
+The render-engine SpatialDescriptor owns neutral public types; Preset owns
+validation and Three material mapping. `emissive` is a 24-bit sRGB color and
+`emissiveIntensity` a finite nonnegative multiplier, both defaulting to zero.
+This is an additive material property, with no asset-name checks, provider
+objects in app geometry, renderer-owned canonical writes or new cache. Spec:
+Office Foundation and Preset material contract. Failure owner: render-spatial.
+Formal gates: reject malformed emission; preserve admitted values; actual Three
+material emission on creation/update/reset and distant instances; retain geometry
+and material identity on appearance-only updates. Run naming before/after,
+focused engine/admission tests, builds and lint. Stop if a provider bypass is needed.
+
+Step 2 - `construct-asset` then `compose-office`: carry replaceable emission from
+the night-light diffuser recipe through AssetPart and material batching into the
+public descriptor. Every unrelated part retains zero emission. Material batching
+must distinguish emissive/non-emissive regions even with identical albedo.
+Formal production-mesh tests precede edits. Verify the unchanged lamp envelope,
+light-only emission, batch separation, app lint/types and real hardware pantry
+close captures. Completion requires a visibly luminous warm core inside the
+existing transparent enclosure; emission does not imply lighting other surfaces.
+
+Validation: 11 shared emission regressions failed before implementation; all 77
+focused spatial admission/engine/layer/registration/resource/lighting tests now
+pass. Three Office failures preceded asset/frame transport; all 31 focused
+asset/material/composition cases pass. Naming (15), scoped framework lint, app
+lint/typecheck/build, render-engine/Preset builds and Inspector validation pass.
+Hardware pantry capture passes on APP_URL at 1800 x 1200, device scale 2; the
+554 x 480 refrigerator close crop was inspected. Final emission color is #FFB35C
+at intensity 2.5 to retain warm light behind the transparent enclosure. Emission
+is verified on actual Three materials and retained distant instances, with no
+bloom or lighting of other surfaces. Geometry and placement remain unchanged.
+
+### Soft visible night-light glow - revised approach - 2026-10-27
+
+The owner rejected the emission-only image: brighter albedo/core alone does not
+produce the requested gentle light halo. The missing owner is `render-spatial`
+presentation, not lamp geometry. Keep the approved geometry/material emission
+and add an opt-in, engine-owned emissive bloom operation. Render normal
+appearance unchanged, then an HDR emission-only mask with ordinary geometry retained as black
+occluders and transparent enclosure alpha retained. Apply a small separable
+Gaussian blur, tone/color-convert only that glow and add it over the unchanged
+normal render. This avoids changing background or non-emissive tone mapping.
+This keeps bright non-emissive walls, plants and UI from becoming bloom sources.
+No app-specific mesh names, overlay sprites, patch geometry or global lighting
+changes. No new dependency: use the installed Three renderer/fullscreen primitive.
+
+Step 1 - render-spatial, per Office Inspector/Foundation: input is optional
+neutral bloom settings (strength and CSS-pixel radius) plus admitted scene;
+output is the visible scene with emission-derived halo. Preset owns admission,
+render targets, mask material reuse and disposal. Defaults omit the effect;
+invalid settings and unsupported driver methods reject instead of silently
+ignoring bloom. Targets follow viewport/DPR and are disposed with the renderer.
+Mask material copies are retained by source material identity, updated on each
+render, and released with their source or engine. Original scene/material/renderer
+state is restored even on failure. Existing flush owns rendering; no new frame
+loop or scene construction. Scope: Preset spatial presentation and direct tests,
+Office options, current lamp spec/docs and Inspector. Gates: admission red/green,
+mask/occlusion/restoration/resource/work-count tests, adjacent engine tests,
+app lint/build, naming, Inspector and live hardware close image. Stop on changes
+to geometry, external scene, dependencies or canonical state requirements.
+
+Step 2 - compose-office: opt into the small emissive glow through applyPreset
+options; keep source intensity/color and all scene geometry fixed. Review the
+real pantry crop for a visible soft warm edge around the core, no harsh outline,
+and unchanged other objects. The prior emission-only completion claim is
+superseded; material property tests alone cannot close this visual request.
+
+
+Validation: the missing bloom admission and Office opt-in were reproduced before
+implementation. Final focused Preset cases: 88 passed; Office asset, composition
+and runtime cases: 33 passed. Naming (15), scoped lint, Preset build, Office
+build and Inspector contract passed. Hardware pantry review passed on APP_URL
+at 1800 x 1200 and DPR 2. Its 554 x 480 native close crop and rotated appliance
+view show a soft warm halo around the core while the shade/base remain readable;
+the current desktop tab was refreshed and inspected at Tea point as well.
+Final presentation settings: strength 0.45, radius 8 CSS pixels. Shader/runtime
+console errors are checked; the existing automatic favicon 404 is excluded from
+this scene-only gate. Evidence is under
+`apps/asyra-office/test-results/night-light-glow/`.
+
+
+Owner brightness adjustment: reduce the night-light emission multiplier from
+2.5 to 1.75 and bloom strength from 0.45 to 0.315 (70% of each previous
+setting). Preserve warm color, 8 CSS-pixel halo radius, geometry and scene
+lighting. This is a parameter adjustment within the existing night-light scope,
+not a new renderer behavior.
+
+
+### Add framed night-light while retaining the original - 2026-10-27
+
+Owner request: retain the original pantryNightLight asset and its specification,
+add a distinct frameNightLight from the supplied photographs, and select the new
+asset at the existing refrigerator anchor. Construct-asset owns the reference,
+source dimensions, regions and mesh factory. Compose-office changes only that
+assembly's asset selection. Reuse existing lathe/profile extrusion, replaceable
+appearance, public emission/alpha and Preset bloom. Do not alter framework,
+lighting, other furnishings, or the original asset. Freeze tabletop height at
+300 mm and derive other ratios from the photograph, documenting that it has no
+physical scale. Acceptance: two independent retained factories, four uprights
+joined by two perpendicular rounded arch straps crossing at the top, clear tall cylinder with light confined to
+its bottom, grooved bronze base, no old cap/loop, and unchanged fridge anchor.
+Gates: named-region/bounds/transparency/emission tests, old-asset regression,
+room placement tests, naming/lint/build and hardware close/multiple-angle review.
+No commit or push in this task.
+
+
+The second owner photograph corrected the initial parallel-frame interpretation
+before completion. Two perpendicular arches now cross with tops at 294/300 mm.
+The original night-light recipe and factory are unchanged. Both factories have
+independent public review routes. The selected fridge assembly uses the new
+model at the existing anchor. The dedicated FRAME-NIGHT-LIGHT.md, source JSON,
+two source photos and five-view single-part reference are retained together.
+Validation: 31 asset/composition cases, 4 preview cases, 15 naming cases, scoped
+lint and App build passed. Two hardware visual cases captured both assets and
+the pantry; the reference-sheet-only rerun also passed after removing UI corner
+pixels from the capture bounds. Close and three-quarter views were inspected
+against both photos. Owner visual approval remains pending; no commit or push.
+
+
+### Framed night-light metal finish - 2026-10-27
+
+The owner reports a matte-looking metal frame/base. The App currently replaces
+all non-instanced metal finishes with metalness 0.35 and all instanced finishes
+with zero; AssetPart cannot preserve a recipe-specific value. Reuse the existing
+public Spatial metalness contract. Construct-asset carries the source finish;
+compose-office preserves it in descriptors and material batching. Scope: optional
+AssetPart metalness, new lamp recipe/factory, direct descriptor tests, reference
+sheet and related specifications. Keep old defaults, other assets, geometry,
+light core, bloom and scene lights unchanged. Test finish transport and batch
+separation before implementation, then inspect the real app and regenerate the
+same reference sheet. No new dependency, environment renderer or commit/push.
+
+
+Visual checkpoint: explicit metalness passed the transport tests but made the
+metal darker, not glossy. The actual image rejects parameter-only completion.
+The existing provider has no environment map. Revised render-spatial slice:
+add neutral per-mesh environmentIntensity (zero by default), with one lazy
+provider-owned studio PMREM resource shared for that engine lifetime. Reuse the
+installed Three RoomEnvironment and PMREM APIs; no download or dependency.
+Only the new lamp's metal regions opt in; the scene's environment, lights and
+all other assets remain unchanged. Target specular highlights must vary with
+view direction rather than being painted into color or emissive geometry.
+Test default-off and admission failures, resource creation counts, sharing,
+updates, disable/re-enable, failure restoration and disposal. Preserve source
+geometry, existing material defaults, emission and bloom; rebuild API/provider
+and inspect actual app/preview images before completion. This supersedes the
+initial no-environment-renderer restriction based on the visual failure.
+
+Validation of the revised finish slice: 54 focused Preset tests, 14 Office
+material/asset/preview tests, the Inspector contract, naming and scoped lint
+passed. Preset and Office builds passed; Office retains its existing bundle-size
+warning. Both hardware browser reviews passed. Inspected the actual pantry
+close-up, the five-view asset sheet and the user's live Tea point view: the base
+now shows reflective bands and the straps retain bronze shading across angles.
+The five-view asset reference is updated from those captures. Original asset
+preservation and unchanged light-core intensity remain covered by focused tests.
+This validates the metal finish change, not complete photographic equivalence.
+
+### Shelf condiment interpretation - 2026-10-27
+
+Owner correction: the five objects after the two plants are condiment/spice
+containers. Bounded work repairs their recipes and labels at construct-asset,
+then updates their direct scene references at compose-office. Reuse pantryVessel
+and existing lathe/label geometry; no new framework capability is required.
+Preserve plants, shelf support/placement, first three jar silhouettes, rejected
+yellow lower label, all other pantry objects, lights and building geometry.
+Replace the inferred hourglass object and utensil crock with narrow amber and
+dark herb jars. Supersede their unpersisted preview IDs, without compatibility
+aliases. Do not invent readable ingredient names from the low-resolution crop.
+
+Step execution: construction consumes sourceVariants.vessels and owner crop,
+outputs closed named AssetParts; composition consumes them at the same shelf
+anchors. No renderer-owned geometry or invalid-input bypass is allowed.
+Regression first: capped jar topology, broad amber waist, absence of utensils,
+source envelopes and five-item order. Finish with focused vessel/room tests,
+naming, lint, build and maintained hardware pantry screenshots with close review.
+Stop at this correction; do not commit or push in this task.
+
+Validation: 49 focused asset/composition/preview tests pass, including the
+unchanged structural and exterior meshes. Naming, scoped lint, Inspector contract
+and app build pass (existing bundle-size warning remains). The hardware pantry
+E2E passes; its source-angle shelf crop was inspected against the owner crop.
+Five distinct capped containers are visible, without utensils or a narrow mill
+waist. Source-relative placement and the two plants are retained. Tiny markings
+and hidden cap construction remain inferred, not exact recovered image detail.
+
+### Transparent condiment jars - revised task iteration - 2026-10-28
+
+The owner invalidated the previous opaque-jar interpretation: all five jars
+are clear containers, and their colors belong to the contents. The previous
+checks proved caps and order but omitted container/contents separation. This
+revision supersedes that material interpretation at construct-asset. Inputs
+are the same owner crop plus this explicit clarification; outputs are hollow
+neutral transparent bodies, separate opaque caps and independently colored
+interior fills with visible headspace. Ingredient identities remain inferred:
+sugar, dried herbs, brown spice powder, ochre spice powder and peppercorns.
+
+Bounded scope: vessel JSON/factory/labels, its direct tests, replaceable ingredient
+surfaces and tests, pantry specification/implementation docs, and existing pantry
+visual review. Existing public opacity/environment/surface APIs suffice. No
+framework change, jar envelope or placement change, unrelated room work, push
+or commit. Tests must first reject opaque walls and missing independent fills,
+then prove clearance/headspace/recolor isolation and valid repeatable surfaces.
+DoD: focused tests, scoped lint/naming, app build and inspected actual pantry
+close-up at the existing live URL. Inspector construct-asset and compose-office
+contracts remain unchanged; no downstream overlay substitutes for jar geometry.
+Self-review: scope corrects the first wrong material/geometry interpretation;
+uncertain ingredient names are not promoted to recovered facts.
+
+Revised validation: 51 focused tests pass; opaque-shell and out-of-range UV
+regressions were demonstrated before their respective corrections. App build,
+scoped lint and Inspector contract pass. Hardware pantry review passes, and
+the final actual shelf crop was inspected: neutral transparent headspace,
+separate colored fills and irregular grain patterns replace opaque painted
+jars and stretched radial/grid patterns. Ingredient identity remains an explicit
+inference; this is not a claim to recover labels or hidden details exactly.
+
+### Owner-specific jar necks and paper labels - 2026-10-28
+
+This bounded revision replaces the overgeneralized no-label and generic-cap
+assumptions. Construct-asset consumes the latest owner clarification: ivory
+contents/yellow paper on jar one, ochre contents/green paper on jar two, inset
+neck and broad flat cork on jar three, and a long narrow chili-bottle neck on
+jar four. The fifth closure needs source/owner confirmation. Preserve transparent
+shells and separate fills, outer placement/height envelopes, unrelated pantry
+objects and scene structure. Reuse pantryVessel, lathe, vesselLabel and public
+surface/opacity contracts. No framework work or commit/push.
+
+Test first: paper-shell clearance, independent food/paper colors, inset neck
+ratio, flat cork and narrow-neck length; retain closure/UV/fill clearance and
+scene preservation tests. Synchronize JSON/spec text, then run focused tests,
+scoped lint/naming/build and inspect source-angle pantry close-ups. The existing
+construct-asset to compose-office flow remains unchanged. Exact food identity
+is still unknown; latest owner descriptions override earlier ingredient guesses.
+Self-review: earlier engineering checks failed to encode the source-specific
+neck/cap and paper distinctions. This revision adds those actual constraints
+rather than using a shared generic jar shape or changing the renderer.
+
+Owner clarified the fifth object during execution: it is an opaque blue pot
+with brown edging, succulent leaves and a dark possible flower bud. Supersede
+the fifth glass-jar interpretation entirely. Extend only the existing shelf-plant
+factory/source recipe and its direct preview/scene consumers; retain four clear
+containers. Scene tests must reject a lid/food and require soil, distinct leaves
+and the bud at the fifth support anchor. This is confirmed scope, not a new
+plant category invented by the implementation.
+
+The owner supplied a real cork-jar photograph during this revision. It replaces
+the narrow-neck/broad-disc interpretation for jar three: a wide opening, gently
+inset shoulder, visible glass lip and a tapered cork inserted into the mouth.
+Keep its existing 161 x 161 x 215 mm scene envelope and brown contents. Test
+the mouth/body ratio, inserted depth, cork-to-mouth fit and continuous cork
+profile before rebuilding; compare the actual app close-up with the photograph.
+The supplied photo is reference-cork-jar.png in the pantry-smallware directory.
+
+Validation: 59 focused asset/scene/surface/preview tests pass, including the
+wide-mouth cork, planar cork UVs, independent paper colors, four fill clearances
+and fifth succulent topology. Naming, app lint/build and Inspector contract pass.
+The maintained hardware pantry and two asset microscope cases pass (3 E2E cases).
+The final actual shelf crop and cork microscope were inspected; the cork now
+sits inside the glass lip and no longer has a narrow stalk or radial top streaks.
+The source does not identify the food species or hidden plant details; those
+remain documented interpretations, not exact recovered product data.
+
+### Fourth shelf bottle proportional correction - 2026-10-28
+
+Owner request: fourth bottle total height is 70% of the third jar. Scope is the
+existing shelf-amber-jar source profile, dependent dimensional tests and specs.
+Reuse construct-asset and the existing pantryVessel constructor; scale all profile
+radii/Z values and dimension metadata uniformly by (215 * 0.7) / 255, keeping
+the bottom anchor, appearance and all other assets unchanged. No new renderer,
+placement correction, dependency, commit or push. Prove the height/aspect contract
+red first, then run vessel/scene tests, app checks and the maintained pantry
+visual review; inspect the rendered shelf before completion.
+
+Validation: the new 70% height regression failed at the original 255 mm height
+and passes at 150.5 mm. All 48 focused vessel/room tests, app lint/build,
+Inspector contract and the maintained hardware pantry E2E pass. The final
+actual shelf close-up was inspected for proportional shrink and unchanged
+support contact. No unrelated asset dimensions or placement were changed.
+
+### Rendering workload investigation - 2026-10-28
+
+Task association: Complete reference scene implementation, compose-office output
+and render-spatial consumer; whole-plan acceptance remains with the owner.
+The owner authorizes measuring the existing furnished scene and evaluating only
+appearance-preserving batching before any proposed budget change. Preserve the
+current <160 descriptor gate until a reviewed decision; do not alter materials,
+geometry, transparency sorting, independent visibility/LoD, or interaction.
+
+Step execution card: inspect `compose-office` output (`artifact:spatial-scene`)
+and its official `render-spatial` consumer using the current approved scene,
+real navigation input and the existing hardware browser route. App tests own
+measurement, not runtime state or rendering. Allowed files: focused Office E2E
+measurement helpers/specs, direct scene regression tests and this task's docs;
+a production batching correction requires evidence and equivalence tests first.
+No cache, provider change, debug product route, scene substitution or alternative
+renderer is admitted. Failure remains with composition or the measured render
+owner, not a fixture fallback. Initial stop conditions: measurable appearance
+change, cross-object visibility/LoD coupling, or needing to relax the threshold.
+
+The existing `scene.test.ts` gate counts `buildSpatialMeshes(scene, {})` results,
+not actual WebGL submissions. The count excludes separately generated text/art
+and additional shadow/bloom passes. Related task notes repeat the limit but do
+not identify a hardware baseline. Measure real frame intervals, WebGL calls and
+submitted triangles (including all passes), buffer allocation, live resource
+counts and browser JS heap. Distinguish measured JS heap/buffer storage from
+unknown total GPU memory; timing is host evidence, not a portable unit assertion.
+Use hardware Chrome at 1440 x 960 CSS pixels, DPR 1 and 2, overview idle/orbit/
+keyboard pan/zoom, with unchanged app geometry and effects. Save route, browser,
+GPU, workload, instrumentation scope and screenshots. Existing fidelity, input,
+resource-lifetime and budget tests remain authoritative and unchanged.
+
+
+The verified inventory is 2,997 parts and 187 descriptors: 160 opaque material
+batches, 18 instanced entries and nine transparent entries. Existing public
+SpatialShape.colors and Preset's vertex-color material support permit preserving
+individual sRGB colors as linear vertex albedo with a white uniform tint. The
+first formal color-batching regression fails on the existing two-descriptor
+output. The bounded compose-office correction may use this existing API for
+static, non-selectable opaque entries only. Preserve positions, indices, UVs,
+all non-color descriptor state and surface identity; bypass instance/LoD,
+transparent and hidden entries. Do not quantize colors or alter asset geometry.
+Compare the unchanged hardware navigation/capture route before and after; retain
+the existing <160 gate. No framework API or renderer implementation change.
+
+
+Hardware evidence (Apple M3 Max, Chrome, 1440 x 960 CSS viewport, 2026-10-28):
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Composition descriptors without separately prepared surfaces/art | 187 | 62 |
+| Instanced entries / transparent entries | 18 / 9 | 18 / 9 |
+| DPR 1 nonempty navigation frame calls, median | 624 | 274 |
+| DPR 2 nonempty navigation frame calls, median | 588 | 238 |
+| DPR 2 continuous keyboard-pan drawing frames per second | 58.9 | 58.9 |
+| Initial live WebGL buffer storage, bytes | 45,475,204 | 54,879,136 |
+| Idle draw calls in the two-second sample | 0 | 0 |
+
+The source contains 2,997 parts throughout. Vertex color storage costs about
+9.4 MB; it is not free memory optimization. These are instrumented submission
+counts, not GPU execution time or total VRAM. Mouse-driven orbit/zoom redraw
+frequency is limited by the test's input rate and must not be presented as FPS
+capacity. Pan reverses every 250 ms to keep the furnished scene in view.
+Short M3 Max samples do not certify mobile hardware or large agent populations.
+
+Artifacts: `apps/asyra-office/test-results/render-workload-verified/` is the
+unchanged baseline; `render-workload-batched/` contains the candidate JSON and
+screenshots. The same DPR 2 overview differs in 205 of 3,478,112 pixels; this is
+not pixel-identical output (the earlier two baseline captures were identical).
+No shape, placement or material discrepancy was identified in the inspected
+actual overview, shelf close-up and refrigerator-light close-up. Do not equate
+this preservation review with approval of unfinished assets against the source
+concept. The existing descriptor limit passes unchanged. Focused topology,
+color-space, UV, finish, alpha and LoD tests pass; wider pre-push validation
+remains separate and must complete before the pending push.
+
+
+Final review found a test-route defect: OFFICE_HARDWARE_REVIEW=1 was honored by
+individual hardware specs but ignored by the shared Playwright configuration.
+Camera/interior specs still forced SwiftShader, and the combined 26-case run
+exceeded its unchanged 150-second suite guard (the first camera case also
+exceeded 30 seconds). A configuration regression test demonstrates the ignored
+flag. Correct the shared Office test configuration to honor the existing flag,
+preserve default software CI and all timeout/worker/retry guards, and document
+this route. Run bounded review groups rather than increasing the suite limit.
+This is test infrastructure within the current render-review task, not a
+production rendering or camera behavior change. Revalidate Office and shared
+checks; other validated source inputs are unchanged.

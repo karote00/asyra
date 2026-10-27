@@ -61,3 +61,62 @@ export function createPlantGrowth(
     }
   })
 }
+
+/** Shared leaf samples are attached to real sprigs, not a spherical placement skin. */
+export function createShrubSprigs(
+  samples: ReturnType<typeof createPlantGrowth>
+) {
+  const variant = requiredSpecValue(
+    spec.modules[0].growthVariants,
+    'plant variants'
+  ).shrub
+  const crown = variant.crown
+  const fraction = (value: number, range: readonly number[]) =>
+    (value - range[0]) / (range[1] - range[0])
+  const branches = Array.from({ length: crown.sprigCount }, (_, index) => {
+    const sample = samples[index]
+    const angle =
+      ((samples[0].azimuthDegrees + index * variant.growth.azimuthStepDegrees) *
+        Math.PI) /
+      180
+    const reach =
+      crown.sprigReach[0] +
+      fraction((sample.roll * 180) / Math.PI, variant.growth.rollDegrees) *
+        (crown.sprigReach[1] - crown.sprigReach[0])
+    const radius =
+      reach * (index < crown.innerSprigCount ? crown.innerSprigReachScale : 1)
+    const top =
+      crown.sprigTipHeight[0] +
+      fraction(sample.archScale, variant.growth.archScale) *
+        (crown.sprigTipHeight[1] - crown.sprigTipHeight[0])
+    return [
+      [0, 0, crown.sprigBaseZ],
+      [
+        radius * 0.35 * Math.cos(angle),
+        radius * 0.35 * Math.sin(angle),
+        crown.sprigBaseZ + (top - crown.sprigBaseZ) * 0.55
+      ],
+      [radius * Math.cos(angle), radius * Math.sin(angle), top]
+    ]
+  })
+  const origins = samples.map((sample, index) => {
+    const branch = index % branches.length
+    const rank = Math.floor(index / branches.length)
+    const count = Math.ceil((samples.length - branch) / branches.length)
+    const phase =
+      (rank +
+        0.2 +
+        0.6 * fraction(sample.archScale, variant.growth.archScale)) /
+      count
+    const t =
+      crown.leafFraction[0] +
+      phase * (crown.leafFraction[1] - crown.leafFraction[0])
+    const segment = t < 0.55 ? 0 : 1
+    const local = segment === 0 ? t / 0.55 : (t - 0.55) / 0.45
+    return branches[branch][segment].map(
+      (value, axis) =>
+        value + (branches[branch][segment + 1][axis] - value) * local
+    )
+  })
+  return { branches, origins }
+}

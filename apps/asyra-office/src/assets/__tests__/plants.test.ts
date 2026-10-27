@@ -105,3 +105,93 @@ it('builds soil-rooted rosettes without stretching the vessel or retaining a tal
   )
   expect(planter(1, 0xe8dbc3, 606, 'rosette')).toEqual(parts)
 })
+
+it('keeps the pantry shrub dense, bounded and below its small-crown triangle budget', () => {
+  const parts = planter(1, 0xa57a49, 606, 'shrub')
+  expect(
+    parts.filter((p) => p.id.startsWith('leaf-')).length
+  ).toBeGreaterThanOrEqual(88)
+  expect(parts.reduce((n, p) => n + p.mesh.indices.length / 3, 0)).toBeLessThan(
+    22000
+  )
+  const positions = parts.flatMap((p) => p.mesh.positions)
+  for (const [axis, limit] of [
+    [0, 0.14],
+    [1, 0.14]
+  ] as const)
+    expect(
+      Math.max(...positions.filter((_, i) => i % 3 === axis).map(Math.abs))
+    ).toBeLessThan(limit)
+  expect(Math.max(...positions.filter((_, i) => i % 3 === 2))).toBeLessThan(
+    0.33
+  )
+})
+
+it('uses narrow curved lanceolate blades for the pantry without changing the pot', () => {
+  const parts = planter(1, 0xe8dbc3, 606, 'lanceolate')
+  const leaves = parts.filter((p) => p.id.startsWith('leaf-'))
+  expect(leaves.length).toBeGreaterThanOrEqual(10)
+  expect(parts.find((p) => p.id === 'pot')).toEqual(
+    planter(1).find((p) => p.id === 'pot')
+  )
+  for (const leaf of leaves) {
+    // Midrib at t=0.5 must arch above the straight root-to-tip chord.
+    const root = leaf.mesh.positions.slice(0, 3)
+    const middle = (1 + 11 * 9 + 4) * 3
+    const tip = (1 + 23 * 9) * 3
+    expect(
+      leaf.mesh.positions[middle + 2] -
+        (root[2] + leaf.mesh.positions[tip + 2]) / 2
+    ).toBeGreaterThan(0.012)
+  }
+})
+
+it('retains small distinct shrub blades on unequal branch reaches instead of a spherical skin', () => {
+  const parts = planter(1, 0x956a48, 606, 'shrub')
+  const leaves = parts.filter((p) => p.id.startsWith('leaf-'))
+  expect(leaves.length).toBeGreaterThanOrEqual(80)
+  expect(
+    parts.reduce((sum, p) => sum + p.mesh.indices.length / 3, 0)
+  ).toBeLessThan(18000)
+  const roots = leaves.map(({ mesh }) =>
+    Math.hypot(mesh.positions[0], mesh.positions[1])
+  )
+  // Middle-height leaves must occupy several depths, not a single crown shell.
+  const middleRoots = leaves
+    .filter(({ mesh }) => mesh.positions[2] > 0.2 && mesh.positions[2] < 0.24)
+    .map(({ mesh }) => Math.hypot(mesh.positions[0], mesh.positions[1]))
+  expect(Math.max(...middleRoots) - Math.min(...middleRoots)).toBeGreaterThan(
+    0.025
+  )
+  expect(Math.min(...roots)).toBeLessThan(0.035)
+  for (const leaf of leaves) {
+    const positions = leaf.mesh.positions
+    const point = (n: number) => positions.slice(n * 3, n * 3 + 3)
+    const distance = (a: number[], b: number[]) =>
+      Math.hypot(...a.map((v, i) => v - b[i]))
+    const midrow = 1 + 1 * 5
+    expect(distance(point(midrow), point(midrow + 4))).toBeLessThan(0.03)
+    const tip = 1 + 3 * 5
+    expect(distance(point(0), point(tip))).toBeLessThan(0.05)
+    // Geometry stays a finite, thin, closed blade rather than a solid ball.
+    const upper = point(midrow + 2),
+      lower = point(2 + 3 * 5 + midrow + 2)
+    expect(distance(upper, lower)).toBeCloseTo(0.0006, 6)
+    expect(positions.every(Number.isFinite)).toBe(true)
+  }
+})
+
+it('grows shrub leaves along connected sprigs with short petioles rather than long radial spokes', () => {
+  const parts = planter(1, 0x956a48, 606, 'shrub')
+  expect(parts.filter((p) => p.id.startsWith('sprig-'))).toHaveLength(9)
+  for (const p of parts.filter((p) => p.id.startsWith('petiole-'))) {
+    const xs = p.mesh.positions.filter((_, i) => i % 3 === 0)
+    const ys = p.mesh.positions.filter((_, i) => i % 3 === 1)
+    expect(
+      Math.hypot(
+        Math.max(...xs) - Math.min(...xs),
+        Math.max(...ys) - Math.min(...ys)
+      )
+    ).toBeLessThan(0.015)
+  }
+})

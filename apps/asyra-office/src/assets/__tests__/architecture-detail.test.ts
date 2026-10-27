@@ -257,7 +257,8 @@ it('cuts sink door fields and six blind tray slots instead of overlaying dark ma
   expect(frontDepth(door, -0.2175 + 0.195, 0.323)).toBeCloseTo(-0.248, 8)
   for (const [asset, z] of [
     ['coffee-machine', 0.032],
-    ['water-dispenser', 0.489]
+    // Original-crop revision: cabinet compressed from 0.79 m to 0.64 m.
+    ['water-dispenser', (0.489 * 0.64) / 0.79]
   ] as const) {
     const tray = requiredSpecValue(
       catalogAsset(asset).find((p) => p.id === 'drip-tray'),
@@ -279,18 +280,18 @@ it('cuts sink door fields and six blind tray slots instead of overlaying dark ma
         expect(frontDepth(top, x, y)).toBeCloseTo(-(z - 0.002), 7)
   }
 })
-it('constructs both bottle rings from the declared radial profile', () => {
+it('constructs all four bottle ribs from the owner photo profile', () => {
   const mesh = requiredSpecValue(
     catalogAsset('water-dispenser').find((p) => p.id === 'bottle'),
     'bottle'
   ).mesh
-  for (const z of [0.902, 1.016]) {
+  for (const z of [0.812, 0.866, 1.024, 1.08]) {
     const radius = []
     for (let i = 0; i < mesh.positions.length; i += 3)
       if (Math.abs(mesh.positions[i + 2] - z) < 1e-8)
         radius.push(Math.hypot(mesh.positions[i], mesh.positions[i + 1]))
     expect(radius.length).toBeGreaterThanOrEqual(64)
-    expect(Math.max(...radius)).toBeCloseTo(0.129, 8)
+    expect(Math.max(...radius)).toBeCloseTo(0.131, 8)
   }
 })
 

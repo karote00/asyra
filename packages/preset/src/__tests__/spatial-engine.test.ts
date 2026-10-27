@@ -751,3 +751,83 @@ it('retains geometry and material when instance placement count changes', () => 
   expect(disposeGeometry).toHaveBeenCalledTimes(1)
   expect(disposeMaterial).toHaveBeenCalledTimes(1)
 })
+
+it('offsets shadow receivers by the light texel footprint while retaining cast shadows', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  add(box)
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0][0]
+  const key = scene.children.find(
+    (object) => object instanceof THREE.DirectionalLight && object.castShadow
+  ) as THREE.DirectionalLight
+  expect(key).toBeDefined()
+  const texel =
+    (key.shadow.camera.right - key.shadow.camera.left) / key.shadow.mapSize.x
+  // PCF receiver neighbours must not sample the same plane as an occluder.
+  expect(key.shadow.normalBias).toBeGreaterThanOrEqual(texel)
+  expect(key.shadow.normalBias).toBeLessThanOrEqual(texel * 2)
+  expect(key.shadow.bias).toBeLessThan(0)
+  expect(key.shadow.bias).toBeGreaterThan(-0.001)
+  expect(driver.shadowMap?.enabled).toBe(true)
+  engine.destroy()
+})
+
+it.each([false, true])(
+  'applies emission and updates it without rebuilding material or geometry; instances=%s',
+  (instanced) => {
+    const { engine, driver, add } = setup()
+    add(camera)
+    const descriptor = {
+      ...box,
+      emissive: 0xffdba0,
+      emissiveIntensity: 2.5,
+      ...(instanced
+        ? {
+            instances: [
+              { id: 'lamp', position: [0, 0, 0], rotation: [0, 0, 0, 1] }
+            ],
+            distant: {
+              shape: { kind: 'box', size: [0.8, 0.8, 0.8] },
+              maxError: 0.1
+            }
+          }
+        : {})
+    } as SpatialDescriptor
+    const object = add(descriptor)
+    engine.execute({ type: 'flush' })
+    const scene = vi.mocked(driver.render).mock.calls[0][0]
+    const mesh = scene.getObjectsByProperty('isMesh', true)[0] as THREE.Mesh
+    const material = mesh.material as THREE.MeshStandardMaterial
+    const geometry = mesh.geometry
+    const release = vi.spyOn(geometry, 'dispose')
+    expect(material.emissive.getHex()).toBe(0xffdba0)
+    expect(material.emissiveIntensity).toBe(2.5)
+    for (const [emissive, emissiveIntensity] of [
+      [0xff8800, 4],
+      [0, 0]
+    ]) {
+      engine.execute({
+        type: 'update-object',
+        object,
+        properties: {
+          [SPATIAL_PROPERTY]: { ...descriptor, emissive, emissiveIntensity }
+        }
+      })
+      engine.execute({ type: 'flush' })
+      expect(mesh.geometry).toBe(geometry)
+      expect(mesh.material).toBe(material)
+      expect(release).not.toHaveBeenCalled()
+      expect(material.emissive.getHex()).toBe(emissive)
+      expect(material.emissiveIntensity).toBe(emissiveIntensity)
+      for (const child of mesh.children) {
+        if (child instanceof THREE.InstancedMesh) {
+          const distantMaterial = child.material as THREE.MeshStandardMaterial
+          expect(distantMaterial.emissive.getHex()).toBe(emissive)
+          expect(distantMaterial.emissiveIntensity).toBe(emissiveIntensity)
+        }
+      }
+    }
+    engine.destroy()
+  }
+)

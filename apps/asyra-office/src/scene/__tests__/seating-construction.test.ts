@@ -16,3 +16,13 @@ it('constructs shared tea geometry once per composition and gives the composer t
   chair.mockRestore()
   table.mockRestore()
 })
+
+it('reuses the constructed tabletop for room decoration and reconstructs only for a new scene', async () => {
+  const { createReferenceScene } = await import('../reference-scene')
+  const table = vi.spyOn(furnishings, 'teaTable')
+  createReferenceScene('room-furnishings')
+  expect(table).toHaveBeenCalledTimes(1)
+  createReferenceScene('room-furnishings')
+  expect(table).toHaveBeenCalledTimes(2)
+  table.mockRestore()
+})

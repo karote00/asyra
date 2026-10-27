@@ -5,7 +5,7 @@ import { createReferenceScene } from '../reference-scene'
 const seatingIds = ['desk', 'meeting-table', 'lounge-coffee-table']
 let scene: ReturnType<typeof createReferenceScene>
 beforeAll(() => {
-  scene = createReferenceScene()
+  scene = createReferenceScene('tables-and-chairs')
 })
 it('admits only the three admitted tables after structural approval', () => {
   const baseline = createReferenceScene('structure')

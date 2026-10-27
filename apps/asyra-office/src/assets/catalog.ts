@@ -1,6 +1,7 @@
 import armchairPanels from './generated/armchair-panels.json'
 import {
   bottleSurface,
+  bottleContents,
   cutTrayGrooves,
   type TrayGrooves,
   type BottleRings
@@ -37,11 +38,22 @@ export type SurfaceKind =
   | 'stone'
   | 'water'
   | 'plain'
+  | 'porcelain-floral'
+  | 'cork'
+  | 'granulated'
+  | 'ground-spice'
+  | 'dried-herbs'
+  | 'peppercorns'
 export interface AssetPart {
   id: string
   mesh: Mesh
   color: number
   roughness: number
+  metalness?: number
+  environmentIntensity?: number
+  emissive?: number
+  emissiveIntensity?: number
+  opacity?: number
   material: SurfaceKind
   instances?: GeometryInstance[]
   distant?: { mesh: Mesh; maxError: number }
@@ -78,12 +90,18 @@ type Component = Partial<UpholsteredPanel> & {
   grooves?: TrayGrooves
   rings?: BottleRings
   profileZR?: number[][]
+  sourcePartId?: string
+  fillRatio?: number
+  wallInsetMetres?: number
   centreXY?: number[]
   segments?: number[][][]
   subtract?: { size: number[]; centre: number[]; radius?: number }[]
 }
 interface Batch {
-  materials: Record<string, { baseColorSRGB: string; roughness: number }>
+  materials: Record<
+    string,
+    { baseColorSRGB: string; roughness: number; alpha?: number }
+  >
   modules: {
     moduleId: string
     components: Component[]
@@ -130,7 +148,7 @@ function carvedBox(
   }
   return result
 }
-function componentMesh(c: Component): Mesh {
+function componentMesh(c: Component, components: Component[]): Mesh {
   const size = c.size ?? c.sizeMetres,
     centre = vec(c.centre ?? c.centreMetres ?? [0, 0, 0]),
     shape = c.primitive ?? c.shape
@@ -199,6 +217,21 @@ function componentMesh(c: Component): Mesh {
       c.radius ?? 0.002
     )
     position = [0, 0, 0]
+  } else if (shape === 'lathe-fill') {
+    const source = components.find((part) => part.partId === c.sourcePartId)
+    if (
+      !source?.profileZR ||
+      c.fillRatio === undefined ||
+      c.wallInsetMetres === undefined
+    )
+      throw new Error(`Missing liquid cavity specification: ${c.partId}`)
+    m = bottleContents(
+      source.profileZR,
+      source.rings,
+      c.fillRatio,
+      c.wallInsetMetres
+    )
+    position = [...(source.centreXY ?? [0, 0]), 0] as Vec
   } else if (shape === 'lathe') {
     m = bottleSurface(c.profileZR ?? [], c.rings)
     position = [...(c.centreXY ?? [0, 0]), 0] as Vec
@@ -270,7 +303,7 @@ export function catalogAsset(id: string): AssetPart[] {
         (c.partId === 'left-arm' || c.partId === 'right-arm')
           ? armchairPanels.panels[c.partId]
           : undefined
-      let mesh = prepared?.mesh ?? componentMesh(c)
+      let mesh = prepared?.mesh ?? componentMesh(c, module.components)
       if (back?.parts.includes(c.partId))
         for (let i = 0; i < mesh.positions.length; i += 3)
           for (let k = 0; k < 3; k++) mesh.positions[i + k] += translation[k]
@@ -298,6 +331,9 @@ export function catalogAsset(id: string): AssetPart[] {
         mesh,
         color: parseInt(mat.baseColorSRGB.slice(1), 16),
         roughness: mat.roughness,
+        ...(mat.alpha !== undefined && mat.alpha < 1
+          ? { opacity: mat.alpha }
+          : {}),
         material: materialKind(c.material),
         ...(prepared ? { distant: prepared.distant } : {})
       }

@@ -4,7 +4,6 @@ import { startReferenceScene, type SceneRuntime } from '../scene/runtime'
 import { ACTORS, PLACES } from '../scene/reference-scene'
 import { DEMO_TASKS, DEMO_LOGS } from '../scene/controller'
 import { Icon } from './Icons'
-import { bindCameraKeyboard } from './camera-keyboard'
 
 type Tab = 'Places' | 'Agents' | 'Logs' | 'Tasks'
 function ViewLabel({ runtime }: { runtime: SceneRuntime }) {
@@ -53,12 +52,6 @@ export function OfficeScene() {
         })
     }
   }, [])
-  useEffect(() => {
-    if (!runtime) return
-    return bindCameraKeyboard(window, (right, forward, fast) =>
-      runtime.move(right, forward, fast)
-    )
-  }, [runtime])
   const act = (fn: () => void) => {
     try {
       fn()
@@ -249,7 +242,7 @@ export function OfficeScene() {
             <span aria-label="Composition stage">
               {INTERIOR_REVIEW_STAGE === 'structure'
                 ? 'Structure review - one floor'
-                : 'Tables and chairs review'}
+                : 'Room furnishings review'}
             </span>
             <span role="status" aria-label="Scene status">
               {runtime ? 'Demo scene ready' : 'Preparing demo scene'}

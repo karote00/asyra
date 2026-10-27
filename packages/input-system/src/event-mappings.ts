@@ -39,6 +39,12 @@ export interface InputEventCombo {
   type: InputType
   keys: KeyboardKey[]
   modifiers?: ModifierKey[]
+  /**
+   * Keyboard-only held observation: keys are alternatives, not an exact chord.
+   * Reports down/up/cancel with live modifiers; callback owns modifier admission.
+   * `modifiers` is a chord-mode filter and is not applied in held mode.
+   */
+  keyboardMode?: 'held'
   detail?: DetailType
   /** Return false to ignore this input before dispatch; policy belongs to the caller. */
   callback?: ((raw: RawInputEvent) => void) | ((raw: RawInputEvent) => boolean)

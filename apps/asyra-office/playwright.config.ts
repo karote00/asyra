@@ -14,7 +14,10 @@ export default defineConfig({
     channel: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? undefined : 'chrome',
     launchOptions: {
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
-      args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+      args:
+        process.env.OFFICE_HARDWARE_REVIEW === '1'
+          ? []
+          : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
     },
     screenshot: 'only-on-failure'
   },

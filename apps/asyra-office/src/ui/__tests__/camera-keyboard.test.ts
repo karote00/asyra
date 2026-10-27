@@ -1,6 +1,10 @@
-import { afterEach, expect, it, vi } from 'vitest'
+import core from '@asyra/core'
+import { afterAll, afterEach, expect, it, vi } from 'vitest'
 import { bindCameraKeyboard } from '../camera-keyboard'
 
+afterAll(async () => {
+  await core.resetRuntime()
+})
 const disposers: (() => void)[] = []
 afterEach(() => {
   disposers.splice(0).forEach((dispose) => dispose())
@@ -21,7 +25,12 @@ function fixture() {
     pending.delete(id)
   })
   const move = vi.fn()
-  const dispose = bindCameraKeyboard(window, move)
+  core.setupInputSystem(document.body)
+  const unregister = bindCameraKeyboard(window, move, core)
+  const dispose = () => {
+    window.dispatchEvent(new Event('blur'))
+    unregister()
+  }
   disposers.push(dispose)
   return {
     move,
@@ -44,9 +53,19 @@ function key(
   options: KeyboardEventInit = {},
   target: EventTarget = window
 ) {
+  if (options.shiftKey)
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        code: 'ShiftLeft',
+        key: 'Shift',
+        bubbles: true,
+        shiftKey: true
+      })
+    )
   target.dispatchEvent(
     new KeyboardEvent(type, {
       key: value,
+      code: value.length === 1 ? `Key${value.toUpperCase()}` : value,
       bubbles: true,
       cancelable: true,
       ...options
@@ -194,4 +213,31 @@ it('settles release in real elapsed time even when rendering stalls', () => {
   const count = f.move.mock.calls.length
   f.frame(800)
   expect(f.move).toHaveBeenCalledTimes(count)
+})
+
+it('registers held alternatives through Core and installs no app keyboard listeners', () => {
+  const register = vi.spyOn(core, 'registerInputKeyCombinations')
+  const listen = vi.spyOn(window, 'addEventListener')
+  const f = fixture()
+  expect(register).toHaveBeenCalledOnce()
+  expect(Object.values(register.mock.calls[0][0]).flat()).toEqual([
+    expect.objectContaining({
+      keyboardMode: 'held',
+      keys: expect.arrayContaining([
+        'W',
+        'A',
+        'S',
+        'D',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight'
+      ])
+    })
+  ])
+  // Core already owns the host attachment; binding must not add another key handler.
+  expect(
+    listen.mock.calls.filter(([type]) => type === 'keydown' || type === 'keyup')
+  ).toHaveLength(0)
+  f.dispose()
 })

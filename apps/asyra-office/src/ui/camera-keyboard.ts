@@ -1,26 +1,30 @@
+import core, { keyMap } from '@asyra/core'
+import { InputType } from '@asyra/utils'
+
+const CAMERA_INPUT_EVENT = 'camera.held-movement'
+
 /** Retain held input and integrate velocity only while the camera is moving. */
 export function bindCameraKeyboard(
   target: Window,
-  move: (right: number, forward: number, fast: boolean) => void
+  move: (right: number, forward: number, fast: boolean) => void,
+  owner: Pick<typeof core, 'registerInputKeyCombinations'>
 ) {
-  const movementKeys = new Set([
-    'w',
-    's',
-    'a',
-    'd',
-    'ArrowUp',
-    'ArrowDown',
-    'ArrowLeft',
-    'ArrowRight'
-  ])
+  const movementKeys = [
+    keyMap.keys.KeyW,
+    keyMap.keys.KeyS,
+    keyMap.keys.KeyA,
+    keyMap.keys.KeyD,
+    keyMap.keys.ArrowUp,
+    keyMap.keys.ArrowDown,
+    keyMap.keys.ArrowLeft,
+    keyMap.keys.ArrowRight
+  ]
   const held = new Set<string>()
   let frame: number | undefined
   let previous = 0,
     rightVelocity = 0,
     forwardVelocity = 0,
     fast = false
-  const inputKey = (event: KeyboardEvent) =>
-    event.key.length === 1 ? event.key.toLowerCase() : event.key
   const isEditing = (element: EventTarget | null) =>
     element instanceof Element &&
     !!element.closest(
@@ -40,11 +44,11 @@ export function bindCameraKeyboard(
     previous = now
     // Aliases represent the same direction; opposite directions cancel.
     const right =
-      Number(held.has('d') || held.has('ArrowRight')) -
-      Number(held.has('a') || held.has('ArrowLeft'))
+      Number(held.has(keyMap.keys.KeyD) || held.has('ArrowRight')) -
+      Number(held.has(keyMap.keys.KeyA) || held.has('ArrowLeft'))
     const forward =
-      Number(held.has('w') || held.has('ArrowUp')) -
-      Number(held.has('s') || held.has('ArrowDown'))
+      Number(held.has(keyMap.keys.KeyW) || held.has('ArrowUp')) -
+      Number(held.has(keyMap.keys.KeyS) || held.has('ArrowDown'))
     const length = Math.hypot(right, forward)
     const speed = (fast ? 3 : 1) / Math.max(1, length)
     const desiredRight = right * speed,
@@ -71,50 +75,37 @@ export function bindCameraKeyboard(
     previous = target.performance.now()
     frame = target.requestAnimationFrame(tick)
   }
-  const down = (event: KeyboardEvent) => {
-    if (
-      event.isComposing ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.altKey ||
-      isEditing(event.target) ||
-      target.document.hidden
-    ) {
-      stop()
-      return
-    }
-    if (event.defaultPrevented) return
-    fast = event.shiftKey
-    const key = inputKey(event)
-    if (!movementKeys.has(key)) return
-    event.preventDefault()
-    event.stopPropagation()
-    held.add(key)
-    start()
-  }
-  const up = (event: KeyboardEvent) => {
-    fast = event.shiftKey
-    // Release even if another handler consumed keyup or focus moved since keydown.
-    held.delete(inputKey(event))
-    if (held.size) start()
-  }
-  const focus = (event: FocusEvent) => {
-    if (isEditing(event.target)) stop()
-  }
-  const visibility = () => {
-    if (target.document.hidden) stop()
-  }
-  target.addEventListener('keydown', down, true)
-  target.addEventListener('keyup', up, true)
-  target.addEventListener('blur', stop)
-  target.addEventListener('focusin', focus)
-  target.document.addEventListener('visibilitychange', visibility)
+  const unregister = owner.registerInputKeyCombinations({
+    [CAMERA_INPUT_EVENT]: [
+      {
+        type: InputType.KEYBOARD,
+        keys: movementKeys,
+        keyboardMode: 'held',
+        callback: (raw) => {
+          if (
+            raw.keyboard?.phase === 'cancel' ||
+            raw.keyboard?.isComposing ||
+            raw.modifiers.ctrl ||
+            raw.modifiers.meta ||
+            raw.modifiers.alt ||
+            isEditing(raw.keyboard?.target ?? null) ||
+            isEditing(target.document.activeElement) ||
+            target.document.hidden
+          ) {
+            stop()
+            return false
+          }
+          held.clear()
+          for (const key of raw.keys)
+            if (movementKeys.includes(key)) held.add(key)
+          fast = raw.modifiers.shift
+          if (held.size || rightVelocity || forwardVelocity) start()
+        }
+      }
+    ]
+  })
   return () => {
+    unregister()
     stop()
-    target.removeEventListener('keydown', down, true)
-    target.removeEventListener('keyup', up, true)
-    target.removeEventListener('blur', stop)
-    target.removeEventListener('focusin', focus)
-    target.document.removeEventListener('visibilitychange', visibility)
   }
 }

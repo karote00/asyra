@@ -129,3 +129,52 @@ triangles/bounds/source digest; `RestrictedGlbPreviewWorker` takes your bundled
 Worker factory and handles bounded request lifetime/cancellation. This is the
 existing `restricted-glb-v0` profile, not full glTF. Apps retain original bytes,
 source binding, canonical acceptance and storage; decoding never edits a scene.
+
+## Self-emissive spatial materials
+
+Mesh descriptors accept optional `emissive` (24-bit sRGB color) and
+`emissiveIntensity` (finite, nonnegative multiplier). Both default to zero,
+preserving non-emissive materials. Preset admission rejects malformed values;
+the official Three adapter applies emission on construction and appearance
+updates, retaining unchanged geometry/material resources and copying the same
+material to distant instances. Emission adds radiance independently of scene
+lights. It does not create a light source that illuminates other surfaces and
+does not enable bloom. App code supplies neutral values through public spatial
+descriptors, never renderer-specific material objects. Restricted GLB import
+continues to reject emissive materials; its import contract is unchanged.
+
+
+## Optional emissive bloom
+
+Set `spatial.bloom: { strength: 0.45, radius: 8 }` when applying the 3D preset
+to give emissive surfaces a soft screen-space halo. The default is disabled.
+`strength` must be finite in [0, 2]; `radius` must be finite in (0, 64] CSS
+pixels, independent of device pixel ratio. Invalid settings are rejected.
+
+The official provider renders an HDR emission-only mask, applies separable
+Gaussian blur and adds the result before screen overlays. Ordinary lit surfaces
+contribute no glow. Opaque geometry occludes the mask and transparent geometry
+attenuates it by opacity. This is an optical halo, not illumination of neighboring
+surfaces. The normal scene lighting and color pipeline are unchanged.
+
+Preset owns the two resize-aware render targets and cached mask materials.
+Masks are refreshed from current source materials and released on source disposal;
+engine destruction releases all bloom resources. Failed passes restore scene
+materials and renderer state. Bloom runs only with an existing scene frame and
+adds no animation loop. Injected drivers must support render targets, clear-state
+queries and rendering; unsupported drivers fail explicitly.
+
+## Optional spatial environment reflections
+
+Mesh descriptors accept `environmentIntensity`, a finite, nonnegative multiplier
+that defaults to zero. Positive values opt the material into a shared studio
+reflection map. The renderer generates this map lazily once per engine lifetime,
+reuses it across meshes and updates, and disposes it at engine teardown. Changing
+the multiplier does not regenerate the map. Setting zero detaches it from that
+material. Invalid values are rejected at admission.
+
+This is a studio reflection source, not a live scene capture. It never sets the
+global scene environment or changes non-opted-in materials. Combine it with the
+existing `metalness` and `roughness` fields to control metal highlights; it does
+not change emission or bloom. The standard and distant material paths retain the
+same reflection settings.

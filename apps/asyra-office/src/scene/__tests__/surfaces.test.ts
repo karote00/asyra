@@ -93,3 +93,68 @@ it('maps the canvas top row to the top of a scene label', async () => {
     spy.mockRestore()
   }
 })
+
+it('paints blue porcelain flowers on a light glaze with a continuous wrap and no baked relief', () => {
+  const surface = createSurfaces()['porcelain-floral']
+  expect(surface).toBeDefined()
+  if (!surface) throw new Error('Missing porcelain decoration')
+  let blue = 0
+  for (let i = 0; i < surface.albedo.length; i += 4) {
+    if (surface.albedo[i + 2] > surface.albedo[i] + 30) blue++
+  }
+  expect(surface.albedo.every((n, i) => i % 4 !== 3 || n === 255)).toBe(true)
+  expect(
+    surface.normals.every((n, i) => n === [128, 128, 255, 255][i % 4])
+  ).toBe(true)
+  expect(blue / (surface.width * surface.height)).toBeGreaterThan(0.08)
+  expect(blue / (surface.width * surface.height)).toBeLessThan(0.4)
+  for (let y = 0; y < surface.height; y++) {
+    const first = y * surface.width * 4,
+      last = first + (surface.width - 1) * 4
+    expect(surface.albedo.slice(first, first + 4)).toEqual(
+      surface.albedo.slice(last, last + 4)
+    )
+  }
+})
+
+it('antialiases the porcelain ink edges instead of retaining stair-step binary pixels', () => {
+  const surface = createSurfaces()['porcelain-floral']
+  if (!surface) throw new Error('Missing porcelain surface')
+  const pixels = surface.albedo
+  expect(
+    pixels.some(
+      (r, i) => i % 4 === 0 && r > 69 && r < 235 && pixels[i + 2] > r + 15
+    )
+  ).toBe(true)
+})
+
+it('provides distinct replaceable ingredient grains with neutral lighting and continuous seams', () => {
+  const surfaces = createSurfaces()
+  const firstPixels: number[][] = []
+  for (const kind of [
+    'granulated',
+    'ground-spice',
+    'dried-herbs',
+    'peppercorns'
+  ] as const) {
+    const surface = surfaces[kind]
+    if (!surface) throw new Error('Missing ingredient surface: ' + kind)
+    expect(
+      new Set(surface.albedo.filter((_, i) => i % 4 === 0)).size
+    ).toBeGreaterThan(8)
+    expect(
+      surface.normals.every((v, i) => v === [128, 128, 255, 255][i % 4])
+    ).toBe(true)
+    for (let y = 0; y < surface.height; y++) {
+      const start = y * surface.width * 4
+      expect(surface.albedo.slice(start, start + 4)).toEqual(
+        surface.albedo.slice(
+          start + (surface.width - 1) * 4,
+          start + surface.width * 4
+        )
+      )
+    }
+    firstPixels.push(surface.albedo.slice(0, 256))
+  }
+  expect(new Set(firstPixels.map((v) => JSON.stringify(v))).size).toBe(4)
+})

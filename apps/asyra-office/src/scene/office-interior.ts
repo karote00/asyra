@@ -41,7 +41,15 @@ export interface OfficeComposer {
     rotation?: number,
     scale?: Vec
   ) => void
-  plant: (id: string, position: Vec, scale?: number) => void
+  plant: (
+    id: string,
+    position: Vec,
+    scale?: number,
+    appearance?: {
+      color?: number
+      form?: 'stemmed' | 'rosette' | 'shrub' | 'lanceolate'
+    }
+  ) => void
   label: (
     text: string,
     width: number,
@@ -55,8 +63,9 @@ export interface OfficeComposer {
 }
 
 /** Compose one source-derived single-storey office. No per-frame layout work. */
-export type InteriorStage = 'structure' | 'tables-and-chairs'
-export const INTERIOR_REVIEW_STAGE: InteriorStage = 'tables-and-chairs'
+export type InteriorStage =
+  'structure' | 'tables-and-chairs' | 'room-furnishings'
+export const INTERIOR_REVIEW_STAGE: InteriorStage = 'room-furnishings'
 
 export function composeOfficeInterior(composer: OfficeComposer) {
   const { add, block, asset } = composer

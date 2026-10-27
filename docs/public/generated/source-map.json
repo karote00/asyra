@@ -52,7 +52,7 @@
         },
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004"
+          "sha256": "954c2a688a62d2a4462458673139c79b00152c35d23a526feb8861b70d1c9607"
         }
       ]
     },
@@ -188,7 +188,7 @@
         },
         {
           "path": "docs/ai/framework/packages/input-system.md",
-          "sha256": "f66cd80062c5ff2ed6ad0cc3f3e333e6ce5b4f20f00e146086c0b442314e73aa"
+          "sha256": "51128162da8c4a4d78fb7c986bedb8dbbd676dd7bbe19d15b910b549cc109c16"
         },
         {
           "path": "docs/ai/framework/plans/headless-core-and-core-kernel-future-plan.md",
@@ -430,7 +430,7 @@
         },
         {
           "path": "packages/preset/src/index.ts",
-          "sha256": "ccf8daacd8a0f3814f3dac32954d363ac10c6b84c47c8521eba0e0f9d133aa81"
+          "sha256": "a70920d2645142c904c71fa3b1f5fafb761ad5cbdc36db836ad86185280661c7"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",
@@ -476,7 +476,7 @@
         },
         {
           "path": "packages/preset/src/index.ts",
-          "sha256": "ccf8daacd8a0f3814f3dac32954d363ac10c6b84c47c8521eba0e0f9d133aa81"
+          "sha256": "a70920d2645142c904c71fa3b1f5fafb761ad5cbdc36db836ad86185280661c7"
         },
         {
           "path": "packages/preset/src/props/components/text-component.ts",
@@ -537,6 +537,24 @@
         {
           "path": "packages/utils/src/propsManager/fills.ts",
           "sha256": "2229f2eb1c3060e538886d0e8d016ca39e0c65c9759bafbe113235d721e1a500"
+        }
+      ]
+    },
+    {
+      "id": "updates/held-input-and-spatial-materials-r1",
+      "pageSha256": "aa1726704044a38ae28166710d5740524e1fa040cd0b70124e82c23f541d5f10",
+      "sources": [
+        {
+          "path": "docs/ai/framework/packages/input-system.md",
+          "sha256": "51128162da8c4a4d78fb7c986bedb8dbbd676dd7bbe19d15b910b549cc109c16"
+        },
+        {
+          "path": "docs/ai/framework/packages/preset.md",
+          "sha256": "954c2a688a62d2a4462458673139c79b00152c35d23a526feb8861b70d1c9607"
+        },
+        {
+          "path": "docs/ai/framework/specs/preset-3d-foundation.md",
+          "sha256": "af5e5a46e28934d6566b4d823ffd93fd5954c74c86b662ac3ebc753369692a7a"
         }
       ]
     },
@@ -626,11 +644,11 @@
     },
     {
       "id": "reference/packages/input-system",
-      "pageSha256": "d4990de2edfd7ab0a66fa92c5c80581df004b98b4db2f15afe1e45d689b6ec08",
+      "pageSha256": "b9e7ff8e3337a63aaba2da4164cb56d8d82503f7223ce22c93736569a878aaa5",
       "sources": [
         {
           "path": "docs/ai/framework/packages/input-system.md",
-          "sha256": "f66cd80062c5ff2ed6ad0cc3f3e333e6ce5b4f20f00e146086c0b442314e73aa"
+          "sha256": "51128162da8c4a4d78fb7c986bedb8dbbd676dd7bbe19d15b910b549cc109c16"
         },
         {
           "path": "packages/input-system/package.json",
@@ -654,11 +672,11 @@
     },
     {
       "id": "reference/packages/preset",
-      "pageSha256": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
+      "pageSha256": "b4da8598a9204f170bd22cdb34d4573ed01a09381e841931ea609732c1a5d2e7",
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",
-          "sha256": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004"
+          "sha256": "954c2a688a62d2a4462458673139c79b00152c35d23a526feb8861b70d1c9607"
         },
         {
           "path": "packages/preset/package.json",

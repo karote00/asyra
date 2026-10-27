@@ -81,3 +81,24 @@ describe('Neutral spatial presentation admission', () => {
     expect(readSpatialPresentationOptions({})).toEqual({})
   })
 })
+
+it('admits an isolated optional soft bloom policy without changing defaults', () => {
+  const bloom = { strength: 0.65, radius: 8 }
+  const accepted = readSpatialPresentationOptions({ bloom })
+  expect(accepted).toMatchObject({ bloom: { strength: 0.65, radius: 8 } })
+  bloom.strength = 5
+  expect(accepted).toMatchObject({ bloom: { strength: 0.65 } })
+  expect(Object.isFrozen(accepted.bloom)).toBe(true)
+  expect(readSpatialPresentationOptions({})).toEqual({})
+})
+it.each([
+  null,
+  [],
+  { strength: -1, radius: 8 },
+  { strength: NaN, radius: 8 },
+  { strength: 0.5, radius: 0 },
+  { strength: 0.5, radius: Infinity },
+  { strength: 0.5, radius: 8, unknown: true }
+])('rejects invalid bloom policy %j', (bloom) => {
+  expect(() => readSpatialPresentationOptions({ bloom })).toThrow(/spatial/)
+})

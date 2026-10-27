@@ -261,3 +261,47 @@ it('admits complete mesh poses and independent shadow policy while rejecting inv
     readSpatialDescriptor({ ...input(), shear: [1, 0, 0] })
   ).toThrow()
 })
+
+it('admits explicit emission and defaults ordinary material emission to zero', () => {
+  const luminous = readSpatialDescriptor({
+    ...input(),
+    emissive: 0xffdba0,
+    emissiveIntensity: 2.5
+  })
+  expect(luminous).toMatchObject({ emissive: 0xffdba0, emissiveIntensity: 2.5 })
+  expect(readSpatialDescriptor(input())).toMatchObject({
+    emissive: 0,
+    emissiveIntensity: 0
+  })
+})
+it.each([
+  { emissive: -1 },
+  { emissive: 0x1000000 },
+  { emissive: 0.5 },
+  { emissive: 'white' },
+  { emissiveIntensity: -1 },
+  { emissiveIntensity: Infinity },
+  { emissiveIntensity: NaN },
+  { emissiveIntensity: '2' }
+])('rejects malformed emissive material %j', (patch) => {
+  expect(() => readSpatialDescriptor({ ...input(), ...patch })).toThrow(
+    /material/
+  )
+})
+
+it('admits opt-in environment reflection while ordinary materials remain unaffected', () => {
+  expect(
+    readSpatialDescriptor({ ...input(), environmentIntensity: 0.8 })
+  ).toMatchObject({ environmentIntensity: 0.8 })
+  expect(readSpatialDescriptor(input())).toMatchObject({
+    environmentIntensity: 0
+  })
+})
+it.each([-1, Infinity, NaN, '1'])(
+  'rejects invalid environment intensity %s',
+  (environmentIntensity) => {
+    expect(() =>
+      readSpatialDescriptor({ ...input(), environmentIntensity })
+    ).toThrow(/material/)
+  }
+)

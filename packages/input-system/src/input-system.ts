@@ -56,6 +56,7 @@ const getMouseButtonFromButtonsMask = (buttons: number): MouseButton => {
 }
 
 class InputSystem {
+  private heldKeyboardKeys = new Set<string>()
   private browserHost: Window | null
   private pointerTarget: Window | HTMLElement | null
   private combinations: Combinations = {}
@@ -127,6 +128,10 @@ class InputSystem {
     this.keyboardBindings().forEach((binding) =>
       host.addEventListener(...binding)
     )
+    host.document.addEventListener(
+      'visibilitychange',
+      this.browserListener(this.hiddenKeyboard)
+    )
   }
 
   private removeKeyboardListeners(
@@ -136,6 +141,13 @@ class InputSystem {
     this.keyboardBindings().forEach((binding) =>
       attempt(() => host.removeEventListener(...binding))
     )
+    attempt(() =>
+      host.document.removeEventListener(
+        'visibilitychange',
+        this.browserListener(this.hiddenKeyboard)
+      )
+    )
+    attempt(this.cancelHeldKeyboard)
   }
 
   private addPointerListeners(target: Window | HTMLElement): void {
@@ -157,7 +169,10 @@ class InputSystem {
     return [
       ['keydown', this.browserListener(this.handleKeyDown as EventListener)],
       ['keyup', this.browserListener(this.releaseKey as EventListener), true],
-      ['keyup', this.browserListener(this.handleKeyUp as EventListener)]
+      ['keyup', this.browserListener(this.handleKeyUp as EventListener)],
+      ['blur', this.browserListener(this.cancelHeldKeyboard)],
+      ['focusin', this.browserListener(this.cancelHeldKeyboard)],
+      ['compositionstart', this.browserListener(this.cancelHeldKeyboard)]
     ]
   }
 
@@ -269,8 +284,8 @@ class InputSystem {
   private _isInputActive(event: KeyboardEvent) {
     return (
       InputFieldsList.includes(
-        (event.target as HTMLElement).tagName.toLowerCase() as InputField
-      ) || (event.target as HTMLElement).isContentEditable
+        (event.target as HTMLElement)?.tagName?.toLowerCase() as InputField
+      ) || (event.target as HTMLElement)?.isContentEditable
     )
   }
 
@@ -282,11 +297,21 @@ class InputSystem {
   }
 
   private handleKeyDown = (event: KeyboardEvent) => {
-    if (!this._isInputActive(event) || this._hasTriggerBrowserShortcut(event)) {
+    const key = this.keyMap.mapKey(event.code)
+    const interested = this.hasHeldInterest(key)
+    if (event.isComposing) this.cancelHeldKeyboard()
+    else {
+      if (key && !this.keyMap.isModifierKeys(key))
+        this.heldKeyboardKeys.add(key)
+      if (this.dispatchHeldKeyboard(event, key, 'down')) event.preventDefault()
+    }
+    if (
+      !interested &&
+      (!this._isInputActive(event) || this._hasTriggerBrowserShortcut(event))
+    ) {
       event.preventDefault()
     }
 
-    const key = this.keyMap.mapKey(event.code)
     if (key) {
       this.activeKeys.add(key)
       if (!this.keyMap.isModifierKeys(key)) {
@@ -298,26 +323,111 @@ class InputSystem {
   }
 
   // Release bookkeeping must survive editors stopping event propagation.
-  // Capture never dispatches actions or interferes with native text editing.
-  private releaseKey = (event: KeyboardEvent) => {
+  // Capture publishes opted-in held releases only; ordinary chord dispatch stays in bubble phase.
+  private releaseKey = (event: KeyboardEvent, notifyHeld = true) => {
     const key = this.keyMap.mapKey(event.code)
     if (key) {
       this.activeKeys.delete(key)
       this.clearTimer(key)
+      if (notifyHeld) {
+        this.heldKeyboardKeys.delete(key)
+        this.dispatchHeldKeyboard(event, key, 'up')
+      }
     }
   }
 
   private handleKeyUp = (event: KeyboardEvent) => {
-    if (!this._isInputActive(event) || this._hasTriggerBrowserShortcut(event)) {
+    if (
+      !this.hasHeldInterest(this.keyMap.mapKey(event.code)) &&
+      (!this._isInputActive(event) || this._hasTriggerBrowserShortcut(event))
+    ) {
       event.preventDefault()
     }
 
     const key = this.keyMap.mapKey(event.code)
     if (key) {
-      this.releaseKey(event)
+      this.releaseKey(event, false)
 
       this.checkCombinations(InputType.KEYBOARD)
     }
+  }
+
+  private hasHeldInterest(key: string | undefined): boolean {
+    return this.registry
+      .getEventNames()
+      .some((name) =>
+        this.registry
+          .getCombinations(name)
+          ?.some(
+            (combo) =>
+              combo.type === InputType.KEYBOARD &&
+              combo.keyboardMode === 'held' &&
+              combo.keys.some(
+                (candidate) =>
+                  candidate === key || this.heldKeyboardKeys.has(candidate)
+              )
+          )
+      )
+  }
+
+  private dispatchHeldKeyboard(
+    event: KeyboardEvent | null,
+    key: string | undefined,
+    phase: 'down' | 'up' | 'cancel'
+  ): boolean {
+    let accepted = false
+    const raw: RawInputEvent = {
+      type: InputType.KEYBOARD,
+      keys: [...this.heldKeyboardKeys],
+      modifiers: {
+        shift: event?.shiftKey ?? false,
+        ctrl: event?.ctrlKey ?? false,
+        alt: event?.altKey ?? false,
+        meta: event?.metaKey ?? false
+      },
+      pointer: DefaultPointerEventData,
+      keyboard: {
+        phase,
+        changedKey: key ?? null,
+        target: event?.target ?? null,
+        repeat: event?.repeat ?? false,
+        isComposing: event?.isComposing ?? false
+      }
+    }
+    for (const name of this.registry.getEventNames()) {
+      for (const combo of this.registry.getCombinations(name) ?? []) {
+        if (combo.type !== InputType.KEYBOARD || combo.keyboardMode !== 'held')
+          continue
+        if (
+          phase !== 'cancel' &&
+          !combo.keys.some(
+            (candidate) =>
+              candidate === key || this.heldKeyboardKeys.has(candidate)
+          )
+        )
+          continue
+        const snapshot = {
+          ...raw,
+          keys: [...raw.keys],
+          modifiers: { ...raw.modifiers },
+          detail: combo.detail
+        }
+        if (combo.callback?.(snapshot) === false) continue
+        accepted = true
+        this.triggerAction(name, snapshot)
+      }
+    }
+    return accepted
+  }
+
+  private cancelHeldKeyboard = () => {
+    if (!this.heldKeyboardKeys.size) return
+    this.heldKeyboardKeys.clear()
+    this.dispatchHeldKeyboard(null, undefined, 'cancel')
+  }
+
+  private hiddenKeyboard = () => {
+    if (this.browserHost?.document.hidden) this.cancelHeldKeyboard()
   }
 
   private handleMouseDown = (event: MouseEvent) => {
@@ -459,6 +569,7 @@ class InputSystem {
       if (!combos) continue
 
       for (const combo of combos) {
+        if (combo.keyboardMode === 'held') continue
         if (this.isExactMatch(type, currentKeys, combo, activeModifiers)) {
           const raw: RawInputEvent = {
             type,
@@ -617,6 +728,7 @@ class InputSystem {
     this.timers.forEach((timer) => clearTimeout(timer))
     this.timers.clear()
     this.activeKeys.clear()
+    this.heldKeyboardKeys.clear()
     this.combinations = {}
     this._startPos = null
     this.pointerInputBlocked = false

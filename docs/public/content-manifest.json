@@ -409,6 +409,24 @@
       "packages": ["@asyra/core", "@asyra/preset", "@asyra/utils"]
     },
     {
+      "id": "updates/held-input-and-spatial-materials-r1",
+      "path": "updates/held-input-and-spatial-materials-r1.md",
+      "section": "Extend",
+      "title": "Adopt held keyboard input and spatial material effects",
+      "description": "Integrate continuous keyboard controls and opt-in emissive, bloom and reflection effects while preserving app-owned behavior.",
+      "sources": [
+        "docs/ai/framework/packages/input-system.md",
+        "docs/ai/framework/packages/preset.md",
+        "docs/ai/framework/specs/preset-3d-foundation.md"
+      ],
+      "packages": [
+        "@asyra/input-system",
+        "@asyra/utils",
+        "@asyra/render-engine",
+        "@asyra/preset"
+      ]
+    },
+    {
       "id": "reference/packages/ai-agent-runtime",
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",

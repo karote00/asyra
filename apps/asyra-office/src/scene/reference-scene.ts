@@ -1,3 +1,5 @@
+import { batchStaticColors } from './color-batching'
+import { composeRoomFurnishings } from './room-furnishings'
 import { composeOfficeSeating } from './office-seating'
 import { OFFICE_FIT, OFFICE_FLOORS, referencePoint } from './office-layout'
 import type { ArtworkRegion } from './artwork'
@@ -209,12 +211,25 @@ export function createReferenceScene(
     rotation = 0,
     scale: Vec = [1, 1, 1]
   ) => add(id, key, catalogAsset(key), pos, rotation, scale)
-  const plant = (id: string, pos: Vec, scale = 0.7) => {
+  const plant = (
+    id: string,
+    pos: Vec,
+    scale = 0.7,
+    appearance: {
+      color?: number
+      form?: 'stemmed' | 'rosette' | 'shrub' | 'lanceolate'
+    } = {}
+  ) => {
     // Stable layout identity, not traversal order or frame time, selects growth.
     let seed = 2166136261
     for (const character of id)
       seed = Math.imul(seed ^ character.charCodeAt(0), 16777619) >>> 0
-    add(id, 'planter', planter(scale, undefined, seed), pos)
+    add(
+      id,
+      'planter',
+      planter(scale, appearance.color, seed, appearance.form),
+      pos
+    )
   }
   const label = (
     text: string,
@@ -304,7 +319,15 @@ export function createReferenceScene(
   const interiorStart = assemblies.length
   const interiorLabelStart = labels.length
   composeOfficeInterior({ add, block, asset, plant, label, labels })
-  if (stage === 'tables-and-chairs') composeOfficeSeating({ add })
+  const tableTops =
+    stage !== 'structure'
+      ? composeOfficeSeating({ add })
+      : new Map<string, number>()
+  if (stage === 'room-furnishings')
+    composeRoomFurnishings(
+      { add, block, asset, plant, label, labels },
+      tableTops
+    )
   const interiorLabels = new Set(labels.slice(interiorLabelStart))
   const interiorAssemblyIds = new Set(
     assemblies
@@ -598,11 +621,14 @@ export function buildSpatialMeshes(
         scale: [placement.scale[0], placement.scale[2], placement.scale[1]],
         color: p.color,
         roughness: p.roughness,
-        metalness: 0,
-        opacity: 1,
+        emissive: p.emissive ?? 0,
+        emissiveIntensity: p.emissiveIntensity ?? 0,
+        metalness: p.metalness ?? 0,
+        environmentIntensity: p.environmentIntensity ?? 0,
+        opacity: p.opacity ?? 1,
         wireframe: false,
         selectable: false,
-        castShadow: true,
+        castShadow: (p.opacity ?? 1) === 1,
         receiveShadow: true,
         ...(p.distant
           ? {
@@ -618,7 +644,12 @@ export function buildSpatialMeshes(
       instanced.push({ id: `instances-${index}`, descriptor, visible: true })
       continue
     }
-    const key = `${p.material}-${p.color}-${p.roughness}`
+    // Transparent objects need independent sorting; opaque parts retain material batching.
+    const opaqueKey = `${p.material}-${p.color}-${p.roughness}-${p.metalness ?? (p.material === 'metal' ? 0.35 : 0)}-${p.emissive ?? 0}-${p.emissiveIntensity ?? 0}-${p.environmentIntensity ?? 0}`
+    const key =
+      (p.opacity ?? 1) < 1
+        ? `${opaqueKey}-alpha-${p.opacity}-${index}`
+        : opaqueKey
     let group = groups.get(key)
     if (!group) {
       group = { mesh: emptyMesh(), part: p, maxError: 0 }
@@ -632,7 +663,7 @@ export function buildSpatialMeshes(
     group.maxError = Math.max(group.maxError, p.distant?.maxError ?? 0)
     append(group.mesh, p.mesh)
   }
-  return [
+  return batchStaticColors([
     ...instanced,
     ...[...groups.entries()].map(
       ([id, { mesh, part: p, distant, maxError }]) => {
@@ -643,11 +674,14 @@ export function buildSpatialMeshes(
           rotation: [0, 0, 0, 1],
           color: p.color,
           roughness: p.roughness,
-          metalness: p.material === 'metal' ? 0.35 : 0,
-          opacity: 1,
+          emissive: p.emissive ?? 0,
+          emissiveIntensity: p.emissiveIntensity ?? 0,
+          metalness: p.metalness ?? (p.material === 'metal' ? 0.35 : 0),
+          environmentIntensity: p.environmentIntensity ?? 0,
+          opacity: p.opacity ?? 1,
           wireframe: false,
           selectable: false,
-          castShadow: p.material !== 'water',
+          castShadow: p.material !== 'water' && (p.opacity ?? 1) === 1,
           receiveShadow: true,
           ...(distant
             ? {
@@ -671,5 +705,5 @@ export function buildSpatialMeshes(
         return { id, descriptor, visible: true }
       }
     )
-  ]
+  ])
 }

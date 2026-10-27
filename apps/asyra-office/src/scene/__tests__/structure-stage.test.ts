@@ -9,12 +9,12 @@ import {
 import source from '../reference/interior-landmarks.json'
 
 describe('single-storey structural review', () => {
-  it('defaults to the admitted seating stage without resurrecting rejected furnishings', () => {
+  it('defaults to regular furnishings without resurrecting rejected curved seating', () => {
     const scene = createReferenceScene()
     const ids = new Set(scene.assemblies.map((a) => a.id))
     expect(ids.has('office-slab')).toBe(true)
     expect(ids.has('desk')).toBe(true)
-    for (const id of ['lounge-sofa', 'fridge', 'actor-mina'])
+    for (const id of ['lounge-sofa', 'desk-chair', 'actor-mina'])
       expect(ids.has(id), id).toBe(false)
   })
   it('keeps the fitted overview orbit pivot on the shared office floor', () => {

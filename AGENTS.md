@@ -50,6 +50,19 @@ These rules apply to every task without requiring additional document reads:
   only when the owner is explicitly a compatibility/migration path or the task
   explicitly requests a workaround. See
   `docs/ai/framework/rules/no-unrequested-compatibility.md`.
+- Before any development in this repository, first determine whether Asyra
+  already provides the required capability. Inspect current Asyra documentation,
+  public Core APIs, Preset facilities, shared packages/utils/registries, and
+  relevant existing usages within the task's scope. Reuse the existing semantic
+  owner and supported integration path instead of creating a parallel app-local
+  implementation or bypassing framework mechanisms. Before implementation,
+  briefly identify the capability found and its owner, or the concrete gap in
+  the existing contract. When a gap exists, place new behavior at the appropriate
+  owner; do not assume every gap belongs in the app. This applies to all apps,
+  framework and tool development, including shortcuts and input handling, not
+  only to explicitly requested Asyra integration work. Current repository docs
+  and source take precedence over outdated skill guidance. Discovery does not
+  authorize changes outside the bounded task scope.
 - Before implementing a capability check or shared behavior, identify its semantic
   owner and inspect existing public APIs, utils, and registries. Reuse the
   authoritative capability contract rather than duplicating concrete type lists.

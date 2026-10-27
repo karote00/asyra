@@ -84,3 +84,22 @@ it('reviews the actual catalog door rather than silently constructing a differen
   )
   controller.dispose()
 })
+
+it('uses the production porcelain surface in asset review and retains it across camera changes', () => {
+  const submit = vi.fn(),
+    submitCamera = vi.fn()
+  const control = createAssetReviewController(
+    { submit, submitCamera },
+    'porcelain-floor-jar',
+    { width: 1200, height: 1000 }
+  )
+  const meshes = submit.mock.calls[0][0].meshes
+  expect(
+    meshes.some(
+      (m: { descriptor: { surface?: unknown } }) => m.descriptor.surface
+    )
+  ).toBe(true)
+  control.setView('Top')
+  expect(submit).toHaveBeenCalledOnce()
+  control.dispose()
+})

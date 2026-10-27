@@ -7,6 +7,16 @@ implemented using existing shared Preset capabilities. No complete Office runtim
 provider connector or user-accepted rebuild baseline is claimed. The source reset
 preceded this slice; deleted behaviour is not restored.
 
+## Persistent visual acceptance
+
+Follow the product plan's source authority and `apps/asyra-office/AGENTS.md` for
+every room and asset. References govern visible results; later owner corrections
+override specific details. Numeric documents must be updated when their output
+conflicts with the approved reference. Neither regular code construction nor a
+performance budget permits simplifying or replacing visible details. A clean
+build and passing geometry tests cannot close a visual mismatch. Inspect the
+source angle and enlarged item crops and explicitly retain unresolved differences.
+
 ## Foundation
 
 Use the maintained [custom composition guide](../../../public/start/custom-composition.md)
@@ -725,9 +735,12 @@ Camera movement reuses Preset `moveSpatialCamera`; the app combines its up/forwa
 basis contributions so world height and viewing direction remain fixed. The input
 adapter updates only camera and target from elapsed frame time; native key repeat
 does not create additional movement. There is no idle animation loop. The app
-owns matching movement keys in capture phase
-before canvas input consumes them, leaves text/IME/browser shortcuts alone, and
-removes all input listeners and cancels its active animation frame on disposal.
+registers movement keys through Core's `registerInputKeyCombinations` with
+`keyboardMode: 'held'`. InputSystem owns native listeners and normalized held
+snapshots, including capture-phase releases and cancellation. Scene lifetime
+owns registration and unregisters before controller/Core disposal. The app owns
+editable-target, IME and modifier admission plus velocity integration; it installs
+no native keyboard listeners and cancels its active animation frame on disposal.
 Formal tests cover the focused-canvas regression,
 relative direction after rotation and zero asset reconstruction during movement.
 
@@ -1363,3 +1376,171 @@ the affected coordinates, while preserving every other accepted coordinate.
 The current JSON explicitly marks this new depth revision as awaiting visual review.
 The offline work seating frame follows the same translation, so rerunning its
 solver cannot silently restore the rejected shallow-room placement.
+
+### Procedural room furnishings
+
+The default scene stage is `room-furnishings`. It adds regular indoor assets in
+work, discussion, pantry, lounge order. `structure` and `tables-and-chairs` remain
+explicit inspection stages. The approved shell, floor, room-depth solution,
+entrance, exterior and three table transforms are unchanged.
+
+The original 1280 x 800 `approved-office-reference.jpg` governs the selection and
+relative arrangement. Room source regions are work X=285..626/Y=185..440,
+discussion X=438..763/Y=70..296, pantry X=695..1004/Y=140..406, and lounge
+X=588..1007/Y=330..580. These are inspection regions, not image backdrops or
+unique metric reconstructions. Scene placements fit the accepted room boundaries;
+asset dimensions remain governed by their numeric specifications.
+
+| Room       | Regular additions                                                                                                                                | Source and support constraints                                                                                                                                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Work       | Open laptop, mouse, cup, oval rug, orange low stool, three wall shelves, books, framed print, small side table and plants                        | Laptop lid/desk-edge ratio 41/89; uniform laptop scale. Actual desk top supports all desktop items. Shelves attach to the west interior face; their 35 mm thickness scales uniformly by 1.22. Rug is 1.55 x 1.08 x 0.012 m. Stool uses the approved 0.36 x 0.36 x 0.30 m asset at uniform 1.15 scale. |
+| Discussion | Left wood wall boards, framed print, clock, small rear note, rear console, low side bookcase, cups, book and plants                              | Clock wall stays cream. Clock scale 1.35. Console top is 0.8375 m above the common floor. Table decorations consume the already constructed table's top plane.                                                                                                                                        |
+| Pantry     | Left-only alternating wallpaper, right print, fridge, dispenser, coffee counter, sink cabinet, coffee machine, shelf, canisters, mugs and plants | Wallpaper ends at X=1.90; the right print is on plain wall. Fridge/dispenser rotate 90 degrees to face +X. Their scales are 1.35 and 0.95. Counter height is 0.80 m above floor. Sink accessories rest on the solid right strip outside the basin, not in its opening.                                |
+| Lounge     | Oval rug, narrow two-tier side table, framed side print, six clipped photographs, wall lettering, lamp, table book/cup and plants                | Rug is 2.05 x 1.70 x 0.012 m. Side print remains below the low return's 1.131485 m top; the lamp head stays below the adjacent 1.57716 m wall top. Coffee-table and floor supports derive from the accepted table and shared floor.                                                                   |
+
+All room floor origins remain Z=0.38 m. Composition computes each admitted table
+once and passes its actual top plane to the furnishing composers; it does not
+rebuild a table to place a cup. The lifetime is one scene composition, not camera
+updates. Permanent tests verify invocation counts across two independent scenes,
+mesh contacts, source-relative proportions, appliance orientation, wall clearance,
+unchanged baseline meshes, and rejected-asset absence.
+
+The fridge's tall upper/short lower door split corrects the contradictory pantry
+numeric specification: lower Z=0.060..0.488, upper Z=0.500..1.140 m; 12 mm gap.
+Body bounds, feet and overall dimensions remain unchanged. The room uses a
+replaceable grey cabinet/door appearance; catalog defaults remain available.
+The low stool has separate cushion/leg material regions, explicit underside leg
+openings, closed exterior topology and a bounded distant representation. The
+existing catalog wall-sconce geometry is shared by legacy and current composers.
+
+Small lounge photo surfaces use only printed-art quadrilaterals from the original
+reference, through the existing artwork rectification path. They do not replace
+walls, furniture, or the scene with an image. Their detail is limited by the
+original low-resolution printed images.
+
+Rejected work/discussion chairs, lounge sofa/armchair, indoor people and animals
+remain absent pending Blender modeling and review. Do not add primitive stand-ins.
+These omissions also mean this stage is not a claim of complete reference parity.
+Lighting banding, filters, exterior refinement and live agent integration are
+outside this furnishing slice. Visual acceptance requires inspection of the
+actual app's overview, room views and enlarged details in addition to tests.
+
+### Pantry source correction
+
+The pantry furnishing owner compares the original crop left to right. It uses the
+revised dispenser height split, refrigerator-top shrub/jar, six individually sized
+and colored shelf vessels, preparation plant/mug/dish tray, wood sink top, dark
+left door, utensil mug, soap pump and white floor-band jar. The unsupported box
+coffee machine is absent. Numeric composition defaults and source uncertainty
+are recorded in `assets/asyra-office/models/pantry/GEOMETRY-SUPPLEMENT.md`.
+
+`pantry-smallware` exposes independent body/lid color without modifying geometry.
+`pantry-accessories` owns regular closed tray, utensil and pump parts with a Z=0
+support origin. The small-plants `shrub` recipe reuses the closed blade generator
+with a compact crown and bounded triangle count; existing default plant forms
+stay unchanged. All work occurs during scene construction, never camera frames.
+The accepted structure, other rooms and exterior are outside this correction.
+
+### Translucent catalog assets
+
+Catalog material alpha is preserved as optional AssetPart opacity; omitted alpha
+means the existing opaque contract. Composition passes it to the public spatial
+mesh descriptor for both ordinary and instanced meshes. Opaque material batching
+is preserved; each translucent object has its own sortable draw item. Translucent
+parts do not cast opaque shadows. The existing preset renderer owns transparency
+and depth-write behavior. The inverted dispenser jug is the first catalog user,
+with four reinforcing ribs, a separate opaque cap and no sticker. This is alpha
+translucency; physical transmission/refraction is not claimed.
+
+### Pantry source vessels
+
+`assets/asyra-office/models/pantry-smallware/pantry-smallware-model-spec.json`
+keeps the approved plain canister separate from the pantry's named
+`sourceVariants`. `src/assets/pantry-vessels.ts` constructs their glass shell, contents, cap and collar
+regions once and exposes named colour overrides. Shelf regions retain full detail;
+only other verified recipes expose distant meshes.
+`src/scene/pantry-furnishings.ts` places those same production parts on existing
+support planes; it does not approximate every vessel by scaling one cylinder.
+The asset preview uses the same factory and owns no alternate geometry.
+
+Pantry detail interpretation (updated 2026-10-28): four clear containers follow
+the original two plants. The first holds ivory contents with yellow paper; the
+second holds ochre contents with green paper. The third has a gently inset
+shoulder, wide mouth and inserted tapered cork, following the newer owner photo
+`reference-cork-jar.png`; the glass lip surrounds the inserted portion. The fourth
+has a long narrow chili-style bottle neck. Its complete height is 150.5 mm,
+70% of the third jar, with all regions uniformly scaled and its shelf anchor
+retained. The fifth
+object is a blue/brown succulent pot with a dark flower bud, not a container.
+This latest owner interpretation supersedes previous opaque-jar, no-label,
+green-herb-content and fifth-peppercorn-jar assumptions. Exact ingredients remain
+unconfirmed. Original left-side flowering and leafy plants are unchanged.
+Porcelain body decoration uses the same replaceable production surface in the
+office and asset preview, with height-based UVs; neutral preview removes the
+surface. Pantry lanceolate foliage is a separate form from lounge rosettes;
+shrubs use nine unequal sprigs bearing small, individually pitched leaves.
+The rejected ellipsoid-covering foliage and opaque-crown acceptance oracle
+have been replaced by branch connectivity and individual-blade constraints. The sink
+and its two clearance cuts, drain and faucet move 60 mm left together. Local
+placement remains supported and within the approved pantry. Shadow acne is
+corrected by the Preset shadow provider, not scene geometry or a filter.
+
+### Pantry contact with the west wall
+
+The shelf and preparation worktop start at the accepted west-wall inside face
+(X=0.1776932207). The shelf ends at X=2.0 and redistributes its supported
+contents across that span. The preparation worktop ends at X=1.77, retaining
+a 7.5 mm joint with the independent sink cabinet. Both worktops have depth 0.625 m and aligned front/back edges. The whole
+refrigerator moves forward 0.0739004823 m (including attachments and supported
+objects) to retain 20 mm rear clearance. Cabinet fronts follow the full depth;
+do not shorten the preparation counter to avoid the refrigerator. Formal room tests check wall contact,
+appliance clearance, corner-plant spacing, supported contents and the sink join.
+No shell, other room or exterior change is required.
+
+### Night-light emission
+
+The refrigerator light core uses replaceable emission color #FFB35C at intensity
+1.75 through AssetPart and the public Spatial descriptor. The glass remains alpha
+0.22. Material batch identity includes emission color and intensity, so equal
+albedo never spreads emission to unlit parts. The official provider owns shader
+material creation and updates. Office opts into public `spatial.bloom` with
+strength 0.315 and radius 8 CSS pixels. Preset renders and blurs an emission-only
+mask, respects opaque occlusion and transparent attenuation, and composites it
+before overlays. This provides a soft warm halo without changing surrounding
+illumination, geometry or App SDK ownership. Preset owns target resizing, cached
+mask lifetime, failure restoration and disposal; no additional animation loop
+is introduced.
+
+
+### Framed night-light addition
+
+Retain `pantryNightLight()` and its original recipe/reference. Add
+`frameNightLight()` from `sourceVariants.frameNightLight`; its two owner photos
+and complete component dimensions are in `pantry-smallware/FRAME-NIGHT-LIGHT.md`.
+The frame uses two perpendicular rounded arch straps, four radial uprights,
+a transparent cylinder, grooved bronze base and a low bottom emitter. Only the
+fridge assembly changes asset selection, at the unchanged support anchor. Both
+assets are available through the existing `?review=` route. The new source keeps
+emission intensity 1.75 and the existing Office bloom settings.
+
+The bronze base and straps use metalness 0.85 and roughness 0.18; the reflector
+uses roughness 0.16. These regions opt into Preset studio reflections with
+`environmentIntensity: 1`. AssetPart forwards explicit metalness and reflection
+intensity through ordinary and instanced descriptors, with both fields in the
+opaque batching identity. Existing parts retain their previous metalness defaults
+and zero reflection intensity. Preset owns one lazy reflection map per engine;
+the app does not access Three.js or create a separate render loop. Geometry,
+light-core intensity and global scene lighting are unchanged by the finish fix.
+
+
+### Shelf condiment identification
+
+`sourceVariants.vessels` owns four clear containers with independent glass,
+contents, labels and closures. `pantryVessel` uses the existing lathe/label helpers
+and public material descriptors. `sourceVariants.shelfSucculent` is constructed
+by `pantryShelfSucculent()` from the existing shelf-plant primitives and appears
+at the fifth anchor. Its `shelf-succulent` preview uses the same production parts.
+The previous fifth jar recipe is removed, without a compatibility alias for an
+unpersisted synthetic preview. Current dimensions, default colors and the source
+crop are documented in `pantry-smallware/GEOMETRY-SUPPLEMENT.md`. Shelf positions,
+original two plants and unrelated room geometry remain unchanged.

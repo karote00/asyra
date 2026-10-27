@@ -280,6 +280,24 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
             !Array.isArray(value.distant.shape.uvs))))
     )
       throw new Error('Surface textures require UV coordinates')
+    if (
+      (value.emissive !== undefined &&
+        (!Number.isInteger(value.emissive) ||
+          (value.emissive as number) < 0 ||
+          (value.emissive as number) > 0xffffff)) ||
+      (value.emissiveIntensity !== undefined &&
+        (typeof value.emissiveIntensity !== 'number' ||
+          !Number.isFinite(value.emissiveIntensity) ||
+          value.emissiveIntensity < 0))
+    )
+      throw new Error('Invalid spatial emissive material')
+    if (
+      value.environmentIntensity !== undefined &&
+      (typeof value.environmentIntensity !== 'number' ||
+        !Number.isFinite(value.environmentIntensity) ||
+        value.environmentIntensity < 0)
+    )
+      throw new Error('Invalid spatial environment material')
     for (const key of ['roughness', 'metalness']) {
       const n = value[key]
       if (
@@ -336,6 +354,9 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
             : { surface: readSpatialSurface(value.surface) }),
           roughness: value.roughness ?? 0.65,
           metalness: value.metalness ?? 0.12,
+          environmentIntensity: value.environmentIntensity ?? 0,
+          emissive: value.emissive ?? 0,
+          emissiveIntensity: value.emissiveIntensity ?? 0,
           color: value.color,
           opacity: value.opacity,
           wireframe: value.wireframe,

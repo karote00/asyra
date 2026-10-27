@@ -17,7 +17,7 @@ for (const [name, button, view] of [
       .filter({ hasText: /^Demo scene ready$/ })
       .waitFor()
     await expect(page.getByLabel('Composition stage')).toHaveText(
-      'Tables and chairs review'
+      'Room furnishings review'
     )
     await page.getByRole('button', { name: button, exact: true }).click()
     await expect(page.getByLabel('Current view')).toHaveText(view)
@@ -111,7 +111,7 @@ for (const [name, button, view] of [
         initialView: view,
         currentView: await page.getByLabel('Current view').innerText(),
         scope:
-          'approved single-storey structure with three admitted tables; source-mismatched chairs omitted',
+          'approved single-storey structure with room-by-room regular furnishings; rejected chairs, sofa and occupants omitted',
         geometry: 'production scene',
         reference: 'approved-office-reference.jpg',
         acceptance: 'requires image inspection'
@@ -224,7 +224,7 @@ test('interior whole structure from above and rear', async ({ page }, info) => {
     .filter({ hasText: /^Demo scene ready$/ })
     .waitFor()
   await expect(page.getByLabel('Composition stage')).toHaveText(
-    'Tables and chairs review'
+    'Room furnishings review'
   )
   await page
     .getByRole('button', { name: 'Office Home base', exact: true })

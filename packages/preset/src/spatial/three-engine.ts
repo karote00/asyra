@@ -1,6 +1,9 @@
+import { ReflectionEnvironment } from './reflection-environment.js'
+import { EmissiveBloom, requireBloomRenderer } from './emissive-bloom.js'
 import {
   DEFAULT_SPATIAL_LIGHTING,
   readSpatialLighting,
+  readSpatialBloom,
   type SpatialPresentationOptions
 } from './lighting.js'
 import { SPATIAL_ENGINE_CAPABILITIES } from './lazy-engine.js'
@@ -211,6 +214,8 @@ export class ThreeEngine implements RenderEngine {
     10000
   )
   private driver: GraphicsDriver | null = null
+  private bloom?: EmissiveBloom
+  private readonly reflections = new ReflectionEnvironment()
   private root: ObjectRecord | null = null
   private width = 1
   private height = 1
@@ -251,6 +256,12 @@ export class ThreeEngine implements RenderEngine {
         2
       )
       this.driver.setPixelRatio(this.pixelRatio)
+      if (this.options.bloom !== undefined) {
+        this.bloom = new EmissiveBloom(
+          requireBloomRenderer(this.driver),
+          readSpatialBloom(this.options.bloom)
+        )
+      }
       this.driver.setClearColor(options.backgroundColor ?? 0x101b29, 1)
       this.resize(options.width, options.height)
       this.root = this.create('container', {})
@@ -270,7 +281,10 @@ export class ThreeEngine implements RenderEngine {
         near: 0.1,
         far: lighting.shadowFar
       })
-      key.shadow.normalBias = 0.005
+      // Scale receiver offset to the world-space PCF footprint, not a fixed scene unit.
+      key.shadow.normalBias =
+        (2 * lighting.shadowExtent * 1.5) / key.shadow.mapSize.x
+      key.shadow.bias = -0.0001
       this.scene.add(key)
       const fill = new THREE.DirectionalLight(
         lighting.fillColor ?? 0xffffff,
@@ -391,6 +405,7 @@ export class ThreeEngine implements RenderEngine {
         this.updateInstanceDetail()
         this.requireDriver().clear()
         this.requireDriver().render(this.scene, this.camera)
+        this.bloom?.render(this.scene, this.camera)
         this.requireDriver().clearDepth()
         this.requireDriver().render(this.screen, this.screenCamera)
         break
@@ -518,6 +533,9 @@ export class ThreeEngine implements RenderEngine {
     })
     this.scene.clear()
     this.screen.clear()
+    this.reflections.dispose()
+    this.bloom?.dispose()
+    this.bloom = undefined
     this.driver?.dispose()
     this.driver = null
     this.root = null
@@ -659,8 +677,15 @@ export class ThreeEngine implements RenderEngine {
         side: THREE.DoubleSide,
         roughness: spatial.roughness ?? 0.65,
         metalness: spatial.metalness ?? 0.12,
+        emissive: spatial.emissive ?? 0,
+        emissiveIntensity: spatial.emissiveIntensity ?? 0,
         depthWrite: spatial.opacity >= 1
       })
+      this.reflections.apply(
+        material,
+        spatial.environmentIntensity ?? 0,
+        this.requireDriver()
+      )
       if (spatial.surface) this.surfaceTextures.apply(material, spatial.surface)
       content = spatial.instances
         ? new THREE.InstancedMesh(geometry, material, spatial.instances.length)
@@ -722,6 +747,13 @@ export class ThreeEngine implements RenderEngine {
         material.wireframe = spatial.wireframe
         material.roughness = spatial.roughness ?? 0.65
         material.metalness = spatial.metalness ?? 0.12
+        this.reflections.apply(
+          material,
+          spatial.environmentIntensity ?? 0,
+          this.requireDriver()
+        )
+        material.emissive.setHex(spatial.emissive ?? 0)
+        material.emissiveIntensity = spatial.emissiveIntensity ?? 0
         for (const child of record.content.children)
           if (child instanceof THREE.InstancedMesh) {
             ;(child.material as THREE.MeshStandardMaterial).copy(material)
@@ -864,6 +896,7 @@ export class ThreeEngine implements RenderEngine {
     this.width = width
     this.height = height
     this.requireDriver().setSize(width, height)
+    this.bloom?.setSize(width, height, this.pixelRatio)
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()
     this.screenCamera.right = width

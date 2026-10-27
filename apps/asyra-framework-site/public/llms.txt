@@ -2,7 +2,7 @@
 
 > Public, source-mapped documentation for people and AI coding agents.
 
-This index contains 53 public Markdown pages.
+This index contains 54 public Markdown pages.
 Current: browser/Core composition, official 2D Preset, and engine-neutral CUSTOM composition.
 Future: Headless Core and Core Kernel for non-visible and machine-facing products; no current public API or delivery date.
 
@@ -44,6 +44,7 @@ Treat app domain schemas, permissions, migration, retrieval, services, and produ
 - [Adopt Official Text and Keep Your App Extensions](/docs/updates/text-official-fields-example-1-r3): Worked example, revision 3: clarify shared defaults, browser acceptance and history limits; retain the original revision 2 independent acceptance.
 - [Update Text Again and Preserve Intervening Extensions](/docs/updates/text-spacing-example-2-r1): Modeled subsequent update: adopt a new spacing default using the existing adoption record while preserving intervening rejected approval, custom data and deferred UI; fresh-AI local-candidate acceptance passed with 29 tests; not a published release comparison.
 - [Update Text Again and Preserve Intervening Extensions](/docs/updates/text-spacing-example-2-r2): Worked example: revision 1 independent acceptance: 29 tests; revision 2 existing-context rerun: 34 tests, not a new independent acceptance. Retained pre-update delivery includes candidate archives and public sources.
+- [Adopt held keyboard input and spatial material effects](/docs/updates/held-input-and-spatial-materials-r1): Integrate continuous keyboard controls and opt-in emissive, bloom and reflection effects while preserving app-owned behavior.
 - [@asyra/ai-agent-runtime](/docs/reference/packages/ai-agent-runtime): Optional registry, schema, permission, and execution boundary for app-approved AI actions.
 - [@asyra/collaboration](/docs/reference/packages/collaboration): Optional deterministic replication adapters with app-owned network and service policy.
 - [@asyra/core](/docs/reference/packages/core): The strict composition facade for Framework capabilities and lifecycle.

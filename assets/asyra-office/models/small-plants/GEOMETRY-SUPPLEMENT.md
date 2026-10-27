@@ -50,7 +50,6 @@ LoD keeps every generated leaf, their thickness, cactus branches, pot cavities a
 
 LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. The original drawing batch introduced no Blender export. The seeded recipe below now defines the app foliage construction; cactus modeling remains separate.
 
-
 ## Seeded individual growth - 2026-10-26
 
 The potted-leaf module's `growth` object owns numeric ranges. It affects only
@@ -72,7 +71,7 @@ Use the interpolated dimensions multiplied by their sampled scales. tipZ is
 attachment Z plus scaled rise. Reference fold/thickness, grid and closures are
 retained. In the blade formula above, multiply the centreline arch by archScale;
 add bend*sin(pi*t)*et. Replace the transverse term q*W*et with
-q*W*(cos(roll)*et+sin(roll)*(0,0,1)). Roll and bend vanish at the width-zero/root
+q*W*(cos(roll)_et+sin(roll)_(0,0,1)). Roll and bend vanish at the width-zero/root
 endpoints; petioles still terminate at each actual blade root. Every leaf remains
 a closed two-skin surface. The unscaled generated envelope is within
 X/Y +/-0.18 m, Z 0..0.37 m, with leaf geometry above the pot rim.
@@ -89,10 +88,9 @@ seed diversity/repeatability, staggered roots, leaf/petiole attachment, vessel
 preservation, finite geometry, bounded dimensions and scene identity diversity.
 App screenshots establish visible arrangement separately from those checks.
 
-
 ### Soil-rooted indoor rosette
 
-The approved full-office sink and lounge plants have broad leaves originating
+The reusable lounge rosette has broad leaves originating
 near the vessel rim, rather than staggered leaves on a tall central stalk.
 `growthVariants.rosette` retains the same closed vessel and blade construction,
 but restricts root heights to 105-128 mm and the stem top to 130 mm. Older outer
@@ -102,3 +100,34 @@ construction dimensions describe the reusable form; scene-specific pot and
 foliage image bounds determine its final size. Hidden growth choices are authored,
 not recovered measurements. The original stemmed default and exterior consumers
 are unchanged. Colors and materials remain replaceable independently of form.
+
+### Pantry crown and lanceolate variants - 2026-10-27
+
+The sink and preparation plants now use `growthVariants.lanceolate`, preserving
+the existing pot and soil: 10-13 unequal blades, 27-43 mm scaffold widths and
+40 mm base arch multiplied by seeded variation. This distinct form does not
+change lounge rosettes or exterior stemmed plants. Roots stay at 105-128 mm,
+with a 130 mm stem. Leaf skins remain closed and 0.6 mm apart.
+
+The fridge/shelf shrubs use 136-144 distinct small blades attached along nine
+seeded sprigs, with no sphere mesh or spherical placement skin. Sprigs start at
+Z=125 mm, turn outward at 55% height, and end at Z=205-255 mm. Their radial
+reach is 55-105 mm; three interior sprigs use 35% of that reach. Leaves attach
+between 36% and 98% along the actual sprig path, with staggered seeded positions.
+Sprig radius tapers from 1.8 mm through 1.17 mm to 0.6 mm. Each 0.6 mm radius
+petiole connects its branch point to its leaf base with a 9 mm radial reach
+and 5 mm rise. This replaces the rejected long central spokes and filled ball.
+
+Scaffold leaf lengths are 30-40 mm and widths 21-26 mm, modified by reach scale
+0.75-1.15 and width scale 0.75-1.10. Blade pitch ranges from -30 to +70 degrees;
+roll ranges +/-38 degrees. The folded thin blade uses a 4 mm base arch with
+seeded scaling. Three replaceable greens (#476A39, #526C3C, #718752) distinguish
+overlapping leaves. The crown is irregular and naturally open between leaves;
+opaque projected coverage is explicitly not an acceptance criterion.
+
+The blade grid is 4 longitudinal by 4 lateral intervals, with a 32-segment pot
+and 6-segment sprigs/petioles. The unscaled shrub stays below 18,000 triangles
+and 0.33 m high. Tests cover blade size, varied depths, short petioles, seeds,
+finite geometry, thin skins and the existing vessel. Inspect front/top/oblique
+and the production room. Hidden growth topology is authored construction fitted
+to the source, not a claim of physically reconstructing occluded branches.

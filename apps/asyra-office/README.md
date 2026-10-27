@@ -5,6 +5,14 @@ and the [product plan](../../docs/ai/apps/asyra-office/plans/office-rebuild-plan
 The complete product plan remains open. No Blender or new dependency is used by
 this implementation.
 
+## Reference-first development
+
+The persistent [app instructions](AGENTS.md) and the product plan's source
+authority apply to every Office task. The approved reference controls all visible
+assets and composition, subject to later explicit owner corrections. Do not
+simplify or substitute visible objects for convenience or performance. Correct
+conflicting numeric specifications; tests alone are not visual acceptance.
+
 ## Run
 
 Use the repository's declared Node 24 and Yarn 4.3.1:
@@ -116,3 +124,12 @@ construction work counts and session cleanup. The browser's existing software
 renderer shadow policy may differ from hardware rendering; inspect the live tab
 as well before claiming visual correctness. The production bundle currently
 retains Vite's chunk-size warning; it has not been hidden or waived.
+
+
+For hardware visual review, set `OFFICE_HARDWARE_REVIEW=1`. The shared Playwright
+configuration then uses Chrome's normal graphics backend instead of forcing
+SwiftShader, including camera and interior specs. Default CI keeps SwiftShader.
+Use bounded spec groups within the existing 150-second suite guard; the flag
+does not increase timeouts, workers or retries. The maintained
+`e2e/render-workload.spec.ts` records the actual GPU identity and rejects a
+software backend for hardware performance evidence.

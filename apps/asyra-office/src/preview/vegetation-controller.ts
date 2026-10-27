@@ -1,4 +1,13 @@
+import { pantryShelfSucculent } from '../assets/pantry-shelf-plant'
+import { frameNightLight } from '../assets/frame-night-light'
+import { pantryNightLight } from '../assets/pantry-night-light'
+import { createSurfaces } from '../scene/surfaces'
 import { throwPillow } from '../assets/pillow'
+import {
+  PANTRY_VESSEL_LABELS,
+  isPantryVessel,
+  pantryVessel
+} from '../assets/pantry-vessels'
 import { awning } from '../assets/awning'
 import { wallClock } from '../assets/clock'
 import { chalkboard } from '../assets/chalkboard'
@@ -28,11 +37,17 @@ import { part, type AssetPart } from '../assets/catalog'
 import type { ReviewSnapshot, ReviewView } from './controller'
 
 export const REVIEW_ASSETS = {
+  'shelf-succulent': 'Shelf - blue succulent pot',
+  'pantry-night-light': 'Night-light - original glass shade',
+  'frame-night-light': 'Night-light - bronze frame',
+  ...PANTRY_VESSEL_LABELS,
   leaf: 'Street tree - shared leaf',
   cluster: 'Street tree - first authored leaf cluster',
   'bare-tree': 'Street tree - bare branches',
   tree: 'Street tree - authored canopy',
   plant: 'Potted leaf plant',
+  'plant-shrub': 'Potted plant - small-leaf crown',
+  'plant-lanceolate': 'Potted plant - arching lanceolate leaves',
   'window-four-pane': 'Four-pane window',
   awning: 'Striped shop awning',
   pillow: 'Throw pillow',
@@ -70,12 +85,19 @@ export function createAssetReviewController(
   build?: () => AssetPart[]
 ) {
   const construct = () => {
+    if (asset === 'shelf-succulent') return pantryShelfSucculent()
+    if (asset === 'pantry-night-light') return pantryNightLight()
+    if (asset === 'frame-night-light') return frameNightLight()
     if (asset === 'leaf') return [part('leaf', leaf(), 0x829347, 'leaf', 0.9)]
     if (!Object.hasOwn(REVIEW_ASSETS, asset))
       throw new Error('Unknown review asset')
+    if (isPantryVessel(asset)) return pantryVessel(asset)
     if (asset === 'pillow') return [throwPillow()]
     if (asset === 'awning') return awning()
     if (asset === 'plant') return planter()
+    if (asset === 'plant-shrub') return planter(1, 0x956a48, 606, 'shrub')
+    if (asset === 'plant-lanceolate')
+      return planter(1, 0xe8dbc3, 606, 'lanceolate')
     if (asset === 'round-tea-table') return teaTable()
     if (asset === 'tea-chair') return teaChair()
     if (asset === 'park-bench') return bench()
@@ -100,7 +122,10 @@ export function createAssetReviewController(
     return parts
   }
   const parts = (build ?? construct)()
-  const meshes = buildSpatialMeshes({ parts, assemblies: [], labels: [] }, {})
+  const meshes = buildSpatialMeshes(
+    { parts, assemblies: [], labels: [] },
+    createSurfaces()
+  )
   // Inspection retains the master. Runtime LoD remains on the office path.
   const master = meshes.map((m) => ({
     ...m,
@@ -175,7 +200,8 @@ export function createAssetReviewController(
           ...m,
           descriptor: {
             ...m.descriptor,
-            color: neutral ? 0xb9b9b9 : m.descriptor.color
+            color: neutral ? 0xb9b9b9 : m.descriptor.color,
+            surface: neutral ? undefined : m.descriptor.surface
           }
         }))
       })

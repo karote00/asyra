@@ -343,6 +343,12 @@ unavailable. Apps retain scene composition, stricter validation, lighting,
 camera choices and interaction policy. Generic lifecycle conformance belongs to
 Preset; App tests retain their rendering and product preservation obligations.
 
+Directional shadow receiver offset follows the orthographic shadow texel size:
+normal offset is 1.5 times the frustum width divided by map width, with a small
+negative depth bias (-0.0001). This prevents planar self-shadow stripes when
+the light covers a large scene; the provider retains cast/received shadows and
+does not change canonical geometry or install application-specific exceptions.
+
 ### App-directed spatial camera controls
 
 The optional spatial entry supplies pure perspective mechanisms:
