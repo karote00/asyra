@@ -74,8 +74,8 @@ background content is requested or necessary to the requested composition. Reque
 Preserve existing unrelated content when editing. Before completion, check for unsupported additions as well as missing requirements.
 The App creates editable native components and vectors; image generation and raster insertion are unavailable.
 
-When a task leaves design decisions open, consult relevant Domain Knowledge through
-discover_knowledge before committing those decisions. Omit contexts for general advice;
+Use relevant Domain Knowledge through discover_knowledge for unresolved design decisions;
+it is not a prerequisite for first visible content. Omit contexts for general advice;
 use only declared context labels for specialized work. Read selected discovered IDs with
 read_knowledge, not the entire catalog. Discovery children identify optional nested
 choices with descriptions in the same catalog. Select the sufficient parent or child directly
@@ -125,7 +125,7 @@ omit imageUrl and let the tool resolve declared images internally; provide a kno
 skip this step. Imported images still need your suitability judgment. Never reduce source-image resolution
 or document dimensions. Do not silently substitute an invented design for requested reproduction.
 
-Draw each coherent ready part without waiting for all decoration, research or a complete geometry inventory.
+First frame is optional, not a deadline or completion gate. Draw when useful; research may come first, edits later. No forced previews or splitting for timing. Preserve validation, references and final review.
 Preparation already publishes compiler checks to read_design_checks; do not call another tool just to record them. Use review_prepared_design when explicit attachment or source-scope verification is needed. It never calls a model. An explicitly corrected predecessor continues the same source obligation; source passes never certify current canvas content.
 Correct concrete tool failures and recheck affected source before applying. Tool pass does not certify
 appearance. Keep geometry, repeated construction and relationship scans in tools; do not manually
@@ -146,7 +146,7 @@ For explicitly aligned native reference/canvas crops, discover check_drawing_ima
 Use read_design_checks for counts and firstPendingId without evidence rows. Request exact ids for a known result, or view=details for unresolved/stale work; includePassed adds prior passes to detail pages. Continue pages with nextOffset and the returned revision; restart at offset zero if the revision changes. A dependency change can reopen earlier passes. Unknown scope requires rechecking,
 not silently inheriting approval. Optional polish and estimated dimensions are not automatic defects.
 Use prepare_and_apply_design for other ready construction and execute_design_batch for existing-object edits.
-Direct known-value edits need no prepared-content review. Do not accumulate all stages in one draft.
+Direct known-value edits need no prepared-content review. Choose coherent submission sizes within tool budgets.
 Continue with parentId from the actual returned container identity and a shared coordinate system.
 Preserve requested finish while staging work; defer likely hidden detail using quick estimates, then
 resolve it during final review. Keep useful overlap and requested hidden editable content.
@@ -266,7 +266,7 @@ export const AI_OPERATION_INSTRUCTIONS = `
 Discover only missing schemas. For known semantic operations use describe_design_apis with operations=["owner.method", ...].
 Use returned action names and execution routes rather than translating names. Use names for known native tools;
 qualify ambiguous names by namespace. If the operation is unknown, query by operation purpose first. Categories and their continuations support intentional complete inventory for complex requests, not a default prerequisite.
-Retain parsed definitions in Code Mode and execute directly when the current contract is already known.
+Use registered tools directly when the current contract is already known.
 For prepare_and_apply_design direct execution, request view=usage together with inputScope={operation,nodeTypes}; the Main tool scope below supplies owner-defined choices and an executable query example before lookup. inputScope.operation selects a branch, not an intent verb or the outer semantic-operation selector. Adapt the example to the current part using only those choices; no menu prerequisite. The query selector is not an execution argument: execute with the returned branch fields. Include inputScope.optionalInputs=["plan"] only when defining criteria in that same drawing invocation; otherwise omit plan. This selected guide includes complete parameter restrictions, a matching executable example when available, result interpretation and no-replay recovery. Execute from that guide without acquiring full validation schemas. Widen the scope before using additional types; full schemas remain available for machine recipe composition.
 Only acquire missing information: view=usage for missing routing/usage, schemaPaths for missing fields,
 or full definitions when executable contracts are missing. Usage omits executable validation schemas;
@@ -286,7 +286,7 @@ the same stale reference. Release snapshots when they are no longer needed.
 For local changes, query workspace bounds even if the parent spans many other regions; do not enumerate its children.
 Filter candidates for the task; use result=ids when only targets are needed, then batch-edit elementIds.
 Use children for hierarchy questions. Follow the returned nextOffset and the advertised page limit.
-Use hierarchy.moveElementsRelative for before/after placement without reading all siblings. Retain IDs in Code Mode.
+Use hierarchy.moveElementsRelative for before/after placement without reading all siblings. Reuse returned IDs.
 
 prepare_and_apply_design owns preparation, optional criteria, writing and inspection. Its completedSteps
 and artifactId preserve progress after failure; reuse successful preparation. A rejected draftId and conflict paths
@@ -307,9 +307,9 @@ artifactId. For position-dependent fill changes, prefer map_retained_fills decla
 the backend reads the needed columns and prepares all patches before the canonical write. Standalone
 reference snapshots have consumer leases: release them when no longer needed; never collect a large
 queue of snapshots for a mapping the backend can perform directly.
-Keep large intermediate geometry and returned data inside Code Mode; give the model only decision-relevant
-findings and stable IDs. Await dependent work and ordered canvas writes; parallelize independent permitted
-reads. Forward image results through the native image helper for visual decisions. A missing specialized
+Use existing prepared artifacts, retained target references and recipes for large intermediate data.
+Await dependent work and ordered canvas writes; parallelize independent permitted reads.
+Images accompany tool results directly for visual decisions. A missing specialized
 external tool need not block capabilities already provided by the App. An advertised external tool is
 not installed merely because it was found. On failure, use the returned stage and recovery inputs;
 preserve successful work rather than restarting the entire request.

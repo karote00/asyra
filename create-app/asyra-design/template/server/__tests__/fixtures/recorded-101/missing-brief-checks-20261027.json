@@ -1,0 +1,562 @@
+{
+  "source": {
+    "runId": "knowledge-quality-knowledge-taipei-101-1793101742637",
+    "callId": "call_uuEduMinIjMbjMGsXquYD86i",
+    "inputSha256": "ed472dbaef75249cf9f3f67611dd0273023ce912794729f0a011bd9be6c78820",
+    "outputSha256": "57e0701ab58e413a50fece3bd4a7bb4fea0e5811834c57c19655426d733d60ff",
+    "derivation": "Exact saved native invocation and reply; tests use only the draft when exercising preparation independently."
+  },
+  "input": {
+    "draft": {
+      "type": "frame",
+      "name": "\u53f0\u5317101\uff5c\u516c\u5206\u5c3a\u5ea6\u5efa\u7bc9\u63d2\u756b",
+      "width": 20000,
+      "height": 55000,
+      "projection": {
+        "azimuth": 35,
+        "elevation": 24,
+        "scale": 1,
+        "originX": 10000,
+        "originY": 48000
+      },
+      "brief": {
+        "intent": "Entire Taipei 101 in editable projected 2D vectors, no background or construction equipment.",
+        "viewpoint": "Fixed elevated three-quarter orthographic architectural view, azimuth 35\u00b0, elevation 24\u00b0; world units centimetres, scale 1 px/cm.",
+        "sources": [
+          "Attached aerial: massing and base relationships only",
+          "Attached close-up: ornament shape and metal only",
+          "CTBUH height 508 m; architect eight eight-floor units"
+        ],
+        "assumptions": [
+          "World height 50800 cm; crown roof 44800 cm. Intermediate heights and visible widths estimated from broad proportions, not surveyed geometry.",
+          "Glass uses continuous world-height teal sky reflection with irregular reflected silhouettes; +Y face lighter, +X shaded. Silver frame highlights and deep tier soffits.",
+          "First two permanent tiers test material and joins before repeating."
+        ]
+      },
+      "fillTemplates": {
+        "metal": "#94AFB0",
+        "edge": "#D2DFD9",
+        "dark": "#143239",
+        "recess": "#29494E",
+        "roof": "#718E8C"
+      },
+      "linearFields": {
+        "glassFront": {
+          "frame": "world",
+          "start": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "end": {
+            "x": 0,
+            "y": 0,
+            "z": 44800
+          },
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#284E51",
+              "opacity": 1
+            },
+            {
+              "position": 0.28,
+              "color": "#3D7377",
+              "opacity": 1
+            },
+            {
+              "position": 0.48,
+              "color": "#6E9D9E",
+              "opacity": 1
+            },
+            {
+              "position": 0.7,
+              "color": "#437E88",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#A0C2C5",
+              "opacity": 1
+            }
+          ]
+        },
+        "glassSide": {
+          "frame": "world",
+          "start": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "end": {
+            "x": 0,
+            "y": 0,
+            "z": 44800
+          },
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#172F39",
+              "opacity": 1
+            },
+            {
+              "position": 0.35,
+              "color": "#255360",
+              "opacity": 1
+            },
+            {
+              "position": 0.64,
+              "color": "#487584",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#7696A4",
+              "opacity": 1
+            }
+          ]
+        }
+      },
+      "motifTemplates": {
+        "frames": [
+          {
+            "key": "sill",
+            "name": "Horizontal anodized transom",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.045
+              },
+              {
+                "u": 0,
+                "v": 0.045
+              }
+            ]
+          },
+          {
+            "key": "mullion",
+            "name": "Vertical window frame",
+            "fill": {
+              "template": "metal"
+            },
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.035,
+                "v": 0
+              },
+              {
+                "u": 0.035,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "gasket",
+            "name": "Recessed glazing gasket",
+            "fill": {
+              "template": "dark"
+            },
+            "vertices": [
+              {
+                "u": 0.035,
+                "v": 0.045
+              },
+              {
+                "u": 0.055,
+                "v": 0.045
+              },
+              {
+                "u": 0.055,
+                "v": 1
+              },
+              {
+                "u": 0.035,
+                "v": 1
+              }
+            ]
+          },
+          {
+            "key": "spandrel",
+            "name": "Floor spandrel shadow",
+            "fill": {
+              "template": "recess"
+            },
+            "vertices": [
+              {
+                "u": 0.055,
+                "v": 0.86
+              },
+              {
+                "u": 1,
+                "v": 0.86
+              },
+              {
+                "u": 1,
+                "v": 0.99
+              },
+              {
+                "u": 0.055,
+                "v": 0.99
+              }
+            ]
+          }
+        ]
+      },
+      "children": [
+        {
+          "type": "pattern",
+          "key": "tier",
+          "name": "\u7af9\u7bc0\u5e37\u5e55\u55ae\u5143",
+          "origin": {
+            "x": 0,
+            "y": 0,
+            "z": 13000
+          },
+          "axes": [
+            {
+              "count": 8,
+              "step": {
+                "x": 0,
+                "y": 0,
+                "z": 3400
+              }
+            }
+          ],
+          "instanceRanges": [
+            {
+              "start": 0,
+              "end": 2
+            }
+          ],
+          "members": [
+            {
+              "type": "projected-face",
+              "key": "side",
+              "name": "Shaded blue glass",
+              "materialField": "glassSide",
+              "vertices": [
+                {
+                  "x": 2250,
+                  "y": -2250,
+                  "z": 0
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3240
+                },
+                {
+                  "x": 2600,
+                  "y": -2600,
+                  "z": 3240
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "front",
+              "name": "Daylit teal glass",
+              "materialField": "glassFront",
+              "vertices": [
+                {
+                  "x": -2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 0
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3240
+                },
+                {
+                  "x": -2600,
+                  "y": 2600,
+                  "z": 3240
+                }
+              ]
+            },
+            {
+              "type": "surface-grid",
+              "key": "sg",
+              "name": "Side window frames",
+              "boundary": {
+                "face": "side"
+              },
+              "rows": 8,
+              "columns": 22,
+              "order": "motif-major",
+              "motifs": {
+                "template": "frames"
+              }
+            },
+            {
+              "type": "surface-grid",
+              "key": "fg",
+              "name": "Front window frames",
+              "boundary": {
+                "face": "front"
+              },
+              "rows": 8,
+              "columns": 22,
+              "order": "motif-major",
+              "motifs": {
+                "template": "frames"
+              }
+            },
+            {
+              "type": "projected-face",
+              "key": "sf",
+              "name": "Side projecting fascia",
+              "fill": {
+                "template": "metal"
+              },
+              "vertices": [
+                {
+                  "x": 2600,
+                  "y": -2600,
+                  "z": 3240
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3240
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3310
+                },
+                {
+                  "x": 2600,
+                  "y": -2600,
+                  "z": 3310
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "ff",
+              "name": "Front projecting fascia",
+              "fill": {
+                "template": "edge"
+              },
+              "vertices": [
+                {
+                  "x": -2600,
+                  "y": 2600,
+                  "z": 3240
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3240
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3310
+                },
+                {
+                  "x": -2600,
+                  "y": 2600,
+                  "z": 3310
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "top",
+              "name": "Visible tier terrace",
+              "fill": {
+                "template": "roof"
+              },
+              "vertices": [
+                {
+                  "x": -2600,
+                  "y": -2600,
+                  "z": 3310
+                },
+                {
+                  "x": 2600,
+                  "y": -2600,
+                  "z": 3310
+                },
+                {
+                  "x": 2600,
+                  "y": 2600,
+                  "z": 3310
+                },
+                {
+                  "x": -2600,
+                  "y": 2600,
+                  "z": 3310
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "neckF",
+              "name": "Recessed front neck",
+              "fill": {
+                "template": "dark"
+              },
+              "vertices": [
+                {
+                  "x": -2250,
+                  "y": 2250,
+                  "z": 3310
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 3310
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 3400
+                },
+                {
+                  "x": -2250,
+                  "y": 2250,
+                  "z": 3400
+                }
+              ]
+            },
+            {
+              "type": "projected-face",
+              "key": "neckS",
+              "name": "Recessed side neck",
+              "fill": {
+                "template": "dark"
+              },
+              "vertices": [
+                {
+                  "x": 2250,
+                  "y": -2250,
+                  "z": 3310
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 3310
+                },
+                {
+                  "x": 2250,
+                  "y": 2250,
+                  "z": 3400
+                },
+                {
+                  "x": 2250,
+                  "y": -2250,
+                  "z": 3400
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "plan": {
+      "phase": "plan",
+      "method": "Fixed 35\u00b0 azimuth/24\u00b0 elevation orthographic projection in cm at 1 px/cm. Known overall height retained; unmeasured intermediate geometry estimated. Native surface grids, continuous face-specific world material domains, explicit irregular reflections and curved metal ornament. Attachments restricted to stated roles.",
+      "references": [
+        "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+        "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+      ],
+      "criteria": {
+        "overall": {
+          "requirement": "Entire Taipei 101 from base to spire in fixed elevated three-quarter view with no equipment, text or background.",
+          "description": "Recognizable complete silhouette and eight projecting tiers, visible top surfaces and base relationships.",
+          "verification": "visual",
+          "requiredUnits": []
+        },
+        "material": {
+          "requirement": "Realistic reflective glass, metallic structure, lighting and shadows.",
+          "description": "Inspect glass/frame contrast, reflective character and continuity at representative adjacent tiers.",
+          "verification": "visual",
+          "requiredUnits": [
+            "tier-join"
+          ]
+        },
+        "detail": {
+          "requirement": "Detailed visible facade, window frames and ornament, not broad schematic shapes.",
+          "description": "Review tower, crown and base detail independently.",
+          "verification": "visual",
+          "requiredUnits": [
+            "tower",
+            "crown",
+            "base",
+            "ornament"
+          ]
+        },
+        "scale": {
+          "requirement": "Real-world dimensions at 1cm=1px before consistent projection; editable native shapes.",
+          "description": "World height 50800, roof 44800, scale 1 and consistent camera; other dimensions explicitly estimated.",
+          "verification": "data"
+        }
+      },
+      "detailRequired": true
+    },
+    "inspection": "defer",
+    "message": "\u5efa\u7acb\u5169\u7bc0\u6c38\u4e45\u5854\u8eab\uff0c\u9a57\u8b49\u73bb\u7483\u3001\u6846\u67b6\u8207\u7bc0\u9593\u63a5\u5408"
+  },
+  "output": {
+    "available": false,
+    "code": "PREPARATION_REJECTED",
+    "recovery": "correct_input",
+    "draftId": "c5f031d5-a366-4cac-a1ea-ea1e329b0946",
+    "retainedDraft": {
+      "draftId": "c5f031d5-a366-4cac-a1ea-ea1e329b0946",
+      "revision": "c5f031d5-a366-4cac-a1ea-ea1e329b0946",
+      "sourceBytes": 4560,
+      "partitionLimitation": {
+        "code": "unsupported-root",
+        "message": "Automatic partitions require an independent flat projected group; unsupported root semantics must remain intact."
+      }
+    },
+    "stage": "admission",
+    "settlement": "not-started",
+    "recoverable": true,
+    "message": "arguments.draft.brief.checks: required field is missing",
+    "toolOutcome": {
+      "status": "failed",
+      "settlement": "not-started",
+      "issues": [
+        {
+          "code": "PREPARATION_REJECTED",
+          "message": "arguments.draft.brief.checks: required field is missing"
+        }
+      ]
+    }
+  }
+}

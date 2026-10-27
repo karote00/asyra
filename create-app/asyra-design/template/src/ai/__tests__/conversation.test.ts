@@ -1,3 +1,4 @@
+import { projectAiActivity, summarizeAiTurn } from '../presentation'
 import { describe, expect, it, vi } from 'vitest'
 import {
   AiConversationError,
@@ -68,6 +69,9 @@ it('keeps inherited reference images out of text replies while retaining provide
   })
   const answer = controller.submit('That is fine')
   expect(controller.getSnapshot().activeTurn?.attachments).toEqual([])
+  expect(controller.getSnapshot().activeTurn?.originalIntent).toBe(
+    'Draw the reference at 240 by 240'
+  )
   expect(feature.execute).toHaveBeenLastCalledWith(
     expect.objectContaining({
       metadata: expect.objectContaining({ imageAttachments: [attachment] })
@@ -296,6 +300,7 @@ describe('Asyra Design AI conversation controller', () => {
         attachments: [
           {
             dataUrl: 'data:text/plain;base64,bm90LWltYWdl',
+            // @ts-expect-error Deliberately invalid wire input must be rejected at runtime.
             mediaType: 'text/plain',
             name: 'notes.txt',
             size: 9
@@ -480,6 +485,17 @@ describe('Asyra Design AI conversation controller', () => {
               'right-eye': ['eye-right-1']
             }
           },
+          conversationHistory: {
+            omittedTurns: 0,
+            turns: [
+              {
+                turnId: 'conversation-c:turn:1',
+                intent: 'draw a cat face',
+                message: 'Updated 4 editable elements.',
+                outcome: 'success'
+              }
+            ]
+          },
           conversationId: 'conversation-c',
           turnId: 'conversation-c:turn:2'
         }
@@ -516,6 +532,34 @@ describe('Asyra Design AI conversation controller', () => {
       outcome: 'no-change'
     })
   })
+
+  it.each([
+    { statuses: ['failed'], outcome: 'failed' },
+    { statuses: ['no-change', 'failed'], outcome: 'failed' },
+    { statuses: ['complete', 'failed'], outcome: 'partial' }
+  ])(
+    'retains API receipt failures: $statuses',
+    async ({ statuses, outcome }) => {
+      const feature = createFeature(async () => ({
+        status: 'executed',
+        actionResults: statuses.map((status, index) => ({
+          actionId: `action-${index}`,
+          actionName: 'basic_element_createElements',
+          result: {
+            status,
+            value: status === 'failed' ? [null] : ['element-1']
+          }
+        }))
+      }))
+      const controller = createAiConversationController({
+        feature,
+        getElementType: vi.fn()
+      })
+      await expect(
+        controller.submit('Create the requested elements')
+      ).resolves.toMatchObject({ outcome })
+    }
+  )
 
   it('clears target hints after successful composition deletion', async () => {
     const feature = createFeature(async (request) => {
@@ -803,7 +847,7 @@ it('guards navigation during work and keeps navigation snapshots stable during p
   const task = controller.submit('Draw a scene')
   const snapshot = controller.getNavigationSnapshot(),
     calls = listener.mock.calls.length
-  progress?.({ stage: 'requesting', status: 'running' } as never)
+  progress?.({ phase: 'provider', attempt: 1, summary: 'Requesting actions' })
   expect(controller.getNavigationSnapshot()).toBe(snapshot)
   expect(listener).toHaveBeenCalledTimes(calls)
   expect(() => controller.newConversation()).toThrow()
@@ -813,4 +857,444 @@ it('guards navigation during work and keeps navigation snapshots stable during p
   expect(controller.getNavigationSnapshot().busy).toBe(false)
   await controller.dispose()
   expect(() => controller.newConversation()).toThrow()
+})
+
+it('uses the same lifecycle decisions for recorded progress and the visible turn', async () => {
+  const feature = createFeature(async ({ progressObserver }) => {
+    const work = {
+      phase: 'provider' as const,
+      attempt: 1,
+      summary: 'Working',
+      message: 'Adding windows',
+      activity: {
+        kind: 'work' as const,
+        callId: 'windows',
+        sequence: 1,
+        phase: 'provider' as const
+      }
+    }
+    expect(progressObserver(work)).toMatchObject({
+      reason: 'scoped-owner-phase'
+    })
+    expect(
+      progressObserver({
+        phase: 'settlement',
+        attempt: 1,
+        summary: 'Saving the drawing'
+      })
+    ).toMatchObject({ reason: 'lifecycle-control' })
+    expect(
+      progressObserver({ ...work, activity: { ...work.activity, sequence: 2 } })
+    ).toMatchObject({
+      status: 'rejected',
+      reason: 'illegal-lifecycle-transition'
+    })
+    const active = controller.getSnapshot().activeTurn
+    if (!active) throw new Error('Expected an active turn before settlement')
+    expect(projectAiActivity(active.progress).current.label).toBe(
+      'Saving the drawing'
+    )
+    return executed({ status: 'complete' })
+  })
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  await controller.submit('Draw windows')
+  const turn = controller.getSnapshot().settledTurns[0]
+  expect(
+    projectAiActivity(turn.progress, { outcome: turn.outcome }).current.label
+  ).toBe('Finished')
+  await controller.dispose()
+})
+
+it('retains the original activity objective through a failed clarification and retry', async () => {
+  const question = executed(
+    {
+      action: 'request_drawing_detail_choice',
+      clarification: {
+        kind: 'drawing-detail',
+        optionIds: ['balanced', 'maximum']
+      },
+      status: 'no-change'
+    },
+    'request_drawing_detail_choice'
+  )
+  const activePurposes: string[] = []
+  const continueRequest: AiConversationFeature['execute'] = async ({
+    progressObserver
+  }) => {
+    const initial = controller.getSnapshot().activeTurn
+    if (!initial) throw new Error('Missing active continuation')
+    activePurposes.push(initial.originalIntent)
+    progressObserver({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Active',
+      message: 'Build the roof',
+      activity: { kind: 'work', callId: 'roof', sequence: 1, phase: 'applying' }
+    })
+    progressObserver({
+      attempt: 1,
+      phase: 'provider',
+      summary: 'Completed',
+      toolStatus: 'completed',
+      activity: {
+        kind: 'system',
+        callId: 'roof',
+        sequence: 2,
+        phase: 'applying'
+      }
+    })
+    const active = controller.getSnapshot().activeTurn
+    if (!active) throw new Error('Missing active continuation')
+    expect(
+      projectAiActivity(active.progress, { purpose: active.originalIntent })
+        .current
+    ).toEqual({
+      label: 'Operation ended - outcome unconfirmed',
+      message: 'Build the roof'
+    })
+    return {
+      status: 'failed',
+      stage: 'provider',
+      code: 'AI_PROVIDER_TRANSPORT_FAILED'
+    }
+  }
+  const feature = createFeature(
+    vi.fn().mockResolvedValueOnce(question).mockImplementation(continueRequest)
+  )
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  await controller.submit('Draw a detailed tower')
+  const failed = await controller.submit('Maximum detail, please')
+  await controller.retry(failed.turnId)
+  expect(activePurposes).toEqual([
+    'Draw a detailed tower',
+    'Draw a detailed tower'
+  ])
+})
+
+it('reads current activity without replaying old progress and preserves point-in-time history', async () => {
+  const pending = createDeferred<unknown>()
+  let request: Parameters<AiConversationFeature['execute']>[0] | undefined
+  const feature = createFeature((value) => {
+    request = value
+    return pending.promise
+  })
+  const controller = createAiConversationController({
+    feature,
+    getElementType: vi.fn()
+  })
+  const done = controller.submit('Draw the tower')
+  let reads = 0
+  const first = {
+    attempt: 1,
+    get phase() {
+      reads++
+      return 'execution' as const
+    },
+    message: 'Preparing windows'
+  }
+  request?.progressObserver(first)
+  const snapshot = controller.getSnapshot()
+  const id = snapshot.activeTurn?.turnId ?? ''
+  reads = 0
+  for (let i = 0; i < 300; i++) {
+    request?.progressObserver({
+      phase: 'execution',
+      attempt: 1,
+      message: `Preparing part ${i}`
+    })
+    const activity = controller.getActivity(id, { purpose: 'Draw the tower' })
+    expect(activity.current.label).toBeTruthy()
+    controller.getSnapshot()
+  }
+  expect(reads).toBe(0)
+  expect(snapshot.activeTurn?.progress).toEqual([first])
+  expect(controller.getSnapshot().activeTurn?.progress).toHaveLength(301)
+  expect(controller.getActivity(id).entries.length).toBeGreaterThan(0)
+  pending.resolve({ status: 'executed', actionResults: [] })
+  await done
+  expect(
+    controller.getActivity(id, { outcome: 'success' }).current.label
+  ).toBeTruthy()
+  await controller.dispose()
+})
+
+describe('settled conversation context delivery', () => {
+  const report = (message: string) =>
+    executed(
+      { status: 'no-change', outcome: 'completed', message },
+      'report_outcome'
+    )
+  const historyFrom = (feature: AiConversationFeature, index: number) =>
+    (
+      vi.mocked(feature.execute).mock.calls[index][0].metadata as {
+        conversationHistory?: {
+          turns: {
+            turnId: string
+            intent: string
+            originalIntent?: string
+            message: string
+            outcome: string
+          }[]
+          omittedTurns: number
+        }
+      }
+    ).conversationHistory
+
+  const requireHistory = (feature: AiConversationFeature, index: number) => {
+    const history = historyFrom(feature, index)
+    if (!history) throw new Error('Expected settled conversation history')
+    return history
+  }
+
+  it('delivers complete prior advice once without carrying raw execution data', async () => {
+    const result = report(
+      'Use matte silver, a cool blue facade and continuous reflections. No background.'
+    )
+    Object.defineProperty(result, 'diagnostics', {
+      get: () => {
+        throw new Error('Raw result traversal')
+      },
+      enumerable: true
+    })
+    const feature = createFeature(async () => result)
+    const controller = createAiConversationController({
+      feature,
+      getElementType: () => undefined
+    })
+    try {
+      const first = await controller.submit(
+        'Propose a glass and metal illustration, without drawing.'
+      )
+      await controller.submit(
+        'Keep that direction but change the glass to green.'
+      )
+      expect(historyFrom(feature, 0)).toBeUndefined()
+      expect(historyFrom(feature, 1)).toEqual({
+        turns: [
+          {
+            turnId: first.turnId,
+            intent: first.intent,
+            message: summarizeAiTurn(first).message,
+            outcome: 'no-change'
+          }
+        ],
+        omittedTurns: 0
+      })
+      expect(historyFrom(feature, 1)?.turns[0].message).toContain(
+        'continuous reflections'
+      )
+      expect(vi.mocked(feature.execute).mock.calls[1][0].intent).toBe(
+        'Keep that direction but change the glass to green.'
+      )
+      expect(feature.execute).toHaveBeenCalledTimes(2)
+      expect(Object.keys(requireHistory(feature, 1).turns[0])).toEqual([
+        'turnId',
+        'intent',
+        'message',
+        'outcome'
+      ])
+      expect(controller.getSnapshot().settledTurns[0]).toBe(first)
+    } finally {
+      await controller.dispose()
+    }
+  })
+
+  it('isolates new conversations and restores only the selected conversation', async () => {
+    const feature = createFeature(async () => report('Proposal'))
+    let id = 0
+    const controller = createAiConversationController({
+      feature,
+      getElementType: () => undefined,
+      createConversationId: () => `context-${++id}`
+    })
+    try {
+      const first = await controller.submit('A standalone icon')
+      controller.newConversation()
+      await controller.submit('A different poster')
+      expect(historyFrom(feature, 1)).toBeUndefined()
+      controller.selectConversation(first.conversationId)
+      await controller.submit('Continue the icon')
+      expect(historyFrom(feature, 2)?.turns.map((turn) => turn.intent)).toEqual(
+        ['A standalone icon']
+      )
+    } finally {
+      await controller.dispose()
+    }
+  })
+
+  it.each([
+    { status: 'cancelled', transaction: { status: 'committed' } },
+    {
+      status: 'failed',
+      stage: 'execution',
+      transaction: { status: 'committed' }
+    },
+    {
+      status: 'failed',
+      stage: 'execution',
+      transaction: { status: 'rolled-back' }
+    },
+    {
+      status: 'failed',
+      stage: 'provider',
+      code: 'AI_PROVIDER_TRANSPORT_FAILED'
+    }
+  ])(
+    'preserves authoritative settlement without replay: $status $transaction.status',
+    async (result) => {
+      const feature = createFeature(
+        vi
+          .fn()
+          .mockResolvedValueOnce(result)
+          .mockResolvedValue(report('Next answer'))
+      )
+      const controller = createAiConversationController({
+        feature,
+        getElementType: () => undefined
+      })
+      try {
+        const first = await controller.submit('Draw once')
+        await controller.submit(
+          'Explain the current outcome without changing it'
+        )
+        expect(historyFrom(feature, 1)?.turns[0]).toEqual({
+          turnId: first.turnId,
+          intent: first.intent,
+          message: summarizeAiTurn(first).message,
+          outcome: first.outcome
+        })
+        expect(feature.execute).toHaveBeenCalledTimes(2)
+      } finally {
+        await controller.dispose()
+      }
+    }
+  )
+
+  it('preserves answered questions and their original objective across a safe retry', async () => {
+    const feature = createFeature(
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          executed(
+            {
+              status: 'no-change',
+              clarification: { kind: 'question', question: 'Which tone?' }
+            },
+            'request_clarification'
+          )
+        )
+        .mockResolvedValueOnce({
+          status: 'failed',
+          stage: 'provider',
+          code: 'AI_PROVIDER_TRANSPORT_FAILED'
+        })
+        .mockResolvedValue(report('Use the selected tone'))
+    )
+    const controller = createAiConversationController({
+      feature,
+      getElementType: () => undefined
+    })
+    try {
+      await controller.submit('Design a restrained book cover')
+      const failed = await controller.submit('Warm tones')
+      await controller.retry(failed.turnId)
+      const history = requireHistory(feature, 2)
+      expect(history.turns.map((turn) => turn.intent)).toEqual([
+        'Design a restrained book cover',
+        'Warm tones'
+      ])
+      expect(history.turns[1].originalIntent).toBe(
+        'Design a restrained book cover'
+      )
+      expect(history.turns[0].message).toBe('Which tone?')
+      expect(history.turns[1].outcome).toBe('failed')
+      expect(feature.execute).toHaveBeenCalledTimes(3)
+    } finally {
+      await controller.dispose()
+    }
+  })
+
+  it('bounds complete Unicode pairs without visiting the omitted prefix or changing stored turns', async () => {
+    const feature = createFeature(async () =>
+      report('Complete advice: preserve the final exception.')
+    )
+    const controller = createAiConversationController({
+      feature,
+      getElementType: () => undefined
+    })
+    try {
+      const oldest = await controller.submit('Old topic')
+      const oversized = await controller.submit('界'.repeat(12_000))
+      await controller.submit('New subject')
+      expect(historyFrom(feature, 2)).toEqual({ turns: [], omittedTurns: 2 })
+      // The newest oversized pair is a hard suffix boundary: no scan of older results.
+      Object.defineProperty(oldest.result, 'status', {
+        get: () => {
+          throw new Error('Omitted prefix read')
+        }
+      })
+      await controller.submit('Continue the new subject')
+      const history = requireHistory(feature, 3)
+      expect(history.omittedTurns).toBe(2)
+      expect(history.turns.map((turn) => turn.intent)).toEqual(['New subject'])
+      expect(
+        new TextEncoder().encode(JSON.stringify(history)).length
+      ).toBeLessThanOrEqual(32 * 1024)
+      expect(controller.getSnapshot().settledTurns[1]).toBe(oversized)
+    } finally {
+      await controller.dispose()
+    }
+  })
+
+  it('keeps the maximal contiguous whole-turn suffix and charges JSON escaping and Unicode bytes', async () => {
+    const feature = createFeature(async () =>
+      report('Complete answer: keep all constraints.')
+    )
+    const controller = createAiConversationController({
+      feature,
+      getElementType: () => undefined
+    })
+    try {
+      for (let index = 0; index < 12; index += 1)
+        await controller.submit(`${index}:` + '界\n"'.repeat(800))
+      await controller.submit('Continue')
+      const all = controller.getSnapshot().settledTurns.slice(0, -1)
+      const history = requireHistory(feature, 12)
+      expect(history.omittedTurns).toBeGreaterThan(0)
+      expect(history.turns).toEqual(
+        all.slice(history.omittedTurns).map((turn) => ({
+          turnId: turn.turnId,
+          intent: turn.intent,
+          message: summarizeAiTurn(turn).message,
+          outcome: turn.outcome
+        }))
+      )
+      const bytes = (value: unknown) =>
+        new TextEncoder().encode(JSON.stringify(value)).length
+      expect(bytes(history)).toBeLessThanOrEqual(32 * 1024)
+      const prior = all[history.omittedTurns - 1]
+      expect(
+        bytes({
+          turns: [
+            {
+              turnId: prior.turnId,
+              intent: prior.intent,
+              message: summarizeAiTurn(prior).message,
+              outcome: prior.outcome
+            },
+            ...history.turns
+          ],
+          omittedTurns: history.omittedTurns - 1
+        })
+      ).toBeGreaterThan(32 * 1024)
+    } finally {
+      await controller.dispose()
+    }
+  })
 })

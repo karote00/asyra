@@ -6,7 +6,7 @@ import {
   type CollaborationDebugHandle
 } from '../collaboration/lifecycle'
 import { createDocumentCollaborationPublicationSource } from '../collaboration/factory-adapter'
-import { decodeDocumentPublication } from '../collaboration/operations'
+import { readDocumentPublicationSlices } from '../collaboration/document-publication'
 import core from '../contexts'
 import {
   getActiveAiDrawingPerformanceProfile,
@@ -45,7 +45,14 @@ export const startSharedPublicationCapture = (key: string): void =>
 
 export const startDocumentPublicationCapture = (key: string): void =>
   startCapture(key, (append) =>
-    createDocumentCollaborationPublicationSource(core).subscribe(append)
+    createDocumentCollaborationPublicationSource(core, (publication, error) =>
+      append({
+        status: 'preparation-failed',
+        publicationId: publication.publicationId,
+        publication,
+        error: error.message
+      })
+    ).subscribe(append)
   )
 
 export const startSharedChannelCapture = (key: string, channel: string): void =>
@@ -72,9 +79,23 @@ export const readDocumentPublicationDecodeFailures = (
   key: string
 ): readonly DocumentPublicationDecodeFailure[] =>
   readTestCapture(key).flatMap((publication) => {
+    if (
+      typeof publication === 'object' &&
+      publication !== null &&
+      'status' in publication &&
+      publication.status === 'preparation-failed' &&
+      'publicationId' in publication &&
+      typeof publication.publicationId === 'string' &&
+      'error' in publication &&
+      typeof publication.error === 'string'
+    ) {
+      return [
+        { publicationId: publication.publicationId, message: publication.error }
+      ]
+    }
     try {
-      decodeDocumentPublication(
-        publication as Parameters<typeof decodeDocumentPublication>[0]
+      readDocumentPublicationSlices(
+        publication as Parameters<typeof readDocumentPublicationSlices>[0]
       )
       return []
     } catch (error) {
@@ -141,3 +162,8 @@ export {
   getActiveCollaborationHandle
 }
 export type { AiDrawingPerformanceProfile, CollaborationDebugHandle }
+
+export { subscribeToUndo, subscribeToRedo } from '@asyra/core'
+export { historyApis } from '../common-apis/history'
+
+export { textCanvasApis } from '../common-apis/text-canvas'

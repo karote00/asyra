@@ -21,7 +21,7 @@ const actionApis = (): AiActionApis => ({
   scaleVectorElementGeometry: vi.fn(() => true),
   selectElements: vi.fn(),
   setDrawingProgress: vi.fn(),
-  setElementVisible: vi.fn(() => true),
+  setElementsVisible: vi.fn(() => ['changed' as const]),
   updateElementFillColor: vi.fn(() => true),
   updateElementFillColors: vi.fn(() => []),
   updateElementStrokeColor: vi.fn(() => true),
@@ -105,17 +105,25 @@ const preparedDrawingArtifact = (): PreparedDrawingArtifact => {
 }
 
 describe('server-prepared Asyra Design action consumers', () => {
-  it('publishes only the backend input schema and executor contract', () => {
+  it('publishes the common tool contract without frontend preparation', () => {
     const actions = createAiActions(actionApis())
 
     actions.forEach((action) => {
       expect(Reflect.ownKeys(action).sort()).toEqual([
         'description',
+        'effect',
         'execute',
         'inputSchema',
-        'name'
+        'lifecycle',
+        'name',
+        'outputSchema',
+        'partialOutputSchema',
+        'resources',
+        'revision'
       ])
       expect(action.inputSchema).toEqual(expect.any(Object))
+      expect(action.outputSchema).toEqual(expect.any(Object))
+      expect(action.partialOutputSchema).toEqual(expect.any(Object))
       expect(action).not.toHaveProperty('schema')
       expect(action).not.toHaveProperty('prepare')
     })

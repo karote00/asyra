@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   updateElementProperties: vi.fn(),
   elementLocalToWorkspace: vi.fn(),
+  workspaceToElementLocal: vi.fn(),
   getCanvasPositionFromWorkspace: vi.fn(
     (position: { x: number; y: number }) => position
   ),
@@ -21,11 +22,13 @@ const mocks = vi.hoisted(() => ({
   setVectorElementPosition: vi.fn()
 }))
 
-vi.mock('@asyra/core', () => ({
+vi.mock('@asyra/core', async (original) => ({
+  ...(await original<typeof import('@asyra/core')>()),
   runTransaction: mocks.runTransaction
 }))
 
-vi.mock('@asyra/preset', () => ({
+vi.mock('@asyra/preset', async (original) => ({
+  ...(await original<typeof import('@asyra/preset')>()),
   InputSystemEvents: {},
   moveElementsWithGroupGeometry: mocks.moveElementsWithGroupGeometry,
   normalizeGroupsForElements: mocks.normalizeGroupsForElements,
@@ -65,6 +68,7 @@ vi.mock('../../../contexts', () => {
   return {
     default: {
       elementLocalToWorkspace: mocks.elementLocalToWorkspace,
+      workspaceToElementLocal: mocks.workspaceToElementLocal,
       getCanvasBounds: vi.fn(() => ({
         bottom: 0,
         height: 0,
@@ -133,6 +137,12 @@ import { updateElementProperties } from '../update-element-properties'
 describe('Group geometry mutation handoff', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.updateElementProperties.mockImplementation((updates) => ({
+      acceptedIds: updates.map(
+        (update: { elementId: string }) => update.elementId
+      ),
+      changed: true
+    }))
     mocks.projectGroupGeometryPropertyUpdates.mockImplementation(
       (_core, updates) => updates
     )
@@ -142,6 +152,41 @@ describe('Group geometry mutation handoff', () => {
         y: 200 + y * 2
       })
     )
+  })
+
+  it('returns canonical mutation evidence using original caller identities', () => {
+    mocks.projectGroupGeometryPropertyUpdates.mockReturnValueOnce([
+      { elementId: 'child-1', values: { x: 2 } }
+    ])
+    mocks.updateElementProperties.mockReturnValueOnce({
+      acceptedIds: ['child-1'],
+      changed: true
+    })
+    expect(updateElementProperties(['group-1'], { x: 2 })).toEqual({
+      acceptedIds: ['group-1'],
+      changed: true
+    })
+  })
+
+  it('preserves validated no-op receipts and validates empty values', () => {
+    mocks.updateElementProperties.mockReturnValueOnce({
+      acceptedIds: ['rect-1'],
+      changed: false
+    })
+    expect(updateElementProperties(['rect-1'], {})).toEqual({
+      acceptedIds: ['rect-1'],
+      changed: false
+    })
+    mocks.updateElementProperties.mockImplementationOnce(() => {
+      throw new Error('Missing target')
+    })
+    expect(() => updateElementProperties(['missing'], {})).toThrow(
+      'Missing target'
+    )
+    expect(updateElementProperties([], {})).toEqual({
+      acceptedIds: [],
+      changed: false
+    })
   })
 
   it('projects identity-safe element bounds into client coordinates', () => {
@@ -230,5 +275,93 @@ describe('Group geometry mutation handoff', () => {
       updateElementProperties(['group-1'], { width: 45 }, { undoable: true })
     ).toThrow(/invalid later geometry target/i)
     expect(mocks.updateElementProperties).not.toHaveBeenCalled()
+  })
+})
+
+describe('workspace point bounds queries for nested elements', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('converts translated and rotated workspace points to element-local bounds', () => {
+    mocks.workspaceToElementLocal.mockImplementation(
+      (_id: string, point: { x: number; y: number }) => ({
+        x: point.y - 200,
+        y: 100 - point.x
+      })
+    )
+    expect(elementApis.isPointInsideElement('rect-1', { x: 80, y: 215 })).toBe(
+      true
+    )
+    expect(elementApis.isPointInsideElement('rect-1', { x: 10, y: 20 })).toBe(
+      false
+    )
+    expect(mocks.workspaceToElementLocal).toHaveBeenCalledWith('rect-1', {
+      x: 80,
+      y: 215
+    })
+  })
+
+  it('retains local padding and rejects unavailable or non-finite projections', () => {
+    mocks.workspaceToElementLocal.mockReturnValue({ x: -2, y: 0 })
+    expect(
+      elementApis.isPointInsideElement('rect-1', { x: 98, y: 200 }, 3)
+    ).toBe(true)
+    expect(elementApis.isPointInsideElement('rect-1', { x: 98, y: 200 })).toBe(
+      false
+    )
+    mocks.workspaceToElementLocal.mockReturnValue(null)
+    expect(elementApis.isPointInsideElement('rect-1', { x: 10, y: 20 })).toBe(
+      false
+    )
+    mocks.workspaceToElementLocal.mockReturnValue({ x: NaN, y: 0 })
+    expect(elementApis.isPointInsideElement('rect-1', { x: 10, y: 20 })).toBe(
+      false
+    )
+    expect(elementApis.isPointInsideElement('missing', { x: 10, y: 20 })).toBe(
+      false
+    )
+  })
+})
+
+it('preserves geometry and position outcomes including unchanged and unavailable targets', () => {
+  mocks.updateElementProperties.mockReturnValue({
+    acceptedIds: ['rect-1'],
+    changed: false
+  })
+  expect(
+    elementApis.changeElementGeometry('rect-1', { width: 30 })
+  ).toMatchObject({
+    acceptedIds: ['rect-1'],
+    unavailableIds: [],
+    changed: false
+  })
+  expect(
+    elementApis.setElementPositions({
+      'rect-1': { x: 10, y: 20 },
+      missing: { x: 1, y: 2 }
+    })
+  ).toMatchObject({
+    acceptedIds: ['rect-1'],
+    unavailableIds: ['missing'],
+    changed: false
+  })
+  expect(elementApis.setElementPositions({})).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: [],
+    changed: false
+  })
+  expect(elementApis.setElementLock('missing', true)).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['missing'],
+    changed: false
+  })
+  expect(elementApis.toggleElementLock('missing')).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['missing'],
+    changed: false
+  })
+  expect(elementApis.toggleElementVisible('missing')).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['missing'],
+    changed: false
   })
 })

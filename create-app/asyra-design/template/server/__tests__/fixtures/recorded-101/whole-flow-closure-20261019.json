@@ -1,0 +1,139 @@
+{
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1792342207875",
+  "scope": "Immutable observed input and compact output facts. Tests remap document and request identities to actual current receipts; old outcomes are regression evidence, never expected repaired behavior.",
+  "calls": [
+    {
+      "index": 60,
+      "tool": "review_design",
+      "input": {
+        "arguments": {
+          "elementId": "design-5bac8d62-4684-4465-9adf-4bdbc494f6dd-0"
+        },
+        "inspection": "defer",
+        "message": "最終全棟結構檢查"
+      },
+      "inputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/44642-input.json",
+        "bytes": 133,
+        "sha256": "81e75bdecc418e90699b428603338f8669d39cd7514ecd09a205200b22354bb5",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.01241600001230836
+      },
+      "outputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/44645-output.json",
+        "bytes": 1284,
+        "sha256": "41f5b6b852b711d9aef14488388e849928752baecd7c5dc1b6f7580ae4665d67",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.03258400002960116
+      },
+      "observed": {
+        "complete": true,
+        "findings": [],
+        "checkedElements": 38956
+      }
+    },
+    {
+      "index": 61,
+      "tool": "verify_design_checks",
+      "input": {
+        "requestId": "26279d80-c582-4608-b0e7-3c9142b79b25",
+        "checks": [
+          {
+            "checkId": "measurement:design-5bac8d62-4684-4465-9adf-4bdbc494f6dd-0",
+            "revision": 6
+          }
+        ]
+      },
+      "inputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/44646-input.json",
+        "bytes": 148,
+        "sha256": "3e44ab3117c50e52a4d266f8517dea9598588a0991213670942ac49fca2c0ac8",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.054250000044703484
+      },
+      "outputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/44651-output.json",
+        "bytes": 447,
+        "sha256": "1125995986339023052e9e3bfd0be4018f6f01142fbc1f8797011c240468a39b",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.02458299999125302
+      },
+      "observed": {
+        "verification": {
+          "status": "pass",
+          "progress": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      }
+    },
+    {
+      "index": 62,
+      "tool": "read_design_checks",
+      "input": {},
+      "inputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/44652-input.json",
+        "bytes": 2,
+        "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.01254200004041195
+      },
+      "outputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/46971-output.json",
+        "bytes": 2800599,
+        "sha256": "ff3430077893a7e00a50ed3d6c1c5885a11f43c10766c23f9fba6914b6a3fe73",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 17.055707999970764
+      },
+      "observed": {
+        "counts": {
+          "pass": 1160,
+          "fail": 0,
+          "unverified": 0,
+          "stale": 5459
+        },
+        "visitedResults": 5459
+      }
+    },
+    {
+      "index": 63,
+      "tool": "describe_design_apis",
+      "input": {
+        "query": "report_outcome",
+        "view": "usage"
+      },
+      "inputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/46972-input.json",
+        "bytes": 41,
+        "sha256": "06f9958b919884cc48a619713cd70fec3a19a68503e7017bf19712a396f02994",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.017583000008016825
+      },
+      "outputSource": {
+        "status": "queued",
+        "path": "26279d80-c582-4608-b0e7-3c9142b79b25.payloads/46973-output.json",
+        "bytes": 1308,
+        "sha256": "f37391c13eea0f6e0d2479635c3b96f5cec143955b62fd4eb4d580f42ce8f2da",
+        "redactions": [],
+        "resourceIdentities": [],
+        "serializationMs": 0.03058299992699176
+      },
+      "observed": {
+        "apis": [],
+        "message": "No lexical match; this is not evidence of an unavailable capability. Select an operation from its category."
+      }
+    }
+  ]
+}

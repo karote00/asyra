@@ -1,6 +1,7 @@
 import {
   EntityTypes,
   type ElementRawData,
+  type PositionData,
   type SystemContextSnapshot
 } from '@asyra/utils'
 import { elementApis, hierarchyApis, selectionApis } from '../common-apis'
@@ -185,6 +186,53 @@ export const resolveCanvasHierarchyTarget = ({
 
   return null
 }
+
+export const resolveContainerChildTarget = ({
+  hitElementId,
+  containerId,
+  flattenedIds,
+  elementDataMap
+}: Pick<
+  ResolveCanvasHierarchyTargetInput,
+  'hitElementId' | 'flattenedIds' | 'elementDataMap'
+> & {
+  containerId: string
+}): string | null => {
+  const projection = validateHierarchyProjection(flattenedIds, elementDataMap)
+  if (
+    !hitElementId ||
+    hitElementId === containerId ||
+    !projection?.flattenedIdSet.has(hitElementId) ||
+    !projection.flattenedIdSet.has(containerId)
+  )
+    return null
+
+  const container = elementDataMap[containerId]
+  if (container.lock || container.visible === false) return null
+
+  let currentId = hitElementId
+  while (projection.flattenedIdSet.has(currentId)) {
+    const element = elementDataMap[currentId]
+    if (element.lock || element.visible === false) return null
+    if (element.parentId === containerId) return currentId
+    // Projection validation already proved parent existence and acyclicity.
+    const parentId = element.parentId
+    if (typeof parentId !== 'string') return null
+    currentId = parentId
+  }
+  return null
+}
+
+export const resolveContainerChildAtClientPos = (
+  containerId: string,
+  clientPosition: PositionData
+): string | null =>
+  resolveContainerChildTarget({
+    containerId,
+    hitElementId: elementApis.getRenderElementIdAtClientPos(clientPosition),
+    flattenedIds: hierarchyApis.getFlattenedElementIds(),
+    elementDataMap: hierarchyApis.getElementDataMap()
+  })
 
 export const resolveCreateElementParent = ({
   workspaceId,

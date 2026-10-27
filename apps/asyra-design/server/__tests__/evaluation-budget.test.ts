@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { readEvaluationWindow } from '../../src/ai/evaluation-window'
 import { DesignPreparationLimits } from '../../src/ai/prepared-design'
 import { createDesignPreparationSession } from '../design-preparation'
@@ -92,4 +92,21 @@ it('partitions the preserved source under the effective limit without changing s
   expect(() => production.repair({ draftId: id, partition: 0 })).toThrow(
     /unavailable/
   )
+})
+
+it('admits the authorized fifteen-minute window while enforcing independent work and report ceilings', () => {
+  const now = 1793070000000
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+  try {
+    const policy = { workDeadlineAt: now + 900000, reportTimeoutMs: 60000 }
+    expect(readEvaluationWindow(policy)).toEqual(policy)
+    expect(() =>
+      readEvaluationWindow({ ...policy, workDeadlineAt: now + 900001 })
+    ).toThrow('Invalid evaluation window')
+    expect(() =>
+      readEvaluationWindow({ ...policy, reportTimeoutMs: 60001 })
+    ).toThrow('Invalid evaluation window')
+  } finally {
+    clock.mockRestore()
+  }
 })

@@ -553,7 +553,7 @@ it.each([
   ],
   [
     'core.patchElementProperties',
-    { patches: [{ elementId: 'a', values: { width: 20 } }] },
+    { patches: [{ elementId: 'a', values: { width: 20 }, records: [] }] },
     { acceptedIds: ['a'], changed: true },
     ['a']
   ],

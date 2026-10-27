@@ -1,12 +1,28 @@
 import {
+  FillColorFormats,
+  FillKinds,
+  StrokeStyles,
+  StrokePositions,
+  StrokeJoinTypes,
+  StrokeCapTypes
+} from '@asyra/utils'
+import { VECTOR_TOKENS } from '@asyra/core'
+import { type FillWritableKey } from '../constants/fills'
+import { STROKE_PATCH_KEYS } from '../constants/strokes'
+import {
   defineBasicApi,
   apiString,
+  apiId,
+  apiElementId,
+  apiSingleElementId,
   apiNumber,
   apiBoolean,
   apiPosition,
   apiObject,
   apiArray,
   apiIds,
+  apiElementIds,
+  apiUniqueElementIds,
   apiRecord
 } from './basic-api-contracts'
 
@@ -27,7 +43,7 @@ const elementCreationOptionsSchema = apiObject(
     type: apiString,
     clientPosition: apiPosition,
     workspacePosition: apiPosition,
-    parentId: apiString,
+    parentId: apiId,
     parentWorkspaceOrigin: apiPosition,
     width: apiNumber,
     height: apiNumber,
@@ -42,61 +58,68 @@ const elementCreationOptionsSchema = apiObject(
 )
 
 const elementMoveRequestSchema = apiObject({
-  elementIds: apiIds,
-  targetParentId: apiString,
+  elementIds: apiElementIds,
+  targetParentId: apiId,
   targetIndex: { type: 'integer', minimum: 0 }
 })
 
-const isContainerTypeApi = defineBasicApi({
-  owner: 'element',
-  method: 'isContainerType',
-  effect: 'read',
-  parameters: [{ name: 'type', schema: apiString }]
-})
-
 const getElementTypeApi = defineBasicApi({
+  description:
+    'Read the registered component type of a known element, not its container capability.',
   owner: 'element',
   method: 'getElementType',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const isElementLockedApi = defineBasicApi({
+  description:
+    'Read whether an element is locked; do not use as an existence check.',
   owner: 'element',
   method: 'isElementLocked',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const isElementVisibleApi = defineBasicApi({
+  description:
+    'Read the visibility flag, defaulting to visible; does not prove the element exists.',
   owner: 'element',
   method: 'isElementVisible',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const getElementBoundsApi = defineBasicApi({
+  description:
+    'Read computed x, y, width and height; returns null if bounds are unavailable.',
   owner: 'element',
   method: 'getElementBounds',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const getElementClientBoundsApi = defineBasicApi({
+  description:
+    'Read transformed bounds in browser client coordinates, including the canvas offset; returns null if unavailable.',
   owner: 'element',
   method: 'getElementClientBounds',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const getElementPositionApi = defineBasicApi({
+  description:
+    'Read computed x and y for a known element; returns null when unavailable.',
   owner: 'element',
   method: 'getElementPosition',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const getElementIdAtWorkspacePosApi = defineBasicApi({
+  description:
+    'Hit-test an element at workspace coordinates; returns an identity or null.',
   owner: 'element',
   method: 'getElementIdAtWorkspacePos',
   effect: 'read',
@@ -104,6 +127,8 @@ const getElementIdAtWorkspacePosApi = defineBasicApi({
 })
 
 const getElementIdAtClientPosApi = defineBasicApi({
+  description:
+    'Hit-test at browser client coordinates; uses current viewport conversion.',
   owner: 'element',
   method: 'getElementIdAtClientPos',
   effect: 'read',
@@ -111,6 +136,8 @@ const getElementIdAtClientPosApi = defineBasicApi({
 })
 
 const getRenderElementIdAtClientPosApi = defineBasicApi({
+  description:
+    'Hit-test the render projection at browser client coordinates; projection identity is not canonical document data.',
   owner: 'element',
   method: 'getRenderElementIdAtClientPos',
   effect: 'read',
@@ -118,6 +145,8 @@ const getRenderElementIdAtClientPosApi = defineBasicApi({
 })
 
 const getMousePosInWorkspaceApi = defineBasicApi({
+  description:
+    'Convert a browser client position to workspace coordinates using the current viewport.',
   owner: 'element',
   method: 'getMousePosInWorkspace',
   effect: 'read',
@@ -125,6 +154,8 @@ const getMousePosInWorkspaceApi = defineBasicApi({
 })
 
 const getElementIdsInBoundsApi = defineBasicApi({
+  description:
+    'Find visible projected elements whose workspace bounds intersect the region using a retained spatial index; returns child-before-parent ordered IDs. Bounds are candidates, not exact path hits or occlusion. Use read_design_context scope=region for type, hierarchy and lock filtering before a batch edit.',
   owner: 'element',
   method: 'getElementIdsInBounds',
   effect: 'read',
@@ -132,79 +163,104 @@ const getElementIdsInBoundsApi = defineBasicApi({
 })
 
 const isPointInsideElementApi = defineBasicApi({
+  description:
+    'Test a point against computed element bounds; returns a boolean, not a detailed path hit.',
   owner: 'element',
   method: 'isPointInsideElement',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     { name: 'point', schema: apiPosition }
   ]
 })
 
 const getPositionInParentApi = defineBasicApi({
+  description:
+    'Convert a workspace position into the current Workspace or Group parent coordinates; returns null for unsupported parents. Core workspaceToElementLocal handles general element transforms.',
   owner: 'element',
   method: 'getPositionInParent',
   effect: 'read',
   parameters: [
-    { name: 'parentId', schema: apiString },
+    { name: 'parentId', schema: apiId },
     { name: 'workspacePosition', schema: apiPosition }
   ]
 })
 
 const setElementLockApi = defineBasicApi({
+  description:
+    'Set the desired lock state for a known element; The receipt distinguishes unchanged from an unavailable target.',
   owner: 'element',
   method: 'setElementLock',
+  resultKind: 'mutation-receipt',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     { name: 'lock', schema: apiBoolean }
   ]
 })
 
-const setElementVisibleApi = defineBasicApi({
+const setElementsVisibleApi = defineBasicApi({
+  description:
+    'Set visibility on all supplied elements in one canonical batch. Returns ordered changed/unchanged/unavailable statuses. Canonical mutationScope identifies actual changes and is not visual acceptance. Use elementIds target references; no per-element action expansion.',
   owner: 'element',
-  method: 'setElementVisible',
+  method: 'setElementsVisible',
   effect: 'write',
+  resultKind: 'status-items',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementIds', schema: apiElementIds },
     { name: 'visible', schema: apiBoolean }
   ]
 })
 
 const toggleElementLockApi = defineBasicApi({
+  description:
+    'Invert the current lock state at the canonical owner; use setElementLock when the desired state is known.',
   owner: 'element',
   method: 'toggleElementLock',
+  resultKind: 'mutation-receipt',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const toggleElementVisibleApi = defineBasicApi({
+  description:
+    'Invert current visibility at the canonical owner; use setElementsVisible when the desired state is known.',
   owner: 'element',
   method: 'toggleElementVisible',
+  resultKind: 'mutation-receipt',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const resetElementSizeApi = defineBasicApi({
+  description:
+    'Reset an element to the App default size; use changeElementGeometry for explicit dimensions.',
   owner: 'element',
   method: 'resetElementSize',
+  resultKind: 'mutation-receipt',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const changeElementGeometryApi = defineBasicApi({
+  description:
+    'Apply supplied new geometry fields through App normalization; omitted fields stay unchanged.',
   owner: 'element',
   method: 'changeElementGeometry',
+  resultKind: 'mutation-receipt',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
     { name: 'geometry', schema: elementGeometrySchema }
   ]
 })
 
 const setElementPositionsApi = defineBasicApi({
+  description:
+    'Apply per-element new positions keyed by element ID in one transaction; App group geometry is normalized.',
   owner: 'element',
   method: 'setElementPositions',
+  resultKind: 'mutation-receipt',
   effect: 'write',
   parameters: [
     {
@@ -215,31 +271,40 @@ const setElementPositionsApi = defineBasicApi({
 })
 
 const updateElementPropertiesApi = defineBasicApi({
+  description:
+    'Apply the same new property values to elementIds through App normalization; use patchElementProperties for independent fields or linked records.',
   owner: 'element',
   method: 'updateElementProperties',
   effect: 'write',
+  resultKind: 'property-mutation',
+  resultIdentityPath: [],
   parameters: [
-    { name: 'elementIds', schema: apiIds },
+    { name: 'elementIds', schema: apiElementIds },
     { name: 'values', schema: apiRecord }
   ]
 })
 
 const patchElementPropertiesApi = defineBasicApi({
+  description:
+    'Apply ordered per-element new value and record patches through App normalization; omitted fields stay unchanged.',
   owner: 'element',
   method: 'patchElementProperties',
   effect: 'write',
+  resultKind: 'property-mutation',
+  resultIdentityPath: ['elementId'],
   parameters: [
     {
       name: 'patches',
       schema: apiArray(
         apiObject(
           {
-            elementId: apiString,
+            elementId: apiElementId,
             values: apiRecord,
             records: apiArray(
-              apiObject({ key: apiString, set: apiRecord, remove: apiIds }, [
-                'key'
-              ])
+              apiObject(
+                { key: apiId, set: apiRecord, remove: apiArray(apiString) },
+                ['key']
+              )
             )
           },
           ['elementId', 'records']
@@ -249,18 +314,12 @@ const patchElementPropertiesApi = defineBasicApi({
   ]
 })
 
-const createElementApi = defineBasicApi({
-  owner: 'element',
-  method: 'createElement',
-  effect: 'write',
-  parameters: [{ name: 'createOptions', schema: elementCreationOptionsSchema }],
-  description:
-    'Use workspacePosition for deterministic placement. Registered component types are supported.'
-})
-
 const createElementsApi = defineBasicApi({
+  description:
+    'Create an ordered array of component or vector descriptions, allowing different parents. Returns one ID or null per input in order; retain returned IDs.',
   owner: 'element',
   method: 'createElements',
+  resultKind: 'created-items',
   effect: 'write',
   parameters: [
     { name: 'createOptions', schema: apiArray(elementCreationOptionsSchema) }
@@ -268,8 +327,11 @@ const createElementsApi = defineBasicApi({
 })
 
 const createElementsInParentApi = defineBasicApi({
+  description:
+    'Create canonical descriptors under one parent in order. Returns ordered IDs or null when the parent argument is invalid.',
   owner: 'element',
   method: 'createElementsInParent',
+  resultKind: 'created-items',
   effect: 'write',
   parameters: [
     {
@@ -277,7 +339,7 @@ const createElementsInParentApi = defineBasicApi({
       schema: apiArray({
         ...apiObject(
           {
-            id: apiString,
+            id: apiId,
             name: apiString,
             type: apiString,
             x: apiNumber,
@@ -291,37 +353,37 @@ const createElementsInParentApi = defineBasicApi({
         additionalProperties: true
       })
     },
-    { name: 'parentId', schema: apiString }
+    { name: 'parentId', schema: apiId }
   ]
-})
-
-const createVectorElementApi = defineBasicApi({
-  owner: 'element',
-  method: 'createVectorElement',
-  effect: 'write',
-  parameters: [{ name: 'createOptions', schema: elementCreationOptionsSchema }],
-  description:
-    'Use existing vector topology or ordinary vector construction inputs.'
 })
 
 const createVectorElementsInParentApi = defineBasicApi({
+  description:
+    'Create vector descriptions under one parent in order; returns ordered IDs or null. Use createElements for mixed component types or parents.',
   owner: 'element',
   method: 'createVectorElementsInParent',
+  resultKind: 'created-items',
   effect: 'write',
   parameters: [
     { name: 'createOptions', schema: apiArray(elementCreationOptionsSchema) },
-    { name: 'parentId', schema: apiString }
+    { name: 'parentId', schema: apiId }
   ]
 })
 
-const deleteElementApi = defineBasicApi({
+const deleteElementsApi = defineBasicApi({
+  description:
+    'Delete one or more non-Workspace elements and their descendants in one canonical batch. Pass all ready target IDs together; preparation and orphan-property work are shared. Overlapping ancestor/descendant targets are removed once. Invalid, duplicate or missing targets reject before writes. Returns removed identities.',
   owner: 'element',
-  method: 'deleteElement',
+  method: 'deleteElements',
+  examples: [{ elementIds: ['example-element'] }],
   effect: 'delete',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  resultKind: 'removed',
+  parameters: [{ name: 'elementIds', schema: apiUniqueElementIds }]
 })
 
 const getWorkspaceIdApi = defineBasicApi({
+  description:
+    'Read the current workspace identity from saved hierarchy data; use core.getCurrentWorkspaceId for direct current identity.',
   owner: 'hierarchy',
   method: 'getWorkspaceId',
   effect: 'read',
@@ -329,6 +391,8 @@ const getWorkspaceIdApi = defineBasicApi({
 })
 
 const getFlattenedElementIdsApi = defineBasicApi({
+  description:
+    'Read the current flattened UI layer order; this is a UI projection, not a complete canonical tree query.',
   owner: 'hierarchy',
   method: 'getFlattenedElementIds',
   effect: 'read',
@@ -336,6 +400,8 @@ const getFlattenedElementIdsApi = defineBasicApi({
 })
 
 const getElementDataMapApi = defineBasicApi({
+  description:
+    'Read the current UI layer data map; use canonical reads for authoritative element properties.',
   owner: 'hierarchy',
   method: 'getElementDataMap',
   effect: 'read',
@@ -343,36 +409,65 @@ const getElementDataMapApi = defineBasicApi({
 })
 
 const groupElementsApi = defineBasicApi({
+  description:
+    'Group the supplied element IDs with App geometry preservation; returns grouping details.',
   owner: 'hierarchy',
   method: 'groupElements',
+  resultKind: 'grouped',
   effect: 'write',
-  parameters: [{ name: 'elementIds', schema: apiIds }]
+  parameters: [{ name: 'elementIds', schema: apiElementIds }]
 })
 
 const ungroupElementApi = defineBasicApi({
+  description:
+    'Ungroup a container while preserving App child geometry; returns the resulting identities and removal result.',
   owner: 'hierarchy',
   method: 'ungroupElement',
+  resultKind: 'ungrouped',
   effect: 'write',
-  parameters: [{ name: 'groupId', schema: apiString }]
+  parameters: [{ name: 'groupId', schema: apiId }]
 })
 
 const moveElementsApi = defineBasicApi({
   owner: 'hierarchy',
   method: 'moveElements',
+  resultKind: 'moves',
   effect: 'write',
   parameters: [{ name: 'request', schema: elementMoveRequestSchema }],
   description:
-    'Preserves App group-geometry behavior. Read the target parent children with core.getElementData first. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
+    'Preserves App group-geometry behavior. For before/after placement prefer hierarchy.moveElementsRelative with an anchor ID, without reading siblings. For indexed placement read children using core.getElementChildren. targetIndex is a zero-based insertion index from 0 through the target child count excluding the moved elements; use that count to append. All moved elements must share a source parent. An oversized index is rejected, not clamped.'
 })
 
-const removeSubtreeApi = defineBasicApi({
+const moveElementsRelativeApi = defineBasicApi({
   owner: 'hierarchy',
-  method: 'removeSubtree',
-  effect: 'delete',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  method: 'moveElementsRelative',
+  examples: [
+    {
+      request: {
+        elementIds: ['example-element'],
+        anchorId: 'example-anchor',
+        placement: 'before'
+      }
+    }
+  ],
+  resultKind: 'moves',
+  effect: 'write',
+  parameters: [
+    {
+      name: 'request',
+      schema: apiObject({
+        elementIds: apiElementIds,
+        anchorId: apiSingleElementId,
+        placement: { type: 'string', enum: ['before', 'after'] }
+      })
+    }
+  ],
+  description:
+    'Move one or more same-parent elements immediately before or after a current anchor. Resolves the destination parent and insertion index internally, preserves Group geometry and Undo, and rejects missing anchors or an anchor included in the moved set. No old values or sibling-list read is needed.'
 })
 
 const getSelectedIdsApi = defineBasicApi({
+  description: 'Read the current element selection IDs.',
   owner: 'selection',
   method: 'getSelectedIds',
   effect: 'read',
@@ -380,6 +475,8 @@ const getSelectedIdsApi = defineBasicApi({
 })
 
 const getVectorPointSelectionIdsApi = defineBasicApi({
+  description:
+    'Read encoded vector point selection IDs; use getSelectedVectorPoints for structured references.',
   owner: 'selection',
   method: 'getVectorPointSelectionIds',
   effect: 'read',
@@ -387,6 +484,8 @@ const getVectorPointSelectionIdsApi = defineBasicApi({
 })
 
 const getVectorSegmentSelectionIdsApi = defineBasicApi({
+  description:
+    'Read encoded vector segment selection IDs; use getSelectedVectorSegments for structured references.',
   owner: 'selection',
   method: 'getVectorSegmentSelectionIds',
   effect: 'read',
@@ -394,6 +493,8 @@ const getVectorSegmentSelectionIdsApi = defineBasicApi({
 })
 
 const getSelectedVectorPointsApi = defineBasicApi({
+  description:
+    'Read structured selected vector point references with element and point identity.',
   owner: 'selection',
   method: 'getSelectedVectorPoints',
   effect: 'read',
@@ -401,48 +502,35 @@ const getSelectedVectorPointsApi = defineBasicApi({
 })
 
 const getSelectedVectorSegmentsApi = defineBasicApi({
+  description:
+    'Read structured selected vector segment references with element and segment identity.',
   owner: 'selection',
   method: 'getSelectedVectorSegments',
   effect: 'read',
   parameters: []
 })
 
-const clearSelectionApi = defineBasicApi({
-  owner: 'selection',
-  method: 'clearSelection',
-  effect: 'selection',
-  parameters: []
-})
-
-const clearVectorPointSelectionApi = defineBasicApi({
-  owner: 'selection',
-  method: 'clearVectorPointSelection',
-  effect: 'selection',
-  parameters: []
-})
-
-const clearVectorSegmentSelectionApi = defineBasicApi({
-  owner: 'selection',
-  method: 'clearVectorSegmentSelection',
-  effect: 'selection',
-  parameters: []
-})
-
 const toggleSelectionApi = defineBasicApi({
+  description:
+    'Toggle membership of one known element in the current selection; use selectElements for explicit replacement.',
   owner: 'selection',
   method: 'toggleSelection',
   effect: 'selection',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const selectElementsApi = defineBasicApi({
+  description:
+    'Replace the element selection with existing IDs at once; any nonexistent ID rejects the entire replacement and preserves the current selection. An empty array clears it.',
   owner: 'selection',
   method: 'selectElements',
   effect: 'selection',
-  parameters: [{ name: 'elementIds', schema: apiIds }]
+  parameters: [{ name: 'elementIds', schema: apiElementIds }]
 })
 
 const selectVectorPointsApi = defineBasicApi({
+  description:
+    'Replace encoded vector point selection IDs; an empty array clears them.',
   owner: 'selection',
   method: 'selectVectorPoints',
   effect: 'selection',
@@ -450,6 +538,8 @@ const selectVectorPointsApi = defineBasicApi({
 })
 
 const selectVectorSegmentsApi = defineBasicApi({
+  description:
+    'Replace encoded vector segment selection IDs; an empty array clears them.',
   owner: 'selection',
   method: 'selectVectorSegments',
   effect: 'selection',
@@ -457,30 +547,39 @@ const selectVectorSegmentsApi = defineBasicApi({
 })
 
 const selectVectorPointApi = defineBasicApi({
+  description:
+    'Select one structured point reference without asking the caller to encode its identity.',
   owner: 'selection',
   method: 'selectVectorPoint',
   effect: 'selection',
   parameters: [
     {
       name: 'point',
-      schema: apiObject({ elementId: apiString, pointId: apiString })
+      schema: apiObject({
+        elementId: apiElementId,
+        pointId: apiId,
+        target: { enum: Object.values(VECTOR_TOKENS.POINT.TARGET) }
+      })
     }
   ]
 })
 
 const selectVectorSegmentApi = defineBasicApi({
+  description:
+    'Select one structured segment reference without asking the caller to encode its identity.',
   owner: 'selection',
   method: 'selectVectorSegment',
   effect: 'selection',
   parameters: [
     {
       name: 'segment',
-      schema: apiObject({ elementId: apiString, segmentId: apiString })
+      schema: apiObject({ elementId: apiElementId, segmentId: apiId })
     }
   ]
 })
 
 const getScaleApi = defineBasicApi({
+  description: 'Read the current App zoom scale, with its configured default.',
   owner: 'viewport',
   method: 'getScale',
   effect: 'read',
@@ -488,6 +587,8 @@ const getScaleApi = defineBasicApi({
 })
 
 const getPositionApi = defineBasicApi({
+  description:
+    'Read the App viewport translation, with its configured default.',
   owner: 'viewport',
   method: 'getPosition',
   effect: 'read',
@@ -495,6 +596,8 @@ const getPositionApi = defineBasicApi({
 })
 
 const getCanvasPositionFromWorkspaceApi = defineBasicApi({
+  description:
+    'Convert workspace coordinates to canvas coordinates using current App zoom and translation.',
   owner: 'viewport',
   method: 'getCanvasPositionFromWorkspace',
   effect: 'read',
@@ -502,6 +605,8 @@ const getCanvasPositionFromWorkspaceApi = defineBasicApi({
 })
 
 const zoomFitApi = defineBasicApi({
+  description:
+    'Fit the canvas to current content only when the user requests navigation; this is not an automatic drawing step.',
   owner: 'viewport',
   method: 'zoomFit',
   effect: 'viewport',
@@ -509,6 +614,8 @@ const zoomFitApi = defineBasicApi({
 })
 
 const zoomToCenterApi = defineBasicApi({
+  description:
+    'Set zoom around the supplied canvas center, preserving that focal point.',
   owner: 'viewport',
   method: 'zoomToCenter',
   effect: 'viewport',
@@ -520,6 +627,8 @@ const zoomToCenterApi = defineBasicApi({
 })
 
 const panToApi = defineBasicApi({
+  description:
+    'Set the viewport translation to the supplied x and y; does not modify document geometry.',
   owner: 'viewport',
   method: 'panTo',
   effect: 'viewport',
@@ -529,87 +638,170 @@ const panToApi = defineBasicApi({
   ]
 })
 
-const addFillApi = defineBasicApi({
-  owner: 'fill',
-  method: 'addFill',
-  effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
-})
-
-const removeFillApi = defineBasicApi({
-  owner: 'fill',
-  method: 'removeFill',
-  effect: 'delete',
-  parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString }
-  ]
-})
-
 const getFillByIdApi = defineBasicApi({
+  description:
+    'Read one current Fill by known element and Fill IDs; use only when its values are needed for a calculation.',
   owner: 'fill',
   method: 'getFillById',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString }
+    { name: 'elementId', schema: apiElementId },
+    { name: 'fillId', schema: apiId }
   ]
 })
 
 const getPrimaryFillColorApi = defineBasicApi({
+  description:
+    'Read the first Fill color or null; this is not a complete Fill record.',
   owner: 'fill',
   method: 'getPrimaryFillColor',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
-})
-
-const updatePrimaryFillColorApi = defineBasicApi({
-  owner: 'fill',
-  method: 'updatePrimaryFillColor',
-  effect: 'write',
-  parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'color', schema: apiString }
-  ]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const updatePrimaryFillColorsApi = defineBasicApi({
+  description:
+    'Recolor the primary Fill of each supplied element. Retains other fields; returns one ordered changed, unchanged or unavailable status per input. Unchanged is a valid no-op; unavailable requires correction.',
   owner: 'fill',
   method: 'updatePrimaryFillColors',
+  resultKind: 'status-items',
   effect: 'write',
   parameters: [
     {
       name: 'updates',
-      schema: apiArray(apiObject({ elementId: apiString, color: apiString }))
+      schema: apiArray(apiObject({ elementId: apiElementId, color: apiString }))
     }
   ]
 })
 
-const updateFillFieldsApi = defineBasicApi({
+const fillGradientSchema = apiObject(
+  {
+    gradientType: {
+      ...apiString,
+      description:
+        'Native gradient type, including linear, radial, angular or diamond.'
+    },
+    gradientHandles: apiArray(apiPosition),
+    gradientStops: apiArray(
+      apiObject({ position: apiNumber, color: apiString, opacity: apiNumber })
+    ),
+    metadata: apiRecord
+  },
+  ['gradientType', 'gradientHandles', 'gradientStops']
+)
+
+const fillPatchProperties = {
+  kind: { enum: Object.values(FillKinds) },
+  defaultColorFormat: { enum: Object.values(FillColorFormats) },
+  colorFormat: { enum: Object.values(FillColorFormats) },
+  color: apiString,
+  opacity: apiNumber,
+  visible: apiBoolean,
+  gradient: {
+    anyOf: [{ type: 'null' }, fillGradientSchema],
+    description:
+      'Replace the gradient value here, nested inside the Fill patch. Use null to clear it.'
+  }
+} satisfies Record<FillWritableKey, Record<string, unknown>>
+
+const fillPatchSchema = apiObject(fillPatchProperties, [])
+
+const fillTargetSchema = apiObject({ elementId: apiElementId, fillId: apiId })
+
+const getFillTargetsAtIndexApi = defineBasicApi({
   owner: 'fill',
-  method: 'updateFillFields',
-  effect: 'write',
+  method: 'getFillTargetsAtIndex',
+  effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
-    { name: 'currentFill', schema: apiRecord },
-    { name: 'patch', schema: apiRecord }
+    { name: 'elementIds', schema: apiElementIds },
+    { name: 'index', schema: { type: 'integer', minimum: 0 } }
   ],
   description:
-    'Read the current fill immediately before patching; preserve unrelated fields.'
+    'Resolve current Fill IDs at one row index for known elements. Returns only elementId/fillId targets; missing rows reject. Retain these IDs for edits rather than retrieving full Fill values.'
 })
 
-const updateFillFieldApi = defineBasicApi({
+const addFillsApi = defineBasicApi({
   owner: 'fill',
-  method: 'updateFillField',
+  method: 'addFills',
+  resultKind: 'mutation-receipt',
+  effect: 'write',
+  parameters: [{ name: 'elementIds', schema: apiElementIds }],
+  description:
+    'Add one default Fill to each unique element in one canonical batch; value retains the new Fill IDs in first-occurrence element order.'
+})
+
+const removeFillsApi = defineBasicApi({
+  owner: 'fill',
+  method: 'removeFills',
+  resultKind: 'mutation-receipt',
+  effect: 'delete',
+  parameters: [{ name: 'targets', schema: apiArray(fillTargetSchema) }],
+  description: 'Remove the specified Fill records in one canonical batch.'
+})
+
+const fillRowIndexSchema = { type: 'integer', minimum: 0 }
+const fillRowTargetsSchema = apiUniqueElementIds
+const updateFillsAtIndexApi = defineBasicApi({
+  owner: 'fill',
+  method: 'updateFillsAtIndex',
+  resultKind: 'mutation-receipt',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
-    { name: 'currentFill', schema: apiRecord },
-    { name: 'key', schema: apiString },
-    { name: 'value', schema: {} }
-  ]
+    { name: 'elementIds', schema: fillRowTargetsSchema },
+    { name: 'index', schema: fillRowIndexSchema },
+    {
+      name: 'patch',
+      schema: { anyOf: [fillPatchSchema, apiArray(fillPatchSchema)] }
+    }
+  ],
+  description:
+    'Apply new Fill fields to one row on unique element targets. Duplicate element IDs are invalid; they do not express sharing. patch is either one uniform patch or an array aligned exactly with elementIds in input order; arrays support different values per target without reading Fill IDs. Resolves child IDs inside the App; use prepared target references without reading or returning Fill IDs. Omitted fields and independent ownership are preserved. One plural canonical batch.'
+})
+const shareFillAtIndexApi = defineBasicApi({
+  owner: 'fill',
+  method: 'shareFillAtIndex',
+  resultKind: 'mutation-receipt',
+  effect: 'write',
+  parameters: [
+    { name: 'sourceElementId', schema: apiId },
+    { name: 'elementIds', schema: fillRowTargetsSchema },
+    { name: 'index', schema: fillRowIndexSchema }
+  ],
+  description:
+    'Link target Fill rows to an independent source row. Selected-owner edits remain local overrides; only core.updateSharedPropertySources changes all unmasked consumers. Other rows remain unchanged. A source-backed source row is rejected: explicitly choose its independent source through core.shareElementPropertyTargets or detach it first to share its effective values.'
+})
+const detachFillsAtIndexApi = defineBasicApi({
+  owner: 'fill',
+  method: 'detachFillsAtIndex',
+  resultKind: 'mutation-receipt',
+  effect: 'write',
+  parameters: [
+    { name: 'elementIds', schema: fillRowTargetsSchema },
+    { name: 'index', schema: fillRowIndexSchema }
+  ],
+  description:
+    'Detach the chosen shared Fill row into independent property components using their current values; other rows retain their references. Subsequent edits no longer change the original shared Fill. Undo restores the links.'
+})
+
+const updateFillFieldsBatchApi = defineBasicApi({
+  owner: 'fill',
+  method: 'updateFillFieldsBatch',
+  resultKind: 'mutation-receipt',
+  effect: 'write',
+  parameters: [
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({
+          elementId: apiElementId,
+          fillId: apiId,
+          patch: fillPatchSchema
+        })
+      )
+    }
+  ],
+  description:
+    'Update multiple Fill records in one atomic canonical batch using IDs and requested new fields only. Preserve omitted fields and independent values. No currentFill snapshots or full computed reads are required; invalid values reject the batch.'
 })
 
 const getGradientHandleHitAtClientPosApi = defineBasicApi({
@@ -617,12 +809,13 @@ const getGradientHandleHitAtClientPosApi = defineBasicApi({
   method: 'getGradientHandleHitAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
+    { name: 'fillId', schema: apiId },
     { name: 'clientPos', schema: apiPosition },
     { name: 'hitRadius', schema: apiNumber, optional: true }
   ],
-  description: ''
+  description:
+    'Hit-test a gradient control at browser client coordinates; returns its control index or null.'
 })
 
 const getGradientStopHitAtClientPosApi = defineBasicApi({
@@ -630,15 +823,18 @@ const getGradientStopHitAtClientPosApi = defineBasicApi({
   method: 'getGradientStopHitAtClientPos',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
+    { name: 'fillId', schema: apiId },
     { name: 'clientPos', schema: apiPosition },
     { name: 'hitSize', schema: apiNumber, optional: true }
   ],
-  description: ''
+  description:
+    'Hit-test a gradient control at browser client coordinates; returns its control index or null.'
 })
 
 const getCanvasBoundsApi = defineBasicApi({
+  description:
+    'Read the browser canvas bounds needed for pointer-coordinate conversion.',
   owner: 'fill',
   method: 'getCanvasBounds',
   effect: 'read',
@@ -646,6 +842,8 @@ const getCanvasBoundsApi = defineBasicApi({
 })
 
 const getCanvasPositionFromClientApi = defineBasicApi({
+  description:
+    'Convert browser client coordinates to canvas coordinates by subtracting the canvas offset.',
   owner: 'fill',
   method: 'getCanvasPositionFromClient',
   effect: 'read',
@@ -653,153 +851,127 @@ const getCanvasPositionFromClientApi = defineBasicApi({
 })
 
 const getGradientHandleGeometryApi = defineBasicApi({
+  description:
+    'Read current gradient handle geometry for interactive editing; returns null if the Fill or dimensions are unavailable.',
   owner: 'fill',
   method: 'getGradientHandleGeometry',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString }
-  ]
-})
-
-const getNextGradientForHandleWithDeltaApi = defineBasicApi({
-  owner: 'fill',
-  method: 'getNextGradientForHandleWithDelta',
-  effect: 'read',
-  parameters: [
-    { name: 'baseGradient', schema: apiRecord },
-    { name: 'handleIndex', schema: { enum: [0, 1] } },
-    { name: 'width', schema: apiNumber },
-    { name: 'height', schema: apiNumber },
-    { name: 'delta', schema: apiPosition }
+    { name: 'elementId', schema: apiElementId },
+    { name: 'fillId', schema: apiId }
   ]
 })
 
 const getNextGradientForHandleAtClientPositionApi = defineBasicApi({
+  description:
+    'Calculate a new gradient for a handle at a browser client position using current owner data; does not write it.',
   owner: 'fill',
   method: 'getNextGradientForHandleAtClientPosition',
   effect: 'read',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
+    { name: 'fillId', schema: apiId },
     { name: 'handleIndex', schema: { enum: [0, 1] } },
     { name: 'clientPos', schema: apiPosition }
   ]
 })
 
 const updateGradientHandleAtClientPositionApi = defineBasicApi({
+  description:
+    'Move a gradient handle to a browser client position; reads required current geometry internally and returns the new gradient or null.',
   owner: 'fill',
   method: 'updateGradientHandleAtClientPosition',
+  resultKind: 'mutation-receipt',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
+    { name: 'elementId', schema: apiElementId },
+    { name: 'fillId', schema: apiId },
     { name: 'handleIndex', schema: { enum: [0, 1] } },
     { name: 'clientPos', schema: apiPosition }
   ]
 })
 
-const getNextGradientForHandleWithWorkspaceDeltaApi = defineBasicApi({
-  owner: 'fill',
-  method: 'getNextGradientForHandleWithWorkspaceDelta',
-  effect: 'read',
-  parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
-    { name: 'handleIndex', schema: { enum: [0, 1] } },
-    { name: 'baseGradient', schema: apiRecord },
-    { name: 'delta', schema: apiPosition }
-  ]
-})
-
-const updateGradientHandleWithWorkspaceDeltaApi = defineBasicApi({
-  owner: 'fill',
-  method: 'updateGradientHandleWithWorkspaceDelta',
-  effect: 'write',
-  parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'fillId', schema: apiString },
-    { name: 'handleIndex', schema: { enum: [0, 1] } },
-    { name: 'baseGradient', schema: apiRecord },
-    { name: 'delta', schema: apiPosition }
-  ]
-})
-
 const addStrokeApi = defineBasicApi({
+  description:
+    'Append a default Stroke to a known element; returns its new identity. Put all ready targets in the same execution batch.',
   owner: 'stroke',
   method: 'addStroke',
+  resultKind: 'mutation-receipt',
   effect: 'write',
-  parameters: [{ name: 'elementId', schema: apiString }]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const removeStrokeApi = defineBasicApi({
+  description:
+    'Remove a known Stroke from an element; other Strokes are preserved.',
   owner: 'stroke',
   method: 'removeStroke',
+  resultKind: 'mutation-receipt',
   effect: 'delete',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'strokeId', schema: apiString }
+    { name: 'elementId', schema: apiElementId },
+    { name: 'strokeId', schema: apiId }
   ]
 })
 
 const getPrimaryStrokeColorApi = defineBasicApi({
+  description:
+    'Read the first Stroke color or null; this is not a complete Stroke record.',
   owner: 'stroke',
   method: 'getPrimaryStrokeColor',
   effect: 'read',
-  parameters: [{ name: 'elementId', schema: apiString }]
-})
-
-const updatePrimaryStrokeColorApi = defineBasicApi({
-  owner: 'stroke',
-  method: 'updatePrimaryStrokeColor',
-  effect: 'write',
-  parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'color', schema: apiString }
-  ]
+  parameters: [{ name: 'elementId', schema: apiElementId }]
 })
 
 const updatePrimaryStrokeColorsApi = defineBasicApi({
+  description:
+    'Recolor the primary Stroke of each supplied element. Retains other fields; returns one ordered changed, unchanged or unavailable status per input. Unchanged is a valid no-op; unavailable requires correction.',
   owner: 'stroke',
   method: 'updatePrimaryStrokeColors',
+  resultKind: 'status-items',
   effect: 'write',
   parameters: [
     {
       name: 'updates',
-      schema: apiArray(apiObject({ elementId: apiString, color: apiString }))
+      schema: apiArray(apiObject({ elementId: apiElementId, color: apiString }))
     }
   ]
 })
 
-const updateStrokeFieldsApi = defineBasicApi({
+const strokePatchProperties = {
+  style: { type: 'string', enum: Object.values(StrokeStyles) },
+  position: { type: 'string', enum: Object.values(StrokePositions) },
+  width: apiNumber,
+  dash: apiNumber,
+  gap: apiNumber,
+  fill: apiRecord,
+  joinType: { type: 'string', enum: Object.values(StrokeJoinTypes) },
+  capType: { type: 'string', enum: Object.values(StrokeCapTypes) },
+  miterAngle: apiNumber
+} satisfies Record<(typeof STROKE_PATCH_KEYS)[number], Record<string, unknown>>
+
+const updateStrokeFieldsBatchApi = defineBasicApi({
   owner: 'stroke',
-  method: 'updateStrokeFields',
+  method: 'updateStrokeFieldsBatch',
+  resultKind: 'mutation-receipt',
   effect: 'write',
   parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'strokeId', schema: apiString },
-    { name: 'currentStroke', schema: apiRecord },
-    { name: 'patch', schema: apiRecord }
+    {
+      name: 'updates',
+      schema: apiArray(
+        apiObject({
+          elementId: apiElementId,
+          strokeId: apiId,
+          patch: apiObject(strokePatchProperties, [])
+        })
+      )
+    }
   ],
   description:
-    'Read the current stroke immediately before patching; uses existing vector-bounds repair.'
-})
-
-const updateStrokeFieldApi = defineBasicApi({
-  owner: 'stroke',
-  method: 'updateStrokeField',
-  effect: 'write',
-  parameters: [
-    { name: 'elementId', schema: apiString },
-    { name: 'strokeId', schema: apiString },
-    { name: 'currentStroke', schema: apiRecord },
-    { name: 'key', schema: apiString },
-    { name: 'value', schema: {} }
-  ]
+    'Patch multiple existing Stroke records with requested new fields only. Validates all targets before writing; preserves omitted fields and canonical history.'
 })
 
 export const basicDesignApiContracts = [
-  isContainerTypeApi,
   getElementTypeApi,
   isElementLockedApi,
   isElementVisibleApi,
@@ -814,7 +986,7 @@ export const basicDesignApiContracts = [
   isPointInsideElementApi,
   getPositionInParentApi,
   setElementLockApi,
-  setElementVisibleApi,
+  setElementsVisibleApi,
   toggleElementLockApi,
   toggleElementVisibleApi,
   resetElementSizeApi,
@@ -822,27 +994,22 @@ export const basicDesignApiContracts = [
   setElementPositionsApi,
   updateElementPropertiesApi,
   patchElementPropertiesApi,
-  createElementApi,
   createElementsApi,
   createElementsInParentApi,
-  createVectorElementApi,
   createVectorElementsInParentApi,
-  deleteElementApi,
+  deleteElementsApi,
   getWorkspaceIdApi,
   getFlattenedElementIdsApi,
   getElementDataMapApi,
   groupElementsApi,
   ungroupElementApi,
   moveElementsApi,
-  removeSubtreeApi,
+  moveElementsRelativeApi,
   getSelectedIdsApi,
   getVectorPointSelectionIdsApi,
   getVectorSegmentSelectionIdsApi,
   getSelectedVectorPointsApi,
   getSelectedVectorSegmentsApi,
-  clearSelectionApi,
-  clearVectorPointSelectionApi,
-  clearVectorSegmentSelectionApi,
   toggleSelectionApi,
   selectElementsApi,
   selectVectorPointsApi,
@@ -855,29 +1022,26 @@ export const basicDesignApiContracts = [
   zoomFitApi,
   zoomToCenterApi,
   panToApi,
-  addFillApi,
-  removeFillApi,
   getFillByIdApi,
   getPrimaryFillColorApi,
-  updatePrimaryFillColorApi,
   updatePrimaryFillColorsApi,
-  updateFillFieldsApi,
-  updateFillFieldApi,
+  getFillTargetsAtIndexApi,
+  addFillsApi,
+  removeFillsApi,
+  updateFillsAtIndexApi,
+  shareFillAtIndexApi,
+  detachFillsAtIndexApi,
+  updateFillFieldsBatchApi,
   getGradientHandleHitAtClientPosApi,
   getGradientStopHitAtClientPosApi,
   getCanvasBoundsApi,
   getCanvasPositionFromClientApi,
   getGradientHandleGeometryApi,
-  getNextGradientForHandleWithDeltaApi,
   getNextGradientForHandleAtClientPositionApi,
   updateGradientHandleAtClientPositionApi,
-  getNextGradientForHandleWithWorkspaceDeltaApi,
-  updateGradientHandleWithWorkspaceDeltaApi,
   addStrokeApi,
   removeStrokeApi,
   getPrimaryStrokeColorApi,
-  updatePrimaryStrokeColorApi,
   updatePrimaryStrokeColorsApi,
-  updateStrokeFieldsApi,
-  updateStrokeFieldApi
+  updateStrokeFieldsBatchApi
 ]

@@ -72,7 +72,12 @@ const vectorItemWithPointCount = (pointCount: number, role: string) => ({
 })
 
 const actionApis = () => ({
-  changeElementGeometry: vi.fn(),
+  changeElementGeometry: vi.fn((id: string) => ({
+    value: null,
+    acceptedIds: [id],
+    unavailableIds: [],
+    changed: true
+  })),
   createCompositionElements: vi.fn(
     (descriptors: readonly PreparedElementDescriptor[]) =>
       canonicalElementIds(descriptors.map(({ id }) => id))
@@ -85,7 +90,12 @@ const actionApis = () => ({
   getElementStrokeColor: vi.fn(),
   getElementType: vi.fn(),
   removeSubtree: vi.fn(),
-  scaleVectorElementGeometry: vi.fn(() => true),
+  scaleVectorElementGeometry: vi.fn((id: string) => ({
+    value: true,
+    acceptedIds: [id],
+    unavailableIds: [],
+    changed: true
+  })),
   selectElements: vi.fn(),
   setDrawingProgress: vi.fn(),
   setElementsVisible: vi.fn(() => ['changed' as const]),

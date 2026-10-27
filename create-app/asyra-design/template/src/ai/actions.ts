@@ -1,3 +1,15 @@
+import { SelectionTargetUnavailableError } from '../common-apis/selection'
+import { requireMutationReceipt } from './basic-api-results'
+import type { DocumentPersistenceReceipt } from '../collaboration/protocol'
+import {
+  toolResultBoolean,
+  toolResultCount,
+  toolResultIds,
+  toolResultObject,
+  toolResultStatus,
+  toolResultString,
+  actionToolSemantics
+} from './tool-contract'
 import { AiActionExecutionError, runAiMutation } from '@asyra/ai-agent-runtime'
 import { PREPARED_DRAWING_INPUT_SCHEMA } from './prepared-drawing-schema'
 import type {
@@ -33,6 +45,12 @@ export const AI_SCALE_MAX = 2
 export const AI_TRANSIENT_CREATE_CHUNK_SIZE = 256
 
 export interface CreateAiActionsOptions {
+  readonly confirmPersistence?: (
+    signal: AbortSignal
+  ) => Promise<
+    | ({ readonly status: 'durable' } & DocumentPersistenceReceipt)
+    | { readonly status: 'local-only' }
+  >
   readonly waitForPaint?: () => Promise<void>
   readonly yieldToHost?: () => Promise<void>
 }
@@ -124,11 +142,7 @@ export interface RemoveAiCompositionArgs {
 }
 
 export interface AiActionApis {
-  changeElementGeometry(
-    elementId: string,
-    geometry: AiCompositionBounds,
-    options?: EVENT_OPTIONS
-  ): void
+  changeElementGeometry: typeof elementApis.changeElementGeometry
   createCompositionElements(
     descriptors: readonly PreparedElementDescriptor[],
     parent: {
@@ -155,17 +169,9 @@ export interface AiActionApis {
         }
     )[]
   }
-  scaleVectorElementGeometry(
-    elementId: string,
-    geometry: UpdateCompositionGeometry,
-    options?: EVENT_OPTIONS
-  ): boolean
+  scaleVectorElementGeometry: typeof elementApis.scaleVectorElementAroundCenter
   setDrawingProgress(progress: AiDrawingProgressState | null): void
-  setElementVisible(
-    elementId: string,
-    visible: boolean,
-    options?: EVENT_OPTIONS
-  ): boolean
+  setElementsVisible: typeof elementApis.setElementsVisible
   selectElements(elementIds: string[], options?: EVENT_OPTIONS): void
   updateElementFillColor(
     elementId: string,
@@ -175,7 +181,7 @@ export interface AiActionApis {
   updateElementFillColors(
     updates: readonly AiColorUpdate[],
     options?: EVENT_OPTIONS
-  ): readonly boolean[]
+  ): readonly ('changed' | 'unchanged' | 'unavailable')[]
   updateElementStrokeColor(
     elementId: string,
     color: string,
@@ -184,7 +190,7 @@ export interface AiActionApis {
   updateElementStrokeColors(
     updates: readonly AiColorUpdate[],
     options?: EVENT_OPTIONS
-  ): readonly boolean[]
+  ): readonly ('changed' | 'unchanged' | 'unavailable')[]
 }
 
 export class AiActionError extends Error {
@@ -241,8 +247,8 @@ const defaultApis: AiActionApis = {
     hierarchyApis.removeSubtree(elementId, options),
   scaleVectorElementGeometry: (elementId, geometry, options) =>
     elementApis.scaleVectorElementAroundCenter(elementId, geometry, options),
-  setElementVisible: (elementId, visible, options) =>
-    elementApis.setElementVisible(elementId, visible, options),
+  setElementsVisible: (elementIds, visible, options) =>
+    elementApis.setElementsVisible(elementIds, visible, options),
   selectElements: (elementIds, options) =>
     selectionApis.selectElements(elementIds, options),
   setDrawingProgress: (progress) =>
@@ -390,6 +396,19 @@ const createCompositionActions = (
         }
       }
     },
+    ...actionToolSemantics(
+      AiActionNames.INSERT_VECTOR_COMPOSITION,
+      toolResultObject({
+        status: toolResultStatus,
+        compositionId: toolResultString,
+        appliedElementIds: toolResultIds,
+        roleToElementIds: {
+          type: 'object',
+          additionalProperties: toolResultIds
+        },
+        skipped: { type: 'array' }
+      })
+    ),
     name: AiActionNames.INSERT_VECTOR_COMPOSITION,
     inputSchema: PREPARED_DRAWING_INPUT_SCHEMA
   })
@@ -521,15 +540,27 @@ const createCompositionActions = (
               )
               continue
             }
-            await runAiMutation(context, () =>
-              measureBrowserDragPhase('ai-app:apply-update-batch', () => {
+            const receipt = await runAiMutation(context, () =>
+              measureBrowserDragPhase('ai-app:apply-update-batch', () =>
                 apis.changeElementGeometry(
                   operation.elementId,
                   geometry,
                   mutationOptions
                 )
-              })
+              )
             )
+            const outcome = requireMutationReceipt(receipt, [
+              operation.elementId
+            ])
+            if (!outcome.changed || outcome.unavailableIds.length) {
+              skipped.push({
+                elementId: operation.elementId,
+                reason: outcome.unavailableIds.length
+                  ? 'unavailable-target'
+                  : 'no-change'
+              })
+              continue
+            }
             appliedElementIds.push(operation.elementId)
             await measureBrowserDragAsyncPhase(
               'ai-app:progressive-host-yield',
@@ -551,7 +582,7 @@ const createCompositionActions = (
               )
               continue
             }
-            const applied = await runAiMutation(context, () =>
+            const receipt = await runAiMutation(context, () =>
               measureBrowserDragPhase('ai-app:apply-update-batch', () =>
                 apis.scaleVectorElementGeometry(
                   operation.elementId,
@@ -560,7 +591,10 @@ const createCompositionActions = (
                 )
               )
             )
-            if (applied) {
+            const outcome = requireMutationReceipt(receipt, [
+              operation.elementId
+            ])
+            if (outcome.changed && !outcome.unavailableIds.length) {
               appliedElementIds.push(operation.elementId)
               await measureBrowserDragAsyncPhase(
                 'ai-app:progressive-host-yield',
@@ -570,7 +604,9 @@ const createCompositionActions = (
               skipped.push(
                 Object.freeze({
                   elementId: operation.elementId,
-                  reason: 'unsupported-target'
+                  reason: outcome.unavailableIds.length
+                    ? 'unsupported-target'
+                    : 'no-change'
                 })
               )
             }
@@ -656,7 +692,7 @@ const createCompositionActions = (
           let appliedBatchCount = 0
           batchResults.forEach((applied, index) => {
             const batchOperation = batchOperations[index]
-            if (applied) {
+            if (applied === 'changed') {
               appliedElementIds.push(batchOperation.elementId)
               appliedBatchCount += 1
               return
@@ -664,7 +700,8 @@ const createCompositionActions = (
             skipped.push(
               Object.freeze({
                 elementId: batchOperation.elementId,
-                reason: 'no-change'
+                reason:
+                  applied === 'unchanged' ? 'no-change' : 'unavailable-target'
               })
             )
           })
@@ -676,13 +713,30 @@ const createCompositionActions = (
           }
         }
         assertNotAborted(context)
+        let status: 'complete' | 'no-change' | 'partial' | 'failed' =
+          statusForMutation(appliedElementIds.length, 0)
+        if (skipped.some((item) => item.reason !== 'no-change'))
+          status =
+            appliedElementIds.length ||
+            skipped.some((item) => item.reason === 'no-change')
+              ? 'partial'
+              : 'failed'
         return Object.freeze({
           action: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
           appliedElementIds: Object.freeze(appliedElementIds),
           skipped: Object.freeze(skipped),
-          status: statusForMutation(appliedElementIds.length, skipped.length)
+          status
         })
       },
+      ...actionToolSemantics(
+        AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
+        toolResultObject({
+          status: toolResultStatus,
+          appliedElementIds: toolResultIds,
+          skipped: { type: 'array' }
+        })
+      ),
+      revision: 4,
       name: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       inputSchema: Object.freeze({
         additionalProperties: false,
@@ -695,7 +749,11 @@ const createCompositionActions = (
               additionalProperties: false,
               required: ['elementId'],
               properties: {
-                elementId: { type: 'string', minLength: 1 },
+                elementId: {
+                  'x-design-element-binding': 'each',
+                  type: 'string',
+                  minLength: 1
+                },
                 geometry: {
                   type: 'object',
                   additionalProperties: false,
@@ -776,6 +834,14 @@ const createCompositionActions = (
         status: statusForMutation(appliedElementIds.length, 0)
       })
     },
+    ...actionToolSemantics(
+      AiActionNames.REMOVE_AI_COMPOSITION,
+      toolResultObject({
+        status: toolResultStatus,
+        appliedElementIds: toolResultIds,
+        skipped: { type: 'array' }
+      })
+    ),
     name: AiActionNames.REMOVE_AI_COMPOSITION,
     inputSchema: Object.freeze({
       additionalProperties: false,
@@ -794,6 +860,15 @@ const createCompositionActions = (
     readonly compositionId: string
     readonly drawing: PreparedDrawingArtifact
   }> = Object.freeze({
+    ...actionToolSemantics(
+      AiActionNames.REPLACE_VECTOR_COMPOSITION,
+      toolResultObject({
+        status: toolResultStatus,
+        compositionId: toolResultString,
+        appliedElementIds: toolResultIds,
+        skipped: { type: 'array' }
+      })
+    ),
     name: AiActionNames.REPLACE_VECTOR_COMPOSITION,
     description:
       'Replace the referenced existing AI composition with a fully prepared drawing in one transaction. Use this instead of separate remove and insert actions. If insertion is incomplete, the old drawing is preserved.',
@@ -862,6 +937,16 @@ export const createAiActions = (
     options.waitForPaint ?? options.yieldToHost ?? waitForCooperativePaint
   const drawingDetailChoice: AiActionDefinition<RequestDrawingDetailChoiceArgs> =
     Object.freeze({
+      ...actionToolSemantics(
+        AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
+        toolResultObject({
+          status: { const: 'no-change' },
+          clarification: toolResultObject({
+            kind: { const: 'drawing-detail' },
+            optionIds: toolResultIds
+          })
+        })
+      ),
       name: AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
       description:
         'Request an App-owned choice between supported drawing detail levels without mutating the document.',
@@ -890,14 +975,25 @@ export const createAiActions = (
     })
   const visibility: AiActionDefinition<SetElementVisibilityArgs> =
     Object.freeze({
+      ...actionToolSemantics(
+        AiActionNames.SET_ELEMENT_VISIBILITY,
+        toolResultObject({
+          changed: toolResultBoolean,
+          elementId: toolResultString,
+          status: toolResultStatus
+        })
+      ),
+      revision: 3,
       name: AiActionNames.SET_ELEMENT_VISIBILITY,
-      description: 'Set whether one existing element is visible.',
+      description:
+        'Set whether one existing editable element is visible. The receipt distinguishes changed, already matching and unavailable targets. An unavailable target fails without writing; it is not a successful no-change.',
       inputSchema: Object.freeze({
         type: 'object',
         additionalProperties: false,
         required: Object.freeze(['elementId', 'visible']),
         properties: Object.freeze({
           elementId: Object.freeze({
+            'x-design-element-binding': 'each',
             type: 'string',
             minLength: 1
           }),
@@ -911,26 +1007,54 @@ export const createAiActions = (
         context: AiExecutionContext
       ) => {
         assertNotAborted(context)
-        const changed = await runAiMutation(context, () =>
-          apis.setElementVisible(args.elementId, args.visible, mutationOptions)
+        const results = await runAiMutation(context, () =>
+          apis.setElementsVisible(
+            [args.elementId],
+            args.visible,
+            mutationOptions
+          )
         )
+        if (
+          results.length !== 1 ||
+          !['changed', 'unchanged', 'unavailable'].includes(results[0])
+        )
+          throw new AiActionExecutionError(
+            'The visibility owner returned an invalid target receipt.'
+          )
+        const result = results[0]
+        let status = 'no-change'
+        if (result === 'changed') status = 'complete'
+        if (result === 'unavailable') status = 'failed'
         return Object.freeze({
           action: AiActionNames.SET_ELEMENT_VISIBILITY,
-          changed,
-          elementId: args.elementId
+          changed: result === 'changed',
+          elementId: args.elementId,
+          status,
+          ...(result === 'unavailable'
+            ? {
+                settlement: 'not-started',
+                message:
+                  'The visibility target is unavailable or not editable. No visibility change was made.'
+              }
+            : {})
         })
       }
     })
 
   const selection: AiActionDefinition<SelectElementsArgs> = Object.freeze({
+    ...actionToolSemantics(
+      AiActionNames.SELECT_ELEMENTS,
+      toolResultObject({ selectedCount: toolResultCount })
+    ),
     name: AiActionNames.SELECT_ELEMENTS,
-    description: `Select from 1 to ${AI_SELECTION_LIMIT} existing elements.`,
+    description: `Select from 1 to ${AI_SELECTION_LIMIT} existing elements. Any nonexistent ID rejects the entire request and preserves the current selection.`,
     inputSchema: Object.freeze({
       type: 'object',
       additionalProperties: false,
       required: Object.freeze(['elementIds']),
       properties: Object.freeze({
         elementIds: Object.freeze({
+          'x-design-element-binding': 'all',
           type: 'array',
           minItems: 1,
           maxItems: AI_SELECTION_LIMIT,
@@ -944,9 +1068,16 @@ export const createAiActions = (
     }),
     execute: async (args: SelectElementsArgs, context: AiExecutionContext) => {
       assertNotAborted(context)
-      await runAiMutation(context, () =>
-        apis.selectElements([...args.elementIds], mutationOptions)
-      )
+      await runAiMutation(context, () => {
+        assertNotAborted(context)
+        try {
+          apis.selectElements([...args.elementIds], mutationOptions)
+        } catch (error) {
+          if (error instanceof SelectionTargetUnavailableError)
+            throw new AiActionExecutionError(error.message)
+          throw error
+        }
+      })
       return Object.freeze({
         action: AiActionNames.SELECT_ELEMENTS,
         selectedCount: args.elementIds.length
@@ -956,15 +1087,30 @@ export const createAiActions = (
 
   const clarification: AiActionDefinition<{ readonly question: string }> =
     Object.freeze({
+      ...actionToolSemantics(
+        AiActionNames.REQUEST_CLARIFICATION,
+        toolResultObject({
+          status: { const: 'no-change' },
+          clarification: toolResultObject({
+            kind: { const: 'question' },
+            question: toolResultString
+          })
+        })
+      ),
       name: AiActionNames.REQUEST_CLARIFICATION,
       description:
-        'Ask one concise question when the drawing target or required capability is ambiguous. Return this action alone without mutations.',
+        'Ask one concise question for material ambiguity, user-only resources, or external-tool/security permission when needed. App editing itself requires no approval. Return this action alone without mutations and wait for the answer.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
         required: ['question'],
         properties: {
-          question: { type: 'string', minLength: 1, maxLength: 1000 }
+          question: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 1000,
+            pattern: '\\S'
+          }
         }
       },
       execute: async (
@@ -989,16 +1135,48 @@ export const createAiActions = (
     readonly outcome: 'completed' | 'unsupported'
     readonly message: string
   }> = {
+    ...actionToolSemantics(
+      AiActionNames.REPORT_OUTCOME,
+      toolResultObject(
+        {
+          status: { enum: ['no-change', 'partial'] },
+          outcome: { enum: ['completed', 'unsupported'] },
+          message: toolResultString,
+          persistence: {
+            anyOf: [
+              toolResultObject({
+                status: { const: 'durable' },
+                documentId: toolResultString,
+                documentGeneration: { type: 'integer', minimum: 0 },
+                sequence: { type: 'integer', minimum: 0 },
+                durableSequence: { type: 'integer', minimum: 0 }
+              }),
+              toolResultObject({ status: { const: 'local-only' } }),
+              toolResultObject({
+                status: { const: 'unavailable' },
+                message: toolResultString
+              })
+            ]
+          }
+        },
+        ['status', 'outcome', 'message']
+      )
+    ),
     name: AiActionNames.REPORT_OUTCOME,
     description:
-      'End this request with a specific user-facing result or capability limitation. This action makes no canvas changes. Use only as the final action after considering available tool combinations.',
+      'End this request with a specific user-facing drawing result or capability limitation. Completed drawing work confirms the existing durable publication target; it does not export or serialize the document. Read persistence independently: unavailable is a partial settlement, local-only is not durable storage. Never replay drawing work to retry saving. This action makes no canvas changes. Use only as the final action after considering available tool combinations.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
       required: ['outcome', 'message'],
       properties: {
         outcome: { type: 'string', enum: ['completed', 'unsupported'] },
-        message: { type: 'string', minLength: 1, maxLength: 1000 }
+        message: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 1000,
+          pattern: '\\S'
+        }
       }
     },
     execute: async (args, context) => {
@@ -1011,9 +1189,46 @@ export const createAiActions = (
         args.message.length > 1000
       )
         throw new AiActionError()
+      let persistence:
+        | Awaited<
+            ReturnType<
+              NonNullable<CreateAiActionsOptions['confirmPersistence']>
+            >
+          >
+        | { status: 'unavailable'; message: string }
+        | undefined =
+        args.outcome === 'completed' ? { status: 'local-only' } : undefined
+      if (args.outcome === 'completed' && options.confirmPersistence) {
+        try {
+          context.reportProgress?.({
+            phase: 'settlement',
+            summary: 'Saving the drawing'
+          })
+          const confirmPersistence = options.confirmPersistence
+          const confirm = () => confirmPersistence(context.signal)
+          persistence = context.observe
+            ? await context.observe(
+                'durability',
+                'Confirm durable publication target',
+                confirm
+              )
+            : await confirm()
+        } catch (error) {
+          assertNotAborted(context)
+          persistence = {
+            status: 'unavailable',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Document persistence could not be confirmed.'
+          }
+        }
+      }
+      assertNotAborted(context)
       return Object.freeze({
+        ...(persistence ? { persistence } : {}),
         action: AiActionNames.REPORT_OUTCOME,
-        status: 'no-change',
+        status: persistence?.status === 'unavailable' ? 'partial' : 'no-change',
         outcome: args.outcome,
         message: args.message.trim()
       })

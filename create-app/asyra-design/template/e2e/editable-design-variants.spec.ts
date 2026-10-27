@@ -27,7 +27,7 @@ const text = (
   text: content,
   fontSize,
   lineHeight: fontSize * 1.2,
-  textColor
+  fill: textColor
 })
 const rect = (
   key: string,

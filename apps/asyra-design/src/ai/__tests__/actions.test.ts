@@ -494,3 +494,66 @@ const requireTestValue = <T>(value: T | undefined | null): T => {
   if (value == null) throw new Error('Required test fixture is unavailable')
   return value
 }
+
+it.each([
+  [AiActionNames.REQUEST_CLARIFICATION, { question: '   ' }],
+  [AiActionNames.REPORT_OUTCOME, { outcome: 'completed', message: '\t ' }]
+])(
+  'publishes the existing nonblank control-input constraint for %s',
+  async (name, input) => {
+    const action = actionByName(name as string, actionApis())
+    await expect(
+      action.execute(input as never, executionContext())
+    ).rejects.toThrow()
+    expect(operationInputIssue(input, action.inputSchema)).toBeDefined()
+  }
+)
+
+it.each([
+  [
+    AiActionNames.REQUEST_CLARIFICATION,
+    { question: '  Which material?  ' },
+    {
+      status: 'no-change',
+      clarification: { kind: 'question', question: 'Which material?' }
+    }
+  ],
+  [
+    AiActionNames.REQUEST_DRAWING_DETAIL_CHOICE,
+    {},
+    { status: 'no-change', clarification: { kind: 'drawing-detail' } }
+  ],
+  [
+    AiActionNames.REPORT_OUTCOME,
+    { outcome: 'unsupported', message: '  No matching capability.  ' },
+    {
+      status: 'no-change',
+      outcome: 'unsupported',
+      message: 'No matching capability.'
+    }
+  ],
+  [
+    AiActionNames.REPORT_OUTCOME,
+    { outcome: 'completed', message: '  Ready.  ' },
+    {
+      status: 'no-change',
+      outcome: 'completed',
+      message: 'Ready.',
+      persistence: { status: 'local-only' }
+    }
+  ]
+])(
+  'executes control %s through public admission without document writes',
+  async (name, input, expected) => {
+    const apis = actionApis()
+    const action = observeAiAction(actionByName(name as string, apis))
+    const result = await action.execute(input as never, executionContext())
+    expect(result).toMatchObject(expected as object)
+    expect(operationInputIssue(result, action.outputSchema)).toBeUndefined()
+    for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
+    await expect(
+      action.execute(input as never, { signal: AbortSignal.abort() })
+    ).rejects.toThrow()
+    for (const api of Object.values(apis)) expect(api).not.toHaveBeenCalled()
+  }
+)

@@ -1,3 +1,4 @@
+import { ComputedFieldSelectionLimits } from '@asyra/core/contracts'
 import {
   defineBasicApi,
   apiString,
@@ -183,7 +184,17 @@ const getElementComputedDataApi = defineBasicApi({
   effect: 'read',
   parameters: [
     { name: 'elementId', schema: apiElementId },
-    { name: 'fields', schema: apiArray(apiString), optional: true }
+    {
+      name: 'fields',
+      schema: {
+        ...apiArray({
+          ...apiString,
+          maxLength: ComputedFieldSelectionLimits.fieldName
+        }),
+        maxItems: ComputedFieldSelectionLimits.fields
+      },
+      optional: true
+    }
   ],
   description:
     'Read only requested fields when possible. This is a computed projection, not a canonical write payload: linked records such as fills/strokes are expanded objects. Keep their IDs and use patchElementProperties records to edit them; do not write expanded records back through updateElementProperties.'
@@ -402,13 +413,13 @@ const patchElementPropertiesApi = defineBasicApi({
               )
             )
           },
-          ['elementId']
+          ['elementId', 'records']
         )
       )
     }
   ],
   description:
-    'Plural patches of canonical property records without replacing unrelated records or relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; Reuse known fillId; if unknown, obtain it from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
+    'Plural patches require records (use [] with ordinary values); updateElementProperties also supports ordinary values. Preserve unrelated records and relationship IDs. For fill changes use patches:[{elementId,records:[{key:"fills",set:{[fillId]:{color,gradient}}}]} with only the fields being changed; Reuse known fillId; if unknown, obtain it from getElementComputedData fields:["fills"]. Combine all ready targets into one patches array. Likewise use the registered property key and record IDs for other linked records.'
 })
 
 const updatePropertyComponentsApi = defineBasicApi({
@@ -617,6 +628,16 @@ const shareElementPropertyTargetsApi = defineBasicApi({
 })
 
 export const basicCoreApiContracts = [
+  defineBasicApi({
+    owner: 'core',
+    method: 'allocateIds',
+    effect: 'prepare',
+    resultKind: 'allocated-ids',
+    parameters: [{ name: 'types', schema: apiArray(apiString) }],
+    examples: [{ types: ['el', 'el'] }],
+    description:
+      'Allocate IDs atomically from the existing registered counters in input order; el is the general element counter. No objects or Undo entries are created. Use separate returned IDs as source keys for distinct nodes, and reuse the face key in boundary.face. Keep returned IDs for later references; prepared keyToId is authoritative for actual document IDs. Empty input is valid; invalid/unregistered types, ambiguous prefixes or exhaustion consume nothing. Counter state and reset are not exposed. Caller-authored unique keys remain valid.'
+  }),
   readElementPropertyTargetsApi,
   updateElementPropertyTargetsApi,
   updateSharedPropertySourcesApi,

@@ -1,3 +1,4 @@
+import type { TextData } from '@asyra/preset'
 import { DataTypes, type EVENT_OPTIONS } from '@asyra/utils'
 import { elementApis, selectionApis } from '../common-apis'
 
@@ -21,4 +22,10 @@ export const updateSelectedElementProperties = (
     },
     options
   )
+}
+
+export const updateSelectedTextStyle = (
+  values: Pick<TextData, 'fontWeight' | 'fontStyle'>
+) => {
+  elementApis.updateElementProperties(selectionApis.getSelectedIds(), values)
 }

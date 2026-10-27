@@ -119,6 +119,40 @@ import {
   withAdviceFixture
 } from '../quality.mjs'
 
+test('ordinary quality prompts allow zero Knowledge reads without weakening the design request', () => {
+  const spec = JSON.parse(
+    fs.readFileSync(new URL('../quality-cases.json', import.meta.url))
+  )
+  for (const item of [...spec.development, ...spec.transfer]) {
+    const scenario = qualityScenario(spec, item.id)
+    assert.ok(scenario.prompt.startsWith(item.prompt + '\n\n'))
+    assert.ok(
+      scenario.prompt.includes('Knowledge is optional reference material')
+    )
+    assert.ok(
+      scenario.prompt.includes('at any stage or proceed without reading it')
+    )
+    assert.equal(scenario.prompt.includes('Before designing'), false)
+    assert.ok(
+      scenario.prompt.includes(
+        'Optional Knowledge modules: ' + JSON.stringify(item.modules)
+      )
+    )
+    assert.deepEqual(scenario.criteria, item.criteria)
+  }
+  const observed = summarizeCalls([
+    {
+      stage: 'tool_started',
+      tool: 'prepare_and_apply_design',
+      callId: 'draw',
+      elapsedMs: 1
+    },
+    { stage: 'tool_completed', callId: 'draw', elapsedMs: 3 }
+  ])
+  assert.equal(observed.knowledgeCalls.length, 0)
+  assert.equal(observed.incomplete.length, 0)
+})
+
 test('content arms use identical prompts and ablation preserves metadata only', () => {
   const spec = JSON.parse(
     fs.readFileSync(new URL('../quality-cases.json', import.meta.url))

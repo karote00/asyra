@@ -1,5 +1,25 @@
 # AI design execution flow
 
+## Direct native tool delivery
+
+Tools expose vendor-independent JSON contracts and owner results. The local adapter
+registers deferred native declarations and delivers text and images directly through
+the native tool-response channel. No generated JavaScript program, interpreter
+storage or model-authored forwarding step participates. App-owned result handles,
+bounded content continuations and explicit refresh remain the recovery authority;
+recovering delivery must never replay a completed mutation or capture.
+
+Normal startup selects direct tools and standard Responses delivery from the native
+executable's public model metadata without changing global configuration or model
+limits. Missing configuration fails explicitly before model use. Request-owned
+configuration is released on every terminal path. Other providers consume the same
+public owner contracts through their own adapters, without native-runtime dependence.
+
+Formal offline tests must inspect the real successor request for full text, native
+images, exact search routing, paging, failures and cancellation. A stored result is
+not proof of model receipt. Generated templates use this same production path.
+
+
 Registered App editing actions execute directly, including deletion and replacement,
 with ordinary grouped Undo. The App prompt owns contextual permission questions
 for external-tool use or security concerns through request_clarification; it does
@@ -123,8 +143,8 @@ not invent depth or force orthographic projection on perspective artwork.
 Executable examples demonstrate syntax rather than prescribing content or camera.
 It may defer schema loading through native discovery while retaining exact tool
 identities, schemas and the existing dispatch/permission route. A deferred tool
-is available, not unsupported. Use native Code Mode for dependent composition
-and compact intermediate values; the App does not evaluate model-written code.
+is available, not unsupported. Use registered workflow/recipe owners for dependent composition and retained
+intermediate values; the App does not evaluate model-written code.
 Research and simple edits remain available without a construction prerequisite.
 Native sleep display notifications are lifecycle evidence only: they neither
 execute App actions nor supply a final response. Validate their protocol fields;
@@ -183,8 +203,9 @@ execution or substitutes for current registry validation.
 Exact name/operation lookup also supports `view: "usage"` and `schemaPaths`
 (JSON Pointers into the canonical input schema). Usage includes purpose,
 execution route and nested property/schema-definition paths, with compact effect/composition/lifecycle
-metadata. Usage never embeds input, output, partial/recovery or delivery validation
-schemas; exact full lookup remains the authority for executable contracts.
+metadata. Ordinary unscoped usage omits full validation schemas. Selected usage publishes the
+complete selected input contract as standard JSON Schema with owner result and
+recovery guidance. Exact full lookup retains all validation schemas.
 Fragment replies include exact selected values and transitive local reference dependencies; they are partial documentation,
 not complete executable schemas. Unknown paths reject recoverably. Schema paths
 require an exact selector; usage also supports category and query selectors.
@@ -236,8 +257,8 @@ Tool checks cannot grant primary visual acceptance or document durability. Captu
 rendered images before primary judgments; retain independent passes. Optional library
 storage failure uses the actual save-only receipt, not drawing replay. New requests
 obtain fresh selection/evidence; library resume is availability, not an execution
-cursor. Provider, discovery and result guidance agree on these routes. Code Mode
-binds current values; Runtime owns admitted recurring iteration.
+cursor. Provider, discovery and result guidance agree on these routes. Existing artifact references
+bind current values; Runtime owns admitted recurring iteration.
 
 ## Preparation and execution
 
@@ -1204,6 +1225,14 @@ separate projection, not as completion authority.
 
 ### Bounded evaluation work and self-report
 
+Ordinary drawing/quality evaluation prompts announce optional Knowledge resources.
+The agent may consult them for an unresolved decision at any stage or proceed
+without reading them. Neither a read count nor a prescribed reading order is an
+acceptance condition. Preserve the original design requirements, references and
+deadline. Save the actual prompt; historical forced-reading runs remain immutable
+and cannot be treated as the same prompt condition. Do not add a forced-reading
+variant or extra model run to an ordinary observation.
+
 An explicit evaluation window may set `expandedNodeLimit: 2000` for diagnostic
 reproduction. Omission retains the production 10,000-object ceiling; other override
 values reject. This request-local policy is consumed by existing budget inspection,
@@ -1283,7 +1312,7 @@ metadata explicit. Interrupted and malformed records remain visibly incomplete.
 Feedback is kept separate and never substitutes for tool or visual evidence.
 An explicit post-run assessment may reuse the native provider transport once,
 with a compact report and named criteria only. It advertises no App tools and
-disables web search and Code Mode; no canvas executor or document is attached.
+disables web search; no canvas executor or document is attached.
 Assessment duration, usage and record identity remain separate from drawing.
 Assessment diagnostics use stderr so the report CLI's stdout remains a single
 machine-readable payload. Drawing diagnostics retain their existing channel.
@@ -1667,7 +1696,7 @@ and layer separation use the same decoder pixel admission.
 
 Exact-name discovery distinguishes native tool inputs from canvas action inputs.
 Its native routes and complete schemas come from the actual registered tool groups.
-Native Code Mode declarations may omit sibling union fields or abbreviate nested
+Native declarations may omit sibling union fields or abbreviate nested
 schemas as unknown. Registration distributes common union fields into each branch
 without changing admission. Exact-name lookup returns the canonical inputSchema,
 including definitions and constraints, on every requested read through bounded
@@ -1758,6 +1787,15 @@ failure stage without interpreting successful download as suitable artwork.
 
 ### First visible change admission
 
+First visible content is a good-to-have experience goal, not a mandatory stage,
+independent deadline or completion criterion. Useful editable progress may be
+shown when its inputs are ready; necessary research may precede drawing. Do not
+create disposable previews, force smaller submissions or weaken required input
+validation, reference obligations or final review solely to improve this timing.
+Record the actual first-content time (or its absence) as diagnostic evidence;
+latency alone neither accepts nor rejects the task. Explicit user requirements
+and the overall work deadline remain authoritative.
+
 The original user request remains immutable in the invocation and primary-agent
 result review. A ready partial drawing may be applied before model-authored review
 criteria exist. The first criteria record may follow partial drawing but must
@@ -1799,32 +1837,23 @@ Identical decoded-admitted source bytes share attachment identity. Different
 bytes remain distinct even when names or URLs resemble one another. Protocol
 image delivery is verified independently from download success.
 
-The provider adapter owns the Code Mode result contract: receipt JSON on the
-first line and unchanged image data URLs on subsequent lines. Advertise one
-executable forwarding recipe for this format, separate from MCP content arrays.
-Forward images with the native image helper and only the parsed receipt with the
-text helper. Retained Code Mode values can be redisplayed without reacquisition.
-Formal tests cover zero/multiple images and exclude base64 from text output;
-an opt-in real-model probe verifies actual image visibility from one acquisition.
+The provider adapter delivers structured receipt text and original image bytes as
+separate native inputText/inputImage content. No model-authored forwarding helper
+is required; base64 never becomes receipt prose.
 
 ### Image result delivery and recovery
 
-The published Code Mode receipt example stores the complete result under a fresh,
-caller-selected key before parsing or forwarding. A display failure does not erase
-acknowledged mutations or the saved original image. The published recovery example
-loads that same key and forwards the retained receipt/images without invoking the
-producer again. Missing or malformed retained results fail explicitly; no fallback
-capture, redraw, automatic retry or invented success. Independent calls use separate
-keys within existing Code Mode storage; no new App retention mechanism is introduced.
+Existing image and inspection owners retain original evidence with explicit handles.
+A delivery failure preserves acknowledged mutations and retained evidence. Use the
+advertised read/redisplay route without invoking the producer again; missing or
+malformed handles fail explicitly. No fallback capture, redraw, automatic retry or
+invented success is allowed. Independent results retain independent identities.
 
-The native contract must be tested with the actual published examples and actual
-inputText/inputImage results through the native image helper, reaching the next
-outbound request. Zero, one and multiple image cases preserve bytes and order;
-image base64 must not become receipt text. Mock helper call counts alone do not
-prove this boundary. Fixed offline responses may exercise the native executable
-without invoking a real model. Evidence identifies source/example version and
-native executable, and separates submitted results, native outgoing content,
-unavailable live model visibility and model-authored judgments.
+Formal tests send actual owner output through the native response channel and
+inspect the next outbound request. Zero, one and multiple images preserve bytes
+and order. Fixed offline responses exercise the actual native executable without
+a model. Evidence separates submitted content, native outgoing content, unavailable
+live visibility and model-authored visual judgments.
 
 Image redisplay and criterion binding are independent. Existing inspection IDs
 can be bound with bindChecks after criteria are defined, without recapture; current
@@ -1844,6 +1873,31 @@ candidates retain their diagnostics while the existing resolver tries other
 publisher-declared resources. No thumbnail downgrade, subject decision or new
 network permission is implied. A successful candidate and explicit redisplay
 continue through the same request-local acquisition owner.
+
+### Selected batch-operation usage
+
+A selected admitted mutation batch action queried with view=usage includes the complete
+existing execute_design_batch invocation contract and that action's canonical
+arguments, results and recovery, rendered as usage rather than raw schemas. Derive
+from registered owners: no copied operation allowlist, new executor or state. Name,
+semantic operation and explicit usage queries preserve their existing selection
+and ambiguity rules. Read-only actions retain compact navigation. Mutation menu entries point to the exact selected usage acquisition.
+
+Keep target field/path cardinality, artifact and retained snapshot selectors,
+current admission, inspection policy, ordered partial receipts and retry-only-pending
+instructions. An executable example comes from a valid owner example wrapped by the
+existing route; unavailable examples are explicit, never fabricated IDs. Unselected
+operation enums and result alternatives must not appear in this selected contract.
+Full and schema-path queries, general usage navigation and deliberate complete
+inventory remain available. Refresh, repeated reads and continuation never mutate.
+
+DoD: execute delivered examples through real owners with success, invalid input,
+cancellation, stale/unknown targets and partial-success recovery without replay.
+For the saved 29,264-byte acquisition, selected complete delivery uses one query and
+fewer total bytes under the same budget. Adding unrelated operations cannot increase
+selected reply bytes or page count. Preserve target binding, restrictions, ordering,
+local results and existing persistence/history semantics. Live adoption and timing
+remain separately observed rather than inferred from deterministic tests.
 
 ### Selected operation contract delivery
 
@@ -1865,8 +1919,8 @@ Scope excludes incompatible operation fields and unselected node types without
 weakening shared or branch constraints. Missing, ambiguous or unsupported scope
 returns a recoverable read failure, never an inferred route or silent full fallback.
 Retain exact reference closure without adding a second schema registry. Menu/usage publishes choices; a known selection requires no
-preliminary lookup. Full and field queries remain available. Scope cannot combine
-with usage or schemaPaths; refresh and continuations preserve it and its revision.
+preliminary lookup. Full and field queries remain available. Scope supports selected usage or full delivery and cannot combine with schemaPaths;
+refresh and continuations preserve it and its revision.
 
 Usage navigation exposes root input fields rather than enumerating every nested
 schema path. Exact field queries and their path-resolution recovery remain valid;
@@ -1957,12 +2011,70 @@ their real owners. Execute the published forwarding example with the same-versio
 offline native engine and compare the successor request exactly. Preserve paging,
 repeat/rehydrate, cancellation and stale-content recovery without write replay.
 
+### Selected retained information delivery
+
+Existing read tools accept fromResult to redisplay exact selected content already
+resolved in this request. read_knowledge uses a previous contextKey and ids;
+describe_design_apis uses a returned resultKey and names. This mode returns actual
+text/contracts, not omission markers, and cannot combine with fresh-query modes
+(rehydrate/reuseFrom or refresh/view/schemaPaths/inputScope). Normal reads and
+refresh remain available to obtain a different current composition or scope.
+
+Knowledge inherits the retained contexts, rejects explicitly different contexts,
+and preserves original document order, resolved overrides, source/provenance and
+necessary target/effective-source dependencies. It uses retained full documents
+without provider content reads. It must not import unrelated old siblings. The
+selected result receives its own contextKey so later reuse cannot imply possession
+of the omitted documents. Generation/context invalidation, permission, cancellation,
+eviction and session disposal remain authoritative.
+
+Discovery retains results in its existing request-bounded result map. Exact-name
+selection returns whole saved entries with original input/output, recovery, local
+schema references, coverage and execution routes. Menus/fragments never become full
+contracts. Ambiguous and missing names remain explicit; valid siblings survive.
+Selection must not rerun contract projection. Registry changes and foreign/expired
+keys fail with ordinary selected-read recovery; do not silently substitute current
+content. Preserve bounded continuation bytes and cancellation. Keys are identities,
+not fuzzy goal matches. Existing purpose search chooses candidates separately.
+Neither mode executes or replays drawing or capture. Measure cold-plus-repeat wire
+bytes and real source/projection work, including handle overhead.
+
 ### Cross-query Knowledge dependency delivery
+
+The App owns delivery of decision-required Knowledge to the active model turn.
+The native tool-response channel carries complete bounded text directly; retained
+values alone do not establish model receipt. Deliver advisory content as
+untrusted context, distinct from the user's intent and from executable authority.
+The model-facing body and the tool receipt must not duplicate the same content.
+Preserve complete explicit reads and expose any changed receipt shape truthfully.
+
+The existing provider channel must prove complete same-turn delivery in actual
+successor requests without additional model requests before this path is enabled.
+A steer/queue acknowledgement alone is not that proof. Use existing result storage
+and its lifecycle; no additional cache, acknowledgement tool or body ledger.
+Failure cannot certify forwarding or trigger product mutation replay.
+
+Automatic dependency selection belongs to the App and the existing Runtime session,
+not model bookkeeping. Ordinary new-child reads may omit only identical dependencies
+with verified complete forwarding in the current context. Retained storage or native
+dynamic-tool completion alone is insufficient. No forwarding evidence means full
+required content, never a success receipt with missing restrictions. Selected new
+content remains complete; source, revision, override and document order stay exact.
+No new cache, acknowledgement tool call or model round trip is introduced. Existing
+explicit reuseFrom/fromResult, complete reads, paging and rehydrate remain available.
+
+Incomplete pages, suppressed/truncated output, failed delivery and context loss do
+not authorize automatic omission. Current permissions and source validity remain
+mandatory. Formal native successor-request cases must distinguish these paths from
+complete forwarding before automatic omission is enabled. A last page or successful
+App call cannot stand in for complete coverage. Recovery repeats only the required
+read, never completed drawing or capture.
 
 The existing read tool accepts optional `reuseFrom`, at most 32 unique opaque
 `contextKey` values from complete results whose advice the caller still holds.
 No extra discovery, acknowledgement, parent read or Knowledge prerequisite is needed.
-Without this opt-in the entire required dependency closure is returned as before.
+Without explicit reuse or verified complete forwarding, return the entire required
+dependency closure.
 A result key is scoped to its retaining session; query equality cannot forge another
 session's key. Runtime owns validation and reuse in its existing bounded result map.
 
@@ -2007,22 +2119,12 @@ and directs a fresh read; refresh/rehydrate retain their recovery meaning. Conti
 one result does not reset context again or replay any design mutation. Continuations
 are request/query/revision scoped and preserve cancellation and permission checks.
 
-The App guides Code Mode to consume one bounded page per output and retain composed
-data without printing all pages together. No output-budget increase or mandatory
-Knowledge prerequisite is introduced. Native request tests must verify exact page
-content and lossless reconstruction, separately from actual model adoption.
-Discovery and provider instructions must publish the same executable informational
-forwarding example. It accepts one original text-only read reply and a query-specific
-Code Mode key, validates contiguous revision-bound byte coverage, and retains the
-complete parsed value only at completion. Each exec forwards one original bounded
-page, not the assembled value or a schema summary. Replaying a saved original page
-requires no tool call. Repeated identical pages are valid; gaps, mixed revisions,
-incoherent byte metadata and oversized single replies reject before state replacement.
-Failed read receipts cannot overwrite valid retained content. Fresh reads and refresh
-remain legal after context loss; use a fresh key for changed content. Existing
-text/image receipt forwarding remains independent. Tests execute the actual delivered
-example and inspect real native successor requests; neither storage nor tests prove
-model adoption or prevent arbitrary agent-authored oversized output.
+The App delivers one bounded page per direct tool response. Follow the returned
+same-owner continuation; no assembled-body echo, output-budget increase or mandatory
+Knowledge prerequisite is introduced. Native tests verify exact page bytes and
+complete reconstruction. Repeated pages remain stable, gaps and mixed revisions
+cannot certify completeness, and stale content requires explicit read/refresh.
+Existing retained-result queries recover output without replaying product writes.
 
 ### Source and upstream evidence provenance
 
@@ -2032,21 +2134,16 @@ It must preserve the subsequent outbound request, fixture/binary identity and
 explicit missing evidence using existing diagnostic storage. Never equate a native
 echo, history view or scripted response with final remote model visibility. Test
 configuration must not change production refresh behavior or increase output limits.
-Cross-execution proofs must retain each scripted exec, corresponding actual outbound
-request and public notifications through that same evidence sink. Verify retained
-fragment coverage, revision and byte identity before parsing; a last page alone is
-insufficient. Compare compact and full printed output separately from retained
-content. Missing coverage rejects assembly. Scripted store/load observations do not
-expose native storage internals or establish historical AI behavior; absent public
-orchestration output remains explicitly unavailable.
+Multi-call proofs retain each direct call, actual outbound request and public
+notifications through the existing evidence sink. Verify contiguous content and
+revision identity; a last page alone does not establish complete delivery.
 
 For matching discovery and Knowledge calls, retain publicly exposed native completed
 result content through the existing profiler payload sink, separately from App
 output. Decode JSON text before redaction; record original byte counts and digests
 without claiming sanitized bytes equal original bytes. Missing/null, empty,
 malformed and non-text results remain explicit. Native echo is not final model
-visibility. Exec/wait output without an explicit child-call relationship remains
-uncorrelated and its arbitrary body is omitted. No private reasoning or credentials
+visibility. Unsupported native output is rejected rather than treated as an App result. No private reasoning or credentials
 may enter the trace. Diagnostic failure does not change tool settlement, recovery,
 refresh/rehydrate or dispatch; no completed operation is replayed for recording.
 
@@ -3627,8 +3724,16 @@ resolution as names, including ambiguous-name rejection and independent action/n
 routes. Descriptions referencing that identity do not add matches. No exact hit keeps
 the existing lexical capability search; category exploration remains available.
 
-Representation is unchanged: query without view is a menu, usage is usage, full
-retains canonical restrictions. Exact queries need no additional lookup and no
+An exact query resolving one unambiguous native tool accepts `inputScope` just
+like the equivalent single `names` selector. Scope selection without `view`
+returns full selected schemas; with `view=usage` it returns the complete selected
+guide. Scope cannot combine with `schemaPaths`. Ambiguity remains explicit;
+fuzzy queries cannot project a scope onto descriptive matches. Action-only
+identities cannot silently stand in for a native scoped owner. Invalid scope
+values use that owner's existing choices and recovery, without another menu.
+
+Without inputScope, representation is unchanged: query without view is a menu,
+usage is usage, full retains canonical restrictions. Exact queries need no additional lookup and no
 inventory offset; a nonzero offset rejects rather than falling back to lexical
 search. Existing content paging, registry revision checks, refresh and no-replay
 recovery remain. No new selector, registry, result store or limit is introduced.
@@ -3637,6 +3742,10 @@ DoD: replay the saved main-workflow query in one reply; adding 10000 descriptive
 references does not grow delivery or calls. Verify purpose/category exploration,
 qualified names, ambiguous namespaces, action/native dual routes, complete full
 contracts and executable usage/recovery through existing owners.
+Replay both saved valid-operation query/scope failures, compare names/query
+restrictions and page recovery, and execute the actual delivered example through
+the dispatcher and preparation/application owners. Repeated lookup, refresh,
+registry invalidation and cancellation never replay an acknowledged mutation.
 
 ### Preparation source reads and immutable lifetime
 
@@ -3721,7 +3830,7 @@ and must not claim single-response coverage when continuation is present.
 
 The existing schemaPaths array applies independently to every selected exact
 identity. Different tools requiring different fields use separate queries, which
-may run in parallel in the same Code Mode execution. Shared-path multi-tool reads
+may run in parallel in the same native turn. Shared-path multi-tool reads
 remain valid. Never infer ownership from a field name or silently rewrite a pointer.
 A tool with any invalid requested path keeps its whole requested scope unavailable;
 other identities retain their complete requested fragments, constraints and references.
@@ -3733,10 +3842,15 @@ The existing explicit full refresh route remains.
 
 Usage exposes immediate input properties and union branch roots, including those
 under an argument wrapper, without preloading validation schemas or enumerating all
-branch leaves. The returned refresh/recovery selector identifies that entry alone:
-action operations use operations, native tools use qualified names. To query fields,
-reuse only that selector, omit view/refresh/refreshReason and add paths from that entry's inputFields. Do not
-transfer paths between entries. Bare exact-name full/usage lookup still returns both
+branch leaves. When input navigation is available, usage includes an executable
+fieldQuery using the existing tool/arguments shape:
+action operations use operations, native tools use qualified names. Its schemaPaths
+contains one canonical navigation example; replace only those paths with needed
+paths from the same entry. Do not reconstruct selectors from refresh instructions,
+transfer paths between entries or automatically fetch every advertised field.
+Unavailable-scope inputFields use the same compact root/branch navigation without
+traversing unrelated nested leaves; issues and exact same-owner recovery remain.
+Refresh/recovery selectors continue to identify only their own entry. Bare exact-name full/usage lookup still returns both
 legitimate routes. Native arguments remain wrapped exactly once; action arguments
 remain direct. Navigation is not an executable validation schema. Fragments retain
 ancestor restrictions and local reference closure; canonical execution validation
@@ -3759,6 +3873,11 @@ DoD: saved mixed-field query, all-failed/mixed/success outcomes through invocati
 executable narrower recovery and per-tool usage guidance, reference and cross-field
 constraint preservation, partial-page forwarding, repeat/refresh/stale/cancellation,
 empty search/menu and zero mutation replay through actual downstream owners.
+The saved mixed query fits one existing bounded reply; corresponding usage and
+field-query input/output is below 30,676 bytes. Growing unrelated nested leaves
+must not grow failed navigation or its traversal work. Execute delivered fieldQuery
+examples rather than test-authored selector assembly, including downstream reference
+selection and invalid/stale revisions. No extra preliminary lookup or larger limit.
 
 ### Next-part operation selection
 
@@ -3883,6 +4002,30 @@ shared-state behavior. No count cache, fallback snapshot read or extra exchange.
 Formal verification must exercise actual canonical owners and count copying before
 capture, alongside existing pixel and native reply/recovery preservation tests.
 
+### Workspace mechanical review
+
+A workspace is a non-geometric scene root. The deterministic reviewer checks its
+visible descendants through canonical metadata, ordered membership and actual
+geometry/text owners; the workspace itself needs no computed rectangle and imposes
+no Frame containment. Do not fabricate bounds, regroup the document or skip real
+child errors. Existing unsupported geometry, text, Frame containment, visibility,
+missing targets, cancellation and mixed-source failures retain their semantics.
+A mechanical pass is not visual approval; an empty workspace supplies no visual
+proof. Workspace mechanical receipts depend on subtree membership and relevant rule
+inputs. Painter-order-only changes retain equal mechanical verdicts while visual
+evidence keeps its existing order invalidation. Local independent receipts survive unrelated edits; load retires receipts.
+
+Final review consumes this same reviewer for workspace overview targets. Incomplete
+mechanical review keeps accepted=false and exposes current pending findings via the
+existing retained-check query/recovery contract; it must not merely ask for another
+unspecified measurement. Preserve successful images and visual judgments. Recovery
+never redraws, recaptures current evidence or replays settled mutations.
+
+DoD: real canonical workspace to capture/binding/final acceptance integration;
+valid multi-root and negative geometry/text/Frame/hidden/missing/empty cases;
+membership/order/load/local invalidation, cancellation, retained work counts,
+read-only save/history/shared-publication invariants and actionable failed recovery.
+
 ### Workspace overview and inspection receipts
 
 The existing inspect_drawing and review_drawing capture routes accept the actual
@@ -3992,3 +4135,106 @@ unsettled or non-idle input, failed/cancelled outcome or expiry stops the sequen
 without retry. A captured final partial report is not artwork acceptance. Capture ordinary answers separately from attributed
 final reports and compare original native inputs; historical self-report text cannot
 stand in for the actual design answer or prove causal model improvement.
+
+## Pre-execution guidance and recoverable input validation
+
+Registered API descriptions, selected usage, examples and runtime admission share
+canonical owners. Validate each published executable example against its actual
+route before delivery. Never publish an invalid example as executable, silently
+coerce model input or substitute a different operation. Full contract validation
+is retained at execution; semantic owner preflight happens before side effects.
+
+A source key identifies one node; boundary.face references another node's key in
+the same source scope. A face and its grid have distinct keys even when they share
+a display name. Ambiguous source identities report every conflicting source path,
+retain the original source and offer existing repair replacements. They do not
+become a generic missing boundary error or receive automatically guessed names.
+Valid unique references and explicit corner boundaries remain unchanged.
+
+Review supersedes is legal only with an explicit declared unitId and exact prior
+revision plus redesign reason. Whole-criterion judgments omit supersedes; fresh
+images of an unchanged scope do not require it. Validate this before capture,
+binding and recording. Invalid whole-criterion recovery identifies the removable
+field, retains image assignments and invokes the existing bind route without
+recapture or replay. Never invent a unit, relax scope replacement checks or treat
+binding as visual approval.
+
+First visible content may be a small editable part. Complete planning, optional
+Knowledge, all materials, decoration and whole-structure approval are not first-
+drawing prerequisites. The agent chooses what to show first and may adjust it
+later. Real geometry/input validation still applies; visual review and required
+whole-request coverage remain completion obligations. No new preliminary call or
+forced drawing order is introduced.
+
+Basic computed-field lookup publishes the existing Core owner selection limits;
+full reads and an empty selection remain legal. Both Core and App property patches require records, accepting records:[]
+with ordinary values or combined linked-record patches. Ordinary values may also
+use updateElementProperties. Empty patches retain no-op semantics. Dynamic property validity remains with the canonical property registry.
+
+## Identity allocation and composed owner receipts
+
+The model may allocate an ordered list of IDs through the existing Core/basic API
+route backed by idCounter. All requested counter types must already exist. One
+atomic allocation returns isolated immutable IDs in input order, observes the
+existing namespace and loaded counter positions, and rejects malformed, ambiguous
+or exhausted allocation without consuming a prefix. Empty input is valid. The
+model cannot set, reset, load or unregister counters. Allocation does not create
+objects, publish document changes or enter Undo history. Generated IDs can be used
+as explicit source keys; references reuse exactly the issued key, while final
+prepared keyToId mappings remain authoritative for document operations. Valid
+caller-authored keys and omission of unneeded keys remain legal. Allocation cannot
+make two distinct nodes sharing one explicit key unambiguous.
+
+Composed geometry, prepared-material and retained-fill operations consume canonical
+mutation receipts through the existing receipt interpretation. A valid unchanged
+operation reports no-change, available/unavailable mixtures remain partial, and
+missing/malformed receipts never certify a write. Preserve accepted identities,
+true settlement and no-replay instructions; retain original provenance validation,
+local invalidation, ordered application, history and receipt delivery. An accepted
+identity is not proof that its value changed. Tool execution, visual approval and
+conversation/evaluation outcomes remain distinct.
+
+Formal cases execute delivered allocation through Core and real owner no-op edits,
+validate references and cancellation, and retain the current invalid-input, mixed
+result, partial application and no-replay regression gates.
+
+## Unified public tool contract delivery
+
+The existing registered owner is authoritative for each tool identity, input and
+output schema, examples, effects and recovery. Discovery and provider adapters
+must project that definition; they cannot introduce an independent parameter
+language, registry or inferred operation. Selected usage publishes executable
+JSON Schema with standard local references and the complete selected constraint
+closure. Only provably unreachable alternatives may be removed. Preserve ordinary
+search, ambiguity, full/field queries, bounded paging and independent operations.
+An unrelated opaque recipe alternative cannot block a supported binding when its
+necessary discriminator proves non-overlap. Unsupported selected bindings and
+ambiguous alternatives remain rejected by the existing Runtime proof owner.
+
+Optional construction checks may be omitted and then mean no requested checks.
+Supplied checks retain their semantic constraints; width and height expectations
+are nonnegative and note fields must contain non-whitespace content. Omission
+cannot create a visual or mechanical pass. Published examples and validation must
+agree with these actual owner semantics. Targeted typography edits reuse the
+Preset owner's public value constraints rather than derive validity from default
+value types; target capability and locks remain execution-owner checks.
+
+Input failures identify the failing contract and support correction through the
+existing retained draft/repair owner. A missing declared object field can be
+corrected without resending completed geometry; unknown/prototype paths, arbitrary
+array insertions, expired or foreign references remain invalid. Validate the
+complete corrected source before execution. Preserve workflow context, exact
+completed results and no-replay semantics across admission and output failures.
+For a never-started parts request, recovery preserves every part's source, order,
+parent relationship and workflow options. Retained valid source may use empty
+replacements after complete owner validation. Missing retention or an invalid
+outer envelope must not produce a purported complete recovery invocation.
+Execution failures continue to expose only unfinished work; admission recovery
+never implies that any mutation already ran.
+
+Every public API requires actual-owner semantic evidence through its delivered
+entry, with applicable success, no-op, invalid input/output, cancellation, partial
+result, stale identity and recovery cases. Format-only admission, mocked delegation
+and provider transport success do not prove the requested operation completed.
+The existing verification gate must fail when a registered entry lacks required
+coverage; local evidence does not claim model adoption or universal correctness.

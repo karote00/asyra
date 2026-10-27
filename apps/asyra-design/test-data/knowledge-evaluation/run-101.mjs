@@ -92,7 +92,10 @@ const meta = {
   declaredToolLibraryDirectory: process.env.AI_TOOL_LIBRARY_DIR,
   configurationEvidence:
     'Expected configuration only; actual provider configuration requires execution-record verification',
-  expectedModel: { model: 'gpt-6-astra', effort: 'medium' },
+  expectedModel: {
+    model: process.env.AI_PROVIDER_MODEL?.trim() || 'gpt-6-astra',
+    effort: 'medium'
+  },
   producer,
   recordingDirectory: path.resolve(
     app,

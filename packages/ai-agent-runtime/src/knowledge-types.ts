@@ -35,6 +35,8 @@ export interface AiKnowledgeContent {
 }
 
 export interface AiKnowledgeQuery {
+  /** Redisplay selected full documents from a live result in this session. */
+  readonly fromResult?: string
   /** Re-read advice after earlier results are absent from effective context. */
   readonly rehydrate?: boolean
   /** Complete earlier results explicitly still held by this caller. */

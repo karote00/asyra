@@ -108,15 +108,16 @@ test('real recording restores public Unicode activity and partial CLI evidence w
       'CREATE TABLE logs(id INTEGER, ts INTEGER, ts_nanos INTEGER, target TEXT, thread_id TEXT, process_uuid TEXT, feedback_log_body TEXT)'
     )
     const startedMs = Date.parse(parsed.records[0].startedAt)
+    const eventMs = startedMs + 150
     database
       .prepare('INSERT INTO logs VALUES (1, ?, ?, ?, ?, ?, ?)')
       .run(
-        Math.floor(startedMs / 1000),
-        ((startedMs % 1000) + 150) * 1000000,
+        Math.floor(eventMs / 1000),
+        (eventMs % 1000) * 1000000,
         'codex_core::stream_events_utils',
         'thread',
         'process',
-        'try_run_sampling_request{turn_id=turn}: Output item item_type="custom_tool_call" item_id="ctc_pending"'
+        'try_run_sampling_request{turn_id=turn}: Output item item_type="function_call" item_id="ctc_pending"'
       )
     database.close()
     const nativeBoundaryEvidence = captureNativeBoundaries(

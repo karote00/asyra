@@ -1048,12 +1048,7 @@ it('provides executable fact and binding examples in the native-discoverable des
 })
 
 it('advertises an executable deferred-detail example including the required reason', () => {
-  const description =
-    designEvidenceSchema.properties.deferredDetails.description
-  const match = description.match(/Example: (\{.*\})/)
-  expect(match).not.toBeNull()
-  if (!match) throw new Error('Missing deferred-detail example')
-  const item = JSON.parse(match[1])
+  const item = designEvidenceSchema.properties.deferredDetails.examples[0][0]
   const input = { ...plan, deferredDetails: [item] }
   expect(
     operationInputIssue(schemaReviewInput(input), designEvidenceSchema)

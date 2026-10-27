@@ -16,8 +16,10 @@ import {
 } from '@asyra/utils'
 import {
   CollaborationMessageTypes,
+  collaborationBootstrapPhases,
   type CollaborationRequestInput,
   type CollaborationRequestMessage,
+  type DocumentPersistenceReceipt,
   type DocumentSessionBootstrap
 } from './protocol'
 import type {
@@ -136,6 +138,7 @@ export class CollaborationWebSocketProvider implements Provider {
   private readonly connectionTimeoutMs: number
   private readonly transportWorkerFactory: () => CollaborationTransportWorkerLike
   private status: ProviderStatus = 'idle'
+  private bootstrapPhaseIndex = 0
   private connectionGeneration = 0
   private requestSequence = 0
   private transportWorker: CollaborationTransportWorkerLike | null = null
@@ -252,6 +255,7 @@ export class CollaborationWebSocketProvider implements Provider {
     if (this.connectPromise) return this.connectPromise
 
     const generation = ++this.connectionGeneration
+    this.bootstrapPhaseIndex = 0
     this.suppressedAppFailureGeneration = null
     this.documentSessionBootstrap = null
     this.documentBootstrapCompleted = false
@@ -468,6 +472,41 @@ export class CollaborationWebSocketProvider implements Provider {
     )
   }
 
+  async confirmPersistence(
+    signal?: AbortSignal
+  ): Promise<DocumentPersistenceReceipt> {
+    signal?.throwIfAborted()
+    this.requireDocumentSessionLive()
+    const sequence = this.appliedDocumentSequence
+    const documentGeneration =
+      this.documentSessionBootstrap?.documentGeneration ?? 0
+    if (sequence === null) throw new Error('Document sequence is unavailable')
+    const result = (await this.request(
+      {
+        type: CollaborationMessageTypes.CONFIRM_PERSISTENCE,
+        sequence,
+        documentGeneration
+      },
+      this.connectionGeneration,
+      undefined,
+      signal
+    )) as DocumentPersistenceReceipt | undefined
+    const documentId =
+      this.identity.connectionMetadata?.fileId ?? this.identity.documentId
+    if (
+      !result ||
+      result.documentId !== documentId ||
+      result.documentGeneration !== documentGeneration ||
+      result.sequence !== sequence ||
+      !Number.isSafeInteger(result.durableSequence) ||
+      result.durableSequence < sequence
+    )
+      throw new Error(
+        'Persistence acknowledgement does not match the captured document version'
+      )
+    return result
+  }
+
   async resetDocument(): Promise<void> {
     this.requireDocumentSessionLive()
     await this.request(
@@ -495,8 +534,10 @@ export class CollaborationWebSocketProvider implements Provider {
   private request(
     input: CollaborationRequestInput,
     generation: number,
-    consumeAcceptedSource?: PublicationConsumer
+    consumeAcceptedSource?: PublicationConsumer,
+    signal?: AbortSignal
   ): Promise<unknown> {
+    signal?.throwIfAborted()
     this.requireConnectedGeneration(generation)
     const requestId = `${this.identity.actorId}:${++this.requestSequence}`
     const message: CollaborationRequestMessage = {
@@ -508,7 +549,13 @@ export class CollaborationWebSocketProvider implements Provider {
         ? 'publication'
         : 'control'
 
+    let abort: (() => void) | undefined
     return new Promise((resolve, reject) => {
+      abort = () => {
+        this.pendingRequests.delete(requestId)
+        reject(signal?.reason)
+      }
+      signal?.addEventListener('abort', abort, { once: true })
       const pending: PendingRequest =
         kind === 'publication' &&
         message.type === CollaborationMessageTypes.SEND_PUBLICATION
@@ -547,6 +594,8 @@ export class CollaborationWebSocketProvider implements Provider {
         }
         reject(failure)
       }
+    }).finally(() => {
+      if (abort) signal?.removeEventListener('abort', abort)
     })
   }
 
@@ -669,6 +718,18 @@ export class CollaborationWebSocketProvider implements Provider {
       return
     }
 
+    if (response.type === 'bootstrap-progress') {
+      if (
+        this.pendingConnection?.generation === response.generation &&
+        this.bootstrapPhaseIndex < collaborationBootstrapPhases.length &&
+        response.phase ===
+          collaborationBootstrapPhases[this.bootstrapPhaseIndex]
+      ) {
+        this.bootstrapPhaseIndex += 1
+        this.startConnectionTimeout(response.generation)
+      }
+      return
+    }
     if (response.type === 'timing') {
       recordWorkerTiming(response.phase, response.durationMs)
       return
@@ -732,7 +793,7 @@ export class CollaborationWebSocketProvider implements Provider {
       if (!pending) return
       this.pendingRequests.delete(response.requestId)
       if (pending.kind === 'control') {
-        pending.resolve(undefined)
+        pending.resolve(response.persistence)
         return
       }
       const sequence = response.acceptedSequences?.[0]

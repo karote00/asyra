@@ -438,6 +438,9 @@ for the current declarative format and lifecycle.
   or bounded repair issues, without execution. Limits bound bytes, steps and
   bindings. The deliberately conservative schema subset proves field/type handoffs;
   the host's full validator remains authoritative for actual inputs and outputs.
+  Necessary root property constraints may prove an opaque sibling disjoint from a
+  guaranteed binding. This never admits an opaque selected branch or guesses an
+  optional discriminator; overlaps remain explicit admission failures.
 - Primitive tools opt into composition with `composition: 'allowed'` on their
   canonical descriptor. Control-plane tools use `composition: 'control-plane'`.
   An omitted declaration remains unavailable for composition, while ordinary
@@ -522,7 +525,7 @@ and delivery reuse unchanged. The controller binds one tenant and
 scope. A host creates `openSession(principal, taskId)` from trusted request context;
 never obtain these identities from model tool arguments.
 
-Sessions expose `discover(contexts?, ids?)`, `retrieve({ ids, contexts, rehydrate?, reuseFrom? }, signal)`,
+Sessions expose `discover(contexts?, ids?)`, `retrieve({ ids, contexts, rehydrate?, reuseFrom?, fromResult? }, signal)`,
 `invalidateContext()` and `dispose()`. Context invalidation only clears delivery
 receipts; it never updates knowledge or permissions. Discovery returns metadata, not bodies. Optional `children` lists navigation IDs,
 filtered to entries discoverable in the same contexts; missing children are omitted
@@ -602,3 +605,14 @@ full advice, ignoring otherwise well-formed old reuse references. Permissions,
 revisions, epoch, cancellation and disposal are rechecked. Stable retries reuse the
 same response; invalidation retires both full and wire content. No raw provider cache
 or change to content limits, dependency traversal or mutation authority is introduced.
+
+### Selected retained Knowledge redisplay
+
+fromResult selects a live contextKey in the same retaining session. With exact ids,
+return full retained text plus necessary target/effective-source dependencies in
+original order and with original resolved overrides. Inherit original contexts;
+explicit mismatch, rehydrate or reuseFrom is invalid. Never call the content
+provider for this selection. Recheck permissions/generation/epoch/cancellation;
+foreign, evicted or invalidated results fail with KNOWLEDGE_REUSE_UNAVAILABLE and
+ordinary selected-read recovery. A selected result gets its own contextKey and
+complete source metadata. No new store, filesystem reader or semantic summarizer.

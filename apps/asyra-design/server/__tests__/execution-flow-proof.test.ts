@@ -133,6 +133,13 @@ import { createLocalToolScheduler } from '../local-tool-scheduler'
 import { createLocalToolHost } from '../local-tool-host'
 
 const { spawn } = vi.hoisted(() => ({ spawn: vi.fn() }))
+vi.mock('../native-provider-config', () => ({
+  createNativeProviderConfig: vi.fn(async () => ({
+    path: 'fixture-model.json',
+    arguments: ['-c', 'model_catalog_json="fixture-model.json"'],
+    dispose: vi.fn(async () => undefined)
+  }))
+}))
 vi.mock('node:child_process', () => ({ spawn }))
 
 it('execution proof resolves batched semantic identities and applies ordered ready parts', async () => {
@@ -348,6 +355,43 @@ it('execution proof repairs rejected source through the same request preparation
     })
   ).toHaveLength(2)
   expect(source.children[1].key).toBe('part')
+  const definition = tools.definitions.find(
+    (tool) => tool.name === AiDesignToolIds.PREPARE_DESIGN
+  )
+  if (!definition) throw new Error('Missing preparation definition')
+  const missing = JSON.parse(
+    (
+      await invokeLocalTool(
+        tools,
+        definition,
+        {
+          draft: { type: 'frame', name: 'Frame', height: 40, children: [] }
+        },
+        signal
+      )
+    ).text
+  )
+  expect(missing.toolOutcome).toMatchObject({
+    status: 'failed',
+    settlement: 'not-started'
+  })
+  expect(missing.repairGuide.arguments.repair.replacements).toEqual([
+    { path: '/width' }
+  ])
+  const missingCorrection = structuredClone(missing.repairGuide.arguments)
+  missingCorrection.repair.replacements[0].value = 60
+  expect(missingCorrection).not.toHaveProperty('draft')
+  const completed = JSON.parse(
+    (await invokeLocalTool(tools, definition, missingCorrection, signal)).text
+  )
+  expect(completed.toolOutcome).toMatchObject({
+    status: 'success',
+    settlement: 'completed'
+  })
+  expect(completed.preparationInput).toMatchObject({
+    kind: 'retained-repair',
+    replacementCount: 1
+  })
   const nonplanarRecovery = {
     projection: {
       azimuth: 35,
@@ -832,7 +876,7 @@ it('execution proof preserves registered native capability envelopes', async ({
     model: 'gpt-6-astra',
     ephemeral: true,
     allowProviderModelFallback: false,
-    config: { 'features.code_mode': true, model_reasoning_effort: 'medium' }
+    config: { model_reasoning_effort: 'medium' }
   })
   const groups = thread?.dynamicTools as {
     type: string
@@ -1622,6 +1666,31 @@ it('execution proof retains partial progress when a successor makes no change', 
 })
 
 it('execution proof accounts observed spans without private payloads or invented model timing', async () => {
+  const { architectureScenario } =
+    await import('../../test-data/knowledge-evaluation/architecture-protocol.mjs')
+  const { qualityScenario } =
+    await import('../../test-data/knowledge-evaluation/quality.mjs')
+  const architecture = (
+    await import('../../test-data/knowledge-evaluation/architecture-101.json')
+  ).default
+  const quality = (
+    await import('../../test-data/knowledge-evaluation/quality-cases.json')
+  ).default
+  for (const scenario of [
+    architectureScenario(architecture),
+    ...[...quality.development, ...quality.transfer].map((item) =>
+      qualityScenario(quality, item.id)
+    )
+  ]) {
+    expect(scenario.prompt).toContain(
+      'Knowledge is optional reference material'
+    )
+    expect(scenario.prompt).toContain(
+      'at any stage or proceed without reading it'
+    )
+    expect(scenario.prompt).not.toContain('Before designing')
+    expect(scenario.prompt).toContain('Optional Knowledge modules:')
+  }
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const clock = vi.spyOn(performance, 'now')
   const retained: ExecutionRecord[] = []
@@ -4256,6 +4325,13 @@ it('execution proof preserves a rejected mechanical repair as not-started across
 
 it('execution proof connects tool-first guidance to native selection and Runtime decision recovery', async () => {
   const { AI_APP_PROMPT } = await import('../ai-domain-prompt')
+  expect.soft(AI_APP_PROMPT).toContain('First frame is optional')
+  expect.soft(AI_APP_PROMPT).toContain('not a deadline or completion gate')
+  expect.soft(AI_APP_PROMPT).toContain('research may come first')
+  expect
+    .soft(AI_APP_PROMPT)
+    .toContain('Preserve validation, references and final review')
+  expect.soft(AI_APP_PROMPT).not.toContain('Draw each coherent ready part')
   expect.soft(AI_APP_PROMPT).toContain('mechanicalSelection')
   expect.soft(AI_APP_PROMPT).toContain('verify_design_checks')
   expect.soft(AI_APP_PROMPT).toContain('repair_design_checks')
@@ -4582,12 +4658,13 @@ it('execution proof saves nested tool evidence and reopens without product repla
       ],
       output: { kind: 'step', step: 'prepare', path: '' }
     }
-    expect(
-      await call('tool_library.submit_tool', {
-        submissionId: 'child',
-        proposal: child
-      })
-    ).toMatchObject({ ok: true })
+    const submittedChild = await call('tool_library.submit_tool', {
+      submissionId: 'child',
+      proposal: child
+    })
+    expect(submittedChild, JSON.stringify(submittedChild)).toMatchObject({
+      ok: true
+    })
     expect(
       await call('tool_library.submit_tool', {
         submissionId: 'parent',
@@ -5386,7 +5463,12 @@ it('execution proof consumes complete mapping scope before bounded delivery and 
     () => () => undefined
   )
   const signal = new AbortController().signal
-  const update = vi.fn()
+  const update = vi.fn((updates: readonly { elementId: string }[]) => ({
+    value: null,
+    changed: updates.length > 0,
+    acceptedIds: updates.map((item) => item.elementId),
+    unavailableIds: []
+  }))
   const action = createRetainedFillAction(store, {
     metadata: () => ({ lock: false }),
     targets: (members) =>
@@ -7230,8 +7312,7 @@ const readCompleteInformation = async (
   throw new Error('Information continuation did not terminate')
 }
 
-it('execution proof executes the published bounded information example without replaying operations', async () => {
-  const { runInNewContext } = await import('node:vm')
+it('execution proof delivers bounded information through owner continuations without replaying operations', async () => {
   const { toolSemantics } = await import('../../src/ai/tool-contract')
   const dispatch = vi.fn()
   const schema = {
@@ -7271,22 +7352,6 @@ it('execution proof executes the published bounded information example without r
     (d) => d.name === 'describe_design_apis'
   )
   if (!definition) throw new Error('Missing discovery definition')
-  const example =
-    /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/.exec(
-      definition.description
-    )?.[1]
-  expect(example).toBeTruthy()
-  if (!example) throw new Error('Missing advertised example')
-  const values = new Map<string, unknown>()
-  const text = vi.fn()
-  const forward = (result: string) =>
-    runInNewContext(example, {
-      result,
-      deliveryKey: 'proof',
-      text,
-      load: (key: string) => values.get(key),
-      store: (key: string, value: unknown) => values.set(key, value)
-    })
   let args: Record<string, unknown> = { names: ['proof.choose'] }
   const pages: string[] = []
   for (let i = 0; i < 20; i++) {
@@ -7298,20 +7363,21 @@ it('execution proof executes the published bounded information example without r
     )
     expect(reply.success).toBe(true)
     pages.push(reply.text)
-    forward(reply.text)
     const page = JSON.parse(reply.text).contentDelivery
     if (!page || page.lastPage) break
     args = page.next.arguments
   }
   expect(pages.length).toBeGreaterThan(1)
-  expect(values.get('proof')).toMatchObject({
-    complete: true,
-    value: { tools: [{ inputSchema: schema }] }
-  })
-  const before = values.get('proof')
-  pages.forEach(forward)
-  expect(values.get('proof')).toEqual(before)
-  expect(text.mock.calls.map((call) => call[0])).toEqual([...pages, ...pages])
+  const fragments = pages.map((raw) => JSON.parse(raw).contentDelivery)
+  let offset = 0
+  for (const page of fragments) {
+    expect(page.startByte).toBe(offset)
+    offset = page.endByte
+  }
+  expect(offset).toBe(fragments[0].totalBytes)
+  expect(
+    JSON.parse(fragments.map((page) => page.text).join('')).tools[0].inputSchema
+  ).toEqual(schema)
   expect(dispatch).not.toHaveBeenCalled()
 })
 
@@ -7602,6 +7668,53 @@ it('execution proof delivers selected Knowledge decisions completely without opt
 })
 
 it('execution proof delivers selected operation contracts without exhaustive discovery', async () => {
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
+  const selectedMutation = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.UPDATE_DESIGN_ELEMENT,
+        description: 'Edit selected values',
+        inputSchema: {
+          type: 'object',
+          properties: { value: { type: 'number', minimum: 0 } },
+          required: ['value'],
+          examples: [{ value: 1 }]
+        },
+        ...toolSemantics(
+          { type: 'object', properties: { applied: { type: 'boolean' } } },
+          'mutation',
+          ['document']
+        )
+      }
+    ],
+    { modelActions: (v) => v, resolveBatch: (v) => v },
+    vi.fn()
+  )
+  const selectedUsage = JSON.parse(
+    await selectedMutation.call(
+      'describe_design_apis',
+      { operations: [AiActionNames.UPDATE_DESIGN_ELEMENT], view: 'usage' },
+      new AbortController().signal
+    )
+  )
+  expect(selectedUsage.contentDelivery).toBeUndefined()
+  expect(selectedUsage.apis[0].usageGuide.operationParameters).toMatchObject({
+    type: 'object',
+    properties: { value: { type: 'number', minimum: 0 } },
+    required: ['value']
+  })
+  expect(selectedUsage.apis[0].usageGuide.instructions).toContain(
+    'Omit target-supplied'
+  )
+  expect(selectedUsage.apis[0].usageGuide.recovery).toContain(
+    'do not replay acknowledged mutations'
+  )
+  expect(
+    selectedUsage.apis[0].invocationExample.invocation.arguments.operations
+  ).toEqual([
+    { name: AiActionNames.UPDATE_DESIGN_ELEMENT, arguments: { value: 1 } }
+  ])
+
   const { workflowQueryGuidance } = await import('../design-workflow-discovery')
   const { operationInputIssue } = await import('../operation-input-schema')
   const designs = createLocalDesignTools([
@@ -7675,8 +7788,15 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(guidance.operationUsage.parts).toContain('each part artifact fits')
   const first = await read(guidance.example.arguments)
   expect(first.tools[0].usageGuide).toBeDefined()
+  const deliveredSchema = first.tools[0].usageGuide.parameters
+  expect(typeof deliveredSchema).toBe('object')
+  const deliveredInput = first.tools[0].invocationExample.invocation.arguments
+  expect(operationInputIssue(deliveredInput, deliveredSchema)).toBeUndefined()
+  expect(
+    operationInputIssue({ ...deliveredInput, repair: {} }, deliveredSchema)
+  ).toBeDefined()
   expect(counts).toHaveLength(1)
-  expect(first.tools[0].usageGuide.instructions).toContain(
+  expect(JSON.stringify(deliveredSchema)).toContain(
     'root and nested containers'
   )
   const excess = JSON.parse(
@@ -7762,6 +7882,12 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(counts).toHaveLength(1)
   expect(counts[0]).toBeLessThan(5000)
   counts.splice(0)
+  const { names: scopedNames, ...selectedQuery } = guidance.example.arguments
+  const expectedScope = await read(guidance.example.arguments)
+  const expectedBytes = counts.splice(0)
+  const actualScope = await read({ query: scopedNames[0], ...selectedQuery })
+  expect(actualScope.tools).toEqual(expectedScope.tools)
+  expect(counts.splice(0)).toEqual(expectedBytes)
   const full = await read({ names })
   const fullCounts = counts.splice(0)
   const inputScope = { operation: 'draft', nodeTypes: ['vector'] }
@@ -7873,6 +7999,25 @@ it('execution proof distinguishes inspection lookup coverage from completed read
   })
   const complete = await read(['/properties/phase'])
   expect(complete.success).toBe(true)
+  const usage = await invokeLocalTool(
+    owner,
+    definition,
+    { names: ['select_design_references'], view: 'usage' },
+    new AbortController().signal
+  )
+  const query = JSON.parse(usage.text).tools[0].fieldQuery
+  expect(query).toBeDefined()
+  expect(query.arguments.names).toEqual(['design.select_design_references'])
+  const fields = await invokeLocalTool(
+    owner,
+    definition,
+    query.arguments,
+    new AbortController().signal
+  )
+  expect(fields.success).toBe(true)
+  expect(JSON.parse(fields.text).tools).toHaveLength(1)
+  expect(Buffer.byteLength(failed.text)).toBeLessThan(24000)
+
   expect(dispatch).not.toHaveBeenCalled()
 })
 
@@ -9069,7 +9214,25 @@ it('execution proof delivers shared motifs through the main workflow without ext
   expect(body).toContain('without overrides')
   expect(replies.length).toBeLessThanOrEqual(fixture.baseline.guideReplies)
   const bytes = replies.reduce((n, text) => n + Buffer.byteLength(text), 0)
-  expect(bytes).toBeLessThanOrEqual(fixture.baseline.guideWireBytes)
+  const { resultKey, ...contract } = JSON.parse(body)
+  expect(resultKey).toEqual(expect.any(String))
+  // Keep the original contract-only budget; the total below still includes the handle.
+  const { deliverInformation } = await import('../local-information-delivery')
+  let budgetQuery: Record<string, unknown> = fixture.query
+  let contractBytes = 0
+  for (;;) {
+    const pageText = deliverInformation(
+      JSON.stringify(contract),
+      'describe_design_apis',
+      budgetQuery,
+      'contract-budget'
+    )
+    contractBytes += Buffer.byteLength(pageText)
+    const page = JSON.parse(pageText).contentDelivery
+    if (!page || page.lastPage) break
+    budgetQuery = page.next.arguments
+  }
+  expect(contractBytes).toBeLessThanOrEqual(fixture.baseline.guideWireBytes)
   expect(
     bytes + Buffer.byteLength(JSON.stringify(fixture.compact))
   ).toBeLessThan(
@@ -9768,14 +9931,9 @@ it('execution proof preserves incremental UI publications without unrelated hier
   }
 })
 
-it('execution proof retains failed image forwarding for display-only recovery', async () => {
-  const { runInNewContext } = await import('node:vm')
-  const {
-    localToolContent,
-    localToolResultExample,
-    localToolResultRecoveryExample,
-    localToolResultInstructions
-  } = await import('../local-operation-tools')
+it('execution proof preserves retained images during direct response reprojection', async () => {
+  const { localToolContent, localToolResultInstructions } =
+    await import('../local-operation-tools')
   const imageBytes = await sharp({
     create: { width: 2, height: 2, channels: 3, background: '#345678' }
   })
@@ -9796,31 +9954,12 @@ it('execution proof retains failed image forwarding for display-only recovery', 
     ]
   }
   const content = await localToolContent(JSON.stringify(receipt))
-  const result = content
-    .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
-    .join('\n')
-  const saved = new Map<string, unknown>()
-  const text = vi.fn()
-  const context = {
-    resultKey: 'receipt',
-    text,
-    store: (key: string, value: unknown) => saved.set(key, value),
-    load: (key: string) => saved.get(key)
-  }
-  expect(() =>
-    runInNewContext(localToolResultExample, {
-      ...context,
-      result,
-      image: () => {
-        throw new Error('Display failed')
-      }
-    })
-  ).toThrow('Display failed')
-  const image = vi.fn()
-  runInNewContext(localToolResultRecoveryExample, { ...context, image })
-  expect(image.mock.calls).toEqual([[uri]])
-  expect(text.mock.calls.at(-1)?.[0].toolOutcome).toEqual(receipt.toolOutcome)
-  expect(localToolResultInstructions).toContain(localToolResultRecoveryExample)
+  const redisplayed = await localToolContent(JSON.stringify(receipt))
+  expect(redisplayed).toEqual(content)
+  expect(content).toContainEqual({ type: 'inputImage', imageUrl: uri })
+  const text = content.find((item) => item.type === 'inputText')
+  if (!text || text.type !== 'inputText') throw new Error('Missing receipt')
+  expect(JSON.parse(text.text).toolOutcome).toEqual(receipt.toolOutcome)
   expect(localToolResultInstructions).toContain('bindChecks')
 })
 
@@ -10473,6 +10612,17 @@ it('execution proof resolves compact Knowledge sources through the delivered exa
       )
     ).toEqual(full.documents)
     expect(result.sources).toEqual(full.sources)
+    const selected = await invokeLocalTool(
+      owner,
+      definition,
+      { ids: ['base'], fromResult: result.contextKey },
+      new AbortController().signal
+    )
+    expect(selected.success).toBe(true)
+    const redisplayed = JSON.parse(selected.text)
+    expect(redisplayed.documents[0]).toEqual(result.documents[0])
+    expect(redisplayed.documents[0].text).toBe('Specific constraint')
+    expect(redisplayed.contextKey).not.toBe(result.contextKey)
     expect(result.documents[0].source.provenance).toBeUndefined()
     expect(result.documents[0].replacedSource.provenance).toBeUndefined()
     expect(Buffer.byteLength(reply.text)).toBeLessThan(
@@ -10593,6 +10743,35 @@ it('execution proof prepares explicit attachment uses through the existing owner
 })
 
 it('execution proof delivers automatic mechanical scope without accumulating candidates', async () => {
+  const { createDesignReviewer } =
+    await import('../../src/common-apis/design-review')
+  const computed = vi.fn(() => ({ x: 0, y: 0, width: 10, height: 10 }))
+  const reviewer = createDesignReviewer(
+    {
+      read: (id) =>
+        id === 'scene'
+          ? { type: 'workspace', children: ['shape'] }
+          : { type: 'rect' },
+      computed,
+      measure: () => [],
+      observeChanges: () => () => undefined
+    },
+    async () => undefined,
+    true
+  )
+  const workspace = await reviewer.capture('scene')
+  expect(workspace).toMatchObject({
+    complete: true,
+    available: true,
+    findings: [],
+    checkedElements: 2
+  })
+  expect(computed.mock.calls).toHaveLength(1)
+  if (!workspace.evidence) throw new Error('Missing workspace receipt')
+  expect(
+    (await reviewer.coverage(workspace.evidence))?.checks[0].geometry
+  ).toBe(false)
+  reviewer.dispose()
   // This node-only proof checks the server boundary. The registered direct
   // consumer integration runs actual Runtime, material and browser reviewer owners.
   const ids = Array.from({ length: 128 }, (_, i) => `leaf-${i}`)

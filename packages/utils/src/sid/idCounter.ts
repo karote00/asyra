@@ -124,6 +124,37 @@ class IDCounter {
     return newId
   }
 
+  /** Allocate registered identities without publishing a partially consumed batch. */
+  allocate(types: readonly string[]): readonly string[] {
+    if (!Array.isArray(types))
+      throw new Error('ID allocation requires a type list.')
+    const prefixes = new Map<string, number>()
+    for (const current of Object.values(this.counter)) {
+      const parsed = this.splitId(current)
+      if (parsed)
+        prefixes.set(parsed.prefix, (prefixes.get(parsed.prefix) ?? 0) + 1)
+    }
+    const pending = new Map<string, string>()
+    const ids: string[] = []
+    for (const type of types) {
+      if (typeof type !== 'string' || !this.hasType(type))
+        throw new Error('ID allocation requires registered counter types.')
+      const current = this.splitId(pending.get(type) ?? this.counter[type])
+      if (!current || !Number.isSafeInteger(current.count + 1))
+        throw new Error('ID allocation counter is invalid or exhausted.')
+      if (prefixes.get(current.prefix) !== 1)
+        throw new Error('ID allocation counter prefix is ambiguous.')
+      const count = current.count + 1
+      const next = current.prefix
+        ? `${current.prefix}${CODE_SPLIT}${count}`
+        : String(count)
+      pending.set(type, next)
+      ids.push(next)
+    }
+    for (const [type, value] of pending) this.update(type, value)
+    return Object.freeze(ids)
+  }
+
   valid(id: string, type: string = IDTypes.DEFAULT): boolean {
     if (!id || !type) {
       return false

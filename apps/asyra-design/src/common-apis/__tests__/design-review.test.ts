@@ -981,3 +981,98 @@ it('selects completed descendants without caller candidates and preserves explic
   })
   f.review.dispose()
 })
+
+it('reviews non-geometric workspace descendants without masking real findings', async () => {
+  const { apis, data, geometry } = fixture()
+  data.scene = { type: 'workspace', children: ['f', 'hidden'] }
+  data.hidden = { type: 'rect', visible: false }
+  geometry.scene = {}
+  let changed: (value?: InspectionDependencyChange) => void = () => undefined
+  const reviewer = createDesignReviewer(
+    {
+      ...apis,
+      observeChanges(listener) {
+        changed = listener
+        return () => undefined
+      }
+    },
+    async () => undefined,
+    true
+  )
+  apis.measure.mockReturnValue([
+    { elementId: 't', bounds: { x: 0, y: 0, width: 90, height: 20 } }
+  ])
+  const first = await reviewer.capture('scene', undefined, 'descendants')
+  expect(first).toMatchObject({
+    complete: true,
+    available: true,
+    findings: [],
+    checkedElements: 4
+  })
+  expect(apis.computed.mock.calls.some(([id]) => id === 'scene')).toBe(false)
+  const stamp = requiredEvidence(first)
+  expect(
+    (await reviewer.coverage(stamp))?.checks.find(
+      (check) => check.elementId === 'scene'
+    )
+  ).toMatchObject({ geometry: false, containment: false })
+  expect((await reviewer.capture('scene')).observation.evaluatedNodes).toBe(0)
+  const local = requiredEvidence(await reviewer.capture('f'))
+  data.scene.children = ['hidden', 'f']
+  changed({ elementIds: ['scene'] })
+  // Painter order remains a visual dependency, not a changed mechanical rule.
+  expect((await reviewer.validate(stamp)).current).toBe(true)
+  expect((await reviewer.validate(local)).current).toBe(true)
+  data.scene.children.push('new')
+  data.new = { type: 'rect' }
+  geometry.new = { x: -100, y: 0, width: 10, height: 10 }
+  changed({ elementIds: ['scene'] })
+  expect((await reviewer.validate(stamp)).current).toBe(false)
+  expect((await reviewer.validate(local)).current).toBe(true)
+  apis.measure.mockReturnValue([])
+  changed({ elementIds: ['t'] })
+  expect(await reviewer.capture('scene')).toMatchObject({
+    complete: false,
+    findings: expect.arrayContaining([
+      { kind: 'measurement-unavailable', elementId: 't' }
+    ])
+  })
+  apis.measure.mockReturnValue([
+    { elementId: 't', bounds: { x: 0, y: 0, width: 90, height: 20 } }
+  ])
+  geometry.t.width = 400
+  changed({ elementIds: ['t'] })
+  expect((await reviewer.validate(stamp)).current).toBe(false)
+  const overflow = await reviewer.capture('scene')
+  expect(overflow.findings).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ kind: 'container-overflow', elementId: 't' })
+    ])
+  )
+  geometry.t = {}
+  changed({ elementIds: ['t'] })
+  expect(await reviewer.capture('scene')).toMatchObject({
+    complete: false,
+    available: false,
+    findings: expect.arrayContaining([
+      { kind: 'geometry-unavailable', elementId: 't' }
+    ])
+  })
+  data.scene.children = []
+  changed({ elementIds: ['scene'] })
+  expect(await reviewer.capture('scene')).toMatchObject({
+    complete: true,
+    checkedElements: 1,
+    findings: []
+  })
+  expect(await reviewer.capture('missing')).toMatchObject({
+    complete: false,
+    findings: [{ kind: 'missing-element', elementId: 'missing' }]
+  })
+  const abort = new AbortController()
+  abort.abort()
+  await expect(reviewer.capture('scene', abort.signal)).rejects.toThrow()
+  changed()
+  expect((await reviewer.validate(stamp)).current).toBe(false)
+  reviewer.dispose()
+})

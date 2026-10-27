@@ -74,7 +74,7 @@ export const createDesignReviewAction = (
       ]
     )
   ),
-  revision: 7,
+  revision: 8,
   composition: 'allowed',
   verification: {
     statusPath: '/verification/status',
@@ -82,7 +82,7 @@ export const createDesignReviewAction = (
   },
   name: AiActionNames.REVIEW_DESIGN,
   description:
-    'Read-only deterministic review of the complete target subtree in cooperative chunks: measure real text content against its layout box and check unrotated child bounds. No screenshot. Fix concrete findings using current IDs, then explicitly review the corrected target. Capturing an image is independent. Complete means supported checks ran. The verification verdict covers only mechanical findings and supports explicit bounded repair recipes; it never certifies appearance or brief compliance. Truncation and unavailable checks must not be reported as full verification.',
+    'Read-only deterministic review of the complete target subtree in cooperative chunks: measure real text content against its layout box and check unrotated child bounds. Workspace has no own geometry; review its visible descendants without imposing root containment. No screenshot. Fix concrete findings using current IDs, then explicitly review the corrected target. Capturing an image is independent. Complete means supported checks ran. The verification verdict covers only mechanical findings and supports explicit bounded repair recipes; it never certifies appearance or brief compliance. Truncation and unavailable checks must not be reported as full verification.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,

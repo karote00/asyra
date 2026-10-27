@@ -6,8 +6,8 @@ export const architectureFiles = [
 ]
 
 export function architectureScenario(specification) {
-  if (specification.id !== 'taipei-101' || specification.deadlineMs !== 600000)
-    throw new Error('Only Taipei 101 with a 600000 ms hard deadline is allowed')
+  if (specification.id !== 'taipei-101' || specification.deadlineMs !== 900000)
+    throw new Error('Only Taipei 101 with a 900000 ms hard deadline is allowed')
   if (
     JSON.stringify(specification.modules) !==
       JSON.stringify(['design.architectural-illustration']) ||

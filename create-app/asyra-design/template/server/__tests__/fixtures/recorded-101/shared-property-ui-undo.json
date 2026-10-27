@@ -1,0 +1,144 @@
+{
+  "description": "Synthetic rectangle UI Undo receiver state and exact rejected canonical publication. Captured by the formal browser lifecycle scenario, no model or user document.",
+  "document": {
+    "version": "1.0.0",
+    "sceneTree": {
+      "workspace": "workspace",
+      "workspaceList": ["workspace"],
+      "elements": {
+        "workspace": {
+          "id": "workspace",
+          "type": "workspace",
+          "name": "Workspace",
+          "parentId": "",
+          "visible": true,
+          "lock": false,
+          "children": ["rect-actor-575f35bc-ab39-4a88-af93-091e82e60204-1"]
+        },
+        "rect-actor-575f35bc-ab39-4a88-af93-091e82e60204-1": {
+          "id": "rect-actor-575f35bc-ab39-4a88-af93-091e82e60204-1",
+          "type": "rect",
+          "name": "Rectangle 1",
+          "parentId": "workspace",
+          "visible": true,
+          "lock": false,
+          "props": {
+            "position": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-1",
+            "dimension": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-2",
+            "fills": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-3",
+            "strokes": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-5"
+          }
+        }
+      }
+    },
+    "props": {
+      "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-4": {
+        "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-4",
+        "type": "fill",
+        "kind": "solid",
+        "defaultColorFormat": "hex",
+        "colorFormat": "hex",
+        "color": "#cccccc",
+        "opacity": 1,
+        "visible": true,
+        "gradient": null
+      },
+      "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-5": {
+        "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-5",
+        "type": "strokes",
+        "strokes": []
+      },
+      "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-3": {
+        "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-3",
+        "type": "fills",
+        "fills": ["pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-4"]
+      },
+      "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-2": {
+        "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-2",
+        "type": "dimension",
+        "width": 0.1,
+        "height": 0.1,
+        "widthUnit": "px",
+        "heightUnit": "px"
+      },
+      "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-1": {
+        "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-1",
+        "type": "position",
+        "x": 220,
+        "y": 159,
+        "rotation": 0,
+        "xUnit": "px",
+        "yUnit": "px"
+      }
+    }
+  },
+  "changes": [
+    {
+      "kind": "element-removal",
+      "removals": [
+        {
+          "data": {
+            "id": "rect-actor-575f35bc-ab39-4a88-af93-091e82e60204-1",
+            "type": "rect",
+            "name": "Rectangle 1",
+            "parentId": "workspace",
+            "visible": true,
+            "lock": false,
+            "props": {
+              "position": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-1",
+              "dimension": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-2",
+              "fills": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-3",
+              "strokes": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-5"
+            }
+          },
+          "parentId": "workspace",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "kind": "property-components",
+      "updates": [],
+      "removals": [
+        {
+          "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-1",
+          "type": "position",
+          "x": 220,
+          "y": 159,
+          "rotation": 0,
+          "xUnit": "px",
+          "yUnit": "px"
+        },
+        {
+          "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-2",
+          "type": "dimension",
+          "width": 0.1,
+          "height": 0.1,
+          "widthUnit": "px",
+          "heightUnit": "px"
+        },
+        {
+          "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-4",
+          "type": "fill",
+          "kind": "solid",
+          "defaultColorFormat": "hex",
+          "colorFormat": "hex",
+          "color": "#cccccc",
+          "opacity": 1,
+          "visible": true,
+          "gradient": null
+        },
+        {
+          "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-3",
+          "type": "fills",
+          "fills": ["pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-4"]
+        },
+        {
+          "id": "pp-actor-575f35bc-ab39-4a88-af93-091e82e60204-5",
+          "type": "strokes",
+          "strokes": []
+        }
+      ]
+    }
+  ]
+}

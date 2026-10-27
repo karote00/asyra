@@ -1,0 +1,59 @@
+{
+  "id": "knowledge-quality-knowledge-taipei-101-1792323795116",
+  "sentAt": "2026-10-18T11:43:18.102Z",
+  "firstContentMs": 98568,
+  "elapsedMs": 496629,
+  "outcome": "success",
+  "failure": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'whenIdle')\n    at eval (eval at evaluate (:311:30), <anonymous>:5:15)\n    at async <anonymous>:337:30",
+  "deadline": {
+    "status": "finished",
+    "at": 1792324294731
+  },
+  "persistence": {
+    "documentId": "knowledge-quality-knowledge-taipei-101-1792323795116",
+    "documentGeneration": 0,
+    "sequence": 814,
+    "durableSequence": 814
+  },
+  "checkpoint": {
+    "bytes": 187936908,
+    "documentGeneration": 0,
+    "durableSequence": 814
+  },
+  "video": {
+    "path": "tmp/knowledge-evaluation/knowledge-quality-knowledge-taipei-101-1792323795116/recording.webm",
+    "bytes": 48540390
+  },
+  "sources": {
+    "server/ai-domain-prompt.ts": "6cb3a427cc35f717484558ce414388b4ebbfdfa81d0ebb37a4256b97f73f5c56",
+    "test-data/knowledge-evaluation/architecture-101.json": "a02f6073458d2417b8620451e69dc782d6acf5109ca45c9491f7219a82809ac8",
+    "test-data/knowledge-evaluation/run-101.mjs": "946eea6761c703f7c890404b02404a26cfc94b84e1b6d6e357aa5992d8343b44",
+    "server/local-knowledge.ts": "73506a4c5a143ad849b60384a398db1b8b1eec576699cb31ed6b315812ccc27b",
+    "knowledge/design.docs-page.md": "24e663af8fa33710b7d547c949fc34467abe032b5b2d059bd5f90cfbf2a0edb2",
+    "knowledge/design.architectural-illustration.md": "62f9b86f97317bfc16bf890f2d12fccda2d03e34af5ef14d2e75c67da65d5af7",
+    "test-data/knowledge-evaluation/quality-cases.json": "80e33a7308c2f017a165d4a184ea907654ee9f6eb56160e79b4b9ac189a50492",
+    "../../domain-knowledge/colors.md": "232e3f18e5486b6b1b8cbed58af6d2e5e44361943eacf5ace4c29c69ec5ee820",
+    "../../domain-knowledge/components.button.md": "b9f068aeb6b16e949e84d24c6c692666431bffab85017428d938d8fa4d741d7a",
+    "../../domain-knowledge/design.landing-page.md": "9eff97f106ad5afdca5113651d26f98ceaa18d95d62ad39cacb6d90a8a7e74b5",
+    "../../domain-knowledge/icons.md": "55ed4810fbe36f34d7e2cd66514d9674ea8e680f1b92ae2a08f191072b56e48f",
+    "../../domain-knowledge/illustration.architecture.md": "4edb88d598da28491e7442d682bca0c634a7c7518074373e66db77f2421fdcaa",
+    "../../domain-knowledge/typography.md": "302671aaef1c37684082c7818b22092e8cc9ee725c97ae8880aa3f8cf92dd378"
+  },
+  "attachments": [
+    {
+      "path": "evidence/quality-2026-10-18/reference-0.jpg",
+      "sha256": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+    },
+    {
+      "path": "evidence/quality-2026-10-18/reference-1.jpg",
+      "sha256": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+    }
+  ],
+  "limitations": [
+    "One candidate only; no matched causal control.",
+    "Read instruction explicitly identifies the module/context.",
+    "Original reload collector failed; separate read-only reload verified saved roots/order/sequence and rendered views.",
+    "Native web search raw I/O is not exposed by provider; available trace/query retained.",
+    "No independent precise-edit follow-up or blind human acceptance."
+  ]
+}

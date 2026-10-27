@@ -1,6 +1,33 @@
 {
   "pages": [
     {
+      "contentSha256": "6a97f5e56338a19957bc215ee450abb0a45983475c7c1876d6edf6054ebaaf42",
+      "description": "Pending exact Knowledge and tool-result selection with preserved scope, validity and read-only recovery.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt selected retained information"
+        },
+        {
+          "depth": 2,
+          "title": "Selected retained information - pending integration"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/retained-information-r1",
+      "markdownPath": "docs/public/updates/retained-information-r1.md",
+      "packages": [
+        "@asyra/ai-agent-runtime"
+      ],
+      "path": "updates/retained-information-r1.md",
+      "section": "Extend",
+      "title": "Adopt selected retained information",
+      "wordCount": 313
+    },
+    {
       "contentSha256": "bff730cbf00018b8fd54549e5f2a07464c76cfea16e5364654912d4a537af2ad",
       "description": "Build domain-owned information products whose visual, collaborative, persistent, and AI-facing capabilities remain composable.",
       "headings": [
@@ -1837,7 +1864,7 @@
       "wordCount": 818
     },
     {
-      "contentSha256": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
+      "contentSha256": "2fd827443c789e040b1912952faed99c3e6ffeb2607216efb62296ad2f1e2620",
       "description": "Optional registry, schema, permission, and execution boundary for app-approved AI actions.",
       "headings": [
         {
@@ -1886,6 +1913,10 @@
         },
         {
           "depth": 2,
+          "title": "Selected retained information"
+        },
+        {
+          "depth": 2,
           "title": "Canonical sources and release inventory"
         }
       ],
@@ -1897,7 +1928,7 @@
       "path": "reference/packages/ai-agent-runtime.md",
       "section": "Reference",
       "title": "@asyra/ai-agent-runtime",
-      "wordCount": 689
+      "wordCount": 723
     },
     {
       "contentSha256": "d89bff16e1372b77541c570df2d78a8ec84f4159d0e20f3919e77bc44b621cd5",
@@ -3185,6 +3216,32 @@
       "section": "Extend",
       "title": "Adopt canonical property and AI handoffs",
       "wordCount": 694
+    },
+    {
+      "contentSha256": "f4c610f19c1107fc65bcdea7f09b25e7a59b8fadcdbce93550ee941bd4e0a07d",
+      "description": "Pending direct-tool integration, canonical constraints and retained recovery without replay.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt unified direct tool contracts"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/unified-tool-contracts-r1",
+      "markdownPath": "docs/public/updates/unified-tool-contracts-r1.md",
+      "packages": [
+        "@asyra/ai-agent-runtime",
+        "@asyra/core",
+        "@asyra/preset",
+        "@asyra/utils"
+      ],
+      "path": "updates/unified-tool-contracts-r1.md",
+      "section": "Extend",
+      "title": "Adopt unified direct tool contracts",
+      "wordCount": 355
     }
   ],
   "releaseHistory": [
@@ -3360,6 +3417,7 @@
     {
       "id": "extend",
       "pageIds": [
+        "updates/retained-information-r1",
         "start/extend-with-ai",
         "build/custom-schema",
         "build/feature-session",
@@ -3381,7 +3439,8 @@
         "updates/text-spacing-example-2-r1",
         "updates/text-spacing-example-2-r2",
         "updates/held-input-and-spatial-materials-r1",
-        "updates/design-owner-handoffs-r1"
+        "updates/design-owner-handoffs-r1",
+        "updates/unified-tool-contracts-r1"
       ]
     },
     {

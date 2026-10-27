@@ -9,6 +9,9 @@ import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+export const isReservedDraftRepairKey = (key: string) =>
+  ['__proto__', 'prototype', 'constructor'].includes(key)
+
 /** Retained source for capacity continuation or repair; never an executable artifact. */
 export const createDesignDraftRepairStore = (
   expandedNodeLimit: number = limits.expandedNodes
@@ -58,7 +61,10 @@ export const createDesignDraftRepairStore = (
           }
         : undefined
     },
-    repair(value: unknown): unknown {
+    repair(
+      value: unknown,
+      admitMissing?: (candidate: unknown) => boolean
+    ): unknown {
       if (
         !record(value) ||
         Object.keys(value).some(
@@ -74,7 +80,7 @@ export const createDesignDraftRepairStore = (
         'partition' in value === 'replacements' in value
       )
         throw new Error(
-          'Provide repair.draftId and exactly one partition or nonempty replacements.'
+          'Provide repair.draftId and exactly one partition or replacements array.'
         )
       const draft = drafts.get(value.draftId)
       if (!draft)
@@ -97,11 +103,15 @@ export const createDesignDraftRepairStore = (
       }
       if (
         value.continueFromArtifact !== undefined ||
-        !Array.isArray(value.replacements) ||
-        !value.replacements.length
+        !Array.isArray(value.replacements)
       )
-        throw new Error('Provide nonempty replacements.')
+        throw new Error('Provide a replacements array.')
+      if (!value.replacements.length && !admitMissing?.(result))
+        throw new Error(
+          'Unchanged retained source requires complete owner admission.'
+        )
       const paths = new Set<string>()
+      let addedField = false
       for (const replacement of value.replacements) {
         if (
           !record(replacement) ||
@@ -122,6 +132,8 @@ export const createDesignDraftRepairStore = (
           .slice(1)
           .split('/')
           .map((part) => part.replace(/~1/g, '/').replace(/~0/g, '~'))
+        if (parts.some(isReservedDraftRepairKey))
+          throw new Error(`Reserved repair path: ${replacement.path}`)
         let parent = result
         for (const part of parts.slice(0, -1)) {
           if (
@@ -136,10 +148,12 @@ export const createDesignDraftRepairStore = (
         if (
           !parent ||
           typeof parent !== 'object' ||
-          !Object.hasOwn(parent, key) ||
+          (!Object.hasOwn(parent, key) &&
+            (!admitMissing || Array.isArray(parent))) ||
           (Array.isArray(parent) && !/^(0|[1-9]\d*)$/.test(key))
         )
           throw new Error(`Repair path does not exist: ${replacement.path}`)
+        if (!Object.hasOwn(parent, key)) addedField = true
         Object.defineProperty(parent, key, {
           value: structuredClone(replacement.value),
           enumerable: true,
@@ -147,6 +161,10 @@ export const createDesignDraftRepairStore = (
           configurable: true
         })
       }
+      if (addedField && !admitMissing?.(result))
+        throw new Error(
+          'Missing-field repair does not satisfy the complete owner input contract.'
+        )
       return result
     },
     release: remove

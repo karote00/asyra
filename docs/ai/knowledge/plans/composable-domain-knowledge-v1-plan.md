@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 - retained geometry recovery and offline native boundary handoffs verified locally; authorized eight-minute observation pending.**
+Status: **Task 3 - unified public tool contracts and per-API semantic verification active; closure gates are pending.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -28,16 +28,17 @@ No additional run, implementation, push or CI inspection is authorized by this r
 
 ## Current authority and task boundary
 
-This is the single active plan. The three proposed issues below replace the prior
-four-issue execution sequence and its completed execution instructions. Completed
-plans, immutable reports, recordings and input/output are unchanged. The canonical
-shared-property contract and fixed evaluation rubric below remain authoritative.
+This is the single active plan. The current Task 3 subsection defines the active
+follow-up; earlier issue sequences and execution checkpoints are historical.
+Completed plans, immutable reports, recordings and input/output are unchanged.
+Existing product contracts remain authoritative until their bounded successor
+changes are admitted; historical test results do not admit a new proposal.
 
 - Worktree: `.worktrees/design-knowledge-evaluation`.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: complete the verified retained geometry recovery and offline native boundary handoffs, then run exactly one authorized eight-minute 101 observation with a separate 60-second report phase, no video and production limits. Keep legal full-query behavior and unobserved upstream wait cause explicit. No push or CI inspection.
+- Current scope: the five-part unified public tool contract correction below, including admitted owner changes, permanent per-API tests and bounded self-review. No model runs, CI inspection, push or Knowledge content changes.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -95,6 +96,1540 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Unified public tool contracts and executable API coverage - 2026-10-27
+
+Status: implementation and applicable formal local validation complete on 2026-10-28.
+This closes the authorized five-part contract correction under the evidence and
+limitations below; it does not close all Task 3 work or establish live AI adoption. Earlier local passes and live observations remain
+historical evidence, not acceptance of this version. Goal: the information given
+to an agent must be sufficient, accurate and executable through the same owners
+that implement each public operation. No model or 101 run, CI, push, new package,
+subagent, second registry, cache or execution engine is authorized.
+
+#### Frozen scope and evidence
+
+Reuse this Task 3, the existing action/native registrations, public discovery,
+input validator, tool middleware, retained artifacts, repair and result owners.
+The initial inventory contains 182 App actions and 206 native entries (including
+shared action routes), plus 156 basic API contracts. These are observations, not
+hardcoded acceptance counts: permanent tests enumerate the actual registrations.
+The 545 existing delivery-audit tests pass but do not establish per-API semantic
+success, no-op, partial success, or executable recovery. Expand that existing test
+mechanism and its actual owner suites rather than treating admission-only tests as
+proof of execution. Do not introduce a separate runtime capability registry.
+
+Saved run 1793101742637, call call_uuEduMinIjMbjMGsXquYD86i, rejected an absent
+brief.checks before mutation. The canonical brief requirement is unchanged across
+eight saved source snapshots; this is not evidence that the latest field-query
+change introduced it. The reply retained the draft but provided no executable
+missing-field repair. The repair owner currently rejects inserting the missing
+leaf; replacing the complete parent works. Separate demonstrated declaration
+mismatches include negative width/height checks and whitespace-only intent.
+Selected usage currently translates JSON Schema into T aliases and numbered prose
+notes, includes irrelevant type branches, and cannot itself be validated as JSON
+Schema. Preserve original records and add minimal hash-attributed formal fixtures.
+
+Discovery is bounded to registered App actions and native tools, their schema,
+examples, invocation/result adapters, direct semantic owners and existing tests.
+Enumerate registrations and inspect each implementation; text/regex matches are
+not an audit. Record cases as executable tests with owner-specific assertions,
+not a second governance ledger. New relevant defects remain within these five
+handoffs; unrelated geometry, Knowledge policy, rendering, provider scheduling,
+model performance and historical observation gaps are excluded.
+
+Allowed runtime families: apps/asyra-design/server discovery, schema, invocation,
+preparation, repair, review and tool-owner modules; apps/asyra-design/src/ai
+contract/action/result adapters; their directly invoked common-API owners only
+where a reproduced semantic mismatch requires correction; existing
+packages/ai-agent-runtime contract, invocation and registry owners if necessary.
+Each implementation slice must additionally fit its exact Inspector step file
+allowlist. Allowed evidence/configuration: formal tests and minimal fixtures in
+those owners, existing flow mapping, test scripts, this plan, task context,
+necessary App/runtime specs, Inspector and generated assets, existing release
+notes. No unrelated dirty file may be replaced. Entry manifest and inventory are
+retained under tmp/tool-contract-unification-entry; changed existing files also
+retain entry bytes for bounded review.
+
+#### Five workstreams and implementation order
+
+1. Authoritative definitions and declaration consistency (compose, then the
+   specific prepare/apply/inspect owner if its semantics are affected). Resolve
+   name, input, output, constraints, examples, effect and cancellation/recovery
+   from existing registrations. Audit schema keywords actually used against the
+   existing validator and native conversion. Fix missing enforcement or inaccurate
+   declarations at their semantic owner; no generic acceptance fallback. Treat
+   browser/HTTP/native transport as adapters of these same contracts. These five
+   requirements do not require introducing a new WebMCP service or migrating the
+   provider; standard JSON Schema and existing framework tool contracts remain
+   provider-neutral.
+2. Standard structured delivery (compose). Replace the custom parameter language
+   with executable JSON Schema in the existing selected usage response. Retain
+   owner descriptions, selected examples, result and recovery meaning next to
+   schema. Factor repeated schema fragments using standard local $defs/$ref,
+   prune only provably unreachable type alternatives, and retain ancestor,
+   cross-field and recursive reference constraints. Full and field lookup remain
+   independent valid routes. Keep the same paging budget and request protocol;
+   remove superseded renderer instructions and tests, not legal independent APIs.
+3. Input admission and owner agreement (prepare/apply/inspect one at a time).
+   Distinguish omitted optional advice from malformed execution requirements.
+   Optional construction checks default to no checks, never passed checks;
+   supplied checks keep exact range, type and target validation. Align declared
+   constraints with real semantic validation. Test all registered examples and
+   relevant omitted/empty/boundary/invalid combinations through actual entry.
+4. Truthful output and usable recovery (compose/prepare, then apply/inspect/settle
+   when affected). Keep transport success separate from domain status and actual
+   settlement. Reuse retained source and existing repair. Missing known object
+   fields must be correctable through an owner-validated path without resending
+   geometry; forbid unknown/prototype paths, arbitrary array insertion and stale
+   references. Derive recovery fields from the actual failing owner contract,
+   retain workflow context, completed items and original failure evidence. Do not
+   infer success from absence of exceptions or automatically replay writes.
+5. Per-API permanent coverage and drift prevention. Extend existing delivery
+   audit and actual-owner suites; every registered API has an executable positive
+   semantic case and applicable negative/cancellation/recovery cases. Same-owner
+   multiple entries must agree. Every mutation family has real canonical state,
+   no-op and partial-result evidence where supported. Missing registration
+   coverage fails the existing test gate. Do not satisfy coverage with mocks that
+   echo arguments, schema acceptance alone, generated guessed values or tests that
+   resend a known valid fixture instead of following delivered recovery.
+
+Current execution evidence: contract review
+0075bbaeb1d2d1407552017f52971c97a9f05cd62ff58896418e524de8938a45
+is accepted using the existing selected-operation and compact-repair proof
+selectors. Their assertions will be strengthened; old passing assertions are not
+new semantic proof. The initial proposal of separate future selectors was blocked
+and not accepted. New validator/structured-delivery regressions first failed 3/3,
+then passed with existing validator tests (31/31). Actual discovery consumers
+exposed larger structured replies, so compose is not closed. Unreachable selected
+alternatives first failed 2/2 and now pass; paging budgets are not relaxed.
+
+Active prepare card: local-design-tools.ts, design-preparation.ts,
+design-construction-schema.ts, design-construction.ts and design-draft-repair.ts,
+with unified-tool-contracts.integration.test.ts and the saved missing-checks
+fixture. Reuse the preparation owner's exact allowed fields instead of a separate
+schema-only list. The actual owner accepts oval rotation but the current generic
+node declaration omits it, and generic schemas admit typography on non-text nodes
+that the owner rejects. Add formal cases before changing these owners. Preserve
+all supported kinds, frame/group distinctions, vector paired dimensions, defaults,
+source isolation and prepared ordering. Return to compose projection after this
+canonical correction; no claimed closure until byte and consumer gates pass.
+
+Bounded iteration review: the first two structured-delivery consumer runs retain
+paging/byte failures; no budget or required case is changed. Re-audit shows that
+owner-forbidden fields must be removed only after canonical admission agrees
+(native preparation consumers now pass 102/102). The JSON Schema factoring owner
+also estimates every reference at 48 bytes, so repeated 46-byte numeric schemas
+can never be factored even though real references are shorter. Replace the
+estimate with actual serialized candidate/reference/definition cost, remove only
+unreferenced generated definitions, and recheck exact schema equivalence and all
+existing delivery budgets. This is the next bounded compose iteration; do not
+remove constraints or split a formerly complete response to make it pass.
+
+Bounded compose follow-up: actual selected payload measurement separates 16,856
+schema bytes from 5,890 bytes of examples, lifecycle/recovery and delivery metadata.
+Repeated parent sharing leaves generated child definitions referenced once; their
+original occurrence counts no longer justify indirection. First prove this with a
+formal nested-sharing case, then inline only generated references whose actual
+retained-graph cost is not smaller. Preserve original references, recursive closure,
+all annotations and exact reconstructed schema. This is an internal correction to
+the admitted compose projection, not permission to relax the old delivery budgets
+or remove explanations. After that focused proof, reassess the remaining payload
+rather than repeat speculative packing edits.
+
+Existing per-API semantic cases are already present in
+`e2e/fixtures/basic-api-cases.ts`, enumerated against all `basicApiContracts` by
+`e2e/basic-api-actions.spec.ts`. Reuse and strengthen these real browser owners,
+invalid-input and cancellation checks; do not add a duplicate basic API registry.
+The old run status is not new evidence. Read assertions individually and execute
+applicable cases on the final frozen source, including their result values and
+state changes; presence-only assertions require a stronger domain oracle.
+
+Compose size review after retained-graph factoring: the existing complete server
+harness has 17 failures, including unchanged byte/page gates, old string-consumer
+assertions, and two old absent-field rejection assertions superseded by the admitted
+full-input repair contract. The latter consumer assertions are replaced by exact
+structured-schema and legal-insertion/illegal-field/isolation checks, not removed.
+The retained graph correction passes 58 focused tests but saves only 228 bytes for
+the measured scope. The remaining selected schema has 6,730 description bytes;
+including plan raises descriptions to 9,066 bytes, alongside complete standard
+validation keywords. The next bounded compose slice edits canonical owner
+explanations for preparation, construction, fill, review and the main workflow:
+remove prose that merely repeats standard required/type/range/oneOf declarations,
+and shorten repeated explanations while retaining semantic limits, coordinates,
+ordering, material identity, source attribution, partial outcomes and every recovery
+route. The complete selected schema, owner examples, existing delivery budgets and
+semantic execution tests remain the oracles. No new encoding, prefetch, query,
+truncation, budget increase or inference is allowed. Review every edited sentence
+against the existing owner before changing it; changing input behavior is excluded
+from this wording slice. Existing examples must still execute unchanged.
+
+Per-API checkpoint: all 156 registered basic browser cases pass with actual owners.
+The strengthened version also passes all 156, with exact gradient hit/coordinate,
+vector endpoint, runtime/viewport assertions, input isolation and repeated read
+checks that preserve the saved document. App direct consumers pass 774 tests. These
+results do not close native-owner coverage or selected-delivery cost failures.
+
+Canonical schema reuse follow-up: the first concise-owner pass restores single-page
+acquisition for the recorded non-plan scopes, but existing size gates still fail.
+Do not continue cutting semantic instructions to meet a number. Root child-condition
+isolation and the missing-field repair declaration now pass 108 focused tests. The
+remaining face geometry contract is copied into standalone, member and face-only
+modes with different key/name/type constraints. Keep one shared canonical geometry
+schema, compose each mode with standard allOf plus its exact identity restrictions,
+and retain the existing per-mode discriminator for selection. No input becomes
+newly valid, no geometry algorithm changes, and the full/field discovery navigation
+must follow the current schema. Verify root/member/face-only positives, invalid
+identity lengths/types, all selected examples, existing material tests and unchanged
+whole-response budgets before advancing. Directly affected files remain the admitted
+construction-schema owner and its existing preparation/discovery consumers.
+
+Canonical Fill follow-up: the selected schema repeats the same inline-fill
+constraints and explanation both independently and inside the extended fill union.
+Compose that union from its existing inline schema instead of spreading and
+repeating it. Preserve the same three public fill forms, exact gradient constraints,
+shared/template identity semantics and current field navigation. Existing byte
+failures remain the red oracle; test all forms before and after through canonical
+admission and actual preparation. This remains within the admitted fill/compose
+owners; no new material behavior or delivery syntax.
+
+Direct-consumer compose card: the complete 203-case run has 200 passes and three
+failures; two are stale wording checks, one is a real recipe regression. The
+canonical face allOf branch retains an explicit type discriminator but Runtime
+represents the unproved branch as opaque, so it also blocks a provably disjoint
+rectangle binding. Owner: Runtime recipe schema proof within compose. Inputs:
+registered immutable schemas and guaranteed binding shapes. Output: a selected
+supported variant only when every other branch is provably disjoint. Conditions:
+use necessary root property constraints of an opaque alternative only to prove
+exclusion; never admit opaque values, guess structure, ignore overlap or execute
+at admission. Existing supported recipe subset, original raw schema, depth bounds,
+reference lifetimes and host validation remain authoritative. Allowed files:
+recipe-schema.ts, recipe-admission.test.ts, TOOL_SPECIFICATION.md, the package
+contract, and existing App nested recipe proof. No new execution engine/cache or
+runtime retries. Cases: discriminated opaque sibling, overlapping/missing/optional
+discriminator, selected opaque branch, nested union and full saved recipe
+submission/invocation/persistence. Gates: Runtime recipe tests plus the actual App
+nested recipe and all selected-delivery tests. This directly repairs D1/D2/D4/D9;
+DoD stays fixed. Do not advance to parts recovery while this consumer fails.
+
+Prepare/compose admission-recovery card: Runtime 459 cases and the rebuilt App
+81-case flow proof pass. The remaining demonstrated input-failure gap is a parts
+request: only invalid draft sources are retained, so its recovery loses valid
+siblings and their parentPart/options. Reuse the existing request-owned draft
+store for every draft in this rejected, never-started envelope. Return one main
+workflow repairGuide preserving part order/keys/parents and request context; only
+failing draft fields need corrected values. A retained valid sibling may use empty
+replacements only after full source validation; this is source reuse, not an
+executed write or a replay token. Keep existing repair parts unchanged. If any
+source cannot be retained, or an error belongs to the envelope rather than a draft,
+do not advertise an executable complete guide. Preserve precise original issues
+and retention diagnostics. Expired/foreign sources still reject; after an execution
+failure existing remaining-only recovery owns the completed prefix.
+Allowed files: local-design-workflow.ts, local-design-tools.ts,
+design-draft-repair.ts and their existing unified/workflow/repair/proof tests.
+Cases: valid sibling plus missing-field sibling, preserved plan/review/parent
+options, invalid empty reuse, stale/foreign source, retention failure, malformed
+part envelope, and execution failure after one completed part followed by remaining
+recovery without replay. Use actual delivered arguments and real preparation;
+real Core history/reload consumer remains required where writes are exercised.
+Do not add a store, auto-retry, relax budget or rename failure as success. Fixed
+D4/D6/D8/D9/D10 remain unchanged. Admission precedes formal red and implementation.
+
+Compose control-declaration card: the existing question and outcome owners reject
+whitespace-only text while their published schema accepts it. Inputs are the
+registered control-action arguments; output remains the same question/detail-choice
+or persistence-aware report receipt. Align declaration with the current trim check,
+without new approval, drawing or persistence behavior. Preserve valid whitespace
+around meaningful text, cancellation and truthful no-change/partial results.
+Allowed files: src/ai/actions.ts and src/ai/__tests__/actions.test.ts, already in
+compose's allowlist. Formal red checks compare schema admission to actual owner
+rejection; positive tests execute all three control actions through observeAiAction.
+D1/D4/D5/D7/D9 apply; existing canonical contract admission covers this declaration
+correction. No new owner or mutation path. Stop if persistence semantics change.
+
+User-approved scope extension - Preset typography contract: include the canonical
+text property owner, its public export, native-text tests and package contract.
+No other Preset or Utils behavior is authorized. Compose card: expose immutable
+standard JSON Schema value constraints from the existing typography owner; its
+existing validators consume those same constants. App's targeted edit declaration
+uses the public export rather than inferring constraints from default value types.
+Do not introduce a second validator, registry, AI dependency or persistence field.
+Preserve every currently legal string, enum and finite numeric boundary, including
+Number.MIN_VALUE. Empty literal text and negative letter spacing remain legal;
+whitespace-only font family does not. Existing target type, locked hierarchy,
+missing paint, transaction and no-change checks remain with the edit owner.
+Allowed files: packages/preset/src/props/components/text-component.ts, index.ts,
+native-text.test.ts, its package contract, App design-edit-action.ts and tests.
+Red oracle: all typography fields through published edit admission versus the real
+property validators, including minima/maxima, wrong types, invalid enum, whitespace
+and valid defaults. Green gates: same per-field cases, actual Property.set/load
+semantics, App edit/consumer tests, Preset production build, production types,
+existing naming/lint and Inspector proof. D1/D2/D4/D5/D7/D9/D10 stay fixed. Admission
+precedes tests/implementation. Stop on changed valid values, a new validator or
+render/persistence changes.
+
+Final Inspector representation card - settle: the static viewer rejects a prose
+cleanup condition listed as an output artifact. The entry source already contains
+this invalid output; cleanup observation and failure preservation are separately
+and fully declared in settle conditions. Remove the redundant non-artifact output
+only, retain artifact:visible-outcome and every cleanup condition, and regenerate
+the existing workspace bundle. No runtime, lifecycle or result semantics change.
+The failing existing workspace renderer test is the red oracle. Allowed files are
+this plan, the current execution Inspector and its generated workspace snapshot.
+Run static validation, contract admission and source-bound proof again. The
+unrelated canonical-projection Inspector terminal-route defect is outside scope;
+report it without changing its owner or weakening its assertion. D12 is unchanged.
+
+#### Fixed DoD
+
+| ID | Required observable result | Formal oracle |
+| --- | --- | --- |
+| D1 | One canonical contract per owner, accurate route and no drift across discovery/native/action entry | Enumerate current registrations; compare delivered schema, selectors, examples and owner delegation for every entry; unknown and ambiguous selectors stay explicit |
+| D2 | Delivered selected parameters are standard, executable JSON Schema with all necessary constraints | Execute delivered examples and validate positive/negative samples against both selected and canonical contracts; preserve recursive refs, exact oneOf, not, property-name, required, range and cross-field restrictions used by owners |
+| D3 | Selected delivery excludes provably irrelevant branches and costs less without extra prerequisite requests | Measure complete request/response bytes and pages for saved scopes and enlarged unrelated catalogs; no higher page limit, eager whole catalog, new cache or extra read |
+| D4 | All published examples execute the operation they describe | Run actual delivered examples through public admission/dispatcher and real downstream owner; assert requested state/output, not only a called function or output presence |
+| D5 | Optional advice cannot create a mandatory drawing gate; real invalid inputs remain invalid | Saved absent-checks case can prepare; malformed supplied checks, negative dimensions, blank notes and wrong identities fail before mutation; no fabricated review pass |
+| D6 | Failure replies identify exact owner/path and directly support valid correction | Follow delivered recovery with minimal corrected values; preserve original error, retained identity, workflow context, geometry and completed prefix; stale/foreign/unknown paths reject without mutation |
+| D7 | Every API reports truthful success, legal no-op and failures | Actual-owner positive and negative cases plus output-contract checks; false/null/empty values keep their domain meaning, invalid output never becomes success |
+| D8 | Supported partial/cancelled outcomes preserve acknowledged work and never replay | Cancel before dispatch and during applicable batches, inject downstream/output failure, recover only unfinished work and assert exact calls/IDs/state/order |
+| D9 | Existing independent operations and direct consumers remain valid | Exact/general/ambiguous/full/field multi-tool lookup, paging/repeat/refresh/rehydrate, expiry, permissions and retained-target invalidation stay tested |
+| D10 | Any affected document writes preserve history, persistence and collaboration | Run existing real-owner Undo/Redo, saved reload and collaboration assertions for changed mutation paths; unchanged paths retain their existing consumer tests |
+| D11 | New registration or missing semantic coverage fails locally | Existing API audit compares actual registrations with executable covered cases; scenario exclusions require a concrete non-applicability reason, never silent skip |
+| D12 | Closure binds this implementation and direct consumers | Applicable deterministic integration suites, production/flow types, affected lint, naming and source-bound Inspector proof pass; explicitly separate pre-existing server type diagnostics and unobserved AI behavior |
+
+Universal per-entry scenarios: valid request, wrong shape/required field/extra field,
+pre-dispatch cancellation, true owner exception, invalid owner result, repeated read
+or non-replayed write, and actual delivered route. Domain-specific scenarios:
+empty/no-op, partial items, mid-operation cancellation, stale/expired retained
+identity, permissions, paging, malformed reference and recovery. An inapplicable
+scenario must explain the owner semantics (for example, a pure scalar read has
+no partial mutation); that explanation does not replace its positive assertion.
+No requirement is weakened after a failure. A test infrastructure failure does
+not prove an API bug or completion. Repeated implementation failures trigger an
+in-scope revised execution plan before further patches.
+
+#### Admission, execution cards and gates
+
+Current card - compose: consume registered tool contracts and requested selection;
+produce accurate structured usage and invocation/recovery contracts. Failure owner
+is compose; no document write is permitted here. Allowed contributors are canonical
+schema, owner examples, retained information delivery and public invocation.
+Forbidden contributors are inferred schemas, test-only successful fixtures,
+provider-specific parameter dialects and mutation replay. Bypasses are explicit
+full/field lookup and independent APIs. Complete contract review and supported
+Inspector admission before adding failing regressions or runtime changes.
+
+Next card - prepare: consume draft or existing retained repair reference; produce
+prepared artifact or truthful recoverable failure. The construction/repair owners
+retain identity and source. Default absent advisory checks only; validate supplied
+checks and path edits before preparation. No apply or review verdict is inferred.
+
+Next card - apply/inspect/settle: enter only for an evidenced mismatch in these
+handoffs. Use the existing registered executor, canonical result/reviewer and
+workflow status owner. Preserve transaction membership, complete and partial
+receipts, independent evidence bindings and invalidation. Each card must list its
+specific files and failing oracle before editing; no blanket owner rewrite.
+
+Run naming baseline before identifier-bearing changes (entry pass: 15/15).
+Run formal red tests before each fix, focused green owner/consumer tests after it,
+then the combined direct server-response and App AI suites plus runtime contract
+suites if changed. Run scoped lint, production/flow type checks and Inspector
+static/source-bound verification on final source. Preserve pre-existing diagnostics
+without calling their gate passed; fix any new diagnostics from this work. Do not
+run repository-wide CI or model tests. Update the existing flow mapping/test script
+so direct consumer coverage cannot be omitted by an Inspector-only pass.
+
+Self-review the current-task entry diff, real direct consumers and fixed DoD;
+remove superseded contract prose and implementations. Completion requires all five
+workstreams and all applicable per-API scenarios, not a local subset. Stop only
+for a concrete external blocker, explicit user direction or completed verification;
+do not mark a coverage gap as an unobserved success. Final report distinguishes
+confirmed prior failures, actual corrections, local evidence and limitations.
+
+#### Requested bounded second review - 2026-10-28
+
+Reopen only the unified-contract diff and direct consumers under unchanged D1-D12.
+Read-only review identified two candidate boundaries: retained recovery for mixed
+repairable/unrepairable admission issues, and lossless schema factoring around
+JSON Pointer references into schema descendants. No broader API discovery, model,
+101, CI, provider installation or unrelated Inspector correction is authorized.
+
+Prepare card: consume existing structured admission issues and retained source;
+produce a truthful executable correction only for paths supported by the existing
+replacement owner. Do not advertise a complete repair when an unknown field,
+reserved path, missing ancestor or diagnostic truncation prevents that operation.
+Keep source retention and original diagnostics, valid missing-field correction,
+parts parents/order and no-replay. Existing spec Unified public tool contract
+delivery and prepare/compose Inspector conditions already require executable
+recovery; their accepted semantics and allowlists remain unchanged. Allowed edits:
+local-design-tools.ts and unified-tool-contracts.integration.test.ts. First prove
+mixed-field and path cases fail through actual public single/parts entries, then
+repair the owner and rerun existing repair/workflow/consumer tests. No new repair
+operation or automatic source mutation. Stop if a new public contract is needed.
+
+Compose review card: preserve local JSON Pointer destinations while factoring
+standard schemas. Existing contract requires lossless local references, including
+pointers into descendant schemas, not only whole $defs entries. Inputs are the
+registered schema and its existing references; output remains the same selected
+JSON Schema. Use existing projection, preserve pointer ancestors, and factor only
+where addresses survive. No new cache, registry, validation engine or lookup.
+Allowed files: design-workflow-discovery.ts and the existing unified integration
+test. First prove nested $defs/property pointers lose their target under repeated
+parent sharing; compare canonical and delivered valid/invalid admission and source
+isolation. Run selected-delivery size/continuation/example consumers unchanged.
+D2/D3/D4/D9 and existing compose admission remain authoritative; no semantic
+contract amendment is required. Prepare review passed 154 cases; its outer-envelope
+case intentionally retains an executable part-local preparation guide while
+withholding a complete main invocation, preserving independent legal recovery.
+
+Prepare path-boundary follow-up: the same recovery review also covers dynamic
+mapping keys that the existing repair owner reserves. Share that owner's current
+reserved-key predicate between application and guide construction rather than
+copy a new forbidden-name list. This requires its existing design-draft-repair.ts
+within the prepare allowlist; no allowed key, repair policy or public operation
+changes. Prove the single/parts response does not advertise an unusable pointer
+inside a reserved key, while existing direct repair rejection remains unchanged.
+
+Bounded path-review replan: the reserved-key guard alone cannot see a violation
+that admission never reports. The canonical validator reads properties[key]
+without an own-property check, so constructor/toString/__proto__ can resolve to
+Object.prototype instead of the declared additionalProperties schema. Add formal
+own-key dictionary cases first, then use own-property lookup at that existing
+validator. No new schema keyword, owner, registry or legal-value policy. Allowed
+files additionally include the already-admitted src/ai/tool-schema.ts and its
+formal tool-schema.test.ts. Reuse the same public recovery cases to prove the
+upstream diagnosis reaches prepare and does not produce an unusable guide.
+
+Second-review closure: three confirmed defects are corrected: incomplete retained
+repair guides, descendant schema addresses erased by parent factoring, and inherited
+object-property lookup bypassing dynamic-key validation. The latter was an existing
+validator defect exposed by the reserved-path case. Formal red cases were retained;
+legal part-local preparation remains available when only the main envelope is bad.
+The repair owner and guide share one existing reserved-key policy. No new repair
+operation, registry, cache, page budget or runtime retry was added.
+
+Final review validation: 783 App tests and 2,387 Server tests passed. The same two
+opt-in Server cases remain skipped in this run, with their previously documented
+scope unchanged. Focused owner regressions passed 165 cases. Production/flow types,
+scoped lint and all 15 naming cases passed; the same 40 pre-existing Server type
+diagnostics remain, with no new entries. Relevant complete-delivery byte/page
+measurements are unchanged from the first closure. Source-bound Inspector run
+04eb880d-ad12-4c34-be68-f307bf655877 passed all 81 cases at mapping revision 160,
+source e600ccb356aabf4df1ba225ac9d2cec3ac63a3920ed4835306a8e77457734c3d.
+No remaining concrete finding was identified within this requested review's frozen
+diff/direct-consumer scope. Live model behavior, the existing external protocol
+probe and the unrelated static Inspector defect remain outside this evidence.
+No model/101, CI, push or subagents were used. The following first-closure figures
+remain the earlier checkpoint and are superseded above where counts changed.
+
+#### Final local evidence and bounded review - 2026-10-28
+
+All five workstreams are implemented. The Preset extension was explicitly approved;
+canonical text constraints are shared with existing validators without changing
+legal values. Review covered the entry-relative task diff, direct consumers,
+input/output ownership, schema equivalence, source retention, whole-parts recovery,
+completed-prefix exclusion, history/load behavior and fixed D1-D12. No model or
+101 run, CI, push or subagent was used. The earlier red failures remain preserved.
+
+- App AI suite: 783 passed across 57 files, including the previously omitted real
+  Core owner integration test now included in the existing test script.
+- Server response harness: 2,373 passed, two opt-in skips. Subsequent final guards
+  and recursive-boundary coverage passed 125 focused cases; the new unified
+  contract file contains 22 cases. The large-document bootstrap opt-in was run
+  separately and passed. The installed native-provider protocol executable probe
+  was not run; no live-provider or model-adoption claim follows from local tests.
+- Runtime: 459 passed across 32 files and production build passed. Preset native
+  text: 19 passed and production build passed. Real browser basic API owner cases:
+  all 156 passed, with exact semantic oracles and unchanged registration-driven
+  coverage checks. The real native-text browser case also passed editing,
+  Undo/Redo and saved reload on the final typography source.
+- Production and flow types passed. Server type checking still reports exactly
+  the same 40 diagnostics as the preserved baseline after normalizing source line
+  positions; its gate is not described as passing. Scoped lint has zero errors
+  and two pre-existing console warnings. Naming passed all 15 cases.
+- Final workspace static tests passed 25 cases after correcting the existing
+  settle output representation. The broader static suite still has an unrelated
+  canonical-projection Inspector missing terminal route for property-intent-result;
+  that owner and assertion are unchanged and are not claimed to pass.
+- Final contract review 40665ae15691faf8784abf89fccc1d34e3054c633863ef78000cef1d56ef20ba
+  was accepted without blockers. Source-bound execution proof covers all 81 mapped
+  cases; retained logs identify the final source and mapping revision.
+
+Measured current delivery: selected vector usage is 14,880 bytes/one reply;
+group/face/pattern usage is 19,910 bytes/one reply. The existing full-with-usage
+versus selected-contract comparison is 122,971 bytes/seven replies versus 48,926
+bytes/three replies; this is a route comparison on current source, not an AI timing
+comparison. Layered usage without plan is 18,642 bytes/one reply; with plan it is
+27,557 transport bytes/two replies. The unchanged paging budget still applies.
+Adding 10,000 related tools leaves exact-name usage at 4,787 bytes/one reply.
+Existing byte, unrelated-catalog and traversal limits pass without increased limits.
+
+Formal coverage distinguishes admission checks from actual semantic execution.
+The 545 delivery audit cases alone are not completion evidence. Basic browser
+owners have explicit result/state cases; native owner suites execute public
+admission/result boundaries alongside their domain assertions, including exception,
+invalid output and no-replay checks. External services use deterministic owner
+fixtures, not live service certification. Partial/cancelled, expiry and recovery
+cases apply to owners that support those states; scalar reads do not imply partial
+mutations. The actual delivered missing-field repair is executed through real Core,
+including valid siblings, preserved parent relationships, a failed later part,
+remaining-only recovery, Undo/Redo and reload. No missing observation is counted
+as a successful live AI behavior.
+
+### Field-query ownership and bounded recovery - 2026-10-27
+
+Status: compose slice complete under formal local evidence; live AI adoption
+remains unobserved and no model run is authorized for this slice.
+
+Step Execution Card - compose (`request-to-compose`, `inspect-to-compose`):
+consume registered owner schemas and exact selectors plus requested field paths.
+Return an owner-specific executable `fieldQuery` in ordinary usage, using the
+existing tool/arguments invocation shape and one canonical navigation path as an
+example. Callers may replace only its schemaPaths with needed paths from the same
+entry. It is request-scoped discovery output, not persisted product state; no alias
+or new registry is introduced. Replace refresh-selector surgery instructions.
+Invalid scopes retain their original issues, unavailable coverage, same-owner
+narrower recovery and successful siblings. Reuse compact root/branch navigation
+instead of recursively enumerating unrelated leaves. Full schemas and exact deep
+pointers remain independently available with all ancestor and reference limits.
+
+Owner/failure owner: existing discovery compose owner in local-operation-tools.ts.
+Allowed contributors: registered schemas, exact owner selector, existing bounded
+information delivery and invocation. Forbidden: inferred pointer ownership, schema
+union, new cache, mutation dispatch, recovery replay, larger page limits or extra
+prerequisite requests. Bypasses: full/deep lookup, selected workflow usage and shared
+valid multi-owner paths retain their current contracts. No model, 101 or CI run.
+
+Allowed changes: this plan, task context, inspection discovery specification,
+compose Inspector and generated bundle, flow mapping, local-operation-tools.ts,
+its discovery/operation integration tests and permanent recorded input fixture.
+Strengthen the existing mapped discovery proof and run direct consumers. Keep
+prior work and immutable evidence unchanged; review against entry-state snapshots.
+
+Fixed DoD:
+1. Replay the saved 1793098230821 mixed query: one delivered and one unavailable;
+   the complete reply fits the existing single-page budget without raising it.
+2. Execute actual delivered fieldQuery examples, including qualified native and
+   action selectors. Tests must not reconstruct selectors from refresh arguments.
+3. No extra preliminary call; corresponding usage plus field-query input/output
+   stays below the recorded 30,676-byte baseline.
+4. Added unrelated nested leaves must not expand failed navigation or trigger its
+   recursive traversal. Assert bytes and actual owner work, not output alone.
+5. Preserve ancestor/cross-field constraints, local reference closure, deep exact
+   paths and full retrieval.
+6. Preserve shared paths, mixed/all-invalid scopes, ambiguity and missing-owner
+   receipts with executable recovery; never promote unavailable coverage.
+7. Exercise reference selection with current requirement revision through its
+   real owner; invalid and stale inputs retain validation.
+8. Repeat, refresh, retained reads, stale pages and cancellation never repeat
+   completed mutations or captures.
+9. Map permanent evidence into existing verification; local proof does not claim
+   future AI adoption. No new cache, round trip or automatic read of all fields.
+
+Admission precedes tests and production edits. First retain failing regression
+results, then implement the compose slice and run discovery/operation consumers,
+information delivery, production/flow types, affected lint, naming, Inspector
+contracts and source-bound proof. Stop for an unresolved owner/contract mismatch;
+no adjacent Knowledge or model work is authorized.
+
+
+Local evidence so far: admission candidate
+`b15cc796fcb0ce349fb0ab88c92a8eba19bfb77a08c1b59de2803e61209b65be`
+accepted after revision 152. Formal red tests reproduce two-page mixed delivery,
+1,001 unrelated property-map traversals and absent executable field queries;
+logs remain in `tmp/field-query-red-final.log` and `tmp/field-query-proof-red.log`.
+The permanent fixture preserves exact saved query bytes and hashes. The owner now
+uses existing compact navigation on failures and publishes one exact-selector
+fieldQuery in usage. No execution, capture, storage or Knowledge owner changed.
+Tests execute delivered examples through action/native routes and reference
+selection, retaining invalid/stale revision, failed-source and no-replay checks.
+Observed mixed output is 6,018 bytes; usage plus both inputs/output totals 13,484
+bytes versus the 30,676-byte saved first-page baseline. Unrelated nested navigation
+traversals fall from 1,001 to zero; ordinary catalog/revision serialization remains.
+Existing production types, direct consumer tests, naming and Inspector static
+contracts pass; final evidence will record the source-bound gate separately.
+The existing `test:design-execution-flow` consumer harness already runs both changed
+consumer suites; the mapped inspection-discovery case now also binds their source
+and fixture. It executes the published fieldQuery before claiming read coverage.
+
+Final bounded review: direct discovery/operation/information consumers pass 282/282;
+source-bound Inspector verify `d1f9f646-6393-4e59-a06e-fe5e45698e3a` passes 81/81
+at revision 154, source `2531265f1db7ded7c11968a144195c75d93931854d4f031f71aa6c9b2dc98f3a`.
+Final admitted candidate is `64fc5c61277a361a18c49ec0c1e5bd8b6c9ab93f46c625fe4311e28b0dc8616c`.
+Both production and flow-proof TypeScript checks pass. Static Inspector/catalog
+checks pass 10/10; naming passes 15/15. Affected lint has zero errors and one
+pre-existing console warning at execution-flow-proof.test.ts:1827. The extra
+server-only TypeScript configuration still emits exactly the same 40 diagnostic
+lines as `tmp/query-scope-types-baseline.log`; no new diagnostic is present.
+This existing browser-global typing boundary is not changed or marked passed.
+At 1 and 1,000 unrelated nested items, failed replies are both 1,682 bytes with
+zero unrelated property-map navigation traversals. Shared same-path multi-owner,
+partial/all-unavailable recovery, full/deep reference constraints, current/stale
+reference revisions, cancellation and no-replay gates remain intact. Inspection,
+mutation, save/reload and history owners were not changed. Review is limited to
+this entry-state diff and its direct consumers. No model, 101, CI or push ran.
+
+### Progressive construction and decision continuity - 2026-10-27
+
+Current status: segment 1 and optional-advice prompts are implemented and locally
+verified under the authorized slice below; other proposed segments are not implemented.
+This subsection replaces the earlier paused-removal instruction. Subsequent
+authorized native-tool evaluations exist; their execution does not establish
+that every removal change or proposed improvement has passed verification.
+
+Objective: make the information needed for the next useful retained contribution
+available without reopening settled decisions or requiring a complete design up
+front. Progressive construction applies throughout the task, including edits;
+first visible content remains a good-to-have experience observation, not a timed
+gate, forced preview, placeholder requirement or final acceptance substitute.
+
+Planning segment: Inspector `compose` and its existing `request-to-compose`,
+`apply-to-compose` and `inspect-to-compose` handoffs. Inputs are saved native
+input/output, current registered declarations and owner behavior. Output is this
+bounded proposal, not a new runtime contract. The existing specification sections
+`Capability discovery and composition`, `First visible change admission`,
+`Knowledge-to-capability adoption` and `Main-workflow visual judgment handoff`
+remain execution authority. App guidance, registry discovery and existing review
+state are the relevant contributors; no extra agent, renderer entry point, cache,
+plan store, scheduler, fixed subject routing or inferred visual approval is allowed.
+The original planning-only mutation boundary was this plan and task association.
+The subsequent authorized slice below defines the present implementation boundary.
+Before implementing each further segment, reconcile its spec and exact Inspector contract,
+complete admission and freeze the owner-specific execution card and formal gates.
+
+#### Authorized implementation slice - exact selection and optional advice
+
+The subsequent user instruction authorizes segment 1 and the narrow optional-advice
+prompt correction. Segments 2 and 3 remain proposed. Segment 4 does not authorize
+new orchestration or a forced-Knowledge test arm: ordinary tests only announce
+available advice and allow zero reads. Historical runs remain unchanged.
+
+Step Execution Card - compose: consume the existing registered identity indexes,
+validated query fields and owner scopes; return the same complete selected contract,
+execution route and recovery as names. Apply exact-query scope only to one native
+owner, preserve ambiguous results and reject fuzzy/action-only scopes without
+fallback. The existing discovery owner owns failure. Allowed files are
+local-operation-tools.ts, discovery-delivery.integration.test.ts, its saved-input
+fixture, execution-flow-proof.test.ts, the spec, Inspector and mapping. Names remain
+internal semantic identifiers; no public selector, cache, state or alias is added.
+Formal cases replay both raw calls, execute the returned example through existing
+owners, compare complete scopes, test cancellation/stale revision/page recovery,
+and retain search/ambiguity and no-replay protection. Naming baseline passes 15/15.
+
+Step Execution Card - observe (after compose): existing qualityScenario and
+architectureScenario consume the current scenario JSON and expose optional
+Knowledge hints in the ordinary prompt. No read prerequisite, prescribed stage or
+new mode. Preserve requirements, modules/contexts as optional hints, attachments,
+deadlines, actual-use reporting and historical evidence. Change only the two current
+scenario JSON files, shared prompt labels and their existing offline tests. The
+observe owner owns prompt evidence; no product Knowledge reader changes. Validate
+composed prompts and zero-read observations through existing formal tests.
+
+Before implementation: admit the revised compose/observe conditions using the
+existing candidate/contract-diff/contract-accept path. This proves structural
+admission only. Keep the existing mapped proof names; strengthen the selected
+operation case after admission and run its direct consumer suite separately.
+Required local gates: focused red/green tests, discovery and operation consumers,
+scenario/analysis tests, production TypeScript, affected-file lint, naming,
+Inspector contract test and source-bound verify. No broad local CI or live model.
+Review this turn's changes against preserved entry-state files because the
+worktree contains unrelated pending changes. Preserve all earlier work.
+
+#### Local slice result - 2026-10-27
+
+Admission accepted candidate `aa8c4bf506b12551db9f356c428088712eaf3f0c284c15d0ff2a4a6ad215a79d`
+at revision 152. The earlier candidate admitted the behavior; the successor adds
+its permanent saved-call fixture boundary. One acceptance attempt correctly refused
+changed mapped test source; the original reviewed source was restored for admission,
+then the retained failing assertions were reapplied before the owner fix.
+
+Before the fix, the three existing selected discovery tests passed, while six
+new/strengthened selected cases failed, including both raw valid-operation inputs.
+The two optional-advice prompt tests also failed before the prompt edit. Preserve
+`tmp/query-scope-red.log`, `tmp/query-scope-red-proof.log` and
+`tmp/query-scope-optional-red.log` as local execution evidence. Permanent tests
+use `exact-query-scope-20261027.json`, with original call identities and input
+hashes; they do not read ignored evidence directories.
+
+Exact native query now reaches the existing selected-schema/usage owner. Unscoped
+search and menus remain unchanged. Ambiguity returns qualified candidates; fuzzy
+scope and action-only scope remain explicit failures. Actual published examples
+execute through invocation, preparation and the existing application action. The
+fixture's unavailable follow-up still returns partial after acknowledged creation;
+lookup repair never upgrades that to whole-workflow success. Repeat, refresh and
+fromResult redisplay leave created content and compile/write counts unchanged.
+Both saved scopes need one reply: pattern 18,783 bytes; projected-face 17,214 bytes.
+The replies equal the names route in content and size, including with 10,000
+unrelated descriptive tools. This proves no corrective lookup is required by the
+contract, not that a real agent will never issue one.
+
+Validation: 266 discovery/operation tests; 16 information-delivery tests, including
+existing scripted native successor-request checks without model inference; 16
+scenario/analysis tests; 10 Inspector/catalog tests; naming 15/15. Production App
+TypeScript and flow-proof TypeScript pass. The latter now enables JavaScript
+source consumption for the actual evaluation .mjs modules without suppressions.
+The pre-existing server-only tsconfig fails on browser globals before this fix;
+its missing DOM/Vite environment was not repaired or treated as a passing gate.
+Affected-file lint has zero errors and one unchanged console warning in the proof.
+
+Final source-bound verification `cefb9d9a-e636-4bdd-bdea-d2617c7be95a` passes
+81/81 cases, zero skipped, source
+`1a395681b7c812def4f6c61e47a7074f9f4ec9fc507608e602a9ec54abf75cca`.
+An earlier isolated proof failed collection because __tests__ fixtures are excluded
+from runtime capture. Keep saved-input tests in the ordinary integration suite;
+the isolated proof exercises the owner's delivered query example instead of
+relaxing source isolation. Scenario source files are included in the existing
+manifest, and the observed-accounting case executes their real prompt composers.
+
+Self-review compared entry-state files, direct consumers and failure paths. Only
+commonInstruction/comparison changed in the current 101 scenario; only
+commonInstruction changed in quality cases. Shared prompt labels now say optional.
+Briefs, attachments, criteria and deadlines are unchanged. Historical evidence,
+Knowledge bodies, geometry, review obligations and persistence owners are untouched.
+The generated Inspector catalog and pending owner notes are synchronized. No model,
+101, CI inspection, push or later proposal implementation was performed. Model
+adoption and elapsed-time effects remain unobserved. Stop this slice here.
+
+#### Evidence and limits
+
+Primary evidence is run `1793091171388`, its `verified-observations.json`, frozen
+source and raw stream
+`tmp/drawing-continuity-provider-1793091154997/2beaa1d7-fa03-4560-abac-7c7faf2f5d96.jsonl`
+with its payloads. Input/output payload hashes for the initial Knowledge/discovery
+sequence were rechecked against the raw trace. Compare the earlier Astra run
+`1793087598839`; Luna run `1793089300787` is a different model condition, not a
+controlled timing baseline. Preserve all original reports and source snapshots.
+
+| Finding | Evidence | Interpretation limit |
+| --- | --- | --- |
+| Initial contract lookup begins at 42.137 s; that call takes 53.375 ms | Latest raw start/completion and payloads | This is not a 42-second tool execution. Public reasoning/message events exist before the call; they do not measure the cost of understanding each document. |
+| Exact `query` plus `inputScope` is rejected at 62.606 s | Raw 117-byte input; `discoveryInputIssue` requires one `names` entry before exact-query resolution | The declaration advertises exact-name query resolution, while its scope description does not explain the selector-specific restriction. Both recent Astra runs encounter this combination. Do not generalize to every historical run. |
+| Three selected Knowledge IDs resolve to nine documents | Two pages reconstruct 31,030 bytes; discovery plus read replies total 38,378 bytes | Files are already split. Dependency expansion, mixed advice/mechanics and mandatory evaluation ordering need examination; there is no controlled no-Knowledge causal measurement. |
+| Initial discovery returns 38,272 bytes over four calls | Two main-tool pages, one three-tool usage query and one rejection | Add Knowledge replies for 76,650 serialized App reply bytes before drawing. This excludes the initial prompt, attachments and native transport. Not every later contract read is redundant. |
+| Initial criteria and brief retain method, view, scale, roles, sources and assumptions | First create input at 160.782 s | They do not contain an actionable description of each later contribution. No initial deferred details are supplied. This is a continuity hypothesis, not proof of model forgetting. |
+| Existing state is reused after first content | Four later creates attach to the same root; no Knowledge read follows 21.080 s; material and final edits use retained targets | Do not replace existing retention with another cache or claim every stage restarts. New-capability discovery and affected-image review can be necessary. |
+| First content appears at 162.697 s, following create completion at 162.680 s | Saved first-content observer and raw tool completion | This instance points to pre-submission work, not a demonstrated renderer publication bottleneck. Unrecorded intervals remain unrecorded. |
+| The evaluation requires Knowledge before design | `quality-cases.json` common instruction and saved prompt; App prompt makes Knowledge optional | A forced-advice evaluation cannot by itself describe ordinary optional-advice behavior. Preserve the historical scenario and label future evaluation conditions explicitly. |
+
+#### Execution order and minimal changes
+
+Implement and close one segment at a time. A failing local product case is required
+before changing behavior; do not infer a needed implementation solely from this
+plan or from lack of model adoption.
+
+1. **Make exact tool selection and scoped retrieval coherent.**
+   Reuse `local-operation-tools.ts`'s existing registered-identity resolution.
+   An unambiguous exact native `query` with `inputScope` must have the same selected
+   contract semantics as its `names` equivalent. Preserve qualified namespaces,
+   ambiguous matches, independent action routes and ordinary purpose search.
+   A fuzzy query cannot silently acquire a selected execution scope. Invalid
+   combinations must name the conflicting fields and supply a valid selected
+   recovery when identity is known; never invent missing operation choices.
+   Update declaration and validation together. No alias, new search tool,
+   preliminary menu call or larger delivery limit. Existing malformed-operation
+   recovery tests remain applicable; they are not proof of valid exact-query scope.
+   Do not claim this removes the entire pre-query or pre-submission interval.
+
+2. **Separate next-decision advice from executable mechanics.**
+   Audit only the selected architectural parent, material method, repetition and
+   their resolved dependencies against their current direct tool consumers.
+   Keep representation limits, source uncertainty, material-domain distinctions,
+   ordering constraints and dependent-review requirements with the decision that
+   needs them. Remove redundant API syntax/recovery prose from these advisory
+   modules only after the selected canonical tool contract demonstrably supplies
+   it. Retain optional detailed children for genuinely unresolved conversions or
+   examples; a parent must not import all children. Repair references to standalone
+   preparation examples when the ordinary selected main-tool example is the actual
+   consumer. Do not delete necessary dependencies merely to fit one page or add a
+   second lifecycle/filter/cache mechanism. The existing resolver, source/version
+   identity, retained results, paging and rehydration remain authoritative.
+
+3. **Carry decisions across retained contributions.**
+   First exercise the existing brief, criteria method, facts, deferred details,
+   artifact/source references, review `acceptanceContext` and correction receipts
+   as one flow. Retain shared view/scale/material assumptions once; describe only
+   useful pending contributions and unresolved questions, without enumerating all
+   future geometry. Reuse current context already present in native history.
+   If the formal consumer cannot recover a needed existing decision through those
+   owners, add only the missing selected projection to the relevant existing
+   handoff, keyed by explicit current artifact/check/reference identities. Never
+   infer an operation schedule from free text or echo the whole plan in every reply.
+   Do not turn `deferredDetails` into a generic scheduler or change its evidence
+   obligations. Future-part intent remains descriptive in existing brief/method
+   fields; canonical completed operations and invalidation remain tool-owned.
+   A changed local dependency reopens its affected decisions; unrelated ready work
+   and current passes remain available. A failed material premise blocks repeating
+   that premise, not every independent contribution. Reading a new tool for a new
+   operation is valid; reacquiring an unchanged already-complete contract is not a
+   required workflow step. Missing/stale context follows existing recovery.
+
+4. **Align progressive behavior and evaluation with that flow.**
+   Reconcile current App guidance and examples around useful retained progress,
+   necessary research and dependency-local review, removing contradictory ordering
+   rather than appending another priority slogan. Do not prefetch every contract,
+   impose a new planning call or require the entire object before any application.
+   Existing `parts` provides ordered application once input exists; it does not
+   make a still-generating JSON invocation executable. Use existing ordinary
+   contributions when independently ready. Preserve efficient single submissions
+   and necessary research first when those are appropriate.
+   Ordinary evaluations announce optional advice, with no required read or stage.
+   Distinguish their prompt condition from historical forced-reading evidence;
+   do not introduce a forced-reading arm. Do not rewrite historical prompts/evidence
+   or silently compare different conditions. Keep identical user quality requirements, references, model/effort
+   and observation clock. Actual model runs need a separate user authorization.
+
+#### Fixed DoD and bounded gates
+
+- Replay both recorded valid-operation exact-query scope failures through the
+  production discovery owner, then execute the actual delivered invocation through
+  the formal dispatcher/main owner. Compare scoped schemas, usage, limits and
+  recovery with exact `names`. Keep ambiguity, fuzzy scope, invalid operations,
+  cancellation, paging, registry change and refresh negative cases. No preliminary
+  lookup or mutation replay; unrelated registry growth must not enlarge selection.
+- For the fixed selected Knowledge composition and direct consumer examples,
+  prove reduced complete serialized delivery, no added required reads and preserved
+  constraints/provenance/override behavior. A removed paragraph must have an
+  authoritative delivery destination or be demonstrably redundant. Retain valid
+  direct child, complete read, partial-page and rehydration behavior. No new byte
+  cap, source-specific selection rule or compulsory Knowledge read.
+- Execute a general multi-contribution case using the actual published examples:
+  first contribution, retained assumptions, local failed judgment, targeted edit,
+  independent next contribution and final assessment. Assert the same root/basis,
+  references, materials, order and current evidence. No full-plan resubmission,
+  repeated unchanged advice, guessed target or repeated completed mutation is
+  required. Missing context must recover explicitly; no synthetic success.
+- Prove already-ready content is published while an independent later input is
+  still absent, and that pending dependent work does not block unrelated ready
+  contributions. Use existing real owner/browser tests first; supplement only
+  missing coverage. Preserve cancellation, partial receipts, no-replay recovery,
+  strict final quality obligations and affected save/reload, Undo/Redo and
+  collaboration behavior. No provisional placeholder or bypassed admission.
+- Measure complete first-use and correction-path delivery, not only a shorter
+  isolated prompt or module. The fixed consumer flow must need no extra frontloaded
+  call; its total required informational bytes must decrease without relocating
+  omitted essentials into an uncounted mandatory follow-up. Extra future geometry
+  is not an acceptable way to avoid later decision lookups.
+- Run the touched owner and direct-consumer integration suites, applicable lint,
+  production types and Inspector gates on the same implementation source. Reuse
+  source-matched valid checks; do not inspect CI or run full local CI by default.
+  Stop for a bounded replan if equivalence, delivery cost or ownership fails.
+- A future authorized observation reports first content and subsequent retained
+  contribution times, actual new/reused decisions, justified new contracts,
+  repeated unchanged reads, rejections and total bytes. Distinguish public agent
+  statements from tool evidence. Unobserved internal reasoning and unavailable
+  event intervals remain unknown; no promise that first content occurs by a fixed
+  time or that one run establishes stability or Knowledge causality.
+
+Planning self-review: exact-query admission is the first confirmed owner defect.
+Knowledge volume is measured, its latency contribution is not. Continuity already
+has authoritative stores and partial handoffs; prove a missing consumer projection
+before extending one. Ordinary optional-advice evaluations retain their changed
+prompt condition; historical forced-reading records stay immutable. None of these proposals permits a second agent, model
+switch, larger tool limit, renderer bypass, weaker final review or another cache.
+
+### Direct tool delivery - 2026-10-27
+
+Historical removal checkpoint: the user requested finishing edits and static
+review before further tests. Later individually authorized native-tool runs are
+recorded in the evidence above. Earlier completed gates remain source-specific
+evidence, not verification of every final edit below. This checkpoint does not
+authorize another run or supersede the current planning-only task boundary.
+
+
+Objective: remove the embedded JavaScript orchestration layer from active App
+execution, delivery examples, offline harnesses and generated product templates.
+Public tool definitions, JSON arguments, results and images remain independent of
+any AI vendor. The local native adapter owns its process configuration; forks do
+not depend on an ignored evaluation launcher or a machine-specific model snapshot.
+Historical reports and original provider evidence remain immutable records, not
+supported execution paths. The following earlier investigations are historical;
+their interpreter forwarding requirements no longer govern implementation.
+
+Step Execution Card - compose. Inputs: registered owner contracts, selected model,
+native executable metadata, request context and existing retained results. Outputs:
+deferred native declarations, direct structured results/images and truthful owner
+receipts. Native adapter reads its executable's public bundled catalog once per
+request, preserves model capabilities and output limits, and selects direct tools
+and the standard Responses transport in a request-owned configuration file. It
+never changes global settings, downloads a runtime or adds a second registry/cache.
+API-based providers continue using their existing provider boundary. Missing model
+metadata, invalid configuration and cancellation fail before model execution.
+Cleanup releases the configuration together with the existing request resources.
+
+Implementation boundary: existing provider/discovery/information/image owners and
+their direct tests; a local native configuration helper; the existing offline native
+harness, boundary analyzer and tests; generated create-app template; current App
+specifications, architecture and Inspector compose contract. The Inspector control
+plane's isolated native adapter must also remain free of interpreter dependency.
+No geometry, Knowledge content, rendering, persistence or model change is included.
+
+Fixed DoD:
+1. A failing normal-launch regression proves the production adapter no longer needs
+   the ignored evaluation launcher. Native offline requests expose deferred tools,
+   canonical search and direct invocations; full bounded text and image bytes enter
+   the same turn's next request without a model echo or extra turn.
+2. Remove generated-script forwarding, intermediate interpreter storage, interpreter
+   output acceptance and obsolete harness branches. Convert their applicable paging,
+   truncation, recovery and image oracles to direct owner delivery; retain historical
+   failure evidence without executable compatibility paths.
+3. Complete contracts, page identity, refresh, retained-result reads, truthful partial
+   receipts, cancellation and no-replay recovery remain intact. Unknown environment
+   execution is rejected. No output-limit increase or eager catalog is permitted.
+4. Test normal configuration lifecycle, malformed/missing models, native protocol,
+   direct consumers and template generation. Run naming, focused lint, production
+   types and structural Inspector admission. Review the diff and direct consumers;
+   active literal inventory must contain no obsolete execution paths or guidance.
+5. After local gates pass, freeze source and run one 101 with 900,000 ms work and
+   at most 60,000 ms reporting, no recording, gpt-6-astra/medium and 10,000-node
+   production capacity. Preserve original available input/output, images, report and
+   screenshots. Report first frame, all phases, failures/recovery and unavailable
+   observations independently from completion or visual quality.
+
+Stop conditions: unresolved owner mismatch, failed required gate, resource leakage,
+or unsupported native configuration prevents the live run. Repair within this scope
+before proceeding; do not weaken assertions or use a temporary launcher as a fix.
+
+
+Implementation checkpoint: the production adapter now derives direct configuration
+from its executable, uses native JSON calls and releases request configuration.
+Generated forwarding helpers and interpreter acceptance branches are removed.
+Canonical native search, bounded text and image delivery use real successor-request
+proofs. Native progress/disconnect probes now use function arguments. Obsolete
+interpreter-only tests are replaced by direct owner and native consumer tests;
+original historical reply bytes and reports are unchanged. Template regeneration
+uses the existing generator and excludes request-local tmp artifacts.
+
+Before the user's test pause: 81 execution proof cases passed; the focused suite
+reported 622 passed, one obsolete assertion failed and one opt-in case skipped.
+After correcting that obsolete assertion, the provider/information subset passed
+242 cases with the same opt-in skip. Ten native direct cases, six configuration
+cases, four image cases and two native unfinished-output cases passed in their
+respective runs. These counts overlap and must not be summed. Naming passed;
+flow-proof types passed. The broad ai-server types command reported browser DOM
+and Vite type gaps from included integration consumers; that gate is unresolved.
+A subsequent lint run found one unused import, now removed, with four warnings.
+The final cleanup/formatting/template edits have not been retested by instruction.
+
+### Automatic cross-query Knowledge dependency handoff - 2026-10-27
+
+Bounded objective: ordinary new-child reads automatically reuse exact dependencies
+whose complete delivery in the current effective context is verified. The existing
+session owns matching and retained full/wire results; the App owns delivery evidence.
+Do not equate retained content, a successful call, or native dynamic-tool completion
+with full Code Mode output. Do not add a cache, a second delivery ledger, an AI
+acknowledgement call, source-body edits, logging work or a first-frame requirement.
+
+Evidence: saved run 1793038239157 reads the architecture method and then its review
+child. Original replies are 21,851 and 20,604 bytes; four identical required documents
+repeat 7,614 UTF-8 text bytes. Both reads are in one request without recorded context
+compaction. The six inspected owner/observation files match the saved source snapshot.
+
+Step Execution Card - compose. Inputs: selected IDs/contexts, current authorized
+composition, existing retained full/wire results, and owner-correlated complete
+information delivery in the same context. Output: full newly selected content and
+ordered exact dependency references only where complete delivery is established.
+The existing Runtime session validates source/revision/override/context/permission;
+App native delivery supplies evidence. Missing evidence bypasses omission and returns
+required text. Explicit fromResult and rehydrate remain full-text recovery. Partial
+pages, truncation, suppressed output, failed transport, invalidation and cancellation
+must not certify coverage. No new model turn or repeated drawing/capture is allowed.
+
+Implementation boundary: Runtime knowledge.ts/knowledge-types.ts and formal tests;
+App local-knowledge.ts, local-information-delivery.ts and local-ai-provider.ts with
+their direct formal tests; existing native-delivery.mjs offline harness and its
+formal tests; mapped compose proof, package/App contracts and existing release notes.
+Failure owner: compose. Discovery tools, logging, canvas/history/persistence owners,
+portable Knowledge bodies, model configuration and native output budgets are excluded.
+
+Fixed DoD:
+1. A formal saved-input and generic new-child regression detects repeated dependency
+   delivery before implementation. Execute the actual delivered forwarding example.
+2. Normal full delivery automatically reuses the four identical dependencies without
+   caller-selected reuseFrom, preserves the new child and source/order/override
+   constraints, reduces total input/output plus guide bytes and adds no model turns.
+3. Verify actual native successor requests. Stored-only, suppressed, truncated,
+   failed and incompletely paged output cannot authorize omission. Last-page-only
+   delivery is insufficient. Preserve retries and exact stable continuation bytes.
+4. Current permission, revision, context loss, cancellation, concurrent reads,
+   eviction and disposal remain authoritative. Recover through selected reads only;
+   do not replay writes or captures. Explicit full redisplay remains legal.
+5. Use existing bounded result storage; measure matching/serialization work and file
+   loads, not only output equality. Run Runtime/direct App integration, provider and
+   native offline cases, types, naming/lint and mapped Inspector verification.
+
+Current implementation sequence - App-owned direct forwarding:
+1. Update and admit compose's direct delivery contract. The existing provider owns
+   an untrusted advisory context input for the active turn, while the session retains
+   content. Do not require model-authored text() for decision-required Knowledge.
+2. Test the existing native channel with turn/steer additionalContext, untrusted
+   kind, exact expectedTurnId and no new user intent. While the original Knowledge
+   tool is pending, submit the App-owned body and complete that tool with a bounded
+   location/identity receipt instead of duplicating the body. This is a candidate
+   transport, not a statement that steer acknowledgement proves delivery.
+3. Before production changes, capture the actual next request with the existing
+   offline native harness. Require exact complete content in that same turn,
+   unchanged model request count and one body occurrence. Exercise suppressed Code
+   Mode output, long/multibyte content, failed/mismatched turn and cancellation.
+   A queue acknowledgement, hidden content, repeated body or additional model round
+   trip fails the gate. Do not add a proxy, change native persistence, or replace the
+   provider to make this bounded candidate pass.
+4. Only after that gate passes, implement App delivery and automatic dependency
+   matching in the existing result/session owner, then run the fixed DoD below and
+   bounded self-review. Preserve paging, explicit full reads and failed-only recovery.
+
+Retain the original forwarding/suppression cases and their red evidence. They prove
+that dynamic-tool completion cannot establish model visibility. New acceptance must
+exercise the App-controlled path and actual next-request bytes; it must not require
+unsupported history APIs to start working, nor replace the full-delivery oracle
+with tool success. A failed direct-channel gate blocks production omission and must
+be reported with the unchanged DoD. No real inference or live 101 is authorized.
+
+Direct-channel result: contract candidate
+7c4059a9029d6f194b41f6900504755d5d5c5d6a6fa2a830e43d15ed59815c73
+was admitted from local proof b143461c-d0bb-4e55-891b-1d681a0a02a0.
+The permanent App-context native test then received JSON-RPC -32600, "input must
+not be empty", when submitting additionalContext with no new user input while the
+Knowledge tool was pending. Evidence: tmp/knowledge-direct-channel.log and
+native-handoff-6KoRbO. This form did not reach a successor request; complete delivery,
+no-extra-model-request and no-duplicate-body obligations remain unproven. Do not
+insert a fabricated user instruction to bypass the input admission or enable
+omission. The original forwarding/suppression failure remains unchanged.
+
+Feasibility result: structural contract admission accepted candidate
+3fcb3841c2efbac31ec6cdf1a8bacc0a72cf8d4ed12477e4b8270b3410f2c729
+from candidate proof 3708e364-ed1a-4948-abe3-81ca43dcc40f (existing mapped cases
+passed; this is not new-behavior acceptance). The permanent native forwarding gate
+then failed on Codex 0.160.0: the actual next request contains the entire owner reply
+when the published example forwards it and omits it when Code Mode only stores it.
+Both cases expose the same public item kinds and exact successful dynamic-tool echo.
+The current ephemeral thread rejects includeTurns; thread/items/list returns not
+supported. Neither surface provides forwarded-output coverage. Evidence and cleanup
+are retained in tmp/knowledge-auto-native-red.log and its native-handoff artifacts.
+
+Do not enable automatic omission or replace this gate with dynamic-tool success.
+The original DoD remains unmet; lower delivery bytes and automatic dependency
+handoff have not been implemented or validated. A trustworthy forwarding boundary
+is required before resuming production work. This is not an AI-adoption finding,
+a reason to add a cache, or authorization to change Codex, add a proxy, alter thread
+persistence, rerun a model, or proceed to the separate logging task.
+
+Bounded verification: information-delivery integration has 20 passing existing
+cases and one failing complete-forwarding feasibility case. Keep that failure
+visible; it blocks automatic-omission completion. The test runs the published
+forwarding example against the real owner and installed native binary with only
+local scripted responses, never real inference. Both native paths clean up their
+processes and loopback services. App server production types pass; scoped lint has
+zero errors and one existing console warning; naming has 15 passing cases; static
+Inspector has two passing cases. Task context and scoped whitespace checks pass.
+Self-review confirms the production Knowledge/session/provider files remain identical
+to the saved source; only the bounded test harness and contract preparation changed.
+No automatic reuse, byte reduction, complete product fix or AI adoption is claimed.
+
+### Selected retained information delivery - 2026-10-27
+
+Use the existing result owners to redisplay selected previously resolved content.
+Knowledge read accepts fromResult (an existing contextKey) and exact ids; tool
+discovery accepts fromResult (a returned resultKey) and exact names. These select
+full text/contracts, not retainedFrom markers or summaries. Purpose/goal search
+continues through existing discovery; similar wording never establishes validity.
+
+Step Execution Card - compose: inputs are a same-owner live result identity and
+exact target selection. Outputs are dependency-closed Knowledge text or complete
+selected tool entries in their original view/scope, with bounded normal paging.
+Reuse existing session delivered and discovery returnedDefinitions maps only.
+Knowledge preserves original resolved overrides/order; include selected target
+and effective-source dependencies, current permission and unchanged generation.
+Inherited contexts remain fixed; explicit different contexts reject. Tool selection
+preserves original entry coverage, paired routes, ambiguity, missing identities,
+input/output/recovery and registry revision. No field-level stripping or new
+semantic summaries. Miss/foreign/evicted/stale state requires ordinary selected
+read, never completed mutation replay. Rehydrate/refresh stay independent.
+
+Boundary: Runtime knowledge.ts/knowledge-types.ts and knowledge.test.ts; App
+local-knowledge.ts, local-operation-tools.ts, information-delivery.integration.test.ts,
+local-knowledge.test.ts, local-operation-tools.test.ts and the mapped execution
+proof. Synchronize Runtime public docs, App spec and compose Inspector. Failure
+owner is compose. No new registry/store, fuzzy hit authority, model call, filesystem
+access in Runtime, or cross-request credentials. Existing cache lifetimes/bounds
+remain; retain small discovery results in the existing bounded map as well as pages.
+
+Fixed DoD: reproduce seven-item read then two-item redisplay with no provider
+content reads; preserve override and required restrictions, exclude unrelated
+siblings and duplicate dependencies, and reduce total initial-plus-repeat bytes.
+Execute the published fromResult calls through actual read/admission owners.
+For tools, redisplay exact saved entries without repeated schema projection, keep
+cross-field constraints, full/usage/fragment limitations and both legal routes.
+Measure cold plus repeated bytes including keys; test partial/missing/ambiguous
+selection, stale revisions, permission changes, cancellation, eviction, disposal,
+foreign keys, context mismatch, paging retries and ordinary recovery. Missing
+storage must never return success with missing text or cause writes. Freeze both
+contracts before production; prove failing regressions first. Run Runtime and
+focused App tests, direct provider delivery, production types, lint/naming and
+Inspector proof; review the bounded diff and direct consumers. No model or 101,
+CI, push, new dependencies, Knowledge body edits or first-frame acceptance target.
+
+
+Bounded iteration: actual tests exposed request-specific result identity comparisons,
+equivalent category selectors and an existing concurrent decoder mock that assumed
+arrival order. Preserve full result comparisons except opaque cross-request keys;
+normalize includeSchemas=false only after ordinary discovery admission. Inject the
+existing decoder failure by fixture source, not scheduling. The shared-motif total
+wire-plus-input budget remains strict: use 128 random bits encoded as base64url for
+discovery resultKey, avoiding UUID punctuation/hex overhead; no identity is persisted.
+Contract-only byte comparison remains separate from the total including the key.
+Self-review also reproduces a multi-target override: selecting one resolved target
+must retain its effective source and required restrictions without importing that
+source's unrelated overridden targets. Explicitly selecting the source itself
+still includes its declared target dependencies. The original fixed sibling
+exclusion DoD is unchanged.
+The complete direct-consumer harness additionally identifies the same opaque-key
+comparison and contract-only byte metric in batch-usage.integration.test.ts and
+shared-motifs.test.ts. Update those consumers without changing total-byte or page
+budgets. Before final closure, exercise selected paged reads at the existing
+64-result boundary: inserting a selection must not evict its own source and break
+its immediate continuation. Evict an unrelated entry only for selected insertion;
+retain the existing bound, invalidation, permission checks and ordinary eviction.
+These changes stay within the fixed delivery/recovery DoD; no new store or scope.
+
+Validation - selected retained information: Runtime 457 tests passed; the complete
+App server response harness passed 2,344 tests across 70 files. Two existing opt-in
+cases were not run: installed native registration (LOCAL_AI_PROTOCOL_EXECUTABLE)
+and large saved-document bootstrap (E2E_LARGE_DOCUMENT). They are not evidence of
+this change; native Code Mode information-delivery cases ran against local fixture
+responses without real inference. Production types, naming (15 checks), update-note
+validation and changed-file lint passed (two existing console warnings, no errors).
+Inspector admission revision 147 is accepted; final verify
+b01646d9-ff1f-45d2-9d58-437f9b0df856 passed all 81 mapped cases.
+
+Fail-first evidence reproduced repeated provider reads, missing retained selection,
+unrelated override targets, and capacity eviction breaking the next page. Final
+formal tests execute the published selection/recovery examples and cover immutable
+full text, provenance/override, context and permission changes, partial/ambiguous
+contracts, cancellation, stale/foreign/evicted keys and continuation bytes. Selected
+insertion preserves its live source while evicting another entry at the same bound.
+Ordinary eviction, normal reads, rehydrate/refresh and read-only recovery remain.
+
+Measured tool reply JSON: cold 16,073 bytes plus selected 4,698 bytes = 20,771,
+versus 32,072 for two complete seven-entry replies before handle overhead (35.2%
+less). Repeated schema projections: zero. Seven-item Knowledge read followed by
+two selected targets plus their shared restriction adds zero provider content
+reads. These fixed local measurements do not claim complete prompt-token cost,
+model adoption or task latency. Startup instruction and existing total-wire-plus-
+invocation/page budgets still pass. No Knowledge body filtering, model/101 run,
+CI inspection, commit or push occurred in this slice. Broad dependencies explicitly
+declared by the author still remain required; no heuristic deletion of restrictions.
+
+### Selected retained information - authorized live observation - 2026-10-27
+
+Run the existing quality-knowledge Taipei 101 scenario once with 480000 ms of
+work and an independent report timeout of 60000 ms, without video. Preserve the
+production 10000 artifact ceiling, gpt-6-astra/medium, frozen references and normal
+model choices. Freeze source before Send. Observe retained Knowledge/tool selection,
+actual repeated reads, bytes, recovery and first visible content without forcing
+adoption or an early-frame acceptance threshold. Preserve complete provider I/O,
+report text, first/final/reload screenshots, checkpoint and source identity; separate
+observed results from model self-report and unavailable evidence. Use the existing
+observe owner, deadline, collector and cleanup mechanisms. No production edits,
+model retry, CI, push or unrelated validation. This authorization supersedes the
+preceding slice's no-model restriction only for this single observation.
+
+Observation result: run `knowledge-quality-knowledge-taipei-101-1793038239157`
+completed its evidence collection. First content 100.387 s; work cutoff 480.002 s;
+UI partial at 496.405 s. All 42 App calls returned success/completed, while final
+visual coverage remained stale with no final judgment. Neither fromResult nor
+reuseFrom was used; a new material-review topic repeated four prior dependency
+bodies (7614 bytes). This does not demonstrate live retained-selection savings.
+All 13 submitted images restore by hash, 1003 drawing diagnostic payloads verify,
+and save/reload agree at durable sequence 567. Source verification and cleanup
+completed. See [the full live report](../evaluations/2026-10-27-retained-information-eight-minute-101.md)
+for every tool interval, input/output byte counts, eventless gaps, self-report and
+remaining limits. No production edit, repeat live run, CI or push followed.
+
+### Optional first-frame experience policy - 2026-10-27
+
+First visible content is a good-to-have experience goal, not mandatory work,
+a deadline, a completion criterion or a prerequisite for other operations. Prefer
+useful editable progress when inputs are ready; permit justified research first.
+Do not create disposable previews, force parts or weaken required validation to
+obtain an early frame. Preserve final review and record first-content timing as
+an observation, never an acceptance threshold.
+
+Step Execution Card - compose: inputs are the original request, available
+capabilities and current advice; output is the same native provider instruction
+payload with this optional policy. Conditions: ready inputs may be applied before
+criteria or optional research; necessary input/reference checks remain required.
+Bypass: tasks without useful partial content may proceed without a first-frame
+stage. Allowed contributors are existing App prompt and provider composition;
+forbidden contributors are new state, timers, schedulers, tool routes or inferred
+model receipt. Failure owner: compose. Spec: First visible change admission.
+Boundary: ai-domain-prompt.ts, the existing local-design-workflow.ts scope
+guidance, the prompt unit test, local-ai-provider.test.ts and the existing
+execution-flow-proof.test.ts guidance case. Synchronize this plan,
+specification and the compose Inspector condition before admission.
+
+Fixed DoD: replace imperative early-drawing guidance, including the owner-generated
+initial scope selection, rather than append a
+contradictory exception. The actual thread/start baseInstructions must carry the
+optional policy, allow necessary research first, retain validation/final review,
+and forbid disposable preview work or forced splitting for timing. Keep the
+first-content observer and historical evidence unchanged. Run failing formal
+prompt/native-delivery assertions before implementation, then focused prompt and
+provider suites, mapped Inspector proof, production types and changed-file lint.
+Review only this diff and direct consumers. Existing Knowledge/session/delivery
+owners are read-only analysis; no new reader, cache, model call, CI or push.
+
+Validation and bounded review: admission accepted at revision 146 after candidate
+`0f1f52de-513b-471c-8d52-1539da3e6dd9`. The new prompt and native-packet assertions
+failed before implementation. Initial wording exceeded the unchanged 30,327-byte
+startup budget (30,691 bytes); concise replacement passed at 30,317 bytes without
+raising that limit. Final prompt/provider rerun: 246 passed, one existing installed
+native-registration probe skipped because LOCAL_AI_PROTOCOL_EXECUTABLE was unset.
+The unchanged main-workflow, Knowledge and information-delivery suites passed
+108, 29 and 16 tests. Production typecheck passed; lint had zero errors and two
+existing console warnings; naming passed 15 tests. Inspector verify
+`a6e7520a-9561-4285-b984-6f00d211b833` passed 81/81 mapped cases at revision 146.
+Review covered the turn-local diff, initial owner scope guidance, actual emitted
+thread/start payload and preserved validation/recovery consumers. No new model
+behavior or latency improvement was measured. First-content observation and
+historical evidence remain unchanged; no push or CI inspection was performed.
+
+
+
+
+### Registered tool ownership and identity allocation - 2026-10-26
+
+Freeze the audit to actual App/local registrations and their direct declarations,
+dispatch, public methods, delegates and consumers. Enumerate with runtime registries
+and TypeScript AST; read each implementation individually, without regex discovery.
+Do not equate null-input rejection, declared signatures or older green tests with
+successful semantic execution. Preserve existing dirty changes and historical evidence.
+
+Confirmed follow-up: source keys are not persisted element IDs. Existing idCounter
+owns namespace-aware allocation but exposes no model allocation route. Composed
+geometry/material/fill actions can discard changed evidence from their real owners.
+The saved evaluation's final unsupported report combines with complete operations
+into UI partial; this is not a completion percentage. Explain this separately from
+the real partial image-binding receipt and visual judgments; do not relabel history.
+
+Sequential execution cards:
+
+1. apply - identity allocation. Inputs: an ordered list of registered ID counter
+   types through the existing Core facade and basic API route. Outputs: one frozen
+   allocated ID per input in order. Existing idCounter owns atomic allocation and
+   namespaces; no new counter, ID store, document write, history entry or reset API.
+   Reject unregistered/malformed/exhausted allocation before advancing any counter.
+   Empty input is valid. Retain issued values for references; allocation is not
+   document creation and cannot resolve an intentionally reused ambiguous key.
+   Allowed: utils sid owner, Core facade, existing basic API declaration/execution/
+   result owners and direct tests. Forbidden: renderer writes, model counter updates,
+   new registry or automatic renaming. Spec: Identity allocation and owner receipts;
+   failure owner: apply. Test registered/custom types, concurrency, namespaces, load
+   advancement, exhaustion, malformed input, cancellation and real boundary use.
+2. compose - delivery and audit. Publish allocation only through existing on-demand
+   lookup and batch execution. Give executable example and distinguish source keys,
+   references and persisted IDs. Audit all registered APIs individually and use actual
+   owner tests, not generic null tests as evidence of semantics. Strengthen existing
+   AST/signature and actual usage tests for declaration drift. No preload, mandatory
+   ID lookup, new model exchange or removal of caller-authored valid keys. Allowlist:
+   existing catalog, discovery, examples, action tests and basic browser fixtures.
+   Failure owner: compose. Stop if a published example cannot reach its true owner.
+3. apply - composed receipts. Inputs: current geometry/material/mapping requests and
+   actual canonical MutationReceipt. Outputs preserve changed, accepted/unavailable
+   identities, legal no-op, partial/failure and existing no-replay recovery. Consume
+   existing receipt interpretation instead of void/truthiness or speculative rereads.
+   Scope: actions, prepared-material-action, retained-fill-action, basic-api-results,
+   their direct tests/fixtures and declarations. Preserve geometry, materials, order,
+   provenance, local invalidation, Factory history and retained delivery. Missing
+   output is a result-contract failure, not successful modification. No new state.
+
+Fixed DoD: formal real-owner cases must fail for discarded no-op evidence before
+production changes; the delivered allocation example must execute through the real
+Core/counter and the actual IDs must work as face/grid references. Invalid allocation
+must advance nothing; successful allocation does not create document history. Keep
+valid no-op and partial acceptance, canonical write results and failure recovery
+without replay. Run focused affected integration and consumer tests, production
+types, lint, naming and Inspector admission/proof on the same final source. Review
+the diff and direct consumers. Report source-inspected, executed and unobserved
+cases separately. No new model run, CI inspection, push or historical report edits.
+
+Validation: this bounded follow-up is complete locally. All 156 basic APIs ran
+through the browser fixtures; the separately enabled large export/reload case also
+passed. The final server harness passed 2,341 tests in 71 files with zero skips;
+App action tests passed 774 cases, with final affected-owner reruns (118) and
+counter cases (20). Production types, scoped lint (zero errors), naming (15),
+Inspector architecture/routes and 81 execution proofs passed. Two obsolete
+void-return mocks were corrected without weakening their semantic assertions.
+The admitted contract digest is unchanged. Individual source review, test limits,
+identity usage and the saved partial/inspection explanation are recorded in
+`docs/ai/knowledge/evaluations/2026-10-26-registered-tool-owner-audit.md`.
+No new model run or push; AI allocator adoption remains unobserved. Task 3 and
+the overall plan remain open.
+
+Authorized follow-up observation: run one 101 with a 480,000 ms work limit and
+independent 60,000 ms report limit, no video and the production 10,000-object
+artifact limit. Use a new document and empty tool library; freeze source while
+running. Preserve provider input/output, submitted images, report, screenshots,
+checkpoint and reload receipts. Inspect actual allocation adoption, key/reference
+conflicts, canonical-to-composed receipts, visual-review recovery and replay.
+List first frame in the timeline and retain unobserved cases as unobserved.
+No production edits, forced allocator use, CI inspection or push in this observation.
+
+Observation completed: run 1793028665812 stopped work at 480 seconds and captured
+its report by 502.041 seconds; first frame was 106.847 seconds. Thirty-four of
+35 App-facing calls succeeded; one schema lookup was partial and recovered through
+retained bounds without redraw. Two prepared-material writes delivered actual
+changed/accepted/unavailable/settlement fields. Counter allocation, legal no-op
+and partial write recovery were not exercised. Final visual acceptance remained
+false because roof additions crossed foreground geometry; failures were recorded,
+but deletion was only queried before cutoff. Eleven submitted images, complete
+provider records, report, checkpoint and fresh reload were preserved; durable
+sequence 490/490 and source identity matched. See
+`docs/ai/knowledge/evaluations/2026-10-26-identity-owner-eight-minute-101.md`.
+No production edits or push; overall Task 3 remains open.
+
+### Pre-execution guidance and recoverable input validation - 2026-10-26
+
+Objective: close the observed source-key and review-supersession handoffs, audit
+all registered App AI APIs individually through their current declarations,
+dispatch and semantic owners, and explain the saved 47.91-134.31 second interval.
+Use registry/AST enumeration and direct source inspection, not regex discovery.
+Preserve the dirty workspace-mechanical and selected-batch slices. Historical
+reports and evidence remain immutable. No CI, push, subagents or extra model runs.
+
+Evidence: run 1793017937929 submitted duplicate podium-x and podium-y source keys
+for a face and its grid. Boundary resolution masked the existing key-conflict
+contract before compilation. Public activity exists inside the reported gap;
+argument-generation progress and the remaining wait cause are not observable.
+Run 1793014314889 supplied unit-only supersedes on whole criteria; capture
+succeeded before binding rejected it, and recovery repeated the invalid field.
+
+Sequential Step Execution Cards (re-read each exact Inspector step before work):
+
+1. prepare - source identity and retained repair. Inputs are the submitted draft,
+   explicit boundary references and retained request-local source. Produce exact
+   duplicate source paths and an executable retained-field correction route before
+   any canvas write. Reuse boundary resolution, construction key conflict and
+   draft repair; no guessed rename, geometry change, second store or retry loop.
+   Valid unique references and explicit corners bypass correction. Scope: existing
+   design-face, design-construction, local-design-tools, source schemas/examples,
+   retained repair and their formal tests. Failure owner: prepare.
+2. inspect - supersession admission and recovery. Inputs are explicit declared
+   criterion/unit selections, revision/reason and retained image identities.
+   Validate unit-only supersession before capture and before binding/recording.
+   Reject incorrect fields precisely without inventing units, weakening whole-view
+   coverage or repeating captures/writes. Retain valid multi-scale bindings, exact
+   revision protection, sparse passes and no-replay recovery. Scope: existing
+   local-design-review, local-operation-tools and review integration tests.
+   Failure owner: inspect. No new result state or automatic visual judgment.
+3. compose - actual delivery and per-API audit. Inputs are registered contracts,
+   canonical owner examples and current request context. Check each API's input,
+   output, status and invocation ownership and exercise delivered examples through
+   existing admission. Invalid examples must never be published. Correct confirmed
+   in-scope discrepancies at their owner and add red tests first. Initial guidance
+   explicitly permits a small editable visible part without a complete plan,
+   Knowledge read, material verdict or whole-structure preparation. Preserve real
+   input safety, on-demand discovery and later review obligations. Scope: existing
+   prompt, catalog, discovery, schema and direct-consumer tests. No new registry,
+   blanket API coercion, preload, cache or mandatory model round trip. Failure
+   owner: compose. Additional semantic defects require a bounded card here before
+   implementation, not opportunistic broad rewrites.
+
+4. apply - direct-consumer proof only, using the existing creation-results
+   integration boundary. Execute the actually delivered small-part example through
+   main workflow, preparation and real App creation owner without criteria or
+   research. Prove a subsequent real property edit preserves identity. Headless
+   missing render measurements remain explicit partial follow-ups, never acceptance.
+   No production apply, transaction, persistence or renderer changes. Failure owner:
+   apply. Run creation-results integration and existing history/property suites.
+
+5. inspect then compose - two API audit findings. Core computed-field reads
+   already reject more than 64 fields or names longer than 128 characters, but the
+   App schema omits these constraints. Expose the unchanged limits from the current
+   Core snapshot owner and consume them in the App contract; do not copy constants
+   or alter snapshot behavior. The canonical property-patch API requires a records array; the Core tool
+   schema omits that requirement while the App schema is correct. Preserve the
+   App requirement, correct the Core declaration and guidance, and prove values
+   with records:[], empty no-op and invalid payload rejection. Boundary: Core scene-tree API/types, public contracts export and current App basic
+   contracts/tests. No new cache, route, retry or persistence format. Naming,
+   public export/type/build, snapshot and direct-consumer gates apply.
+
+Review findings: the prior selected-batch implementation removed top-level
+binding diagnostics but preserves the complete binding annotations in delivered
+operationParameters. Its native provider test must assert that actual contract
+and execute its returned batch. The discovery test must assert the invocation
+envelope outcome also when content is paged, not look for envelope fields inside
+reassembled content. A Core patch fixture must supply the canonical required
+records array. These direct-consumer corrections preserve semantic assertions;
+fixed delivery byte budgets remain unchanged. A boundary wording regression
+exceeded a saved budget by 68 bytes; shorten wording without dropping constraints.
+
+Fixed DoD: formal red cases for both observed failures; execute the actual returned
+repair and review routes, including stale references, invalid paths, cancellation,
+valid no-op, partial progress and no replay. Verify valid source geometry, material,
+order and references are unchanged; whole-criterion and regional review protections
+remain. Enumerate every registered API, inspect owner behavior and report tested
+versus inspection-only coverage per API. Schema/examples and live invocation agree;
+passing schema validation alone is not semantic proof. First-part integration must
+create visible content without planning/research/review prerequisites and allow a
+later edit. Run focused suites, mapped direct consumers and Inspector proof,
+production types, scoped lint, naming, docs synchronization and build; self-review
+only the diff and direct consumers, iterate until those gates pass.
+
+After those gates, run exactly one authorized 480-second 101 with at most 60
+seconds reporting, no video, production 10,000-node limit, full I/O, report and
+screenshots. Freeze sources during validation/run. Report public activity and
+unobserved intervals explicitly, first-frame timing, each fix's local/live outcome,
+and remaining uncertainty. Do not retry the model or count unexercised recovery
+as success. Stop on a new out-of-scope defect and report it separately.
+
+Bounded result: local gates passed, including 2,332 server cases, 186 direct owner
+cases, 35 Core cases and 81 Inspector proof cases. Both conditional tests were
+separately enabled and passed. No fixed data budget was increased. The single
+480-second authorized observation `1793022990110` finished naturally at 410.319
+seconds; first content 94.442 seconds. All 44 App calls were successful or truthful
+partial results (43/1). Invalid boundary and whole-criterion recovery were not
+live-triggered. Save/reload durable sequence 441 matched, source verification
+passed, and owned services were released. Public native gaps remain explicitly
+unattributed; Code Mode error details in the model's report are not captured by
+App records and remain unconfirmed. The final direct-consumer assertion verifies provisional-first guidance in the
+provider thread/start packet (227 provider cases passed); this post-observation
+change is test-only. No additional product mutation, model run, CI or push.
+See [the full report](../evaluations/2026-10-26-pre-execution-eight-minute-101.md)
+and [the per-API audit](../evaluations/2026-10-26-pre-execution-api-audit.md).
+
+### Workspace mechanical closure - 2026-10-26
+
+Step Execution Card - inspect. Run 1793014314889 automatically reviewed the
+workspace at 461.508 seconds and failed on its absent own geometry; a later
+explicit review repeated the same finding. Scene Tree intentionally gives the
+workspace no computed geometry. This slice fixes the deterministic reviewer and
+its final-review handoff, not visual binding supersession or Knowledge.
+
+Inputs: canonical metadata, ordered child membership, selected computed geometry,
+text measurements, existing evidence and check identities. Output: complete
+workspace descendant review with authoritative receipts, or exact real findings
+and the existing retained-check recovery route. Workspace is a non-geometric
+root, not a Frame, fake Group bounds or a geometry fallback. All real descendant
+geometry/text checks, Frame containment, hidden-node rules and local invalidation
+remain. Empty mechanical scope must not manufacture visual evidence or acceptance.
+The reviewer owns failed, cancelled, mixed-source and unavailable reads. Existing
+snapshot and result-store owners remain authoritative; no cache, tool, registry,
+state, document mutation, grouping, replay or extra preflight.
+
+Boundary: src/common-apis/design-review.ts, src/ai/review-action.ts and
+server/local-operation-tools.ts and local-design-review.ts output contract within inspect; direct design-review,
+workspace-inspection, mechanical-closure and execution-flow tests. No Framework
+geometry, persistence, renderer or binding owner changes. Names reuse EntityTypes
+and existing check/recovery contracts; no persisted identity changes.
+
+Fixed DoD: prove the real workspace failure before production edits; execute the
+actual review capture/bind/record handoff through real Core, reviewer, validation
+and result-store owners; achieve final acceptance for valid multi-root content.
+Prove missing geometry, text failure, Frame overflow, hidden content, missing roots,
+empty scope, cancellation, membership/order changes, load and local invalidation.
+Preserve unaffected receipts and existing work reuse counts. A failed final review
+must expose retained findings and executable existing check lookup without replay,
+recapture or invented approval. Read-only save/history/publication observations
+must remain unchanged. No ignored evidence dependency in formal tests.
+
+Sequence: synchronize Workspace mechanical review spec and inspect contract;
+admit the mapping, then red tests, owner repair, focused consumers and bounded
+self-review. Required gates: naming, App/server production types, scoped lint and
+format, Inspector mapped proof and direct integration tests. Source freezes before
+one authorized gpt-6-astra/medium 101: 480 seconds work, at most 60 seconds reporting,
+no video, production 10,000 limit. Preserve full I/O, images, report, screenshots,
+first-frame time and raw timing. No CI inspection, push or further live run.
+
+Local verification: original behavior fails the workspace reviewer and real Core
+capture-to-final-acceptance regressions. The negative child case also proves lost
+unavailable findings; the fix retains them without treating diagnostics as a pass.
+Focused owner/action/closure tests: 51 passed; extended recovery, membership,
+local receipt preservation and load cases pass (39 tests in the two touched files).
+Direct consumers: 470 passed. Mapped Inspector proof: 81 passed. Contract tests:
+2 passed. Production types, naming and update guidance pass. Scope review preserves
+no writes, no new cache and the unchanged binding-supersession issue. Mechanical
+paint-order-only changes retain equal rule inputs; visual invalidation remains.
+Final lint has zero errors and two pre-existing console warnings; production build
+passes. Live observation on frozen source is recorded below.
+
+Live observation: run 1793017937929, no video, gpt-6-astra/medium, 10,000 limit,
+480-second work allowance. First frame 152.494 seconds; self-report 477.676 seconds;
+UI settles partial at 477.797 seconds before cutoff. Four concrete-root mechanical
+checks complete, but no workspace mechanical check runs: visual coverage is 1/3
+with material/detail failures. Live target adoption/recovery remain unobserved.
+29 App calls, complete drawing record, zero recorder failures, 1,031 archived files
+and 7 restored tool images. Source verification, screenshots, persistence/reload
+(generation 0, durable sequence 372) and owned service cleanup complete. No extra
+model run or push. Detailed evidence and full timing are in
+[evaluations/2026-10-26-workspace-mechanical-eight-minute-101.md](../evaluations/2026-10-26-workspace-mechanical-eight-minute-101.md).
+
+### Selected batch-operation usage - 2026-10-26
+
+Step Execution Card - compose. Run 1793010611909, original calls 29-32, required
+29,264 reply bytes across batch usage, batch fields and selected delete contract
+before a 255-byte edit. The operations fragment exposed 176 names. Scope is the
+existing discovery-to-batch handoff, not a new editing capability or registry.
+
+Inputs: exact selected admitted mutation actions, their canonical input/output contracts,
+existing batch owner description/input/result policies and execution route. Read-only actions retain compact navigation. Output:
+schema-free complete selected usage with an executable owner example, target
+binding rules, current constraints and receipt/recovery instructions. Derive it
+from current owners using the existing usage renderer; never enumerate unrelated
+operation names or result branches. Ordinary full, field and menu queries remain
+valid. Menu guidance identifies the existing selected usage query without a new
+preflight. Refresh and pagination retain scope and never replay an edit.
+
+Implementation boundary: local-operation-tools.ts and canonical basic-design-api-contracts.ts
+examples; reuse design-workflow-discovery
+parameter rendering, registry and batch semantics. No mutation owner, snapshot,
+Knowledge, model prompt policy, scheduler or cache change. Direct consumer tests:
+new batch-usage.integration.test.ts and saved raw-input fixture, existing discovery,
+operation, invocation and workflow tests, execution-flow proof and manifest.
+The compose owner owns unavailable/ambiguous routes and read failures. Bypasses:
+non-batch execution routes retain their owner contract; explicit full/schemaPaths
+and complete inventory remain independently available. No tool-name special cases.
+
+Fixed DoD: test-first saved sequence; one selected usage acquisition before actual
+execution; lower complete reply bytes than 29,264 without increasing page budget.
+Add 10,000 unrelated admitted operations and prove selected bytes/pages unchanged.
+Execute delivered examples through the dispatcher and real canonical App owner;
+verify original cross-field admission, target binding, multiple selected operations,
+invalid input, cancellation, unavailable/stale targets, local partial results and
+recovery of only pending work. Preserve ordering and actual saved/Undo/Redo behavior
+where execution is exercised. No helper-only or renamed-status closure. Query costs
+include invocation examples, parent instructions, output and recovery information.
+Reuse existing owners' tests for unchanged transaction/collaboration machinery.
+
+Before production edits: review spec Selected batch-operation usage, compose
+Inspector conditions/contributors/boundary and supported admission. Formal red
+regression follows admission. Gates: direct integration and existing discovery /
+operation / invocation / workflow consumers, 81 mapped Inspector cases, production
+types, scoped lint, naming, update notes and diff review. Stop on owner conflict or
+three failed implementation corrections and revise within this scope. After local
+closure freeze source and run one gpt-6-astra/medium 101: 480 seconds work, at most
+60 seconds report, no video, production 10,000 limit, full I/O/images/report/screen
+and native boundary evidence. Record first frame and actual usage adoption separately
+from deterministic cost proof. No further model run, unrelated repair, CI or push.
+
+Local closure: the saved regression failed before implementation and now delivers
+13,945 bytes in one read versus 29,264 bytes in three. A verified inventory of
+10,000 unrelated native tools leaves selected bytes/pages unchanged. Real owner
+execution, target-only invocation, explicit expired-source rejection, cancellation,
+partial-prefix recovery, save/reload and Undo/Redo pass. General searches and read-only
+navigation retain their existing cost assertions. Final validation: 509 direct
+consumer tests, 40 basic-owner tests, 81 Inspector cases, production types, naming,
+formatting, update guidance and diff checks; lint has no errors and one existing warning.
+
+Live closure: one 480-second run, 1793014314889, no video, production 10,000 limit.
+First frame 128.892 seconds. The model reads hierarchy.moveElementsRelative usage
+once (13,280 bytes), then executes directly without parent/field lookup; the true
+owner moves workspace index 2 to 0 with a completed receipt. Whole drawing remains
+partial on workspace mechanical measurement, not on the selected edit. No drawing
+after cutoff; report settled at 503.463 seconds, cleanup and durable reload succeed.
+One unclosed public provider span remains explicit; no recorder write failures.
+Live failure recovery for this edit was not observed. No further run or push.
+See evaluations/2026-10-26-selected-batch-usage-eight-minute-101.md for evidence,
+fixed-DoD attribution, full tool timeline and remaining observations.
 
 ### Binding failure recovery - 2026-10-26
 

@@ -2,6 +2,32 @@ import { describe, expect, it } from 'vitest'
 import { createLocalToolScheduler } from '../local-tool-scheduler'
 
 describe('request tool scheduling', () => {
+  it('runs coordinators without a barrier while their leaves remain scheduled', async () => {
+    const schedule = createLocalToolScheduler(new AbortController().signal)
+    const events: string[] = []
+    const parent = schedule('coordinator', async () => {
+      events.push('parent')
+      await schedule('exclusive', async () => {
+        events.push('leaf')
+      })
+      events.push('complete')
+    })
+    for (let index = 0; index < 12; index++) await Promise.resolve()
+    expect(events).toEqual(['parent', 'leaf', 'complete'])
+    await parent
+  })
+
+  it('does not start a coordinator after cancellation', async () => {
+    const controller = new AbortController()
+    controller.abort()
+    let started = false
+    await expect(
+      createLocalToolScheduler(controller.signal)('coordinator', async () => {
+        started = true
+      })
+    ).rejects.toThrow()
+    expect(started).toBe(false)
+  })
   it('treats missing access as a barrier and continues after a recoverable failure', async () => {
     const schedule = createLocalToolScheduler(new AbortController().signal)
     let resume!: () => void

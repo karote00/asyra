@@ -76,7 +76,7 @@ describe('stage-owned App guidance', () => {
   })
 
   it('reviews reference-dependent ready recipes without requiring a complete geometry inventory', () => {
-    expect(general).toContain('Draw each coherent ready part')
+    expect(general).toContain('Draw when useful')
     expect(general).toContain('review_prepared_design')
     expect(general).toContain('It never calls a model')
     expect(general).toContain('primary agent reviews actual rendered images')
@@ -89,7 +89,9 @@ describe('stage-owned App guidance', () => {
     expect(general).not.toMatch(
       /Before the first mutation, save|Plan input example:|factBindings|dependencyChanges|instanceRanges/
     )
-    expect(general).toContain('Do not accumulate all stages in one draft')
+    expect(general).toContain(
+      'Choose coherent submission sizes within tool budgets'
+    )
     expect(general).toContain('parentId')
   })
   it('separates chosen-method local decisions from tool success and whole completion', () => {
@@ -261,4 +263,30 @@ it('separates remaining-work execution from replay and library availability reco
   expect(general).toContain('only the unresolved steps')
   expect(general).toContain('resume restores library availability')
   expect(general).toContain('not a saved execution position')
+})
+
+it('permits provisional visible content before optional design research and validation', () => {
+  expect(AI_APP_PROMPT).toContain('Draw when useful')
+  expect(AI_APP_PROMPT).toContain('edits later')
+  expect(AI_APP_PROMPT).toContain(
+    'not a prerequisite for first visible content'
+  )
+  expect(AI_APP_PROMPT).not.toContain(
+    'discover_knowledge before committing those decisions'
+  )
+})
+
+it('treats first visible content as an optional experience goal without weakening validation', () => {
+  expect(AI_APP_PROMPT).toContain('First frame is optional')
+  expect(AI_APP_PROMPT).toContain('not a deadline or completion gate')
+  expect(AI_APP_PROMPT).toContain('research may come first')
+  expect(AI_APP_PROMPT).toContain('No forced previews or splitting for timing')
+  expect(AI_APP_PROMPT).toContain(
+    'Preserve validation, references and final review'
+  )
+  expect(AI_APP_PROMPT).toContain('not a deadline')
+  expect(AI_APP_PROMPT).not.toContain('Draw each coherent ready part')
+  expect(AI_APP_PROMPT).not.toContain(
+    'Do not accumulate all stages in one draft'
+  )
 })

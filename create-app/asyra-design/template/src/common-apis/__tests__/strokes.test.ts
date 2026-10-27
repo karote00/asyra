@@ -40,6 +40,14 @@ import { strokeApis } from '../strokes'
 describe('stroke common API primary-color boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.patchElementProperties.mockImplementation((updates) => ({
+      acceptedIds: [
+        ...new Set(
+          updates.map((update: { elementId: string }) => update.elementId)
+        )
+      ],
+      changed: updates.length > 0
+    }))
     mocks.getElementById.mockReturnValue({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
       getAllComputedData: () => ({
@@ -70,7 +78,7 @@ describe('stroke common API primary-color boundary', () => {
   })
 
   it('adds and removes one repeatable stroke through canonical record patches', () => {
-    const strokeId = strokeApis.addStroke('whisker-1', { undoable: true })
+    const strokeId = strokeApis.addStroke('whisker-1', { undoable: true }).value
 
     expect(strokeId).toEqual(expect.any(String))
     expect(strokeId).not.toBe('')
@@ -100,7 +108,7 @@ describe('stroke common API primary-color boundary', () => {
     )
 
     expect(
-      strokeApis.removeStroke('whisker-1', 'stroke-1', { undoable: true })
+      strokeApis.removeStroke('whisker-1', 'stroke-1', { undoable: true }).value
     ).toBe(true)
     expect(mocks.patchElementProperties).toHaveBeenNthCalledWith(
       2,
@@ -217,7 +225,7 @@ describe('stroke common API primary-color boundary', () => {
         ],
         options
       )
-    ).toEqual([true, true])
+    ).toEqual(['changed', 'changed'])
     expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
       [
@@ -293,7 +301,7 @@ describe('stroke common API primary-color boundary', () => {
         { color: '#5B3A29', elementId: 'unchanged' },
         { color: '#2563EB', elementId: 'missing' }
       ])
-    ).toEqual([true, false, false])
+    ).toEqual(['changed', 'unchanged', 'unavailable'])
     expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
       [
@@ -340,25 +348,88 @@ describe('stroke common API primary-color boundary', () => {
       strokeApis.updatePrimaryStrokeColors([
         { color: '#5B3A29', elementId: 'unchanged' }
       ])
-    ).toEqual([false])
+    ).toEqual(['unchanged'])
     expect(mocks.patchElementProperties).not.toHaveBeenCalled()
     expect(mocks.runTransaction).not.toHaveBeenCalled()
   })
 
-  it('patches canonical stroke fields without forwarding UI aggregation metadata', () => {
-    const currentStroke = {
-      ...mocks.getElementById('whisker-1').getAllComputedData().strokes[0],
-      ids: ['stroke-1']
-    }
+  it('does not publish old unrelated Stroke fields when changing width', () => {
+    strokeApis.updateStrokeFields('whisker-1', 'stroke-1', { width: 8 })
+    expect(
+      mocks.patchElementProperties.mock.calls[0][0][0].records[0].set
+    ).toEqual({
+      'stroke-1': { width: 8 }
+    })
+  })
 
-    strokeApis.updateStrokeField(
-      'whisker-1',
-      'stroke-1',
-      currentStroke,
-      'width',
-      5,
-      { undoable: true }
+  it('admits all targets before applying a multi-owner Stroke patch', () => {
+    mocks.getElementById.mockImplementation((id: string) =>
+      id === 'missing'
+        ? undefined
+        : {
+            get: () => 'rect',
+            getAllComputedData: () => ({ strokes: [{ id: 'stroke-1' }] })
+          }
     )
+    expect(() =>
+      strokeApis.updateStrokeFieldsBatch([
+        { elementId: 'valid', strokeId: 'stroke-1', patch: { width: 8 } },
+        { elementId: 'missing', strokeId: 'stroke-1', patch: { width: 8 } }
+      ])
+    ).toThrow('Missing Stroke')
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  })
+
+  it('prepares repeated targets once and emits all patches in one transaction', () => {
+    strokeApis.updateStrokeFieldsBatch([
+      { elementId: 'a', strokeId: 'stroke-1', patch: { width: 5 } },
+      { elementId: 'a', strokeId: 'stroke-1', patch: { dash: 8 } },
+      { elementId: 'b', strokeId: 'stroke-1', patch: { width: 9 } }
+    ])
+    expect(mocks.runTransaction).toHaveBeenCalledOnce()
+    expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
+    expect(
+      mocks.patchElementProperties.mock.calls[0][0].map(
+        (p: { elementId: string }) => p.elementId
+      )
+    ).toEqual(['a', 'a', 'b'])
+    // Target read + type + geometry per distinct owner, not per update.
+    expect(mocks.getElementById).toHaveBeenCalledTimes(6)
+    mocks.getElementById.mockClear()
+    strokeApis.updateStrokeFieldsBatch([
+      { elementId: 'a', strokeId: 'stroke-1', patch: { width: 10 } }
+    ])
+    expect(mocks.getElementById).toHaveBeenCalledTimes(3)
+  })
+
+  it('validates empty patch targets and rejects unknown fields before a write', () => {
+    expect(() =>
+      strokeApis.updateStrokeFieldsBatch([
+        {
+          elementId: 'missing',
+          strokeId: 'absent',
+          patch: { width: undefined }
+        }
+      ])
+    ).toThrow('Missing Stroke')
+    expect(mocks.getElementById).toHaveBeenCalledExactlyOnceWith('missing')
+    expect(() =>
+      strokeApis.updateStrokeFieldsBatch([
+        { elementId: 'a', strokeId: 'stroke-1', patch: { width: 5 } },
+        {
+          elementId: 'b',
+          strokeId: 'stroke-1',
+          patch: { id: 'other' } as never
+        }
+      ])
+    ).toThrow('Invalid Stroke patch field')
+    expect(mocks.patchElementProperties).not.toHaveBeenCalled()
+  })
+
+  it('patches canonical stroke fields without forwarding UI aggregation metadata', () => {
+    strokeApis.updateStrokeField('whisker-1', 'stroke-1', 'width', 5, {
+      undoable: true
+    })
 
     expect(mocks.patchElementProperties).toHaveBeenCalledOnce()
     expect(mocks.patchElementProperties).toHaveBeenCalledWith(
@@ -370,22 +441,7 @@ describe('stroke common API primary-color boundary', () => {
               key: 'strokes',
               set: {
                 'stroke-1': {
-                  style: 'solid',
-                  position: 'center',
-                  width: 5,
-                  dash: 20,
-                  gap: 20,
-                  fill: {
-                    color: '#5B3A29',
-                    colorFormat: 'hex',
-                    id: 'stroke-1',
-                    opacity: 1,
-                    type: 'fill',
-                    visible: true
-                  },
-                  joinType: 'miter',
-                  capType: 'butt',
-                  miterAngle: 28.96
+                  width: 5
                 }
               }
             }
@@ -408,6 +464,7 @@ describe('stroke common API primary-color boundary', () => {
     mocks.getElementById.mockReturnValue({
       get: (key: string) => (key === 'type' ? 'vector' : undefined),
       getAllComputedData: () => ({
+        strokes: [currentStroke],
         height: 999,
         networks: {
           network: {
@@ -434,7 +491,6 @@ describe('stroke common API primary-color boundary', () => {
     strokeApis.updateStrokeFields(
       'whisker-1',
       'stroke-1',
-      currentStroke as never,
       {
         width: 5
       },
@@ -466,4 +522,42 @@ describe('stroke common API primary-color boundary', () => {
     )
     expect(mocks.changeComputedData).not.toHaveBeenCalled()
   })
+})
+
+it('retains Stroke creation, unavailable removal and unchanged batch evidence', () => {
+  mocks.getElementById.mockReturnValue({
+    get: () => 'rect',
+    getAllComputedData: () => ({ strokes: [{ id: 'stroke-1' }] })
+  })
+  mocks.patchElementProperties.mockReturnValue({
+    acceptedIds: ['a'],
+    changed: true
+  })
+  expect(strokeApis.addStroke('a')).toMatchObject({
+    acceptedIds: ['a'],
+    unavailableIds: [],
+    changed: true,
+    value: expect.any(String)
+  })
+  expect(strokeApis.removeStroke('a', 'missing')).toMatchObject({
+    acceptedIds: [],
+    unavailableIds: ['a'],
+    changed: false,
+    value: false
+  })
+  mocks.patchElementProperties.mockReturnValue({
+    acceptedIds: ['a'],
+    changed: false
+  })
+  expect(
+    strokeApis.updateStrokeFieldsBatch([
+      { elementId: 'a', strokeId: 'stroke-1', patch: { width: 1 } }
+    ])
+  ).toMatchObject({ acceptedIds: ['a'], unavailableIds: [], changed: false })
+  mocks.getElementById.mockReturnValue(undefined)
+  expect(() =>
+    strokeApis.updateStrokeFieldsBatch([
+      { elementId: 'missing', strokeId: 'missing', patch: {} }
+    ])
+  ).toThrow()
 })

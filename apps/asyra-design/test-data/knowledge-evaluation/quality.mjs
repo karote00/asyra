@@ -12,9 +12,9 @@ export function qualityScenario(cases, id) {
       scenario.prompt +
       '\n\n' +
       cases.commonInstruction +
-      '\nModules: ' +
+      '\nOptional Knowledge modules: ' +
       JSON.stringify(scenario.modules) +
-      '\nContexts: ' +
+      '\nOptional Knowledge contexts: ' +
       JSON.stringify(scenario.contexts)
   }
 }

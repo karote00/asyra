@@ -11,13 +11,37 @@ import {
 const spec = JSON.parse(
   fs.readFileSync(new URL('../architecture-101.json', import.meta.url))
 )
-test('the only model case is architectural 101 with an exact ten-minute deadline', () => {
+test('the only model case is architectural 101 with an exact fifteen-minute deadline', () => {
   const scenario = architectureScenario(spec)
-  assert.equal(scenario.deadlineMs, 600000)
+  assert.equal(scenario.deadlineMs, 900000)
   assert.ok(scenario.prompt.includes('Draw the entire Taipei 101'))
-  assert.throws(() => architectureScenario({ ...spec, deadlineMs: 900000 }))
+  assert.throws(() => architectureScenario({ ...spec, deadlineMs: 900001 }))
   assert.throws(() => architectureScenario({ ...spec, id: 'general-design' }))
   assert.throws(() => architectureScenario({ ...spec, modules: ['icons'] }))
+})
+test('the ordinary 101 prompt offers Knowledge without requiring a read or design stage', () => {
+  const scenario = architectureScenario(spec)
+  assert.ok(scenario.prompt.startsWith(spec.prompt + '\n\n'))
+  assert.ok(
+    scenario.prompt.includes('Knowledge is optional reference material')
+  )
+  assert.ok(scenario.prompt.includes('only if useful for a decision'))
+  assert.ok(
+    scenario.prompt.includes('at any stage or proceed without reading it')
+  )
+  assert.ok(
+    scenario.prompt.includes(
+      'Optional Knowledge modules: ' + JSON.stringify(spec.modules)
+    )
+  )
+  assert.ok(
+    scenario.prompt.includes(
+      'Optional Knowledge contexts: ' + JSON.stringify(spec.contexts)
+    )
+  )
+  assert.equal(scenario.prompt.includes('Before designing'), false)
+  assert.deepEqual(scenario.attachments, spec.attachments)
+  assert.equal(scenario.deadlineMs, 900000)
 })
 test('the ablation changes only the two new advisory bodies, never unrelated knowledge', () => {
   assert.deepEqual(architectureFiles, [
@@ -30,11 +54,11 @@ test('the ablation changes only the two new advisory bodies, never unrelated kno
 })
 
 test('a run-scoped deadline can shorten but never extend the canonical scenario', () => {
-  assert.equal(observationDeadline(spec, []), 600000)
+  assert.equal(observationDeadline(spec, []), 900000)
   assert.equal(observationDeadline(spec, ['--deadline-ms=120000']), 120000)
-  assert.equal(spec.deadlineMs, 600000)
+  assert.equal(spec.deadlineMs, 900000)
   for (const args of [
-    ['--deadline-ms=600001'],
+    ['--deadline-ms=900001'],
     ['--deadline-ms=0'],
     ['--deadline-ms=NaN'],
     ['--deadline-ms=1.5'],

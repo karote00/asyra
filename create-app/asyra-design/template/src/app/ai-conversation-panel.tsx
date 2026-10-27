@@ -1,3 +1,5 @@
+import { AiToolLibraryPanel } from './ai-tool-library-panel'
+import { projectEvaluationReport } from '../ai/evaluation-window'
 import { AiConversationNavigation } from './ai-conversation-navigation'
 import { AiConnectionStatus } from './ai-connection-status'
 import {
@@ -25,14 +27,16 @@ import type {
 } from '../ai/conversation'
 import {
   canRetryAiTurn,
-  projectAiActivity,
   formatElapsedTime,
   projectAiQuestion,
   summarizeAiTurn,
   type AiDrawingDetailChoice,
   type AiDrawingDetailOptionId
 } from '../ai/presentation'
-import { AiDocumentInteractionTargetProps } from '../constants'
+import {
+  AiDocumentInteractionTargetProps,
+  CONVERSATION_PANEL_WIDTH
+} from '../constants'
 
 const ACCEPTED_IMAGE_TYPES = new Set<AiImageMediaType>([
   'image/jpeg',
@@ -335,7 +339,8 @@ const AiConversationPanelLayout = ({
       aria-label="Agent conversation"
       tabIndex={-1}
       aria-modal="false"
-      className="fixed bottom-0 right-0 top-10 z-50 flex w-[384px] max-w-[calc(100vw-24px)] flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
+      className="fixed bottom-0 right-0 top-10 z-50 flex flex-col overflow-hidden select-text border-l border-[#45464b] bg-[#202124] text-[12px] text-[#f5f5f5] shadow-[-18px_0_48px_rgba(0,0,0,0.32)]"
+      style={{ width: CONVERSATION_PANEL_WIDTH }}
       data-testid="ai-agent-panel"
       role="complementary"
     >
@@ -344,6 +349,7 @@ const AiConversationPanelLayout = ({
           conversation={conversation}
           onNavigate={navigateConversation}
         />
+        <AiToolLibraryPanel />
         <button
           aria-label="Close Agent panel"
           className="grid h-6 w-6 shrink-0 place-items-center rounded border-0 bg-transparent text-[#b8b9c0] hover:bg-[#303136] hover:text-white"
@@ -513,6 +519,9 @@ const AiConversationFeed = ({
   conversation,
   confirmation
 }: Pick<AiConversationPanelProps, 'conversation' | 'confirmation'>) => {
+  const [expandedHistory, setExpandedHistory] = useState<ReadonlySet<string>>(
+    new Set()
+  )
   const conversationBodyRef = useRef<HTMLElement>(null)
   const followLatestRef = useRef(true)
   const [showJump, setShowJump] = useState(false)
@@ -546,6 +555,8 @@ const AiConversationFeed = ({
       setShowJump(false)
     }
   }, [confirmationSnapshot, conversationSnapshot])
+  // Initial following must run before measuring an already overflowing feed.
+  useLayoutEffect(syncScrollPosition, [expandedHistory, syncScrollPosition])
 
   const submitDrawingDetailChoice = useCallback(
     (turnId: string, optionId: AiDrawingDetailOptionId) => {
@@ -597,6 +608,9 @@ const AiConversationFeed = ({
         {timeline.map((turn) => {
           const settled = 'outcome' in turn ? turn : null
           const summary = settled ? summarizeAiTurn(settled) : null
+          const evaluationReport = settled
+            ? projectEvaluationReport(settled)
+            : undefined
           const question = settled ? projectAiQuestion(settled) : null
           const answer = timeline.find(
             (entry) => entry.replyToTurnId === turn.turnId
@@ -611,7 +625,8 @@ const AiConversationFeed = ({
           if (canAnswer) questionStatus = 'Waiting for your answer'
           const latest = timeline.at(-1)?.turnId === turn.turnId
           const stopping = !settled && conversationSnapshot.activeTurn?.stopping
-          const activity = projectAiActivity(turn.progress, {
+          const activity = conversation.getActivity(turn.turnId, {
+            purpose: turn.originalIntent ?? turn.intent,
             outcome: settled?.outcome,
             awaitingAnswer: Boolean(question),
             stopping: Boolean(stopping),
@@ -623,6 +638,9 @@ const AiConversationFeed = ({
               data-testid="ai-agent-message"
               data-outcome={settled?.outcome ?? 'active'}
               data-turn-id={turn.turnId}
+              data-evaluation-report={
+                evaluationReport ? JSON.stringify(evaluationReport) : undefined
+              }
               key={turn.turnId}
             >
               <div
@@ -643,8 +661,16 @@ const AiConversationFeed = ({
                 className="min-w-0 self-stretch py-1 pr-3 text-[12px] leading-5 text-[#e1dff0]"
               >
                 <details
+                  onToggle={(event) => {
+                    const open = event.currentTarget.open
+                    setExpandedHistory((previous) => {
+                      const next = new Set(previous)
+                      if (open) next.add(turn.turnId)
+                      else next.delete(turn.turnId)
+                      return next
+                    })
+                  }}
                   className="mt-2 text-[12px] text-[#96939f]"
-                  onToggle={syncScrollPosition}
                 >
                   <summary
                     aria-label="Work history"
@@ -667,36 +693,55 @@ const AiConversationFeed = ({
                     aria-label="Operational progress"
                     className="my-1 list-none space-y-1 pl-3"
                   >
-                    {activity.entries.flatMap((entry, index) => {
-                      const lines =
-                        entry.message && entry.message !== entry.label
-                          ? [entry.label, entry.message]
-                          : [entry.label]
-                      return lines.map((line, lineIndex) => (
-                        <li
-                          key={`${turn.turnId}:${index}:${lineIndex}`}
-                          aria-current={
-                            !settled &&
-                            entry === activity.current &&
-                            lineIndex === lines.length - 1
-                              ? 'step'
-                              : undefined
-                          }
-                          className="whitespace-pre-wrap break-words py-1"
-                        >
-                          {line}
-                        </li>
-                      ))
-                    })}
+                    {expandedHistory.has(turn.turnId)
+                      ? activity.entries.flatMap((entry, index) => {
+                          const lines =
+                            entry.message && entry.message !== entry.label
+                              ? [entry.label, entry.message]
+                              : [entry.label]
+                          return lines.map((line, lineIndex) => (
+                            <li
+                              key={`${turn.turnId}:${index}:${lineIndex}`}
+                              aria-current={
+                                !settled &&
+                                entry === activity.current &&
+                                lineIndex === lines.length - 1
+                                  ? 'step'
+                                  : undefined
+                              }
+                              className="whitespace-pre-wrap break-words py-1"
+                            >
+                              {line}
+                            </li>
+                          ))
+                        })
+                      : null}
                   </ol>
                 </details>
                 {!settled ? (
                   <div
                     role="status"
                     aria-label="Current activity"
-                    className="mt-3 text-[#b9b2d4]"
+                    data-activity-mode={activity.mode}
+                    className="mt-3 whitespace-pre-wrap break-words text-[#b9b2d4]"
                   >
-                    {activity.current.message || activity.current.label}
+                    {activity.current.message ? (
+                      <span
+                        className="line-clamp-3"
+                        title={activity.current.message}
+                      >
+                        {activity.current.message}
+                      </span>
+                    ) : null}
+                    {activity.current.label ? (
+                      <span>
+                        {activity.mode === 'context' &&
+                        activity.current.label === 'Current task' &&
+                        activity.current.message
+                          ? 'Task context - no App operation executing'
+                          : activity.current.label}
+                      </span>
+                    ) : null}
                   </div>
                 ) : null}
                 {confirmationSnapshot.decisions
@@ -745,7 +790,10 @@ const AiConversationFeed = ({
                   </section>
                 ) : null}
                 {settled && !question ? (
-                  <p className="mb-0 mt-2 whitespace-pre-wrap break-words">
+                  <p
+                    data-testid="ai-agent-result"
+                    className="mb-0 mt-2 whitespace-pre-wrap break-words"
+                  >
                     {summary?.message}
                   </p>
                 ) : null}

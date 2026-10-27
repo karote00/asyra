@@ -99,6 +99,28 @@ export const withToolContractAssertions = <
         invokeLocalTool(boundaryOwner, definition, input, AbortSignal.abort())
       ).rejects.toThrow()
       expect(calls, `${name} rejected/cancelled owner calls`).toBe(0)
+      for (const failure of ['exception', 'invalid-output'] as const) {
+        let failedCalls = 0
+        const failed = await invokeLocalTool(
+          {
+            ...boundaryOwner,
+            call: async () => {
+              failedCalls++
+              if (failure === 'exception')
+                throw new Error('Owner failed before returning a receipt')
+              return 'null'
+            }
+          },
+          definition,
+          input,
+          signal
+        )
+        expect(failed.success, `${name} ${failure} cannot report success`).toBe(
+          false
+        )
+        expect(failedCalls, `${name} ${failure} cannot replay`).toBe(1)
+        expect(JSON.parse(failed.text).toolOutcome.status).not.toBe('success')
+      }
       checked.add(name)
     }
     const reply = await invokeLocalTool(

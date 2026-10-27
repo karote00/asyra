@@ -347,7 +347,7 @@ it('carries the recorded material decision into initial preparation without chan
     })
     expect(rejected.artifactId).toBeUndefined()
     expect(session.resolve(baseline.artifactId)).toEqual(priorArtifact)
-    const rejectedInsertion = JSON.parse(
+    const insertedTemplate = JSON.parse(
       await designs.call(
         'prepare_design',
         {
@@ -361,11 +361,13 @@ it('carries the recorded material decision into initial preparation without chan
         signal()
       )
     )
-    expect(rejectedInsertion).toMatchObject({
-      available: false,
-      recovery: 'correct_input',
-      message: expect.stringContaining('Repair path does not exist')
+    expect(insertedTemplate).toMatchObject({
+      available: true,
+      preparationInput: { kind: 'retained-repair', replacementCount: 1 }
     })
+    expect(session.recipe(insertedTemplate.artifactId).recipe).toEqual(
+      candidate
+    )
     expect(session.resolve(baseline.artifactId)).toEqual(priorArtifact)
     const repaired = JSON.parse(
       await designs.call(
@@ -402,7 +404,7 @@ it('carries the recorded material decision into initial preparation without chan
   }
 })
 
-it('recovers missing template containers through existing assignments without inserting absent pointers', async () => {
+it('recovers missing template containers through fully admitted insertion or existing assignment', async () => {
   const session = createDesignPreparationSession()
   const designs = createLocalDesignTools(
     [createPreparedDesignAction()],
@@ -439,9 +441,24 @@ it('recovers missing template containers through existing assignments without in
     }
   })
   expect(missingContainer).toMatchObject({
-    available: false,
-    message: expect.stringContaining('Repair path does not exist')
+    available: true,
+    preparationInput: { kind: 'retained-repair', replacementCount: 1 }
   })
+  expect(session.recipe(missingContainer.artifactId).recipe).toEqual({
+    ...draft,
+    fillTemplates: { glass: '#527b86' }
+  })
+  expect(draft).not.toHaveProperty('fillTemplates')
+  expect(
+    await prepare({
+      repair: {
+        draftId: rejected.draftId,
+        replacements: [
+          { path: '/unregisteredTemplates', value: { glass: '#527b86' } }
+        ]
+      }
+    })
+  ).toMatchObject({ available: false, settlement: 'not-started' })
   const repaired = await prepare({
     repair: {
       draftId: rejected.draftId,
@@ -779,7 +796,12 @@ it('hands a declared color-only method through exact discovery to retained mappi
       }
     }
   )
-  const update = vi.fn()
+  const update = vi.fn((updates: readonly { elementId: string }[]) => ({
+    value: null,
+    changed: updates.length > 0,
+    acceptedIds: updates.map((item) => item.elementId),
+    unavailableIds: []
+  }))
   const action = createRetainedFillAction(queries, {
     metadata: (id) => (entries.has(id) ? {} : undefined),
     targets: (selectedIds) =>

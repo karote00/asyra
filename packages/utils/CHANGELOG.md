@@ -1,5 +1,22 @@
 # @asyra/utils
 
+## Pending Atomic registered identity allocation
+
+```update-note
+{
+  "change": "registered-identity-allocation",
+  "owner": "Utils ID counter",
+  "summary": "Reserve immutable ordered IDs atomically from existing counters, rejecting invalid types, ambiguous prefixes and exhaustion before consumption.",
+  "sources": [
+    "packages/utils/src/sid/idCounter.ts",
+    "packages/utils/src/sid/__tests__/idCounter.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Callers can reserve registered identities without exposing counter reset or document mutation."
+}
+```
+
 ## Pending computed snapshot selection
 
 ```update-note

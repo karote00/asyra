@@ -549,37 +549,7 @@ export const setSelectedGradient = async (
   }, gradient)
 }
 
-/**
- * Perform an Undo operation
- */
-export async function undo(page: Page) {
-  // Click on the toolbar area (neutral zone) to gain focus without triggering tools
-  const toolbar = getToolbar(page)
-  await toolbar.click({ position: { x: 5, y: 5 } })
-
-  // Press the shortcut
-  await page.keyboard.down('Meta')
-  await page.keyboard.press('Z')
-  await page.keyboard.up('Meta')
-  await page.waitForTimeout(500)
-}
-
-/**
- * Perform a Redo operation
- */
-export async function redo(page: Page) {
-  // Click on the toolbar area (neutral zone) to gain focus without triggering tools
-  const toolbar = getToolbar(page)
-  await toolbar.click({ position: { x: 5, y: 5 } })
-
-  // Press the shortcut
-  await page.keyboard.down('Meta')
-  await page.keyboard.down('Shift')
-  await page.keyboard.press('Z')
-  await page.keyboard.up('Shift')
-  await page.keyboard.up('Meta')
-  await page.waitForTimeout(1000) // Extra time for redo to process
-}
+export { undo, redo } from './execution-evidence'
 
 /**
  * Check if an element is selected by checking the Properties Panel

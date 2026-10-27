@@ -50,6 +50,18 @@ const owners = (): ApiOwners => ({
   viewport: viewportApis
 })
 
+const basicApiToolEffect = (effect: BasicApiContract['effect']) => {
+  if (effect === 'read') return 'read'
+  if (effect === 'prepare') return 'prepare'
+  return 'mutation'
+}
+
+const basicApiResources = (effect: BasicApiContract['effect']) => {
+  if (effect === 'prepare') return ['request']
+  if (effect === 'viewport' || effect === 'selection') return [effect]
+  return ['document']
+}
+
 const basicApiRevision = (contract: BasicApiContract): number => {
   if (contract.result.kind === 'mutation-receipt') return 9
   if (
@@ -96,10 +108,8 @@ export const createBasicApiActions = (
   basicApiContracts.map((contract) => ({
     ...toolSemantics(
       basicApiResultSchema(contract),
-      contract.effect === 'read' ? 'read' : 'mutation',
-      ['viewport', 'selection'].includes(contract.effect)
-        ? [contract.effect]
-        : ['document']
+      basicApiToolEffect(contract.effect),
+      basicApiResources(contract.effect)
     ),
     partialOutputSchema: basicApiResultSchema(contract, true),
     ...(basicApiDeliverySchema(contract)
@@ -293,6 +303,7 @@ export const createBasicApiActions = (
       let settledResult: ReturnType<typeof finish> | undefined
       try {
         const value = await (contract.effect === 'read' ||
+        contract.effect === 'prepare' ||
         contract.effect === 'viewport'
           ? call()
           : runAiMutation(context, mutate, (value) => {

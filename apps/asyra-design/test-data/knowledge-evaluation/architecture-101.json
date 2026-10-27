@@ -6,7 +6,7 @@
   "contexts": [
     "architectural-illustration"
   ],
-  "deadlineMs": 600000,
+  "deadlineMs": 900000,
   "attachments": [
     {
       "path": "evidence/quality-2026-10-18/reference-0.jpg",
@@ -24,6 +24,6 @@
     "Visible foreground podium relationships retained instead of a generic plinth",
     "Coherent face lighting and material cues without unsupported detail claims"
   ],
-  "commonInstruction": "Before designing, use discover_knowledge and read_knowledge to read the specified advisory modules in the specified context. Apply useful guidance without changing this brief. An absence-of-advice notice is valid; continue using your own judgment. Do not ask questions or add explanatory text to the artwork.",
-  "comparison": "Latest user direction: new Knowledge only. One candidate run, no further control. Saved historical traces are diagnostic references, not matched causal controls."
+  "commonInstruction": "Knowledge is optional reference material available through discover_knowledge and read_knowledge. Consult the suggested modules or other relevant topics only if useful for a decision, at any stage or proceed without reading it. Apply useful guidance without changing this brief. Do not ask questions or add explanatory text to the artwork.",
+  "comparison": "Ordinary product observation with optional Knowledge consultation. No required read count or stage. Saved historical forced-reading traces use a different prompt condition and are diagnostic references, not matched causal controls."
 }

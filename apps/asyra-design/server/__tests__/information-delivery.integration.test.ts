@@ -61,10 +61,7 @@ it('delivers complete advice through bounded same-owner pages without source rel
   }
 })
 
-import {
-  createLocalOperationTools,
-  localToolResultInstructions
-} from '../local-operation-tools'
+import { createLocalOperationTools } from '../local-operation-tools'
 import { toolSemantics } from '../../src/ai/tool-contract'
 
 it('preserves the complete schema and execution route through bounded discovery pages', async () => {
@@ -118,6 +115,37 @@ it('preserves the complete schema and execution route through bounded discovery 
     if (page.lastPage) break
     input = page.next.arguments
   }
+  const saved = JSON.parse(text)
+  for (let i = 0; i < 63; i++)
+    await owner.call(
+      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      { names: ['unrelated-' + i] },
+      new AbortController().signal
+    )
+  let selectedInput: Record<string, unknown> = {
+    names: ['test_tools.choose'],
+    fromResult: saved.resultKey
+  }
+  let selectedText = ''
+  for (;;) {
+    const raw = await owner.call(
+      AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+      selectedInput,
+      new AbortController().signal
+    )
+    expect(
+      await owner.call(
+        AiDesignToolIds.DESCRIBE_DESIGN_APIS,
+        selectedInput,
+        new AbortController().signal
+      )
+    ).toBe(raw)
+    const page = JSON.parse(raw).contentDelivery
+    selectedText += page.text
+    if (page.lastPage) break
+    selectedInput = page.next.arguments
+  }
+  expect(JSON.parse(selectedText).tools).toEqual(saved.tools)
   const definition = JSON.parse(text).tools[0]
   expect(definition.inputSchema).toEqual(inputSchema)
   expect(definition.execution).toEqual({
@@ -140,7 +168,7 @@ it('preserves the complete schema and execution route through bounded discovery 
 import { invokeLocalTool } from '../local-tool-invocation'
 import { createHash } from 'node:crypto'
 
-it('retains every current Knowledge page in real native Code Mode successor requests', async () => {
+it('retains every current Knowledge page in real native direct successor requests', async () => {
   const nativeModule = new URL(
     '../../test-data/knowledge-evaluation/native-delivery.mjs',
     import.meta.url
@@ -187,7 +215,7 @@ it('retains every current Knowledge page in real native Code Mode successor requ
           ]
         }
       }
-      const evidence = await runNativeDelivery({ fixture, mode: 'code' })
+      const evidence = await runNativeDelivery({ fixture })
       expect(evidence.comparison.exact).toBe(true)
       expect(evidence.comparison.truncationMarker).toBe(false)
       expect(evidence.receipt.status).toBe('saved')
@@ -254,7 +282,6 @@ async function verifyNativePage(
   )
   expect(reply.success, reply.text.slice(0, 1200)).toBe(true)
   const evidence = await runNativeDelivery({
-    mode: 'code',
     fixture: {
       tool: definition.name,
       namespace,
@@ -284,343 +311,7 @@ async function verifyNativePage(
   return evidence.directory as string
 }
 
-import { runInNewContext } from 'node:vm'
-
-const advertisedExample = (description: string) => {
-  const code =
-    /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/.exec(
-      description
-    )?.[1]
-  expect(
-    code,
-    'Actual discovery description must deliver executable forwarding'
-  ).toBeTruthy()
-  if (!code) throw new Error('Missing advertised information example')
-  return code
-}
-
-const forwardingOwner = () => {
-  const native = {
-    name: 'choose',
-    namespace: 'example_tools',
-    description: 'Choose a permitted value.',
-    inputSchema: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['choice'],
-      properties: {
-        choice: {
-          enum: Array.from({ length: 700 }, (_, i) =>
-            `${i}: declared constraint 材質🌲 "quoted". `.repeat(3)
-          )
-        }
-      }
-    },
-    ...toolSemantics({ type: 'object' }, 'read', [])
-  }
-  const dispatch = vi.fn()
-  const owner = createLocalOperationTools(
-    basicApiContracts,
-    { modelActions: (a) => a, resolveBatch: (v) => v },
-    dispatch,
-    { getNativeTools: () => [native] }
-  )
-  const definition = owner.definitions.find(
-    (d) => d.name === 'describe_design_apis'
-  )
-  if (!definition) throw new Error('Missing discovery definition')
-  const code = advertisedExample(definition.description)
-  const values = new Map<string, unknown>()
-  const output: string[] = []
-  const forward = (result: string, deliveryKey = 'contract') =>
-    runInNewContext(code, {
-      result,
-      deliveryKey,
-      load: (key: string) => structuredClone(values.get(key)),
-      store: (key: string, value: unknown) =>
-        values.set(key, structuredClone(value)),
-      text: (text: string) => output.push(text)
-    })
-  const read = async (input: Record<string, unknown>) =>
-    invokeLocalTool(owner, definition, input, new AbortController().signal)
-  return {
-    owner,
-    definition,
-    native,
-    code,
-    values,
-    output,
-    forward,
-    read,
-    dispatch
-  }
-}
-
-it('executes actual advertised information forwarding and replays retained pages without reads', async () => {
-  const h = forwardingOwner()
-  let input: Record<string, unknown> = { names: ['example_tools.choose'] }
-  const pages: string[] = []
-  for (let i = 0; i < 20; i++) {
-    const reply = await h.read(input)
-    expect(reply.success).toBe(true)
-    pages.push(reply.text)
-    h.forward(reply.text)
-    expect(h.output.at(-1)).toBe(reply.text)
-    const page = JSON.parse(reply.text).contentDelivery
-    if (page.lastPage) break
-    input = page.next.arguments
-    expect(h.values.get('contract')).toMatchObject({ complete: false })
-  }
-  const state = h.values.get('contract') as {
-    value: { tools: { inputSchema: unknown }[] }
-    pages: string[]
-    complete: boolean
-  }
-  expect(state.complete).toBe(true)
-  expect(state.value.tools[0].inputSchema).toEqual(h.native.inputSchema)
-  expect(state.pages).toEqual(pages)
-  for (const page of state.pages) h.forward(page)
-  expect(h.values.get('contract')).toEqual(state)
-  expect(h.output).toEqual([...pages, ...pages])
-  expect(h.dispatch).not.toHaveBeenCalled()
-})
-
-const collectForwardingPages = async (
-  h: ReturnType<typeof forwardingOwner>,
-  query: Record<string, unknown> = { names: ['example_tools.choose'] }
-) => {
-  let input = query
-  const pages: { input: Record<string, unknown>; raw: string }[] = []
-  for (let i = 0; i < 20; i++) {
-    const reply = await h.read(input)
-    expect(reply.success).toBe(true)
-    pages.push({ input, raw: reply.text })
-    const page = JSON.parse(reply.text).contentDelivery
-    if (!page || page.lastPage) return pages
-    input = page.next.arguments
-  }
-  throw new Error('Information did not terminate')
-}
-
-it('rejects incomplete or incoherent advertised-example input while preserving retained content', async () => {
-  const h = forwardingOwner()
-  const pages = await collectForwardingPages(h)
-  expect(pages.length).toBeGreaterThan(2)
-  expect(() => h.forward(pages[pages.length - 1].raw)).toThrow(/Missing/)
-  expect(h.values.size).toBe(0)
-  h.forward(pages[0].raw)
-  const before = structuredClone(h.values.get('contract'))
-  expect(() => h.forward(pages[2].raw)).toThrow(/Missing/)
-  for (const change of [
-    { revision: '0'.repeat(64) },
-    { endByte: 1 },
-    { totalBytes: 1 },
-    { text: 'changed' },
-    { lastPage: true },
-    { next: null }
-  ]) {
-    const value = JSON.parse(pages[1].raw)
-    Object.assign(value.contentDelivery, change)
-    if ('revision' in change)
-      value.contentDelivery.next.arguments.contentPage.revision =
-        change.revision
-    expect(() => h.forward(JSON.stringify(value))).toThrow()
-    expect(h.values.get('contract')).toEqual(before)
-  }
-  expect(() => h.forward(JSON.stringify({ text: 'x'.repeat(25000) }))).toThrow(
-    /bounded/
-  )
-  expect(h.values.get('contract')).toEqual(before)
-  const failed = await h.read({
-    names: ['example_tools.choose'],
-    contentPage: { revision: '0'.repeat(64), offset: 0 }
-  })
-  expect(failed.success).toBe(false)
-  h.forward(failed.text)
-  expect(h.output.at(-1)).toBe(failed.text)
-  expect(h.values.get('contract')).toEqual(before)
-  const abort = new AbortController()
-  abort.abort()
-  await expect(
-    invokeLocalTool(
-      h.owner,
-      h.definition,
-      { names: ['example_tools.choose'] },
-      abort.signal
-    )
-  ).rejects.toThrow(/aborted/)
-  expect(h.values.get('contract')).toEqual(before)
-  h.values.clear()
-  expect(() => h.forward(pages[1].raw)).toThrow(/Missing/)
-  const refreshed = await collectForwardingPages(h, {
-    names: ['example_tools.choose'],
-    refresh: true,
-    refreshReason: 'delivery-failure'
-  })
-  for (const page of refreshed) h.forward(page.raw, 'refreshed-contract')
-  expect(h.values.get('refreshed-contract')).toMatchObject({ complete: true })
-  expect(h.dispatch).not.toHaveBeenCalled()
-})
-
-it('preserves small and partial contracts through the actual advertised example', async () => {
-  const h = forwardingOwner()
-  for (const [key, query] of Object.entries({
-    usage: { names: ['example_tools.choose'], view: 'usage' },
-    partial: {
-      names: ['example_tools.choose'],
-      schemaPaths: ['/properties/choice']
-    }
-  })) {
-    const pages = await collectForwardingPages(h, query)
-    for (const page of pages) h.forward(page.raw, key)
-    const retained = h.values.get(key) as { complete: boolean; value: unknown }
-    expect(retained.complete).toBe(true)
-    const canonical = pages
-      .map((page) => JSON.parse(page.raw).contentDelivery?.text ?? page.raw)
-      .join('')
-    expect(retained.value).toEqual(JSON.parse(canonical))
-    if (key === 'partial') {
-      const tool = (
-        retained.value as {
-          tools: {
-            schemaContext: unknown
-            schemaFragments: { schema: unknown }[]
-          }[]
-        }
-      ).tools[0]
-      expect(tool.schemaContext).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            schema: expect.objectContaining({
-              required: ['choice'],
-              additionalProperties: false
-            })
-          })
-        ])
-      )
-      expect(tool.schemaFragments[0].schema).toEqual(
-        h.native.inputSchema.properties.choice
-      )
-    }
-  }
-})
-
-it('executes the delivered forwarding example in native Code Mode without cutting required contracts', async () => {
-  const h = forwardingOwner()
-  const pages = await collectForwardingPages(h)
-  const namespace = 'design_operations'
-  const executions = pages.map((page, index) => ({
-    input: page.input,
-    reply: page.raw,
-    code: `const deliveryKey = "contract"; const result = await tools.${namespace}__${h.definition.name}(${index ? 'load(deliveryKey).next.arguments' : JSON.stringify(page.input)});\n${h.code}`,
-    expected: page.raw
-  }))
-  const summary = {
-    complete: true,
-    required: ['choice'],
-    additionalProperties: false,
-    count: h.native.inputSchema.properties.choice.enum.length
-  }
-  executions.push({
-    input: {},
-    reply: '',
-    code: 'const s = load("contract"); const schema = s.value.tools[0].inputSchema; text(JSON.stringify({complete:s.complete,required:schema.required,additionalProperties:schema.additionalProperties,count:schema.properties.choice.enum.length}));',
-    expected: JSON.stringify(summary)
-  })
-  executions.push({
-    input: {},
-    reply: '',
-    code: `const deliveryKey = "contract"; const result = load(deliveryKey).pages[0];\n${h.code}`,
-    expected: pages[0].raw
-  })
-  const canonical = pages
-    .map((page) => JSON.parse(page.raw).contentDelivery.text)
-    .join('')
-  const oversizedIndex = executions.length
-  executions.push({
-    input: {},
-    reply: '',
-    code: 'text(JSON.stringify(load("contract").value));',
-    expected: canonical
-  })
-  executions.push({
-    input: {},
-    reply: '',
-    code: 'text(load("contract").pages.join("\\n"));',
-    expected: pages.map((p) => p.raw).join('\n')
-  })
-  executions.push({
-    input: {},
-    reply: '',
-    code: `const deliveryKey = "contract"; const result = load(deliveryKey).pages.at(-1);\n${h.code}`,
-    expected: pages[pages.length - 1].raw
-  })
-  const nativeModule = new URL(
-    '../../test-data/knowledge-evaluation/native-delivery.mjs',
-    import.meta.url
-  ).href
-  const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
-  const result = await runNativeDelivery({
-    mode: 'code',
-    executions,
-    fixture: {
-      tool: h.definition.name,
-      namespace,
-      input: pages[0].input,
-      raw: pages[0].raw,
-      sha256: createHash('sha256').update(pages[0].raw).digest('hex'),
-      nativeVersion: 'codex-cli 0.160.0',
-      kind: 'advertised-information-forwarding',
-      declaration: {
-        type: 'namespace',
-        name: namespace,
-        description: 'Actual information owner',
-        tools: [
-          {
-            type: 'function',
-            name: h.definition.name,
-            description: h.definition.description,
-            inputSchema: h.definition.inputSchema,
-            deferLoading: true
-          }
-        ]
-      }
-    }
-  })
-  expect(result.nativeReplies).toBe(pages.length)
-  expect(result.cleanup.errors).toEqual([])
-  expect(result.receipt.status).toBe('saved')
-  result.comparisons.forEach(
-    (
-      comparison: {
-        exact: boolean
-        truncationMarker: boolean
-        omission?: { bytes: number }
-      },
-      index: number
-    ) => {
-      if (index === oversizedIndex || index === oversizedIndex + 1) {
-        expect(comparison.exact).toBe(false)
-        expect(comparison.truncationMarker).toBe(true)
-        expect(comparison.omission?.bytes).toBeGreaterThan(0)
-      } else
-        expect(
-          comparison.exact,
-          `Execution ${index}; ${result.directory}`
-        ).toBe(true)
-    }
-  )
-  expect(h.dispatch).not.toHaveBeenCalled()
-  console.log(
-    JSON.stringify({
-      evidence: result.directory,
-      pages: pages.length,
-      executions: executions.length
-    })
-  )
-}, 60000)
-
-it('forwards complete selected Knowledge topics through the published example into native successor requests', async () => {
+it('forwards complete selected Knowledge topics through direct owner delivery into native successor requests', async () => {
   const { default: recorded } =
     await import('./fixtures/recorded-101/knowledge-topic-selection-20261021.json')
   const nativeModule = new URL(
@@ -634,7 +325,6 @@ it('forwards complete selected Knowledge topics through the published example in
       (tool) => tool.name === AiDesignToolIds.READ_KNOWLEDGE
     )
     if (!definition) throw new Error('Missing Knowledge read definition')
-    const code = advertisedExample(localToolResultInstructions)
     const executions = []
     for (const entry of recorded.cases) {
       const reply = await invokeLocalTool(
@@ -654,13 +344,11 @@ it('forwards complete selected Knowledge topics through the published example in
       executions.push({
         input: entry.input,
         reply: reply.text,
-        code: `const deliveryKey = ${JSON.stringify(entry.topic)}; const result = await tools.design_knowledge__read_knowledge(${JSON.stringify(entry.input)});\n${code}`,
         expected: reply.text
       })
     }
     const first = executions[0]
     const result = await runNativeDelivery({
-      mode: 'code',
       executions,
       fixture: {
         tool: definition.name,
@@ -868,7 +556,7 @@ it('keeps cross-query pages byte-stable and rejects stale continuation without w
   }
 })
 
-it('forwards cross-query held advice and the actual reuse example through native Code Mode', async () => {
+it('forwards cross-query held advice and the actual reuse example through native direct calls', async () => {
   const { default: recorded } =
     await import('./fixtures/recorded-101/knowledge-dependency-reuse-20261024.json')
   const nativeModule = new URL(
@@ -899,23 +587,19 @@ it('forwards cross-query held advice and the actual reuse example through native
     const args = { ...recorded.reads[1], reuseFrom: [previous.contextKey] }
     const second = await invokeLocalTool(owner, definition, args, signal)
     expect(second.success, second.text).toBe(true)
-    const forward = advertisedExample(localToolResultInstructions)
     const executions = [
       {
         input: recorded.reads[0],
         reply: first.text,
-        expected: first.text,
-        code: `const deliveryKey = "prior-advice"; const result = await tools.design_knowledge__read_knowledge(${JSON.stringify(recorded.reads[0])});\n${forward}`
+        expected: first.text
       },
       {
         input: args,
         reply: second.text,
-        expected: second.text,
-        code: `const previous = load("prior-advice").value; const ids = ${JSON.stringify(args.ids)}; const contexts = ${JSON.stringify(args.contexts)}; const read_knowledge = input => tools.design_knowledge__read_knowledge(input); const deliveryKey = "selected-advice"; const result = await ${expression};\n${forward}`
+        expected: second.text
       }
     ]
     const result = await runNativeDelivery({
-      mode: 'code',
       executions,
       fixture: {
         tool: definition.name,
@@ -957,258 +641,439 @@ it('forwards cross-query held advice and the actual reuse example through native
 }, 60000)
 
 // Rejected programs are immutable experiment evidence, never production helpers.
-it('rejects the withdrawn consumer prototype under the unchanged total-cost DoD', async () => {
-  const { readFile } = await import('node:fs/promises')
-  const { default: experiment } =
-    await import('./fixtures/recorded-101/rejected-knowledge-consumer-20261025.json')
-  const raw = await readFile(
-    new URL(
-      './fixtures/recorded-101/knowledge-source-delivery-20261025.json',
-      import.meta.url
-    )
-  )
-  expect(createHash('sha256').update(raw).digest('hex')).toBe(
-    experiment.knowledgeFixtureSha256
-  )
-  const recorded: {
-    ordinaryQueries: Record<string, unknown>[]
-    files: {
-      id: string
-      revision: number
-      markdownBase64: string
-      sha256: string
-    }[]
-  } = JSON.parse(raw.toString())
-  const replayFiles = recorded.files.map((file) => {
-    const markdown = Buffer.from(file.markdownBase64, 'base64')
-    expect(createHash('sha256').update(markdown).digest('hex')).toBe(
-      file.sha256
-    )
-    return {
-      id: file.id,
-      revision: file.revision,
-      markdown: markdown.toString()
-    }
-  })
-  const replay = async (kind: 'baseline' | 'candidate') => {
-    const script = experiment[kind]
-    const body = `${script.prelude}\n${script.forward}`
-    expect(createHash('sha256').update(body).digest('hex')).toBe(
-      script.programSha256
-    )
-    const owner = createLocalKnowledgeTools(
-      `cost-${kind}`,
-      async () => replayFiles
-    )
-    const definition = owner.definitions.find(
-      (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
-    )
-    if (!definition) throw new Error('Missing Knowledge read definition')
-    const memory = new Map<string, ReturnType<typeof JSON.parse>>()
-    const calls: { input: Record<string, unknown>; text: string }[] = []
-    const outputs: string[] = []
-    const documents: unknown[] = []
-    const sources: unknown[] = []
-    let programBytes = 0
-    let completeProgramBytes = 0
-    try {
-      for (const [index, query] of recorded.ordinaryQueries.entries()) {
-        // Ordinary forwarding requires a query-specific key. The rejected program
-        // explicitly required one stable key across different queries.
-        const deliveryKey =
-          kind === 'baseline' ? `knowledge-${index}` : 'knowledge'
-        const code = `const query = ${JSON.stringify(query)}; const deliveryKey = ${JSON.stringify(deliveryKey)}; const read_knowledge = input => tools.design_knowledge__read_knowledge(input);\n${body}`
-        programBytes += Buffer.byteLength(body)
-        completeProgramBytes += Buffer.byteLength(code)
-        await runInNewContext(`(async () => { ${code} })()`, {
-          load: (key: string) => memory.get(key),
-          store: (key: string, value: unknown) =>
-            memory.set(key, structuredClone(value)),
-          text: (value: string) => outputs.push(value),
-          tools: {
-            design_knowledge__read_knowledge: async (
-              input: Record<string, unknown>
-            ) => {
-              const reply = await invokeLocalTool(
-                owner,
-                definition,
-                input,
-                new AbortController().signal
-              )
-              expect(reply.success, reply.text).toBe(true)
-              expect(JSON.parse(reply.text).contentDelivery).toBeUndefined()
-              calls.push({ input: structuredClone(input), text: reply.text })
-              return reply.text
-            }
-          }
-        })
-        const saved = memory.get(deliveryKey)
-        expect(saved.complete).toBe(true)
-        expect(saved.next).toBeNull()
-        expect(
-          saved.value.documents.every(
-            (doc: { text?: string }) => typeof doc.text === 'string'
-          )
-        ).toBe(true)
-        documents.push(structuredClone(saved.value.documents))
-        sources.push(structuredClone(saved.value.sources))
+it('redisplays selected retained tool contracts without rebuilding schemas or replaying execution', async () => {
+  let projections = 0
+  let revision = 0
+  const schema = {
+    type: 'object',
+    required: ['value'],
+    properties: {
+      value: {
+        type: 'string',
+        get description() {
+          projections++
+          return 'Required source constraint. '.repeat(20)
+        }
       }
-      expect(outputs).toEqual(calls.map((call) => call.text))
-      return {
-        calls,
-        documents,
-        sources,
-        programBytes,
-        completeProgramBytes,
-        guideBytes:
-          Buffer.byteLength(script.description) +
-          Buffer.byteLength(script.forward),
-        exchangeBytes: calls.reduce(
-          (total, call) =>
-            total +
-            Buffer.byteLength(JSON.stringify(call.input)) +
-            Buffer.byteLength(call.text),
-          0
-        )
-      }
-    } finally {
-      owner.dispose()
-    }
+    },
+    additionalProperties: false
   }
-  const baseline = await replay('baseline')
-  const candidate = await replay('candidate')
-  expect(candidate.documents).toEqual(baseline.documents)
-  expect(candidate.sources).toEqual(baseline.sources)
-  expect(baseline.calls).toHaveLength(recorded.ordinaryQueries.length)
-  expect(candidate.calls).toHaveLength(baseline.calls.length)
-  expect(baseline.calls.every((call) => !call.input.reuseFrom)).toBe(true)
-  expect(candidate.calls[1].input.reuseFrom).toEqual([
-    JSON.parse(candidate.calls[0].text).contextKey
-  ])
-  expect(candidate.exchangeBytes).toBeLessThan(baseline.exchangeBytes)
-  const guideDelta = candidate.guideBytes - baseline.guideBytes
-  const before = baseline.exchangeBytes + baseline.programBytes
-  const after = candidate.exchangeBytes + candidate.programBytes + guideDelta
-  // Keep the optimization decision separate from successful rejection replay.
-  // The original strict reduction criterion remains unchanged and is NOT met.
-  const meetsFixedDoD =
-    after < before && candidate.calls.length <= baseline.calls.length
-  expect({ decision: meetsFixedDoD ? 'accepted' : 'rejected' }).toEqual({
-    decision: experiment.decision
+  const tools = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((name) => ({
+    name,
+    namespace: 'retained_test',
+    description: 'Original operation',
+    inputSchema: schema,
+    ...toolSemantics({ type: 'object' }, 'read', [])
+  }))
+  const dispatch = vi.fn()
+  const owner = createLocalOperationTools(
+    basicApiContracts,
+    { modelActions: (a) => a, resolveBatch: (v) => v },
+    dispatch,
+    { getNativeTools: () => tools, getNativeToolsRevision: () => revision }
+  )
+  const name = AiDesignToolIds.DESCRIBE_DESIGN_APIS
+  const definition = requiredInformationTool(owner, name)
+  const read = async (args: Record<string, unknown>) => {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      args,
+      new AbortController().signal
+    )
+    expect(reply.success, reply.text).toBe(true)
+    return JSON.parse(reply.text)
+  }
+  const original = await read({
+    names: tools.map((t) => 'retained_test.' + t.name)
   })
-  const beforeComplete =
-    baseline.exchangeBytes + baseline.completeProgramBytes + baseline.guideBytes
-  const afterComplete =
-    candidate.exchangeBytes +
-    candidate.completeProgramBytes +
-    candidate.guideBytes
-  expect(afterComplete).toBeGreaterThan(beforeComplete)
+  expect(original.resultKey).toEqual(expect.any(String))
+  const count = projections
+  const expression = definition.description
+    .split('`')
+    .find((part) =>
+      part.startsWith('describe_design_apis({ names, fromResult:')
+    )
+  expect(expression).toBeDefined()
+  const selected = await new Function(
+    'describe_design_apis',
+    'names',
+    'previous',
+    'return ' + expression
+  )(read, ['retained_test.a', 'retained_test.c'], original)
+  expect(projections).toBe(count)
+  const { resultKey: _key, ...withoutHandle } = original
+  const coldBytes = Buffer.byteLength(JSON.stringify(original))
+  const selectedBytes = Buffer.byteLength(JSON.stringify(selected))
+  const baselineBytes = 2 * Buffer.byteLength(JSON.stringify(withoutHandle))
+  expect(coldBytes + selectedBytes).toBeLessThan(baselineBytes)
   process.stdout.write(
     JSON.stringify({
-      measurement: 'rejected-consumer-cost',
-      before,
-      after,
-      baselineExchange: baseline.exchangeBytes,
-      candidateExchange: candidate.exchangeBytes,
-      guideDelta,
-      baselinePrograms: baseline.programBytes,
-      candidatePrograms: candidate.programBytes,
-      beforeComplete,
-      afterComplete,
-      meetsFixedDoD
+      measurement: 'retained-tool-selection',
+      coldBytes,
+      selectedBytes,
+      baselineBytes,
+      repeatedProjectionReads: projections - count
     }) + '\n'
   )
+  expect(selected.tools).toEqual(
+    original.tools.filter((t: { name: string }) => ['a', 'c'].includes(t.name))
+  )
+  expect(
+    JSON.stringify(original).length + JSON.stringify(selected).length
+  ).toBeLessThan(2 * JSON.stringify(original).length)
+  expect(
+    await read({
+      names: ['retained_test.a', 'retained_test.c'],
+      fromResult: original.resultKey
+    })
+  ).toEqual(selected)
+  expect(dispatch).not.toHaveBeenCalled()
+  revision++
+  tools[0].description = 'Changed operation'
+  const stale = await invokeLocalTool(
+    owner,
+    definition,
+    { names: ['retained_test.a'], fromResult: original.resultKey },
+    new AbortController().signal
+  )
+  expect(stale.success).toBe(false)
+  expect(stale.text).toContain('fromResult')
+  const fresh = await read({ names: ['retained_test.a'] })
+  expect(fresh.tools[0].description).toBe('Changed operation')
+  expect(dispatch).not.toHaveBeenCalled()
 })
 
-it.each([
-  { label: 'registered guide', explanation: '' },
-  {
-    label: 'additional explanation',
-    explanation:
-      '\nRetain required advice until the dependent operation is complete.'
+it('executes published retained Knowledge selection with dependencies and read-only recovery', async () => {
+  const load = vi.fn(async () =>
+    ['a.1', 'a.2', 'a.3', 'b', 'b.1', 'c.3', 'd.5'].map((id) => ({
+      id,
+      revision: 1,
+      markdown:
+        '---\n' +
+        JSON.stringify({
+          description: id,
+          provenance: ['Formal selection fixture'],
+          ...(id === 'a.3' || id === 'c.3' ? { references: ['b'] } : {})
+        }) +
+        '\n---\n' +
+        (id + ' required advice. ').repeat(15)
+    }))
+  )
+  const owner = createLocalKnowledgeTools('selected-wire', load)
+  const definition = requiredInformationTool(
+    owner,
+    AiDesignToolIds.READ_KNOWLEDGE
+  )
+  const read = async (input: Record<string, unknown>) => {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      input,
+      new AbortController().signal
+    )
+    expect(reply.success, reply.text).toBe(true)
+    return JSON.parse(reply.text)
   }
-])(
-  'keeps published forwarding independent from incidental consumer adapter bindings with $label',
-  async ({ explanation }) => {
-    const owner = createLocalKnowledgeTools(
-      'independent-forwarding',
-      async () => files
-    )
-    const definition = owner.definitions.find(
-      (d) => d.name === AiDesignToolIds.READ_KNOWLEDGE
-    )
-    if (!definition) throw new Error('Missing Knowledge read definition')
-    // A description can gain valid advice without changing its executable contract.
-    const description = definition.description + explanation
-    const memory = new Map<string, ReturnType<typeof JSON.parse>>()
-    const incidentalSave = vi.fn(() => {
-      throw new Error('Unrelated state must not intercept forwarding')
+  try {
+    const original = await read({
+      ids: ['a.1', 'a.2', 'a.3', 'b', 'b.1', 'c.3', 'd.5']
     })
-    const forward = advertisedExample(localToolResultInstructions)
-    let input: Record<string, unknown> = { ids: ['test.advice'] }
-    try {
-      for (let pages = 0; pages < 20; pages++) {
-        const reply = await invokeLocalTool(
+    const expression = definition.description
+      .split('`')
+      .find((part) => part.startsWith('read_knowledge({ ids, fromResult:'))
+    expect(expression).toBeDefined()
+    const selected = await new Function(
+      'read_knowledge',
+      'ids',
+      'previous',
+      'return ' + expression
+    )(read, ['a.3', 'c.3'], original)
+    expect(selected.documents.map((d: { target: string }) => d.target)).toEqual(
+      ['b', 'a.3', 'c.3']
+    )
+    expect(
+      selected.documents.every((d: { text?: string }) => Boolean(d.text))
+    ).toBe(true)
+    expect(selected.contextKey).not.toBe(original.contextKey)
+    expect(Buffer.byteLength(JSON.stringify(selected))).toBeLessThan(
+      Buffer.byteLength(JSON.stringify(original))
+    )
+    owner.invalidateContext()
+    const failed = await invokeLocalTool(
+      owner,
+      definition,
+      { ids: ['a.3', 'c.3'], fromResult: original.contextKey },
+      new AbortController().signal
+    )
+    expect(failed.success).toBe(false)
+    expect(failed.text).toContain('without fromResult/reuseFrom')
+    const recovery = definition.description.includes(
+      'ordinary ids/contexts reads'
+    )
+    expect(recovery).toBe(true)
+    expect(
+      (await read({ ids: ['a.3', 'c.3'] })).documents.map(
+        (d: { target: string }) => d.target
+      )
+    ).toEqual(['b', 'a.3', 'c.3'])
+    expect(load).toHaveBeenCalledTimes(1)
+  } finally {
+    owner.dispose()
+  }
+})
+
+it('preserves saved discovery scope, partial results, ambiguity and foreign-key isolation', async () => {
+  const native = ['left', 'right'].map((namespace) => ({
+    namespace,
+    name: 'choose',
+    description: 'Choose a permitted value',
+    inputSchema: {
+      type: 'object',
+      required: ['choice'],
+      additionalProperties: false,
+      properties: { choice: { enum: ['one', 'two'] } }
+    },
+    ...toolSemantics({ type: 'object' }, 'read', [])
+  }))
+  const make = () =>
+    createLocalOperationTools(
+      basicApiContracts,
+      { modelActions: (a) => a, resolveBatch: (v) => v },
+      vi.fn(),
+      { getNativeTools: () => native, getNativeToolsRevision: () => 0 }
+    )
+  const owner = make()
+  const name = AiDesignToolIds.DESCRIBE_DESIGN_APIS
+  const definition = requiredInformationTool(owner, name)
+  const read = async (input: Record<string, unknown>) =>
+    JSON.parse(
+      (
+        await invokeLocalTool(
           owner,
           definition,
           input,
           new AbortController().signal
         )
-        expect(reply.success).toBe(true)
-        const output: string[] = []
-        runInNewContext(forward, {
-          result: reply.text,
-          deliveryKey: 'independent-advice',
-          informationState: { previous: undefined, save: incidentalSave },
-          load: (key: string) => memory.get(key),
-          store: (key: string, value: unknown) =>
-            memory.set(key, structuredClone(value)),
-          text: (value: string) => output.push(value)
-        })
-        expect(output).toEqual([reply.text])
-        const saved = memory.get('independent-advice')
-        if (saved.complete) break
-        input = saved.next.arguments
-      }
-      expect(incidentalSave).not.toHaveBeenCalled()
-      expect(memory.get('independent-advice').value.documents[0].text).toBe(
-        advice
-      )
-      const previous = memory.get('independent-advice').value
-      const expression = description.match(/`(read_knowledge\([^`]+\))`/)?.[1]
-      if (!expression)
-        throw new Error('Missing published explicit reuse example')
-      const read = vi.fn(async (args: Record<string, unknown>) => {
-        const reply = await invokeLocalTool(
-          owner,
-          definition,
-          JSON.parse(JSON.stringify(args)),
+      ).text
+    )
+  for (const scope of [
+    { view: 'usage' },
+    { view: 'full' },
+    { schemaPaths: ['/properties/choice'] }
+  ]) {
+    const saved = await read({
+      names: ['left.choose', 'right.choose'],
+      ...scope
+    })
+    const selected = await read({
+      names: ['left.choose'],
+      fromResult: saved.resultKey
+    })
+    expect(selected.tools).toEqual([saved.tools[0]])
+    expect(selected.tools[0].definition).toEqual(saved.tools[0].definition)
+    const partial = await read({
+      names: ['left.choose', 'absent'],
+      fromResult: saved.resultKey
+    })
+    expect(partial.tools).toEqual([saved.tools[0]])
+    expect(partial.missingNames).toEqual(['absent'])
+    expect(partial.toolOutcome.status).toBe('partial')
+    const ambiguous = await read({
+      names: ['choose'],
+      fromResult: saved.resultKey
+    })
+    expect(ambiguous.tools).toEqual([])
+    expect(ambiguous.ambiguousNames[0].candidates).toEqual([
+      'left.choose',
+      'right.choose'
+    ])
+    const foreign = make()
+    expect(
+      (
+        await invokeLocalTool(
+          foreign,
+          requiredInformationTool(foreign, name),
+          { names: ['left.choose'], fromResult: saved.resultKey },
           new AbortController().signal
         )
-        expect(reply.success, reply.text).toBe(true)
-        return reply.text
-      })
-      const reused = JSON.parse(
-        await runInNewContext(expression, {
-          read_knowledge: read,
-          ids: ['test.advice'],
-          contexts: undefined,
-          previous
-        })
+      ).success
+    ).toBe(false)
+    for (const extra of [
+      { refresh: true },
+      { view: 'full' },
+      { schemaPaths: ['/properties'] },
+      { inputScope: {} }
+    ]) {
+      expect(
+        (
+          await invokeLocalTool(
+            owner,
+            definition,
+            { names: ['left.choose'], fromResult: saved.resultKey, ...extra },
+            new AbortController().signal
+          )
+        ).success
+      ).toBe(false)
+    }
+    const abort = new AbortController()
+    abort.abort()
+    await expect(
+      owner.call(
+        name,
+        { names: ['left.choose'], fromResult: saved.resultKey },
+        abort.signal
       )
-      expect(read).toHaveBeenCalledTimes(1)
-      expect(read.mock.calls[0][0].reuseFrom).toEqual([previous.contextKey])
-      expect(reused.documents).toHaveLength(previous.documents.length)
-      const { retainedFrom, ...document } = reused.documents[0]
-      expect(retainedFrom).toBe(previous.contextKey)
-      expect(document).not.toHaveProperty('text')
-      expect({ ...document, text: previous.documents[0].text }).toEqual(
-        previous.documents[0]
-      )
-      expect(reused.sources).toEqual(previous.sources)
-      expect(description).toContain('rehydrate')
-    } finally {
-      owner.dispose()
+    ).rejects.toThrow()
+  }
+  const menu = await read({ query: 'left.choose' })
+  const selectedMenu = await read({
+    names: ['left.choose'],
+    fromResult: menu.resultKey
+  })
+  expect(selectedMenu.tools).toEqual(menu.tools)
+  expect(selectedMenu.tools[0].inputSchema).toBeUndefined()
+  const old = await read({ names: ['left.choose'] })
+  for (let i = 0; i < 65; i++) await read({ names: ['missing' + i] })
+  expect(
+    (await read({ names: ['left.choose'], fromResult: old.resultKey }))
+      .toolOutcome.status
+  ).toBe('failed')
+  expect((await read({ names: ['left.choose'] })).tools[0].inputSchema).toEqual(
+    native[0].inputSchema
+  )
+})
+
+it('keeps selected retained information page bytes stable at capacity without another source read', async () => {
+  const fillers = Array.from({ length: 63 }, (_, i) => ({
+    id: 'filler-' + i,
+    revision: 1,
+    markdown:
+      '---\n{"description":"Unrelated","provenance":["Test"]}\n---\nUnrelated advice.'
+  }))
+  const load = vi.fn(async () => [...files, ...fillers])
+  const owner = createLocalKnowledgeTools('selected-pages', load)
+  const tool = AiDesignToolIds.READ_KNOWLEDGE
+  const assemble = async (input: Record<string, unknown>) => {
+    let query = input,
+      text = ''
+    for (;;) {
+      const raw = await owner.call(tool, query, new AbortController().signal)
+      const page = JSON.parse(raw).contentDelivery
+      if (!page) return JSON.parse(raw)
+      text += page.text
+      if (page.lastPage) return JSON.parse(text)
+      query = page.next.arguments
     }
   }
-)
+  try {
+    const original = await assemble({ ids: ['test.advice'] })
+    for (const filler of fillers) await assemble({ ids: [filler.id] })
+    const query = { ids: ['test.advice'], fromResult: original.contextKey }
+    const raw = await owner.call(tool, query, new AbortController().signal)
+    expect(await owner.call(tool, query, new AbortController().signal)).toBe(
+      raw
+    )
+    const selected = await assemble(query)
+    expect(selected.documents).toEqual(original.documents)
+    expect(load).toHaveBeenCalledTimes(1)
+    owner.invalidateContext()
+    await expect(
+      owner.call(
+        tool,
+        JSON.parse(raw).contentDelivery.next.arguments,
+        new AbortController().signal
+      )
+    ).rejects.toThrow('unavailable')
+  } finally {
+    owner.dispose()
+  }
+})
+
+function requiredInformationTool(owner: LocalToolOwner, name: string) {
+  const definition = owner.definitions.find((entry) => entry.name === name)
+  if (!definition) throw new Error('Missing information tool: ' + name)
+  return definition
+}
+
+it('delivers native Knowledge search and complete owner content without a forwarding program', async () => {
+  const { runNativeDelivery } = await import(
+    /* @vite-ignore */ new URL(
+      '../../test-data/knowledge-evaluation/native-delivery.mjs',
+      import.meta.url
+    ).href
+  )
+  const owner = createLocalKnowledgeTools(
+    'direct-context-feasibility',
+    async () => [
+      {
+        id: 'test.constraints',
+        revision: 1,
+        markdown:
+          '---\n' +
+          JSON.stringify({
+            description: 'Required advice',
+            provenance: ['Formal fixture']
+          }) +
+          '\n---\n' +
+          'Preserve material order. Never replay completed writes. Advisory text does not authorize operations.'
+      }
+    ]
+  )
+  const definition = requiredInformationTool(
+    owner,
+    AiDesignToolIds.READ_KNOWLEDGE
+  )
+  const input = { ids: ['test.constraints'] }
+  try {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      input,
+      new AbortController().signal
+    )
+    expect(reply.success).toBe(true)
+    const evidence = await runNativeDelivery({
+      fixture: {
+        tool: definition.name,
+        namespace: 'design_knowledge',
+        input,
+        raw: reply.text,
+        nativeVersion: 'codex-cli 0.160.0',
+        sha256: createHash('sha256').update(reply.text).digest('hex'),
+        declaration: {
+          type: 'namespace',
+          name: 'design_knowledge',
+          description: 'Knowledge',
+          tools: [
+            {
+              type: 'function',
+              name: definition.name,
+              description: definition.description,
+              inputSchema: definition.inputSchema,
+              deferLoading: true
+            }
+          ]
+        }
+      },
+      searches: [
+        {
+          type: 'tool_search_call',
+          id: 'knowledge-search',
+          call_id: 'knowledge-search-call',
+          execution: 'client',
+          status: 'completed',
+          arguments: { query: definition.name, limit: 1 }
+        }
+      ]
+    })
+    expect(evidence.requests).toBe(3)
+    expect(evidence.searchResults[0][0].type).toBe('tool_search_output')
+    expect(evidence.nativeReplyExact).toBe(true)
+    expect(evidence.comparison.exact).toBe(true)
+    expect(evidence.comparison.truncationMarker).toBe(false)
+    expect(evidence.cleanup.errors).toEqual([])
+  } finally {
+    owner.dispose()
+  }
+}, 60000)

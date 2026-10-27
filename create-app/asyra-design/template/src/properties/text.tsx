@@ -1,121 +1,37 @@
-import { useEffect, useRef, useState } from 'react'
-import {
-  TEXT_PROPERTY_SCHEMA,
-  TEXT_PROPERTY_TYPE,
-  type TextData
-} from '@asyra/preset'
+import { getFeature } from '@asyra/core'
+import { FeatureNames } from '../constants'
+import { TEXT_PROPERTY_TYPE, type TextData } from '@asyra/preset'
 import { useProperty } from '../hooks'
-import { updateSelectedElementProperties } from '../controllers/scene-tree'
+import {
+  updateSelectedElementProperties,
+  updateSelectedTextStyle
+} from '../controllers/scene-tree'
+import Header from './header'
+import { TextField } from './text-field'
+import { FontFamilySelect, TextSelect } from './text-select'
 
-const fields = [
-  ['text', 'Content'],
-  ['fontFamily', 'Font family'],
-  ['fontSize', 'Font size'],
-  ['fontWeight', 'Weight'],
-  ['fontStyle', 'Style'],
-  ['textAlign', 'Alignment'],
-  ['lineHeight', 'Line height'],
-  ['letterSpacing', 'Letter spacing'],
-  ['textColor', 'Text color']
+const alignmentPaths = {
+  left: 'M3 4h12M3 8h8M3 12h12M3 16h8',
+  center: 'M3 4h12M5 8h8M3 12h12M5 16h8',
+  right: 'M3 4h12M7 8h8M3 12h12M7 16h8'
+} as const
+
+const fontStyles = [
+  {
+    id: 'regular',
+    label: 'Regular',
+    fontWeight: 'normal',
+    fontStyle: 'normal'
+  },
+  { id: 'italic', label: 'Italic', fontWeight: 'normal', fontStyle: 'italic' },
+  { id: 'bold', label: 'Bold', fontWeight: 'bold', fontStyle: 'normal' },
+  {
+    id: 'bold-italic',
+    label: 'Bold Italic',
+    fontWeight: 'bold',
+    fontStyle: 'italic'
+  }
 ] as const
-const choices: Partial<Record<keyof TextData, readonly string[]>> = {
-  fontWeight: ['normal', 'bold'],
-  fontStyle: ['normal', 'italic'],
-  textAlign: ['left', 'center', 'right']
-}
-
-const TextField = ({
-  field,
-  label,
-  value,
-  onCommit
-}: {
-  field: keyof TextData
-  label: string
-  value: string | number
-  onCommit(value: string | number): void
-}) => {
-  const [draft, setDraft] = useState(String(value))
-  const [invalid, setInvalid] = useState(false)
-  const cancelled = useRef(false)
-  useEffect(() => {
-    setDraft(String(value))
-    setInvalid(false)
-  }, [value])
-  const numeric = typeof value === 'number'
-  const commit = () => {
-    if (cancelled.current) {
-      cancelled.current = false
-      return
-    }
-    let next: string | number = draft
-    if (numeric) next = draft.trim() ? Number(draft) : NaN
-    const schema = TEXT_PROPERTY_SCHEMA.fields.find(
-      (entry) => entry.key === field
-    )
-    if (!schema?.validate?.(next)) {
-      setInvalid(true)
-      return
-    }
-    setInvalid(false)
-    if (next !== value) onCommit(next)
-  }
-  const props = {
-    'aria-label': label,
-    'aria-invalid': invalid,
-    className:
-      'w-full min-w-0 rounded bg-white/5 px-2 py-1 text-[12px] outline-none focus:ring-1 focus:ring-violet-400',
-    value: draft,
-    onChange: (
-      event: React.ChangeEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
-    ) => {
-      cancelled.current = false
-      setDraft(event.target.value)
-      setInvalid(false)
-    },
-    onBlur: commit,
-    onKeyDown: (
-      event: React.KeyboardEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
-    ) => {
-      event.stopPropagation()
-      if (event.key === 'Escape') {
-        cancelled.current = true
-        setDraft(String(value))
-        setInvalid(false)
-        event.currentTarget.blur()
-      }
-      if (event.key === 'Enter' && field !== 'text') event.currentTarget.blur()
-    }
-  }
-  let control = <input {...props} type={numeric ? 'number' : 'text'} />
-  const options = choices[field]
-  if (field === 'text') control = <textarea {...props} rows={3} />
-  else if (options)
-    control = (
-      <select {...props}>
-        {options.map((choice) => (
-          <option key={choice} value={choice}>
-            {choice}
-          </option>
-        ))}
-      </select>
-    )
-  return (
-    <label className="flex flex-col gap-1 text-[12px] text-white/60">
-      {label}
-      {control}
-      {invalid && (
-        <span role="alert" className="text-amber-300">
-          Enter a valid value.
-        </span>
-      )}
-    </label>
-  )
-}
 
 const TextProperties = () => {
   const selectedIds = useProperty<Set<string>>('elementSelection')
@@ -124,23 +40,127 @@ const TextProperties = () => {
     TEXT_PROPERTY_TYPE
   )
   if (!selectedId || !typography || typeof typography !== 'object') return null
+
+  const field = (
+    key: Exclude<keyof TextData, 'text'>,
+    label: string,
+    showLabel = false
+  ) => (
+    <TextField
+      key={`${selectedId}:${key}`}
+      field={key}
+      label={label}
+      showLabel={showLabel}
+      value={typography[key]}
+      onCommit={(value) => updateSelectedElementProperties(key, value)}
+    />
+  )
+
   return (
-    <section
-      aria-label="Typography"
-      className="flex flex-col gap-2 p-3"
-      onPointerDown={(event) => event.stopPropagation()}
-    >
-      <h3 className="text-[12px] font-medium">Typography</h3>
-      {fields.map(([field, label]) => (
-        <TextField
-          key={`${selectedId}:${field}`}
-          field={field}
-          label={label}
-          value={typography[field]}
-          onCommit={(value) => updateSelectedElementProperties(field, value)}
-        />
-      ))}
-    </section>
+    <div onPointerDown={(event) => event.stopPropagation()}>
+      <section aria-label="Typography">
+        <button
+          className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
+          onClick={() => {
+            const edit = getFeature(FeatureNames.EDIT_TEXT)?.editSelected as
+              (() => void) | undefined
+            edit?.()
+          }}
+        >
+          Edit text on Canvas
+        </button>
+        <Header label="Typography" />
+        <div className="flex flex-col pb-4">
+          <div className="grid grid-cols-1 items-center pl-4 pr-2 h-8 min-h-8">
+            <FontFamilySelect
+              value={typography.fontFamily}
+              onChange={(value) => {
+                if (value !== typography.fontFamily)
+                  updateSelectedElementProperties('fontFamily', value)
+              }}
+            />
+          </div>
+          <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
+            <TextSelect
+              label="Font style"
+              value={
+                fontStyles.find(
+                  (style) =>
+                    style.fontWeight === typography.fontWeight &&
+                    style.fontStyle === typography.fontStyle
+                )?.id ?? ''
+              }
+              options={fontStyles.map((style) => ({
+                value: style.id,
+                label: style.label
+              }))}
+              onChange={(value) => {
+                const style = fontStyles.find((entry) => entry.id === value)
+                if (
+                  style &&
+                  (style.fontWeight !== typography.fontWeight ||
+                    style.fontStyle !== typography.fontStyle)
+                ) {
+                  updateSelectedTextStyle({
+                    fontWeight: style.fontWeight,
+                    fontStyle: style.fontStyle
+                  })
+                }
+              }}
+            />
+            {field('fontSize', 'Font size')}
+          </div>
+          <div className="grid grid-cols-2 items-start gap-2 pl-4 pr-2 pt-2 pb-1">
+            {field('lineHeight', 'Line height', true)}
+            {field('letterSpacing', 'Letter spacing', true)}
+          </div>
+          <div className="pl-4 pr-2 pt-2 text-[11px] text-text-secondary">
+            Alignment
+          </div>
+          <div className="grid grid-cols-2 items-center gap-2 pl-4 pr-2 h-8 min-h-8">
+            <div
+              role="group"
+              aria-label="Text alignment"
+              className="grid h-6 w-full grid-cols-3 rounded-[3px] bg-panel-surface-hover"
+            >
+              {(Object.keys(alignmentPaths) as TextData['textAlign'][]).map(
+                (alignment) => (
+                  <button
+                    key={alignment}
+                    type="button"
+                    aria-label={`Align ${alignment}`}
+                    aria-pressed={typography.textAlign === alignment}
+                    title={`Align ${alignment}`}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    onKeyUp={(event) => event.stopPropagation()}
+                    className="flex h-6 items-center justify-center rounded-sm text-white/60 hover:bg-white/10 focus-visible:outline focus-visible:outline-border-focus aria-pressed:bg-white/15 aria-pressed:text-white"
+                    onClick={() => {
+                      if (typography.textAlign !== alignment)
+                        updateSelectedElementProperties('textAlign', alignment)
+                    }}
+                  >
+                    <svg
+                      aria-hidden="true"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 18 20"
+                      fill="none"
+                    >
+                      <path
+                        d={alignmentPaths[alignment]}
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }
 export default TextProperties

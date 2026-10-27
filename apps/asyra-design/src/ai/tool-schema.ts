@@ -4,24 +4,40 @@ const { isEqual } = lodash
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v)
 
-export const operationInputIssue = (
+export interface OperationInputIssue {
+  readonly instancePath: string
+  readonly keyword: string
+  readonly message: string
+}
+
+/** Structured diagnostics from the one canonical traversal, also used by recovery. */
+export const operationInputIssues = (
   value: unknown,
   schema: unknown,
   referenceRoot: unknown = schema,
   rootPath: 'arguments' | 'output' = 'arguments'
-): string | undefined => {
+): OperationInputIssue[] | undefined => {
   const visit = (
     v: unknown,
     s: unknown,
     path: string,
-    depth = 0
-  ): string[] | undefined => {
-    if (depth > 64) return [`${path}: value nesting exceeds validation depth`]
-    if (s === false) return [`${path}: disallowed value`]
+    depth = 0,
+    pointer = ''
+  ): OperationInputIssue[] | undefined => {
+    const childPath = (key: string | number) =>
+      pointer + '/' + String(key).replace(/~/g, '~0').replace(/\//g, '~1')
+    const issue = (
+      message: string,
+      keyword = 'validation',
+      instancePath = pointer
+    ): OperationInputIssue => ({ instancePath, keyword, message })
+    if (depth > 64)
+      return [issue(`${path}: value nesting exceeds validation depth`)]
+    if (s === false) return [issue(`${path}: disallowed value`)]
     if (!record(s)) return
     if (typeof s.$ref === 'string') {
       if (!s.$ref.startsWith('#/'))
-        return [`${path}: unsupported schema reference`]
+        return [issue(`${path}: unsupported schema reference`)]
       let resolved: unknown = referenceRoot
       for (const part of s.$ref.slice(2).split('/')) {
         const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
@@ -31,11 +47,23 @@ export const operationInputIssue = (
             ? (resolved as Record<string, unknown>)[key]
             : undefined
       }
-      if (resolved === undefined) return [`${path}: unknown schema reference`]
-      const issue = visit(v, resolved, path, depth + 1)
-      if (issue) return issue
+      if (resolved === undefined)
+        return [issue(`${path}: unknown schema reference`)]
+      const referencedIssue = visit(v, resolved, path, depth + 1, pointer)
+      if (referencedIssue) return referencedIssue
     }
-    const branchErrors: string[] = []
+    if (Object.hasOwn(s, 'not') && !visit(v, s.not, path, depth + 1, pointer))
+      return [
+        issue(
+          `${path}: ${
+            record(s.not) && typeof s.not.description === 'string'
+              ? s.not.description
+              : 'matches a forbidden combination'
+          }`,
+          'not'
+        )
+      ]
+    const branchErrors: OperationInputIssue[] = []
     for (const mode of ['oneOf', 'anyOf', 'allOf'] as const) {
       const options = s[mode]
       if (!Array.isArray(options)) continue
@@ -71,7 +99,7 @@ export const operationInputIssue = (
         }
       }
       const issues = candidates.map((option) =>
-          visit(v, option, path, depth + 1)
+          visit(v, option, path, depth + 1, pointer)
         ),
         passed = issues.filter((i) => !i).length
       if (
@@ -80,13 +108,14 @@ export const operationInputIssue = (
         (mode === 'allOf' && passed !== options.length)
       )
         branchErrors.push(
-          `${path}: ${mode} mismatch`,
+          issue(`${path}: ${mode} mismatch`, mode),
           ...issues.flatMap((issue) => issue ?? [])
         )
     }
-    if ('const' in s && v !== s.const) return [`${path}: unexpected constant`]
+    if ('const' in s && v !== s.const)
+      return [issue(`${path}: unexpected constant`)]
     if (Array.isArray(s.enum) && !s.enum.includes(v))
-      return [`${path}: value is outside the allowed choices`]
+      return [issue(`${path}: value is outside the allowed choices`)]
     let types: unknown[] = []
     if (Array.isArray(s.type)) types = s.type
     else if (typeof s.type === 'string') types = [s.type]
@@ -101,39 +130,63 @@ export const operationInputIssue = (
         return typeof v === type
       })
     )
-      return [`${path}: expected ${types.join(' or ')}`]
+      return [issue(`${path}: expected ${types.join(' or ')}`)]
     if (record(v)) {
       const props = record(s.properties) ? s.properties : {}
-      const errors: string[] = [...branchErrors]
+      const errors: OperationInputIssue[] = [...branchErrors]
       const count = Object.keys(v).length
       if (typeof s.minProperties === 'number' && count < s.minProperties)
-        errors.push(`${path}: too few properties`)
+        errors.push(issue(`${path}: too few properties`, 'minProperties'))
       if (typeof s.maxProperties === 'number' && count > s.maxProperties)
-        errors.push(`${path}: too many properties`)
+        errors.push(issue(`${path}: too many properties`, 'maxProperties'))
       if (Array.isArray(s.required))
         for (const k of s.required)
           if (typeof k === 'string' && !Object.hasOwn(v, k))
-            errors.push(`${path}.${k}: required field is missing`)
+            errors.push(
+              issue(
+                `${path}.${k}: required field is missing`,
+                'required',
+                childPath(k)
+              )
+            )
       for (const [key, item] of Object.entries(v)) {
+        if (Object.hasOwn(s, 'propertyNames')) {
+          const childIssue = visit(
+            key,
+            s.propertyNames,
+            `${path} property ${JSON.stringify(key)}`,
+            depth + 1,
+            childPath(key)
+          )
+          if (childIssue) errors.push(...childIssue)
+        }
         if (!Object.hasOwn(props, key) && s.additionalProperties === false) {
           errors.push(
-            `${path}.${key}: unknown field; allowed fields: ${Object.keys(props).join(', ')}`
+            issue(
+              `${path}.${key}: unknown field; allowed fields: ${Object.keys(props).join(', ')}`,
+              'additionalProperties',
+              childPath(key)
+            )
           )
         } else {
-          const issue = visit(
+          const childIssue = visit(
             item,
-            props[key] ?? s.additionalProperties,
+            Object.hasOwn(props, key) ? props[key] : s.additionalProperties,
             `${path}.${key}`,
-            depth + 1
+            depth + 1,
+            childPath(key)
           )
-          if (issue) errors.push(...issue)
+          if (childIssue) errors.push(...childIssue)
         }
         if (errors.length >= 12)
           return [
             ...errors,
-            rootPath === 'output'
-              ? 'Additional output diagnostics omitted'
-              : 'Correct these fields and retry for remaining diagnostics'
+            issue(
+              rootPath === 'output'
+                ? 'Additional output diagnostics omitted'
+                : 'Correct these fields and retry for remaining diagnostics',
+              'diagnosticLimit'
+            )
           ]
       }
       if (errors.length) return errors
@@ -146,39 +199,62 @@ export const operationInputIssue = (
           const item = v[i]
           if (item !== null && typeof item === 'object') {
             if (structures.some((previous) => isEqual(previous, item)))
-              return [`${path}[${i}]: duplicate item`]
+              return [
+                issue(
+                  `${path}[${i}]: duplicate item`,
+                  'uniqueItems',
+                  childPath(i)
+                )
+              ]
             structures.push(item)
           } else {
-            if (primitives.has(item)) return [`${path}[${i}]: duplicate item`]
+            if (primitives.has(item))
+              return [
+                issue(
+                  `${path}[${i}]: duplicate item`,
+                  'uniqueItems',
+                  childPath(i)
+                )
+              ]
             primitives.add(item)
           }
         }
       }
       if (typeof s.minItems === 'number' && v.length < s.minItems)
-        return [`${path}: too few items`]
+        return [issue(`${path}: too few items`)]
       if (typeof s.maxItems === 'number' && v.length > s.maxItems)
-        return [`${path}: too many items`]
-      const errors: string[] = []
+        return [issue(`${path}: too many items`)]
+      const errors: OperationInputIssue[] = []
       for (let i = 0; i < v.length; i++) {
         const itemSchema =
           Array.isArray(s.prefixItems) && i < s.prefixItems.length
             ? s.prefixItems[i]
             : s.items
-        const issue = visit(v[i], itemSchema, `${path}[${i}]`, depth + 1)
-        if (issue) errors.push(...issue)
+        const childIssue = visit(
+          v[i],
+          itemSchema,
+          `${path}[${i}]`,
+          depth + 1,
+          childPath(i)
+        )
+        if (childIssue) errors.push(...childIssue)
         if (errors.length >= 12)
           return [
             ...errors,
-            rootPath === 'output'
-              ? 'Additional output diagnostics omitted'
-              : 'Correct these items and retry for remaining diagnostics'
+            issue(
+              rootPath === 'output'
+                ? 'Additional output diagnostics omitted'
+                : 'Correct these items and retry for remaining diagnostics',
+              'diagnosticLimit'
+            )
           ]
       }
       if (errors.length) return errors
     }
     if (branchErrors.length) return branchErrors
     if (typeof v === 'number') {
-      if (!Number.isFinite(v)) return [`${path}: expected a finite number`]
+      if (!Number.isFinite(v))
+        return [issue(`${path}: expected a finite number`)]
       for (const [key, invalid] of [
         ['minimum', v < Number(s.minimum)],
         ['maximum', v > Number(s.maximum)],
@@ -186,19 +262,33 @@ export const operationInputIssue = (
         ['exclusiveMaximum', v >= Number(s.exclusiveMaximum)]
       ] as const)
         if (typeof s[key] === 'number' && invalid)
-          return [`${path}: violates ${key} ${s[key]}`]
+          return [issue(`${path}: violates ${key} ${s[key]}`, key)]
     }
     if (typeof v === 'string') {
       if (typeof s.minLength === 'number' && v.length < s.minLength)
-        return [`${path}: string is too short`]
+        return [issue(`${path}: string is too short`)]
       if (typeof s.maxLength === 'number' && v.length > s.maxLength)
-        return [`${path}: string is too long`]
+        return [issue(`${path}: string is too long`)]
       if (typeof s.pattern === 'string' && !new RegExp(s.pattern).test(v))
-        return [`${path}: string does not match its declared pattern`]
+        return [issue(`${path}: string does not match its declared pattern`)]
     }
   }
-  const issues = visit(value, schema, rootPath)
-  return issues ? [...new Set(issues)].join('; ').slice(0, 3000) : undefined
+  return visit(value, schema, rootPath)
+}
+
+export const formatOperationInputIssues = (
+  issues: readonly OperationInputIssue[]
+): string =>
+  [...new Set(issues.map((issue) => issue.message))].join('; ').slice(0, 3000)
+
+export const operationInputIssue = (
+  value: unknown,
+  schema: unknown,
+  referenceRoot: unknown = schema,
+  rootPath: 'arguments' | 'output' = 'arguments'
+): string | undefined => {
+  const issues = operationInputIssues(value, schema, referenceRoot, rootPath)
+  return issues ? formatOperationInputIssues(issues) : undefined
 }
 
 /** Keep reference resolution independent from invocation-stage diagnostics. */

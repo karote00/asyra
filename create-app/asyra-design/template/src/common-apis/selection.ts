@@ -33,6 +33,13 @@ const getSelectionIds = (selectionType: string): string[] => {
   return []
 }
 
+export class SelectionTargetUnavailableError extends Error {
+  constructor(elementId: string) {
+    super(`Selection target does not exist: ${elementId}`)
+    this.name = 'SelectionTargetUnavailableError'
+  }
+}
+
 export const selectionApis = {
   /**
    * Get currently selected element IDs
@@ -78,13 +85,17 @@ export const selectionApis = {
     const newIds = currentIds.includes(elementId)
       ? currentIds.filter((id: string) => id !== elementId)
       : [...currentIds, elementId]
-    core.selectElements(newIds, options)
+    selectionApis.selectElements(newIds, options)
   },
 
   /**
    * Set selected elements (delegates to core)
    */
   selectElements: (elementIds: string[], options?: EVENT_OPTIONS) => {
+    for (const elementId of elementIds) {
+      if (!core.getElementMetadata(elementId))
+        throw new SelectionTargetUnavailableError(elementId)
+    }
     core.selectElements(elementIds, options)
   },
 

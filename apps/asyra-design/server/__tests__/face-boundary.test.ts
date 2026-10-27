@@ -1,3 +1,4 @@
+import collision from './fixtures/recorded-101/boundary-identity-20261026.json'
 import { expect, it, vi } from 'vitest'
 import fixture from './fixtures/recorded-101/face-boundary-20261025.json'
 import { constructDesign } from '../design-construction'
@@ -308,7 +309,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
     }) + '\n'
   )
   const tool = JSON.parse(raw).tools[0]
-  expect(tool.usageGuide.parameters).toContain('face')
+  expect(JSON.stringify(tool.usageGuide.parameters)).toContain('face')
   const example = tool.invocationExample.invocation.arguments
   expect(JSON.stringify(example)).toContain('"boundary":{"face":')
   const definition = main.definitions[0]
@@ -539,4 +540,73 @@ it('keeps an independent inline boundary unchanged when a nearby face is repaire
     before.entries.find((e) => e.key === 'panel')
   )
   expect(resolveSurfaceBoundaries(draft)).toBe(draft)
+})
+
+it('recovers recorded ambiguous face keys through returned field repair without resending geometry', async () => {
+  const applied: import('../../src/ai/prepared-design').PreparedDesign[] = []
+  const actions = [
+    AiActionNames.APPLY_PREPARED_DESIGN,
+    AiActionNames.INSPECT_DRAWING
+  ].map((name) => ({ name, description: name, inputSchema: {} }))
+  const designs = createLocalDesignTools(actions)
+  const execute = vi.fn(
+    async (
+      batch: import('../../src/ai/action-batch-protocol').AiActionBatch
+    ) => ({
+      context: {},
+      actionResults: batch.actions.map((a) => {
+        const design = admitPreparedDesignDelivery(
+          (a.arguments as { design: unknown }).design
+        )
+        applied.push(design)
+        return {
+          actionId: a.id,
+          actionName: a.name,
+          result: {
+            status: 'complete',
+            appliedElementCount: design.entries.length,
+            compositionId: design.entries[0].descriptor.id
+          }
+        }
+      })
+    })
+  )
+  const operations = createLocalOperationTools(actions, designs, execute)
+  const main = createLocalDesignWorkflow(designs, operations)
+  const signal = new AbortController().signal
+  const call = async (input: unknown) =>
+    JSON.parse(
+      (await invokeLocalTool(main, main.definitions[0], input, signal)).text
+    )
+  const input = { ...collision.input, inspection: 'defer' }
+  const failure = await call(input)
+  expect(failure.toolOutcome.settlement).toBe('not-started')
+  expect(execute).not.toHaveBeenCalled()
+  expect(failure.conflicts, JSON.stringify(failure)).toEqual([
+    { key: 'podium-x', paths: ['/children/0/key', '/children/3/key'] },
+    { key: 'podium-y', paths: ['/children/1/key', '/children/4/key'] }
+  ])
+  expect(failure.repairGuide.tool).toBe(main.definitions[0].name)
+  expect(failure.repairGuide.arguments.draft).toBeUndefined()
+  const repair = failure.repairGuide.arguments
+  // Preserve the referenced face key; replace only the colliding grid key.
+  repair.repair.replacements = failure.conflicts.map(
+    (item: { key: string; paths: string[] }) => ({
+      path: item.paths[1],
+      value: `${item.key}-grid`
+    })
+  )
+  const result = await call(repair)
+  expect(result.toolOutcome.settlement).toBe('completed')
+  expect(execute).toHaveBeenCalledTimes(1)
+  const expected = structuredClone(collision.input.draft)
+  for (const node of expected.children)
+    if (
+      node.type === 'surface-grid' &&
+      ['podium-x', 'podium-y'].includes(node.key)
+    )
+      node.key += '-grid'
+  expect(applied[0].entries).toEqual(
+    prepareDesign(expected, result.artifactId).entries
+  )
 })

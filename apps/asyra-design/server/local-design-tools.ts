@@ -1,3 +1,4 @@
+import { isReservedDraftRepairKey } from './design-draft-repair'
 import {
   toolResultBoolean,
   toolResultIds,
@@ -6,17 +7,20 @@ import {
   toolSemantics
 } from '../src/ai/tool-contract'
 import { inspectDesignBudget } from './design-budget'
-import {
-  DesignKeyConflictError,
-  DesignGeometryError
-} from './design-construction'
+import { DesignGeometryError } from './design-construction'
+import { DesignKeyConflictError } from './design-face'
 import { LocalToolInputError } from './local-tool-invocation'
 import {
   designPreparationExamples,
   designRepresentationGuidance
 } from './design-preparation-examples'
 import { LocalToolAccess } from './local-tool-scheduler'
-import { operationInputIssue } from './operation-input-schema'
+import {
+  operationInputIssue,
+  operationInputIssues,
+  formatOperationInputIssues,
+  type OperationInputIssue
+} from './operation-input-schema'
 import {
   designFillSchema,
   designFillTemplatesSchema,
@@ -28,13 +32,17 @@ import {
   DesignPreparationLimits as limits,
   DesignContainerTypes,
   DesignNodeTypes,
+  DesignTextSizingModes,
   deliverPreparedDesign
 } from '../src/ai/prepared-design'
 import type {
   AiActionBatch,
   AiProviderInput
 } from '../src/ai/action-batch-protocol'
-import { createDesignPreparationSession } from './design-preparation'
+import {
+  createDesignPreparationSession,
+  designNodeInputFields
+} from './design-preparation'
 import {
   designConstructionSchema,
   projectedFaceSchema,
@@ -96,9 +104,9 @@ const containerConditions = [
   { properties: { type: { const: 'frame' } }, required: ['width', 'height'] }
 ]
 const describeArtifactBudget = (expandedNodeLimit: number) =>
-  ` Source work is automatically partitioned into windows of ${limits.nodes} nodes / ${limits.pathCommands} path commands without changing global hierarchy, layout, keys or relations. Per artifact: ${expandedNodeLimit} expanded objects, ${limits.expandedPathCommands} expanded path commands, depth ${limits.depth}. Each indivisible source primitive must fit one window. No detail is omitted.`
+  ` Source windows: ${limits.nodes} nodes/${limits.pathCommands} commands; indivisible primitives must fit. Artifact: ${expandedNodeLimit} expanded objects/${limits.expandedPathCommands} commands, depth ${limits.depth}. Count root and nested containers; windows/templates do not increase artifact capacity. Keep hierarchy/layout/keys/relations/detail.`
 const describeDraftContract = (expandedNodeLimit: number) =>
-  'Choose root type explicitly by intent: group organizes children with content-derived bounds; omit width, height, fill and layout fields for groups. Frame owns positive width/height and optional solid or gradient fill and one-time row/column/grid placement. Either container may nest either type. Optional key identifies this root in the prepared target map (if omitted, the generated element ID is used); all keys must be unique. It is not a canonical element ID.' +
+  'Root group derives bounds; no size/fill/layout. Frame has size, solid/gradient fill, one-time row/column/grid layout. Containers nest. Root target-map key is unique and draft-local; omitted=generated ID. Authored keys are not document IDs.' +
   describeArtifactBudget(expandedNodeLimit)
 const draftSchema = {
   anyOf: containerConditions,
@@ -118,7 +126,10 @@ const draftSchema = {
 }
 const nodeSchema = {
   anyOf: [
-    ...containerConditions,
+    ...containerConditions.map((condition) => ({
+      ...condition,
+      properties: { ...condition.properties }
+    })),
     ...['rect', 'oval', 'text', 'vector'].map((type) => ({
       properties: { type: { const: type } },
       ...(type === 'vector'
@@ -144,7 +155,9 @@ const nodeSchema = {
     ...layout,
     key: { type: 'string', minLength: 1, maxLength: 160 },
     type: { enum: DesignNodeTypes },
+    rotation: position,
     text: { type: 'string', maxLength: limits.textCharacters },
+    textSizing: { enum: DesignTextSizingModes },
     fontFamily: { type: 'string', minLength: 1, maxLength: 128 },
     fontSize: { type: 'number', exclusiveMinimum: 0, maximum: 4096 },
     fontWeight: { enum: ['normal', 'bold'] },
@@ -176,6 +189,19 @@ const nodeSchema = {
   },
   description:
     'Vectors may omit both width and height: the preparation owner measures the exact rings and derives dimensions, with x/y as the local placement offset (default zero). If dimensions are supplied, both are required and constrain the curve. Do not calculate bounds yourself when only the geometry is needed. Unique key and meaningful name. Groups and frames accept children. Groups omit width/height/fill/layout; bounds follow children. Signed draft x/y offsets are allowed: Group normalization preserves workspace geometry; rotated oval origins may be negative while their extents remain inside the group. Rect, oval and text require positive width/height. Only frames accept layout fields. Flow children omit x/y. Text uses literal text and typography fields. Text/rect/oval/vector use fill. Vectors use closed rings: each cubic segment pairs the start outControl with the next anchor inControl; omit both for straight edges. Declare bounds containing the curve. No canonical IDs, props, raster images, SVG strings or executable code.'
+}
+// Field eligibility belongs to preparation, including native oval rotation.
+// Every selected type inherits the same exclusions before any geometry work.
+for (const branch of nodeSchema.anyOf) {
+  const allowed = designNodeInputFields(branch.properties.type.const)
+  Object.assign(
+    branch.properties,
+    Object.fromEntries(
+      Object.keys(nodeSchema.properties)
+        .filter((field) => !allowed.includes(field))
+        .map((field) => [field, false])
+    )
+  )
 }
 const vectorPatternSchema = {
   type: 'object',
@@ -240,7 +266,7 @@ const preparationSchema = {
         { required: ['partition'], properties: { replacements: false } }
       ],
       description:
-        'Repair a rejected draft retained in this request. Execute returned partition references without resending geometry; later partitions require the first artifact. Otherwise replace only existing fields using JSON Pointer paths relative to the draft; send no old values. Revalidation is mandatory. If the draft reference has expired, resend the complete source.',
+        'Repair a rejected draft retained in this request. Execute returned partition references without resending geometry; later partitions require the first artifact. Replace fields or add missing allowed fields via draft-relative JSON Pointers; empty replacements reuse valid retained source. Send no old values. The complete input is revalidated; unknown fields, prototype paths and new array slots reject. If the draft reference has expired, resend the complete source.',
       properties: {
         draftId: { ...toolRequestReference, maxLength: 160 },
         partition: {
@@ -251,7 +277,6 @@ const preparationSchema = {
         continueFromArtifact: toolRequestReference,
         replacements: {
           type: 'array',
-          minItems: 1,
           items: {
             type: 'object',
             additionalProperties: false,
@@ -409,12 +434,61 @@ export const createLocalDesignTools = (
             'Rejected source exceeds retention limits; resend corrected source rather than using an unavailable draft ID.'
         }
   }
+  const retainInputFailure = (
+    draft: unknown,
+    issues: readonly OperationInputIssue[]
+  ) => {
+    const retained = retainDraft(draft)
+    const fieldIssues = issues.filter(
+      (issue) => !['anyOf', 'oneOf', 'allOf'].includes(issue.keyword)
+    )
+    const complete = fieldIssues.every(
+      (issue) =>
+        issue.instancePath.startsWith('/draft/') &&
+        !['diagnosticLimit', 'additionalProperties'].includes(issue.keyword) &&
+        !issue.instancePath
+          .split('/')
+          .slice(2)
+          .some((part) =>
+            isReservedDraftRepairKey(
+              part.replace(/~1/g, '/').replace(/~0/g, '~')
+            )
+          )
+    )
+    const paths = [
+      ...new Set(
+        fieldIssues.map((issue) => issue.instancePath.slice('/draft'.length))
+      )
+    ]
+    return {
+      ...retained,
+      ...(complete && retained.draftId && paths.length && paths.length <= 12
+        ? {
+            repairGuide: {
+              tool: AiDesignToolIds.PREPARE_DESIGN,
+              arguments: {
+                repair: {
+                  draftId: retained.draftId,
+                  replacements: paths.map((path) => ({ path }))
+                }
+              },
+              instructions:
+                'Supply your corrected value for each returned JSON Pointer in repair.replacements, then invoke the returned tool with arguments. Do not resend geometry. Missing declared object fields are admitted only after complete source revalidation. Preserve workflow options and completed work; never replay writes. Expired source requires fresh preparation.'
+            }
+          }
+        : {})
+    }
+  }
   return {
     expandedNodeLimit,
     capacityOutputSchema,
     checkResults: session.checkResults,
     resolveRecipe: session.recipe,
-    rejectInput: (name: string, args: unknown) => {
+    rejectInput: (
+      name: string,
+      args: unknown,
+      issues: readonly OperationInputIssue[] = []
+    ) => {
       if (
         !enabled ||
         name !== AiDesignToolIds.PREPARE_DESIGN ||
@@ -425,7 +499,7 @@ export const createLocalDesignTools = (
       const budget = inspectDesignBudget(args.draft, expandedNodeLimit)?.budget
       return {
         recovery: 'correct_input',
-        ...retainDraft(args.draft),
+        ...retainInputFailure(args.draft, issues),
         ...(budget ? { budget } : {})
       }
     },
@@ -859,7 +933,17 @@ export const createLocalDesignTools = (
         })
       let draft: unknown
       try {
-        draft = 'repair' in args ? session.repairDraft(args.repair) : args.draft
+        draft =
+          'repair' in args
+            ? session.repairDraft(
+                args.repair,
+                (candidate) =>
+                  !operationInputIssue(
+                    { draft: candidate },
+                    effectivePreparationSchema
+                  )
+              )
+            : args.draft
         if (typeof args.materialSourceId === 'string')
           draft = session.withMaterialSource(draft, args.materialSourceId)
         const budgetIssue = inspectDesignBudget(draft, expandedNodeLimit)
@@ -889,17 +973,17 @@ export const createLocalDesignTools = (
               : {})
           })
         }
-        const inputIssue = operationInputIssue(
+        const inputIssues = operationInputIssues(
           { draft },
           effectivePreparationSchema
         )
-        if (inputIssue)
+        if (inputIssues)
           return JSON.stringify({
             available: false,
             settlement: 'not-started',
             recovery: 'correct_input',
-            ...retainDraft(draft),
-            message: `${inputIssue}. Correct the listed input fields and resubmit this draft; do not research a new reference. Geometry has not been compiled.`
+            ...retainInputFailure(draft, inputIssues),
+            message: `${formatOperationInputIssues(inputIssues)}. Correct the listed fields; use the retained repair guide when provided. Geometry has not been compiled.`
           })
         if (
           record(draft) &&
@@ -978,7 +1062,24 @@ export const createLocalDesignTools = (
               }
             : {}),
           ...(error instanceof DesignKeyConflictError
-            ? { conflicts: error.conflicts }
+            ? {
+                conflicts: error.conflicts,
+                ...(retained?.draftId
+                  ? {
+                      repairGuide: {
+                        tool: AiDesignToolIds.PREPARE_DESIGN,
+                        arguments: {
+                          repair: {
+                            draftId: retained.draftId,
+                            replacements: []
+                          }
+                        },
+                        instructions:
+                          'Choose unique keys at the reported paths and put only changed fields in repair.replacements as {path,value}. Preserve the intended referenced face key or explicitly update its boundary.face references. Do not guess a target or resend geometry. Call the returned tool with arguments; revalidation is mandatory. Do not replay completed parts. An expired source requires resubmission.'
+                      }
+                    }
+                  : {})
+              }
             : {}),
           message:
             error instanceof Error

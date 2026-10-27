@@ -462,6 +462,86 @@ async function verifySelectedReviewFlow() {
       inspections: [{ elementId: ids[1], checks: [{ criterionId: 'overall' }] }]
     })
     await judge(stable.next)
+    // Saved run 1793014314889 put supersedes on a whole criterion. This must
+    // reject before pixel work and return a correction that preserves identity.
+    const countBeforeInvalid = captures.length
+    const wholeSupersedes = { revision: 2, reason: 'New visible evidence' }
+    const badCapture = await call(invocation.tool, {
+      phase: 'visual',
+      final: false,
+      inspections: [
+        {
+          elementId: ids[1],
+          checks: [{ criterionId: 'overall', supersedes: wholeSupersedes }]
+        }
+      ]
+    })
+    expect(badCapture.toolOutcome.settlement).toBe('not-started')
+    expect(captures).toHaveLength(countBeforeInvalid)
+    expect(badCapture.next.arguments.inspections[0].checks).toEqual([
+      { criterionId: 'overall' }
+    ])
+    expect(badCapture.message).toContain('supersedes')
+    expect(
+      operationInputIssue(badCapture.next.arguments, canonical)
+    ).toBeUndefined()
+    const fixedCapture = await call(
+      badCapture.next.tool,
+      badCapture.next.arguments
+    )
+    expect(fixedCapture.next.arguments.checks[0].binding).toBeDefined()
+    const beforeBindCorrection = captures.length
+    const badBind = await call(invocation.tool, {
+      phase: 'visual',
+      final: false,
+      inspectionIds: stable.inspectionIds,
+      bindChecks: [
+        {
+          criterionId: 'overall',
+          inspectionIds: stable.inspectionIds,
+          supersedes: wholeSupersedes
+        }
+      ]
+    })
+    expect(badBind.toolOutcome.settlement).toBe('not-started')
+    expect(badBind.next.arguments.bindChecks[0]).toEqual({
+      criterionId: 'overall',
+      inspectionIds: stable.inspectionIds
+    })
+    const fixedBind = await call(badBind.next.tool, badBind.next.arguments)
+    await judge(fixedBind.next)
+    expect(captures).toHaveLength(beforeBindCorrection)
+    expect(
+      dispatched.every((name) =>
+        [actions[0].name, actions[1].name].includes(name)
+      )
+    ).toBe(true)
+    const invalidRecord = structuredClone(fixedBind.next.arguments)
+    invalidRecord.checks[0].supersedes = wholeSupersedes
+    const badRecord = await call(fixedBind.next.tool, invalidRecord)
+    expect(badRecord.toolOutcome.settlement).toBe('not-started')
+    expect(badRecord.next.arguments.bindChecks[0]).toEqual({
+      criterionId: 'overall',
+      inspectionIds: stable.inspectionIds
+    })
+    const correctedRecordBinding = await call(
+      badRecord.next.tool,
+      badRecord.next.arguments
+    )
+    await judge(correctedRecordBinding.next)
+    expect(captures).toHaveLength(beforeBindCorrection)
+    const unrelatedInvalid = await call(invocation.tool, {
+      phase: 'visual',
+      inspections: [
+        {
+          elementId: 42,
+          checks: [{ criterionId: 'overall', supersedes: wholeSupersedes }]
+        }
+      ]
+    })
+    expect(unrelatedInvalid.toolOutcome.settlement).toBe('not-started')
+    expect(unrelatedInvalid.next).toBeUndefined()
+    expect(captures).toHaveLength(beforeBindCorrection)
     const beforeScopeChange = await call('read_design_checks', {
       view: 'details',
       includePassed: true

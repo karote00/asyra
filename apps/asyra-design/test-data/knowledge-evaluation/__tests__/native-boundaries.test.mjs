@@ -87,19 +87,19 @@ test('read-only native extraction isolates process and window and saves only bou
   const { collectNativeBoundaries } = await import('../native-boundaries.mjs')
   await databaseCase(async ({ insert, filename }) => {
     const started =
-      'PRIVATE prefix try_run_sampling_request{turn_id=turn}: Output item item_type="custom_tool_call" item_id="ctc_item" PRIVATE suffix'
+      'PRIVATE prefix try_run_sampling_request{turn_id=turn}: Output item item_type="function_call" item_id="ctc_item" PRIVATE suffix'
     insert(1, 1, 'codex_core::stream_events_utils', started)
     insert(
       2,
       2,
       'codex_core::stream_events_utils',
-      'turn.id=turn handle_output_item_done: ToolCall: exec thread_id=thread'
+      'turn.id=turn handle_output_item_done: ToolCall: fixture.draw thread_id=thread'
     )
     insert(
       3,
       3,
-      'codex_code_mode::timing',
-      'turn_id=turn code-mode host operation completed call_id=call_one tool_name="exec" code_mode_host_duration_ns=1000000'
+      'codex_core::stream_events_utils',
+      'turn_id=turn handle_output_item_done: Output item item_type="function_call" item_id="ctc_item"'
     )
     insert(
       4,
@@ -137,13 +137,14 @@ test('read-only native extraction isolates process and window and saves only bou
       [
         'native-output-item-started',
         'native-tool-dispatched',
-        'native-host-completed'
+        'native-output-item-completed'
       ]
     )
     assert.equal(result.boundaries[0].bodySha256, hash(started))
     assert.equal(result.boundaries[0].completion, 'unavailable')
     assert.equal(result.boundaries[1].itemId, undefined)
-    assert.equal(result.boundaries[2].durationMs, 1)
+    assert.equal(result.boundaries[2].itemId, 'ctc_item')
+    assert.equal(result.boundaries[2].durationMs, undefined)
     assert.equal(result.argumentProgress, 'unavailable')
     assert.equal(JSON.stringify(result).includes('PRIVATE'), false)
     assert.equal(JSON.stringify(result).includes('Unsupported private'), false)
@@ -211,7 +212,7 @@ test('evaluation capture follows exact recorded requests and the analyzer consum
       1,
       1,
       'codex_core::stream_events_utils',
-      'try_run_sampling_request{turn_id=turn}: Output item item_type="custom_tool_call" item_id="ctc_item"'
+      'try_run_sampling_request{turn_id=turn}: Output item item_type="function_call" item_id="ctc_item"'
     )
     const recordingDirectory = path.join(directory, 'provider')
     fs.mkdirSync(recordingDirectory)
@@ -276,7 +277,7 @@ test('fractional window excludes other processes and unknown item formats do not
       1,
       1,
       'codex_core::stream_events_utils',
-      'try_run_sampling_request{turn_id=turn}: Output item item_type="custom_tool_call" item_id="outside"',
+      'try_run_sampling_request{turn_id=turn}: Output item item_type="function_call" item_id="outside"',
       'thread',
       'outside'
     )
@@ -284,13 +285,13 @@ test('fractional window excludes other processes and unknown item formats do not
       2,
       2,
       'codex_core::stream_events_utils',
-      'Unknown origin turn_id=turn Output item item_type="custom_tool_call" item_id="unsupported"'
+      'Unknown origin turn_id=turn Output item item_type="function_call" item_id="unsupported"'
     )
     insert(
       3,
       3,
       'codex_core::stream_events_utils',
-      'handle_output_item_done turn_id=turn Output item item_type="custom_tool_call" item_id="completed"'
+      'handle_output_item_done turn_id=turn Output item item_type="function_call" item_id="completed"'
     )
     db.prepare('UPDATE logs SET ts_nanos=500000000 WHERE id=1').run()
     const result = collectNativeBoundaries({

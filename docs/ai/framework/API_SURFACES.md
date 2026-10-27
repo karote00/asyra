@@ -25,6 +25,17 @@ Core API tier types (explicit ownership contract):
 - `CorePresetInstallAPIs`: strict subset required by `applyPreset(...)` (no optional `core?.api` checks)
 - `CorePresetDependencies`: concrete dependency object returned by `core.getPresetDependencies()`
 
+Identity reservation:
+
+- `core.allocateIds(types: readonly string[]): readonly string[]` delegates to
+  the existing `idCounter` owner. Registered types receive one frozen ordered ID
+  each; use `el` for general element identities. Empty input is valid. Unknown
+  types, ambiguous prefixes and exhausted counters reject the entire allocation
+  without advancing any counter. Namespace and loaded counter positions remain
+  authoritative. This reserves identities, not document objects: no document
+  publication, Undo entry or geometry is created. Keep issued IDs; retries reserve
+  new values. Never infer persistent IDs from draft keys or reset a live counter.
+
 Lifecycle and integration:
 
 - `suspendElementPresentation(elementId)`: temporary render-only suppression,
@@ -273,6 +284,8 @@ Scene/model bridge:
     materialization; selected reads neither enumerate all projection keys nor
     create a complete shallow projection before filtering. Core validates first
     and detaches the owner result; no additional cache or query is introduced
+  - `ComputedFieldSelectionLimits` from `@asyra/core/contracts` exposes these
+    unchanged limits for input-schema consumers; the Core owner still validates them
   - accepts at most 64 nonempty flat names of at most 128 characters; duplicate
     names are read once and invalid selections fail before reading the owner
   - missing elements return `undefined`; empty selection for an existing element

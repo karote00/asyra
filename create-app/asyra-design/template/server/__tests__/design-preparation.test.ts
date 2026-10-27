@@ -1,3 +1,14 @@
+import { admitPreparedDesign } from '../../src/ai/prepared-design-admission'
+import { readFileSync } from 'node:fs'
+const recordedMaterials = JSON.parse(
+  readFileSync(
+    new URL(
+      '../../test-data/knowledge-evaluation/evidence/architecture-2026-10-18/representation-replay.jsonl',
+      import.meta.url
+    ),
+    'utf8'
+  )
+)
 import { DEFAULT_TEXT_DATA, TEXT_PROPERTY_SCHEMA } from '@asyra/preset'
 import {
   DesignTextDefaults,
@@ -10,6 +21,40 @@ import {
   prepareDesign,
   createDesignPreparationSession
 } from '../design-preparation'
+
+it('publishes failed draft diagnostics for request repair and releases their actual source', () => {
+  const published: {
+    handle: string
+    release: () => void
+    validate: () => void
+    lifetime?: string
+  }[] = []
+  const assertOwned = vi.fn()
+  const session = createDesignPreparationSession(undefined, undefined, {
+    requestId: 'r',
+    publish: (handle, release, validate, lifetime) => {
+      published.push({ handle, release, validate, lifetime })
+    },
+    publishAliases: vi.fn(),
+    assertOwned,
+    borrow: vi.fn(),
+    assertRelease: vi.fn(),
+    retire: vi.fn()
+  })
+  const handle = session.retainRejectedDraft({ name: 'Original' })
+  expect(published).toHaveLength(1)
+  expect(published[0]).toMatchObject({ handle, lifetime: 'request' })
+  expect(
+    session.repairDraft({
+      draftId: handle,
+      replacements: [{ path: '/name', value: 'Corrected' }]
+    })
+  ).toEqual({ name: 'Corrected' })
+  expect(assertOwned).toHaveBeenCalledWith(handle)
+  published[0].release()
+  expect(published[0].validate).toThrow(/unavailable/)
+  expect(session.describeRejectedDraft(handle as string)).toBeUndefined()
+})
 
 const draft = () => ({
   type: 'frame',
@@ -110,9 +155,25 @@ describe('semantic design preparation', () => {
     )
   })
 
+  it('compiles Text fill through the shared paint property', () => {
+    const artifact = prepareDesign(
+      { ...draft(), children: [{ ...draft().children[0], fill: '#ff0000' }] },
+      'text-fill'
+    )
+    expect(artifact.entries[1].descriptor.fills).toEqual([
+      expect.objectContaining({ color: '#ff0000', opacity: 1, visible: true })
+    ])
+    expect(artifact.entries[1].descriptor.props).toHaveProperty('fills')
+    expect(artifact.entries[1].descriptor).not.toHaveProperty('textColor')
+    expect(() => admitPreparedDesign(artifact)).not.toThrow()
+  })
+
   it.each([
     { ...draft(), width: Infinity },
-    { ...draft(), children: [{ ...draft().children[0], fill: '#ff0000' }] },
+    {
+      ...draft(),
+      children: [{ ...draft().children[0], fill: 'invalid-color' }]
+    },
     { ...draft(), unexpected: true },
     {
       ...draft(),
@@ -134,7 +195,7 @@ describe('semantic design preparation', () => {
         name: 'Too many',
         width: 100,
         height: 100,
-        children: Array.from({ length: 1000 }, (_, index) => ({
+        children: Array.from({ length: 10000 }, (_, index) => ({
           key: `node-${index}`,
           name: 'Node',
           type: 'rect',
@@ -310,7 +371,7 @@ describe('editable illustration preparation', () => {
       measurement.mockRestore()
     }
   })
-  it('preserves compound rings and enforces the combined point budget', () => {
+  it('preserves compound rings across source path work windows', () => {
     const shape = vector()
     const result = prepareDesign(
       illustration({
@@ -337,8 +398,9 @@ describe('editable illustration preparation', () => {
     const rings = [
       Array.from({ length: 10001 }, (_, i) => ({ x: i % 100, y: i % 90 }))
     ]
-    expect(() =>
-      prepareDesign({
+    const sourceWork = vi.fn()
+    const partitioned = prepareDesign(
+      {
         type: 'frame',
         name: 'Over budget',
         width: 300,
@@ -347,8 +409,18 @@ describe('editable illustration preparation', () => {
           { ...shape, rings },
           { ...shape, key: 'other', rings }
         ]
+      },
+      'partitioned',
+      sourceWork
+    )
+    expect(sourceWork).toHaveBeenCalledWith(
+      expect.objectContaining({
+        batches: 2,
+        pathCommands: 20002,
+        largestBatchPathCommands: 10001
       })
-    ).toThrow('vector point limit')
+    )
+    expect(partitioned.entries).toHaveLength(3)
   })
   it('rejects malformed rings, unpaired controls and excess whole-request points', () => {
     for (const rings of [
@@ -398,6 +470,10 @@ it('keeps the inert semantic typography protocol compatible with canonical field
     '',
     ' ',
     'sans-serif',
+    'fixed',
+    'auto-width',
+    'auto-height',
+    'invalid-sizing',
     'normal',
     'bold',
     'italic',
@@ -650,7 +726,7 @@ it('validates construction boundaries and isolates brief evidence from caller ch
   for (const invalid of [
     { ...base, relations: Array.from({ length: 257 }, () => relation) },
     { ...base, relations: [{ ...relation, factor: Infinity }] },
-    { ...base, relations: [{ ...relation, offset: -1000 }] },
+    { ...base, relations: [{ ...relation, offset: -Infinity }] },
     { ...base, relations: [{ ...relation, targetAnchor: 2 }] },
     {
       ...base,
@@ -900,4 +976,675 @@ describe('preparation text layout review', () => {
     expect(receipt.layoutReview?.textBoxOverlaps).toHaveLength(64)
     expect(receipt.layoutReview?.truncated).toBe(true)
   })
+})
+
+it('reports all malformed cubic edges with semantic node and ring locations', () => {
+  expect(() =>
+    prepareDesign({
+      type: 'group',
+      name: 'Decorations',
+      children: [
+        {
+          key: 'ornament',
+          name: 'Ornament',
+          type: 'vector',
+          width: 100,
+          height: 100,
+          rings: [
+            [
+              { x: 10, y: 10, outControl: { x: 15, y: 10 } },
+              { x: 90, y: 90 },
+              { x: 90, y: 10, outControl: { x: 95, y: 10 } }
+            ]
+          ]
+        }
+      ]
+    })
+  ).toThrow(/ornament.*rings\[0\].*edge 0.*edge 2/)
+})
+
+it('checks an explicitly keyed root and preserves server-generated identity', () => {
+  const input = {
+    type: 'frame',
+    key: 'building',
+    name: 'Building',
+    width: 80,
+    height: 210,
+    children: [],
+    brief: {
+      intent: 'Draw',
+      viewpoint: 'front',
+      sources: [],
+      assumptions: [],
+      checks: [
+        { key: 'building', property: 'height', expected: 210, tolerance: 0 }
+      ]
+    }
+  }
+  const before = structuredClone(input)
+  const result = prepareDesign(input)
+  expect(result.review?.checks[0]).toMatchObject({
+    key: 'building',
+    actual: 210,
+    passed: true
+  })
+  expect(result.keyToId.building).toBe(result.rootId)
+  expect(result.rootId).not.toBe('building')
+  expect(input).toEqual(before)
+})
+
+it('uses the generated identity for unnamed roots without a reserved selector', () => {
+  for (const type of ['group', 'frame']) {
+    const result = prepareDesign({
+      type,
+      name: 'Untitled',
+      ...(type === 'frame' ? { width: 10, height: 10 } : {}),
+      children: []
+    })
+    expect(result.entries[0].key).toBe(result.rootId)
+    expect(result.keyToId[result.rootId]).toBe(result.rootId)
+    expect(result.keyToId).not.toHaveProperty('$root')
+  }
+})
+
+it('preserves global relation resolution and deterministic identities across source windows', () => {
+  const children = Array.from({ length: 1100 }, (_, index) => ({
+    key: `item-${index}`,
+    name: 'item',
+    type: 'rect',
+    width: 1,
+    height: 1,
+    x: index,
+    y: 0
+  }))
+  const input = {
+    type: 'frame',
+    key: 'page',
+    name: 'page',
+    width: 5000,
+    height: 10,
+    children,
+    relations: [
+      {
+        target: 'item-1099',
+        property: 'x',
+        source: 'item-0',
+        sourceProperty: 'right',
+        offset: 5
+      }
+    ]
+  }
+  const first = prepareDesign(input, 'stable')
+  const second = prepareDesign(input, 'stable')
+  expect(second).toEqual(first)
+  expect(first.entries[1100].descriptor.x).toBe(6)
+  expect(first.entries[1100].descriptor.id).toBe(first.keyToId['item-1099'])
+  expect(input.children[1099].x).toBe(1099)
+  const duplicate = { ...input, children: [...children, children[0]] }
+  expect(() => prepareDesign(duplicate)).toThrow(/duplicate key/)
+})
+
+const sharedFillDraft = () => ({
+  type: 'group',
+  name: 'Shared paint',
+  sharedFills: { paint: '#123456' },
+  children: [
+    {
+      type: 'rect',
+      key: 'a',
+      name: 'A',
+      width: 10,
+      height: 10,
+      fill: { shared: 'paint' }
+    },
+    {
+      type: 'oval',
+      key: 'b',
+      name: 'B',
+      x: 20,
+      width: 10,
+      height: 10,
+      fill: { shared: 'paint' }
+    },
+    {
+      type: 'rect',
+      key: 'c',
+      name: 'Independent',
+      x: 40,
+      width: 10,
+      height: 10,
+      fill: '#123456'
+    }
+  ]
+})
+it('compiles explicit shared fills once without merging equal independent paint', () => {
+  const input = sharedFillDraft(),
+    before = structuredClone(input)
+  const artifact = prepareDesign(input, 'shared')
+  const first = (artifact.entries[1].descriptor.fills as { id: string }[])[0]
+  expect(first).toMatchObject({ id: 'design-shared-1-fill', color: '#123456' })
+  expect(artifact.entries[2].descriptor.fills).toEqual([first.id])
+  expect(artifact.entries[3].descriptor.fills).toEqual([
+    expect.objectContaining({ id: 'design-shared-3-fill' })
+  ])
+  expect(artifact.sharedFillIds).toEqual({ paint: first.id })
+  expect(input).toEqual(before)
+  expect(prepareDesign(input, 'other').sharedFillIds?.paint).not.toBe(first.id)
+})
+it('rejects missing or malformed shared definitions before creating an artifact', () => {
+  for (const sharedFills of [
+    {},
+    { paint: '#bad' },
+    { paint: { shared: 'other' } }
+  ]) {
+    expect(() => prepareDesign({ ...sharedFillDraft(), sharedFills })).toThrow()
+  }
+  const input = sharedFillDraft()
+  input.sharedFills.paint = '#abcdef'
+  const session = createDesignPreparationSession()
+  const result = session.prepare(input)
+  expect(result.sharedFillIds).toEqual({ paint: expect.any(String) })
+  expect(session.resolve(result.artifactId)).not.toHaveProperty('sharedFillIds')
+})
+it('does not create unused shared fills', () => {
+  const result = prepareDesign({ ...sharedFillDraft(), children: [] })
+  expect(result.entries).toHaveLength(1)
+  expect(result.sharedFillIds).toEqual({})
+})
+
+it('retains shared gradient data without freezing or aliasing the caller input', () => {
+  const gradient = {
+    gradientType: 'linear',
+    gradientHandles: [
+      { x: 0, y: 0.5 },
+      { x: 1, y: 0.5 }
+    ],
+    gradientStops: [
+      { position: 0, color: '#123456', opacity: 1 },
+      { position: 1, color: '#abcdef', opacity: 0.5 }
+    ]
+  }
+  const session = createDesignPreparationSession()
+  const receipt = session.prepare({
+    ...sharedFillDraft(),
+    sharedFills: { paint: gradient }
+  })
+  const artifact = session.resolve(receipt.artifactId)
+  expect(artifact.entries[1].descriptor.fills).toEqual([
+    expect.objectContaining({
+      kind: 'gradient',
+      gradient: structuredClone(gradient)
+    })
+  ])
+  expect(artifact.entries[2].descriptor.fills).toEqual([
+    receipt.sharedFillIds?.paint
+  ])
+  gradient.gradientStops[0].color = '#ffffff'
+  expect(artifact.entries[1].descriptor.fills).toEqual([
+    expect.objectContaining({
+      gradient: expect.objectContaining({
+        gradientStops: [
+          { position: 0, color: '#123456', opacity: 1 },
+          { position: 1, color: '#abcdef', opacity: 0.5 }
+        ]
+      })
+    })
+  ])
+})
+
+describe('owner-derived vector dimensions', () => {
+  const rings = [
+    [
+      { x: 10, y: 20 },
+      { x: 50, y: 20 },
+      { x: 50, y: 60 }
+    ]
+  ]
+  const source = (dimensions = {}) => ({
+    type: 'group',
+    key: 'assembly',
+    name: 'Assembly',
+    children: [
+      {
+        type: 'vector',
+        key: 'face',
+        name: 'Face',
+        x: 3,
+        y: 7,
+        fill: '#123456',
+        rings,
+        ...dimensions
+      }
+    ]
+  })
+  it('derives dimensions without changing canonical geometry or repeating measurement', () => {
+    const measure = vi.spyOn(vectorMeasurement, 'measureVectorPath')
+    try {
+      const derived = prepareDesign(source(), 'same')
+      expect(measure).toHaveBeenCalledTimes(1)
+      const explicit = prepareDesign(source({ width: 50, height: 60 }), 'same')
+      expect(derived.entries).toEqual(explicit.entries)
+      expect(source().children[0]).not.toHaveProperty('width')
+    } finally {
+      measure.mockRestore()
+    }
+  })
+  it('rejects incomplete dimensions and keeps explicit bounds assertions', () => {
+    expect(() => prepareDesign(source({ width: 50 }))).toThrow(/dimensions/)
+    expect(() => prepareDesign(source({ width: 20, height: 20 }))).toThrow(
+      /bounds/
+    )
+  })
+})
+
+it('derives repeated vector bounds once and preserves independent Fill identities', () => {
+  const measure = vi.spyOn(vectorMeasurement, 'measureVectorPath')
+  try {
+    const prepared = prepareDesign({
+      type: 'group',
+      name: 'Repeated',
+      children: [
+        {
+          type: 'vector-pattern',
+          key: 'motif',
+          name: 'Motif',
+          template: {
+            rings: [
+              [
+                { x: 0, y: 0 },
+                { x: 10, y: 0 },
+                { x: 10, y: 8 }
+              ]
+            ],
+            fill: '#123456'
+          },
+          placements: [
+            { x: 0, y: 0 },
+            { x: 20, y: 0 },
+            { x: 40, y: 0 }
+          ]
+        }
+      ]
+    })
+    expect(prepared.entries).toHaveLength(4)
+    expect(measure).toHaveBeenCalledTimes(1)
+    expect(
+      new Set(
+        prepared.entries
+          .slice(1)
+          .map((e) => (e.descriptor.fills as { id: string }[])[0].id)
+      )
+    ).toHaveProperty('size', 3)
+  } finally {
+    measure.mockRestore()
+  }
+})
+
+describe('signed draft coordinates and Group normalization', () => {
+  it('normalizes nested Group children without moving their workspace positions', () => {
+    const input = {
+      type: 'group',
+      name: 'Outer',
+      x: 100,
+      y: 200,
+      children: [
+        {
+          type: 'group',
+          key: 'inner',
+          name: 'Inner',
+          x: -30,
+          y: -40,
+          children: [
+            {
+              type: 'rect',
+              key: 'a',
+              name: 'A',
+              x: -10,
+              y: -20,
+              width: 10,
+              height: 10
+            },
+            {
+              type: 'rect',
+              key: 'b',
+              name: 'B',
+              x: 20,
+              y: 30,
+              width: 10,
+              height: 10
+            }
+          ]
+        }
+      ]
+    }
+    const before = structuredClone(input)
+    const result = prepareDesign(input, 'signed-groups')
+    const [outer, inner, a, b] = result.entries.map((e) => e.descriptor)
+    expect(outer).toMatchObject({ x: 60, y: 140 })
+    expect(inner).toMatchObject({ x: 0, y: 0 })
+    expect(a).toMatchObject({ x: 0, y: 0 })
+    expect(b).toMatchObject({ x: 30, y: 50 })
+    expect(Number(outer.x) + Number(inner.x) + Number(b.x)).toBe(90)
+    expect(Number(outer.y) + Number(inner.y) + Number(b.y)).toBe(190)
+    expect(input).toEqual(before)
+  })
+
+  it('retains signed Frame offsets as overflow evidence without moving content', () => {
+    const result = prepareDesign({
+      type: 'frame',
+      name: 'Bounds',
+      width: 50,
+      height: 50,
+      children: [
+        {
+          type: 'rect',
+          key: 'a',
+          name: 'A',
+          x: -10,
+          y: -20,
+          width: 10,
+          height: 10
+        }
+      ]
+    })
+    expect(result.entries[1].descriptor).toMatchObject({ x: -10, y: -20 })
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({ kind: 'overflow', key: 'a', left: 10, top: 20 })
+    )
+  })
+
+  it.each(['projected-face', 'pattern'])(
+    'preserves signed %s workspace geometry with nonnegative Group-relative positions',
+    (type) => {
+      const vertices = [
+        { x: -10, y: 0, z: 0 },
+        { x: 10, y: 0, z: 0 },
+        { x: 10, y: 0, z: 20 },
+        { x: -10, y: 0, z: 20 }
+      ]
+      const face = { key: 'wall', name: 'Wall', fill: '#123456', vertices }
+      const child =
+        type === 'projected-face'
+          ? { ...face, type }
+          : {
+              key: 'walls',
+              name: 'Walls',
+              type,
+              origin: { x: 0, y: 0, z: 0 },
+              axes: [{ count: 2, step: { x: 30, y: 0, z: 0 } }],
+              faces: [face]
+            }
+      const input = {
+        type: 'group',
+        name: 'Projected',
+        projection: {
+          azimuth: 0,
+          elevation: 0,
+          scale: 1,
+          originX: -5,
+          originY: -7
+        },
+        children: [child]
+      }
+      const before = structuredClone(input)
+      const result = prepareDesign(input)
+      expect(result.entries[0].descriptor).toMatchObject({ x: -15, y: -27 })
+      expect(result.entries[1].descriptor).toMatchObject({ x: 0, y: 0 })
+      const points = Object.values(
+        result.entries[1].descriptor.points as Record<
+          string,
+          { x: number; y: number }
+        >
+      )
+      expect(points.map((p) => [p.x, p.y])).toEqual([
+        [-15, -7],
+        [5, -7],
+        [5, -27],
+        [-15, -27]
+      ])
+      for (const e of result.entries.slice(1)) {
+        expect(Number(e.descriptor.x)).toBeGreaterThanOrEqual(0)
+        expect(Number(e.descriptor.y)).toBeGreaterThanOrEqual(0)
+      }
+      expect(input).toEqual(before)
+    }
+  )
+})
+
+it('reuses immutable fill template compilation while keeping independent property identities', () => {
+  const gradient = {
+    gradientType: 'linear',
+    gradientHandles: [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 }
+    ],
+    gradientStops: [
+      { position: 0, color: '#123456', opacity: 1 },
+      { position: 1, color: '#abcdef', opacity: 1 }
+    ]
+  }
+  const input = {
+    type: 'group',
+    name: 'Independent paints',
+    fillTemplates: { glass: gradient },
+    children: Array.from({ length: 24 }, (_, i) => ({
+      type: 'rect',
+      key: `p${i}`,
+      name: 'Pane',
+      x: i * 10,
+      width: 8,
+      height: 8,
+      fill: { template: 'glass' }
+    }))
+  }
+  const session = createDesignPreparationSession()
+  const receipt = session.prepare(input)
+  const artifact = session.resolve(receipt.artifactId)
+  const fills = artifact.entries
+    .slice(1)
+    .map((e) => (e.descriptor.fills as { id: string; gradient: unknown }[])[0])
+  expect(new Set(fills.map((f) => f.id)).size).toBe(24)
+  expect(
+    fills.every((f) => JSON.stringify(f.gradient) === JSON.stringify(gradient))
+  ).toBe(true)
+  expect(receipt.reuse).toMatchObject({
+    fillOccurrences: 24,
+    compiledFillDefinitions: 1,
+    fillTemplateUses: 24
+  })
+  const again = session.prepare(input)
+  expect(again.reuse).toMatchObject({ compiledFillDefinitions: 1 })
+  expect(
+    session.resolve(again.artifactId).entries[1].descriptor.fills
+  ).not.toEqual(artifact.entries[1].descriptor.fills)
+  gradient.gradientStops[0].color = '#ffffff'
+  expect((fills[0].gradient as typeof gradient).gradientStops[0].color).toBe(
+    '#123456'
+  )
+})
+
+describe('prepared artifact host ownership', () => {
+  it('keeps the real prepared source and its target alias through child completion', async () => {
+    const { createLocalToolLeases } = await import('../local-tool-leases')
+    const leases = createLocalToolLeases({ requestId: 'r', capacity: 12 })
+    let callId: string | undefined = 'child'
+    const session = createDesignPreparationSession(undefined, undefined, {
+      requestId: 'r',
+      publish: (handle, release, validate) =>
+        leases.publish({ handle, callId, release, validate }),
+      publishAliases: leases.publishAliases,
+      assertOwned: (handle) => leases.assertOwned(handle, callId),
+      borrow: (handle) => leases.borrow(handle, callId),
+      assertRelease: (handle) => leases.assertRelease(handle, callId),
+      retire: (handle) => leases.retire(handle, callId)
+    })
+    const open = (
+      id: string,
+      parentCallId?: string,
+      input: unknown = 0,
+      inputSchema: unknown = { type: 'number' }
+    ) =>
+      leases.open({
+        requestId: 'r',
+        callId: id,
+        parentCallId,
+        input,
+        inputSchema: inputSchema as never
+      })
+    const reference = {
+      type: 'string',
+      'x-runtime-value': 'request-artifact'
+    } as const
+    await open('parent')
+    await open('child', 'parent')
+    const prepared = session.prepare(draft())
+    const compiled = session.resolve(prepared.artifactId)
+    const [target] = session.retainTargetSets([
+      {
+        artifactId: prepared.artifactId,
+        ids: [compiled.entries[0].descriptor.id]
+      }
+    ])
+    await leases.retain({
+      requestId: 'r',
+      fromCallId: 'child',
+      toCallId: 'parent',
+      value: target.targetSetId,
+      outputSchema: reference
+    })
+    await leases.release({ requestId: 'r', callId: 'child' })
+    callId = 'parent'
+    expect(
+      session.resolveTargetSet(prepared.artifactId, target.targetSetId)
+    ).toEqual([compiled.entries[0].descriptor.id])
+    await open('consumer', 'parent', target.targetSetId, reference)
+    expect(() => session.release([prepared.artifactId])).toThrow('borrowed')
+    await leases.release({ requestId: 'r', callId: 'consumer' })
+    await leases.retain({
+      requestId: 'r',
+      fromCallId: 'parent',
+      value: prepared.artifactId,
+      outputSchema: reference
+    })
+    await leases.release({ requestId: 'r', callId: 'parent' })
+    callId = undefined
+    expect(session.resolve(prepared.artifactId)).toBe(compiled)
+    await leases.dispose()
+    expect(() => session.resolve(prepared.artifactId)).toThrow()
+  })
+
+  it('removes newly compiled source when ownership publication is refused', () => {
+    let rejectedId = ''
+    const session = createDesignPreparationSession(undefined, undefined, {
+      requestId: 'r',
+      publish: (handle) => {
+        rejectedId = handle
+        throw new Error('ownership capacity')
+      },
+      publishAliases: vi.fn(),
+      assertOwned: vi.fn(),
+      borrow: vi.fn(),
+      assertRelease: vi.fn(),
+      retire: vi.fn()
+    })
+    expect(() => session.prepare(draft())).toThrow('ownership capacity')
+    expect(rejectedId).not.toBe('')
+    expect(() => session.resolve(rejectedId)).toThrow('unavailable')
+    expect(() => session.recipe(rejectedId)).toThrow('unavailable')
+  })
+})
+
+it('publishes compiler findings automatically only after a retained source is available', () => {
+  const session = createDesignPreparationSession()
+  const source = session.prepare({
+    type: 'frame',
+    name: 'Small frame',
+    width: 10,
+    height: 10,
+    children: [
+      {
+        type: 'rect',
+        key: 'overflow',
+        name: 'Overflow',
+        x: 20,
+        width: 10,
+        height: 10
+      }
+    ]
+  })
+  expect(source.applicable).toBe(false)
+  expect(session.checkResults.read().items).toEqual([
+    expect.objectContaining({
+      id: `prepared:${source.artifactId}:data`,
+      status: 'fail'
+    })
+  ])
+  const before = session.checkResults.read({ includePassed: true })
+  expect(() => session.prepare({ type: 'invalid' })).toThrow()
+  expect(session.checkResults.read({ includePassed: true })).toEqual(before)
+})
+
+it('keeps cancellation and failed artifact publication out of retained source passes', async () => {
+  const session = createDesignPreparationSession()
+  const controller = new AbortController()
+  controller.abort()
+  await expect(
+    session.prepareAsync(draft(), controller.signal)
+  ).rejects.toThrow()
+  expect(session.checkResults.read({ includePassed: true }).items).toEqual([])
+  const failed = createDesignPreparationSession(undefined, undefined, {
+    requestId: 'r',
+    publish: () => {
+      throw new Error('Publication unavailable')
+    },
+    publishAliases: vi.fn(),
+    assertOwned: vi.fn(),
+    borrow: vi.fn(),
+    assertRelease: vi.fn(),
+    retire: vi.fn()
+  })
+  expect(() => failed.prepare(draft())).toThrow('Publication unavailable')
+  expect(failed.checkResults.read({ includePassed: true }).items).toEqual([])
+})
+
+it('preserves the recorded reflection geometry and independent paints when equal gradients use templates', () => {
+  const saved = JSON.parse(JSON.stringify(recordedMaterials))
+  const call = saved.calls.find(
+    (item: { input: { bytes: number } }) => item.input.bytes === 670447
+  )
+  if (!call) throw new Error('Missing recorded reflection input')
+  const original = call.inputValue.draft
+  const compact = structuredClone(original)
+  const keys = new Map<string, string>()
+  for (const grid of compact.children) {
+    if (grid.type !== 'surface-grid') continue
+    for (const motif of grid.motifs) {
+      if (!motif.fills) continue
+      motif.fills = motif.fills.map((fill: unknown) => {
+        const serialized = JSON.stringify(fill)
+        let key = keys.get(serialized)
+        if (!key) {
+          key = `material-${keys.size}`
+          keys.set(serialized, key)
+          compact.fillTemplates[key] = fill
+        }
+        return { template: key }
+      })
+    }
+  }
+  expect(keys.size).toBe(1545)
+  const before = prepareDesign(original, 'material-equivalence')
+  const after = prepareDesign(compact, 'material-equivalence')
+  expect(after).toEqual(before)
+  expect(Buffer.byteLength(JSON.stringify(compact))).toBeLessThan(
+    Buffer.byteLength(JSON.stringify(original))
+  )
+  const unknown = structuredClone(compact)
+  const first = keys.values().next().value
+  if (!first) throw new Error('Missing material template')
+  Reflect.deleteProperty(unknown.fillTemplates, first)
+  expect(() => prepareDesign(unknown, 'invalid-material')).toThrow(
+    'unknown Fill template'
+  )
+  expect(prepareDesign(compact, 'material-equivalence')).toEqual(before)
 })

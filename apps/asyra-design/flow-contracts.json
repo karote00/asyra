@@ -48,6 +48,10 @@
         "e2e/execution-evidence.ts",
         "e2e/test-utils.ts",
         "e2e/fixtures/execution-continuity.json",
+        "test-data/knowledge-evaluation/architecture-101.json",
+        "test-data/knowledge-evaluation/quality-cases.json",
+        "test-data/knowledge-evaluation/quality.mjs",
+        "test-data/knowledge-evaluation/architecture-protocol.mjs",
         "test-data/knowledge-evaluation/native-boundaries.mjs",
         "test-data/knowledge-evaluation/public-activity.mjs"
       ],
@@ -118,7 +122,8 @@
             "apps/asyra-design/server/design-draft-repair.ts",
             "apps/asyra-design/server/design-preparation.ts",
             "apps/asyra-design/server/design-construction.ts",
-            "apps/asyra-design/server/local-design-tools.ts"
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/design-construction-schema.ts"
           ]
         },
         {
@@ -226,7 +231,11 @@
           "testName": "execution proof accounts observed spans without private payloads or invented model timing",
           "implementationPaths": [
             "packages/ai-agent-runtime/src/profiler/recorder.ts",
-            "packages/ai-agent-runtime/src/profiler/evaluation.ts"
+            "packages/ai-agent-runtime/src/profiler/evaluation.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/architecture-101.json",
+            "apps/asyra-design/test-data/knowledge-evaluation/quality-cases.json",
+            "apps/asyra-design/test-data/knowledge-evaluation/quality.mjs",
+            "apps/asyra-design/test-data/knowledge-evaluation/architecture-protocol.mjs"
           ]
         },
         {
@@ -591,7 +600,7 @@
         {
           "id": "compose.information-forwarding",
           "stepId": "compose",
-          "testName": "execution proof executes the published bounded information example without replaying operations",
+          "testName": "execution proof delivers bounded information through owner continuations without replaying operations",
           "implementationPaths": [
             "apps/asyra-design/server/local-information-delivery.ts",
             "apps/asyra-design/server/local-operation-tools.ts"
@@ -643,7 +652,8 @@
             "apps/asyra-design/server/ai-domain-prompt.ts",
             "apps/asyra-design/server/design-preparation-examples.ts",
             "apps/asyra-design/server/design-budget.ts",
-            "apps/asyra-design/server/design-construction-schema.ts"
+            "apps/asyra-design/server/design-construction-schema.ts",
+            "apps/asyra-design/src/ai/tool-schema.ts"
           ]
         },
         {
@@ -652,7 +662,10 @@
           "testName": "execution proof distinguishes inspection lookup coverage from completed reads",
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-information-delivery.ts"
+            "apps/asyra-design/server/local-information-delivery.ts",
+            "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
+            "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+            "apps/asyra-design/server/__tests__/fixtures/recorded-101/field-query-recovery-20261027.json"
           ]
         },
         {
@@ -806,7 +819,7 @@
         {
           "id": "compose.image-display-recovery",
           "stepId": "compose",
-          "testName": "execution proof retains failed image forwarding for display-only recovery",
+          "testName": "execution proof preserves retained images during direct response reprojection",
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts"
           ]

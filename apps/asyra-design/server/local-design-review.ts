@@ -1,3 +1,4 @@
+import { operationInputIssue } from './operation-input-schema'
 import {
   createDesignCheckResults,
   designCheckDeliverySchema,
@@ -101,11 +102,89 @@ const visualCheckIdentity = (check: {
   check.unitId === undefined
     ? `visual:${check.criterionId}`
     : `visual-unit:${JSON.stringify([check.criterionId, check.unitId])}`
+const reviewSupersessionConstraint = {
+  anyOf: [{ required: ['unitId'] }, { properties: { supersedes: false } }]
+}
+const validateSupersession = (check: {
+  unitId?: unknown
+  supersedes?: unknown
+}) => {
+  if (check.supersedes === undefined) return
+  if (check.unitId === undefined)
+    throw new Error(
+      'Whole-criterion checks must omit supersedes. It replaces an existing regional unit scope only; do not invent unitId. Reuse current images and bind the same criterion without supersedes.'
+    )
+  if (
+    !record(check.supersedes) ||
+    !Number.isInteger(check.supersedes.revision) ||
+    Number(check.supersedes.revision) < 1 ||
+    !text(check.supersedes.reason) ||
+    check.supersedes.reason.length > 1000 ||
+    Object.keys(check.supersedes).some(
+      (key) => !['revision', 'reason'].includes(key)
+    )
+  )
+    throw new Error(
+      'Unit supersession requires an exact revision and redesign reason.'
+    )
+}
+/** Pure corrective input only; the next invocation still validates evidence and scope. */
+export const reviewSupersessionRecovery = (value: unknown) => {
+  if (!record(value)) return
+  const next = structuredClone(value)
+  let corrected = false
+  const correct = (items: unknown) => {
+    if (!Array.isArray(items)) return
+    for (const check of items) {
+      if (
+        record(check) &&
+        check.unitId === undefined &&
+        check.supersedes !== undefined
+      ) {
+        delete check.supersedes
+        corrected = true
+      }
+    }
+  }
+  if (Array.isArray(next.inspections))
+    for (const target of next.inspections)
+      if (record(target)) correct(target.checks)
+  correct(next.bindChecks)
+  correct(next.checks)
+  if (!corrected) return
+  if (Array.isArray(next.checks)) {
+    next.bindChecks = next.checks.map((check) => {
+      if (!record(check)) return check
+      const {
+        status: _status,
+        evidence: _evidence,
+        binding: _binding,
+        ...selection
+      } = check
+      return selection
+    })
+    delete next.checks
+  }
+  const schema =
+    next.phase === 'structure' ? designEvidenceSchema : reviewVisualSchema
+  if (operationInputIssue(next, schema)) return
+  return {
+    next: {
+      tool: AiDesignToolIds.REVIEW_DRAWING,
+      arguments: next,
+      requiredInputs: [],
+      instruction:
+        'Removed only whole-criterion supersedes. Keep criterion identities and current image assignments; call next.arguments for validation and binding, then explicitly judge the images. No judgments were recorded. Do not invent units, recapture retained images or replay edits.'
+    }
+  }
+}
 const checkIdentityProperties = {
   referenceUses: referenceUsesSchema,
   criterionId: { type: 'string', minLength: 1 },
   unitId: { type: 'string', minLength: 1, maxLength: 256 },
   supersedes: {
+    description:
+      'Only with declared unitId: replace its scope using exact prior revision and redesign reason. Omit for whole-criterion checks and unchanged-scope fresh images.',
     type: 'object',
     additionalProperties: false,
     required: ['revision', 'reason'],
@@ -116,6 +195,7 @@ const checkIdentityProperties = {
   }
 }
 const reviewSelectionSchema = {
+  ...reviewSupersessionConstraint,
   type: 'object',
   additionalProperties: false,
   required: ['criterionId', 'inspectionIds'],
@@ -165,7 +245,7 @@ const factBindingsSchema = {
   type: 'array',
   maxItems: 24,
   description:
-    'Link applied source facts to exact criterion/unit and canonical IDs. Image-backed facts require explicit current fact-purpose referenceUses. Source facts remain unchanged.',
+    'Link source facts to exact criterion/unit/document IDs. Image facts need current fact-purpose referenceUses. Source facts remain unchanged.',
   items: {
     type: 'object',
     additionalProperties: false,
@@ -219,7 +299,7 @@ const designReviewProperties = {
   criteria: {
     type: 'object',
     description:
-      'Named checks keyed by stable IDs. Each links the original user requirement to an observable check. Do not upgrade the requested quality with extra material, fidelity or detail demands; optional polish is not a completion criterion. Set verification=visual for appearance judged from images or data for numeric scale, editability and other canonical properties. Split mixed requirements into separate criteria. Reuse IDs in structureCriteria, factBindings and checks; do not repeat descriptions as IDs.',
+      'Stable criterion IDs link requested requirements/checks. No added material/fidelity/detail demands or polish gate. visual=images; data=scale/editability/canonical properties; split mixed requirements. structureCriteria/factBindings/checks reuse IDs.',
     additionalProperties: {
       type: 'object',
       additionalProperties: false,
@@ -244,7 +324,7 @@ const designReviewProperties = {
           uniqueItems: true,
           items: { type: 'string', minLength: 1, maxLength: 256 },
           description:
-            'Required explicit scope for every visual criterion: [] deliberately means whole-view; nonempty stable unit IDs mean independent regional or cross-region judgments. Use regional units for independently editable areas and a separate whole-view criterion for overall agreement. Omit only for data criteria. Nonempty units are not supported for structure criteria.'
+            'Visual: []=whole-view; stable unit IDs=independent regional/cross-region judgments. Editable regions need units; overall agreement needs a separate whole-view criterion. Omit only for data; no structure units.'
         }
       }
     }
@@ -252,15 +332,25 @@ const designReviewProperties = {
   structureCriteria: {
     type: 'array',
     description:
-      'Select a unique subset of criterion IDs for an optional whole-structure checkpoint. Ready parts can be drawn and reviewed with phase=visual, final=false while other criteria remain pending.',
+      'Optional whole-structure checkpoint IDs. Ready parts can use phase=visual, final=false while other criteria remain pending.',
     maxItems: 24,
     items: { type: 'string', minLength: 1, maxLength: 1000 }
   },
   deferredDetails: {
     type: 'array',
     maxItems: 24,
+    examples: [
+      [
+        {
+          id: 'rear-detail',
+          description: 'Rear-facing trim',
+          reason:
+            'Likely occluded in the requested view; verify in final review.'
+        }
+      ]
+    ],
     description:
-      'Deferred-part descriptions, not geometry. Each entry requires id, description and reason. Add in plan or reviews. Final review resolves retained IDs. Example: {"id":"rear-detail","description":"Rear-facing trim","reason":"Likely occluded in the requested view; verify in final review."}',
+      'Deferred descriptions, not geometry; add in plan or reviews. Final review resolves retained IDs. State the reason, such as uncertain visibility.',
     items: {
       type: 'object',
       additionalProperties: false,
@@ -312,6 +402,7 @@ const designReviewProperties = {
             type: 'object',
             additionalProperties: false,
             required: ['criterionId'],
+            ...reviewSupersessionConstraint,
             properties: checkIdentityProperties
           }
         }
@@ -332,6 +423,7 @@ const designReviewProperties = {
         'inspectionIds',
         'binding'
       ],
+      ...reviewSupersessionConstraint,
       properties: {
         binding: reviewBindingSchema,
         referenceUses: referenceUsesSchema,
@@ -377,7 +469,7 @@ const referenceImageIndexesSchema = {
   uniqueItems: true,
   items: { type: 'integer', minimum: 0 },
   description:
-    'Attachment indexes of suitable reference images chosen for comparison. Include imported references explicitly; omitted selection uses only original user attachments. Do not select rejected research images.'
+    'Suitable comparison indexes: explicitly select imports; omission uses original user attachments only. Never select rejected research images.'
 }
 
 const reviewFactsSchema = {
@@ -806,6 +898,11 @@ export const designEvidenceDefinitions = [
           }),
           next: {
             oneOf: [
+              toolResultObject({
+                tool: { const: AiDesignToolIds.READ_DESIGN_CHECKS },
+                arguments: toolResultObject({ ids: toolResultIds }),
+                instruction: toolResultString
+              }),
               toolResultObject({
                 tool: { const: AiDesignToolIds.REVIEW_DRAWING },
                 arguments: toolResultObject(
@@ -1487,6 +1584,7 @@ export const createLocalDesignReview = (
             'Each review capture requires explicit check identities.'
           )
         for (const check of target.checks) {
+          validateSupersession(check)
           if (!allowed.has(visualCheckIdentity(check)))
             throw new Error(
               'Review capture requires an exact declared criterion/unit identity.'
@@ -2364,21 +2462,7 @@ export const createLocalDesignReview = (
         message: string
       }[] = []
       for (const [index, check] of value.checks.entries()) {
-        if (
-          check.supersedes !== undefined &&
-          (check.unitId === undefined ||
-            !record(check.supersedes) ||
-            !Number.isInteger(check.supersedes.revision) ||
-            check.supersedes.revision < 1 ||
-            !text(check.supersedes.reason) ||
-            check.supersedes.reason.length > 1000 ||
-            Object.keys(check.supersedes).some(
-              (key) => !['revision', 'reason'].includes(key)
-            ))
-        )
-          throw new Error(
-            'Unit supersession requires an exact revision and redesign reason.'
-          )
+        validateSupersession(check)
         if (check.unitId === undefined) continue
         const key = visualCheckIdentity(check)
         const scope = [

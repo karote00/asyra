@@ -282,11 +282,49 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
         if (!retained.length) return []
         const properties = branch.properties as Record<string, unknown>
         const type = properties.type as Record<string, unknown>
+        const alternatives = Array.isArray(branch.anyOf)
+          ? branch.anyOf.filter(
+              (alternative) =>
+                !record(alternative) ||
+                !nodeTypes(alternative).length ||
+                nodeTypes(alternative).some((type) => retained.includes(type))
+            )
+          : undefined
+        // A closed object already rejects names absent from properties. Remove
+        // fields forbidden by every retained alternative, preserving that rule.
+        const excluded = new Set(
+          branch.additionalProperties === false && alternatives?.length
+            ? Object.keys(properties).filter((name) =>
+                alternatives.every(
+                  (alternative) =>
+                    record(alternative) &&
+                    record(alternative.properties) &&
+                    alternative.properties[name] === false
+                )
+              )
+            : []
+        )
+        const included = (values: Record<string, unknown>) =>
+          Object.fromEntries(
+            Object.entries(values).filter(([name]) => !excluded.has(name))
+          )
         return [
           {
             ...branch,
+            ...(alternatives
+              ? {
+                  anyOf: alternatives.map((alternative) =>
+                    record(alternative) && record(alternative.properties)
+                      ? {
+                          ...alternative,
+                          properties: included(alternative.properties)
+                        }
+                      : alternative
+                  )
+                }
+              : {}),
             properties: {
-              ...properties,
+              ...included(properties),
               type: { ...type, ...(type.enum ? { enum: retained } : {}) }
             }
           }
@@ -343,103 +381,183 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
   return schema
 }
 
-/** Readable documentation of the canonical schema, never an execution validator. */
+/** A lossless JSON Schema projection; no separate parameter grammar or validator. */
 export const workflowUsageParameters = (input: unknown) => {
-  const notes: string[] = []
-  const reusable = new Map<string, { name: string; text: string }>()
-  let sequence = 0
-  const occurrences = new Map<string, number>()
-  const count = (value: unknown) => {
+  if (!record(input)) throw new Error('Missing canonical input')
+  const maps = [
+    'properties',
+    '$defs',
+    'definitions',
+    'patternProperties',
+    'dependentSchemas'
+  ]
+  const lists = ['anyOf', 'oneOf', 'allOf', 'prefixItems']
+  const singles = [
+    'items',
+    'additionalProperties',
+    'propertyNames',
+    'not',
+    'if',
+    'then',
+    'else',
+    'contains',
+    'unevaluatedProperties'
+  ]
+  const mapChildren = (
+    schema: Record<string, unknown>,
+    visit: (child: unknown) => unknown
+  ): Record<string, unknown> => {
+    const result = { ...schema }
+    // Examples are delivered once in the existing executable invocation field.
+    delete result.examples
+    for (const key of maps)
+      if (record(result[key]))
+        result[key] = Object.fromEntries(
+          Object.entries(result[key]).map(([name, child]) => [
+            name,
+            visit(child)
+          ])
+        )
+    for (const key of lists)
+      if (Array.isArray(result[key])) result[key] = result[key].map(visit)
+    for (const key of singles)
+      if (Object.hasOwn(result, key)) result[key] = visit(result[key])
+    return result
+  }
+  const counts = new Map<string, number>()
+  const normalize = (value: unknown): unknown => {
+    if (!record(value)) return value
+    const result = mapChildren(value, normalize)
+    const key = JSON.stringify(result)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+    return result
+  }
+  const root = normalize(input) as Record<string, unknown>
+  // A reference may address a descendant rather than an entire definition.
+  // Replacing one of its ancestors with a ref would erase that JSON Pointer.
+  const addressedAncestors = new WeakSet<object>()
+  const preserveAddresses = (value: unknown): void => {
     if (Array.isArray(value)) {
-      value.forEach(count)
+      value.forEach(preserveAddresses)
       return
     }
     if (!record(value)) return
-    const key = JSON.stringify(value)
-    occurrences.set(key, (occurrences.get(key) ?? 0) + 1)
-    for (const [name, child] of Object.entries(value))
-      if (name !== 'examples') count(child)
-  }
-  count(input)
-  const render = (value: unknown, label: string): string => {
-    if (value === false) return 'forbidden'
-    if (value === true) return 'any value'
-    if (!record(value)) throw new Error('Invalid canonical parameter schema')
-    const key = JSON.stringify(value)
-    const previous = reusable.get(key)
-    if (previous) return previous.name
-    const pieces: string[] = []
-    if (typeof value.$ref === 'string')
-      pieces.push(value.$ref.replace('#/$defs/', ''))
-    if (value.type) pieces.push(String(value.type))
-    if (record(value.properties))
-      pieces.push(
-        '{' +
-          Object.entries(value.properties)
-            .map(([name, schema]) => `${name}:${render(schema, name)}`)
-            .join(';') +
-          '}'
-      )
-    if (value.items !== undefined)
-      pieces.push('items: ' + render(value.items, label + 'Item'))
-    if (value.additionalProperties !== undefined)
-      pieces.push(
-        'additional=' + render(value.additionalProperties, label + 'Value')
-      )
-    if (value.propertyNames !== undefined)
-      pieces.push('field names: ' + render(value.propertyNames, 'fieldName'))
-    for (const [keyword, meaning] of [
-      ['anyOf', 'anyOf'],
-      ['oneOf', 'oneOf'],
-      ['allOf', 'allOf']
-    ] as const)
-      if (Array.isArray(value[keyword]))
-        pieces.push(
-          `${meaning}(${value[keyword].map((entry) => render(entry, label + 'Case')).join(' | ')})`
-        )
-    if (typeof value.description === 'string') {
-      let index = notes.indexOf(value.description)
-      if (index < 0) index = notes.push(value.description) - 1
-      pieces.push(`note ${index + 1}`)
+    if (typeof value.$ref === 'string' && value.$ref.startsWith('#/')) {
+      let ancestor: unknown = root
+      for (const part of value.$ref.slice(2).split('/')) {
+        if (!record(ancestor) && !Array.isArray(ancestor)) break
+        addressedAncestors.add(ancestor)
+        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+        ancestor = Object.hasOwn(ancestor, key)
+          ? (ancestor as Record<string, unknown>)[key]
+          : undefined
+      }
     }
-    // Keep all other canonical restrictions verbatim, including vocabulary added
-    // by the owner later. Documentation must not silently weaken admission.
-    const handled = new Set([
-      '$ref',
-      '$defs',
-      'type',
-      'properties',
-      'items',
-      'additionalProperties',
-      'propertyNames',
-      'anyOf',
-      'oneOf',
-      'allOf',
-      'description',
-      'examples'
-    ])
-    for (const [name, constraint] of Object.entries(value))
-      if (!handled.has(name))
-        pieces.push(`${name}=${JSON.stringify(constraint)}`)
-    const text = pieces.join(';')
-    if (text.length < 40 || occurrences.get(key) === 1) return text
-    const name = `T${++sequence}`
-    reusable.set(key, { name, text })
-    return name
+    Object.values(value).forEach(preserveAddresses)
   }
-  if (!record(input)) throw new Error('Missing canonical input')
-  const definitions = record(input.$defs) ? input.$defs : {}
-  const root = render(input, 'arguments')
-  const aliases = Object.entries(definitions).map(
-    ([name, schema]) => `${name} = ${render(schema, name)}`
+  preserveAddresses(root)
+  const definitions = record(root.$defs) ? { ...root.$defs } : {}
+  const references = new Map<string, string>()
+  let sequence = 0
+  const project = (value: unknown): unknown => {
+    if (!record(value)) return value
+    const key = JSON.stringify(value)
+    const count = counts.get(key) ?? 1
+    if (!addressedAncestors.has(value) && references.has(key))
+      return { $ref: '#/$defs/' + references.get(key) }
+    const result = mapChildren(value, project)
+    if (count < 2 || addressedAncestors.has(value)) return result
+    let name: string
+    do {
+      name = (++sequence).toString(36)
+    } while (Object.hasOwn(definitions, name))
+    const reference = { $ref: '#/$defs/' + name }
+    const size = JSON.stringify(result).length
+    if (
+      count * (size - JSON.stringify(reference).length) <=
+      size + name.length + 4
+    )
+      return result
+    definitions[name] = result
+    references.set(key, name)
+    return reference
+  }
+  // Existing references remain rooted at the same definitions, never renamed.
+  const originalDefinitions = record(root.$defs) ? root.$defs : {}
+  delete root.$defs
+  const result = mapChildren(root, project)
+  for (const [name, definition] of Object.entries(originalDefinitions))
+    definitions[name] = project(definition)
+  const used = new Set(Object.keys(originalDefinitions))
+  const retain = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(retain)
+      return
+    }
+    if (!record(value)) return
+    if (typeof value.$ref === 'string' && value.$ref.startsWith('#/$defs/')) {
+      const name = value.$ref
+        .slice(8)
+        .split('/')[0]
+        .replace(/~1/g, '/')
+        .replace(/~0/g, '~')
+      if (!used.has(name)) {
+        used.add(name)
+        retain(definitions[name])
+      }
+    }
+    Object.values(value).forEach(retain)
+  }
+  retain(result)
+  Object.keys(originalDefinitions).forEach((name) => retain(definitions[name]))
+  for (const name of Object.keys(definitions))
+    if (!used.has(name)) Reflect.deleteProperty(definitions, name)
+  // Parent sharing changes child occurrence counts. Price references in the
+  // retained graph, not the expanded input, before publishing indirection.
+  const retainedCounts = new Map<string, number>()
+  const countReferences = (value: unknown): void => {
+    if (!record(value)) return
+    if (typeof value.$ref === 'string')
+      retainedCounts.set(value.$ref, (retainedCounts.get(value.$ref) ?? 0) + 1)
+    for (const key of maps)
+      if (record(value[key])) Object.values(value[key]).forEach(countReferences)
+    for (const key of lists)
+      if (Array.isArray(value[key])) value[key].forEach(countReferences)
+    for (const key of singles)
+      if (Object.hasOwn(value, key)) countReferences(value[key])
+  }
+  countReferences(result)
+  Object.values(definitions).forEach(countReferences)
+  const inline = new Set(
+    Object.entries(definitions).flatMap(([name, definition]) => {
+      if (Object.hasOwn(originalDefinitions, name)) return []
+      const ref = '#/$defs/' + name
+      const count = retainedCounts.get(ref) ?? 0
+      const size = JSON.stringify(definition).length
+      const referenceSize = JSON.stringify({ $ref: ref }).length
+      return count * size <= count * referenceSize + size + name.length + 4
+        ? [name]
+        : []
+    })
   )
-  return [
-    'Optional unless required; constraints combine. forbidden rejects; additional=forbidden rejects unlisted fields. anyOf >=1; oneOf exactly one; allOf every branch. Types/notes included.',
-    `arguments = ${root}`,
-    ...aliases,
-    ...[...reusable.values()].map(({ name, text }) => `${name} = ${text}`),
-    ...notes.map((note, index) => `note ${index + 1}: ${note}`)
-  ].join('\n')
+  const expand = (value: unknown): unknown => {
+    if (!record(value)) return value
+    if (Object.keys(value).length === 1 && typeof value.$ref === 'string') {
+      const name = value.$ref.slice(8)
+      if (value.$ref.startsWith('#/$defs/') && inline.has(name))
+        return expand(definitions[name])
+    }
+    return mapChildren(value, expand)
+  }
+  const published = mapChildren(result, expand)
+  const retainedDefinitions = Object.fromEntries(
+    Object.entries(definitions)
+      .filter(([name]) => !inline.has(name))
+      .map(([name, definition]) => [name, expand(definition)])
+  )
+  if (Object.keys(retainedDefinitions).length)
+    published.$defs = retainedDefinitions
+  return published
 }
 
 export const workflowUsageGuide = (
@@ -468,7 +586,7 @@ export const workflowUsageGuide = (
     selection:
       typeof usage.selection === 'string'
         ? usage.selection
-        : 'inputScope.optionalInputs selects full contracts; selection does not require sending them. Omit plan without rereading.',
+        : 'Selection does not require sending optionalInputs. Omit plan without rereading.',
     parameters: workflowUsageParameters(selected),
     results: usage.results,
     recovery: usage.recovery

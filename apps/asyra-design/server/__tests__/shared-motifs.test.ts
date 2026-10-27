@@ -313,7 +313,25 @@ it('reduces complete selected delivery and saved invocation without another page
     JSON.parse(text).tools[0].invocationExample.invocation.arguments.draft
       .motifTemplates
   ).toBeDefined()
-  expect(bytes).toBeLessThanOrEqual(fixture.baseline.guideWireBytes)
+  const { resultKey, ...contract } = JSON.parse(text)
+  expect(resultKey).toEqual(expect.any(String))
+  // Keep the original contract-only budget; the total below still includes the handle.
+  const { deliverInformation } = await import('../local-information-delivery')
+  let budgetQuery: Record<string, unknown> = fixture.query
+  let contractBytes = 0
+  for (;;) {
+    const pageText = deliverInformation(
+      JSON.stringify(contract),
+      'describe_design_apis',
+      budgetQuery,
+      'contract-budget'
+    )
+    contractBytes += Buffer.byteLength(pageText)
+    const page = JSON.parse(pageText).contentDelivery
+    if (!page || page.lastPage) break
+    budgetQuery = page.next.arguments
+  }
+  expect(contractBytes).toBeLessThanOrEqual(fixture.baseline.guideWireBytes)
   expect(
     bytes + Buffer.byteLength(JSON.stringify(fixture.compact))
   ).toBeLessThan(fixture.baseline.guideWireBytes + fixture.baseline.inputBytes)

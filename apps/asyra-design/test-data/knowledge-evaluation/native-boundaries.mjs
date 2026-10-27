@@ -75,7 +75,7 @@ export function collectNativeBoundaries({
     const rows =
       database.prepare(`SELECT id, ts, ts_nanos, target, feedback_log_body FROM logs
       WHERE thread_id = ? AND process_uuid = ? AND ts >= ? AND ts <= ?
-      AND target IN ('codex_core::stream_events_utils', 'codex_code_mode::timing') ORDER BY ts, ts_nanos, id`)
+      AND target = 'codex_core::stream_events_utils' ORDER BY ts, ts_nanos, id`)
     for (const row of rows.iterate(
       threadId,
       processId,
@@ -91,7 +91,7 @@ export function collectNativeBoundaries({
       let event
       if (row.target === 'codex_core::stream_events_utils') {
         const itemId = body.match(
-          /Output item item_type="custom_tool_call" item_id="([a-zA-Z0-9_-]{1,180})"/
+          /Output item item_type="function_call" item_id="([a-zA-Z0-9_-]{1,180})"/
         )?.[1]
         if (
           itemId &&
@@ -111,22 +111,6 @@ export function collectNativeBoundaries({
           )?.[1]
           if (tool) event = { stage: 'native-tool-dispatched', tool }
         }
-      } else if (body.includes('code-mode host operation completed')) {
-        const callId = identity(body, 'call_id')
-        const tool = identity(body, 'tool_name')
-        const duration = body.match(/\bcode_mode_host_duration_ns=(\d+)\b/)?.[1]
-        if (
-          callId &&
-          tool &&
-          duration &&
-          Number.isSafeInteger(Number(duration))
-        )
-          event = {
-            stage: 'native-host-completed',
-            callId,
-            tool,
-            durationMs: Number(duration) / 1000000
-          }
       }
       if (event)
         boundaries.push({

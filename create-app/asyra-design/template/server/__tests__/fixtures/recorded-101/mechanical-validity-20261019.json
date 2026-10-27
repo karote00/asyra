@@ -1,0 +1,153 @@
+{
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1792342207875",
+  "requestId": "26279d80-c582-4608-b0e7-3c9142b79b25",
+  "scope": "Mechanical validity only; actor IDs and workload sizes are remapped to fresh canonical fixtures. No claim that every stale result has this cause.",
+  "structuralCalls": [
+    {
+      "index": 35,
+      "tool": "execute_design_batch",
+      "operations": [
+        {
+          "name": "api_element_deleteElements",
+          "arguments": {},
+          "target": {
+            "artifactId": "f5092f82-df6c-4f22-9f57-ca1cec1247f0",
+            "field": "elementIds",
+            "keys": [
+              "crown-fin0X",
+              "crown-fin0Y",
+              "crown-fin0roof",
+              "spire-sun",
+              "spire-shade"
+            ]
+          }
+        },
+        {
+          "name": "api_hierarchy_groupElements",
+          "arguments": {},
+          "target": {
+            "field": "elementIds",
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 0,
+                "y": 38000,
+                "width": 30000,
+                "height": 22000
+              },
+              "filter": {
+                "type": "vector",
+                "parentId": "design-5bac8d62-4684-4465-9adf-4bdbc494f6dd-0"
+              },
+              "expectedCount": 6583
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "tool": "execute_design_batch",
+      "operations": [
+        {
+          "name": "api_hierarchy_moveElementsRelative",
+          "arguments": {
+            "request": {
+              "elementIds": [
+                "grp-actor-4a9d8b5f-19a2-4759-bb4f-300b8e073de9-8"
+              ],
+              "anchorId": "design-c617cc7f-629f-43e1-ac73-ba6c9c0a3627-0",
+              "placement": "before"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "tool": "execute_design_batch",
+      "operations": [
+        {
+          "name": "api_hierarchy_groupElements",
+          "arguments": {
+            "elementIds": [
+              "design-f5092f82-df6c-4f22-9f57-ca1cec1247f0-0",
+              "design-463775c0-d7cf-4e2d-ba73-ec7b63998f8d-0"
+            ]
+          }
+        },
+        {
+          "name": "api_hierarchy_groupElements",
+          "arguments": {
+            "elementIds": [
+              "grp-actor-4a9d8b5f-19a2-4759-bb4f-300b8e073de9-8",
+              "design-8dc898b2-6d79-42a8-97fd-afa175a75d85-0"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "tool": "execute_design_batch",
+      "operations": [
+        {
+          "name": "api_hierarchy_moveElementsRelative",
+          "arguments": {
+            "request": {
+              "anchorId": "design-5bac8d62-4684-4465-9adf-4bdbc494f6dd-2099",
+              "placement": "before"
+            }
+          },
+          "target": {
+            "field": "elementIds",
+            "path": ["request", "elementIds"],
+            "query": {
+              "scope": "region",
+              "bounds": {
+                "x": 0,
+                "y": 45000,
+                "width": 25000,
+                "height": 15000
+              },
+              "filter": {
+                "parentId": "grp-actor-4a9d8b5f-19a2-4759-bb4f-300b8e073de9-8",
+                "name": {
+                  "prefix": "mall"
+                }
+              },
+              "expectedCount": 1129
+            }
+          }
+        },
+        {
+          "name": "api_element_deleteElements",
+          "arguments": {},
+          "target": {
+            "artifactId": "8dc898b2-6d79-42a8-97fd-afa175a75d85",
+            "field": "elementIds",
+            "keyPrefix": "colonnadeY"
+          }
+        },
+        {
+          "name": "api_element_deleteElements",
+          "arguments": {},
+          "target": {
+            "artifactId": "8dc898b2-6d79-42a8-97fd-afa175a75d85",
+            "field": "elementIds",
+            "keyPrefix": "doorY"
+          }
+        },
+        {
+          "name": "api_element_deleteElements",
+          "arguments": {},
+          "target": {
+            "artifactId": "8dc898b2-6d79-42a8-97fd-afa175a75d85",
+            "field": "elementIds",
+            "keys": ["entranceY", "canopyY"]
+          }
+        }
+      ]
+    }
+  ]
+}

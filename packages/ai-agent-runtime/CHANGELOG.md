@@ -1,5 +1,25 @@
 # @asyra/ai-agent-runtime
 
+## Pending selected retained information
+
+```update-note
+{
+  "change": "selected-retained-information",
+  "owner": "AI Agent Runtime",
+  "summary": "Redisplay selected full Knowledge text or tool contracts from existing request-owned results, preserving original scope, dependencies, overrides and read-only recovery without repeated content reads or projection.",
+  "sources": [
+    "packages/ai-agent-runtime/src/knowledge.ts",
+    "packages/ai-agent-runtime/src/knowledge-types.ts",
+    "packages/ai-agent-runtime/src/__tests__/knowledge.test.ts"
+  ],
+  "impact": "integration",
+  "guides": [
+    "docs/public/updates/retained-information-r1.md"
+  ],
+  "reason": "Callers may opt into fromResult with exact targets; retain original result identities only within their valid request/session and recover stale selections without replay."
+}
+```
+
 ## Pending public provider activity recording
 
 ```update-note

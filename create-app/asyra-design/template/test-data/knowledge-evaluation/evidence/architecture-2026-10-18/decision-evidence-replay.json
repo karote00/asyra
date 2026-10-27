@@ -1,0 +1,2114 @@
+{
+  "sourceRun": "knowledge-quality-knowledge-taipei-101-1792337950811",
+  "sourceSha256": "282eb497c8aaf145c017c594bb5aa0935aac0606d86d5d9298b228cc40dbd539",
+  "scope": "Exact selected calls only; original identities are historical, never new-session receipts. Offline agent choices and image capture are controlled, not real-agent efficacy evidence.",
+  "calls": {
+    "criteria": {
+      "tool": "define_design_criteria",
+      "callId": "exec-008fba68-ece2-49d9-a3e6-e0d439176d4b",
+      "startMs": 30976.691208,
+      "status": "usable",
+      "inputValue": {
+        "method": "公分世界座標，1 cm=1 px，固定正交三分之四俯視（方位35°、仰角25°）。總高50800 cm；分層與平面尺寸為附件約略比例推估，非竣工測量。青綠玻璃採整面連續反射、金屬窗框與簷口分離；光由左上，右面較暗。規則窗框採surface-grid，獨特如意飾件另畫。",
+        "references": [
+          "附件0：僅量體、底座關係、輪廓，排除施工設備",
+          "附件1：僅如意飾件形狀與材質"
+        ],
+        "criteria": {
+          "overall": {
+            "requirement": "完整台北101，基座到尖頂、俯視三分之四、透明周圍",
+            "description": "完整輪廓、八段竹節、可見頂面、無設備背景文字",
+            "verification": "visual",
+            "requiredUnits": []
+          },
+          "detail": {
+            "requirement": "高度細緻寫實立面、窗框、可見裝飾",
+            "description": "玻璃與金屬、細密窗框、簷口、如意與屋頂細節",
+            "verification": "visual",
+            "requiredUnits": [
+              "base",
+              "tiers",
+              "crown",
+              "ornament"
+            ]
+          },
+          "scale": {
+            "requirement": "實際尺寸1cm=1px投影前，可編輯2D",
+            "description": "公分世界座標、總高50800，原生向量與固定投影；未見尺寸標示估計",
+            "verification": "data"
+          }
+        },
+        "detailRequired": true
+      },
+      "outputValue": {
+        "phase": "plan",
+        "recorded": true,
+        "requirementRevision": 1,
+        "criterionIds": [
+          "overall",
+          "detail",
+          "scale"
+        ],
+        "facts": [],
+        "deferredDetailIds": [],
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    "references": {
+      "tool": "select_design_references",
+      "callId": "exec-d13f718a-d1e3-4805-afac-b18594b1060f",
+      "startMs": 58498.806207999995,
+      "status": "usable",
+      "inputValue": {
+        "referenceImageIndexes": [
+          0,
+          1
+        ],
+        "requirementRevision": 1,
+        "referenceDecisions": [
+          {
+            "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+            "status": "restricted",
+            "reason": "低解析空拍僅支持量體和基座關係；排除起重設備",
+            "uses": [
+              {
+                "id": "massing",
+                "criterionId": "overall",
+                "purpose": "visual",
+                "region": "whole",
+                "limitations": [
+                  "不建立精確窗格或隱藏幾何"
+                ]
+              }
+            ]
+          },
+          {
+            "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+            "status": "restricted",
+            "reason": "如意近照僅支持造型與金屬材質",
+            "uses": [
+              {
+                "id": "ornament-shape",
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "purpose": "visual",
+                "region": "whole",
+                "limitations": [
+                  "不建立位置與實際尺寸"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "outputValue": {
+        "referenceImageIndexes": [
+          0,
+          1
+        ],
+        "changed": true,
+        "requirementRevision": 1,
+        "referenceDecisions": [
+          {
+            "attachmentIndex": 0,
+            "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+            "status": "restricted",
+            "reason": "低解析空拍僅支持量體和基座關係；排除起重設備",
+            "uses": [
+              {
+                "id": "massing",
+                "criterionId": "overall",
+                "purpose": "visual",
+                "region": "whole",
+                "limitations": [
+                  "不建立精確窗格或隱藏幾何"
+                ],
+                "receipt": {
+                  "requestId": "18c539c2-f776-4839-a286-de2893fb2c31",
+                  "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                  "useId": "massing",
+                  "revision": 1,
+                  "requirementRevision": 1
+                },
+                "pixels": {
+                  "width": 507,
+                  "height": 665
+                }
+              }
+            ],
+            "author": "model",
+            "requirementRevision": 1,
+            "freshness": "current"
+          },
+          {
+            "attachmentIndex": 1,
+            "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+            "status": "restricted",
+            "reason": "如意近照僅支持造型與金屬材質",
+            "uses": [
+              {
+                "id": "ornament-shape",
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "purpose": "visual",
+                "region": "whole",
+                "limitations": [
+                  "不建立位置與實際尺寸"
+                ],
+                "receipt": {
+                  "requestId": "18c539c2-f776-4839-a286-de2893fb2c31",
+                  "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                  "useId": "ornament-shape",
+                  "revision": 2,
+                  "requirementRevision": 1
+                },
+                "pixels": {
+                  "width": 500,
+                  "height": 518
+                }
+              }
+            ],
+            "author": "model",
+            "requirementRevision": 1,
+            "freshness": "current"
+          }
+        ],
+        "review": {
+          "accepted": false,
+          "requiresFreshReview": true,
+          "affectedCriterionIds": [],
+          "referenceIssues": [],
+          "requirementRevision": 1,
+          "requiredCriterionIds": [
+            "overall",
+            "detail",
+            "scale"
+          ],
+          "coverage": {
+            "required": 6,
+            "passed": 0,
+            "pending": [
+              {
+                "id": "visual:overall",
+                "criterionId": "overall",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"base\"]",
+                "criterionId": "detail",
+                "unitId": "base",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"tiers\"]",
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"crown\"]",
+                "criterionId": "detail",
+                "unitId": "crown",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"ornament\"]",
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "status": "unverified"
+              },
+              {
+                "id": "visual:scale",
+                "criterionId": "scale",
+                "status": "unverified"
+              }
+            ]
+          },
+          "next": {
+            "tool": "review_drawing",
+            "phase": "visual",
+            "final": false,
+            "requiredInputs": [
+              "inspectionIds",
+              "checks"
+            ],
+            "instruction": "Record observed pending criterion/unit judgments before editing, including passes and failures; retain unrelated passes. Use final=true only for completion. Reuse unchanged inspection IDs only if canonical evidence validation still accepts them.",
+            "inspectionIds": [],
+            "invalidatedFactIds": []
+          }
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    "earlyCapture": {
+      "tool": "review_drawing",
+      "callId": "exec-b5d80825-0832-4ad9-879d-edc9b124443b",
+      "startMs": 98470.856,
+      "status": "usable",
+      "inputValue": {
+        "phase": "visual",
+        "final": false,
+        "inspections": [
+          {
+            "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+            "view": "overview",
+            "checks": [
+              {
+                "criterionId": "overall"
+              }
+            ]
+          },
+          {
+            "elementId": "design-3e34f8cf-cf5c-44b5-bc3c-65b72a79b0a0-0",
+            "view": "overview",
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "tiers"
+              }
+            ]
+          }
+        ]
+      },
+      "outputValue": {
+        "phase": "visual",
+        "accepted": false,
+        "readyForDetail": false,
+        "inspectionIds": [
+          "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+          "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+        ],
+        "actionResults": [
+          {
+            "actionId": "1a9587f8-b566-4ab5-af3b-2d64c7412aa9",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "image": {
+                "type": "snapshot",
+                "width": 300,
+                "height": 1024,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 14206,
+                  "height": 48496
+                }
+              },
+              "partial": false,
+              "imageScope": "overview",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                "receiptId": "d3d710ec-e764-4890-86ff-e12d2ead6ae2",
+                "revision": 9026
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+              "revision": 2
+            }
+          },
+          {
+            "actionId": "fd5a996a-9d2e-4b12-88c4-cff47dbf4206",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-3e34f8cf-cf5c-44b5-bc3c-65b72a79b0a0-0",
+              "image": {
+                "type": "snapshot",
+                "width": 1024,
+                "height": 1015,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 7921,
+                  "height": 7853
+                }
+              },
+              "partial": false,
+              "imageScope": "overview",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                "receiptId": "01425f08-4b20-4d31-a8ae-d3260cf6fb0b",
+                "revision": 9026
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "55838e7f-ef53-49d5-ac7d-681be2644dd8",
+              "revision": 2
+            }
+          }
+        ],
+        "coverage": {
+          "required": 6,
+          "passed": 1,
+          "pending": [
+            {
+              "id": "visual-unit:[\"detail\",\"base\"]",
+              "criterionId": "detail",
+              "unitId": "base",
+              "status": "unverified"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"tiers\"]",
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "status": "unverified"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"crown\"]",
+              "criterionId": "detail",
+              "unitId": "crown",
+              "status": "unverified"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"ornament\"]",
+              "criterionId": "detail",
+              "unitId": "ornament",
+              "status": "unverified"
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "status": "stale"
+            }
+          ]
+        },
+        "next": {
+          "tool": "review_drawing",
+          "arguments": {
+            "phase": "visual",
+            "final": false,
+            "inspectionIds": [
+              "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+              "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+            ],
+            "checks": [
+              {
+                "criterionId": "overall",
+                "inspectionIds": [
+                  "f5c9948a-b3d2-4424-93cf-fa0d63bb383c"
+                ],
+                "binding": {
+                  "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+                  "requirementRevision": 1,
+                  "checkRevision": 2,
+                  "dependencies": [
+                    {
+                      "inspectionId": "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+                      "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                      "scope": "overview:whole",
+                      "source": {
+                        "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                        "revision": 9026,
+                        "receiptId": "d3d710ec-e764-4890-86ff-e12d2ead6ae2"
+                      }
+                    }
+                  ],
+                  "signature": "fa13307aabc147de2bf1e3f0b7b69b1748cf84db330a59a010896831701b7a01"
+                }
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "inspectionIds": [
+                  "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+                ],
+                "binding": {
+                  "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+                  "requirementRevision": 1,
+                  "checkRevision": 1,
+                  "dependencies": [
+                    {
+                      "inspectionId": "55838e7f-ef53-49d5-ac7d-681be2644dd8",
+                      "elementId": "design-3e34f8cf-cf5c-44b5-bc3c-65b72a79b0a0-0",
+                      "scope": "overview:whole",
+                      "source": {
+                        "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                        "revision": 9026,
+                        "receiptId": "01425f08-4b20-4d31-a8ae-d3260cf6fb0b"
+                      }
+                    }
+                  ],
+                  "signature": "6462c36e9ee22900011016d825ef9dcfb7a6c733c9353af7c0dcd8020b39f8f2"
+                }
+              }
+            ]
+          },
+          "requiredInputs": [
+            "checks[].status",
+            "checks[].evidence"
+          ],
+          "instruction": "Inspect the delivered images, fill status/evidence in each bound check, and submit next.arguments without capture targets. Preserve bindings exactly. Submit only observed checks; keep unrelated passes. Use final=true only to attempt completion from retained current results."
+        },
+        "message": "Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.",
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    "earlyVerdict": {
+      "tool": "review_drawing",
+      "callId": "exec-18e73f37-ecb8-4efd-982c-86be5165f792",
+      "startMs": 108925.83975,
+      "status": "usable",
+      "inputValue": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+          "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+        ],
+        "checks": [
+          {
+            "criterionId": "overall",
+            "inspectionIds": [
+              "f5c9948a-b3d2-4424-93cf-fa0d63bb383c"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 2,
+              "dependencies": [
+                {
+                  "inspectionId": "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+                  "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                  "scope": "overview:whole",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 9026,
+                    "receiptId": "d3d710ec-e764-4890-86ff-e12d2ead6ae2"
+                  }
+                }
+              ],
+              "signature": "fa13307aabc147de2bf1e3f0b7b69b1748cf84db330a59a010896831701b7a01"
+            },
+            "status": "pass",
+            "evidence": "窗框與原量體對齊，八節輪廓與頂面保持；整體細節仍在進行。"
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "inspectionIds": [
+              "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 1,
+              "dependencies": [
+                {
+                  "inspectionId": "55838e7f-ef53-49d5-ac7d-681be2644dd8",
+                  "elementId": "design-3e34f8cf-cf5c-44b5-bc3c-65b72a79b0a0-0",
+                  "scope": "overview:whole",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 9026,
+                    "receiptId": "01425f08-4b20-4d31-a8ae-d3260cf6fb0b"
+                  }
+                }
+              ],
+              "signature": "6462c36e9ee22900011016d825ef9dcfb7a6c733c9353af7c0dcd8020b39f8f2"
+            },
+            "status": "fail",
+            "evidence": "已畫兩節的細密窗框、樓板與垂直肋條清楚；尚缺其餘六節及簷口裝飾，需完成。"
+          }
+        ]
+      },
+      "outputValue": {
+        "phase": "visual",
+        "results": {
+          "counts": {
+            "pass": 3,
+            "fail": 1,
+            "unverified": 3,
+            "stale": 1
+          },
+          "items": [
+            {
+              "id": "visual-unit:[\"detail\",\"base\"]",
+              "criterionId": "detail",
+              "unitId": "base",
+              "origin": "main-agent",
+              "status": "unverified",
+              "evidence": "Await primary-agent review of actual rendered evidence.",
+              "dependencies": {
+                "criterion:detail": "1"
+              },
+              "revision": 1
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"tiers\"]",
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "已畫兩節的細密窗框、樓板與垂直肋條清楚；尚缺其餘六節及簷口裝飾，需完成。",
+              "scope": [
+                "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+              ],
+              "dependencies": {
+                "check-scope:visual-unit:[\"detail\",\"tiers\"]": "current",
+                "inspection:55838e7f-ef53-49d5-ac7d-681be2644dd8": "9026",
+                "criterion:detail": "1"
+              },
+              "revision": 2
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"crown\"]",
+              "criterionId": "detail",
+              "unitId": "crown",
+              "origin": "main-agent",
+              "status": "unverified",
+              "evidence": "Await primary-agent review of actual rendered evidence.",
+              "dependencies": {
+                "criterion:detail": "1"
+              },
+              "revision": 1
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"ornament\"]",
+              "criterionId": "detail",
+              "unitId": "ornament",
+              "origin": "main-agent",
+              "status": "unverified",
+              "evidence": "Await primary-agent review of actual rendered evidence.",
+              "dependencies": {
+                "criterion:detail": "1"
+              },
+              "revision": 1
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "origin": "main-agent",
+              "status": "stale",
+              "evidence": "Await primary-agent review of actual rendered evidence.",
+              "dependencies": {
+                "scene": "0",
+                "criterion:scale": "1"
+              },
+              "revision": 1,
+              "reason": "Unscoped canonical evidence changed."
+            }
+          ],
+          "visitedResults": 5
+        },
+        "coverage": {
+          "required": 6,
+          "passed": 1,
+          "pending": [
+            {
+              "id": "visual-unit:[\"detail\",\"base\"]",
+              "criterionId": "detail",
+              "unitId": "base",
+              "status": "unverified"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"tiers\"]",
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "status": "fail"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"crown\"]",
+              "criterionId": "detail",
+              "unitId": "crown",
+              "status": "unverified"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"ornament\"]",
+              "criterionId": "detail",
+              "unitId": "ornament",
+              "status": "unverified"
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "status": "stale"
+            }
+          ]
+        },
+        "final": false,
+        "facts": [
+          {
+            "id": "height",
+            "statement": "台北101建築高度508公尺，八個外擴主節段各含八層。",
+            "scope": "總高與主節段；不建立精確平面或未見裝飾位置",
+            "sources": [
+              "https://www.skyscrapercenter.com/taipei/taipei-101/117",
+              "https://english.gov.taipei/News_Content.aspx"
+            ],
+            "verification": "文字資料確認；未搜尋或取得其他參考圖",
+            "dependencies": [
+              {
+                "key": "public-building-facts",
+                "version": "2026-10-18"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "asserted",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://www.skyscrapercenter.com/taipei/taipei-101/117",
+                "https://english.gov.taipei/News_Content.aspx"
+              ],
+              "referenceIds": []
+            }
+          }
+        ],
+        "deferredDetails": [],
+        "deferredChecks": [],
+        "pendingDetails": [],
+        "regressions": [],
+        "revision": 2,
+        "accepted": false,
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "inspectionIds": [
+              "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 1,
+              "dependencies": [
+                {
+                  "inspectionId": "55838e7f-ef53-49d5-ac7d-681be2644dd8",
+                  "elementId": "design-3e34f8cf-cf5c-44b5-bc3c-65b72a79b0a0-0",
+                  "scope": "overview:whole",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 9026,
+                    "receiptId": "01425f08-4b20-4d31-a8ae-d3260cf6fb0b"
+                  }
+                }
+              ],
+              "signature": "6462c36e9ee22900011016d825ef9dcfb7a6c733c9353af7c0dcd8020b39f8f2"
+            },
+            "status": "fail",
+            "evidence": "已畫兩節的細密窗框、樓板與垂直肋條清楚；尚缺其餘六節及簷口裝飾，需完成。",
+            "factIds": []
+          }
+        ],
+        "inspectionIds": [
+          "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+          "55838e7f-ef53-49d5-ac7d-681be2644dd8"
+        ],
+        "correction": {
+          "diagnosticOnly": true,
+          "coverage": {
+            "required": 6,
+            "passed": 1,
+            "pending": [
+              {
+                "id": "visual-unit:[\"detail\",\"base\"]",
+                "criterionId": "detail",
+                "unitId": "base",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"tiers\"]",
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "status": "fail"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"crown\"]",
+                "criterionId": "detail",
+                "unitId": "crown",
+                "status": "unverified"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"ornament\"]",
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "status": "unverified"
+              },
+              {
+                "id": "visual:scale",
+                "criterionId": "scale",
+                "status": "stale"
+              }
+            ]
+          },
+          "referenceDecisions": [
+            {
+              "attachmentIndex": 0,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "低解析空拍僅支持量體和基座關係；排除起重設備",
+              "uses": [
+                {
+                  "id": "massing",
+                  "criterionId": "overall",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "不建立精確窗格或隱藏幾何"
+                  ],
+                  "receipt": {
+                    "requestId": "18c539c2-f776-4839-a286-de2893fb2c31",
+                    "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                    "useId": "massing",
+                    "revision": 1,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 507,
+                    "height": 665
+                  }
+                }
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "如意近照僅支持造型與金屬材質",
+              "uses": [
+                {
+                  "id": "ornament-shape",
+                  "criterionId": "detail",
+                  "unitId": "ornament",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "不建立位置與實際尺寸"
+                  ],
+                  "receipt": {
+                    "requestId": "18c539c2-f776-4839-a286-de2893fb2c31",
+                    "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                    "useId": "ornament-shape",
+                    "revision": 2,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 500,
+                    "height": 518
+                  }
+                }
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            }
+          ],
+          "requiresFreshReview": true,
+          "revision": 2,
+          "criteria": [
+            {
+              "criterionId": "detail",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence.",
+                "已畫兩節的細密窗框、樓板與垂直肋條清楚；尚缺其餘六節及簷口裝飾，需完成。"
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "scale",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence."
+              ],
+              "elementIds": [
+                "design-53a43082-270d-4bf3-ba01-010192f80fa8-0"
+              ]
+            }
+          ],
+          "inspections": [
+            {
+              "inspectionId": "f5c9948a-b3d2-4424-93cf-fa0d63bb383c",
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "overview": true,
+              "detail": false
+            },
+            {
+              "inspectionId": "55838e7f-ef53-49d5-ac7d-681be2644dd8",
+              "elementId": "design-3e34f8cf-cf5c-44b5-bc3c-65b72a79b0a0-0",
+              "overview": true,
+              "detail": false
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    "combinedCapture": {
+      "tool": "review_drawing",
+      "callId": "exec-22302a8d-e516-492e-a883-ae3e02e8c07b",
+      "startMs": 250979.605,
+      "status": "usable",
+      "inputValue": {
+        "phase": "visual",
+        "final": false,
+        "inspections": [
+          {
+            "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+            "view": "detail",
+            "region": {
+              "x": 6430,
+              "y": 34000,
+              "width": 1024,
+              "height": 1024
+            },
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "先前範圍只有窗框，改到同一第一節如意實際位置"
+                }
+              }
+            ]
+          },
+          {
+            "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+            "view": "detail",
+            "region": {
+              "x": 6500,
+              "y": 46000,
+              "width": 1024,
+              "height": 1024
+            },
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "base"
+              }
+            ]
+          },
+          {
+            "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+            "view": "detail",
+            "region": {
+              "x": 8500,
+              "y": 20000,
+              "width": 1024,
+              "height": 1024
+            },
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "完整八節已補齊；改為含底材的中段立面局部，配合總覽"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "outputValue": {
+        "phase": "visual",
+        "accepted": false,
+        "readyForDetail": false,
+        "inspectionIds": [
+          "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+          "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+          "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+        ],
+        "actionResults": [
+          {
+            "actionId": "a8a4f60f-c198-4d55-9b86-438556d83953",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "image": {
+                "type": "snapshot",
+                "width": 1024,
+                "height": 1024,
+                "bounds": {
+                  "x": 6430,
+                  "y": 34000,
+                  "width": 1024,
+                  "height": 1024
+                }
+              },
+              "partial": true,
+              "imageScope": "region",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                "receiptId": "56b9af74-0d96-4b7b-9324-57adc5abeed8",
+                "revision": 50127
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+              "revision": 7
+            }
+          },
+          {
+            "actionId": "d18f7fbe-d4b9-47ce-b924-a90d0f0a091a",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "image": {
+                "type": "snapshot",
+                "width": 1024,
+                "height": 1024,
+                "bounds": {
+                  "x": 6500,
+                  "y": 46000,
+                  "width": 1024,
+                  "height": 1024
+                }
+              },
+              "partial": true,
+              "imageScope": "region",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                "receiptId": "e7709e04-3612-42f8-81b0-e551ee308ca8",
+                "revision": 50127
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+              "revision": 7
+            }
+          },
+          {
+            "actionId": "9fb863bd-4188-4cc1-b4a8-53497ed3e749",
+            "actionName": "inspect_drawing",
+            "result": {
+              "available": true,
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "image": {
+                "type": "snapshot",
+                "width": 1024,
+                "height": 1024,
+                "bounds": {
+                  "x": 8500,
+                  "y": 20000,
+                  "width": 1024,
+                  "height": 1024
+                }
+              },
+              "partial": true,
+              "imageScope": "region",
+              "background": "#ffffff",
+              "evidence": {
+                "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                "receiptId": "fa54a50a-30e2-4233-8967-fcb860cfd95f",
+                "revision": 50127
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              },
+              "inspectionId": "8beaa41e-a58e-4c66-bd4d-b750cc2a071b",
+              "revision": 7
+            }
+          }
+        ],
+        "coverage": {
+          "required": 6,
+          "passed": 2,
+          "pending": [
+            {
+              "id": "visual-unit:[\"detail\",\"base\"]",
+              "criterionId": "detail",
+              "unitId": "base",
+              "status": "unverified"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"tiers\"]",
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "status": "fail"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"ornament\"]",
+              "criterionId": "detail",
+              "unitId": "ornament",
+              "status": "unverified"
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "status": "stale"
+            }
+          ]
+        },
+        "next": {
+          "tool": "review_drawing",
+          "arguments": {
+            "phase": "visual",
+            "final": false,
+            "inspectionIds": [
+              "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+              "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+              "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+            ],
+            "checks": [
+              {
+                "criterionId": "detail",
+                "unitId": "ornament",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "先前範圍只有窗框，改到同一第一節如意實際位置"
+                },
+                "inspectionIds": [
+                  "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b"
+                ],
+                "binding": {
+                  "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+                  "requirementRevision": 1,
+                  "checkRevision": 2,
+                  "dependencies": [
+                    {
+                      "inspectionId": "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+                      "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                      "scope": "detail:[6430,34000,1024,1024]",
+                      "source": {
+                        "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                        "revision": 50127,
+                        "receiptId": "56b9af74-0d96-4b7b-9324-57adc5abeed8"
+                      }
+                    }
+                  ],
+                  "signature": "de6c4ebd37127b5b1e22fa9349173781a4337d39b9172e18de05a9f8687f1c42"
+                }
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "base",
+                "inspectionIds": [
+                  "53a624d4-7c46-4989-94fb-efc14d9af8cb"
+                ],
+                "binding": {
+                  "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+                  "requirementRevision": 1,
+                  "checkRevision": 1,
+                  "dependencies": [
+                    {
+                      "inspectionId": "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+                      "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                      "scope": "detail:[6500,46000,1024,1024]",
+                      "source": {
+                        "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                        "revision": 50127,
+                        "receiptId": "e7709e04-3612-42f8-81b0-e551ee308ca8"
+                      }
+                    }
+                  ],
+                  "signature": "65264d1c9e6d4615051aca54b147f0a135a435c558c1b23512170563d1494cc4"
+                }
+              },
+              {
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "supersedes": {
+                  "revision": 2,
+                  "reason": "完整八節已補齊；改為含底材的中段立面局部，配合總覽"
+                },
+                "inspectionIds": [
+                  "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+                ],
+                "binding": {
+                  "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+                  "requirementRevision": 1,
+                  "checkRevision": 2,
+                  "dependencies": [
+                    {
+                      "inspectionId": "8beaa41e-a58e-4c66-bd4d-b750cc2a071b",
+                      "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                      "scope": "detail:[8500,20000,1024,1024]",
+                      "source": {
+                        "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                        "revision": 50127,
+                        "receiptId": "fa54a50a-30e2-4233-8967-fcb860cfd95f"
+                      }
+                    }
+                  ],
+                  "signature": "e621585ea67edf68e17fe5c5b17afb911c09278bc356e00095df947ce09c3bea"
+                }
+              }
+            ]
+          },
+          "requiredInputs": [
+            "checks[].status",
+            "checks[].evidence"
+          ],
+          "instruction": "Inspect the delivered images, fill status/evidence in each bound check, and submit next.arguments without capture targets. Preserve bindings exactly. Submit only observed checks; keep unrelated passes. Use final=true only to attempt completion from retained current results."
+        },
+        "message": "Inspect the returned images, then submit primary-agent findings with these inspectionIds and no new capture targets. Supplied judgments were not recorded before the images were delivered.",
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    },
+    "materialVerdict": {
+      "tool": "review_drawing",
+      "callId": "exec-251995e2-5152-47d5-be35-588a59fe1591",
+      "startMs": 272970.766291,
+      "status": "usable",
+      "inputValue": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+          "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+          "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+        ],
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "ornament",
+            "supersedes": {
+              "revision": 2,
+              "reason": "先前範圍只有窗框，改到同一第一節如意實際位置"
+            },
+            "inspectionIds": [
+              "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 2,
+              "dependencies": [
+                {
+                  "inspectionId": "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+                  "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                  "scope": "detail:[6430,34000,1024,1024]",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 50127,
+                    "receiptId": "56b9af74-0d96-4b7b-9324-57adc5abeed8"
+                  }
+                }
+              ],
+              "signature": "de6c4ebd37127b5b1e22fa9349173781a4337d39b9172e18de05a9f8687f1c42"
+            },
+            "status": "pass",
+            "evidence": "如意包含雙捲紋、上方圓鈕、收束柄與下環，呈現金屬邊緣、高光與厚度陰影。"
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "base",
+            "inspectionIds": [
+              "53a624d4-7c46-4989-94fb-efc14d9af8cb"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 1,
+              "dependencies": [
+                {
+                  "inspectionId": "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+                  "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                  "scope": "detail:[6500,46000,1024,1024]",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 50127,
+                    "receiptId": "e7709e04-3612-42f8-81b0-e551ee308ca8"
+                  }
+                }
+              ],
+              "signature": "65264d1c9e6d4615051aca54b147f0a135a435c558c1b23512170563d1494cc4"
+            },
+            "status": "fail",
+            "evidence": "裙樓窗框與入口可見，但拱頂折線明顯；將改為細分平滑曲線並補頂面接縫。"
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "supersedes": {
+              "revision": 2,
+              "reason": "完整八節已補齊；改為含底材的中段立面局部，配合總覽"
+            },
+            "inspectionIds": [
+              "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 2,
+              "dependencies": [
+                {
+                  "inspectionId": "8beaa41e-a58e-4c66-bd4d-b750cc2a071b",
+                  "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                  "scope": "detail:[8500,20000,1024,1024]",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 50127,
+                    "receiptId": "fa54a50a-30e2-4233-8967-fcb860cfd95f"
+                  }
+                }
+              ],
+              "signature": "e621585ea67edf68e17fe5c5b17afb911c09278bc356e00095df947ce09c3bea"
+            },
+            "status": "fail",
+            "evidence": "窗框密度、肋條和陰影清楚，但大面玻璃反射偏單調；加強同一水平座標域的連續玻璃反射，不逐格加入雜色。"
+          }
+        ]
+      },
+      "outputValue": {
+        "phase": "visual",
+        "results": {
+          "counts": {
+            "pass": 9,
+            "fail": 2,
+            "unverified": 0,
+            "stale": 1
+          },
+          "items": [
+            {
+              "id": "visual-unit:[\"detail\",\"base\"]",
+              "criterionId": "detail",
+              "unitId": "base",
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "裙樓窗框與入口可見，但拱頂折線明顯；將改為細分平滑曲線並補頂面接縫。",
+              "scope": [
+                "53a624d4-7c46-4989-94fb-efc14d9af8cb"
+              ],
+              "dependencies": {
+                "check-scope:visual-unit:[\"detail\",\"base\"]": "current",
+                "inspection:53a624d4-7c46-4989-94fb-efc14d9af8cb": "50127",
+                "criterion:detail": "1"
+              },
+              "revision": 2
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"tiers\"]",
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "supersedes": {
+                "revision": 2,
+                "reason": "完整八節已補齊；改為含底材的中段立面局部，配合總覽"
+              },
+              "origin": "main-agent",
+              "status": "fail",
+              "evidence": "窗框密度、肋條和陰影清楚，但大面玻璃反射偏單調；加強同一水平座標域的連續玻璃反射，不逐格加入雜色。",
+              "scope": [
+                "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+              ],
+              "dependencies": {
+                "check-scope:visual-unit:[\"detail\",\"tiers\"]": "current",
+                "inspection:8beaa41e-a58e-4c66-bd4d-b750cc2a071b": "50127",
+                "criterion:detail": "1"
+              },
+              "revision": 3
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "origin": "main-agent",
+              "status": "stale",
+              "evidence": "原生向量建構採公分world座標，z=0至50800、scale=1、35°/25°固定投影，未縮小文件；其餘量體尺寸為明示估計而非精確竣工資料。",
+              "scope": [
+                "0e06add8-0c70-4f66-b0f7-3e72a44b1eab"
+              ],
+              "dependencies": {
+                "check-scope:visual:scale": "current",
+                "inspection:0e06add8-0c70-4f66-b0f7-3e72a44b1eab": "49984",
+                "criterion:scale": "1"
+              },
+              "revision": 2,
+              "reason": "These inspection dependencies changed or could not be established."
+            }
+          ],
+          "visitedResults": 3
+        },
+        "coverage": {
+          "required": 6,
+          "passed": 3,
+          "pending": [
+            {
+              "id": "visual-unit:[\"detail\",\"base\"]",
+              "criterionId": "detail",
+              "unitId": "base",
+              "status": "fail"
+            },
+            {
+              "id": "visual-unit:[\"detail\",\"tiers\"]",
+              "criterionId": "detail",
+              "unitId": "tiers",
+              "status": "fail"
+            },
+            {
+              "id": "visual:scale",
+              "criterionId": "scale",
+              "status": "stale"
+            }
+          ]
+        },
+        "final": false,
+        "facts": [
+          {
+            "id": "height",
+            "statement": "台北101建築高度508公尺，八個外擴主節段各含八層。",
+            "scope": "總高與主節段；不建立精確平面或未見裝飾位置",
+            "sources": [
+              "https://www.skyscrapercenter.com/taipei/taipei-101/117",
+              "https://english.gov.taipei/News_Content.aspx"
+            ],
+            "verification": "文字資料確認；未搜尋或取得其他參考圖",
+            "dependencies": [
+              {
+                "key": "public-building-facts",
+                "version": "2026-10-18"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "asserted",
+              "inapplicableSources": [],
+              "assertedSources": [
+                "https://www.skyscrapercenter.com/taipei/taipei-101/117",
+                "https://english.gov.taipei/News_Content.aspx"
+              ],
+              "referenceIds": []
+            }
+          }
+        ],
+        "deferredDetails": [],
+        "deferredChecks": [],
+        "pendingDetails": [],
+        "regressions": [],
+        "revision": 7,
+        "accepted": false,
+        "checks": [
+          {
+            "criterionId": "detail",
+            "unitId": "base",
+            "inspectionIds": [
+              "53a624d4-7c46-4989-94fb-efc14d9af8cb"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 1,
+              "dependencies": [
+                {
+                  "inspectionId": "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+                  "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                  "scope": "detail:[6500,46000,1024,1024]",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 50127,
+                    "receiptId": "e7709e04-3612-42f8-81b0-e551ee308ca8"
+                  }
+                }
+              ],
+              "signature": "65264d1c9e6d4615051aca54b147f0a135a435c558c1b23512170563d1494cc4"
+            },
+            "status": "fail",
+            "evidence": "裙樓窗框與入口可見，但拱頂折線明顯；將改為細分平滑曲線並補頂面接縫。",
+            "factIds": []
+          },
+          {
+            "criterionId": "detail",
+            "unitId": "tiers",
+            "supersedes": {
+              "revision": 2,
+              "reason": "完整八節已補齊；改為含底材的中段立面局部，配合總覽"
+            },
+            "inspectionIds": [
+              "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+            ],
+            "binding": {
+              "requestId": "f6904f73-8e84-44a5-96bd-3a139d0ecc87",
+              "requirementRevision": 1,
+              "checkRevision": 2,
+              "dependencies": [
+                {
+                  "inspectionId": "8beaa41e-a58e-4c66-bd4d-b750cc2a071b",
+                  "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+                  "scope": "detail:[8500,20000,1024,1024]",
+                  "source": {
+                    "sessionId": "c5e78cfa-246d-4f0b-8fd6-9bb6e2d26cf1",
+                    "revision": 50127,
+                    "receiptId": "fa54a50a-30e2-4233-8967-fcb860cfd95f"
+                  }
+                }
+              ],
+              "signature": "e621585ea67edf68e17fe5c5b17afb911c09278bc356e00095df947ce09c3bea"
+            },
+            "status": "fail",
+            "evidence": "窗框密度、肋條和陰影清楚，但大面玻璃反射偏單調；加強同一水平座標域的連續玻璃反射，不逐格加入雜色。",
+            "factIds": []
+          }
+        ],
+        "inspectionIds": [
+          "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+          "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+          "8beaa41e-a58e-4c66-bd4d-b750cc2a071b"
+        ],
+        "correction": {
+          "diagnosticOnly": true,
+          "coverage": {
+            "required": 6,
+            "passed": 3,
+            "pending": [
+              {
+                "id": "visual-unit:[\"detail\",\"base\"]",
+                "criterionId": "detail",
+                "unitId": "base",
+                "status": "fail"
+              },
+              {
+                "id": "visual-unit:[\"detail\",\"tiers\"]",
+                "criterionId": "detail",
+                "unitId": "tiers",
+                "status": "fail"
+              },
+              {
+                "id": "visual:scale",
+                "criterionId": "scale",
+                "status": "stale"
+              }
+            ]
+          },
+          "referenceDecisions": [
+            {
+              "attachmentIndex": 0,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "低解析空拍僅支持量體和基座關係；排除起重設備",
+              "uses": [
+                {
+                  "id": "massing",
+                  "criterionId": "overall",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "不建立精確窗格或隱藏幾何"
+                  ],
+                  "receipt": {
+                    "requestId": "18c539c2-f776-4839-a286-de2893fb2c31",
+                    "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                    "useId": "massing",
+                    "revision": 1,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 507,
+                    "height": 665
+                  }
+                }
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "如意近照僅支持造型與金屬材質",
+              "uses": [
+                {
+                  "id": "ornament-shape",
+                  "criterionId": "detail",
+                  "unitId": "ornament",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "不建立位置與實際尺寸"
+                  ],
+                  "receipt": {
+                    "requestId": "18c539c2-f776-4839-a286-de2893fb2c31",
+                    "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                    "useId": "ornament-shape",
+                    "revision": 2,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 500,
+                    "height": 518
+                  }
+                }
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            }
+          ],
+          "requiresFreshReview": true,
+          "revision": 7,
+          "criteria": [
+            {
+              "criterionId": "detail",
+              "evidence": [
+                "裙樓窗框與入口可見，但拱頂折線明顯；將改為細分平滑曲線並補頂面接縫。",
+                "窗框密度、肋條和陰影清楚，但大面玻璃反射偏單調；加強同一水平座標域的連續玻璃反射，不逐格加入雜色。"
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "scale",
+              "evidence": [
+                "原生向量建構採公分world座標，z=0至50800、scale=1、35°/25°固定投影，未縮小文件；其餘量體尺寸為明示估計而非精確竣工資料。"
+              ],
+              "elementIds": [
+                "design-53a43082-270d-4bf3-ba01-010192f80fa8-0"
+              ]
+            }
+          ],
+          "inspections": [
+            {
+              "inspectionId": "3ccd4c8e-4337-47a5-b52a-8c8e57fbbd2b",
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "region": {
+                "x": 6430,
+                "y": 34000,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            },
+            {
+              "inspectionId": "53a624d4-7c46-4989-94fb-efc14d9af8cb",
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "region": {
+                "x": 6500,
+                "y": 46000,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            },
+            {
+              "inspectionId": "8beaa41e-a58e-4c66-bd4d-b750cc2a071b",
+              "elementId": "design-53a43082-270d-4bf3-ba01-010192f80fa8-0",
+              "region": {
+                "x": 8500,
+                "y": 20000,
+                "width": 1024,
+                "height": 1024
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    }
+  },
+  "discoveryProjection": [
+    {
+      "callId": "exec-38c5cd4d-fdfd-4114-a40f-b2933dbe5904",
+      "input": {
+        "names": [
+          "prepare_and_apply_design",
+          "validate_reference_images",
+          "define_design_criteria"
+        ]
+      },
+      "outputBytes": 78121,
+      "definitions": [
+        {
+          "name": "prepare_and_apply_design",
+          "definition": {
+            "revision": "36e92480c448ce7288634438361606e7561e5c904f5319da7e542f0c71111e4f",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_workflow.prepare_and_apply_design"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        },
+        {
+          "name": "validate_reference_images",
+          "definition": {
+            "revision": "f983487a3d2e366fe05bc947691ad43b9cbb99acb6aa328a83cbacdbdd2efc5c",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "image_analysis.validate_reference_images"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        },
+        {
+          "name": "define_design_criteria",
+          "definition": {
+            "revision": "2b9aed66423a5e589e7ad6a6765b1b71b97e61525a45422138dcaa9837ba84e7",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.define_design_criteria"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-9bd7a8a0-a0d1-4491-9cf9-a53affbc41a0",
+      "input": {
+        "names": [
+          "prepare_and_apply_design"
+        ],
+        "refresh": true,
+        "refreshReason": "delivery-failure"
+      },
+      "outputBytes": 65110,
+      "definitions": [
+        {
+          "name": "prepare_and_apply_design",
+          "definition": {
+            "revision": "36e92480c448ce7288634438361606e7561e5c904f5319da7e542f0c71111e4f",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "recovery",
+            "recoveryReason": "delivery-failure",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_workflow.prepare_and_apply_design"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-ec448d26-707c-4961-8f0c-a8e6b9810d98",
+      "input": {
+        "names": [
+          "select_design_references"
+        ],
+        "view": "full"
+      },
+      "outputBytes": 5095,
+      "definitions": [
+        {
+          "name": "select_design_references",
+          "definition": {
+            "revision": "fe8acb865fcf8e55e96fe5deae357865a06bc8e4fafce8e93705c966018879e0",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.select_design_references"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-10eacfec-cd47-406c-b78a-6199a0ba767f",
+      "input": {
+        "names": [
+          "review_drawing",
+          "read_design_context",
+          "record_design_facts"
+        ]
+      },
+      "outputBytes": 66237,
+      "definitions": [
+        {
+          "name": "review_drawing",
+          "definition": {
+            "revision": "8628e02b3663665a1e860cee6447c0526e6435934cf551cd080ac70515ef0d43",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.review_drawing"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        },
+        {
+          "name": "read_design_context",
+          "definition": {
+            "revision": "40214c51bb21a5f019799a58f77470eee68c7f3305ebc0c437467065f44b186a",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.read_design_context"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        },
+        {
+          "name": "record_design_facts",
+          "definition": {
+            "revision": "aed561e39ba2212c68f6c8d9e4b57dbe41f54cded05c748c4bfe17a0a36de8d8",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.record_design_facts"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        },
+        {
+          "name": "read_design_context",
+          "definition": {
+            "revision": "c96c45d632ebbe39ddb2be5a1c06354a63ffa8f79d824bc9188e6a2a59fc8778",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "read_design_context"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-4c465f1f-1318-4bf5-9bd2-38bfaf63a8eb",
+      "input": {
+        "query": "remove elements",
+        "view": "usage"
+      },
+      "outputBytes": 2649,
+      "definitions": [
+        {
+          "name": "api_element_deleteElements",
+          "definition": {
+            "revision": "af303979091d4cb954ed2aac575bdc059aed30482e22f47c1324c77fe85f68ab",
+            "state": "included",
+            "coverage": "usage",
+            "requestedCoverage": "usage",
+            "availableInResponse": true,
+            "nextAction": "use-response-or-recover-requested-scope",
+            "deliveryReason": "initial",
+            "recover": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "api_element_deleteElements"
+                ],
+                "view": "usage",
+                "refresh": true,
+                "refreshReason": "delivery-failure"
+              }
+            },
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "api_element_deleteElements"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-d72e1abb-ebc4-4075-896b-5746928d5ea5",
+      "input": {
+        "names": [
+          "execute_design_batch"
+        ],
+        "view": "full"
+      },
+      "outputBytes": 30104,
+      "definitions": [
+        {
+          "name": "execute_design_batch",
+          "definition": {
+            "revision": "938609d45b21b34d6d24baba94cdc51d6b365673c337e8bae4b6698676d5d1f2",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.execute_design_batch"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-20cca21d-2a94-4236-9c41-14b9c38da9ee",
+      "input": {
+        "operations": [
+          "element.deleteElements"
+        ]
+      },
+      "outputBytes": 8248,
+      "definitions": [
+        {
+          "name": "api_element_deleteElements",
+          "definition": {
+            "revision": "af303979091d4cb954ed2aac575bdc059aed30482e22f47c1324c77fe85f68ab",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "api_element_deleteElements"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-cdaca599-2479-4635-b814-83bde507dd16",
+      "input": {
+        "operations": [
+          "fill.updateFillsAtIndex"
+        ]
+      },
+      "outputBytes": 6220,
+      "definitions": [
+        {
+          "name": "api_fill_updateFillsAtIndex",
+          "definition": {
+            "revision": "283e96b7c6fa187de6829c0fabd3ba3176ee42ca65f5bd1b40a9adb9b10fc9ab",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "api_fill_updateFillsAtIndex"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-8572d805-15fe-4d7d-a032-6b7d19a31974",
+      "input": {
+        "names": [
+          "read_design_checks"
+        ],
+        "view": "full"
+      },
+      "outputBytes": 4792,
+      "definitions": [
+        {
+          "name": "read_design_checks",
+          "definition": {
+            "revision": "3da64e7a0a6d2c1dbf1caf522f64cc919b609c983316fb2d620a5b14d6f069cb",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.read_design_checks"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "callId": "exec-be2fe923-31de-4aa6-8579-af0f8975ccf2",
+      "input": {
+        "names": [
+          "review_design"
+        ],
+        "view": "full"
+      },
+      "outputBytes": 17484,
+      "definitions": [
+        {
+          "name": "review_design",
+          "definition": {
+            "revision": "0e17816f8d96b46bfdd11b637ba8ea798a542bee4a4262a7f3d10cb0c2f85bb3",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "design_operations.review_design"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        },
+        {
+          "name": "review_design",
+          "definition": {
+            "revision": "7f31806734d76b47621e89771c790163f9463bf996ffb41475c617464cf4d5d9",
+            "state": "included",
+            "coverage": "full",
+            "availableInResponse": true,
+            "deliveryReason": "initial",
+            "nextAction": "use-current-response",
+            "refresh": {
+              "tool": "describe_design_apis",
+              "arguments": {
+                "names": [
+                  "review_design"
+                ],
+                "refresh": true,
+                "refreshReason": "context-loss"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

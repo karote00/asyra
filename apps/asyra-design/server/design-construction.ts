@@ -1,4 +1,5 @@
 import {
+  DesignKeyConflictError,
   readFaceVertices,
   projectFaceEllipse,
   resolveSurfaceBoundaries
@@ -24,14 +25,6 @@ export interface DesignBrief {
   }[]
 }
 type Node = Record<string, unknown>
-export class DesignKeyConflictError extends Error {
-  constructor(readonly conflicts: { key: string; paths: string[] }[]) {
-    super(
-      'Invalid design construction: duplicate keys. Replace the conflicting source keys at the reported paths.'
-    )
-    this.name = 'DesignKeyConflictError'
-  }
-}
 export class DesignGeometryError extends Error {
   constructor(
     readonly issue: {
@@ -105,14 +98,15 @@ const readBrief = (value: unknown): DesignBrief | undefined => {
     if (!Array.isArray(v) || v.length > 16) return fail('brief notes')
     return v.map((s) => label(s, 'brief note'))
   }
-  if (!Array.isArray(value.checks) || value.checks.length > limits.checks)
+  const checks = value.checks === undefined ? [] : value.checks
+  if (!Array.isArray(checks) || checks.length > limits.checks)
     return fail('brief checks')
   return {
     intent: label(value.intent, 'intent'),
     viewpoint: label(value.viewpoint, 'viewpoint'),
     sources: notes(value.sources),
     assumptions: notes(value.assumptions),
-    checks: value.checks.map((c) => {
+    checks: checks.map((c) => {
       if (!record(c)) return fail('check')
       fields(c, ['key', 'property', 'expected', 'tolerance'], 'check')
       if (!properties.includes(String(c.property)))

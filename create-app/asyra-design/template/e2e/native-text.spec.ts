@@ -39,7 +39,8 @@ test('native text stays editable and survives undo, redo and save', async ({
             props: {
               position: 'native-text-position',
               dimension: 'native-text-dimension',
-              typography: 'native-text-typography'
+              typography: 'native-text-typography',
+              fills: 'native-text-fills'
             },
             text: 'Editable design\nHello 世界',
             fontFamily: 'sans-serif',
@@ -49,7 +50,17 @@ test('native text stays editable and survives undo, redo and save', async ({
             textAlign: 'left',
             lineHeight: 40,
             letterSpacing: 0,
-            textColor: '#ffffff'
+            fills: [
+              {
+                id: 'text-initial-fill',
+                color: '#ffffff',
+                opacity: 1,
+                visible: true,
+                kind: 'solid',
+                colorFormat: 'hex',
+                defaultColorFormat: 'hex'
+              }
+            ]
           }
         ],
         parent,
@@ -75,10 +86,12 @@ test('native text stays editable and survives undo, redo and save', async ({
   )
   expect(await measure()).toEqual(initialContent)
   const captures = await page.evaluate(async () => {
-    const { core, elementApis } = await import('../src/testing/runtime-access')
-    elementApis.updateElementProperties(
-      ['native-text-example'],
-      { textColor: '#183f35' },
+    const { core } = await import('../src/testing/runtime-access')
+    const { fillApis } = await import('../src/common-apis')
+    fillApis.updateFillFields(
+      'native-text-example',
+      'text-initial-fill',
+      { color: '#183f35' },
       { undoable: true }
     )
     const { viewportApis } = await import('../src/common-apis/viewport')
@@ -112,11 +125,15 @@ test('native text stays editable and survives undo, redo and save', async ({
   await undo(page)
   expect(captures[0].width).toBeGreaterThan(0)
   expect(captures[0].dataUrl === captures[1].dataUrl).toBe(true)
-  const content = page.getByRole('textbox', { name: 'Content', exact: true })
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
+  const content = page.getByRole('textbox', {
+    name: 'Canvas text editor',
+    exact: true
+  })
   await expect(content).toHaveValue('Editable design\nHello 世界')
   const depth = await getUndoHistoryDepth(page)
   await content.fill('Updated heading\nHello 世界')
-  await content.press('Tab')
+  await content.press('Control+Enter')
   await expect.poll(() => getUndoHistoryDepth(page)).toBe(depth + 1)
   const readText = () =>
     page.evaluate(async () => {
@@ -174,7 +191,9 @@ test('native text stays editable and survives undo, redo and save', async ({
     const { selectionApis } = await import('../src/common-apis/selection')
     selectionApis.selectElements(['native-text-example'])
   })
+  await page.getByRole('button', { name: 'Edit text on Canvas' }).click()
   await expect(content).toHaveValue('Updated heading\nHello 世界')
+  await content.press('Escape')
   await page.screenshot({
     path: testInfo.outputPath('native-text.png'),
     fullPage: true

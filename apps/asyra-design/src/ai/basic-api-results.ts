@@ -1,3 +1,4 @@
+import { AiToolContractError } from '@asyra/ai-agent-runtime'
 import {
   toolResultObject,
   toolMutationScope,
@@ -10,6 +11,80 @@ import {
   type BasicApiContract
 } from './basic-api-contracts'
 
+/** One interpretation for direct APIs and their composed consumers. */
+export const describeMutationReceipt = (value: unknown) => {
+  const raw = { value: value ?? null }
+  const receipt = value as Record<string, unknown> | null
+  const ids = (items: unknown): items is string[] =>
+    Array.isArray(items) &&
+    items.every((id) => typeof id === 'string' && id.length > 0) &&
+    new Set(items).size === items.length
+  if (
+    !receipt ||
+    Array.isArray(receipt) ||
+    !Object.prototype.hasOwnProperty.call(receipt, 'value') ||
+    !ids(receipt.acceptedIds) ||
+    !ids(receipt.unavailableIds) ||
+    typeof receipt.changed !== 'boolean' ||
+    (receipt.changed && !receipt.acceptedIds.length)
+  )
+    return {
+      ...raw,
+      status: 'failed',
+      code: 'OWNER_RESULT_INVALID',
+      message:
+        'The owner returned an invalid mutation receipt. Preserve settled evidence; do not replay the operation.'
+    }
+  const { acceptedIds, unavailableIds, changed } = receipt
+  let status = changed ? 'complete' : 'no-change'
+  if (unavailableIds.length) status = acceptedIds.length ? 'partial' : 'failed'
+  let settlement = 'completed'
+  if (unavailableIds.length) settlement = changed ? 'partial' : 'not-started'
+  return {
+    value: receipt.value,
+    acceptedIds,
+    unavailableIds,
+    changed,
+    status,
+    settlement,
+    ...(unavailableIds.length
+      ? {
+          message:
+            'Some requested targets were unavailable; preserve accepted targets without replay.'
+        }
+      : {})
+  }
+}
+
+export const requireMutationReceipt = (
+  value: unknown,
+  targets: readonly string[]
+) => {
+  const result = describeMutationReceipt(value)
+  const expected = new Set(targets)
+  if (
+    'code' in result ||
+    result.acceptedIds.some((id) => result.unavailableIds.includes(id)) ||
+    result.acceptedIds.length + result.unavailableIds.length !==
+      expected.size ||
+    [...result.acceptedIds, ...result.unavailableIds].some(
+      (id) => !expected.has(id)
+    )
+  )
+    throw new AiToolContractError(
+      'output',
+      'The owner receipt does not cover the requested targets. Preserve settled evidence; do not replay the operation.',
+      {
+        status: 'invalid',
+        reportedStatus: 'unknown',
+        settlement: 'completed',
+        issue: 'Invalid canonical mutation receipt',
+        value
+      }
+    )
+  return result
+}
+
 /** Interpret only declared owner return contracts. Never reread the document or invent before/after data. */
 export const describeBasicApiResult = (
   contract: BasicApiContract,
@@ -18,49 +93,25 @@ export const describeBasicApiResult = (
 ) => {
   const kind = contract.result.kind
   const raw = { value: value ?? null }
-  if (kind === 'mutation-receipt') {
-    const receipt = value as Record<string, unknown> | null
-    const ids = (items: unknown): items is string[] =>
-      Array.isArray(items) &&
-      items.every((id) => typeof id === 'string' && id.length > 0) &&
-      new Set(items).size === items.length
+  if (kind === 'allocated-ids') {
     if (
-      !receipt ||
-      Array.isArray(receipt) ||
-      !Object.prototype.hasOwnProperty.call(receipt, 'value') ||
-      !ids(receipt.acceptedIds) ||
-      !ids(receipt.unavailableIds) ||
-      typeof receipt.changed !== 'boolean' ||
-      (receipt.changed && !receipt.acceptedIds.length)
+      !Array.isArray(value) ||
+      !Array.isArray(targetElementIds) ||
+      value.length !== targetElementIds.length ||
+      value.some((id) => typeof id !== 'string' || !id) ||
+      new Set(value).size !== value.length
     )
-      return {
-        ...raw,
-        status: 'failed',
-        code: 'OWNER_RESULT_INVALID',
-        message:
-          'The owner returned an invalid mutation receipt. Preserve settled evidence; do not replay the operation.'
-      }
-    const { acceptedIds, unavailableIds, changed } = receipt
-    let status = changed ? 'complete' : 'no-change'
-    if (unavailableIds.length)
-      status = acceptedIds.length ? 'partial' : 'failed'
-    let settlement = 'completed'
-    if (unavailableIds.length) settlement = changed ? 'partial' : 'not-started'
+      throw new Error(
+        'Invalid allocated identity receipt; retain known IDs and do not infer document creation.'
+      )
     return {
-      value: receipt.value,
-      acceptedIds,
-      unavailableIds,
-      changed,
-      status,
-      settlement,
-      ...(unavailableIds.length
-        ? {
-            message:
-              'Some requested targets were unavailable; preserve accepted targets without replay.'
-          }
-        : {})
+      ...raw,
+      status: 'no-change',
+      execution: 'complete',
+      application: 'prepared'
     }
   }
+  if (kind === 'mutation-receipt') return describeMutationReceipt(value)
   if (kind === 'property-mutation' || kind === 'change-flag') {
     const invalid = () => ({
       ...raw,
@@ -289,6 +340,15 @@ export const basicApiResultSchema = (
         value: { anyOf: [toolDocumentReference, { type: 'null' }] }
       })
     }
+  if (kind === 'allocated-ids') {
+    fields.value = {
+      type: 'array',
+      items: { type: 'string', minLength: 1 },
+      uniqueItems: true
+    }
+    fields.execution = { const: 'complete' }
+    fields.application = { const: 'prepared' }
+  }
   if (kind === 'transient' || kind === 'value') {
     fields.execution = { const: 'complete' }
     fields.application = { const: kind === 'value' ? 'read-only' : 'transient' }

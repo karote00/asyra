@@ -10,6 +10,7 @@ import {
   transactionApis
 } from '../../common-apis'
 import { AiActionNames } from '../actions'
+import { createAiActivityProjection } from '../presentation'
 import { createAiRuntimeInput } from '../runtime-input'
 import { createAiConfirmationBroker } from '../confirmation'
 import { createDeferred } from './deferred'
@@ -55,7 +56,9 @@ const compact16ItemBatch = (): AiActionBatch => {
     name: `Item ${index}`,
     props: {
       dimension: `element-${index}-dimension`,
-      position: `element-${index}-position`
+      position: `element-${index}-position`,
+      fills: `element-${index}-fills`,
+      strokes: `element-${index}-strokes`
     },
     strokes: [],
     type: 'oval',
@@ -88,7 +91,9 @@ const compact16ItemBatch = (): AiActionBatch => {
             name: 'Runtime integration group',
             props: {
               dimension: 'cat-group-dimension',
-              position: 'cat-group-position'
+              position: 'cat-group-position',
+              fills: 'cat-group-fills',
+              strokes: 'cat-group-strokes'
             },
             strokes: [],
             type: 'group',
@@ -171,7 +176,7 @@ const prepareCommonApis = () => {
     x: 10,
     y: 20
   })
-  vi.spyOn(elementApis, 'setElementVisible').mockReturnValue(true)
+  vi.spyOn(elementApis, 'setElementsVisible').mockReturnValue(['changed'])
   vi.spyOn(transactionApis, 'runTransaction').mockImplementation((execute) =>
     execute()
   )
@@ -208,6 +213,102 @@ describe('Asyra Design server action-batch runtime integration', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
+
+  it.each(['success', 'cancelled', 'repeated'] as const)(
+    'projects actual authored Runtime action lifetimes on %s',
+    async (outcome) => {
+      const source = referenceBatch()
+      const controller = new AbortController()
+      const batch = {
+        ...source,
+        actions: source.actions.map((action, index) => ({
+          ...action,
+          summary: { kind: 'work', text: `Refine part ${index}` }
+        }))
+      }
+      if (outcome === 'cancelled')
+        vi.mocked(elementApis.setElementsVisible).mockImplementation(() => {
+          controller.abort()
+          return ['changed']
+        })
+      const projection = createAiActivityProjection()
+      const snapshots: {
+        id: string
+        status?: string
+        count: number
+        message?: string
+      }[] = []
+      const runtime = createAiAgentRuntime(
+        createAiRuntimeInput({
+          permissionRules: {
+            [AiActionNames.SELECT_ELEMENTS]: 'allow',
+            [AiActionNames.SET_ELEMENT_VISIBILITY]: 'allow'
+          },
+          provider: {
+            requestActionBatch: async (_input, options) => {
+              if (outcome === 'repeated') {
+                if (!options.executeBatch)
+                  throw new Error('Expected batch executor')
+                await options.executeBatch({
+                  ...batch,
+                  batchId: 'earlier-batch'
+                })
+              }
+              return batch
+            }
+          }
+        })
+      )
+      try {
+        const result = await runtime.run({
+          intent: 'Refine both parts',
+          signal: controller.signal,
+          progressObserver: (update) => {
+            const decision = projection.append(update)
+            if (update.activity)
+              snapshots.push({
+                id: update.activity.callId,
+                status: update.toolStatus,
+                count: decision.activeCallCount,
+                message: projection.result().current.message
+              })
+          }
+        })
+        if (outcome !== 'cancelled') {
+          expect(result.status).toBe('executed')
+          const expected = [
+            { status: 'running', count: 1, message: 'Refine part 0' },
+            { status: 'completed', count: 0, message: 'Refine part 0' },
+            { status: 'running', count: 1, message: 'Refine part 1' },
+            { status: 'completed', count: 0, message: 'Refine part 1' }
+          ]
+          expect(
+            snapshots.map(({ status, count, message }) => ({
+              status,
+              count,
+              message
+            }))
+          ).toEqual(
+            outcome === 'repeated' ? [...expected, ...expected] : expected
+          )
+          const starts = snapshots.filter((item) => item.status === 'running')
+          expect(new Set(starts.map((item) => item.id)).size).toBe(
+            starts.length
+          )
+        } else {
+          expect(result.status).toBe('cancelled')
+          expect(projection.result({ outcome: 'cancelled' }).current).toEqual({
+            label: 'Stopped'
+          })
+          expect(snapshots.every((item) => item.id === snapshots[0].id)).toBe(
+            true
+          )
+        }
+      } finally {
+        await runtime.dispose()
+      }
+    }
+  )
 
   it('runs the backend batch through finite members of one history group with bounded preview', async () => {
     const result = await executeBatch(referenceBatch())
@@ -255,8 +356,8 @@ describe('Asyra Design server action-batch runtime integration', () => {
     expect(transactionApis.startHistoryGroup).toHaveBeenCalledOnce()
     expect(transactionApis.updateHistoryGroup).toHaveBeenCalledTimes(2)
     expect(transactionApis.endHistoryGroup).toHaveBeenCalledOnce()
-    expect(elementApis.setElementVisible).toHaveBeenCalledWith(
-      'shape-1',
+    expect(elementApis.setElementsVisible).toHaveBeenCalledWith(
+      ['shape-1'],
       false,
       {
         sharedDelivery: 'immediate',
@@ -277,7 +378,9 @@ describe('Asyra Design server action-batch runtime integration', () => {
       (descriptors) => descriptors.map(({ id }) => id)
     )
 
-    await expect(executeBatch(compact16ItemBatch())).resolves.toMatchObject({
+    const result = await executeBatch(compact16ItemBatch())
+    expect(result.status, JSON.stringify(result)).toBe('executed')
+    expect(result).toMatchObject({
       actionResults: [
         {
           actionName: AiActionNames.INSERT_VECTOR_COMPOSITION,

@@ -1,4 +1,5 @@
 import { SelectionTargetUnavailableError } from '../common-apis/selection'
+import { requireMutationReceipt } from './basic-api-results'
 import type { DocumentPersistenceReceipt } from '../collaboration/protocol'
 import {
   toolResultBoolean,
@@ -141,11 +142,7 @@ export interface RemoveAiCompositionArgs {
 }
 
 export interface AiActionApis {
-  changeElementGeometry(
-    elementId: string,
-    geometry: AiCompositionBounds,
-    options?: EVENT_OPTIONS
-  ): void
+  changeElementGeometry: typeof elementApis.changeElementGeometry
   createCompositionElements(
     descriptors: readonly PreparedElementDescriptor[],
     parent: {
@@ -172,11 +169,7 @@ export interface AiActionApis {
         }
     )[]
   }
-  scaleVectorElementGeometry(
-    elementId: string,
-    geometry: UpdateCompositionGeometry,
-    options?: EVENT_OPTIONS
-  ): boolean
+  scaleVectorElementGeometry: typeof elementApis.scaleVectorElementAroundCenter
   setDrawingProgress(progress: AiDrawingProgressState | null): void
   setElementsVisible: typeof elementApis.setElementsVisible
   selectElements(elementIds: string[], options?: EVENT_OPTIONS): void
@@ -253,8 +246,7 @@ const defaultApis: AiActionApis = {
   removeSubtree: (elementId, options) =>
     hierarchyApis.removeSubtree(elementId, options),
   scaleVectorElementGeometry: (elementId, geometry, options) =>
-    elementApis.scaleVectorElementAroundCenter(elementId, geometry, options)
-      .value,
+    elementApis.scaleVectorElementAroundCenter(elementId, geometry, options),
   setElementsVisible: (elementIds, visible, options) =>
     elementApis.setElementsVisible(elementIds, visible, options),
   selectElements: (elementIds, options) =>
@@ -548,15 +540,27 @@ const createCompositionActions = (
               )
               continue
             }
-            await runAiMutation(context, () =>
-              measureBrowserDragPhase('ai-app:apply-update-batch', () => {
+            const receipt = await runAiMutation(context, () =>
+              measureBrowserDragPhase('ai-app:apply-update-batch', () =>
                 apis.changeElementGeometry(
                   operation.elementId,
                   geometry,
                   mutationOptions
                 )
-              })
+              )
             )
+            const outcome = requireMutationReceipt(receipt, [
+              operation.elementId
+            ])
+            if (!outcome.changed || outcome.unavailableIds.length) {
+              skipped.push({
+                elementId: operation.elementId,
+                reason: outcome.unavailableIds.length
+                  ? 'unavailable-target'
+                  : 'no-change'
+              })
+              continue
+            }
             appliedElementIds.push(operation.elementId)
             await measureBrowserDragAsyncPhase(
               'ai-app:progressive-host-yield',
@@ -578,7 +582,7 @@ const createCompositionActions = (
               )
               continue
             }
-            const applied = await runAiMutation(context, () =>
+            const receipt = await runAiMutation(context, () =>
               measureBrowserDragPhase('ai-app:apply-update-batch', () =>
                 apis.scaleVectorElementGeometry(
                   operation.elementId,
@@ -587,7 +591,10 @@ const createCompositionActions = (
                 )
               )
             )
-            if (applied) {
+            const outcome = requireMutationReceipt(receipt, [
+              operation.elementId
+            ])
+            if (outcome.changed && !outcome.unavailableIds.length) {
               appliedElementIds.push(operation.elementId)
               await measureBrowserDragAsyncPhase(
                 'ai-app:progressive-host-yield',
@@ -597,7 +604,9 @@ const createCompositionActions = (
               skipped.push(
                 Object.freeze({
                   elementId: operation.elementId,
-                  reason: 'unsupported-target'
+                  reason: outcome.unavailableIds.length
+                    ? 'unsupported-target'
+                    : 'no-change'
                 })
               )
             }
@@ -727,7 +736,7 @@ const createCompositionActions = (
           skipped: { type: 'array' }
         })
       ),
-      revision: 3,
+      revision: 4,
       name: AiActionNames.UPDATE_COMPOSITION_ELEMENTS,
       inputSchema: Object.freeze({
         additionalProperties: false,
@@ -1096,7 +1105,12 @@ export const createAiActions = (
         additionalProperties: false,
         required: ['question'],
         properties: {
-          question: { type: 'string', minLength: 1, maxLength: 1000 }
+          question: {
+            type: 'string',
+            minLength: 1,
+            maxLength: 1000,
+            pattern: '\\S'
+          }
         }
       },
       execute: async (
@@ -1157,7 +1171,12 @@ export const createAiActions = (
       required: ['outcome', 'message'],
       properties: {
         outcome: { type: 'string', enum: ['completed', 'unsupported'] },
-        message: { type: 'string', minLength: 1, maxLength: 1000 }
+        message: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 1000,
+          pattern: '\\S'
+        }
       }
     },
     execute: async (args, context) => {

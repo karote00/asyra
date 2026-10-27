@@ -499,7 +499,6 @@ export const recipeDisjoint = (
   source = recipeResolve(source)
   target = recipeResolve(target)
   if (source.type === 'never' || target.type === 'never') return true
-  if (source.type === 'opaque' || target.type === 'opaque') return false
   if (source.type === 'union')
     return source.variants.every((item) =>
       recipeDisjoint(item, target, depth + 1)
@@ -508,6 +507,36 @@ export const recipeDisjoint = (
     return target.variants.every((item) =>
       recipeDisjoint(source, item, depth + 1)
     )
+  if (source.type === 'opaque' || target.type === 'opaque') {
+    const known = source.type === 'opaque' ? target : source
+    const opaque = source.type === 'opaque' ? source : target
+    const raw = opaque.raw
+    if (
+      known.type !== 'object' ||
+      !recipeRecord(raw) ||
+      !recipeRecord(raw.properties)
+    )
+      return false
+    const properties = raw.properties
+    // Root properties constrain every object containing that field, even when
+    // another constraint is outside the implication subset. This proves only
+    // non-overlap; it never converts an opaque branch into an admissible one.
+    return known.required.some((key) => {
+      if (!recipeOwn(known.properties, key) || !recipeOwn(properties, key))
+        return false
+      const constraint = properties[key]
+      try {
+        const necessary = readRegisteredRecipeSchema(
+          recipeRecord(constraint) && recipeRecord(raw.$defs)
+            ? { ...constraint, $defs: raw.$defs }
+            : constraint
+        )
+        return recipeDisjoint(known.properties[key], necessary, depth + 1)
+      } catch {
+        return false
+      }
+    })
+  }
   if (
     source.type !== target.type &&
     !(

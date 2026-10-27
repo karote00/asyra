@@ -7,8 +7,10 @@ import {
   toolResultStatus,
   actionToolSemantics
 } from './tool-contract'
+import { requireMutationReceipt } from './basic-api-results'
 import {
   AiActionExecutionError,
+  AiToolContractError,
   runAiMutation,
   type AiActionDefinition
 } from '@asyra/ai-agent-runtime'
@@ -39,7 +41,15 @@ const colorChannels = (color: string) =>
 const mappingModelSchema = toolResultObject(
   {
     status: toolResultStatus,
-    appliedCount: toolResultCount,
+    changed: { type: 'boolean' },
+    acceptedIds: toolResultIds,
+    unavailableIds: toolResultIds,
+    settlement: { enum: ['completed', 'partial', 'not-started'] },
+    appliedCount: {
+      ...toolResultCount,
+      description:
+        'Accepted target count, including legal no-op targets; changed reports aggregate document mutation.'
+    },
     coordinateSpace: { const: 'parent-local' },
     retained: retainedElementSetSchema,
     delivery: toolResultObject({
@@ -47,7 +57,7 @@ const mappingModelSchema = toolResultObject(
       message: { type: 'string' }
     })
   },
-  ['status', 'appliedCount', 'coordinateSpace']
+  ['status', 'changed', 'settlement', 'appliedCount', 'coordinateSpace']
 )
 
 /** Explicit finite interpolation only. Artistic choices remain in the caller's mapping. */
@@ -67,8 +77,15 @@ export const createRetainedFillAction = (
     AiActionNames.MAP_RETAINED_FILLS,
     toolResultObject({
       status: toolResultStatus,
+      changed: { type: 'boolean' },
+      acceptedIds: toolResultIds,
+      unavailableIds: toolResultIds,
       mutationScope: toolMutationScope,
-      appliedCount: toolResultCount,
+      appliedCount: {
+        ...toolResultCount,
+        description:
+          'Accepted target count, including legal no-op targets; changed reports aggregate document mutation.'
+      },
       snapshots: toolResultIds,
       retained: retainedElementSetSchema,
       modelResult: mappingModelSchema,
@@ -78,7 +95,11 @@ export const createRetainedFillAction = (
   partialOutputSchema: toolResultObject({
     status: toolResultStatus,
     mutationScope: toolMutationScope,
-    appliedCount: toolResultCount,
+    appliedCount: {
+      ...toolResultCount,
+      description:
+        'Accepted target count, including legal no-op targets; changed reports aggregate document mutation.'
+    },
     snapshots: toolResultIds,
     coordinateSpace: { const: 'parent-local' },
     modelResult: mappingModelSchema,
@@ -87,7 +108,7 @@ export const createRetainedFillAction = (
       message: { type: 'string' }
     })
   }),
-  revision: 6,
+  revision: 7,
   delivery: {
     path: '/modelResult',
     outputSchema: mappingModelSchema,
@@ -328,20 +349,23 @@ export const createRetainedFillAction = (
           }
         }
         const targets = apis.targets(ids, index)
-        apis.update(
-          targets.map((target, offset) => ({
-            ...target,
-            patch: patches[offset]
-          }))
+        const mutation = requireMutationReceipt(
+          apis.update(
+            targets.map((target, offset) => ({
+              ...target,
+              patch: patches[offset]
+            }))
+          ),
+          ids
         )
         const receipt = {
+          ...mutation,
           mutationScope: {
             complete: true,
-            elementIds: ids,
+            elementIds: mutation.changed ? mutation.acceptedIds : [],
             removedElementIds: []
           },
-          status: 'complete',
-          appliedCount: ids.length,
+          appliedCount: mutation.acceptedIds.length,
           snapshots: mappings.flatMap((mapping) =>
             mapping.snapshotId ? [mapping.snapshotId] : []
           ),
@@ -349,22 +373,40 @@ export const createRetainedFillAction = (
         }
         const summary = {
           status: receipt.status,
+          changed: mutation.changed,
+          settlement: mutation.settlement,
+          ...(mutation.unavailableIds.length
+            ? { unavailableIds: mutation.unavailableIds }
+            : {}),
           appliedCount: receipt.appliedCount,
           coordinateSpace: receipt.coordinateSpace
         }
         try {
-          const retained = queries.retainReceipt(ids, receipt, context.signal)
+          const retained = queries.retainReceipt(
+            mutation.acceptedIds,
+            receipt,
+            context.signal
+          )
           return { ...receipt, retained, modelResult: { ...summary, retained } }
         } catch (error) {
           const delivery = {
             status: 'unavailable',
             message: `${error instanceof Error ? error.message : 'Receipt retention failed.'} The write already settled; do not replay it.`
           }
-          return { ...receipt, delivery, modelResult: { ...summary, delivery } }
+          return {
+            ...receipt,
+            delivery,
+            modelResult: {
+              ...summary,
+              acceptedIds: mutation.acceptedIds,
+              delivery
+            }
+          }
         }
       })
     } catch (error) {
-      if (context.signal.aborted) throw error
+      if (context.signal.aborted || error instanceof AiToolContractError)
+        throw error
       throw new AiActionExecutionError(
         error instanceof Error ? error.message : 'Retained fill mapping failed.'
       )

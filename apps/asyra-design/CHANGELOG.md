@@ -1,5 +1,172 @@
 # @asyra/asyra-design
 
+## Pending exact query scope handoff
+
+```update-note
+{
+  "change": "exact-query-scope-handoff",
+  "owner": "Design information delivery",
+  "summary": "Align exact native query scope with names selection, preserving canonical contracts, search, ambiguity and read-only recovery. Ordinary evaluation prompts offer Knowledge without requiring reads or a fixed stage.",
+  "sources": [
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/test-data/knowledge-evaluation/architecture-101.json",
+    "apps/asyra-design/test-data/knowledge-evaluation/quality-cases.json",
+    "apps/asyra-design/test-data/knowledge-evaluation/quality.mjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Repairs the existing exact-identity selection contract without a new selector, cache, route or migration. Existing names and general search remain valid; saved evaluation evidence is unchanged."
+}
+```
+
+## Pending selected retained information
+
+```update-note
+{
+  "change": "selected-retained-information",
+  "owner": "Design information delivery",
+  "summary": "Redisplay selected full Knowledge text or tool contracts from existing request-owned results, preserving original scope, dependencies, overrides and read-only recovery without repeated content reads or projection.",
+  "sources": [
+    "docs/public/content-manifest.json",
+    "apps/asyra-design/server/local-knowledge.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/__tests__/information-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/batch-usage.integration.test.ts",
+    "apps/asyra-design/server/__tests__/shared-motifs.test.ts",
+    "apps/asyra-design/server/__tests__/local-operation-tools.test.ts"
+  ],
+  "impact": "integration",
+  "guides": [
+    "docs/public/updates/retained-information-r1.md"
+  ],
+  "reason": "Callers may opt into fromResult with exact targets; retain original result identities only within their valid request/session and recover stale selections without replay."
+}
+```
+
+## Pending optional first-frame guidance
+
+```update-note
+{
+  "change": "optional-first-frame-guidance",
+  "owner": "Design execution guidance",
+  "summary": "Treat early visible content as optional useful progress rather than a deadline, prerequisite or completion gate; preserve validation and final review.",
+  "sources": ["apps/asyra-design/server/local-design-workflow.ts"],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Records the existing optional scope-selection guidance; callers have no API or saved-data migration."
+}
+```
+
+## Pending Canonical composed receipts and identity delivery
+
+```update-note
+{
+  "change": "canonical-composed-receipts",
+  "owner": "Design tool delivery",
+  "summary": "Expose optional identity allocation through existing discovery/batch routing and preserve canonical no-op/partial receipts in geometry and material consumers, including recovery identities when compact receipt retention fails.",
+  "sources": [
+    "apps/asyra-design/src/ai/actions.ts",
+    "apps/asyra-design/src/ai/basic-api-actions.ts",
+    "apps/asyra-design/src/ai/basic-api-contracts.ts",
+    "apps/asyra-design/src/ai/basic-api-results.ts",
+    "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+    "apps/asyra-design/src/ai/prepared-material-action.ts",
+    "apps/asyra-design/src/ai/retained-fill-action.ts",
+    "apps/asyra-design/src/ai/__tests__/identity-and-composed-receipts.integration.test.ts",
+    "apps/asyra-design/src/ai/__tests__/basic-api-actions.test.ts",
+    "apps/asyra-design/src/ai/__tests__/composition-actions.test.ts",
+    "apps/asyra-design/src/ai/__tests__/prepared-material-action.test.ts",
+    "apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts",
+    "apps/asyra-design/e2e/basic-api-actions.spec.ts",
+    "apps/asyra-design/e2e/fixtures/basic-api-cases.ts",
+    "apps/asyra-design/src/ai/__tests__/knowledge-handoff.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Consumers must preserve true owner results; source keys remain distinct from canonical document IDs."
+}
+```
+
+## Pending pre-execution contract recovery
+
+```update-note
+{
+  "change": "pre-execution-contract-recovery",
+  "owner": "Asyra Design tool delivery and review",
+  "summary": "Deliver exact source-key conflict paths and retained repair, reject whole-criterion supersession before capture with reusable evidence recovery, align Core API schemas and permit a small editable first part before optional research.",
+  "sources": [
+    "apps/asyra-design/server/design-face.ts",
+    "apps/asyra-design/server/design-construction.ts",
+    "apps/asyra-design/server/design-construction-schema.ts",
+    "apps/asyra-design/server/local-design-tools.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/ai-domain-prompt.ts",
+    "apps/asyra-design/src/ai/basic-core-api-contracts.ts",
+    "apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts",
+    "apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts",
+    "apps/asyra-design/server/__tests__/basic-api-contracts.test.ts",
+    "apps/asyra-design/server/__tests__/creation-results.integration.test.ts",
+    "apps/asyra-design/server/__tests__/face-boundary.test.ts",
+    "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/boundary-identity-20261026.json",
+    "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+    "apps/asyra-design/server/__tests__/local-tool-operation-composition.test.ts",
+    "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing tools, owner limits, retained sources, local review scopes and mutation settlement remain authoritative. No new state, cache, migration, mandatory query or automatic replay."
+}
+```
+
+## Pending workspace mechanical closure
+
+```update-note
+{
+  "change": "workspace-mechanical-closure",
+  "owner": "Asyra Design deterministic review",
+  "summary": "Review workspace descendants without requiring fictitious root geometry; retain unavailable findings and expose exact existing check-query recovery from final review.",
+  "sources": [
+    "apps/asyra-design/src/common-apis/design-review.ts",
+    "apps/asyra-design/src/common-apis/__tests__/design-review.test.ts",
+    "apps/asyra-design/src/ai/review-action.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "apps/asyra-design/server/__tests__/workspace-inspection.integration.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing review inputs and canonical owners remain; no document migration or caller configuration is required. Genuine child errors and unavailable evidence still block acceptance."
+}
+```
+
+## Pending selected batch mutation usage
+
+```update-note
+{
+  "change": "selected-batch-mutation-usage",
+  "owner": "Asyra Design discovery",
+  "summary": "Deliver selected mutation parameters together with canonical batch invocation, result and recovery guidance. Preserve compact exploration and read-only navigation.",
+  "sources": [
+    "apps/asyra-design/package.json",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/src/ai/basic-design-api-contracts.ts",
+    "apps/asyra-design/server/__tests__/batch-usage.integration.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/batch-usage-20261026.json",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Existing operations and view=usage selectors deliver complete owner-derived guidance; execution contracts, permissions, explicit full/field reads and existing recovery paths remain unchanged."
+}
+```
+
 ## Pending public provider activity
 
 ```update-note

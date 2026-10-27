@@ -14,8 +14,8 @@
         "./node"
       ],
       "sourceDigests": {
-        "contract": "80888eeae10a1b5e9400261706b4cac43d1b7143072cf3dd68d68f49b801b8ea",
-        "guide": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
+        "contract": "450b2813e7ddb66ad5a366c39f549348771debf77dcea961606ba27b26c07a65",
+        "guide": "2fd827443c789e040b1912952faed99c3e6ffeb2607216efb62296ad2f1e2620",
         "manifest": "b7333829a47fb2da53c13255b6ebf741ab7163cfcac0d628f9479d0e9fb2bed0"
       },
       "version": "0.5.1"
@@ -213,7 +213,7 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "6adc550b75859b84be8051a967c11795c763a9f4f480e2893d0b093287028a7e",
+        "contract": "b55ea31877b77cae7c0ba34733f58bbc87756ac006f21da7bf266eccaf4a2ec2",
         "guide": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },

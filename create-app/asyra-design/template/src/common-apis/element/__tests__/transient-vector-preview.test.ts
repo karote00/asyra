@@ -232,7 +232,7 @@ describe('Vector transient preview cancellation', () => {
           transientPreview: true,
           undoable: false
         }
-      )
+      ).value
     ).toBe(true)
     expect(api.getVectorTopology(elementId).points.pointB?.x).toBe(25)
     expect(api.getVectorAnchorPointById(elementId, 'pointB')?.point.x).toBe(25)

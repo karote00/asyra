@@ -1,6 +1,13 @@
 import { expect, it, vi } from 'vitest'
 import { createPreparedMaterialApplication } from '../prepared-material-action'
 
+const changedReceipt = (ids: readonly string[]) => ({
+  value: null,
+  acceptedIds: [...ids],
+  unavailableIds: [],
+  changed: ids.length > 0
+})
+
 const gradient = {
   gradientType: 'linear' as const,
   gradientHandles: [
@@ -17,7 +24,7 @@ it('uses captured creation provenance, preflights all members and retains it acr
     ['a', 'geometry-a-binding-a'],
     ['b', 'geometry-b-binding-b']
   ])
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const owner = createPreparedMaterialApplication({
     read: (id) =>
       current.has(id)
@@ -59,7 +66,7 @@ it('uses captured creation provenance, preflights all members and retains it acr
 })
 
 it('rejects foreign request, duplicates, missing members and abort before the first write', async () => {
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const owner = createPreparedMaterialApplication({
     read: (id) => (id === 'a' ? { geometry: 'a', binding: 'binding' } : null),
     update
@@ -95,8 +102,9 @@ it('rejects foreign request, duplicates, missing members and abort before the fi
 
 it('preserves the committed receipt when provenance refresh fails and refuses a blind replay', async () => {
   let written = false
-  const update = vi.fn(() => {
+  const update = vi.fn((ids: readonly string[]) => {
     written = true
+    return changedReceipt(ids)
   })
   const owner = createPreparedMaterialApplication({
     read: () => {
@@ -205,7 +213,8 @@ it('keeps document material provenance across viewport transforms and rejects re
     view.scale.set(2.75, 2.75)
     view.position.set(-331.25, 9.125)
     await expect(owner.action.execute(input, context)).resolves.toMatchObject({
-      status: 'complete'
+      status: 'no-change',
+      changed: false
     })
     // Canonical movement must invalidate even if the renderer has not updated yet.
     core.updateElementProperties([
@@ -247,7 +256,7 @@ it('keeps document material provenance across viewport transforms and rejects re
 
 it('reports a real small document delta without loosening admission or writing', async () => {
   let x = 1
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const owner = createPreparedMaterialApplication({
     read: () => ({ geometry: { x }, binding: 'same' }),
     update
@@ -284,7 +293,7 @@ it.each([0, 0.63])(
       ['a', { geometry: geometry(10, 20), binding: 'a' }],
       ['b', { geometry: geometry(40, 20), binding: 'b' }]
     ])
-    const update = vi.fn()
+    const update = vi.fn(changedReceipt)
     const owner = createPreparedMaterialApplication({
       read: (id) => values.get(id) ?? null,
       update

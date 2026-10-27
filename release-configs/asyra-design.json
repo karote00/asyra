@@ -66,6 +66,7 @@
     "server/__tests__/basic-api-contracts.test.ts",
     "flow-contracts.json",
     "server/__tests__/execution-flow.config.ts",
-    "server/__tests__/execution-flow-proof.test.ts"
+    "server/__tests__/execution-flow-proof.test.ts",
+    "tmp"
   ]
 }

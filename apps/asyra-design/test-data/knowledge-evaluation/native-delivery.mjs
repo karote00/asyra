@@ -1,3 +1,4 @@
+import { createNativeProviderConfig } from '../../server/native-provider-config.ts'
 import { setTimeout } from 'node:timers'
 import process from 'node:process'
 import { Buffer } from 'node:buffer'
@@ -46,9 +47,7 @@ export async function loadFixtures() {
 
 export function inspectSuccessor(request, callId, raw) {
   const output = request?.input?.find(
-    (item) =>
-      ['function_call_output', 'custom_tool_call_output'].includes(item.type) &&
-      item.call_id === callId
+    (item) => item.type === 'function_call_output' && item.call_id === callId
   )?.output
   if (output === undefined) throw new Error('Missing successor tool output')
   if (
@@ -185,31 +184,25 @@ async function nativeIdentity(executable) {
 
 export async function runNativeDelivery({
   fixture,
-  mode,
   executions,
-  outputProbe
+  outputProbe,
+  inspectHistory = false,
+  searches = []
 }) {
   if (
     outputProbe &&
-    (mode !== 'code' ||
-      executions ||
+    (executions ||
       !['progressive', 'silent', 'interrupted'].includes(outputProbe))
   )
     throw new Error('Invalid unfinished output probe')
-  if (!['direct', 'code'].includes(mode))
-    throw new Error('Unsupported native mode')
   if (
     executions &&
-    (mode !== 'code' ||
-      !Array.isArray(executions) ||
+    (!Array.isArray(executions) ||
       !executions.length ||
       executions.length > 16 ||
       executions.some(
         (execution) =>
-          typeof execution?.code !== 'string' ||
-          !execution.code ||
-          typeof execution.expected !== 'string' ||
-          !execution.expected
+          typeof execution.expected !== 'string' || !execution.expected
       ))
   )
     throw new Error('Invalid scripted execution sequence')
@@ -231,7 +224,6 @@ export async function runNativeDelivery({
     requestId: id,
     stage: 'native_handoff_start',
     version,
-    mode,
     sourceFixture: fixture.sha256,
     replySHA256: digest(fixture.raw),
     fixtureKind: fixture.kind || 'preserved'
@@ -284,7 +276,9 @@ export async function runNativeDelivery({
     rejectComplete(error)
   }
   const callId = 'native_delivery_call'
-  const expectedRequests = executions ? executions.length + 1 : 2
+  const expectedRequests = executions
+    ? executions.length + 1
+    : searches.length + 2
   const nativeReplies = []
   let activeExecution = -1
   let probe
@@ -307,52 +301,33 @@ export async function runNativeDelivery({
         assert.equal(body.model, 'gpt-6-astra')
         assert.equal(body.reasoning.effort, 'medium')
       }
-      if (executions && requests.length <= executions.length) {
+      if (requests.length <= searches.length) {
+        const item = searches[requests.length - 1]
+        save(`search-response-${requests.length}`, item)
+        sendResponse(res, item, requests.length)
+      } else if (executions && requests.length <= executions.length) {
         activeExecution = requests.length - 1
         const item = {
-          type: 'custom_tool_call',
+          type: 'function_call',
           id: `fc_script_${activeExecution}`,
           call_id: `${callId}_${activeExecution}`,
-          name: 'exec',
-          namespace: 'functions',
-          input: executions[activeExecution].code
+          name: fixture.tool,
+          namespace: fixture.namespace,
+          arguments: JSON.stringify(executions[activeExecution].input)
         }
         save(`scripted-response-${activeExecution}`, item)
         sendResponse(res, item, requests.length)
-      } else if (requests.length === 1) {
-        if (mode === 'code') {
-          const tools =
-            body.tools ||
-            body.input.find((item) => item.type === 'additional_tools')?.tools
-          assert.ok(
-            tools
-              ?.find((tool) => tool.name === 'functions')
-              ?.tools.some(
-                (tool) => tool.name === 'exec' && tool.type === 'custom'
-              )
-          )
+      } else if (requests.length === searches.length + 1) {
+        const item = {
+          type: 'function_call',
+          id: 'fc_fixture',
+          call_id: callId,
+          name: fixture.tool,
+          namespace: fixture.namespace,
+          arguments: JSON.stringify(fixture.input)
         }
-        const item =
-          mode === 'direct'
-            ? {
-                type: 'function_call',
-                id: 'fc_fixture',
-                call_id: callId,
-                name: fixture.tool,
-                namespace: fixture.namespace,
-                arguments: JSON.stringify(fixture.input)
-              }
-            : {
-                type: 'custom_tool_call',
-                id: 'fc_fixture',
-                call_id: callId,
-                name: 'exec',
-                namespace: 'functions',
-                input: `const result = await tools.${fixture.namespace}__${fixture.tool}(${JSON.stringify(fixture.input)}); text(result);`
-              }
         save('scripted-response', item)
         if (outputProbe) {
-          assert.equal(mode, 'code')
           res.writeHead(200, { 'content-type': 'text/event-stream' })
           const event = (type, values) =>
             res.write(
@@ -364,17 +339,20 @@ export async function runNativeDelivery({
             status: 'in_progress',
             output: []
           }
-          const code = '/*' + 'x'.repeat(64000) + '*/' + item.input
+          const argumentsText = ' '.repeat(64000) + item.arguments
           event('response.created', { response })
           event('response.output_item.added', {
             output_index: 0,
-            item: { ...item, input: '' }
+            item: { ...item, arguments: '' }
           })
           let bytes = 0
           for (let index = 0; index < 4; index++) {
             if (outputProbe === 'progressive') {
-              const delta = code.slice(index * 16000, (index + 1) * 16000)
-              event('response.custom_tool_call_input.delta', {
+              const delta = argumentsText.slice(
+                index * 16000,
+                (index + 1) * 16000
+              )
+              event('response.function_call_arguments.delta', {
                 item_id: item.id,
                 output_index: 0,
                 delta
@@ -404,31 +382,33 @@ export async function runNativeDelivery({
             res.destroy()
             return
           }
-          const delta = code.slice(outputProbe === 'progressive' ? 64000 : 0)
-          event('response.custom_tool_call_input.delta', {
+          const delta = argumentsText.slice(
+            outputProbe === 'progressive' ? 64000 : 0
+          )
+          event('response.function_call_arguments.delta', {
             item_id: item.id,
             output_index: 0,
             delta
           })
-          event('response.custom_tool_call_input.done', {
+          event('response.function_call_arguments.done', {
             item_id: item.id,
             output_index: 0,
-            input: code
+            arguments: argumentsText
           })
           event('response.output_item.done', {
             output_index: 0,
-            item: { ...item, input: code }
+            item: { ...item, arguments: argumentsText }
           })
           event('response.completed', {
             response: {
               ...response,
               status: 'completed',
-              output: [{ ...item, input: code }],
+              output: [{ ...item, arguments: argumentsText }],
               usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 }
             }
           })
           res.end()
-        } else sendResponse(res, item, 1)
+        } else sendResponse(res, item, requests.length)
       } else if (requests.length === expectedRequests) {
         sendResponse(
           res,
@@ -471,7 +451,6 @@ export async function runNativeDelivery({
     notify: [],
     'analytics.enabled': false,
     'history.persistence': 'none',
-    'features.code_mode': mode === 'code',
     web_search: 'disabled',
     model_reasoning_effort: 'medium',
     model_provider: 'offline_fixture',
@@ -487,12 +466,22 @@ export async function runNativeDelivery({
   const send = (value) => child.stdin.write(JSON.stringify(value) + '\n')
   const rpc = (method, params) =>
     new Promise((resolve, reject) => {
+      if (failure) {
+        reject(failure)
+        return
+      }
       const id = ++rpcId
       pending.set(id, { resolve, reject })
       send({ id, method, params })
     })
-  let outcome, cleanup, receipt
+  let outcome, cleanup, receipt, configuration
   try {
+    configuration = await createNativeProviderConfig({
+      executable: identity.binary,
+      model: 'gpt-6-astra',
+      directory
+    })
+    isolation.model_catalog_json = configuration.path
     child = spawn(
       identity.binary,
       [
@@ -536,7 +525,7 @@ export async function runNativeDelivery({
       evidencePath: join(directory, 'deadline.json')
     })
     await deadline.ready
-    createInterface({ input: child.stdout }).on('line', (line) => {
+    createInterface({ input: child.stdout }).on('line', async (line) => {
       try {
         const event = JSON.parse(line)
         if (event.id !== undefined && !event.method) {
@@ -637,15 +626,68 @@ export async function runNativeDelivery({
         ),
         'Missing exact native completion'
       )
+    let history
+    if (inspectHistory) {
+      const project = (items) => ({
+        itemTypes: items.map((item) => item.type),
+        outputs: items
+          .filter((item) => item.type === 'functionCallOutput')
+          .map(({ id, name, namespace, output }) => ({
+            id,
+            name,
+            namespace,
+            output
+          }))
+      })
+      const observe = async (method, params, items) => {
+        try {
+          const reply = await rpc(method, params)
+          return { status: 'available', ...project(items(reply)) }
+        } catch (error) {
+          return { status: 'unavailable', reason: error.message }
+        }
+      }
+      history = {
+        notifications: project(
+          notifications
+            .filter((event) => event.method === 'item/completed')
+            .map((event) => event.params.item)
+        ),
+        read: await observe(
+          'thread/read',
+          { threadId: thread.thread.id, includeTurns: true },
+          (reply) => reply.thread.turns.flatMap((entry) => entry.items)
+        ),
+        page: await observe(
+          'thread/items/list',
+          { threadId: thread.thread.id, turnId: turn.turn.id, limit: 100 },
+          (reply) => reply.data
+        )
+      }
+      save('public-forwarding-history', history)
+    }
     outcome = {
+      ...(history ? { history } : {}),
       source,
       ...(probe ? { outputProbe: probe } : {}),
       version,
       identity,
-      mode,
       tool: fixture.tool,
       directory,
       requests: requests.length,
+      initialToolDelivery: {
+        tools: requests[0].tools ?? [],
+        additionalTools: requests[0].input.filter(
+          (item) => item.type === 'additional_tools'
+        )
+      },
+      searchResults: searches.map((search, index) =>
+        requests[index + 1].input.filter(
+          (item) =>
+            item.call_id === search.call_id &&
+            ['function_call_output', 'tool_search_output'].includes(item.type)
+        )
+      ),
       ...(executions
         ? {
             comparisons: executions.map((execution, index) =>
@@ -663,11 +705,15 @@ export async function runNativeDelivery({
                   .map((event) => event.params.item?.type)
               )
             ],
-            storageInternals: 'unavailable'
+            delivery: 'native-tool-response'
           }
         : {
             nativeReplyExact,
-            comparison: inspectSuccessor(requests[1], callId, fixture.raw)
+            comparison: inspectSuccessor(
+              requests[searches.length + 1],
+              callId,
+              fixture.raw
+            )
           })
     }
     save('comparison', outcome)
@@ -679,6 +725,7 @@ export async function runNativeDelivery({
   } finally {
     shuttingDown = true
     if (deadline) cleanup = await deadline.stop('offline-test-cleanup')
+    await configuration?.dispose()
     server.closeAllConnections()
     await new Promise((resolve) => server.close(resolve))
     save('diagnostics', {

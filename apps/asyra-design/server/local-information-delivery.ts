@@ -57,43 +57,7 @@ export const informationDeliverySchema = {
 }
 
 export const informationDeliveryInstructions =
-  'Large replies return contentDelivery JSON fragments, not a complete contract. Follow next with this same tool; combine matching byte ranges and verify totalBytes before parsing the complete JSON. A lastPage alone does not prove prior coverage. Print one page per Code Mode output; retain assembled data rather than printing all pages together. Use the selectors published by this tool to avoid unnecessary full reads. On stale continuation restart the original read; never replay design writes.'
-
-// Published verbatim; native tests execute the delivered source, not a test copy.
-// Include the canonical toolOutcome envelope within the existing 24 KB reply bound.
-export const informationDeliveryExample = `(() => {
-  const bytes = value => encodeURIComponent(value).replace(/%[0-9A-F]{2}/g, "x").length;
-  if (typeof deliveryKey !== "string" || !deliveryKey || typeof result !== "string" || bytes(result) > ${informationDeliveryBytes + 1000}) throw new Error("Use one bounded informational reply and a query-specific key.");
-  const receipt = JSON.parse(result);
-  if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) throw new Error("Expected an informational object.");
-  if (receipt.toolOutcome && receipt.toolOutcome.status !== "success" && !receipt.contentDelivery) { text(result); return; }
-  const previous = load(deliveryKey);
-  const page = receipt.contentDelivery;
-  if (!page) {
-    if (previous && !previous.pages.includes(result)) throw new Error("Changed content requires a fresh key and ordinary read/refresh.");
-    if (!previous) store(deliveryKey, { complete: true, pages: [result], value: receipt, next: null });
-    text(result); return;
-  }
-  if (page.kind !== "json-fragment" || !/^[a-f0-9]{64}$/.test(page.revision) || ![page.startByte, page.endByte, page.totalBytes].every(Number.isSafeInteger) || page.startByte < 0 || page.endByte <= page.startByte || page.endByte > page.totalBytes || typeof page.text !== "string" || bytes(page.text) !== page.endByte - page.startByte || page.lastPage !== (page.endByte === page.totalBytes)) throw new Error("Invalid information fragment; retain prior state and correct the read.");
-  if (page.lastPage ? page.next !== null : !page.next || typeof page.next.tool !== "string" || page.next.arguments?.contentPage?.revision !== page.revision || page.next.arguments?.contentPage?.offset !== page.endByte) throw new Error("Invalid information continuation.");
-  if (previous && (previous.revision !== page.revision || previous.totalBytes !== page.totalBytes)) throw new Error("Mixed content requires a fresh key and ordinary read/refresh.");
-  if (previous?.pages.includes(result)) { text(result); return; }
-  if (page.startByte !== (previous?.endByte ?? 0)) throw new Error("Missing information page; follow the retained next read or refresh after context loss.");
-  const pages = [...(previous?.pages ?? []), result];
-  const retained = { revision: page.revision, totalBytes: page.totalBytes, endByte: page.endByte, pages, next: page.next, complete: page.lastPage };
-  if (page.lastPage) retained.value = JSON.parse(pages.map(raw => JSON.parse(raw).contentDelivery.text).join(""));
-  store(deliveryKey, retained);
-  text(result);
-})();`
-
-export const informationDeliveryExampleInstructions = `
-For text-only informational discovery replies, bind result to the returned STRING and deliveryKey to a fresh key for this query (for example "chosen-contract-1"). Run this example once per exec, with no other text output; do not loop several pages into the same exec. Reuse the key for continuation. load(deliveryKey).next supplies the next same-tool arguments; call only that read in a later exec, then run this example again. The complete parsed value is load(deliveryKey).value only when complete is true. Preserve required fields, local references, execution and recovery constraints; select narrower usage/schemaPaths through ordinary discovery rather than inventing summaries.
-Information forwarding example (one execution):
-\`\`\`javascript
-${informationDeliveryExample}
-\`\`\`
-To redisplay a page after output loss, bind result = load(deliveryKey).pages[index] and run the SAME example once, without calling a tool. Never print the assembled value. Retained completeness is not model receipt or successful lookup coverage; partial/failed lookup pages keep their outcome and may contain useful sibling definitions. Missing storage or stale content permits normal read/refresh using a fresh key; never repeat a completed mutation to recover informational output. This example does not intercept arbitrary Code Mode output.
-`
+  'Large replies return contentDelivery JSON fragments, not a complete contract. Call next.tool with next.arguments to continue. Read matching contiguous byte ranges through totalBytes before treating the contract as complete. A lastPage alone does not prove prior coverage. Each page is delivered directly as a tool result. Use the selectors published by this tool to avoid unnecessary full reads. On stale continuation restart the original read; never replay design writes.'
 
 export const deliverInformation = (
   text: string,

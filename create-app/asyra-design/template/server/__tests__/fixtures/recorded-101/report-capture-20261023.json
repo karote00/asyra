@@ -1,0 +1,23 @@
+{
+  "provenance": {
+    "run": "1792693671659",
+    "payload": "64-output.json",
+    "sha256": "ee0e7e5f35bfe824e60631d91e676935534c85ba914593cf80a00b93df8efe50",
+    "captureError": "Network.getResponseBody: Request content was evicted from inspector cache",
+    "sourceRequestId": "2a0ad4ab-6d25-4f6d-932f-efbab1fe37ee"
+  },
+  "batch": {
+    "batchId": "taipei101-partial-report",
+    "actions": [
+      {
+        "id": "outcome",
+        "name": "report_outcome",
+        "arguments": {
+          "outcome": "unsupported",
+          "message": "已完成：prepare_and_apply_design 兩次確認建立共 9,574 個原生可編輯元素，包含基座、八節外張塔身、窗框、簡化裝飾與尖塔；兩次局部預覽均已實際顯示，因此我認為已產生首個畫面。未完成：高寫實反射、陰影、精確裝飾與基座細節、尺寸查證，以及全棟整合視覺驗收。現有外觀仍偏示意，不能視為符合原要求。已觀察阻礙：review_drawing 對 workspace 的擷取回報 unavailable（呼叫 df02f0a8-1e62-4558-9356-c67f46650b57）；尚未取得全棟合併影像與持久保存確認。時間不足可能與契約探索及大量向量建立有關，但只是推測，沒有量測證據足以確認延遲原因。工作階段已結束，保留已建立內容；本報告不是作品驗收。"
+        },
+        "summary": "回報已保留的部分成果、未完成項目及證據限制"
+      }
+    ]
+  }
+}

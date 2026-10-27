@@ -133,15 +133,15 @@ beauty, roll back work, or weaken the user's requested finish.
 
 ## AI tool orchestration
 
-The installed local Codex code-mode runtime may compute draft data and compose
-registered App tools. It does not gain workspace, shell or plugin access.
+Registered tools expose JSON arguments, structured owner receipts and image content.
+Each AI provider adapter consumes these contracts directly; there is no embedded
+JavaScript orchestration dependency. The local native adapter derives its direct
+configuration from the installed executable and releases it with the request.
 prepare_and_apply_design joins existing preparation and application, preserving
 validation, measurement, inspection, permissions and the invocation transaction.
-Its compact receipt omits duplicated context and ID lists; code may request full
-receipts to select specific IDs without printing the full result to the model.
-Concurrent writes queue; only adjacent read-only contour analyses overlap.
-Fatal failure/cancellation prevents queued work from starting. Native script
-outputs are diagnostics only and cannot become canonical action batches.
+Compact and full receipts remain available. Concurrent writes queue; only
+owner-declared independent work overlaps. Cancellation prevents queued work from
+starting, and unsupported environment output cannot become a canonical batch.
 
 Source preparation uses bounded work windows while retaining one immutable
 artifact and its global hierarchy/layout/relations. Expanded artifact ceilings

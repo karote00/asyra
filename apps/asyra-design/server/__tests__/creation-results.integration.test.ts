@@ -397,3 +397,120 @@ it.each(['compact', 'full'] as const)(
     }
   }
 )
+
+it('executes the delivered small-part example without criteria or research and permits later adjustment', async () => {
+  reset()
+  const { createLocalDesignWorkflow } = await import('../local-design-workflow')
+  const { invokeLocalTool } = await import('../local-tool-invocation')
+  const { createBasicApiActions } =
+    await import('../../src/ai/basic-api-actions')
+  const { observeAiAction } = await import('../../src/ai/runtime-input')
+  const creation = createPreparedDesignAction(undefined, async () => undefined)
+  const { createDesignReviewer } =
+    await import('../../src/common-apis/design-review')
+  const { createDesignReviewAction } =
+    await import('../../src/ai/review-action')
+  const reviewer = createDesignReviewer()
+  try {
+    const actions = [
+      creation,
+      createDesignReviewAction(reviewer.capture, reviewer.isCurrent),
+      ...createBasicApiActions()
+    ].map((action) => observeAiAction(action))
+    const descriptions = actions.map(createAiToolContract)
+    const source = createLocalDesignTools(descriptions)
+    const operations = createLocalOperationTools(
+      descriptions,
+      source,
+      async (batch) => ({
+        context: {},
+        actionResults: await Promise.all(
+          batch.actions.map(async (a) => ({
+            actionId: a.id,
+            actionName: a.name,
+            result: (await (() => {
+              const owner = actions.find((d) => d.name === a.name)
+              if (!owner) throw new Error('Missing action owner')
+              return owner.execute(a.arguments, { signal })
+            })()) as never
+          }))
+        )
+      }),
+      {
+        getNativeTools: () =>
+          main.definitions.map((d) => ({ ...d, namespace: 'design' }))
+      }
+    )
+    const main = createLocalDesignWorkflow(source, operations)
+    const signal = new AbortController().signal
+    const discovery = operations.definitions.find(
+      (d) => d.name === 'describe_design_apis'
+    )
+    if (!discovery) throw new Error('Missing discovery')
+    let page = JSON.parse(
+      (
+        await invokeLocalTool(
+          operations,
+          discovery,
+          {
+            names: ['prepare_and_apply_design'],
+            view: 'usage',
+            inputScope: { operation: 'draft', nodeTypes: ['vector'] }
+          },
+          signal
+        )
+      ).text
+    )
+    let text = ''
+    while (page.contentDelivery) {
+      text += page.contentDelivery.text
+      const next = page.contentDelivery.next
+      if (!next) break
+      page = JSON.parse(
+        (await invokeLocalTool(operations, discovery, next.arguments, signal))
+          .text
+      )
+    }
+    const example = (text ? JSON.parse(text) : page).tools[0].invocationExample
+      .invocation
+    expect(example.arguments.plan).toBeUndefined()
+    const created = JSON.parse(
+      (
+        await invokeLocalTool(
+          main,
+          main.definitions[0],
+          { ...example.arguments, inspection: 'defer' },
+          signal
+        )
+      ).text
+    )
+    // A headless owner fixture has no pixel projection; follow-up review may be
+    // partial, but it cannot gate or undo the acknowledged visible creation.
+    expect(created.toolOutcome.settlement, JSON.stringify(created)).toBe(
+      'completed'
+    )
+    expect(created.actionResults[0].result.status).toBe('complete')
+    const child = core.getElementChildren(
+      created.actionResults[0].result.compositionId
+    ).elementIds[0]
+    expect(core.getElementComputedData(child)?.width).toBeGreaterThan(0)
+    const before = await core.save()
+    const edit = actions.find(
+      (d) => d.name === 'api_element_patchElementProperties'
+    )
+    if (!edit) throw new Error('Missing edit owner')
+    const changed = (await edit.execute(
+      {
+        patches: [{ elementId: child, values: { x: 40, y: 50 }, records: [] }]
+      },
+      { signal }
+    )) as { toolOutcome: { status: string } }
+    expect(changed.toolOutcome.status).toBe('success')
+    expect(core.getElementComputedData(child)?.x).toBe(40)
+    expect((await core.save()).sceneTree.elements[child].id).toBe(
+      before.sceneTree.elements[child].id
+    )
+  } finally {
+    reviewer.dispose()
+  }
+})

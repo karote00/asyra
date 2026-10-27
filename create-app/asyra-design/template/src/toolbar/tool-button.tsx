@@ -9,7 +9,8 @@ const PRIMARY_TOOL_ICON_MAP: Record<string, IconName> = {
   [PrimaryToolType.SELECT]: 'Select',
   [PrimaryToolType.RECTANGLE]: 'Rect',
   [PrimaryToolType.OVAL]: 'Oval',
-  [PrimaryToolType.PEN]: 'Pen'
+  [PrimaryToolType.PEN]: 'Pen',
+  [PrimaryToolType.TEXT]: 'Text'
 }
 
 const ToolButton = () => {
@@ -35,6 +36,10 @@ const ToolButton = () => {
 
   const handleSwitchToPenTool = useCallback(() => {
     switchPrimaryTool(PrimaryToolType.PEN)
+  }, [])
+
+  const handleSwitchToTextTool = useCallback(() => {
+    switchPrimaryTool(PrimaryToolType.TEXT)
   }, [])
 
   return (
@@ -109,6 +114,18 @@ const ToolButton = () => {
         title="Pen (P)"
       >
         <Icon name="Pen" />
+      </button>
+      <button
+        aria-label="Text"
+        aria-pressed={primaryTool === PrimaryToolType.TEXT}
+        className={`tool-btn ${primaryTool === PrimaryToolType.TEXT ? 'active' : ''}`}
+        onClick={handleSwitchToTextTool}
+        data-testid="tool-text"
+        data-active={primaryTool === PrimaryToolType.TEXT}
+        title="Text (T)"
+        type="button"
+      >
+        <Icon name={PRIMARY_TOOL_ICON_MAP[PrimaryToolType.TEXT]} />
       </button>
     </div>
   )

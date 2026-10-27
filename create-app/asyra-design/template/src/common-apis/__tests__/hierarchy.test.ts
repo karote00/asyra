@@ -4,7 +4,10 @@ const mocks = vi.hoisted(() => {
   const core = {
     getUIProperty: vi.fn(),
     removeSubtree: vi.fn(),
-    sceneTreeSaveData: vi.fn()
+    sceneTreeSaveData: vi.fn(),
+    getCurrentWorkspaceId: vi.fn(),
+    getElementMetadata: vi.fn(),
+    getElementChildren: vi.fn()
   }
 
   return {
@@ -99,21 +102,60 @@ describe('app hierarchy common APIs', () => {
   })
 
   it('reads the canonical current workspace id from the Core facade', () => {
-    mocks.core.sceneTreeSaveData.mockReturnValue({
-      workspace: 'workspace',
-      workspaceList: ['workspace'],
-      elements: {}
-    })
-
+    mocks.core.getCurrentWorkspaceId.mockReturnValue('workspace')
     expect(hierarchyApis.getWorkspaceId()).toBe('workspace')
-    expect(mocks.core.sceneTreeSaveData).toHaveBeenCalledOnce()
-
-    mocks.core.sceneTreeSaveData.mockReturnValue({
-      workspace: '',
-      workspaceList: [],
-      elements: {}
-    })
+    expect(mocks.core.sceneTreeSaveData).not.toHaveBeenCalled()
+    mocks.core.getCurrentWorkspaceId.mockReturnValue('')
     expect(hierarchyApis.getWorkspaceId()).toBeNull()
+  })
+
+  it.each(['before', 'after'] as const)(
+    'resolves %s an anchor after excluding moved siblings',
+    (placement) => {
+      mocks.core.getElementMetadata.mockImplementation((id) =>
+        id === 'anchor' ? { parentId: 'parent' } : { childCount: 4 }
+      )
+      mocks.core.getElementChildren.mockReturnValue({
+        available: true,
+        elementIds: ['moving', 'first', 'anchor', 'last'],
+        total: 4
+      })
+      hierarchyApis.moveElementsRelative(
+        { elementIds: ['moving'], anchorId: 'anchor', placement },
+        { undoable: true }
+      )
+      expect(
+        mocks.moveElementsWithGroupGeometry
+      ).toHaveBeenCalledExactlyOnceWith(
+        mocks.core,
+        {
+          elementIds: ['moving'],
+          targetParentId: 'parent',
+          targetIndex: placement === 'before' ? 1 : 2
+        },
+        { undoable: true }
+      )
+      expect(mocks.core.sceneTreeSaveData).not.toHaveBeenCalled()
+    }
+  )
+
+  it('rejects missing or moving anchors before applying hierarchy mutations', () => {
+    mocks.core.getElementMetadata.mockReturnValue(undefined)
+    expect(() =>
+      hierarchyApis.moveElementsRelative({
+        elementIds: ['a'],
+        anchorId: 'missing',
+        placement: 'before'
+      })
+    ).toThrow()
+    expect(() =>
+      hierarchyApis.moveElementsRelative({
+        elementIds: ['a'],
+        anchorId: 'a',
+        placement: 'after'
+      })
+    ).toThrow()
+    expect(mocks.moveElementsWithGroupGeometry).not.toHaveBeenCalled()
   })
 
   it('routes reorder and reparent through Preset Group geometry normalization', () => {

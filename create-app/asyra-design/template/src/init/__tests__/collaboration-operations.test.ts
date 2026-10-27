@@ -1,3 +1,6 @@
+import { prepareDocumentPublication } from '../../collaboration/document-publication'
+import { applyCanonicalChangesToDocument } from '../../../server/document-canonical-reducer'
+import { createFormalInitialDocument } from '../../collaboration/initial-document'
 import type { CanonicalChange } from '@asyra/core'
 import { Buffer } from 'node:buffer'
 import type {
@@ -18,7 +21,10 @@ import {
   subscribeToBrowserDragPhases
 } from '@asyra/utils'
 import { describe, expect, it, vi } from 'vitest'
-import { applyDocumentSessionBootstrapTail } from '../../collaboration/operations'
+import {
+  applyDocumentSessionBootstrapTail,
+  decodeDocumentPublication
+} from '../../collaboration/operations'
 import {
   createPublicationProcessor,
   type DecideRemotePublication
@@ -503,7 +509,8 @@ const createHarness = (options: HarnessOptions = {}) => {
     applyCanonicalChanges,
     applyRemoteCanonicalChangeSlices,
     decideRemotePublication,
-    processPublication,
+    processPublication: (source: SharedPublication) =>
+      processPublication(prepareDocumentPublication(source)),
     runRemoteTransaction,
     runRemoteTransactionProgressively,
     settleRemoteSlice
@@ -650,7 +657,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
         publication([computed], 'remote-computed-projection')
       )
     ).toThrow(/unsupported canonical publication batch evidence/i)
-    expect(harness.decideRemotePublication).toHaveBeenCalledOnce()
+    expect(harness.decideRemotePublication).not.toHaveBeenCalled()
     expect(harness.runRemoteTransaction).not.toHaveBeenCalled()
     expect(harness.applyCanonicalChanges).not.toHaveBeenCalled()
   })
@@ -682,6 +689,96 @@ describe('Asyra Design app-owned collaboration processing', () => {
     ])
   })
 
+  it.each([
+    ['shared', ['existing-fill']],
+    ['ordered', ['existing-fill', 'retained-fill']]
+  ])(
+    'preserves %s relationship values through lifecycle conversion and durable reduction',
+    (_name, after) => {
+      const document = createFormalInitialDocument()
+      Object.assign(document.props, {
+        'target-fills': {
+          id: 'target-fills',
+          type: 'fills',
+          fills: ['old-fill', 'retained-fill']
+        },
+        'old-fill': { id: 'old-fill', type: 'fill', color: '#111111' },
+        'existing-fill': {
+          id: 'existing-fill',
+          type: 'fill',
+          color: '#222222'
+        },
+        'retained-fill': { id: 'retained-fill', type: 'fill', color: '#333333' }
+      })
+      const before = structuredClone(document)
+      const changes = [
+        {
+          ...delivery(
+            SharedDataChannelNames.PROPS,
+            EventTypes.UPDATE_PROPERTY,
+            {
+              action: PROPS_ACTIONS.UPDATE_PROPERTY,
+              eventName: EventTypes.UPDATE_PROPERTY,
+              id: 'old-fill',
+              key: 'color',
+              before: '#444444',
+              after: '#111111'
+            },
+            'restore-old-before-removal'
+          ),
+          batchId: 'material-batch',
+          orderedIds: ['target-fills']
+        },
+        {
+          ...delivery(
+            SharedDataChannelNames.PROPS,
+            EventTypes.REMOVE_PROPERTY,
+            {
+              action: PROPS_ACTIONS.REMOVE_PROPERTY,
+              eventName: EventTypes.REMOVE_PROPERTY,
+              data: [document.props['old-fill']]
+            },
+            'remove-old'
+          ),
+          batchId: 'material-batch',
+          orderedIds: ['target-fills']
+        },
+        {
+          ...delivery(
+            SharedDataChannelNames.PROPS,
+            EventTypes.UPDATE_PROPERTY,
+            {
+              action: PROPS_ACTIONS.UPDATE_PROPERTY,
+              eventName: EventTypes.UPDATE_PROPERTY,
+              id: 'target-fills',
+              key: 'fills',
+              before: ['old-fill', 'retained-fill'],
+              after
+            },
+            'link-existing'
+          ),
+          batchId: 'material-batch',
+          orderedIds: ['target-fills']
+        }
+      ]
+      const harness = createHarness()
+      expect(harness.processPublication(publication(changes))).toBe(true)
+      const canonical = harness.applyCanonicalChanges.mock
+        .calls[0][0] as readonly CanonicalChange[]
+      const reduced = applyCanonicalChangesToDocument(document, canonical)
+      expect(reduced.props['target-fills']).toMatchObject({ fills: after })
+      expect(reduced.props['existing-fill']).toEqual(
+        before.props['existing-fill']
+      )
+      expect(reduced.props['retained-fill']).toEqual(
+        before.props['retained-fill']
+      )
+      expect(reduced.props['old-fill']).toBeUndefined()
+      expect(document).toEqual(before)
+      expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
+    }
+  )
+
   it('preserves exact property record additions before updates in one Core request', () => {
     const harness = createHarness()
     const propertyBatchId = 'batch-vector-topology'
@@ -709,7 +806,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
           id: 'points-root',
           key: 'points',
           before: ['point-a'],
-          after: ['point-a', 'point-b']
+          after: ['point-b', 'point-a']
         },
         'update-points-root'
       ),
@@ -728,26 +825,23 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        records: [
+        creations: pointAddition.payload.data,
+        removals: [],
+        updates: []
+      },
+      {
+        kind: 'property-components',
+        updates: [
           {
             propertyId: 'points-root',
-            key: 'points',
-            set: {
-              'point-b': {
-                id: 'point-b',
-                type: 'vectorPoint',
-                x: 20,
-                y: 30
-              }
-            }
+            values: { points: ['point-b', 'point-a'] }
           }
-        ],
-        updates: []
+        ]
       }
     ])
   })
 
-  it('preserves exact property record removals before updates in one Core request', () => {
+  it('preserves exact relationship updates before record retirement in one Core request', () => {
     const harness = createHarness()
     const propertyBatchId = 'batch-vector-topology-removal'
     const pointRemoval = {
@@ -793,13 +887,13 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        records: [
-          {
-            propertyId: 'points-root',
-            key: 'points',
-            remove: ['point-b']
-          }
-        ],
+        updates: [
+          { propertyId: 'points-root', values: { points: ['point-a'] } }
+        ]
+      },
+      {
+        kind: 'property-components',
+        removals: pointRemoval.payload.data,
         updates: []
       }
     ])
@@ -879,21 +973,19 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       {
         kind: 'property-components',
-        records: [
-          {
-            propertyId: 'segments-root',
-            key: 'segments',
-            set: {
-              'segment-new': {
-                id: 'segment-new',
-                type: 'vectorSegment',
-                startId: 'point-a',
-                endId: 'point-b'
-              }
-            },
-            remove: ['segment-old']
-          }
-        ],
+        creations: segmentAddition.payload.data,
+        removals: [],
+        updates: []
+      },
+      {
+        kind: 'property-components',
+        updates: [
+          { propertyId: 'segments-root', values: { segments: ['segment-new'] } }
+        ]
+      },
+      {
+        kind: 'property-components',
+        removals: segmentRemoval.payload.data,
         updates: []
       }
     ])
@@ -940,15 +1032,14 @@ describe('Asyra Design app-owned collaboration processing', () => {
     ])
     expect(changes?.[0]).toMatchObject({
       kind: 'element-creation',
-      parentId: 'workspace-a',
-      index: 0,
-      elements: [{ id: 'group-a' }]
+      entries: [{ data: { id: 'group-a' }, parentId: 'workspace-a', index: 0 }]
     })
     expect(changes?.[1]).toMatchObject({
       kind: 'element-creation',
-      parentId: 'group-a',
-      index: 0,
-      elements: [{ id: 'rect-a' }, { id: 'rect-b' }]
+      entries: [
+        { data: { id: 'rect-a' }, parentId: 'group-a', index: 0 },
+        { data: { id: 'rect-b' }, parentId: 'group-a', index: 1 }
+      ]
     })
   })
 
@@ -1068,7 +1159,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     ).toBe(true)
     expect(
       harness.applyCanonicalChanges.mock.calls[0]?.[0].map(({ kind }) => kind)
-    ).toEqual(['hierarchy-moves', 'element-removal'])
+    ).toEqual(['hierarchy-moves', 'element-removal', 'property-components'])
   })
 
   it('organizes each source publication topology exactly once', () => {
@@ -1137,6 +1228,131 @@ describe('Asyra Design app-owned collaboration processing', () => {
 
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
     expect(observedRawEvents).toEqual([])
+  })
+
+  it('preserves each creation entry parent and index instead of inferring a contiguous range', () => {
+    const deliveries = canonicalCreationDeliveries(['right', 'left'])
+    const scene = deliveries.find(
+      ({ channel }) => channel === SharedDataChannelNames.SCENE_TREE
+    )
+    if (!scene) throw new Error('Missing Scene fixture')
+    const payload = scene.payload as {
+      entries: {
+        data: { id: string; parentId: string }
+        parentId: string
+        index: number
+      }[]
+    }
+    const [right, left] = payload.entries
+    if (!right || !left) throw new Error('Missing insertion entries')
+    right.index = 2
+    left.parentId = 'other-parent'
+    left.data.parentId = 'other-parent'
+    left.index = 0
+    const source = publication(deliveries, 'exact-insertion-evidence', 'undo')
+    const decoded = decodeDocumentPublication(source)
+    expect(decoded[0]).toMatchObject({
+      kind: 'element-creation',
+      entries: payload.entries
+    })
+    expect(decoded[0]).not.toHaveProperty('index')
+    const harness = createHarness()
+    expect(harness.processPublication(source)).toBe(true)
+    expect(harness.applyCanonicalChanges).toHaveBeenCalledWith(decoded)
+  })
+
+  it('preserves work before and after each restore in both persistence and live decoding', () => {
+    const second = JSON.parse(
+      JSON.stringify(restoreDeliveries()).replaceAll('group-a', 'group-b')
+    ) as TestPublicationDelivery[]
+    const source = publication(
+      [
+        ...propertyUpdateDeliveries('existing-position', { x: 3 }),
+        ...restoreDeliveries(),
+        ...propertyUpdateDeliveries('position-group-a', { x: 40 }),
+        ...second,
+        ...propertyUpdateDeliveries('position-group-b', { y: 60 })
+      ],
+      'mixed-restores',
+      'undo'
+    )
+    const expected = [
+      'property-components',
+      'subtree-restore',
+      'property-components',
+      'subtree-restore',
+      'property-components'
+    ]
+    const decoded = decodeDocumentPublication(source)
+    expect(decoded.map(({ kind }) => kind)).toEqual(expected)
+    expect(decoded[1]).toMatchObject({
+      propsSnapshot: { components: [{ id: 'position-group-a', x: 12, y: 24 }] }
+    })
+    const harness = createHarness()
+    expect(harness.processPublication(source)).toBe(true)
+    expect(harness.applyCanonicalChanges).toHaveBeenCalledWith(decoded)
+  })
+
+  it('does not discard malformed evidence following a restore', () => {
+    const source = publication(
+      [
+        ...restoreDeliveries(),
+        delivery(
+          SharedDataChannelNames.PROPS,
+          'unknownOperation',
+          {},
+          'unknown-tail'
+        )
+      ],
+      'invalid-restore-tail',
+      'undo'
+    )
+    expect(() => decodeDocumentPublication(source)).toThrow(
+      /unsupported canonical|invalid property-component/
+    )
+    const harness = createHarness()
+    expect(() => harness.processPublication(source)).toThrow(
+      /unsupported canonical|invalid property-component/
+    )
+    expect(harness.applyCanonicalChanges).not.toHaveBeenCalled()
+  })
+
+  it('preserves exact property creation across semantic slices before a Scene restore', async () => {
+    const source = publication(restoreDeliveries(), 'restore-boundary', 'undo')
+    const propertyBatch = source.slices[0]?.batches[0]
+    const sceneBatch = source.slices[0]?.batches[1]
+    if (!propertyBatch || !sceneBatch)
+      throw new Error('Missing restore batches')
+    const sceneOnly = publication(
+      restoreDeliveries().filter(
+        ({ channel }) => channel === SharedDataChannelNames.SCENE_TREE
+      ),
+      'restore-shared-properties',
+      'undo'
+    )
+    expect(decodeDocumentPublication(sceneOnly)).toMatchObject([
+      { kind: 'subtree-restore', propsSnapshot: { components: [] } }
+    ])
+    const split: SharedPublication = {
+      ...source,
+      mode: 'progressive',
+      slices: [
+        { sliceId: 'properties', orderedIds: [], batches: [propertyBatch] },
+        { sliceId: 'scene', orderedIds: [], batches: [sceneBatch] }
+      ]
+    }
+    expect(decodeDocumentPublication(split)).toMatchObject([
+      {
+        kind: 'property-components',
+        creations: [{ id: 'position-group-a' }],
+        updates: [],
+        removals: []
+      },
+      { kind: 'subtree-restore', propsSnapshot: { components: [] } }
+    ])
+    const harness = createHarness()
+    expect(await harness.processPublication(split)).toBe(true)
+    expect(harness.applyCanonicalChanges).toHaveBeenCalledTimes(2)
   })
 
   it('classifies one restore envelope as one Core canonical change', () => {
@@ -1271,21 +1487,22 @@ describe('Asyra Design app-owned collaboration processing', () => {
 
     expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
-    expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
-      expect.objectContaining({
-        kind: 'element-removal',
-        removals: [...elementIds].reverse().map((elementId) =>
-          expect.objectContaining({
-            data: expect.objectContaining({ id: elementId })
-          })
-        )
-      })
-    ])
+    const changes = harness.applyCanonicalChanges.mock.calls[0]?.[0]
+    expect(changes?.[0]).toMatchObject({
+      kind: 'element-removal',
+      removals: [...elementIds].reverse().map((id) => ({ data: { id } }))
+    })
+    expect(changes?.slice(1)).toEqual(
+      [...elementIds].reverse().map((id) => ({
+        kind: 'property-components',
+        updates: [],
+        removals: [{ id: `position-${id}`, type: 'position' }]
+      }))
+    )
   })
 
-  it('coalesces adjacent removal batches from one publication into one canonical request', () => {
+  it('preserves property retirement barriers between adjacent Scene removals in one request', () => {
     const harness = createHarness()
-
     expect(
       harness.processPublication(
         publication(
@@ -1298,27 +1515,35 @@ describe('Asyra Design app-owned collaboration processing', () => {
         )
       )
     ).toBe(true)
-
     expect(harness.runRemoteTransaction).toHaveBeenCalledOnce()
     expect(harness.applyCanonicalChanges).toHaveBeenCalledOnce()
-    expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
-      {
-        kind: 'element-removal',
-        removals: [
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-b' })
-          }),
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-a' })
-          }),
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-d' })
-          }),
-          expect.objectContaining({
-            data: expect.objectContaining({ id: 'rect-c' })
-          })
-        ]
-      }
+    const changes = harness.applyCanonicalChanges.mock.calls[0]?.[0]
+    expect(changes?.map(({ kind }) => kind)).toEqual([
+      'element-removal',
+      'property-components',
+      'property-components',
+      'element-removal',
+      'property-components',
+      'property-components'
+    ])
+    expect(
+      changes?.flatMap((change) =>
+        change.kind === 'element-removal'
+          ? change.removals.map(({ data }) => data.id)
+          : []
+      )
+    ).toEqual(['rect-b', 'rect-a', 'rect-d', 'rect-c'])
+    expect(
+      changes?.flatMap((change) =>
+        change.kind === 'property-components'
+          ? (change.removals?.map(({ id }) => id) ?? [])
+          : []
+      )
+    ).toEqual([
+      'position-rect-b',
+      'position-rect-a',
+      'position-rect-d',
+      'position-rect-c'
     ])
   })
 
@@ -1348,7 +1573,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
       }))
     ).toEqual([
       { ids: ['rect-a'], kind: 'element-removal' },
-      { ids: ['group-a'], kind: 'element-removal' }
+      { ids: [], kind: 'property-components' },
+      { ids: ['group-a'], kind: 'element-removal' },
+      { ids: [], kind: 'property-components' }
     ])
   })
 
@@ -1370,7 +1597,9 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenCalledWith([
       expect.objectContaining({
         kind: 'element-creation',
-        elements: elementIds.map((id) => expect.objectContaining({ id }))
+        entries: elementIds.map((id) =>
+          expect.objectContaining({ data: expect.objectContaining({ id }) })
+        )
       })
     ])
   })
@@ -1381,7 +1610,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       applyCanonicalChanges: (changes) => {
         const elementIds = changes.flatMap((change) =>
           change.kind === 'element-creation'
-            ? change.elements.map(({ id }) => id)
+            ? change.entries.map(({ data }) => data.id)
             : []
         )
         order.push(`apply:${elementIds.join(',')}`)
@@ -1425,13 +1654,17 @@ describe('Asyra Design app-owned collaboration processing', () => {
     expect(harness.applyCanonicalChanges).toHaveBeenNthCalledWith(1, [
       expect.objectContaining({
         kind: 'element-creation',
-        elements: firstElementIds.map((id) => expect.objectContaining({ id }))
+        entries: firstElementIds.map((id) =>
+          expect.objectContaining({ data: expect.objectContaining({ id }) })
+        )
       })
     ])
     expect(harness.applyCanonicalChanges).toHaveBeenNthCalledWith(2, [
       expect.objectContaining({
         kind: 'element-creation',
-        elements: secondElementIds.map((id) => expect.objectContaining({ id }))
+        entries: secondElementIds.map((id) =>
+          expect.objectContaining({ data: expect.objectContaining({ id }) })
+        )
       })
     ])
     expect(order).toEqual([
@@ -1488,7 +1721,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
       'transformed-publication'
     )
     const harness = createHarness({
-      decideRemotePublication: () => transformed
+      decideRemotePublication: () => prepareDocumentPublication(transformed)
     })
 
     expect(
@@ -1626,7 +1859,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     const harness = createHarness()
 
     expect(() => harness.processPublication(make())).toThrow()
-    expect(harness.decideRemotePublication).toHaveBeenCalledOnce()
+    expect(harness.decideRemotePublication).not.toHaveBeenCalled()
     expect(harness.runRemoteTransaction).not.toHaveBeenCalled()
     expect(harness.applyCanonicalChanges).not.toHaveBeenCalled()
   })
@@ -1643,6 +1876,7 @@ describe('Asyra Design app-owned collaboration processing', () => {
     await expect(
       duplicateHarness.processPublication({
         ...duplicateSource,
+        mode: 'progressive',
         slices: [
           firstSlice,
           {
@@ -1766,6 +2000,7 @@ const persistenceBatch = (
     batchId?: string
     documentId?: string
     expectedDurableSequence?: number
+    raw?: boolean
   }> = {}
 ) => ({
   protocolVersion: 1,
@@ -1778,7 +2013,7 @@ const persistenceBatch = (
     const encodedPublicationFrames = encodePublicationMessageFrames({
       type: CollaborationMessageTypes.SEND_PUBLICATION,
       requestId: `persistence-${item.publicationId}`,
-      publication: item
+      publication: options.raw ? item : prepareDocumentPublication(item)
     }).map((frame) => Buffer.from(frame).toString('base64'))
     return {
       documentId: options.documentId ?? 'document-a',
@@ -1790,6 +2025,73 @@ const persistenceBatch = (
 })
 
 describe('Asyra Design backend document materialization', () => {
+  it('prepares the real checkpoint maps once per durable batch and keeps exact retries free of work', async () => {
+    const document = createFormalInitialDocument()
+    document.props['position-a'] = {
+      id: 'position-a',
+      type: 'position' as never,
+      x: 0,
+      y: 0
+    }
+    const propsKeys = vi.fn((target: object) => Reflect.ownKeys(target))
+    const input = {
+      ...document,
+      props: new Proxy(document.props, { ownKeys: propsKeys })
+    }
+    let record: MaterializedDocumentRecord<typeof document> = {
+      document: input,
+      durableSequence: 0,
+      publicationSequences: {},
+      batches: {}
+    }
+    const service = createDocumentMaterializationService({
+      authorize: async () => undefined,
+      applyCanonicalChanges: (current, changes, observation) => {
+        const next = applyCanonicalChangesToDocument(
+          current,
+          changes,
+          observation
+        )
+        return { ...next, props: new Proxy(next.props, { ownKeys: propsKeys }) }
+      },
+      store: {
+        transact: async (_id, execute) => {
+          let next: typeof record | undefined
+          const result = await execute(record, (value) => {
+            next = value
+          })
+          if (next) record = next
+          return result
+        }
+      }
+    })
+    const batch = persistenceBatch(
+      [10, 20, 30].map((x, index) => ({
+        sequence: index + 1,
+        publication: publication(
+          propertyUpdateDeliveries('position-a', { x }),
+          `publication-${index}`
+        )
+      }))
+    )
+    const stages: string[] = []
+    await service.materialize(batch, {
+      span: (stage) => {
+        stages.push(stage)
+        return () => undefined
+      },
+      detail: () => undefined
+    })
+    expect(
+      stages.filter((stage) => stage === 'working-map-preparation')
+    ).toHaveLength(1)
+    expect(propsKeys).toHaveBeenCalledTimes(1)
+    expect(record.document.props['position-a']).toMatchObject({ x: 30 })
+    expect(document.props['position-a']).toMatchObject({ x: 0 })
+    await service.materialize(batch)
+    expect(propsKeys).toHaveBeenCalledTimes(1)
+  })
+
   it('decodes and applies every publication in sequence before acknowledging the contiguous durable sequence', async () => {
     const harness = createMaterializationHarness()
     const batch = persistenceBatch([
@@ -1812,7 +2114,7 @@ describe('Asyra Design backend document materialization', () => {
     await expect(harness.service.materialize(batch)).resolves.toEqual({
       durableSequence: 2
     })
-    expect(harness.apply).toHaveBeenCalledTimes(2)
+    expect(harness.apply).toHaveBeenCalledTimes(1)
     expect(harness.getRecord()).toMatchObject({
       document: { appliedValues: [10, 20] },
       durableSequence: 2,
@@ -1928,36 +2230,37 @@ describe('Asyra Design backend document materialization', () => {
     )
     await expect(
       harness.service.materialize(
-        persistenceBatch([
-          {
-            sequence: 1,
-            publication: publication(
-              [delivery('selection', 'selection.update', {})],
-              'selection-publication'
-            )
-          }
-        ])
+        persistenceBatch(
+          [
+            {
+              sequence: 1,
+              publication: publication(
+                [delivery('selection', 'selection.update', {})],
+                'selection-publication'
+              )
+            }
+          ],
+          { raw: true }
+        )
       )
-    ).rejects.toThrow('unsupported canonical publication batch evidence')
+    ).rejects.toThrow('Invalid canonical operation')
     expect(harness.transact).not.toHaveBeenCalled()
     expect(harness.apply).not.toHaveBeenCalled()
   })
 
   it('does not commit any publication or advance durability when a later publication fails', async () => {
     const harness = createMaterializationHarness((document, changes) => {
-      const nextValue = changes.flatMap((change) =>
+      const nextValues = changes.flatMap((change) =>
         change.kind === 'property-components'
           ? change.updates.flatMap(({ values }) =>
               typeof values.x === 'number' ? [values.x] : []
             )
           : []
-      )[0]
-      if (nextValue === 20) throw new Error('backend canonical apply failed')
+      )
+      if (nextValues.includes(20))
+        throw new Error('backend canonical apply failed')
       return {
-        appliedValues:
-          nextValue === undefined
-            ? document.appliedValues
-            : [...document.appliedValues, nextValue]
+        appliedValues: [...document.appliedValues, ...nextValues]
       }
     })
 

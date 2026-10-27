@@ -15,7 +15,6 @@ it('characterizes actual native progressing and silent unfinished output with se
   for (const outputProbe of ['progressive', 'silent']) {
     const result = await runNativeDelivery({
       fixture,
-      mode: 'code',
       outputProbe
     })
     expect(result.requests).toBe(2)
@@ -63,7 +62,6 @@ it('preserves a disconnected unfinished native output without inventing invocati
   try {
     await runNativeDelivery({
       fixture: { ...(await loadFixtures())[0], raw: '{"ok":true}' },
-      mode: 'code',
       outputProbe: 'interrupted'
     })
   } catch (value) {

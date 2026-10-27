@@ -1,3 +1,4 @@
+import { migrateTextFills } from '../../collaboration/migrate-text-fills'
 import type { Core } from '@asyra/core'
 import {
   DEFAULT_TEXT_DATA,
@@ -14,6 +15,7 @@ import { PropertyTypes, SCENE_TREE_ACTIONS } from '@asyra/utils'
 export const initText = (
   core: Pick<
     Core,
+    | 'registerLoadHook'
     | 'registerPropertySchema'
     | 'definePropertyComponent'
     | 'defineComponent'
@@ -21,6 +23,7 @@ export const initText = (
     | 'defineUIProperty'
   >
 ): void => {
+  core.registerLoadHook(migrateTextFills)
   core.registerPropertySchema(TEXT_PROPERTY_SCHEMA)
   core.definePropertyComponent(TEXT_PROPERTY_DEFINITION)
   core.defineComponent(TEXT_COMPONENT_DEFINITION)
@@ -28,6 +31,7 @@ export const initText = (
     relations: [
       PropertyTypes.POSITION,
       PropertyTypes.DIMENSION,
+      PropertyTypes.FILLS,
       TEXT_PROPERTY_TYPE
     ].map((key) => ({
       name: `property:${key}`,

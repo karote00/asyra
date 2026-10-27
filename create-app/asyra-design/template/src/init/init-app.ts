@@ -97,6 +97,16 @@ export const initApp = (): AppInitialization => {
     confirmation: aiStartup.confirmation,
     history: aiStartup.history,
     feature: aiFeature.api,
+    onPublished: (turn) => {
+      const result = turn.result as { recordingId?: unknown } | null
+      if (typeof result?.recordingId !== 'string') return
+      aiStartup.runtime.observe?.({
+        sourceRequestId: result.recordingId,
+        purpose: 'conversation-publication',
+        metadata: { conversationId: turn.conversationId, turnId: turn.turnId },
+        evidence: { outcome: turn.outcome, durationMs: turn.durationMs }
+      })
+    },
     getElementType: (elementId) => elementApis.getElementType(elementId)
   })
 

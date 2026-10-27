@@ -193,6 +193,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
         string,
         {
           contextKey: string
+          contexts: readonly string[]
           full?: AiKnowledgeResult
           response?: AiKnowledgeResult
         }
@@ -270,6 +271,97 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               return fail('KNOWLEDGE_INVALID_QUERY')
             const ids = list(query.ids)
             const contexts = list(query.contexts)
+            if (query.fromResult !== undefined) {
+              if (
+                !boundedText(query.fromResult, 128) ||
+                query.rehydrate !== undefined ||
+                query.reuseFrom !== undefined
+              )
+                return fail('KNOWLEDGE_INVALID_QUERY')
+              const original = [...delivered.values()].find(
+                (value) => value.contextKey === query.fromResult
+              )
+              if (!retainResults || !original?.full)
+                return fail('KNOWLEDGE_REUSE_UNAVAILABLE')
+              if (
+                query.contexts !== undefined &&
+                JSON.stringify(contexts) !== JSON.stringify(original.contexts)
+              )
+                return fail('KNOWLEDGE_INVALID_QUERY')
+              const full = original.full
+              const epoch = contextEpoch
+              const byTarget = new Map(
+                full.documents.map((doc) => [doc.target, doc])
+              )
+              const selected = new Set<string>()
+              const expandedOverrides = new Set<string>()
+              const visitRetained = (id: string, includeOverrides = true) => {
+                if (
+                  selected.has(id) &&
+                  (!includeOverrides || expandedOverrides.has(id))
+                )
+                  return
+                const document = byTarget.get(id)
+                const metadata = entries.get(id)
+                if (!document || !metadata)
+                  return fail('KNOWLEDGE_REUSE_UNAVAILABLE')
+                requirePermission('read', who, metadata)
+                if (!relevant(metadata, original.contexts))
+                  return fail('KNOWLEDGE_NOT_APPLICABLE')
+                selected.add(id)
+                if (includeOverrides) expandedOverrides.add(id)
+                for (const dependency of [
+                  ...(metadata.references ?? []),
+                  ...(metadata.extends ?? [])
+                ])
+                  visitRetained(dependency)
+                if (includeOverrides)
+                  for (const override of metadata.overrides ?? [])
+                    visitRetained(override.target)
+                if (document.source.id !== id)
+                  visitRetained(document.source.id, false)
+              }
+              for (const id of ids) visitRetained(id)
+              assertSession()
+              signal.throwIfAborted()
+              if (generation !== full.generation)
+                return fail('KNOWLEDGE_STALE_REVISION')
+              if (contextEpoch !== epoch) return fail('KNOWLEDGE_STALE_CONTEXT')
+              const key = JSON.stringify(['fromResult', query.fromResult, ids])
+              const previous = delivered.get(key)?.response
+              if (previous) return previous
+              const documents = Object.freeze(
+                full.documents.filter((doc) => selected.has(doc.target))
+              )
+              const sourceIds = new Set(
+                documents.flatMap((doc) => [
+                  doc.source.id,
+                  ...(doc.replacedSource ? [doc.replacedSource.id] : [])
+                ])
+              )
+              const result: AiKnowledgeResult = Object.freeze({
+                ...full,
+                contextKey: globalThis.crypto.randomUUID(),
+                alreadyDelivered: false,
+                documents,
+                sources: Object.freeze(
+                  full.sources.filter((value) => sourceIds.has(value.id))
+                )
+              })
+              if (delivered.size >= 64)
+                for (const [entryKey, entry] of delivered) {
+                  if (entry === original) continue
+                  delivered.delete(entryKey)
+                  break
+                }
+              delivered.set(key, {
+                contextKey: result.contextKey,
+                contexts: original.contexts,
+                full: result,
+                response: result
+              })
+              return result
+            }
             if (
               query.rehydrate !== undefined &&
               typeof query.rehydrate !== 'boolean'
@@ -475,6 +567,7 @@ export const createAiKnowledgeAccess = (options: AiKnowledgeOptions) => {
               : result
             delivered.set(key, {
               contextKey: result.contextKey,
+              contexts,
               ...(retainResults ? { full: result, response } : {})
             })
             return response

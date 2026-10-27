@@ -37,7 +37,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
         fontSize: 38,
         lineHeight: 48,
         fontWeight: 'bold',
-        textColor: '#183f35'
+        fill: '#183f35'
       },
       {
         key: 'body',
@@ -50,7 +50,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
         text: 'A collection of field notes, sketches and small discoveries.',
         fontSize: 20,
         lineHeight: 28,
-        textColor: '#385248'
+        fill: '#385248'
       },
       {
         key: 'card',
@@ -96,7 +96,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
             fontSize: 28,
             lineHeight: 36,
             fontWeight: 'bold',
-            textColor: '#183f35'
+            fill: '#183f35'
           }
         ]
       }
@@ -209,10 +209,10 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
             arguments: {
               elementId: design.keyToId.heading,
               name: 'Revised heading',
+              fillColor: '#245640',
               properties: {
                 text: 'Explore something new',
                 fontSize: 32,
-                textColor: '#245640',
                 x: 55
               }
             },
@@ -234,9 +234,13 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
   await expect.poll(read).toMatchObject({ text: 'Explore something new' })
   const headingStyle = await page.evaluate(async (id) => {
     const { core } = await import('../src/testing/runtime-access')
-    return core.getElementComputedData(id, ['fontSize', 'textColor', 'x'])
+    return core.getElementComputedData(id, ['fontSize', 'fills', 'x'])
   }, design.keyToId.heading)
-  expect(headingStyle).toEqual({ fontSize: 32, textColor: '#245640', x: 55 })
+  expect(headingStyle).toMatchObject({
+    fontSize: 32,
+    fills: [{ color: '#245640' }],
+    x: 55
+  })
   expect(await unchangedObjects()).toEqual(unchanged)
   expect(await getUndoHistoryDepth(page)).toBe(editDepth + 1)
   const afterEdit = await getCoreDocumentDigest(page)

@@ -2,7 +2,7 @@
   "version": 1,
   "deadlineMs": 600000,
   "samplesPerCase": 3,
-  "commonInstruction": "Before designing, use discover_knowledge and read_knowledge to read the specified advisory modules in the specified context. Apply useful guidance without changing this brief. An absence-of-advice notice is valid; continue using your own judgment. Do not ask questions or add explanatory text to the artwork.",
+  "commonInstruction": "Knowledge is optional reference material available through discover_knowledge and read_knowledge. Consult the suggested modules or other relevant topics only if useful for a decision, at any stage or proceed without reading it. Apply useful guidance without changing this brief. Do not ask questions or add explanatory text to the artwork.",
   "development": [
     {
       "id": "dense-information",

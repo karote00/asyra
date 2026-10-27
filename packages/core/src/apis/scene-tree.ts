@@ -1,3 +1,4 @@
+import { ComputedFieldSelectionLimits } from '../types/scene-tree.js'
 import { sceneTreeInit, sceneTreeLoadData } from '@asyra/reactive-events'
 import {
   Bounds,
@@ -193,16 +194,16 @@ export const createSceneTreeAPIs = (
       if (
         fields !== undefined &&
         (!Array.isArray(fields) ||
-          fields.length > 64 ||
+          fields.length > ComputedFieldSelectionLimits.fields ||
           fields.some(
             (field) =>
               typeof field !== 'string' ||
               field.length === 0 ||
-              field.length > 128
+              field.length > ComputedFieldSelectionLimits.fieldName
           ))
       ) {
         throw new Error(
-          'Computed field selection requires at most 64 nonempty field names of at most 128 characters.'
+          `Computed field selection requires at most ${ComputedFieldSelectionLimits.fields} nonempty field names of at most ${ComputedFieldSelectionLimits.fieldName} characters.`
         )
       }
       const data = sceneTreeRequests.getElementComputedData(elementId, fields)

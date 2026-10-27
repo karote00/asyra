@@ -4,7 +4,7 @@ import type {
   PropertySchema,
   PositionData
 } from '@asyra/utils'
-import { isRecord } from '@asyra/utils'
+import { isRecord, idCounter } from '@asyra/utils'
 import factory, {
   Factory,
   type SharedPublication,
@@ -632,6 +632,11 @@ class Core implements CoreAPIs {
 
   getCurrentWorkspaceId(): string {
     return this.deps.sceneTree.workspace
+  }
+
+  /** Reserves identities only; does not create elements or document history. */
+  allocateIds(types: readonly string[]): readonly string[] {
+    return idCounter.allocate(types)
   }
 
   getAllElementData() {

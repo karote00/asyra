@@ -111,6 +111,15 @@ is derived from the flattened object for cleanup and lifecycle iteration. Apps
 that install these Preset defaults reuse the exported keys rather than declaring
 parallel string constants. App-only properties remain app-owned.
 
+## Native typography value contract
+
+`TEXT_PROPERTY_VALUE_SCHEMAS` exposes immutable, standard JSON Schema constraints
+for the existing native text fields. `TEXT_PROPERTY_SCHEMA` validators and public
+App declarations consume the same owner constants; defaults alone do not describe
+valid enum/range values. The value contract does not imply target capability or
+permission and adds no state, registry, execution API or AI dependency. Existing
+valid-write and invalid-load fallback behavior remains unchanged.
+
 ## Composition Order
 
 ```text

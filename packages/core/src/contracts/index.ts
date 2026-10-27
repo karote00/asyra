@@ -1,3 +1,4 @@
+export { ComputedFieldSelectionLimits } from '../types/scene-tree.js'
 export { EventTypes } from '@asyra/reactive-events'
 
 export type {

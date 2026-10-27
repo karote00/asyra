@@ -142,6 +142,11 @@ export function deliverPreparedDesign(
 
 // Semantic draft defaults are wire values, independent of Framework runtime
 // installation. Browser admission remains the canonical schema authority.
+export const DesignTextSizingModes = [
+  'fixed',
+  'auto-width',
+  'auto-height'
+] as const
 export const DesignTextDefaults = Object.freeze({
   text: '',
   textSizing: 'fixed',
@@ -165,7 +170,7 @@ export const DesignTextValidators: Readonly<
     typeof value === 'string' &&
     value.length <= DesignPreparationLimits.textCharacters,
   textSizing: (value: unknown) =>
-    value === 'fixed' || value === 'auto-width' || value === 'auto-height',
+    DesignTextSizingModes.some((mode) => mode === value),
   fontFamily: (value: unknown) =>
     typeof value === 'string' && value.trim().length > 0 && value.length <= 128,
   fontSize: (value: unknown) => finiteTextRange(value, Number.MIN_VALUE, 4096),

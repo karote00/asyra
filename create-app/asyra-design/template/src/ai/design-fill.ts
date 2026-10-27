@@ -1,12 +1,14 @@
 import { FillGradientTypes, type FillGradientData } from '@asyra/utils'
 
+export type DesignGradientData = FillGradientData
+
 const color = { type: 'string', pattern: '^#[0-9A-Fa-f]{6}$' }
 const unit = { type: 'number', minimum: 0, maximum: 1 }
 const handle = { type: 'number', minimum: -10000, maximum: 10000 }
 const gradientTypes = [FillGradientTypes.LINEAR]
 
 // App wire admission is intentionally narrower than extensible canonical metadata.
-export const designFillSchema = {
+export const designInlineFillSchema = {
   anyOf: [
     color,
     {
@@ -41,7 +43,7 @@ export const designFillSchema = {
     }
   ],
   description:
-    'Solid #RRGGBB or native gradient data. Handles are normalized to the final 2D element bounds (0..1 spans its box), not world-space coordinates. Stops must be ordered by position; equal positions allow hard edges. Use native gradients for continuous shading rather than many thin shapes. Pattern face gradients repeat in each projected element box; they are not automatic 3D lighting.'
+    'Solid #RRGGBB or continuous native gradient. Handles: final 2D box (0..1), not world. Stops ascend; ties form hard edges. Patterns repeat gradients per projected box; no automatic 3D lighting.'
 }
 
 const record = (v: unknown): v is Record<string, unknown> =>
@@ -54,7 +56,7 @@ const finite = (v: unknown, min: number, max: number): v is number =>
 const isColor = (v: unknown): v is string =>
   typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)
 
-export const isDesignGradient = (v: unknown): v is FillGradientData => {
+export const isDesignGradient = (v: unknown): v is DesignGradientData => {
   if (
     !record(v) ||
     !exact(v, ['gradientType', 'gradientHandles', 'gradientStops']) ||
@@ -89,5 +91,60 @@ export const isDesignGradient = (v: unknown): v is FillGradientData => {
   })
 }
 
-export const isDesignFill = (v: unknown): v is string | FillGradientData =>
-  isColor(v) || isDesignGradient(v)
+export const isDesignInlineFill = (
+  v: unknown
+): v is string | DesignGradientData => isColor(v) || isDesignGradient(v)
+
+export const isDesignSharedFill = (v: unknown): v is { shared: string } =>
+  record(v) &&
+  exact(v, ['shared']) &&
+  typeof v.shared === 'string' &&
+  v.shared.trim().length > 0 &&
+  v.shared.length <= 160
+
+export const isDesignFillTemplate = (v: unknown): v is { template: string } =>
+  record(v) &&
+  exact(v, ['template']) &&
+  typeof v.template === 'string' &&
+  v.template.trim().length > 0 &&
+  v.template.length <= 160
+
+export const isDesignFill = (
+  v: unknown
+): v is
+  string | DesignGradientData | { shared: string } | { template: string } =>
+  isDesignInlineFill(v) || isDesignSharedFill(v) || isDesignFillTemplate(v)
+
+export const designFillSchema = {
+  anyOf: [
+    designInlineFillSchema,
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['template'],
+      properties: { template: { type: 'string', minLength: 1, maxLength: 160 } }
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['shared'],
+      properties: { shared: { type: 'string', minLength: 1, maxLength: 160 } }
+    }
+  ],
+  description:
+    '{shared:key} links a draft.sharedFills definition, not a document ID. Equal inline values stay independent. {template:key} reuses draft.fillTemplates values with independent editable Fill IDs.'
+}
+
+export const designSharedFillsSchema = {
+  type: 'object',
+  propertyNames: { type: 'string', minLength: 1, maxLength: 160 },
+  additionalProperties: designInlineFillSchema,
+  description:
+    'Draft-local: first use creates a Fill; later uses link its ID. Edit via sharedFillIds. No inter-definition references; existing fills use public linking APIs.'
+}
+
+export const designFillTemplatesSchema = {
+  ...designSharedFillsSchema,
+  description:
+    'fill:{template:key} creates independent Fill IDs; sharedFills links edits. No inter-definition references.'
+}

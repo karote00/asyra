@@ -13,7 +13,6 @@ import {
 import { createRetainedDesignContext } from '../../src/common-apis/retained-design-context'
 import sharp from 'sharp'
 import { reviewPlanExample } from '../local-design-review'
-import { runInNewContext } from 'node:vm'
 import {
   createDocumentContextAction,
   createRegionTargetsAction
@@ -48,8 +47,7 @@ vi.mock('../../src/contexts', () => ({ default: {} }))
 import {
   createLocalOperationTools as createOwner,
   LocalOperationPreparationError,
-  localToolContent,
-  localToolResultExample
+  localToolContent
 } from '../local-operation-tools'
 import {
   withToolContractAssertions,
@@ -4634,7 +4632,7 @@ it('returns requested action definitions on repeated reads with explicit context
   expect(changed.inputSchema.required).toEqual(['different'])
 })
 
-it('executes the advertised Code Mode recipe for image, multi-image and text-only results without leaking image bytes', async () => {
+it('projects direct image, multi-image and text-only results without leaking image bytes', async () => {
   for (const count of [0, 1, 2]) {
     const receipt = {
       actionResults: Array.from({ length: count }, () => ({
@@ -4646,23 +4644,15 @@ it('executes the advertised Code Mode recipe for image, multi-image and text-onl
       }))
     }
     const content = await localToolContent(JSON.stringify(receipt))
-    // Actual native Code Mode adapter shape, independently verified by live probe.
-    const result = content
-      .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
-      .join('\n')
-    const text = vi.fn()
-    const image = vi.fn()
-    runInNewContext(localToolResultExample, {
-      resultKey: 'test-receipt',
-      store: vi.fn(),
-      result,
-      text,
-      image
-    })
-    expect(text).toHaveBeenCalledOnce()
-    expect(JSON.stringify(text.mock.calls)).not.toContain('base64')
-    expect(image).toHaveBeenCalledTimes(count)
-    for (const call of image.mock.calls) expect(call).toEqual([png])
+    const texts = content.filter((item) => item.type === 'inputText')
+    expect(texts).toHaveLength(1)
+    expect(JSON.stringify(texts)).not.toContain('base64')
+    expect(content.filter((item) => item.type === 'inputImage')).toEqual(
+      Array.from({ length: count }, () => ({
+        type: 'inputImage',
+        imageUrl: png
+      }))
+    )
   }
 })
 
@@ -9378,15 +9368,12 @@ describe('context entry navigation and recovery', () => {
           branch,
           'usage must expose the selected union boundary'
         ).toBeDefined()
-        // Follow the tool description: reuse only this entry's selector,
-        // omit representation/recovery flags, and add its own delivered path. No corrected pointer is authored here.
-        const {
-          view: _view,
-          refresh: _refresh,
-          refreshReason: _reason,
-          ...selector
-        } = entry.definition.refresh.arguments
-        const queried = await t.read({ ...selector, schemaPaths: [branch] })
+        // Select a delivered path in the actual example, without rebuilding its selector.
+        expect(entry.fieldQuery).toBeDefined()
+        const queried = await t.read({
+          ...entry.fieldQuery.arguments,
+          schemaPaths: [branch]
+        })
         expect(queried.toolOutcome.status).toBe('success')
         expect([...queried.apis, ...(queried.tools ?? [])]).toHaveLength(1)
         const fragment = [...queried.apis, ...(queried.tools ?? [])][0]
@@ -9558,16 +9545,17 @@ describe('context entry navigation and recovery', () => {
         value.endsWith('/oneOf/0')
       )
       expect(path).toBeDefined()
-      const {
-        view: _view,
-        refresh: _refresh,
-        refreshReason: _reason,
-        ...selector
-      } = entry.definition.refresh.arguments
-      const corrected = await t.read({ ...selector, schemaPaths: [path] })
+      expect(entry.fieldQuery).toBeDefined()
+      expect(
+        (await t.read(entry.fieldQuery.arguments)).toolOutcome.status
+      ).toBe('success')
+      const corrected = await t.read({
+        ...entry.fieldQuery.arguments,
+        schemaPaths: [path]
+      })
       expect(corrected.tools[0].definition.coverage).toBe('partial')
       const mixedPaths = await t.read({
-        ...selector,
+        ...entry.fieldQuery.arguments,
         schemaPaths: [path, '/missing']
       })
       expect(mixedPaths.toolOutcome.status).toBe('failed')
@@ -9641,14 +9629,13 @@ it('keeps union navigation compact while fragments preserve escaped references a
     '/$defs/a~1b~0c'
   ])
   expect(JSON.stringify(usage)).not.toContain('bounded-secret-detail')
-  const {
-    view: _view,
-    refresh: _refresh,
-    refreshReason: _reason,
-    ...selector
-  } = usage.definition.refresh.arguments
+  expect(usage.fieldQuery).toBeDefined()
+  const example = (await read(usage.fieldQuery.arguments)).apis[0]
+  expect(example.definition.coverage).toBe('partial')
   for (const path of usage.inputFields) {
-    const fragment = (await read({ ...selector, schemaPaths: [path] })).apis[0]
+    const fragment = (
+      await read({ ...usage.fieldQuery.arguments, schemaPaths: [path] })
+    ).apis[0]
     expect(fragment.definition.state).toBe('included')
     expect(fragment.schemaContext).toContainEqual({
       path: '',
@@ -9703,7 +9690,12 @@ it('prepares only explicit reference uses and preserves selection through failed
     {
       validateReferences: images.validateReferences,
       prepareReferences: images.prepareReferences,
-      resolveSources: images.resolveSources
+      resolveSources: images.resolveSources,
+      getNativeTools: () =>
+        tools.definitions.map((definition) => ({
+          ...definition,
+          namespace: 'design_operations'
+        }))
     }
   )
   const signal = new AbortController().signal
@@ -9727,6 +9719,29 @@ it('prepares only explicit reference uses and preserves selection through failed
     detailRequired: false
   })
   expect(plan.success).toBe(true)
+  const usage = JSON.parse(
+    (
+      await call('describe_design_apis', {
+        names: ['select_design_references'],
+        view: 'usage'
+      })
+    ).text
+  ).tools[0]
+  expect(usage.fieldQuery).toBeDefined()
+  expect(
+    (await call(usage.fieldQuery.tool, usage.fieldQuery.arguments)).success
+  ).toBe(true)
+  const fields = JSON.parse(
+    (
+      await call(usage.fieldQuery.tool, {
+        ...usage.fieldQuery.arguments,
+        schemaPaths: usage.inputFields
+      })
+    ).text
+  ).tools[0]
+  expect(
+    fields.schemaFragments.map((fragment: { path: string }) => fragment.path)
+  ).toEqual(usage.inputFields)
   const originalStats = sharp.prototype.stats
   const stats = vi.spyOn(sharp.prototype, 'stats')
   const timeout = vi.spyOn(sharp.prototype, 'timeout')
@@ -9773,14 +9788,28 @@ it('prepares only explicit reference uses and preserves selection through failed
       identities[0].referenceId
     ])
     expect(stats).not.toHaveBeenCalled()
+    const stale = { ...selection('pending'), requirementRevision: 2 }
+    expect((await call('select_design_references', stale)).success).toBe(false)
+    expect(
+      (
+        await call('select_design_references', {
+          ...selection('pending'),
+          referenceImageIndexes: [-1]
+        })
+      ).success
+    ).toBe(false)
     const prior = await call('select_design_references', selection('pending'))
     expect(prior.success).toBe(true)
     expect(stats).not.toHaveBeenCalled()
-    // One new successful decode and one transient decoder failure in the same selection.
-    stats
-      .mockImplementationOnce(originalStats)
-      .mockRejectedValueOnce(new Error('Injected decoder timeout'))
+    // Fail the blue attachment, independent of concurrent decoder arrival order.
+    stats.mockImplementation(async function (this: sharp.Sharp) {
+      const result = await originalStats.call(this)
+      if (result.channels[2].mean === 255)
+        throw new Error('Injected decoder timeout')
+      return result
+    })
     const failed = await call('select_design_references', selection('accepted'))
+    stats.mockImplementation(originalStats)
     expect(failed.success).toBe(false)
     expect(failed.text).toContain('Retry failed attachmentIndexes')
     const failedSources = JSON.parse(

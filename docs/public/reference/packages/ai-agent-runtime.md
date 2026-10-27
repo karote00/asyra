@@ -93,8 +93,16 @@ current; no compatibility wrapper or alternate client payload mode is
 supported. Migration must preserve action schemas, prepared argument identity,
 permission defaults, and one-transaction behavior.
 
+## Selected retained information
+
+See the pending [selected information integration guide](../../updates/retained-information-r1.md)
+for exact result redisplay, validity boundaries and read-only recovery.
+
 ## Canonical sources and release inventory
 
+- [Knowledge owner](../../../../packages/ai-agent-runtime/src/knowledge.ts)
+- [Design information delivery](../../../../apps/asyra-design/server/local-knowledge.ts)
+- [Design tool discovery](../../../../apps/asyra-design/server/local-operation-tools.ts)
 - [Package contract](../../../ai/framework/packages/ai-agent-runtime.md)
 - [Package manifest](../../../../packages/ai-agent-runtime/package.json)
 - [Registered AI action guide](../../build/ai-actions.md)

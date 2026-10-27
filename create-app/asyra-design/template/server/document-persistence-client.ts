@@ -12,6 +12,7 @@ type PersistenceFetch = (
     method: 'DELETE' | 'GET' | 'POST'
     headers: Readonly<Record<string, string>>
     body?: string
+    signal?: AbortSignal
   }>
 ) => Promise<PersistenceFetchResponse>
 
@@ -22,7 +23,10 @@ export interface DocumentBootstrapCheckpoint {
 }
 
 export interface HttpDocumentPersistenceClient {
-  readCheckpoint(documentId: string): Promise<DocumentBootstrapCheckpoint>
+  readCheckpoint(
+    documentId: string,
+    signal?: AbortSignal
+  ): Promise<DocumentBootstrapCheckpoint>
   resetCheckpoint(documentId: string): Promise<number>
   sendBatch(
     batch: DocumentPersistenceBatch
@@ -57,14 +61,15 @@ export const createHttpDocumentPersistenceClient = ({
   }
 
   return {
-    async readCheckpoint(documentId) {
+    async readCheckpoint(documentId, signal) {
       const endpoint = new URL(
         `/api/documents/${encodeURIComponent(documentId)}/bootstrap-checkpoint`,
         base
       )
       const response = await send(endpoint.toString(), {
         method: 'GET',
-        headers: { accept: 'application/json' }
+        headers: { accept: 'application/json' },
+        ...(signal ? { signal } : {})
       })
       if (response.status === 404) {
         return Object.freeze({
@@ -141,8 +146,13 @@ export const createHttpDocumentPersistenceClient = ({
         body: JSON.stringify(batch)
       })
       if (!response.ok) {
+        const rejection = await response.json().catch(() => undefined)
+        const detail =
+          isRecord(rejection) && typeof rejection.error === 'string'
+            ? `: ${rejection.error}`
+            : ''
         throw new Error(
-          `[document-persistence-client] backend rejected persistence batch (${response.status})`
+          `[document-persistence-client] backend rejected persistence batch (${response.status})${detail}`
         )
       }
       const acknowledgement = await response.json()

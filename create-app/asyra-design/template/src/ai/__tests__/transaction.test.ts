@@ -1,3 +1,4 @@
+import { MutationRecoveryError } from '@asyra/utils'
 import { describe, expect, it, vi } from 'vitest'
 import { Factory } from '@asyra/factory'
 import { EventTypes, type AllEvent } from '@asyra/reactive-events'
@@ -43,6 +44,38 @@ const setup = () => {
 }
 
 describe('Design invocation history groups', () => {
+  it('reports unknown when a canonical owner cannot verify pre-handoff recovery', async () => {
+    const { runner } = setup()
+    await expect(
+      runner.run('draw', async (mutate) => {
+        if (!mutate) throw new Error('Expected mutation executor')
+        return mutate(() => {
+          throw new MutationRecoveryError(new Error('primary'), [
+            new Error('cleanup')
+          ])
+        })
+      })
+    ).rejects.toMatchObject({ status: 'unknown' })
+  })
+
+  it('cannot turn swallowed rollback failure into success or admit later writes', async () => {
+    const { runner, write, values } = setup()
+    await expect(
+      runner.run('failed-recovery', async (mutate) => {
+        if (!mutate) throw new Error('Missing mutation executor')
+        await expect(
+          mutate(() => {
+            throw new MutationRecoveryError(new Error('primary'), [
+              new Error('cleanup')
+            ])
+          })
+        ).rejects.toBeInstanceOf(AiTransactionSettlementError)
+        await expect(mutate(() => write('late', 1))).rejects.toThrow()
+      })
+    ).rejects.toMatchObject({ status: 'unknown' })
+    expect(values.has('late')).toBe(false)
+  })
+
   it('publishes each member and permits independent user Undo before sealing one AI entry', async () => {
     const { apis, values, write, runner } = setup()
     const captures = vi.fn()
@@ -166,5 +199,77 @@ describe('Design invocation history groups', () => {
     ).rejects.toBeInstanceOf(AiTransactionSettlementError)
     expect(apis.getUndoHistoryDepth()).toBe(0)
     expect(apis.isTransactionBoundaryIdle()).toBe(true)
+  })
+})
+
+it('observes mutation settlement after canonical publication and before queued unrelated work', async () => {
+  const { runner, apis, write } = setup()
+  const events: string[] = []
+  apis.subscribeToCommitCapture(() => events.push('published'))
+  await runner.run('settlement', async (mutate) => {
+    if (!mutate) throw new Error('Missing mutation executor')
+    await mutate(
+      () => {
+        write('ai', 1)
+        queueMicrotask(() => events.push('other'))
+        return 'receipt'
+      },
+      (value) => events.push(value)
+    )
+  })
+  expect(events).toEqual(['published', 'receipt', 'other'])
+})
+
+describe('evaluation work deadline', () => {
+  it('rejects a late member without replaying committed work and preserves Undo/Redo', async () => {
+    const { apis, values, write } = setup()
+    const deadline = Date.now() + 1000
+    const runner = createAiTransactionRunner({
+      apis,
+      getMutationDeadline: () => deadline
+    })
+    const now = vi.spyOn(Date, 'now').mockReturnValue(deadline - 1)
+    try {
+      await expect(
+        runner.run('bounded work', async (mutate) => {
+          if (!mutate) throw new Error('Missing mutation executor')
+          await mutate(() => write('ai', 1))
+          now.mockReturnValue(deadline)
+          await mutate(() => write('ai', 2))
+        })
+      ).rejects.toThrow()
+      expect(values.get('ai')).toBe(1)
+      expect(apis.getUndoHistoryDepth()).toBe(1)
+      apis.undo()
+      expect(values.get('ai')).toBe(0)
+      apis.redo()
+      expect(values.get('ai')).toBe(1)
+    } finally {
+      now.mockRestore()
+    }
+  })
+
+  it('rechecks the deadline after waiting for an unrelated user interaction', async () => {
+    const { apis, values, write } = setup()
+    const deadline = Date.now() + 1000
+    const runner = createAiTransactionRunner({
+      apis,
+      getMutationDeadline: () => deadline
+    })
+    const now = vi.spyOn(Date, 'now').mockReturnValue(deadline - 1)
+    try {
+      apis.startTransaction()
+      const pending = runner.run('queued work', async (mutate) => {
+        if (!mutate) throw new Error('Missing mutation executor')
+        await mutate(() => write('ai', 1))
+      })
+      const rejected = expect(pending).rejects.toThrow()
+      now.mockReturnValue(deadline)
+      apis.endTransaction()
+      await rejected
+      expect(values.has('ai')).toBe(false)
+    } finally {
+      now.mockRestore()
+    }
   })
 })

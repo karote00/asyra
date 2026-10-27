@@ -7,6 +7,13 @@ vi.mock('../../common-apis/fills', () => ({ fillApis: {} }))
 import { createRetainedDesignContext } from '../../common-apis/retained-design-context'
 import { createRetainedFillAction as createAction } from '../retained-fill-action'
 
+const changedReceipt = (updates: readonly { elementId: string }[]) => ({
+  value: null,
+  acceptedIds: updates.map((item) => item.elementId),
+  unavailableIds: [],
+  changed: updates.length > 0
+})
+
 const createRetainedFillAction = createAction
 const targets = (ids: readonly string[]) =>
   ids.map((elementId) => ({ elementId, fillId: `fill-${elementId}` }))
@@ -44,7 +51,7 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     expect(admitted).toBe(true)
     return snapshot
   })
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction({ get } as never, {
     targets,
     metadata: () => ({ lock: false }),
@@ -62,12 +69,12 @@ it('maps retained positions to one plural new-value fill call inside mutation ad
     { elementId: 'b', fillId: 'fill-b', patch: { color: '#808080' } },
     { elementId: 'c', fillId: 'fill-c', patch: { color: '#ffffff' } }
   ])
-  expect(action.revision).toBe(6)
+  expect(action.revision).toBe(7)
   expect(result).toMatchObject({ appliedCount: 3 })
 })
 it('rejects a reference invalidated while queued and performs no write', async () => {
   let stale = false
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction(
     {
       get: () => {
@@ -91,7 +98,7 @@ it('rejects a reference invalidated while queued and performs no write', async (
 it.each(['lock', 'missing', 'domain', 'nonfinite'])(
   'rejects %s before any write',
   async (reason) => {
-    const update = vi.fn()
+    const update = vi.fn(changedReceipt)
     const data = structuredClone(snapshot)
     if (reason === 'nonfinite') data.result.elements[2].properties.x = NaN
     const action = createRetainedFillAction({ get: () => data } as never, {
@@ -112,7 +119,7 @@ it.each(['lock', 'missing', 'domain', 'nonfinite'])(
 )
 
 it('rejects a locked ancestor before writing descendants', async () => {
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction({ get: () => snapshot } as never, {
     targets,
     metadata: (id) =>
@@ -130,7 +137,7 @@ it('discovers the mapping by operation and admits the advertised input through t
   const action = createRetainedFillAction({ get: () => snapshot } as never, {
     targets,
     metadata: () => ({}),
-    update: vi.fn()
+    update: vi.fn(changedReceipt)
   })
   registry.register(action)
   const tools = createLocalOperationTools(
@@ -195,8 +202,9 @@ it.each([false, true])(
       },
       () => () => undefined
     )
-    const update = vi.fn(() => {
+    const update = vi.fn((updates: readonly { elementId: string }[]) => {
       expect(reads).toBe(10)
+      return changedReceipt(updates)
     })
     const action = createRetainedFillAction(queries, {
       targets,
@@ -254,7 +262,7 @@ it('rejects foreign retained inputs before writing and preserves the owning requ
     { scope: 'ids', elementIds: ['a'], fields: ['x'], delivery: 'reference' },
     owner
   )
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction(queries, {
     targets,
     metadata: () => ({ lock: false }),
@@ -289,7 +297,7 @@ it.each([false, true])(
     const action = createRetainedFillAction({ get, releaseLease } as never, {
       targets,
       metadata: () => ({ lock: locked }),
-      update: vi.fn()
+      update: vi.fn(changedReceipt)
     })
     const pending = action.execute(
       { mappings: [{ ...input.mappings[0], leaseId: 'caller-lease' }] },
@@ -360,7 +368,7 @@ it('refines retained candidates into one canonical plural edit', async () => {
       observation: { selectionExecutions: 0, refinementExecutions: 1 }
     })
     const released = vi.spyOn(queries, 'releaseLease')
-    const update = vi.fn()
+    const update = vi.fn(changedReceipt)
     const edit = createRetainedFillAction(queries, {
       targets: (selectedIds) =>
         selectedIds.map((elementId) => ({
@@ -414,7 +422,7 @@ it('refines retained candidates into one canonical plural edit', async () => {
 })
 
 it('maps distinct local colors on one shared source and reports only selected owners', async () => {
-  const update = vi.fn()
+  const update = vi.fn(changedReceipt)
   const action = createRetainedFillAction({ get: () => snapshot } as never, {
     targets: (ids) =>
       ids.map((elementId) => ({ elementId, fillId: 'shared-fill' })),
@@ -461,7 +469,7 @@ it.each([3584, 1600])(
       () => () => undefined
     )
     const signal = new AbortController().signal
-    const update = vi.fn()
+    const update = vi.fn(changedReceipt)
     const action = createAction(queries, {
       metadata: () => ({ lock: false }),
       targets,
@@ -581,8 +589,9 @@ it.each(['capacity', 'cancel'] as const)(
       throw new Error('Retained query capacity reserved by pending consumers')
     })
     const get = vi.fn(() => snapshot)
-    const update = vi.fn(() => {
+    const update = vi.fn((updates: readonly { elementId: string }[]) => {
       if (failure === 'cancel') controller.abort()
+      return changedReceipt(updates)
     })
     const action = createRetainedFillAction({ get, retainReceipt } as never, {
       targets,
@@ -646,8 +655,9 @@ it.each(['complete', 'locked', 'write-failure'])(
       controller.signal
     )
     const released = vi.spyOn(queries, 'releaseLease')
-    const update = vi.fn(() => {
+    const update = vi.fn((updates: readonly { elementId: string }[]) => {
       if (outcome === 'write-failure') throw new Error('Canonical write failed')
+      return changedReceipt(updates)
     })
     const action = createRetainedFillAction(queries, {
       targets,
@@ -830,7 +840,7 @@ it('advertises only executable inline query scopes for retained fill consumers',
   const action = createRetainedFillAction({} as never, {
     targets,
     metadata: () => ({ lock: false }),
-    update: vi.fn()
+    update: vi.fn(changedReceipt)
   })
   const { snapshotId: _snapshot, ...mapping } = input.mappings[0]
   for (const schema of [
@@ -862,4 +872,58 @@ it('advertises only executable inline query scopes for retained fill consumers',
         operationInputIssue({ mappings: [{ ...mapping, query }] }, schema)
       ).toBeDefined()
   }
+})
+
+it('preserves unavailable targets in the model receipt without replaying accepted mapping work', async () => {
+  const update = vi.fn(() => ({
+    value: null,
+    changed: true,
+    acceptedIds: ['a', 'b'],
+    unavailableIds: ['c']
+  }))
+  const action = createRetainedFillAction(
+    {
+      get: () => snapshot,
+      retainReceipt: () => {
+        throw new Error('Retention unavailable')
+      }
+    } as never,
+    { targets, metadata: () => ({}), update }
+  )
+  const result = await action.execute(input, {
+    signal: new AbortController().signal
+  })
+  expect(result).toMatchObject({
+    status: 'partial',
+    acceptedIds: ['a', 'b'],
+    unavailableIds: ['c'],
+    modelResult: {
+      status: 'partial',
+      unavailableIds: ['c'],
+      acceptedIds: ['a', 'b'],
+      delivery: { status: 'unavailable' }
+    }
+  })
+  expect(update).toHaveBeenCalledTimes(1)
+})
+
+it('preserves an output contract failure after a malformed owner receipt', async () => {
+  const update = vi.fn(() => ({
+    value: null,
+    changed: true,
+    acceptedIds: ['wrong'],
+    unavailableIds: []
+  }))
+  const action = createRetainedFillAction({ get: () => snapshot } as never, {
+    targets,
+    metadata: () => ({}),
+    update
+  })
+  await expect(
+    action.execute(input, { signal: new AbortController().signal })
+  ).rejects.toMatchObject({
+    stage: 'output',
+    inspection: { settlement: 'completed' }
+  })
+  expect(update).toHaveBeenCalledTimes(1)
 })

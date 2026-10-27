@@ -1,3 +1,5 @@
+import fieldRecovery from './fixtures/recorded-101/field-query-recovery-20261027.json'
+import { createLocalKnowledgeTools } from '../local-knowledge'
 import sampledEllipse from './fixtures/recorded-101/projected-ellipse-20261024.json'
 import { constructDesign } from '../design-construction'
 import { measureDesignBudget } from '../design-budget'
@@ -13,8 +15,8 @@ import {
   workflowQueryGuidance
 } from '../design-workflow-discovery'
 import invalidQueryScope from './fixtures/recorded-101/invalid-query-scope-20261022.json'
+import exactQueryScope from './fixtures/recorded-101/exact-query-scope-20261027.json'
 import operationSelection from './fixtures/recorded-101/operation-selection-20261022.json'
-import { runInNewContext } from 'node:vm'
 import inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20261022.json'
 import { createHash } from 'node:crypto'
 import { designPreparationExamples } from '../design-preparation-examples'
@@ -41,7 +43,8 @@ import type { AiActionBatch } from '../../src/ai/action-batch-protocol'
 const setup = (
   unrelatedCount = 0,
   description = 'Unrelated capability',
-  expandedNodeLimit = 10000
+  expandedNodeLimit = 10000,
+  includeKnowledge = false
 ) => {
   const actions = [
     {
@@ -119,7 +122,14 @@ const setup = (
   })
   const trace = vi.fn()
   const workflow = createLocalDesignWorkflow(designs, operations, { trace })
-  const owners = [designs, operations, workflow]
+  const owners = [
+    designs,
+    operations,
+    workflow,
+    ...(includeKnowledge
+      ? [createLocalKnowledgeTools('field-query-proof', async () => [])]
+      : [])
+  ]
   const calls: string[] = []
   const deliveries: number[] = []
   const replies: { input: unknown; raw: string }[] = []
@@ -257,7 +267,8 @@ it('navigates actual local definitions and preserves selected constraints and re
     await call('describe_design_apis', { names, schemaPaths: ['/missing'] })
   ).value.tools[0]
   expect(missing.definition.availableInResponse).toBe(false)
-  expect(missing.schemaResolution.inputFields).toContain(path)
+  expect(missing.schemaResolution.inputFields).toEqual(usage.inputFields)
+  expect(missing.schemaResolution.inputFields).not.toContain(path)
   const full = (await call('describe_design_apis', { names })).value.tools[0]
   const draft = (
     await call('describe_design_apis', {
@@ -367,9 +378,7 @@ it('navigates the criteria dictionary without dropping its conditional required 
   })
 })
 
-import { runInNewContext } from 'node:vm'
-
-it('uses the delivered forwarding example to invoke the owner and recover information without replaying writes', async () => {
+it('uses direct delivered contracts to invoke the owner and recover information without replaying writes', async () => {
   const { call, owners, execute, created } = setup()
   const operations = owners.find((owner) =>
     owner.definitions.some((d) => d.name === 'describe_design_apis')
@@ -379,12 +388,8 @@ it('uses the delivered forwarding example to invoke the owner and recover inform
     (d) => d.name === 'describe_design_apis'
   )
   if (!definition) throw new Error('Missing discovery definition')
-  const code =
-    /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/.exec(
-      definition.description
-    )?.[1]
-  expect(code).toBeTruthy()
-  if (!code) throw new Error('Missing advertised example')
+  expect(definition.description).toContain('Each page is delivered directly')
+  expect(definition.description).not.toContain('Code Mode')
   const retained = new Map<
     string,
     {
@@ -397,15 +402,6 @@ it('uses the delivered forwarding example to invoke the owner and recover inform
       }
     }
   >()
-  const outputs: string[] = []
-  const forward = (result: string, deliveryKey: string) =>
-    runInNewContext(code, {
-      result,
-      deliveryKey,
-      load: (key: string) => retained.get(key),
-      store: (key: string, value: never) => retained.set(key, value),
-      text: (value: string) => outputs.push(value)
-    })
   const read = async (query: Record<string, unknown>, key: string) => {
     let input = query
     const pages: string[] = []
@@ -417,10 +413,20 @@ it('uses the delivered forwarding example to invoke the owner and recover inform
         new AbortController().signal
       )
       expect(reply.success).toBe(true)
-      forward(reply.text, key)
       pages.push(reply.text)
       const page = JSON.parse(reply.text).contentDelivery
-      if (!page || page.lastPage) return pages
+      if (!page || page.lastPage) {
+        retained.set(key, {
+          value: page
+            ? JSON.parse(
+                pages
+                  .map((raw) => JSON.parse(raw).contentDelivery.text)
+                  .join('')
+              )
+            : JSON.parse(reply.text)
+        })
+        return pages
+      }
       input = page.next.arguments
     }
     throw new Error('Missing terminal information page')
@@ -443,8 +449,7 @@ it('uses the delivered forwarding example to invoke the owner and recover inform
   expect(execute).toHaveBeenCalledOnce()
   expect(created.length).toBeGreaterThan(0)
   const before = structuredClone(created)
-  for (const page of pages) forward(page, 'usage')
-  expect(outputs.slice(-pages.length)).toEqual(pages)
+  expect(pages.length).toBeGreaterThan(0)
   retained.clear()
   await read(
     {
@@ -611,7 +616,7 @@ it.each([
   { nodeTypes: ['group', 'projected-face', 'pattern'] },
   { nodeTypes: ['group', 'surface-grid'] }
 ])(
-  'forwards the actual selected usage guide through native Code Mode without truncation $nodeTypes',
+  'delivers the actual selected usage guide through native direct calls without truncation $nodeTypes',
   async ({ nodeTypes }) => {
     const run = setup()
     const inputScope = { operation: 'draft', nodeTypes }
@@ -624,16 +629,11 @@ it.each([
       .flatMap((owner) => owner.definitions)
       .find((tool) => tool.name === 'describe_design_apis')
     if (!definition) throw new Error('Missing discovery definition')
-    const code =
-      /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/.exec(
-        definition.description
-      )?.[1]
-    if (!code) throw new Error('Missing delivered forwarding example')
+    expect(definition.description).toContain('Each page is delivered directly')
     const namespace = 'design_operations'
-    const executions = run.replies.map((page, index) => ({
+    const executions = run.replies.map((page) => ({
       input: page.input,
       reply: page.raw,
-      code: `const deliveryKey = "selected"; const result = await tools.${namespace}__${definition.name}(${index ? 'load(deliveryKey).next.arguments' : JSON.stringify(page.input)});\n${code}`,
       expected: page.raw
     }))
     const nativeModule = new URL(
@@ -642,7 +642,7 @@ it.each([
     ).href
     const { runNativeDelivery } = await import(/* @vite-ignore */ nativeModule)
     const result = await runNativeDelivery({
-      mode: 'code',
+      mode: 'direct',
       executions,
       fixture: {
         tool: definition.name,
@@ -833,8 +833,8 @@ it('delivers and executes one selected usage guide without validation schema bag
     expect(tool.outputSchema).toBeUndefined()
     expect(tool.partialOutputSchema).toBeUndefined()
     expect(tool.recoveryOutputSchema).toBeUndefined()
-    expect(tool.usageGuide.parameters).toContain('required')
-    expect(tool.usageGuide.parameters).toContain('100000')
+    expect(JSON.stringify(tool.usageGuide.parameters)).toContain('required')
+    expect(JSON.stringify(tool.usageGuide.parameters)).toContain('100000')
     expect(tool.usageGuide.recovery).toContain('Never replay completed writes')
     expect(tool.description).not.toContain('without changing the canvas')
     const example = tool.invocationExample.invocation
@@ -914,43 +914,47 @@ it.each([
         view: 'usage'
       })
     ).value.tools[0]
-    const text = guide.usageGuide.parameters
-    const structural = new Set([
-      '$defs',
-      '$ref',
-      'type',
-      'properties',
-      'items',
-      'additionalProperties',
-      'propertyNames',
-      'anyOf',
-      'oneOf',
-      'allOf',
-      'description',
-      'examples'
-    ])
-    const check = (schema: unknown) => {
-      if (!schema || typeof schema !== 'object') return
-      if (Array.isArray(schema)) {
-        schema.forEach(check)
-        return
+    const node = full.inputSchema.$defs.node.anyOf.find(
+      (entry: { properties?: { type?: { enum?: string[] } } }) =>
+        entry.properties?.type?.enum
+    )
+    expect(
+      node.anyOf.every((entry: { properties: { type: { const: string } } }) =>
+        nodeTypes.includes(entry.properties.type.const)
+      )
+    ).toBe(true)
+    expect(node.properties).not.toHaveProperty('fontFamily')
+    const delivered = guide.usageGuide.parameters
+    expect(typeof delivered).toBe('object')
+    // Resolve only generated factoring references. Canonical recursive references
+    // stay intact, so this comparison proves every restriction and description.
+    const canonicalDefinitions = full.inputSchema.$defs ?? {}
+    const definitions = delivered.$defs ?? {}
+    const expand = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(expand)
+      if (!value || typeof value !== 'object') return value
+      const object = value as Record<string, unknown>
+      if (
+        typeof object.$ref === 'string' &&
+        object.$ref.startsWith('#/$defs/')
+      ) {
+        const key = object.$ref.slice(8)
+        if (!Object.hasOwn(canonicalDefinitions, key))
+          return expand(definitions[key])
       }
-      for (const [key, value] of Object.entries(schema)) {
-        if (key === 'examples') continue
-        if (key === 'description') expect(text).toContain(value)
-        else if (key === '$ref')
-          expect(text).toContain(String(value).replace('#/$defs/', ''))
-        else if (!structural.has(key))
-          expect(text).toContain(`${key}=${JSON.stringify(value)}`)
-        else if (key === 'properties' || key === '$defs')
-          Object.values(value as object).forEach(check)
-        else check(value)
-      }
+      return Object.fromEntries(
+        Object.entries(object)
+          .filter(([key]) => key !== 'examples')
+          .map(([key, child]) => [key, expand(child)])
+      )
     }
-    check(full.inputSchema)
-    expect(text).toContain('oneOf exactly one')
-    expect(text).toContain('oneOf(')
-    expect(text).toContain('additional=forbidden')
+    const expanded = expand({
+      ...delivered,
+      $defs: Object.fromEntries(
+        Object.keys(canonicalDefinitions).map((key) => [key, definitions[key]])
+      )
+    })
+    expect(expanded).toEqual(expand(full.inputSchema))
     const example = guide.invocationExample.invocation.arguments
     for (const args of [
       { ...example, repair: {} },
@@ -958,7 +962,9 @@ it.each([
       { ...example, plan: {} }
     ]) {
       expect(operationInputIssue(args, full.inputSchema)).toBeDefined()
+      expect(operationInputIssue(args, delivered)).toBeDefined()
     }
+    expect(operationInputIssue(example, delivered)).toBeUndefined()
     const invalid = await run.call('prepare_and_apply_design', {
       ...example,
       repair: {}
@@ -984,7 +990,10 @@ it('bounds selected usage delivery under unrelated catalog growth and exposes ex
   }
   const a = await small.call('describe_design_apis', args)
   const b = await large.call('describe_design_apis', args)
-  expect(b.value).toEqual(a.value)
+  expect(b.value.resultKey).toEqual(expect.any(String))
+  expect(a.value.resultKey).toEqual(expect.any(String))
+  expect(b.value.resultKey).not.toBe(a.value.resultKey)
+  expect({ ...b.value, resultKey: a.value.resultKey }).toEqual(a.value)
   expect(large.deliveries).toEqual(small.deliveries)
   expect(large.deliveries).toHaveLength(1)
   const complete = await large.call('describe_design_apis', {
@@ -1011,7 +1020,7 @@ it('rejects recorded foreign inspection fields and executes each narrower recove
   ).toBe(true)
   expect(failed.success).toBe(false)
   expect(definition.description).toContain('same schemaPaths list')
-  expect(definition.description).toContain('parallel')
+  expect(definition.description).toContain('independent per-tool queries')
   expect(failed.value.toolOutcome).toMatchObject({
     status: 'failed',
     settlement: 'completed'
@@ -1082,7 +1091,8 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
     schemaPaths: ['/properties/inspections']
   })
   expect(mixed.success).toBe(false)
-  expect(mixed.value.toolOutcome).toMatchObject({
+  // Outcome belongs to the actual invocation envelope, including paged results.
+  expect(JSON.parse(mixed.text).toolOutcome).toMatchObject({
     status: 'partial',
     settlement: 'completed'
   })
@@ -1126,7 +1136,7 @@ it('distinguishes mixed exact coverage from successful shared paths and empty di
   expect(execute).not.toHaveBeenCalled()
 })
 
-it('forwards paged partial discovery through the published example without promoting coverage or replaying writes', async () => {
+it('delivers paged partial discovery directly without promoting coverage or replaying writes', async () => {
   const { owners, call, execute } = setup()
   const usage = (
     await call('describe_design_apis', {
@@ -1148,13 +1158,8 @@ it('forwards paged partial discovery through the published example without promo
     (d) => d.name === 'describe_design_apis'
   )
   if (!definition) throw new Error('Missing discovery definition')
-  const example =
-    /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/.exec(
-      definition.description
-    )?.[1]
-  if (!example) throw new Error('Missing forwarding example')
-  const values = new Map<string, unknown>()
-  const printed: string[] = []
+  expect(definition.description).toContain('Each page is delivered directly')
+  const fragments: string[] = []
   let args: Record<string, unknown> = {
     names: ['prepare_and_apply_design', 'missing-tool']
   }
@@ -1173,22 +1178,15 @@ it('forwards paged partial discovery through the published example without promo
       settlement: 'completed'
     })
     expect(Buffer.byteLength(reply.text)).toBeLessThanOrEqual(24000)
-    runInNewContext(example, {
-      result: reply.text,
-      deliveryKey: 'partial-contract',
-      text: (v: string) => printed.push(v),
-      load: (k: string) => values.get(k),
-      store: (k: string, v: unknown) => values.set(k, v)
-    })
-    expect(printed.at(-1)).toBe(reply.text)
+    fragments.push(receipt.contentDelivery?.text ?? reply.text)
     if (!receipt.contentDelivery || receipt.contentDelivery.lastPage) break
     args = receipt.contentDelivery.next.arguments
   }
   expect(pages).toBeGreaterThan(0)
   expect(pages).toBeLessThan(30)
-  expect(values.get('partial-contract')).toMatchObject({
-    complete: true,
-    value: { status: 'partial', missingNames: ['missing-tool'] }
+  expect(JSON.parse(fragments.join(''))).toMatchObject({
+    status: 'partial',
+    missingNames: ['missing-tool']
   })
   const refresh = await call('describe_design_apis', {
     names: ['review_drawing'],
@@ -1585,6 +1583,232 @@ it('preserves exact query representations, full constraints and bounded recovery
   expect(run.execute).not.toHaveBeenCalled()
 })
 
+it.each(exactQueryScope.calls)(
+  'executes saved exact query scope $runId without a corrective lookup or replay',
+  async ({ input }) => {
+    const baseline = setup()
+    const { query, ...options } = input
+    const expected = await baseline.call('describe_design_apis', {
+      names: [query],
+      ...options
+    })
+    process.stdout.write(
+      JSON.stringify({
+        measurement: 'exact-query-scope',
+        nodeTypes: input.inputScope.nodeTypes,
+        replyBytes: baseline.deliveries[0],
+        replies: baseline.deliveries.length
+      }) + '\n'
+    )
+    for (const run of [setup(), setup(10000, `Related to ${query}`)]) {
+      const reply = await run.call('describe_design_apis', input)
+      expect(reply.success).toBe(true)
+      expect(reply.value.tools).toEqual(expected.value.tools)
+      expect(run.deliveries).toEqual(baseline.deliveries)
+      expect(run.deliveries).toHaveLength(1)
+      const guide = reply.value.tools[0]
+      const invocation = guide.invocationExample.invocation
+      const applied = await run.call(invocation.tool, invocation.arguments)
+      expect(applied.value.completedSteps).toContain('apply_prepared_design')
+      expect(applied.value.toolOutcome).toMatchObject({
+        status: 'partial',
+        settlement: 'completed'
+      })
+      expect(applied.value.actionResults[0].result.status).toBe('complete')
+      expect(run.created.length).toBeGreaterThan(0)
+      const saved = structuredClone(run.created)
+      const restored = await run.call(
+        guide.definition.recover.tool,
+        guide.definition.recover.arguments
+      )
+      expect(restored.value.tools[0].usageGuide).toEqual(guide.usageGuide)
+      expect(restored.value.tools[0].definition.inputScope).toEqual(
+        input.inputScope
+      )
+      await run.call('describe_design_apis', input)
+      const retained = await run.call('describe_design_apis', {
+        fromResult: reply.value.resultKey,
+        names: [query]
+      })
+      expect(retained.success).toBe(true)
+      expect(retained.value.tools[0].usageGuide).toEqual(guide.usageGuide)
+      expect(run.created).toEqual(saved)
+      expect(run.execute).toHaveBeenCalledOnce()
+      expect(run.compile).toHaveBeenCalledOnce()
+    }
+  }
+)
+
+it('preserves full exact query scope constraints, paging, refresh and invalidation', async () => {
+  const run = setup()
+  const { query, inputScope } = exactQueryScope.calls[0].input
+  const names = [query]
+  const expected = await run.call('describe_design_apis', { names, inputScope })
+  for (const selection of [query, `design.${query}`, `  ${query}  `]) {
+    const input = { query: selection, inputScope }
+    const start = run.replies.length
+    const full = await run.call('describe_design_apis', input)
+    expect(full.success).toBe(true)
+    expect(full.value.tools).toEqual(expected.value.tools)
+    expect(full.value.tools[0].definition.coverage).toBe('scoped')
+    const pages = run.replies.slice(start)
+    expect(pages.length).toBeGreaterThan(1)
+    for (const page of pages) {
+      const value = JSON.parse(page.raw)
+      if (value.contentDelivery.next)
+        expect(value.contentDelivery.next.arguments).toMatchObject(input)
+    }
+    const refreshed = await run.call('describe_design_apis', {
+      ...input,
+      refresh: true,
+      refreshReason: 'delivery-failure'
+    })
+    expect(refreshed.value.tools[0].inputSchema).toEqual(
+      expected.value.tools[0].inputSchema
+    )
+  }
+  for (const extra of [
+    { offset: 1 },
+    { registryRevision: 99999 },
+    { schemaPaths: ['/properties/draft'] },
+    { contentPage: { revision: 'stale', offset: 1 } }
+  ]) {
+    const reply = await run.call('describe_design_apis', {
+      query,
+      inputScope,
+      ...extra
+    })
+    expect(reply.success).toBe(false)
+  }
+  const controller = new AbortController()
+  controller.abort()
+  await expect(
+    run.call('describe_design_apis', { query, inputScope }, controller.signal)
+  ).rejects.toThrow()
+  expect(run.execute).not.toHaveBeenCalled()
+})
+
+it('keeps fuzzy query scope rejected and recovers invalid exact scope from owner choices', async () => {
+  const run = setup(2, 'Related construction')
+  const { input } = exactQueryScope.calls[0]
+  const fuzzy = await run.call('describe_design_apis', {
+    ...input,
+    query: 'Related construction'
+  })
+  expect(fuzzy.success).toBe(false)
+  expect(fuzzy.value.message).toContain('inputScope')
+  expect(fuzzy.value.message).toContain('Omit inputScope')
+  const search = await run.call('describe_design_apis', {
+    query: 'Related construction'
+  })
+  expect(search.success).toBe(true)
+  expect(search.value.count).toBeGreaterThanOrEqual(2)
+  const bad = await run.call('describe_design_apis', {
+    ...input,
+    inputScope: { operation: 'create', nodeTypes: ['pattern'] }
+  })
+  expect(bad.success).toBe(false)
+  const correction = JSON.parse(bad.value.message.split('Scope guidance: ')[1])
+  const corrected = await run.call(
+    correction.example.tool,
+    correction.example.arguments
+  )
+  expect(corrected.success).toBe(true)
+  expect(corrected.value.tools[0].invocationExample.invocation).toBeDefined()
+  const actionOwner = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.APPLY_PREPARED_DESIGN,
+        description: 'Apply',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (actions) => actions, resolveBatch: (actions) => actions },
+    vi.fn(),
+    { getNativeTools: () => [] }
+  )
+  const actionDefinition = actionOwner.definitions.find(
+    (item) => item.name === 'describe_design_apis'
+  )
+  if (!actionDefinition) throw new Error('Missing discovery definition')
+  const actionOnly = await invokeLocalTool(
+    actionOwner,
+    actionDefinition,
+    {
+      query: AiActionNames.APPLY_PREPARED_DESIGN,
+      inputScope: input.inputScope
+    },
+    new AbortController().signal
+  )
+  expect(actionOnly.success).toBe(false)
+  expect(JSON.parse(actionOnly.text).message).toContain('native tool')
+  expect(run.execute).not.toHaveBeenCalled()
+})
+
+it('preserves scoped exact query ambiguity and qualified recovery without selecting a namespace', async () => {
+  const run = setup()
+  const { input } = exactQueryScope.calls[0]
+  const main = run.owners
+    .flatMap((owner) => owner.definitions)
+    .find((definition) => definition.name === input.query)
+  if (!main) throw new Error('Missing workflow definition')
+  const owner = createLocalOperationTools(
+    [
+      {
+        name: AiActionNames.APPLY_PREPARED_DESIGN,
+        description: 'Apply',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (actions) => actions, resolveBatch: (actions) => actions },
+    vi.fn(),
+    {
+      getNativeTools: () =>
+        ['first', 'second'].map((namespace) => ({ ...main, namespace }))
+    }
+  )
+  const definition = owner.definitions.find(
+    (item) => item.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  for (const selector of [{ query: input.query }, { names: [input.query] }]) {
+    const reply = await invokeLocalTool(
+      owner,
+      definition,
+      {
+        ...selector,
+        view: 'usage',
+        inputScope: input.inputScope
+      },
+      new AbortController().signal
+    )
+    const value = JSON.parse(reply.text)
+    expect(reply.success).toBe(false)
+    expect(value.tools, reply.text).toEqual([])
+    expect(value.ambiguousNames).toEqual([
+      {
+        name: input.query,
+        candidates: [`first.${input.query}`, `second.${input.query}`]
+      }
+    ])
+    const recovered = await invokeLocalTool(
+      owner,
+      definition,
+      {
+        query: value.ambiguousNames[0].candidates[0],
+        view: 'usage',
+        inputScope: input.inputScope
+      },
+      new AbortController().signal
+    )
+    expect(recovered.success).toBe(true)
+    const guide = JSON.parse(recovered.text).tools[0]
+    expect(guide.namespace).toBe('first')
+    expect(guide.definition.inputScope).toEqual(input.inputScope)
+  }
+  expect(run.execute).not.toHaveBeenCalled()
+})
+
 it('recovers the recorded invalid query scope from owner choices without a menu or replay', async () => {
   const run = setup()
   const rejected = await run.call(
@@ -1754,7 +1978,9 @@ it('corrects only the rejected operation while preserving the requested scope', 
   expect(
     corrected.value.tools[0].definition.recover.arguments.inputScope
   ).toEqual(inputScope)
-  expect(corrected.value.tools[0].usageGuide.parameters).toContain('plan')
+  expect(
+    JSON.stringify(corrected.value.tools[0].usageGuide.parameters)
+  ).toContain('plan')
   expect(
     run.replies.every(
       (reply) =>
@@ -1788,11 +2014,17 @@ it('delivers expansion accounting and parts selection before the recorded oversi
     }
   })
   const guide = result.value.tools[0].usageGuide
-  expect(guide.parameters).toContain('rows*columns*resolved motifs')
-  expect(guide.parameters).toContain('surfaceMotifs')
-  expect(guide.parameters).toContain('motifTemplates')
-  expect(guide.instructions).toContain('root and nested containers')
-  expect(guide.instructions).toContain('not increase artifact capacity')
+  expect(JSON.stringify(guide.parameters)).toContain(
+    'rows*columns*resolved motifs'
+  )
+  expect(JSON.stringify(guide.parameters)).toContain('surfaceMotifs')
+  expect(JSON.stringify(guide.parameters)).toContain('motifTemplates')
+  expect(JSON.stringify(guide.parameters)).toContain(
+    'root and nested containers'
+  )
+  expect(JSON.stringify(guide.parameters)).toContain(
+    'not increase artifact capacity'
+  )
   expect(guide.recovery).toContain('parts')
   expect(run.execute).not.toHaveBeenCalled()
   const invocation = result.value.tools[0].invocationExample.invocation
@@ -2216,7 +2448,9 @@ it.each(['projected-face', 'surface-grid'])(
     ).toEqual([memberType])
     expect(wrapper.properties.faces).toBe(false)
     expect(wrapper.properties.fills).toBe(false)
-    expect(guide.usageGuide.parameters).toContain('instanceRanges')
+    expect(JSON.stringify(guide.usageGuide.parameters)).toContain(
+      'instanceRanges'
+    )
     expect(guide.usageGuide.recovery).toContain('Never replay completed writes')
     const draft = guide.invocationExample.invocation.arguments.draft
     const single = draft.children[0]
@@ -2964,4 +3198,166 @@ it('rejects invalid projected ovals before canonical writes and executes the cor
   })
   expect(run.created).toEqual(retained)
   expect(run.execute).toHaveBeenCalledOnce()
+})
+
+it('replays saved cross-tool field queries in one bounded reply and executes owner-delivered queries', async () => {
+  const t = setup(0, 'Unrelated capability', 10000, true)
+  for (const saved of [fieldRecovery.usage, fieldRecovery.query]) {
+    const raw = JSON.stringify(saved.input)
+    expect(Buffer.byteLength(raw)).toBe(saved.bytes)
+    expect(createHash('sha256').update(raw).digest('hex')).toBe(saved.sha256)
+  }
+  const declaration = t.owners
+    .flatMap((owner) => owner.definitions)
+    .find((entry) => entry.name === 'describe_design_apis')
+  if (!declaration) throw new Error('Missing discovery declaration')
+  expect(declaration.description).toContain('fieldQuery example')
+  const usage = await t.call('describe_design_apis', fieldRecovery.usage.input)
+  expect(usage.success).toBe(true)
+  const mixed = await t.call('describe_design_apis', fieldRecovery.query.input)
+  expect(JSON.parse(mixed.text).toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(
+    mixed.value.tools.map(
+      (entry: { definition: { coverage: string } }) => entry.definition.coverage
+    )
+  ).toEqual(['partial', 'none'])
+  expect(t.replies).toHaveLength(2)
+  expect(JSON.parse(mixed.text).contentDelivery).toBeUndefined()
+  expect(Buffer.byteLength(mixed.text)).toBeLessThanOrEqual(24000)
+  const handoffBytes = t.replies.reduce(
+    (sum, reply) =>
+      sum +
+      Buffer.byteLength(JSON.stringify(reply.input)) +
+      Buffer.byteLength(reply.raw),
+    0
+  )
+  expect(handoffBytes).toBeLessThan(fieldRecovery.baseline.handoffBytes)
+  const selected = usage.value.tools.find(
+    (entry: { name: string }) => entry.name === 'select_design_references'
+  )
+  expect(selected.fieldQuery).toBeDefined()
+  const example = await t.call(
+    selected.fieldQuery.tool,
+    selected.fieldQuery.arguments
+  )
+  expect(example.success).toBe(true)
+  expect(example.value.tools).toHaveLength(1)
+  const required = await t.call(selected.fieldQuery.tool, {
+    ...selected.fieldQuery.arguments,
+    schemaPaths: selected.inputFields
+  })
+  expect(required.success).toBe(true)
+  expect(required.value.tools[0].schemaFragments).toEqual(
+    mixed.value.tools[0].schemaFragments
+  )
+  expect(required.value.tools[0].schemaContext).toEqual(
+    mixed.value.tools[0].schemaContext
+  )
+  expect(required.value.tools[0].schemaReferences).toEqual(
+    mixed.value.tools[0].schemaReferences
+  )
+  const failed = mixed.value.tools[1]
+  expect(
+    failed.schemaResolution.issues.map((issue: { path: string }) => issue.path)
+  ).toEqual([...fieldRecovery.query.input.schemaPaths].sort())
+  const recovered = await t.call(
+    failed.definition.recover.tool,
+    failed.definition.recover.arguments
+  )
+  expect(recovered.value.tools).toHaveLength(1)
+  const next = recovered.value.tools[0].fieldQuery
+  expect((await t.call(next.tool, next.arguments)).success).toBe(true)
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'field-query-handoff',
+      handoffBytes,
+      mixedBytes: Buffer.byteLength(mixed.text),
+      baselineBytes: fieldRecovery.baseline.handoffBytes
+    }) + '\n'
+  )
+  expect(t.execute).not.toHaveBeenCalled()
+  expect(t.compile).not.toHaveBeenCalled()
+})
+
+it('bounds failed field navigation and traversal independently of unrelated nested leaves', async () => {
+  const measure = async (count: number) => {
+    const leafMaps = new Set<object>()
+    const properties = Object.fromEntries(
+      Array.from({ length: count }, (_, index) => {
+        const leaves = { detail: { type: 'string' } }
+        leafMaps.add(leaves)
+        return [`item${index}`, { type: 'object', properties: leaves }]
+      })
+    )
+    leafMaps.add(properties)
+    const schema = {
+      type: 'object',
+      properties: {
+        unrelated: { type: 'object', properties },
+        requiredToken: { type: 'string' }
+      },
+      required: ['requiredToken'],
+      additionalProperties: false
+    }
+    const dispatch = vi.fn()
+    const owner = createLocalOperationTools(
+      [
+        {
+          name: AiActionNames.INSPECT_DRAWING,
+          description: 'Inspect',
+          inputSchema: {}
+        }
+      ],
+      { modelActions: (a) => a, resolveBatch: (b) => b },
+      dispatch,
+      {
+        getNativeTools: () => [
+          {
+            name: 'nested',
+            namespace: 'extension',
+            description: 'Nested input',
+            inputSchema: schema
+          }
+        ]
+      }
+    )
+    const definition = owner.definitions.find(
+      (entry) => entry.name === 'describe_design_apis'
+    )
+    if (!definition) throw new Error('Missing discovery definition')
+    const entries = vi.spyOn(Object, 'entries')
+    try {
+      const reply = await invokeLocalTool(
+        owner,
+        definition,
+        { names: ['extension.nested'], schemaPaths: ['/properties/foreign'] },
+        new AbortController().signal
+      )
+      const traversals = entries.mock.calls.filter(([value]) =>
+        leafMaps.has(value)
+      ).length
+      const value = JSON.parse(reply.text)
+      expect(traversals).toBe(0)
+      expect(value.contentDelivery).toBeUndefined()
+      expect(value.tools[0].schemaResolution.inputFields).toEqual([
+        '/properties/unrelated',
+        '/properties/requiredToken'
+      ])
+      expect(value.toolOutcome.status).toBe('failed')
+      expect(dispatch).not.toHaveBeenCalled()
+      return { bytes: Buffer.byteLength(reply.text), traversals }
+    } finally {
+      entries.mockRestore()
+    }
+  }
+  const large = await measure(1000)
+  const small = await measure(1)
+  expect(large).toEqual(small)
+  process.stdout.write(
+    JSON.stringify({ measurement: 'failed-navigation-work', small, large }) +
+      '\n'
+  )
 })

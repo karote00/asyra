@@ -6,12 +6,14 @@ import type {
 } from '@asyra/collaboration'
 import {
   CollaborationMessageTypes,
+  type collaborationBootstrapPhases,
   decodeCollaborationControlMessage,
   encodeCollaborationControlMessage,
   inspectPublicationFrameHeader,
   parseCollaborationServerMessage,
   type CollaborationRequestMessage,
   type DocumentSessionBootstrap,
+  type DocumentPersistenceReceipt,
   type PublicationFrameHeader,
   type PublicationFrameMessage,
   type SourcePublicationSettlementMessage
@@ -67,6 +69,12 @@ export type CollaborationTransportWorkerRequest =
   | DisconnectCollaborationTransportWorkerRequest
   | DestroyCollaborationTransportWorkerRequest
 
+export interface CollaborationBootstrapProgressResponse {
+  readonly type: 'bootstrap-progress'
+  readonly generation: number
+  readonly phase: (typeof collaborationBootstrapPhases)[number]
+}
+
 export interface CollaborationTransportConnectedResponse {
   readonly type: 'connected'
   readonly generation: number
@@ -78,6 +86,7 @@ export interface CollaborationTransportRequestAcceptedResponse {
   readonly generation: number
   readonly requestId: string
   readonly acceptedSequences?: readonly number[]
+  readonly persistence?: DocumentPersistenceReceipt
 }
 
 export interface CollaborationTransportRequestRejectedResponse {
@@ -169,6 +178,7 @@ export interface CollaborationTransportDiagnosticCounterResponse {
 }
 
 export type CollaborationTransportWorkerResponse =
+  | CollaborationBootstrapProgressResponse
   | CollaborationTransportConnectedResponse
   | CollaborationTransportRequestAcceptedResponse
   | CollaborationTransportRequestRejectedResponse
@@ -319,6 +329,8 @@ export class CollaborationTransportWorkerRuntime {
   private socket: WebSocket | null = null
   private identity: ProviderIdentity | undefined
   private generation = 0
+  private bootstrapCheckpointReady = false
+  private bootstrapFrameReceived = false
   private connected = false
   private destroyed = false
   private intentionalClose = false
@@ -389,6 +401,8 @@ export class CollaborationTransportWorkerRuntime {
     this.intentionalClose = false
     this.terminalFailure = false
     this.connected = false
+    this.bootstrapCheckpointReady = false
+    this.bootstrapFrameReceived = false
     this.codecRuntime.destroy()
     this.codecRuntime = new PublicationCodecWorkerRuntime()
     let socket: WebSocket
@@ -424,6 +438,11 @@ export class CollaborationTransportWorkerRuntime {
     const socket = this.socket
     const identity = this.identity
     if (!socket || !identity || socket.readyState !== SOCKET_OPEN) return
+    this.postMessage({
+      type: 'bootstrap-progress',
+      generation,
+      phase: 'socket-open'
+    })
     try {
       socket.send(
         encodeCollaborationControlMessage({
@@ -447,6 +466,14 @@ export class CollaborationTransportWorkerRuntime {
     const receivedAt = performance.now()
     this.postCounter('collaboration:inbound-frame-entry', 1)
     if (typeof value === 'string') {
+      if (!this.connected && !this.bootstrapFrameReceived) {
+        this.bootstrapFrameReceived = true
+        this.postMessage({
+          type: 'bootstrap-progress',
+          generation,
+          phase: 'bootstrap-received'
+        })
+      }
       this.postCounter(
         'collaboration:inbound-frame-byte-length',
         new TextEncoder().encode(value).byteLength
@@ -503,6 +530,23 @@ export class CollaborationTransportWorkerRuntime {
       duration(receivedAt)
     )
     switch (parsed.type) {
+      case CollaborationMessageTypes.BOOTSTRAP_CHECKPOINT_READY:
+        if (this.connected || this.bootstrapCheckpointReady) {
+          this.fail(
+            'transport-failed',
+            '[collaboration] duplicate or late checkpoint preparation milestone',
+            undefined,
+            true
+          )
+          return
+        }
+        this.bootstrapCheckpointReady = true
+        this.postMessage({
+          type: 'bootstrap-progress',
+          generation: this.generation,
+          phase: 'checkpoint-ready'
+        })
+        return
       case CollaborationMessageTypes.READY:
         if (this.connected) {
           this.fail(
@@ -514,6 +558,11 @@ export class CollaborationTransportWorkerRuntime {
           return
         }
         this.connected = true
+        this.postMessage({
+          type: 'bootstrap-progress',
+          generation: this.generation,
+          phase: 'bootstrap-decoded'
+        })
         this.postMessage({
           type: 'connected',
           generation: this.generation,
@@ -929,7 +978,8 @@ export class CollaborationTransportWorkerRuntime {
           type: 'request-accepted',
           generation: this.generation,
           requestId: message.requestId,
-          acceptedSequences: message.acceptedSequences
+          acceptedSequences: message.acceptedSequences,
+          persistence: message.persistence
         })
         return
       }
@@ -946,7 +996,8 @@ export class CollaborationTransportWorkerRuntime {
       this.postMessage({
         type: 'request-accepted',
         generation: this.generation,
-        requestId: message.requestId
+        requestId: message.requestId,
+        persistence: message.persistence
       })
       return
     }

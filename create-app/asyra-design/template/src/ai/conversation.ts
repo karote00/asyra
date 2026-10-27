@@ -1,4 +1,10 @@
-import { canRetryAiTurn, projectAiQuestion } from './presentation'
+import {
+  canRetryAiTurn,
+  projectAiQuestion,
+  summarizeAiTurn,
+  createAiActivityProjection
+} from './presentation'
+import type { AiActivityProjectionState } from './activity-state'
 import { AiActionNames, AiDrawingDetailSelectionIntents } from '../constants'
 import type {
   AiJsonValue,
@@ -8,6 +14,9 @@ import type {
 
 export type AiConversationOutcome =
   'cancelled' | 'failed' | 'no-change' | 'partial' | 'success'
+
+// App history-delivery cost policy; complete messages are never sliced to fit.
+export const AI_CONVERSATION_HISTORY_MAXIMUM_BYTES = 32 * 1024
 
 export interface AiTargetHints {
   readonly compositionId: string | null
@@ -43,6 +52,7 @@ export interface AiConversationFeature {
 }
 
 export interface AiActiveTurn {
+  readonly originalIntent: string
   readonly waitingSinceMs?: number
   readonly waitingDurationMs?: number
   readonly startedAtMs?: number
@@ -93,6 +103,7 @@ export interface AiConversationNavigationSnapshot {
 }
 
 export interface CreateAiConversationControllerOptions {
+  readonly onPublished?: (turn: AiSettledTurn) => void
   readonly confirmation?: {
     beginTurn(turnId: string): void
     cancel(reason?: unknown): boolean
@@ -139,6 +150,7 @@ export class AiConversationError extends Error {
 }
 
 interface MutableActiveTurn {
+  readonly originalIntent: string
   waitingSinceMs?: number
   waitingDurationMs: number
   readonly replyToTurnId?: string
@@ -252,13 +264,14 @@ const freezeTargetHints = (
 
 const readActionResultStatus = (
   value: unknown
-): 'complete' | 'no-change' | 'partial' | null => {
+): 'complete' | 'no-change' | 'partial' | 'failed' | null => {
   if (!isPlainObject(value)) {
     return null
   }
   return value.status === 'complete' ||
     value.status === 'no-change' ||
-    value.status === 'partial'
+    value.status === 'partial' ||
+    value.status === 'failed'
     ? value.status
     : null
 }
@@ -270,6 +283,43 @@ const readActionResults = (
     return []
   }
   return value.actionResults.filter(isPlainObject)
+}
+
+const projectConversationHistory = (
+  settledTurns: readonly AiSettledTurn[]
+): AiJsonValue | undefined => {
+  if (!settledTurns.length) return
+  const encoder = new TextEncoder()
+  const turns: AiJsonValue[] = []
+  let pairBytes = 0
+  let omittedTurns = settledTurns.length
+  for (let index = settledTurns.length - 1; index >= 0; index -= 1) {
+    const turn = settledTurns[index]
+    const intent = turn.requestIntent ?? turn.intent
+    const pair = {
+      turnId: turn.turnId,
+      intent,
+      ...(turn.originalIntent && turn.originalIntent !== intent
+        ? { originalIntent: turn.originalIntent }
+        : {}),
+      message: summarizeAiTurn(turn).message,
+      outcome: turn.outcome
+    }
+    const bytes = encoder.encode(JSON.stringify(pair)).length
+    const envelopeBytes = encoder.encode(
+      JSON.stringify({ turns: [], omittedTurns: index })
+    ).length
+    // Each prior included pair adds one comma. Never skip an oversized gap.
+    if (
+      envelopeBytes + pairBytes + bytes + turns.length >
+      AI_CONVERSATION_HISTORY_MAXIMUM_BYTES
+    )
+      break
+    turns.push(pair)
+    pairBytes += bytes
+    omittedTurns = index
+  }
+  return { turns: turns.reverse(), omittedTurns }
 }
 
 const outcomeForResult = (
@@ -298,8 +348,9 @@ const outcomeForResult = (
 
   const statuses = readActionResults(result)
     .map((action) => readActionResultStatus(action.result))
-    .filter((status): status is 'complete' | 'no-change' | 'partial' =>
-      Boolean(status)
+    .filter(
+      (status): status is 'complete' | 'no-change' | 'partial' | 'failed' =>
+        Boolean(status)
     )
   const unsupported = readActionResults(result).some(
     (action) =>
@@ -312,6 +363,9 @@ const outcomeForResult = (
     (unsupported && statuses.includes('complete'))
   ) {
     return 'partial'
+  }
+  if (statuses.includes('failed')) {
+    return statuses.includes('complete') ? 'partial' : 'failed'
   }
   if (
     statuses.length > 0 &&
@@ -437,8 +491,15 @@ export const createAiConversationController = (
     return targetHints
   }
 
-  const getSnapshot = (): AiConversationSnapshot =>
-    Object.freeze({
+  const activities = new Map<
+    string,
+    ReturnType<typeof createAiActivityProjection>
+  >()
+  const getSnapshot = (): AiConversationSnapshot => {
+    const turn = activeTurn
+    const length = turn?.progress.length ?? 0
+    let progress: readonly AiRuntimeProgressUpdate[] | undefined
+    return Object.freeze({
       activeTurn:
         activeTurn === null
           ? null
@@ -452,7 +513,12 @@ export const createAiConversationController = (
               attachments: activeTurn.attachments,
               conversationId: activeTurn.conversationId,
               intent: activeTurn.intent,
-              progress: Object.freeze([...activeTurn.progress]),
+              originalIntent: activeTurn.originalIntent,
+              get progress() {
+                return (progress ??= Object.freeze(
+                  turn?.progress.slice(0, length) ?? []
+                ))
+              },
               turnId: activeTurn.turnId
             }),
       conversationId,
@@ -460,6 +526,7 @@ export const createAiConversationController = (
       settledTurns: Object.freeze([...settledTurns]),
       targetHints
     })
+  }
 
   const observeSafely = (
     observer: (snapshot: AiConversationSnapshot) => void,
@@ -524,6 +591,12 @@ export const createAiConversationController = (
   }
 
   const controller = {
+    getActivity: (turnId: string, snapshot: AiActivityProjectionState = {}) => {
+      const projection = activities.get(turnId)
+      if (!projection)
+        throw new AiConversationError('AI_CONVERSATION_INVALID_REPLY')
+      return projection.result(snapshot)
+    },
     getNavigationSnapshot,
     subscribeNavigation: (observer: () => void): (() => void) => {
       if (disposed) return () => undefined
@@ -623,6 +696,7 @@ export const createAiConversationController = (
       const startedAtMs = now()
       turnIndex += 1
       const currentTurn: MutableActiveTurn = {
+        originalIntent,
         waitingDurationMs: 0,
         attachments,
         replyToTurnId,
@@ -634,6 +708,10 @@ export const createAiConversationController = (
         startedAtMs,
         turnId: `${conversationId}:turn:${turnIndex}`
       }
+      const activityProjection = createAiActivityProjection({
+        purpose: originalIntent
+      })
+      activities.set(currentTurn.turnId, activityProjection)
       activeTurn = currentTurn
       options.confirmation?.beginTurn(currentTurn.turnId)
       options.history?.beginTurn(currentTurn.turnId)
@@ -654,12 +732,16 @@ export const createAiConversationController = (
           currentTurn.waitingSinceMs = undefined
         }
         currentTurn.progress.push(update)
+        const decision = activityProjection.append(update)
         notify()
+        return decision
       }
 
       let result: unknown
       try {
+        const conversationHistory = projectConversationHistory(settledTurns)
         const metadata: AiJsonValue = {
+          ...(conversationHistory ? { conversationHistory } : {}),
           ...(replyTo
             ? { replyTo: { turnId: replyTo.turnId, intent: originalIntent } }
             : {}),
@@ -749,6 +831,11 @@ export const createAiConversationController = (
       if (!disposed) {
         settledTurns.push(settled)
         notify()
+        try {
+          options.onPublished?.(settled)
+        } catch {
+          /* Publication observers cannot change the outcome. */
+        }
       }
       return settled
     },
@@ -802,6 +889,7 @@ export const createAiConversationController = (
       observers.clear()
       navigationObservers.clear()
       storedConversations.clear()
+      activities.clear()
       navigationSnapshot = undefined
       if (pendingSettlement) {
         await pendingSettlement.catch(() => undefined)

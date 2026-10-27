@@ -38,6 +38,46 @@ const admitStructured = (
 }
 
 describe('registered structured contract constraints', () => {
+  it.each(['anyOf', 'oneOf'])(
+    'excludes only provably disjoint opaque siblings in %s without admitting their unsupported bindings',
+    (mode) => {
+      const flat = object({
+        kind: { type: 'string', enum: ['flat'] },
+        value: number
+      })
+      const opaque = {
+        ...object({ kind: { const: 'curved' }, value: number }),
+        allOf: [{ properties: { value: { minimum: 0 } } }]
+      }
+      const binding = {
+        kind: 'object',
+        fields: {
+          kind: { kind: 'input', path: '/kind' },
+          value: { kind: 'input', path: '/value' }
+        }
+      }
+      const schema = { [mode]: [flat, opaque] }
+      expect(admitStructured(schema, flat, binding)).toMatchObject({ ok: true })
+      for (const source of [
+        object({ kind: { type: 'string', enum: ['curved'] }, value: number }),
+        object({
+          kind: { type: 'string', enum: ['flat', 'curved'] },
+          value: number
+        }),
+        { ...flat, required: ['value'] }
+      ])
+        expect(admitStructured(schema, source, binding).ok).toBe(false)
+      for (const sibling of [
+        { ...opaque, properties: { kind: { const: 'flat' }, value: number } },
+        { allOf: [opaque] },
+        { ...opaque, properties: { value: number }, required: ['value'] }
+      ])
+        expect(
+          admitStructured({ [mode]: [flat, sibling] }, flat, binding).ok
+        ).toBe(false)
+    }
+  )
+
   it('resolves a recursive definition once across repeated guaranteed paths', () => {
     let definitionReads = 0
     const node = object({ value: number, next: { $ref: '#/$defs/node' } })

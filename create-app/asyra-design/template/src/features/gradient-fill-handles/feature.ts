@@ -1,8 +1,8 @@
 import { defineFeature } from '@asyra/core'
+import { SessionCancelPolicies } from '@asyra/utils'
 import {
   clampUnit,
   type EVENT_OPTIONS,
-  type FillAttrs,
   type FillGradientData,
   type FillGradientStop,
   type PositionData,
@@ -16,6 +16,7 @@ import {
   systemContextApis,
   transactionApis
 } from '../../common-apis'
+import { computeNextGradientForHandleWithDelta } from '../../common-apis/gradient-handle-geometry'
 import type { GradientHandleGeometry } from '../../common-apis/fills'
 import type {
   GradientHandleState,
@@ -35,7 +36,6 @@ interface GradientHandleDragState extends Record<string, unknown> {
   dragStartWorkspacePos: PositionData
   initialGradient: FillGradientData
   latestGradient: FillGradientData
-  currentFill: FillAttrs
   width: number
   height: number
   pendingWorkspacePos: PositionData | null
@@ -51,7 +51,6 @@ interface GradientStopDragState extends Record<string, unknown> {
   stopIndex: number
   initialGradient: FillGradientData
   latestGradient: FillGradientData
-  currentFill: FillAttrs
   geometry: GradientHandleGeometry
   canvasBounds: DOMRect | null
   pendingClientPos: PositionData | null
@@ -216,7 +215,7 @@ const applyHandleDragUpdate = (
   state: GradientHandleDragState,
   workspacePos: PositionData
 ) => {
-  const nextGradient = fillApis.getNextGradientForHandleWithDelta(
+  const nextGradient = computeNextGradientForHandleWithDelta(
     state.initialGradient,
     state.handleIndex,
     state.width,
@@ -241,17 +240,12 @@ const applyHandleDragUpdate = (
   fillApis.updateFillField(
     state.elementId,
     state.fillId,
-    state.currentFill,
     'gradient',
     nextGradient,
     GRADIENT_HANDLE_DRAG_OPTIONS
   )
 
   state.latestGradient = nextGradient
-  state.currentFill = {
-    ...state.currentFill,
-    gradient: nextGradient
-  }
   state.isDragging = true
 }
 
@@ -333,17 +327,12 @@ const applyStopDragUpdate = (
   fillApis.updateFillField(
     state.elementId,
     state.fillId,
-    state.currentFill,
     'gradient',
     nextGradient,
     GRADIENT_STOP_DRAG_OPTIONS
   )
 
   state.latestGradient = nextGradient
-  state.currentFill = {
-    ...state.currentFill,
-    gradient: nextGradient
-  }
   state.isDragging = true
 }
 
@@ -478,7 +467,7 @@ export const dragGradientHandleFeature = defineFeature<
 >(FeatureNames.DRAG_GRADIENT_HANDLE, InputSystemEvents.INPUT_DRAG, {
   priority: 16,
   exclusive: true,
-  cancelPolicy: 'commit-current',
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)
@@ -539,7 +528,6 @@ export const dragGradientHandleFeature = defineFeature<
         dragStartWorkspacePos,
         initialGradient: geometry.fill.gradient,
         latestGradient: geometry.fill.gradient,
-        currentFill: geometry.fill,
         width: geometry.width,
         height: geometry.height,
         pendingWorkspacePos: null,
@@ -601,7 +589,7 @@ export const dragGradientStopFeature = defineFeature<
 >(FeatureNames.DRAG_GRADIENT_STOP, InputSystemEvents.INPUT_DRAG, {
   priority: 15,
   exclusive: true,
-  cancelPolicy: 'commit-current',
+  cancelPolicy: SessionCancelPolicies.COMMIT_CURRENT,
   session: {
     onStart: (snapshot: SystemContextSnapshot) => {
       const activeGradientFill = getEditableGradientFillState(snapshot)
@@ -654,7 +642,6 @@ export const dragGradientStopFeature = defineFeature<
         stopIndex: resolvedStopIndex,
         initialGradient: geometry.fill.gradient,
         latestGradient: geometry.fill.gradient,
-        currentFill: geometry.fill,
         geometry,
         canvasBounds: fillApis.getCanvasBounds(),
         pendingClientPos: null,

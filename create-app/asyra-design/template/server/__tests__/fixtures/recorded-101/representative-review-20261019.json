@@ -1,0 +1,556 @@
+{
+  "sourceRun": "1792402162549",
+  "sourceSha256": "721c2ec21fd10c6057e9ee2a89edea419ed8f9d747c690b00e7a892e1f6c2f88",
+  "calls": [
+    {
+      "index": 5,
+      "tool": "define_design_criteria",
+      "input": {
+        "method": "以公分為世界座標，1 cm=1 px，統一正射俯視相機 azimuth 35°, elevation 28°, scale 1。508m 總高依官方文字資料；其他尺寸為附件比例推估，不宣稱測量精度。使用 projected-face 與 surface-grid，窗格重複幾何與跨立面連續玻璃色域分離；左上日光、深色窗隙與金屬高光。低裙樓向塔身一側延伸，不加入街景。",
+        "references": [
+          "使用者航拍附件：僅量體、基座關係及輪廓；不畫施工設備",
+          "使用者裝飾特寫：僅如意形狀與金屬材質",
+          "https://land.dof.gov.taipei/cp.aspx"
+        ],
+        "criteria": {
+          "overall": {
+            "requirement": "完整台北101，固定俯視三分之四視角，不加文字或景物",
+            "description": "全棟從基座到尖端完整，透明周邊，統一投影及八節外擴輪廓",
+            "verification": "visual",
+            "requiredUnits": []
+          },
+          "base": {
+            "requirement": "保留可見基座關係與表面",
+            "description": "偏置裙樓、塔基交接、屋頂與立面細節",
+            "verification": "visual",
+            "requiredUnits": []
+          },
+          "facade": {
+            "requirement": "精細寫實立面、窗框、材質與陰影",
+            "description": "密集可編輯窗框，連續玻璃明暗、外擴竹節、簷口與結構不淪為示意圖",
+            "verification": "visual",
+            "requiredUnits": []
+          },
+          "ornament": {
+            "requirement": "依裝飾特寫保留可見裝飾",
+            "description": "如意雙捲曲、長柄與圓盤，金屬厚度及反光",
+            "verification": "visual",
+            "requiredUnits": []
+          },
+          "crown": {
+            "requirement": "完整塔冠與尖端",
+            "description": "可見上表面、退縮塔冠、層框與完整尖塔",
+            "verification": "visual",
+            "requiredUnits": []
+          }
+        },
+        "detailRequired": true
+      },
+      "output": null
+    },
+    {
+      "index": 12,
+      "tool": "review_drawing",
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspections": [
+          {
+            "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+            "view": "overview",
+            "checks": [
+              {
+                "criterionId": "facade"
+              }
+            ]
+          },
+          {
+            "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+            "view": "detail",
+            "region": {
+              "x": 2500,
+              "y": 1700,
+              "width": 900,
+              "height": 900
+            },
+            "checks": [
+              {
+                "criterionId": "facade"
+              }
+            ]
+          }
+        ]
+      },
+      "output": null
+    },
+    {
+      "index": 14,
+      "tool": "review_drawing",
+      "input": {
+        "phase": "visual",
+        "final": false,
+        "inspectionIds": [
+          "80d4a39b-1373-437f-a0c5-052c25b96aa6",
+          "646d05bc-c4fd-4def-875f-05dfe45d5866"
+        ],
+        "checks": [
+          {
+            "criterionId": "facade",
+            "inspectionIds": [
+              "80d4a39b-1373-437f-a0c5-052c25b96aa6",
+              "646d05bc-c4fd-4def-875f-05dfe45d5866"
+            ],
+            "binding": {
+              "requestId": "72c94133-62dc-41fa-9410-589f9194b4b7",
+              "requirementRevision": 1,
+              "checkRevision": 1,
+              "dependencies": [
+                {
+                  "inspectionId": "80d4a39b-1373-437f-a0c5-052c25b96aa6",
+                  "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+                  "scope": "overview:whole",
+                  "source": {
+                    "sessionId": "a4b3fab8-b757-4901-83c3-97e64bc49cd4",
+                    "revision": 0,
+                    "receiptId": "451e4065-b210-4505-8a4a-2735da637738"
+                  }
+                },
+                {
+                  "inspectionId": "646d05bc-c4fd-4def-875f-05dfe45d5866",
+                  "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+                  "scope": "detail:[2500,1700,900,900]",
+                  "source": {
+                    "sessionId": "a4b3fab8-b757-4901-83c3-97e64bc49cd4",
+                    "revision": 0,
+                    "receiptId": "41180a5f-b626-4ac0-9a96-36343ccfa81c"
+                  }
+                }
+              ],
+              "signature": "df80b928278662c5b02cfdf842d2db694f1ce8ad67d3e7ae6777e4505bb720e4"
+            },
+            "status": "unverified",
+            "evidence": "第一竹節概觀可見兩側玻璃的連續反光、窗框及外擴邊緣，幾何交接一致。細節裁切落在屋頂，不能證實窗框近觀；全棟其餘竹節與裝飾尚待加入，保留待驗證。"
+          }
+        ]
+      },
+      "output": {
+        "phase": "visual",
+        "results": {
+          "counts": {
+            "pass": 3,
+            "fail": 0,
+            "unverified": 1,
+            "stale": 4
+          },
+          "visitedResults": 0,
+          "revision": 14,
+          "firstPendingId": "visual:overall"
+        },
+        "coverage": {
+          "required": 5,
+          "passed": 0,
+          "pending": [
+            {
+              "id": "visual:overall",
+              "criterionId": "overall",
+              "status": "stale"
+            },
+            {
+              "id": "visual:base",
+              "criterionId": "base",
+              "status": "stale"
+            },
+            {
+              "id": "visual:facade",
+              "criterionId": "facade",
+              "status": "unverified"
+            },
+            {
+              "id": "visual:ornament",
+              "criterionId": "ornament",
+              "status": "stale"
+            },
+            {
+              "id": "visual:crown",
+              "criterionId": "crown",
+              "status": "stale"
+            }
+          ]
+        },
+        "final": false,
+        "facts": [
+          {
+            "id": "height",
+            "statement": "台北101總高度508公尺。",
+            "scope": "整體高度；不確立各層精確尺寸",
+            "sources": ["https://land.dof.gov.taipei/cp.aspx"],
+            "verification": "台北市財政局土地開發資料文字",
+            "dependencies": [
+              {
+                "key": "height-source",
+                "version": "2026-10-19"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "asserted",
+              "inapplicableSources": [],
+              "assertedSources": ["https://land.dof.gov.taipei/cp.aspx"],
+              "referenceIds": []
+            }
+          },
+          {
+            "id": "massing",
+            "statement": "塔身八節外擴，塔冠退縮；低裙樓在塔基一側明顯延伸。",
+            "scope": "廣義量體與可見基座關係，排除暫時施工設備，不能建立精密未見幾何",
+            "sources": [
+              "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+            ],
+            "verification": "直接觀察使用者附件",
+            "dependencies": [
+              {
+                "key": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                "version": "2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "unverified",
+              "inapplicableSources": [
+                "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+              ],
+              "assertedSources": [],
+              "referenceIds": [
+                "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7"
+              ]
+            }
+          },
+          {
+            "id": "ruyi",
+            "statement": "裝飾為雙捲曲如意頭、細長柄與圓形底盤；金屬表面明暗強烈。",
+            "scope": "裝飾形狀和材質，不含精確尺寸與全棟位置",
+            "sources": [
+              "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+            ],
+            "verification": "直接觀察使用者附件",
+            "dependencies": [
+              {
+                "key": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                "version": "d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+              }
+            ],
+            "status": "valid",
+            "freshness": "current",
+            "evidence": {
+              "kind": "source-assertion",
+              "author": "model",
+              "status": "unverified",
+              "inapplicableSources": [
+                "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+              ],
+              "assertedSources": [],
+              "referenceIds": [
+                "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd"
+              ]
+            }
+          }
+        ],
+        "deferredDetails": [],
+        "deferredChecks": [],
+        "pendingDetails": [],
+        "regressions": [],
+        "revision": 3,
+        "accepted": false,
+        "checks": [
+          {
+            "criterionId": "facade",
+            "inspectionIds": [
+              "80d4a39b-1373-437f-a0c5-052c25b96aa6",
+              "646d05bc-c4fd-4def-875f-05dfe45d5866"
+            ],
+            "binding": {
+              "requestId": "72c94133-62dc-41fa-9410-589f9194b4b7",
+              "requirementRevision": 1,
+              "checkRevision": 1,
+              "dependencies": [
+                {
+                  "inspectionId": "80d4a39b-1373-437f-a0c5-052c25b96aa6",
+                  "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+                  "scope": "overview:whole",
+                  "source": {
+                    "sessionId": "a4b3fab8-b757-4901-83c3-97e64bc49cd4",
+                    "revision": 0,
+                    "receiptId": "451e4065-b210-4505-8a4a-2735da637738"
+                  }
+                },
+                {
+                  "inspectionId": "646d05bc-c4fd-4def-875f-05dfe45d5866",
+                  "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+                  "scope": "detail:[2500,1700,900,900]",
+                  "source": {
+                    "sessionId": "a4b3fab8-b757-4901-83c3-97e64bc49cd4",
+                    "revision": 0,
+                    "receiptId": "41180a5f-b626-4ac0-9a96-36343ccfa81c"
+                  }
+                }
+              ],
+              "signature": "df80b928278662c5b02cfdf842d2db694f1ce8ad67d3e7ae6777e4505bb720e4"
+            },
+            "status": "unverified",
+            "evidence": "第一竹節概觀可見兩側玻璃的連續反光、窗框及外擴邊緣，幾何交接一致。細節裁切落在屋頂，不能證實窗框近觀；全棟其餘竹節與裝飾尚待加入，保留待驗證。",
+            "factIds": []
+          }
+        ],
+        "inspectionIds": [
+          "80d4a39b-1373-437f-a0c5-052c25b96aa6",
+          "646d05bc-c4fd-4def-875f-05dfe45d5866"
+        ],
+        "correction": {
+          "diagnosticOnly": true,
+          "coverage": {
+            "required": 5,
+            "passed": 0,
+            "pending": [
+              {
+                "id": "visual:overall",
+                "criterionId": "overall",
+                "status": "stale"
+              },
+              {
+                "id": "visual:base",
+                "criterionId": "base",
+                "status": "stale"
+              },
+              {
+                "id": "visual:facade",
+                "criterionId": "facade",
+                "status": "unverified"
+              },
+              {
+                "id": "visual:ornament",
+                "criterionId": "ornament",
+                "status": "stale"
+              },
+              {
+                "id": "visual:crown",
+                "criterionId": "crown",
+                "status": "stale"
+              }
+            ]
+          },
+          "referenceDecisions": [
+            {
+              "attachmentIndex": 0,
+              "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+              "status": "restricted",
+              "reason": "低解析施工時期照片，僅支持整體量體、裙樓偏置與輪廓",
+              "uses": [
+                {
+                  "id": "overall-visual",
+                  "criterionId": "overall",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "排除吊車、街景與周圍建築；不據此推定精密窗框"
+                  ],
+                  "receipt": {
+                    "requestId": "dbd282b2-fe66-4c5a-b66b-b385a9a841a1",
+                    "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                    "useId": "overall-visual",
+                    "revision": 1,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 507,
+                    "height": 665
+                  }
+                },
+                {
+                  "id": "overall-fact",
+                  "criterionId": "overall",
+                  "purpose": "fact",
+                  "region": "whole",
+                  "limitations": [
+                    "排除吊車、街景與周圍建築；不據此推定精密窗框"
+                  ],
+                  "receipt": {
+                    "requestId": "dbd282b2-fe66-4c5a-b66b-b385a9a841a1",
+                    "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                    "useId": "overall-fact",
+                    "revision": 2,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 507,
+                    "height": 665
+                  }
+                },
+                {
+                  "id": "base-visual",
+                  "criterionId": "base",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": [
+                    "排除吊車、街景與周圍建築；不據此推定精密窗框"
+                  ],
+                  "receipt": {
+                    "requestId": "dbd282b2-fe66-4c5a-b66b-b385a9a841a1",
+                    "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                    "useId": "base-visual",
+                    "revision": 3,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 507,
+                    "height": 665
+                  }
+                },
+                {
+                  "id": "base-fact",
+                  "criterionId": "base",
+                  "purpose": "fact",
+                  "region": "whole",
+                  "limitations": [
+                    "排除吊車、街景與周圍建築；不據此推定精密窗框"
+                  ],
+                  "receipt": {
+                    "requestId": "dbd282b2-fe66-4c5a-b66b-b385a9a841a1",
+                    "referenceId": "reference:2641a97ca7ed04ffc472541566c573aaf9e570ae7cf69d1b6fe845882d7549d7",
+                    "useId": "base-fact",
+                    "revision": 4,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 507,
+                    "height": 665
+                  }
+                }
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            },
+            {
+              "attachmentIndex": 1,
+              "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+              "status": "restricted",
+              "reason": "清楚顯示如意金屬浮雕，不能證明其精確尺寸與所有位置",
+              "uses": [
+                {
+                  "id": "ornament-visual",
+                  "criterionId": "ornament",
+                  "purpose": "visual",
+                  "region": "whole",
+                  "limitations": ["不據此推定精確未見幾何"],
+                  "receipt": {
+                    "requestId": "dbd282b2-fe66-4c5a-b66b-b385a9a841a1",
+                    "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                    "useId": "ornament-visual",
+                    "revision": 5,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 500,
+                    "height": 518
+                  }
+                },
+                {
+                  "id": "ornament-fact",
+                  "criterionId": "ornament",
+                  "purpose": "fact",
+                  "region": "whole",
+                  "limitations": ["不據此推定精確未見幾何"],
+                  "receipt": {
+                    "requestId": "dbd282b2-fe66-4c5a-b66b-b385a9a841a1",
+                    "referenceId": "reference:d4b293abf4e0d0571846b398fda42aed0e7ca6dae611ac32abe288ae63753bdd",
+                    "useId": "ornament-fact",
+                    "revision": 6,
+                    "requirementRevision": 1
+                  },
+                  "pixels": {
+                    "width": 500,
+                    "height": 518
+                  }
+                }
+              ],
+              "author": "model",
+              "requirementRevision": 1,
+              "freshness": "current"
+            }
+          ],
+          "requiresFreshReview": true,
+          "revision": 3,
+          "criteria": [
+            {
+              "criterionId": "overall",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence."
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "base",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence."
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "facade",
+              "evidence": [
+                "第一竹節概觀可見兩側玻璃的連續反光、窗框及外擴邊緣，幾何交接一致。細節裁切落在屋頂，不能證實窗框近觀；全棟其餘竹節與裝飾尚待加入，保留待驗證。"
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "ornament",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence."
+              ],
+              "elementIds": []
+            },
+            {
+              "criterionId": "crown",
+              "evidence": [
+                "Await primary-agent review of actual rendered evidence."
+              ],
+              "elementIds": []
+            }
+          ],
+          "inspections": [
+            {
+              "inspectionId": "80d4a39b-1373-437f-a0c5-052c25b96aa6",
+              "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+              "overview": true,
+              "detail": false
+            },
+            {
+              "inspectionId": "646d05bc-c4fd-4def-875f-05dfe45d5866",
+              "elementId": "design-399822b0-54ea-4308-9cfb-ea96a3b4784d-0",
+              "region": {
+                "x": 2500,
+                "y": 1700,
+                "width": 900,
+                "height": 900
+              },
+              "coordinateSpace": "element-local",
+              "overview": false,
+              "detail": true
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      }
+    }
+  ]
+}

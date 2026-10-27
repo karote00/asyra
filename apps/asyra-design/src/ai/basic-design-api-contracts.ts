@@ -375,6 +375,7 @@ const deleteElementsApi = defineBasicApi({
     'Delete one or more non-Workspace elements and their descendants in one canonical batch. Pass all ready target IDs together; preparation and orphan-property work are shared. Overlapping ancestor/descendant targets are removed once. Invalid, duplicate or missing targets reject before writes. Returns removed identities.',
   owner: 'element',
   method: 'deleteElements',
+  examples: [{ elementIds: ['example-element'] }],
   effect: 'delete',
   resultKind: 'removed',
   parameters: [{ name: 'elementIds', schema: apiUniqueElementIds }]

@@ -12,6 +12,7 @@ import {
 } from '../../src/common-apis'
 import {
   SelectionChannels,
+  PresetSystemPropertyKeys,
   encodeVectorPointSelectionId,
   encodeVectorSegmentSelectionId
 } from '@asyra/preset'
@@ -140,7 +141,7 @@ export const createBasicApiCases = async () => {
     elementApis.createVectorElementFromSinglePoint('case-a', {
       x: 20,
       y: 200
-    })
+    }).value
   )
   elementApis.appendVectorAnchorPoint(vector, {
     id: 'case-b',
@@ -237,13 +238,8 @@ export const createBasicApiCases = async () => {
   add('core', 'getAllElementsBounds', {}, (v) =>
     assert(v.maxX >= 400 && v.maxY >= 200, 'Bounds exclude fixture geometry')
   )
-  add('core', 'getViewportPosition', {}, (v) => {
-    assert(
-      Number.isFinite(v.x) && Number.isFinite(v.y),
-      'Invalid viewport position'
-    )
-  })
-  add('core', 'getViewportScale', {}, (v) => assert(v > 0, 'Invalid scale'))
+  add('core', 'getViewportPosition', {}, eq({ x: 0, y: 0 }))
+  add('core', 'getViewportScale', {}, eq(1))
   add('core', 'getSelectedElementIds', {}, eq([rect]), () =>
     selectionApis.selectElements([rect])
   )
@@ -257,7 +253,7 @@ export const createBasicApiCases = async () => {
   )
   add('core', 'hasRenderEngineProvider', {}, eq(true))
   add('core', 'isCompositionOpen', {}, eq(false))
-  add('core', 'getRuntimeState', {}, defined)
+  add('core', 'getRuntimeState', {}, eq('active'))
   add('core', 'getElementMetadata', { elementId: rect }, (v) => {
     equal(v.id, rect)
     equal(v.childCount, 0)
@@ -292,7 +288,10 @@ export const createBasicApiCases = async () => {
   )
   add('core', 'getAllElementData', {}, has(rect))
   add('core', 'getCanonicalOwnerSnapshot', {}, has(paintId))
-  add('core', 'getSystemContextSnapshot', {}, defined)
+  add('core', 'getSystemContextSnapshot', {}, (value) => {
+    equal(value[PresetSystemPropertyKeys.ZOOM], 1)
+    equal(value[PresetSystemPropertyKeys.VIEWPORT_POSITION], { x: 0, y: 0 })
+  })
   add('core', 'isContainerType', { type: 'frame' }, eq(true))
   add('core', 'hasProjectedElement', { elementId: rect }, eq(true))
   const hitRect = (value: unknown) => {
@@ -348,7 +347,7 @@ export const createBasicApiCases = async () => {
     { elementId: rect, workspacePosition: { x: 20, y: 30 } },
     eq({ x: 0, y: 0 })
   )
-  add('core', 'getUIProperty', { key: 'width' }, defined, () =>
+  add('core', 'getUIProperty', { key: 'width' }, eq(100), () =>
     selectionApis.selectElements([rect])
   )
   add('core', 'getSystemProperty', { key: 'missing-case-property' }, eq(null))
@@ -464,8 +463,8 @@ export const createBasicApiCases = async () => {
     void structured
     add('selection', method, {}, eq([encoded]), select)
   }
-  add('viewport', 'getScale', {}, (v) => assert(v > 0, 'Invalid zoom'))
-  add('viewport', 'getPosition', {}, defined)
+  add('viewport', 'getScale', {}, eq(1))
+  add('viewport', 'getPosition', {}, eq({ x: 0, y: 0 }))
   add(
     'viewport',
     'getCanvasPositionFromWorkspace',
@@ -490,33 +489,60 @@ export const createBasicApiCases = async () => {
     { clientPos: client(point) },
     eq(core.workspaceToCanvas(point))
   )
-  add('fill', 'getGradientHandleGeometry', gradientArgs, defined, setupGradient)
+  add(
+    'fill',
+    'getGradientHandleGeometry',
+    gradientArgs,
+    (value) => {
+      equal(value.elementId, rect)
+      equal(value.fillId, paintId)
+      equal(value.width, 100)
+      equal(value.height, 80)
+      equal(value.fill.gradient, gradient)
+      equal(value.canvasHandles, [
+        { x: 20, y: 70 },
+        { x: 120, y: 70 }
+      ])
+    },
+    setupGradient
+  )
   add(
     'fill',
     'getGradientHandleHitAtClientPos',
     { ...gradientArgs, clientPos: client({ x: 20, y: 70 }), hitRadius: 8 },
-    defined,
+    eq({ handleIndex: 0 }),
     setupGradient
   )
   add(
     'fill',
     'getGradientStopHitAtClientPos',
     { ...gradientArgs, clientPos: client({ x: 20, y: 86 }), hitSize: 16 },
-    defined,
+    eq({ stopIndex: 0 }),
     setupGradient
   )
   add(
     'fill',
     'getNextGradientForHandleAtClientPosition',
     { ...gradientArgs, handleIndex: 0, clientPos: client({ x: 30, y: 70 }) },
-    (v) =>
-      assert(
-        JSON.stringify(v) !== JSON.stringify(gradient),
-        'Handle did not move'
-      ),
+    eq({
+      ...gradient,
+      gradientHandles: [
+        { x: 0.1, y: 0.5 },
+        { x: 1, y: 0.5 }
+      ]
+    }),
     setupGradient
   )
-  add('stroke', 'getPrimaryStrokeColor', { elementId: rect }, defined)
+  add(
+    'stroke',
+    'getPrimaryStrokeColor',
+    { elementId: rect },
+    eq('#aabbcc'),
+    () =>
+      strokeApis.updatePrimaryStrokeColors([
+        { elementId: rect, color: '#aabbcc' }
+      ])
+  )
 
   for (const space of ['Workspace', 'Client'] as const) {
     const key = space === 'Workspace' ? 'workspacePos' : 'clientPos'
@@ -561,13 +587,21 @@ export const createBasicApiCases = async () => {
     'element',
     'getVectorAnchorEndpoint',
     { elementId: vector, pointId: 'case-a' },
-    defined
+    (value) => {
+      equal(value.pointId, 'case-a')
+      equal(value.side, 'start')
+      equal(topology.networks[value.networkId].pointIds, ['case-a', 'case-b'])
+    }
   )
   add(
     'element',
     'getVectorAnchorContinuation',
     { elementId: vector, pointId: 'case-a' },
-    defined
+    (value) => {
+      equal(value.pointId, 'case-a')
+      equal(value.side, 'start')
+      equal(topology.networks[value.networkId].pointIds, ['case-a', 'case-b'])
+    }
   )
   add(
     'element',
@@ -1131,6 +1165,12 @@ export const createBasicApiCases = async () => {
     }
   )
 
+  add('core', 'allocateIds', { types: ['el', 'el'] }, (ids) => {
+    equal(ids.length, 2)
+    equal(new Set(ids).size, 2)
+    for (const id of ids) equal(core.getElementMetadata(id), undefined)
+  })
+
   equal(Object.keys(cases).sort(), basicApiContracts.map((c) => c.name).sort())
   const queries = createRetainedDesignContext(core, observeDesignChanges)
   const actions = new Map(
@@ -1237,6 +1277,8 @@ export const createBasicApiCases = async () => {
         selectionApis.selectElements(selectionBefore, { undoable: false })
       }
       const signal = new AbortController().signal
+      const originalInput = JSON.stringify(scenario.input)
+      const beforeExecution = JSON.stringify(await core.save())
       const result = (await createAiTransactionRunner().run(
         name,
         (runMutation) =>
@@ -1250,6 +1292,19 @@ export const createBasicApiCases = async () => {
         `Unusable receipt: ${JSON.stringify(result)}`
       )
       scenario.check(result.value)
+      equal(JSON.stringify(scenario.input), originalInput)
+      if (
+        basicApiContracts.find((contract) => contract.name === name)?.effect ===
+        'read'
+      ) {
+        equal(JSON.stringify(await core.save()), beforeExecution)
+        const repeated = (await observed.execute(scenario.input, {
+          signal
+        })) as Value
+        equal(repeated.value, result.value)
+        equal(repeated.status, result.status)
+        equal(JSON.stringify(await core.save()), beforeExecution)
+      }
       const aborted = new AbortController()
       aborted.abort()
       let rejected = false

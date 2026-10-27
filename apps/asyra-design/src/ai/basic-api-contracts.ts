@@ -3,7 +3,7 @@ import { toolDocumentReference, toolRequestReference } from './tool-contract'
  * Names identify existing public methods; no geometry implementation lives here.
  */
 export type BasicApiEffect =
-  'read' | 'write' | 'delete' | 'selection' | 'viewport'
+  'read' | 'prepare' | 'write' | 'delete' | 'selection' | 'viewport'
 export type BasicApiOwner =
   | 'core'
   | 'element'
@@ -13,6 +13,7 @@ export type BasicApiOwner =
   | 'fill'
   | 'stroke'
 export type BasicApiResultKind =
+  | 'allocated-ids'
   | 'value'
   | 'mutation-receipt'
   | 'transient'
@@ -25,6 +26,8 @@ export type BasicApiResultKind =
   | 'grouped'
   | 'ungrouped'
 const resultDescriptions: Record<BasicApiResultKind, string> = {
+  'allocated-ids':
+    'Ordered reserved IDs, one per requested counter type. No objects or document history are created. Keep issued IDs for references; retrying allocation issues new IDs, not the previous result.',
   transient:
     'Selection or viewport execution only. value preserves the owner result; this is not a document change.',
   value:

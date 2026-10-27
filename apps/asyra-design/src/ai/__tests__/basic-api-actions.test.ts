@@ -10,11 +10,12 @@ import {
 it('delegates every contract in parameter order without copying inputs or injecting history flags', async () => {
   for (const contract of basicApiContracts) {
     let inMutation = false
-    const mutating =
-      contract.effect !== 'read' && contract.effect !== 'viewport'
+    const mutating = !['read', 'viewport', 'prepare'].includes(contract.effect)
     const method = vi.fn(function (this: object, ...args: unknown[]) {
       expect(inMutation).toBe(mutating)
-      return { receiver: this, args }
+      return contract.result.kind === 'allocated-ids'
+        ? ['el-reserved']
+        : { receiver: this, args }
     })
     const owner = { [contract.method]: method }
     const owners = {
@@ -32,10 +33,11 @@ it('delegates every contract in parameter order without copying inputs or inject
     )
     if (!action) throw new Error('Missing action')
     const args = Object.fromEntries(
-      contract.parameters.map((p) => [
-        p,
-        p === 'elementIds' ? ['first', 'second'] : { input: p }
-      ])
+      contract.parameters.map((p) => {
+        if (p === 'types') return [p, ['el']]
+        if (p === 'elementIds') return [p, ['first', 'second']]
+        return [p, { input: p }]
+      })
     )
     await action.execute(args, {
       signal: new AbortController().signal,

@@ -1266,3 +1266,216 @@ it('keeps direct child reads complete and non-retaining sessions explicit', asyn
   ).toBe(true)
   state.access.dispose()
 })
+
+describe('selected retained Knowledge redisplay', () => {
+  it('selects two of seven topics with shared restrictions and no repeated content reads', async () => {
+    const f = fixture()
+    for (const id of ['a.1', 'a.2', 'a.3', 'b', 'b.1', 'c.3', 'd.5'])
+      f.access.register(
+        metadata(id, {
+          ...(id === 'a.3' || id === 'c.3' ? { references: ['b'] } : {}),
+          ...(id === 'b' ? { children: ['b.1'] } : {})
+        }),
+        admin
+      )
+    const session = f.access.openSession(reader, 'selected', {
+      retainResults: true
+    })
+    const original = await session.retrieve(
+      { ids: ['a.1', 'a.2', 'a.3', 'b', 'b.1', 'c.3', 'd.5'] },
+      signal()
+    )
+    const count = f.reads()
+    const query = { ids: ['a.3', 'c.3'], fromResult: original.contextKey }
+    const selected = await session.retrieve(query, signal())
+    expect(f.reads()).toBe(count)
+    expect(selected.documents.map((doc) => doc.target)).toEqual([
+      'b',
+      'a.3',
+      'c.3'
+    ])
+    expect(selected.documents).toEqual(
+      original.documents.filter((doc) =>
+        ['b', 'a.3', 'c.3'].includes(doc.target)
+      )
+    )
+    expect(
+      selected.documents.every((doc) => typeof doc.text === 'string')
+    ).toBe(true)
+    expect(selected.contextKey).not.toBe(original.contextKey)
+    expect(JSON.stringify(selected).length).toBeLessThan(
+      JSON.stringify(original).length
+    )
+    expect(await session.retrieve(query, signal())).toBe(selected)
+    expect(f.reads()).toBe(count)
+    const later = await session.retrieve(
+      { ids: ['d.5'], reuseFrom: [selected.contextKey] },
+      signal()
+    )
+    expect(later.documents[0].text).toBe('d.5@1')
+  })
+
+  it('preserves resolved overrides and inherited contexts instead of silently recomposing', async () => {
+    const f = fixture()
+    f.access.register(metadata('a', { contexts: ['design'] }), admin)
+    f.access.register(
+      metadata('b', {
+        contexts: ['design'],
+        overrides: [{ target: 'a', priority: 1 }]
+      }),
+      admin
+    )
+    f.access.register(metadata('other'), admin)
+    const session = f.access.openSession(reader, 'overrides', {
+      retainResults: true
+    })
+    const original = await session.retrieve(
+      { ids: ['b', 'other'], contexts: ['design'] },
+      signal()
+    )
+    const count = f.reads()
+    const selected = await session.retrieve(
+      { ids: ['a'], fromResult: original.contextKey },
+      signal()
+    )
+    expect(f.reads()).toBe(count)
+    expect(selected.documents[0]).toEqual(original.documents[0])
+    expect(selected.documents[0].text).toBe('b replaces a')
+    expect(selected.documents.map((d) => d.target)).not.toContain('other')
+    await expect(
+      session.retrieve(
+        { ids: ['a'], fromResult: original.contextKey, contexts: [] },
+        signal()
+      )
+    ).rejects.toThrow('KNOWLEDGE_INVALID_QUERY')
+    for (const extra of [
+      { rehydrate: true },
+      { reuseFrom: [original.contextKey] }
+    ])
+      await expect(
+        session.retrieve(
+          { ids: ['a'], fromResult: original.contextKey, ...extra },
+          signal()
+        )
+      ).rejects.toThrow('KNOWLEDGE_INVALID_QUERY')
+    expect(
+      (await session.retrieve({ ids: ['a'], contexts: ['design'] }, signal()))
+        .documents[0].text
+    ).toBe('a@1')
+  })
+
+  it('rejects missing, foreign, revoked and invalidated selections without content reads', async () => {
+    const f = fixture()
+    f.access.register(metadata('a'), admin)
+    f.access.register(metadata('unread'), admin)
+    const session = f.access.openSession(reader, 'one', { retainResults: true })
+    const original = await session.retrieve({ ids: ['a'] }, signal())
+    const query = { ids: ['a'], fromResult: original.contextKey }
+    const count = f.reads()
+    const other = f.access.openSession(reader, 'two', { retainResults: true })
+    await expect(other.retrieve(query, signal())).rejects.toThrow(
+      'KNOWLEDGE_REUSE_UNAVAILABLE'
+    )
+    await expect(
+      session.retrieve({ ...query, ids: ['unread'] }, signal())
+    ).rejects.toThrow('KNOWLEDGE_REUSE_UNAVAILABLE')
+    const abort = new AbortController()
+    abort.abort()
+    await expect(session.retrieve(query, abort.signal)).rejects.toThrow()
+    f.revoke()
+    await expect(session.retrieve(query, signal())).rejects.toThrow(
+      'KNOWLEDGE_UNAUTHORIZED'
+    )
+    expect(f.reads()).toBe(count)
+    session.invalidateContext()
+    await expect(session.retrieve(query, signal())).rejects.toThrow()
+    session.dispose()
+    await expect(session.retrieve(query, signal())).rejects.toThrow(
+      'KNOWLEDGE_DISPOSED'
+    )
+  })
+
+  it('expires selections on revision changes and bounded-map eviction with ordinary read recovery', async () => {
+    const f = fixture()
+    for (let i = 0; i < 66; i++) f.access.register(metadata('topic' + i), admin)
+    const session = f.access.openSession(reader, 'bounded', {
+      retainResults: true
+    })
+    const first = await session.retrieve({ ids: ['topic0'] }, signal())
+    for (let i = 1; i < 66; i++)
+      await session.retrieve({ ids: ['topic' + i] }, signal())
+    await expect(
+      session.retrieve(
+        { ids: ['topic0'], fromResult: first.contextKey },
+        signal()
+      )
+    ).rejects.toThrow('KNOWLEDGE_REUSE_UNAVAILABLE')
+    const current = await session.retrieve({ ids: ['topic0'] }, signal())
+    f.access.update(metadata('topic0', { revision: 2 }), 1, admin)
+    await expect(
+      session.retrieve(
+        { ids: ['topic0'], fromResult: current.contextKey },
+        signal()
+      )
+    ).rejects.toThrow('KNOWLEDGE_REUSE_UNAVAILABLE')
+    expect(
+      (await session.retrieve({ ids: ['topic0'] }, signal())).documents[0].text
+    ).toBe('topic0@2')
+  })
+})
+
+it('redisplays full retained text even when the prior wire response omitted held dependencies', async () => {
+  const f = fixture()
+  f.access.register(metadata('base'), admin)
+  f.access.register(metadata('child', { references: ['base'] }), admin)
+  const session = f.access.openSession(reader, 'omitted-body', {
+    retainResults: true
+  })
+  const base = await session.retrieve({ ids: ['base'] }, signal())
+  const previous = await session.retrieve(
+    { ids: ['child'], reuseFrom: [base.contextKey] },
+    signal()
+  )
+  expect(previous.documents[0].text).toBeUndefined()
+  const reads = f.reads()
+  const selected = await session.retrieve(
+    { ids: ['child'], fromResult: previous.contextKey },
+    signal()
+  )
+  expect(selected.documents.map((d) => d.text)).toEqual(['base@1', 'child@1'])
+  expect(f.reads()).toBe(reads)
+})
+
+it('keeps an effective override source without importing its unrelated overridden targets', async () => {
+  const f = fixture()
+  f.access.register(metadata('a.1'), admin)
+  f.access.register(metadata('a.3'), admin)
+  f.access.register(metadata('limit'), admin)
+  f.access.register(
+    metadata('b', {
+      references: ['limit'],
+      overrides: [
+        { target: 'a.1', priority: 1 },
+        { target: 'a.3', priority: 1 }
+      ]
+    }),
+    admin
+  )
+  const session = f.access.openSession(reader, 'override-scope', {
+    retainResults: true
+  })
+  const previous = await session.retrieve({ ids: ['b'] }, signal())
+  const reads = f.reads()
+  const selected = await session.retrieve(
+    { ids: ['a.3'], fromResult: previous.contextKey },
+    signal()
+  )
+  expect(selected.documents.map((d) => d.target)).toEqual(['a.3', 'limit', 'b'])
+  expect(selected.documents[0].text).toBe('b replaces a.3')
+  expect(f.reads()).toBe(reads)
+  const explicit = await session.retrieve(
+    { ids: ['a.3', 'b'], fromResult: previous.contextKey },
+    signal()
+  )
+  expect(explicit.documents).toEqual(previous.documents)
+})

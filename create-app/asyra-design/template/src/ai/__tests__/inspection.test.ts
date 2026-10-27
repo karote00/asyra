@@ -1,12 +1,24 @@
 const core = vi.hoisted(() => ({
   getElementData: vi.fn(),
+  getCurrentWorkspaceId: vi.fn(() => 'sheet-a'),
+  getElementMetadata: vi.fn(),
   getElementComputedData: vi.fn(),
   captureElementSnapshot: vi.fn()
 }))
 vi.mock('../../contexts', () => ({ default: core }))
 import { inspectionApis } from '../../common-apis/inspection'
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { createAiInspectionAction } from '../inspection'
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  core.getElementMetadata.mockImplementation((id: string) => ({
+    id,
+    type: 'group',
+    parentId: undefined,
+    childCount: 0
+  }))
+})
 
 it('returns fresh rendered evidence for every inspection without caching or writing', async () => {
   const inspect = vi
@@ -54,12 +66,12 @@ it('does not capture after cancellation and preserves explicit unavailable resul
   ).toMatchObject({ available: false })
 })
 
-it('bounds metadata reads and captures once per invocation without reusing old images', () => {
-  core.getElementData.mockImplementation((id: string) =>
+it('captures fresh images without querying unrelated subtree metadata', () => {
+  core.getElementMetadata.mockImplementation((id: string) =>
     id === 'group'
       ? {
           type: 'group',
-          children: Array.from({ length: 300 }, (_, i) => `shape-${i}`)
+          childCount: 300
         }
       : { type: 'oval', name: id }
   )
@@ -76,12 +88,11 @@ it('bounds metadata reads and captures once per invocation without reusing old i
   const first = inspectionApis.inspect('group')
   expect(first).toMatchObject({
     available: true,
-    elementsTruncated: true,
     imageScope: 'overview',
     image: { dataUrl: 'first' }
   })
-  expect(first.elements).toHaveLength(200)
-  expect(core.getElementComputedData).toHaveBeenCalledTimes(200)
+  expect(first).not.toHaveProperty('elements')
+  expect(core.getElementComputedData).not.toHaveBeenCalled()
   expect(core.captureElementSnapshot).toHaveBeenCalledOnce()
   expect(core.captureElementSnapshot).toHaveBeenCalledWith('group', 1024, {
     nativeResolution: false
@@ -90,6 +101,9 @@ it('bounds metadata reads and captures once per invocation without reusing old i
     image: { dataUrl: 'second' }
   })
   expect(core.captureElementSnapshot).toHaveBeenCalledTimes(2)
+  expect(core.getElementData).not.toHaveBeenCalled()
+  expect(core.getElementMetadata).toHaveBeenCalledTimes(2)
+  expect(core.getElementComputedData).not.toHaveBeenCalled()
   core.captureElementSnapshot.mockImplementation(() => {
     throw new Error('Unsupported renderer')
   })
@@ -116,7 +130,7 @@ it('forwards an explicit native region without describing it as the whole drawin
 })
 
 it('keeps overview and native detail capture separate without mutating source geometry', async () => {
-  core.getElementData.mockReturnValue({ type: 'group', children: [] })
+  core.getElementMetadata.mockReturnValue({ type: 'group', childCount: 0 })
   core.getElementComputedData.mockReturnValue({
     x: 0,
     y: 0,
@@ -131,7 +145,6 @@ it('keeps overview and native detail capture separate without mutating source ge
   })
   expect(inspectionApis.inspect('drawing')).toMatchObject({
     imageScope: 'overview',
-    elementsTruncated: false,
     partial: false
   })
   expect(core.captureElementSnapshot).toHaveBeenLastCalledWith(
@@ -170,12 +183,77 @@ it('binds action output to canonical evidence and validates it without another s
   }
   expect(
     await validate.execute({ evidence: result.evidence }, context)
-  ).toEqual({ current: true })
+  ).toEqual({
+    current: true,
+    validatedAt: { sessionId: result.evidence.sessionId, revision: 0 }
+  })
   changed()
   expect(
     await validate.execute({ evidence: result.evidence }, context)
-  ).toEqual({ current: false })
+  ).toEqual({
+    current: false,
+    validatedAt: { sessionId: result.evidence.sessionId, revision: 1 }
+  })
   expect(inspect).toHaveBeenCalledOnce()
   evidence.dispose()
   expect(stop).toHaveBeenCalledOnce()
+})
+
+it('settles workspace overview and explicit unavailable captures at the actual read owner', () => {
+  core.getElementMetadata.mockImplementation((id: string) =>
+    id === 'missing'
+      ? undefined
+      : {
+          id,
+          type: 'workspace',
+          parentId: undefined,
+          childCount: id === 'empty' ? 0 : 1
+        }
+  )
+  core.captureElementSnapshot
+    .mockReset()
+    .mockReturnValue({ dataUrl: 'data:image/png;base64,AA==' })
+  expect(inspectionApis.inspect('sheet-a')).toMatchObject({
+    available: true,
+    settlement: 'completed',
+    imageScope: 'overview'
+  })
+  expect(inspectionApis.inspect('sheet-a', undefined, 'detail')).toMatchObject({
+    available: false,
+    code: 'WORKSPACE_OVERVIEW_ONLY',
+    settlement: 'completed'
+  })
+  expect(
+    inspectionApis.inspect('sheet-a', { x: 0, y: 0, width: 10, height: 10 })
+  ).toMatchObject({
+    available: false,
+    code: 'WORKSPACE_OVERVIEW_ONLY',
+    settlement: 'completed'
+  })
+  expect(inspectionApis.inspect('missing')).toMatchObject({
+    available: false,
+    code: 'INSPECTION_TARGET_UNAVAILABLE',
+    settlement: 'completed'
+  })
+  expect(inspectionApis.inspect('foreign')).toMatchObject({
+    available: false,
+    code: 'INSPECTION_TARGET_UNAVAILABLE',
+    settlement: 'completed'
+  })
+  core.getCurrentWorkspaceId.mockReturnValue('empty')
+  expect(inspectionApis.inspect('empty')).toMatchObject({
+    available: false,
+    code: 'WORKSPACE_EMPTY',
+    settlement: 'completed'
+  })
+  expect(core.captureElementSnapshot).toHaveBeenCalledOnce()
+  core.getCurrentWorkspaceId.mockReturnValue('sheet-a')
+  core.captureElementSnapshot.mockImplementation(() => {
+    throw new Error('renderer failed')
+  })
+  expect(inspectionApis.inspect('sheet-a')).toMatchObject({
+    available: false,
+    code: 'CAPTURE_UNAVAILABLE',
+    settlement: 'completed'
+  })
 })

@@ -1,5 +1,11 @@
 # Manual Domain Knowledge evaluation
 
+Ordinary 101 and quality prompts offer Knowledge as optional reference material.
+The agent may consult relevant topics when useful, at any stage, or make no
+Knowledge calls. Suggested modules and contexts are hints, not a required reading
+sequence. Preserve the actual prompt with each run; older forced-reading records
+remain unchanged and are a different prompt condition, not a matched comparison.
+
 > Current scope: offline Knowledge-to-capability corrections using saved 101 I/O. The commands and general cases below describe
 > historical experiments and are not instructions to run them again. Model execution requires separate explicit authorization; ordinary tests never
 > authorize a run. Read the current checkpoint in
@@ -269,39 +275,20 @@ a passing gate does not mean the reply reached a real model intact. The watchdog
 intentional cleanup stop receipt is retained unchanged and checked for stop errors.
 
 
-The same native gate also scripts separate Code Mode exec calls using store/load.
-Permanent saved schema/advice replies become explicit protocol fragments; this
-fixture derivation does not replace canonical owner pagination tests. Each script,
-submitted reply, native completion and actual successor request uses the existing
-sink. Re-read all retained slices after a deliberately oversized print and compare
-actual outgoing text, byte count, SHA-256 and parsed content with the saved source.
-Missing pages and mixed revisions must reject assembly and leave no complete value.
-The small output and existing direct/code controls remain required.
-
-Reports distinguish exact native tool receipt, scripted retention/assembly, compact
-output, oversized print transformation and actual outgoing request. Public item
-notifications are retained separately; absence of exec output cannot be filled from
-an unrelated dynamic-tool completion. Native storage internals and the historical
-AI's script remain unavailable. The scripted endpoint proves no real-model behavior
-or cause of a historical delivery-failure. Production refresh and Knowledge stay
-unchanged.
-
-
-The information-delivery integration suite extracts the executable example from
-actual discovery descriptions and runs that exact source through native Code Mode.
-Provider transport tests require the same example in developerInstructions. Native
-successor requests must preserve each canonical page, including UTF-8 and escaped
-schema constraints. Full/combined printing remains a negative control. Dispatcher
-integration proves that replaying retained information and refreshing after context
-loss do not replay completed mutations. These deterministic gates do not establish
-that a real model follows the example or explain historical missing execution data.
-
+The native gate uses the production adapter's direct model configuration. It scripts
+canonical search and JSON tool calls against fixed loopback responses, preserves
+submitted replies and the real successor requests, and verifies complete canonical
+pages and native image bytes/order. Oversized saved text remains a truncation
+negative control; bounded delivery must preserve every required constraint without
+increasing output limits. Existing retained-result/refresh integration exercises
+read-only recovery without repeating mutations. These tests establish transport
+behavior, not real-model adoption or historical intent.
 
 Unfinished native output visibility is characterized by
 `server/__tests__/native-output-observation.integration.test.ts`, using the same
 native-delivery harness and installed 0.160.0 engine. The local scripted endpoint
 emits 64,000 argument bytes in multiple deltas or withholds them before completing
-the same custom call. A separate disconnect leaves the call unfinished. These are
+the same function call. A separate disconnect leaves the call unfinished. These are
 not real inference or 101 runs. `unfinished-output-probe` records fixture-side bytes
 and public item metadata before completion; those bytes must never be described
 as production-observed generation. The original successor and completion checks

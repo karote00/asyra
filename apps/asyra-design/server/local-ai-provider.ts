@@ -1,3 +1,4 @@
+import { createNativeProviderConfig } from './native-provider-config'
 import { selectPublicActivity } from './local-provider-activity'
 import { workflowQueryGuidance } from './design-workflow-discovery'
 import {
@@ -868,14 +869,33 @@ const runLocalAiProvider = async (
   const toolTasks = new Map<Promise<void>, string>()
   const toolCalls = new Set<string>()
 
+  let nativeConfig:
+    Awaited<ReturnType<typeof createNativeProviderConfig>> | undefined
   let child: ChildProcessWithoutNullStreams
   try {
+    const finishConfiguration = usage?.span({
+      callId: 'native-configuration',
+      owner: 'provider',
+      purpose: 'Prepare direct native tool configuration'
+    })
+    try {
+      nativeConfig = await createNativeProviderConfig({
+        executable: options.executable,
+        model: options.model,
+        directory: options.recordDirectory ?? 'tmp/ai-executions',
+        signal: options.signal
+      })
+    } finally {
+      finishConfiguration?.()
+    }
+    options.signal?.throwIfAborted()
     child = spawn(
       options.executable,
       [
         'app-server',
         '--listen',
         'stdio://',
+        ...nativeConfig.arguments,
         ...Object.entries(localProviderIsolationConfig).flatMap(
           ([key, value]) => ['-c', `${key}=${JSON.stringify(value)}`]
         )
@@ -887,8 +907,27 @@ const runLocalAiProvider = async (
       }
     )
   } catch {
-    await host?.dispose()
-    await storage.close()
+    const cleanups = [
+      ['native-configuration', () => nativeConfig?.dispose()],
+      ['knowledge', () => knowledge.dispose()],
+      ['tool-host', () => host?.dispose()],
+      ['tool-store', () => storage.close()]
+    ] as const
+    const settled = await Promise.allSettled(
+      cleanups.map(([, cleanup]) => Promise.resolve().then(cleanup))
+    )
+    settled.forEach((result, index) => {
+      if (result.status === 'rejected')
+        usage?.trace('host_observation', {
+          callId: 'provider-cleanup',
+          phase: 'cleanup',
+          executor: cleanups[index][0],
+          status: 'failed',
+          code: 'TOOL_CLEANUP_FAILED',
+          error: localToolErrorMessage(result.reason)
+        })
+    })
+    if (options.signal?.aborted) throw failure('AI_MODEL_BACKEND_ABORTED')
     throw failure('AI_MODEL_BACKEND_INVALID_CONFIGURATION')
   }
   const writeProtocol = (
@@ -1512,12 +1551,6 @@ const runLocalAiProvider = async (
           ...(params.item.type === 'mcpToolCall' &&
           typeof params.item.tool === 'string'
             ? { tool: params.item.tool }
-            : {}),
-          ...(params.item.type === 'functionCallOutput' &&
-          (params.item.namespace == null ||
-            params.item.namespace === 'functions') &&
-          ['exec', 'wait'].includes(String(params.item.name))
-            ? { tool: params.item.name }
             : {})
         }
       )
@@ -1614,22 +1647,6 @@ const runLocalAiProvider = async (
         usage?.trace('orchestration_completed', {
           tool: String(item.tool),
           callId: item.id
-        })
-      } else if (
-        item.type === 'functionCallOutput' &&
-        (item.namespace === 'functions' || item.namespace == null) &&
-        ['exec', 'wait'].includes(String(item.name))
-      ) {
-        // Native orchestration output is not an App receipt or final batch.
-        usage?.trace('orchestration_completed', {
-          tool: String(item.name),
-          callId: String(item.id),
-          nativeOutput: {
-            stage: 'native-orchestration-result',
-            status: 'unavailable',
-            reason: 'child-call-correlation-not-exposed',
-            modelVisibility: 'unavailable'
-          }
         })
       } else if (
         !['agentMessage', 'userMessage', 'reasoning', 'plan'].includes(
@@ -1865,11 +1882,10 @@ const runLocalAiProvider = async (
             (operations
               ? ' input.actions lists final-response actions, not the complete capability catalog. Drawing operations are supplied separately as callable tools; their absence from input.actions does not mean drawing is unavailable. Use backend operation tools to apply changes, inspect actual receipts, and continue with registered operations. Do not repeat an executed operation in the final batch. End with report_outcome: {outcome:"completed"|"unsupported",message:string}.'
               : ' Return the prepared action batch without invoking backend operation tools. Use report_outcome only for an unsupported request.') +
-            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Decision-required contract fields use the bounded information example, preserving their complete selected restrictions. Keep other large query values and intermediate geometry inside Code Mode for invocation and data binding; return only findings or counts needed for the next decision. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Native wrappers and recipe registeredName/revision are different fields; use the returned exact route. ${localToolResultInstructions}`,
+            ` ${libraryUnavailable ? 'Saved tools could not be loaded. Native tools remain available; saving returns explicit status, and save-only retry must not repeat document edits.' : ''} Discover tools by operation purpose using describe_design_apis query; use exact names for known capabilities. Categories and their continuations remain available when an intentional complete inventory is useful. Native discovery provides callable declarations. Read bounded tool results directly, preserving complete selected restrictions and following returned continuations when needed. Reuse App-owned artifacts, target references and recipes for intermediate geometry and data binding. Runtime owns admitted finite iteration; do not coordinate each deterministic check/repair through a new model turn. Use compact mutation receipts and prepared artifact target references when individual acknowledgements are unnecessary. Known current contracts need no lookup. Native wrappers and recipe registeredName/revision are different fields; use the returned exact route. ${localToolResultInstructions}`,
         config: {
           model_reasoning_effort: 'medium',
           ...localProviderIsolationConfig,
-          'features.code_mode': !options.assessmentOnly,
           web_search: options.assessmentOnly ? 'disabled' : 'live',
           mcp_servers: disabledServers
         }
@@ -2179,6 +2195,7 @@ const runLocalAiProvider = async (
     })
     try {
       for (const [component, cleanup] of [
+        ['native-configuration', () => nativeConfig?.dispose()],
         ['knowledge', () => knowledge.dispose()],
         ['tool-host', () => host?.dispose()],
         ['tool-store', () => storage.close()]

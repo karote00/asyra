@@ -1,5 +1,39 @@
 # @asyra/core
 
+## Pending Identity allocation facade
+
+```update-note
+{
+  "change": "identity-allocation-facade",
+  "owner": "Core identity allocation",
+  "summary": "Delegate batch identity reservation to the existing namespace-aware ID counter without document writes or history.",
+  "sources": [
+    "packages/core/src/core.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "New allocateIds facade is documented with ordering, failure and persistence boundaries."
+}
+```
+
+## Pending computed field selection contract
+
+```update-note
+{
+  "change": "computed-field-selection-contract",
+  "owner": "Core computed reads",
+  "summary": "Expose unchanged computed field selection limits through the pure contracts entry for schema consumers.",
+  "sources": [
+    "packages/core/src/types/scene-tree.ts",
+    "packages/core/src/apis/scene-tree.ts",
+    "packages/core/src/contracts/index.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "The existing 64-field and 128-character limits, snapshot isolation and validation remain unchanged. No persisted format or migration changes."
+}
+```
+
 ## Pending ordinary creation input normalization
 
 ```update-note

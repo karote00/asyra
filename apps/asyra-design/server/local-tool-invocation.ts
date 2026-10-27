@@ -14,7 +14,9 @@ import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { BrowserBatchExecutionError } from './batch-exchange'
 import {
   operationContractIssue,
-  operationInputIssue
+  operationInputIssues,
+  formatOperationInputIssues,
+  type OperationInputIssue
 } from './operation-input-schema'
 import { designActionOutcome } from '../src/ai/tool-contract'
 
@@ -61,7 +63,11 @@ export interface LocalToolOwner {
       >
     | undefined
   /** Bounded diagnostics only; called after rejection, never executes a tool. */
-  rejectInput?(name: string, args: unknown): Record<string, unknown> | undefined
+  rejectInput?(
+    name: string,
+    args: unknown,
+    issues?: readonly OperationInputIssue[]
+  ): Record<string, unknown> | undefined
   /** Validate successful domain output, including required retained identities. */
   resultIssue?(name: string, value: unknown): string | undefined
   resultOutcome?(
@@ -294,14 +300,14 @@ export const invokeLocalTool = async (
   try {
     reportPhase()
     const contract = createAiToolContract(definition)
-    const issue = operationInputIssue(args, contract.inputSchema)
-    if (issue) {
+    const issues = operationInputIssues(args, contract.inputSchema)
+    if (issues) {
       const explanation = owner.explainInputIssue?.(definition.name, args)
       return localToolFailureReply(
-        explanation?.message ?? issue,
+        explanation?.message ?? formatOperationInputIssues(issues),
         explanation?.code ?? 'PREPARATION_REJECTED',
         {
-          ...owner.rejectInput?.(definition.name, args),
+          ...owner.rejectInput?.(definition.name, args, issues),
           stage,
           settlement: 'not-started'
         }

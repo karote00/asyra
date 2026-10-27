@@ -289,8 +289,11 @@ export const createDesignReviewer = (
             continue
           }
           const visible = inherited && data.visible !== false
-          work.computedReads++
-          const computed = apis.computed(id, fields)
+          // Workspace owns membership, not a geometric rectangle. Real descendant
+          // geometry and Frame containment remain checked by their normal owners.
+          const workspace = data.type === EntityTypes.WORKSPACE
+          if (!workspace) work.computedReads++
+          const computed = workspace ? undefined : apis.computed(id, fields)
           const valid =
             computed &&
             ['x', 'y', 'width', 'height'].every(
@@ -332,7 +335,7 @@ export const createDesignReviewer = (
             complete: true,
             findings: []
           }
-          if (visible && !bounds) {
+          if (visible && !workspace && !bounds) {
             node.complete = false
             node.findings.push({ kind: 'geometry-unavailable', elementId: id })
           }
@@ -857,7 +860,7 @@ export const createDesignReviewer = (
           parentId: node.parentId,
           parentWidth: node.parentWidth,
           parentHeight: node.parentHeight,
-          geometry: node.visible,
+          geometry: node.visible && node.type !== EntityTypes.WORKSPACE,
           containment: node.visible && node.parentWidth !== undefined,
           text: !!node.text
         }))

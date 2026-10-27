@@ -107,6 +107,17 @@ const containerKeys = [
   'columns',
   'align'
 ]
+/** Canonical native-node fields shared by admission and public schema projection. */
+export const designNodeInputFields = (type: unknown): readonly string[] => [
+  ...(type === 'oval' ? ['rotation'] : []),
+  ...commonKeys.filter((key) =>
+    type === 'group' ? !['width', 'height', 'fill'].includes(key) : true
+  ),
+  ...(type === 'frame' ? containerKeys : []),
+  ...(type === 'group' ? ['children'] : []),
+  ...(type === 'text' ? textKeys : []),
+  ...(type === 'vector' ? ['rings'] : [])
+]
 const freeze = <T>(value: T): T => {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.values(value).forEach(freeze)
@@ -144,16 +155,7 @@ const admitDraft = (input: unknown): DraftNode => {
       (root && !isDesignContainerType(type))
     )
       return fail('unsupported component')
-    const allowed = [
-      ...(type === 'oval' ? ['rotation'] : []),
-      ...commonKeys.filter((key) =>
-        type === 'group' ? !['width', 'height', 'fill'].includes(key) : true
-      ),
-      ...(type === 'frame' ? containerKeys : []),
-      ...(type === 'group' ? ['children'] : []),
-      ...(type === 'text' ? textKeys : []),
-      ...(type === 'vector' ? ['rings'] : [])
-    ]
+    const allowed = designNodeInputFields(type)
     if (Object.keys(source).some((key) => !allowed.includes(key)))
       return fail('unknown field')
     const key = source.key
@@ -1046,7 +1048,10 @@ export const createDesignPreparationSession = (
       }
       return handle
     },
-    repairDraft(input: unknown) {
+    repairDraft(
+      input: unknown,
+      admitMissing?: (candidate: unknown) => boolean
+    ) {
       if (
         input &&
         typeof input === 'object' &&
@@ -1054,7 +1059,7 @@ export const createDesignPreparationSession = (
         typeof input.draftId === 'string'
       )
         ownership?.assertOwned(input.draftId)
-      return rejectedDrafts.repair(input)
+      return rejectedDrafts.repair(input, admitMissing)
     },
     describeRejectedDraft: rejectedDrafts.describe,
     async prepareAsync(

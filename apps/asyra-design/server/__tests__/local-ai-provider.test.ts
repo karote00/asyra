@@ -1,5 +1,13 @@
+vi.mock('../native-provider-config', () => ({
+  createNativeProviderConfig: vi.fn(async () => ({
+    path: 'fixture-model.json',
+    arguments: ['-c', 'model_catalog_json="fixture-model.json"'],
+    dispose: vi.fn(async () => undefined)
+  }))
+}))
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
+import { workflowUsageParameters } from '../design-workflow-discovery'
 import { createAiAgentRuntime } from '@asyra/ai-agent-runtime'
 import { getFeature, unregisterFeature } from '@asyra/feature-system'
 import {
@@ -22,7 +30,6 @@ import inspectionDiscovery from './fixtures/recorded-101/inspection-discovery-20
 import recordedPurpose from './fixtures/recorded-101/purpose-20261017.json'
 import sharp from 'sharp'
 import { createHash } from 'node:crypto'
-import { runInNewContext } from 'node:vm'
 import { toolContractDigest } from '@asyra/ai-agent-runtime/node'
 const reviewCriteria = (names: readonly string[]) =>
   Object.fromEntries(
@@ -1295,7 +1302,6 @@ describe('local subscription AI backend', () => {
     expect(params?.dynamicTools).toEqual([])
     expect(params?.config).toMatchObject({
       web_search: 'disabled',
-      'features.code_mode': false,
       model_reasoning_effort: 'medium'
     })
     expect(params?.baseInstructions).not.toContain('Canvas changes')
@@ -1645,13 +1651,42 @@ describe('local subscription AI backend', () => {
         )
     }
     const instructions = thread?.developerInstructions as string
-    const { localToolResultExample, localToolResultRecoveryExample } =
-      await import('../local-operation-tools')
-    expect(instructions).toContain(localToolResultExample)
-    expect(instructions).toContain(localToolResultRecoveryExample)
-    expect(instructions).toContain('fresh resultKey')
-    expect(instructions).toContain('without calling the tool again')
+    expect(instructions).toContain(
+      'Call registered tools directly with their JSON arguments'
+    )
+    const delivered = JSON.stringify({
+      base: thread?.baseInstructions,
+      instructions,
+      definitions
+    })
+    for (const obsolete of [
+      'Code Mode',
+      'code-mode',
+      'functions.exec',
+      'store(',
+      'text(result)',
+      'load(deliveryKey)'
+    ])
+      expect(delivered).not.toContain(obsolete)
+    expect(thread?.config).toMatchObject({})
     const base = String(thread?.baseInstructions)
+    expect(base).toContain('First frame is optional')
+    expect(base).toContain('not a deadline or completion gate')
+    expect(base).toContain('research may come first')
+    expect(base).toContain('No forced previews or splitting for timing')
+    expect(base).toContain('Preserve validation, references and final review')
+    expect(base).toContain('not a deadline')
+    expect(base).not.toContain(
+      'submit ready geometry before later grid details'
+    )
+    expect(base).not.toContain('Draw each coherent ready part')
+    expect(base).not.toContain('Do not accumulate all stages in one draft')
+    expect(base).toContain(
+      'Draw when useful; research may come first, edits later'
+    )
+    expect(base).toContain('it is not a prerequisite for first visible content')
+    expect(base).toContain('Preserve validation, references and final review')
+    expect(base).not.toContain('before committing those decisions')
     process.stdout.write(
       JSON.stringify({
         measurement: 'composition-startup',
@@ -2260,7 +2295,6 @@ describe('local subscription AI backend', () => {
     expect(thread?.config).toMatchObject({
       'features.shell_tool': false,
       'features.unified_exec': false,
-      'features.code_mode': true,
       'features.multi_agent': false,
       'features.plugins': false,
       'features.apps': false,
@@ -4132,9 +4166,12 @@ it('bounds trace records and never lets a broken diagnostic sink stop the reques
   log.mockRestore()
 })
 
-it('admits native code-mode output as diagnostics only and rejects environment tool output', async () => {
+it('rejects unregistered interpreter and environment output', async () => {
   const server = fakeServer({ hold: true })
   const promise = requestConfiguredAiActionBatch(input, { environment })
+  const firstRejected = expect(promise).rejects.toMatchObject({
+    code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+  })
   await untilTurn(server.packets)
   server.notify('item/completed', {
     item: {
@@ -4145,8 +4182,7 @@ it('admits native code-mode output as diagnostics only and rejects environment t
       output: JSON.stringify({ batchId: 'injected', actions: [] })
     }
   })
-  server.finish()
-  await expect(promise).resolves.toEqual(batch)
+  await firstRejected
   const forbidden = fakeServer({ hold: true })
   const next = requestConfiguredAiActionBatch(input, { environment })
   const rejected = expect(next).rejects.toMatchObject({
@@ -4273,10 +4309,12 @@ it.each([
   await rejected
 })
 
-it('accepts an omitted default namespace on native code-mode output', async () => {
+it('rejects unregistered interpreter output with an omitted namespace', async () => {
   const server = fakeServer({ hold: true })
   const promise = requestConfiguredAiActionBatch(input, { environment })
-  const completed = expect(promise).resolves.toEqual(batch)
+  const completed = expect(promise).rejects.toMatchObject({
+    code: 'AI_MODEL_BACKEND_INVALID_RESPONSE'
+  })
   await untilTurn(server.packets)
   server.notify('item/completed', {
     item: {
@@ -4286,7 +4324,6 @@ it('accepts an omitted default namespace on native code-mode output', async () =
       output: 'image result'
     }
   })
-  server.finish()
   await completed
 })
 
@@ -4565,7 +4602,7 @@ it('records reported provider item intervals without retaining reasoning content
   }
 })
 
-it('records native orchestration lifecycle metadata without code or output', async () => {
+it('records native discovery lifecycle metadata without private output', async () => {
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const server = fakeServer({ hold: true })
   spawn.mockReturnValue(server.child)
@@ -4575,10 +4612,12 @@ it('records native orchestration lifecycle metadata without code or output', asy
     for (const method of ['item/started', 'item/completed'])
       server.notify(method, {
         item: {
-          id: 'exec-1',
-          type: 'functionCallOutput',
-          name: 'exec',
-          output: 'PRIVATE CODE OUTPUT'
+          id: 'discovery-1',
+          type: 'mcpToolCall',
+          server: 'codex',
+          status: 'completed',
+          tool: 'list_mcp_resources',
+          output: 'PRIVATE OUTPUT'
         }
       })
     server.finish()
@@ -4587,18 +4626,18 @@ it('records native orchestration lifecycle metadata without code or output', asy
     const events = records.filter(
       (entry) =>
         entry.stage?.startsWith('provider_item_') &&
-        entry.evidence?.kind === 'functionCallOutput'
+        entry.evidence?.kind === 'mcpToolCall'
     )
     expect(events).toHaveLength(2)
     expect(events[0]).toMatchObject({
-      tool: 'exec',
+      tool: 'list_mcp_resources',
       evidence: {
-        kind: 'functionCallOutput',
+        kind: 'mcpToolCall',
         nativeTurnId: 'turn-1',
-        nativeItemId: 'exec-1'
+        nativeItemId: 'discovery-1'
       }
     })
-    expect(JSON.stringify(records)).not.toContain('PRIVATE CODE OUTPUT')
+    expect(JSON.stringify(records)).not.toContain('PRIVATE OUTPUT')
   } finally {
     log.mockRestore()
   }
@@ -6590,13 +6629,18 @@ it('delivers canonical compact usage through the provider and consumes its actua
     const usage = (
       reply.apis as {
         invocationExample: { invocation: { tool: string; arguments: unknown } }
-        elementBindings: unknown[]
+        usageGuide: { operationParameters: Record<string, unknown> }
       }[]
     )[0]
-    expect(usage.elementBindings).toContainEqual({
-      schemaPath: '/properties/request/properties/anchorId',
-      mode: 'one'
-    })
+    expect(usage.usageGuide.operationParameters).toEqual(
+      workflowUsageParameters(action.inputSchema)
+    )
+    expect(JSON.stringify(usage.usageGuide.operationParameters)).toContain(
+      'anchorId'
+    )
+    expect(JSON.stringify(usage.usageGuide.operationParameters)).toContain(
+      '"x-design-element-binding":"one"'
+    )
     return {
       name: usage.invocationExample.invocation.tool,
       args: usage.invocationExample.invocation.arguments
@@ -6745,35 +6789,14 @@ it.each([
       nativeToolDefinitions(thread).find(
         (tool) => tool.name === 'describe_design_apis'
       )?.description ?? ''
-    const pattern =
-      /Information forwarding example[^\n]*\n```javascript\n([\s\S]*?)\n```/
     expect(String(thread?.developerInstructions)).toContain(
-      'Decision-required contract fields use the bounded information example'
+      'Read bounded tool results directly'
     )
-    const published = pattern.exec(description)?.[1]
-    expect(published).toBeTruthy()
-    if (!published) throw new Error('Missing advertised information example')
-    expect(pattern.exec(String(thread?.developerInstructions))?.[1]).toBe(
-      published
+    expect(description).toContain(
+      'Each page is delivered directly as a tool result'
     )
-    const values = new Map<string, unknown>()
-    const forward = vi.fn()
-    const original = JSON.stringify({
-      route: 'text-only-control',
-      toolOutcome: { status: 'success', settlement: 'completed' }
-    })
-    runInNewContext(published, {
-      result: original,
-      deliveryKey: 'provider-control',
-      text: forward,
-      load: (key: string) => values.get(key),
-      store: (key: string, value: unknown) => values.set(key, value)
-    })
-    expect(forward).toHaveBeenCalledExactlyOnceWith(original)
-    expect(values.get('provider-control')).toMatchObject({
-      complete: true,
-      value: JSON.parse(original)
-    })
+    expect(description).not.toContain('Information forwarding example')
+    expect(description).not.toContain('Code Mode')
 
     expect(
       nativeToolDefinitions(thread).find(
@@ -8084,4 +8107,16 @@ it('cancels attachment identity preparation before starting the native provider'
     )
   ).rejects.toMatchObject({ code: 'AI_MODEL_BACKEND_ABORTED' })
   expect(spawn).not.toHaveBeenCalled()
+})
+
+it('normal startup supplies request-owned direct model configuration without an evaluation launcher', async () => {
+  fakeServer()
+  await requestLocalAiActionBatch(input, {
+    model: 'selected-model',
+    executable: 'codex'
+  })
+  expect(spawn.mock.calls[0][0]).toBe('codex')
+  expect(spawn.mock.calls[0][1]).toEqual(
+    expect.arrayContaining([expect.stringContaining('model_catalog_json=')])
+  )
 })

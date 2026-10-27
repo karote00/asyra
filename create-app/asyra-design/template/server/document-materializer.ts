@@ -1,5 +1,12 @@
+import { createHash } from 'node:crypto'
+import { DocumentPersistenceError } from './document-persistence-error'
+import {
+  persistenceSpan,
+  persistenceDetail,
+  type DocumentPersistenceObservation
+} from './document-persistence-observation'
 import { Buffer } from 'node:buffer'
-import { decodeDocumentPublication } from '../src/collaboration/operations'
+import { readDocumentPublicationSlices } from '../src/collaboration/document-publication'
 import { decodePublicationFramePublication } from '../src/collaboration/protocol'
 import type { CanonicalChange } from '../src/collaboration/app-protocol-types'
 
@@ -33,6 +40,7 @@ export interface MaterializedDocumentRecord<Document> {
   readonly documentGeneration?: number
   readonly durableSequence: number
   readonly publicationSequences: Readonly<Record<string, number>>
+  readonly publicationDigests?: Readonly<Record<string, string>>
   readonly batches: Readonly<
     Record<
       string,
@@ -51,7 +59,8 @@ export interface DocumentMaterializationStore<Document> {
     execute: (
       current: MaterializedDocumentRecord<Document>,
       commit: (next: MaterializedDocumentRecord<Document>) => void
-    ) => Promise<Result>
+    ) => Promise<Result>,
+    observation?: DocumentPersistenceObservation
   ): Promise<Result>
 }
 
@@ -63,18 +72,23 @@ export interface DocumentMaterializationServiceOptions<Document> {
   ) => Awaitable<void>
   readonly applyCanonicalChanges: (
     document: Document,
-    changes: readonly CanonicalChange[]
+    changes: readonly CanonicalChange[],
+    observation?: DocumentPersistenceObservation
   ) => Awaitable<Document>
 }
 
 export interface DocumentMaterializationService {
-  materialize(input: unknown): Promise<Readonly<{ durableSequence: number }>>
+  materialize(
+    input: unknown,
+    observation?: DocumentPersistenceObservation
+  ): Promise<Readonly<{ durableSequence: number }>>
 }
 
 interface PreparedPublication {
   readonly sequence: number
   readonly publicationId: string
   readonly canonicalChanges: readonly CanonicalChange[]
+  readonly digest: string
 }
 
 const BASE64_PATTERN =
@@ -104,7 +118,10 @@ const parsePersistenceBatch = (input: unknown): DocumentPersistenceBatch => {
     !Array.isArray(input.entries) ||
     input.entries.length === 0
   ) {
-    throw new Error('[document-materializer] persistence batch is invalid')
+    throw new DocumentPersistenceError(
+      'invalid-request',
+      '[document-materializer] persistence batch is invalid'
+    )
   }
 
   const protocolVersion = input.protocolVersion
@@ -132,7 +149,8 @@ const parsePersistenceBatch = (input: unknown): DocumentPersistenceBatch => {
           Buffer.from(frame, 'base64').toString('base64') !== frame
       )
     ) {
-      throw new Error(
+      throw new DocumentPersistenceError(
+        'invalid-request',
         '[document-materializer] persistence batch entries must be contiguous and uniquely identified'
       )
     }
@@ -151,7 +169,8 @@ const parsePersistenceBatch = (input: unknown): DocumentPersistenceBatch => {
     firstSequence !== expectedDurableSequence + 1 ||
     lastSequence !== firstSequence + entries.length - 1
   ) {
-    throw new Error(
+    throw new DocumentPersistenceError(
+      'invalid-request',
       '[document-materializer] persistence batch sequence must be contiguous'
     )
   }
@@ -197,7 +216,8 @@ const assertExistingBatchIdentity = <Document>(
     existing.lastSequence !== batch.lastSequence ||
     !sameOrderedValues(existing.publicationIds, publicationIds)
   ) {
-    throw new Error(
+    throw new DocumentPersistenceError(
+      'durable-conflict',
       '[document-materializer] persistence batch identity conflicts with durable data'
     )
   }
@@ -216,15 +236,21 @@ const isFullyDurablePublicationRetry = <Document>(
     )
     if (durableSequence === undefined) continue
     knownCount += 1
-    if (durableSequence !== item.sequence) {
-      throw new Error(
+    if (
+      durableSequence !== item.sequence ||
+      getOwnValue(current.publicationDigests ?? {}, item.publicationId) !==
+        item.digest
+    ) {
+      throw new DocumentPersistenceError(
+        'durable-conflict',
         '[document-materializer] publication identity conflicts with durable data'
       )
     }
   }
   if (knownCount === 0) return false
   if (knownCount !== prepared.length) {
-    throw new Error(
+    throw new DocumentPersistenceError(
+      'durable-conflict',
       '[document-materializer] persistence batch partially overlaps durable data'
     )
   }
@@ -236,83 +262,161 @@ export const createDocumentMaterializationService = <Document>({
   authorize,
   applyCanonicalChanges
 }: DocumentMaterializationServiceOptions<Document>): DocumentMaterializationService => ({
-  async materialize(input) {
-    const batch = parsePersistenceBatch(input)
-    await authorize(batch.documentId, batch)
+  async materialize(input, observation) {
+    const endDecode = persistenceSpan(observation, 'validate-and-decode')
+    let batch: DocumentPersistenceBatch
+    let prepared: readonly PreparedPublication[]
+    try {
+      batch = parsePersistenceBatch(input)
+      await authorize(batch.documentId, batch)
 
-    const prepared = Object.freeze(
-      batch.entries.map((entry) => {
-        const decoded = decodePublicationFramePublication(
-          entry.encodedPublicationFrames.map(
-            (frame) => new Uint8Array(Buffer.from(frame, 'base64'))
-          )
-        )
-        if (decoded.publication.publicationId !== entry.publicationId) {
-          throw new Error(
-            '[document-materializer] publication identity conflicts with encoded bytes'
-          )
-        }
-        return Object.freeze({
-          sequence: entry.sequence,
-          publicationId: entry.publicationId,
-          canonicalChanges: decodeDocumentPublication(decoded.publication)
+      prepared = Object.freeze(
+        batch.entries.map((entry) => {
+          let decoded: ReturnType<typeof decodePublicationFramePublication>
+          try {
+            decoded = decodePublicationFramePublication(
+              entry.encodedPublicationFrames.map(
+                (frame) => new Uint8Array(Buffer.from(frame, 'base64'))
+              )
+            )
+          } catch (cause) {
+            throw new DocumentPersistenceError(
+              'invalid-request',
+              'Invalid publication frame data',
+              { cause }
+            )
+          }
+          if (decoded.publication.publicationId !== entry.publicationId) {
+            throw new DocumentPersistenceError(
+              'invalid-request',
+              '[document-materializer] publication identity conflicts with encoded bytes'
+            )
+          }
+          const slices = readDocumentPublicationSlices(decoded.publication)
+          const digest = createHash('sha256')
+            .update(
+              JSON.stringify(
+                {
+                  artifactId: decoded.publication.artifactId,
+                  transactionId: decoded.publication.transactionId,
+                  origin: decoded.publication.origin,
+                  mode: decoded.publication.mode,
+                  compensatesPublicationId:
+                    decoded.publication.compensatesPublicationId,
+                  slices: slices.map((changes, index) => ({
+                    sliceId: decoded.publication.slices[index]?.sliceId,
+                    changes
+                  }))
+                },
+                (_key, value) =>
+                  value !== null &&
+                  typeof value === 'object' &&
+                  !Array.isArray(value)
+                    ? Object.fromEntries(
+                        Object.keys(value)
+                          .sort()
+                          .map((key) => [key, value[key]])
+                      )
+                    : value
+              )
+            )
+            .digest('hex')
+          return Object.freeze({
+            sequence: entry.sequence,
+            publicationId: entry.publicationId,
+            canonicalChanges: slices.flat(),
+            digest
+          })
         })
-      })
-    )
+      )
+    } finally {
+      endDecode()
+    }
+    persistenceDetail(observation, {
+      documentId: batch.documentId,
+      batchId: batch.batchId,
+      firstSequence: batch.firstSequence,
+      lastSequence: batch.lastSequence,
+      count: prepared.length
+    })
     const publicationIds = Object.freeze(
       prepared.map(({ publicationId }) => publicationId)
     )
 
-    return store.transact(batch.documentId, async (current, commit) => {
-      const existingBatch = assertExistingBatchIdentity(
-        current,
-        batch,
-        publicationIds
-      )
-      const publicationRetry = isFullyDurablePublicationRetry(current, prepared)
-      if (existingBatch || publicationRetry) {
-        if (current.durableSequence < batch.lastSequence) {
-          throw new Error(
-            '[document-materializer] durable retry watermark is inconsistent'
+    return store.transact(
+      batch.documentId,
+      async (current, commit) => {
+        const existingBatch = assertExistingBatchIdentity(
+          current,
+          batch,
+          publicationIds
+        )
+        const publicationRetry = isFullyDurablePublicationRetry(
+          current,
+          prepared
+        )
+        if (existingBatch || publicationRetry) {
+          if (current.durableSequence < batch.lastSequence) {
+            throw new DocumentPersistenceError(
+              'durable-conflict',
+              '[document-materializer] durable retry watermark is inconsistent'
+            )
+          }
+          return Object.freeze({
+            durableSequence: batch.lastSequence
+          })
+        }
+
+        if (current.durableSequence !== batch.expectedDurableSequence) {
+          throw new DocumentPersistenceError(
+            'durable-conflict',
+            '[document-materializer] expected durable sequence conflicts with stored checkpoint'
           )
         }
-        return Object.freeze({
-          durableSequence: current.durableSequence
+
+        persistenceDetail(observation, {
+          documentGeneration: current.documentGeneration ?? 0
         })
-      }
+        const endApply = persistenceSpan(observation, 'canonical-apply')
+        let document: Document
+        try {
+          document = await applyCanonicalChanges(
+            current.document,
+            prepared.flatMap((item) => item.canonicalChanges),
+            observation
+          )
+        } finally {
+          endApply()
+        }
 
-      if (current.durableSequence !== batch.expectedDurableSequence) {
-        throw new Error(
-          '[document-materializer] expected durable sequence conflicts with stored checkpoint'
+        const publicationSequences = copyRegistry(current.publicationSequences)
+        const publicationDigests = copyRegistry(
+          current.publicationDigests ?? {}
         )
-      }
+        prepared.forEach(({ publicationId, sequence, digest }) => {
+          publicationDigests[publicationId] = digest
+          publicationSequences[publicationId] = sequence
+        })
+        const batches = copyRegistry(current.batches)
+        batches[batch.batchId] = Object.freeze({
+          firstSequence: batch.firstSequence,
+          lastSequence: batch.lastSequence,
+          publicationIds
+        })
+        commit({
+          document,
+          documentGeneration: current.documentGeneration ?? 0,
+          durableSequence: batch.lastSequence,
+          publicationSequences: Object.freeze(publicationSequences),
+          publicationDigests: Object.freeze(publicationDigests),
+          batches: Object.freeze(batches)
+        })
 
-      let document = current.document
-      for (const item of prepared) {
-        document = await applyCanonicalChanges(document, item.canonicalChanges)
-      }
-
-      const publicationSequences = copyRegistry(current.publicationSequences)
-      prepared.forEach(({ publicationId, sequence }) => {
-        publicationSequences[publicationId] = sequence
-      })
-      const batches = copyRegistry(current.batches)
-      batches[batch.batchId] = Object.freeze({
-        firstSequence: batch.firstSequence,
-        lastSequence: batch.lastSequence,
-        publicationIds
-      })
-      commit({
-        document,
-        documentGeneration: current.documentGeneration ?? 0,
-        durableSequence: batch.lastSequence,
-        publicationSequences: Object.freeze(publicationSequences),
-        batches: Object.freeze(batches)
-      })
-
-      return Object.freeze({
-        durableSequence: batch.lastSequence
-      })
-    })
+        return Object.freeze({
+          durableSequence: batch.lastSequence
+        })
+      },
+      observation
+    )
   }
 })

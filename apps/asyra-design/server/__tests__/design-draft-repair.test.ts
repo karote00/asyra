@@ -509,3 +509,24 @@ it.each([
     expect(() => store.repair({ draftId, partition: 0 })).toThrow(/unavailable/)
   }
 )
+
+it('reuses unchanged retained source only after complete owner admission', () => {
+  const store = createDesignDraftRepairStore()
+  const source = { type: 'frame', name: 'Kept', width: 100, height: 100 }
+  const draftId = store.retain(source)
+  if (!draftId) throw new Error('Expected retained source')
+  const repair = { draftId, replacements: [] }
+  let validations = 0
+  const accepted = store.repair(repair, (candidate) => {
+    validations++
+    return JSON.stringify(candidate) === JSON.stringify(source)
+  }) as typeof source
+  expect(validations).toBe(1)
+  expect(accepted).toEqual(source)
+  accepted.width = 5
+  expect(store.repair(repair, () => true)).toEqual(source)
+  expect(() => store.repair(repair)).toThrow()
+  expect(() => store.repair(repair, () => false)).toThrow()
+  store.release(draftId)
+  expect(() => store.repair(repair, () => true)).toThrow(/unavailable/)
+})

@@ -1,18 +1,14 @@
 import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import { projectWorkflowInput } from '../design-workflow-discovery'
-import { informationDeliveryExample } from '../local-information-delivery'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createAiExecutionProfiler } from '@asyra/ai-agent-runtime'
 import { createExecutionRecordSink } from '@asyra/ai-agent-runtime/node'
 import sharp from 'sharp'
 import compactFixture from './fixtures/recorded-101/compact-receipt-20261024.json'
-import { runInNewContext } from 'node:vm'
 import {
   localToolContent,
-  localToolResultExample,
-  localToolResultRecoveryExample,
   type NativeToolDescriptor
 } from '../local-operation-tools'
 import capacityFixture from './fixtures/recorded-101/pattern-budget-recovery-20261023.json'
@@ -2196,19 +2192,6 @@ it('delivers the saved compact receipt without diagnostics or loss of any operat
     type: 'inputImage',
     imageUrl: imageResult.dataUrl
   })
-  const text = vi.fn()
-  const image = vi.fn()
-  runInNewContext(localToolResultExample, {
-    resultKey: 'test-receipt',
-    store: vi.fn(),
-    result: content
-      .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
-      .join('\n'),
-    text,
-    image
-  })
-  expect(text.mock.calls).toEqual([[expected]])
-  expect(image.mock.calls).toEqual([[imageResult.dataUrl]])
   expect(Buffer.byteLength(JSON.stringify(compactFixture.delivered))).toBe(5372)
   expect(Buffer.byteLength(delivered.text)).toBeLessThanOrEqual(1938)
   expect(designs.call).toHaveBeenCalledOnce()
@@ -2313,21 +2296,13 @@ it.each(['compact', 'full'] as const)(
         actionResults: [...value.actionResults, captured]
       })
     )
-    const text = vi.fn()
-    const image = vi.fn()
-    runInNewContext(localToolResultExample, {
-      resultKey: 'test-receipt',
-      store: vi.fn(),
-      result: content
-        .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
-        .join('\n'),
-      text,
-      image
-    })
-    expect(text).toHaveBeenCalledOnce()
-    expect(text.mock.calls[0][0].actionResults[0]).toEqual(action)
-    expect(image.mock.calls).toEqual([[png]])
-    expect(JSON.stringify(text.mock.calls)).not.toContain('base64')
+    const texts = content.filter((item) => item.type === 'inputText')
+    expect(texts).toHaveLength(1)
+    expect(JSON.parse(texts[0].text).actionResults[0]).toEqual(action)
+    expect(content.filter((item) => item.type === 'inputImage')).toEqual([
+      { type: 'inputImage', imageUrl: png }
+    ])
+    expect(JSON.stringify(texts)).not.toContain('base64')
     expect(compile).toHaveBeenCalledOnce()
     expect(execute).toHaveBeenCalledOnce()
   }
@@ -2553,36 +2528,25 @@ it('executes the delivered review-selection example and next invocation with few
       return JSON.parse(reply.text)
     }
     const discover = async (args: object) => {
-      const values = new Map<
-        string,
-        { complete: boolean; value: unknown; next: { arguments: object } }
-      >()
       let query = args
+      let text = ''
+      let offset = 0
       for (;;) {
         const value = await invoke(
           'design_operations',
           'describe_design_apis',
           query
         )
-        runInNewContext(informationDeliveryExample, {
-          result: JSON.stringify(value),
-          deliveryKey: 'query',
-          text: vi.fn(),
-          load: (key: string) => values.get(key),
-          store: (
-            key: string,
-            value: {
-              complete: boolean
-              value: unknown
-              next: { arguments: object }
-            }
-          ) => values.set(key, value)
-        })
-        const saved = values.get('query')
-        if (!saved)
-          throw new Error('Published delivery did not retain the result')
-        if (saved.complete) return JSON.parse(JSON.stringify(saved.value))
-        query = saved.next.arguments
+        if (!value.contentDelivery) return value
+        const page = value.contentDelivery
+        expect(page.startByte).toBe(offset)
+        text += page.text
+        offset = page.endByte
+        if (page.lastPage) {
+          expect(offset).toBe(page.totalBytes)
+          return JSON.parse(text)
+        }
+        query = page.next.arguments
       }
     }
     const usage = await discover({
@@ -2608,19 +2572,11 @@ it('executes the delivered review-selection example and next invocation with few
       invocation.arguments
     )
     const content = await localToolContent(JSON.stringify(value))
-    const text = vi.fn(),
-      image = vi.fn()
-    runInNewContext(localToolResultExample, {
-      resultKey: 'test-receipt',
-      store: vi.fn(),
-      result: content
-        .map((part) => (part.type === 'inputText' ? part.text : part.imageUrl))
-        .join('\n'),
-      text,
-      image
-    })
-    expect(image).toHaveBeenCalledOnce()
-    let handoff = text.mock.calls[0][0].visualReview
+    expect(content.filter((item) => item.type === 'inputImage')).toHaveLength(1)
+    const receipt = content.find((item) => item.type === 'inputText')
+    if (!receipt || receipt.type !== 'inputText')
+      throw new Error('Missing receipt')
+    let handoff = JSON.parse(receipt.text).visualReview
     if (!selected) {
       const review = await discover({
         names: ['review_drawing'],
@@ -3186,31 +3142,17 @@ it.each([true, false])(
       signal()
     )
     const content = await localToolContent(raw)
-    const result = content
-      .map((item) => (item.type === 'inputText' ? item.text : item.imageUrl))
-      .join('\n')
-    const saved = new Map<string, unknown>()
-    const context = {
-      resultKey: 'completed-part',
-      text: vi.fn(),
-      store: (key: string, value: unknown) => saved.set(key, value),
-      load: (key: string) => saved.get(key)
-    }
-    expect(() =>
-      runInNewContext(localToolResultExample, {
-        ...context,
-        result,
-        image: () => {
-          throw new Error('Display interrupted')
-        }
-      })
-    ).toThrow('Display interrupted')
     const beforeRedisplay = [...f.events]
-    const image = vi.fn()
-    runInNewContext(localToolResultRecoveryExample, { ...context, image })
+    // Retry only response projection from the retained owner result, never execution.
+    const redisplayed = await localToolContent(raw)
+    expect(redisplayed).toEqual(content)
     expect(f.events).toEqual(beforeRedisplay)
-    expect(image).toHaveBeenCalledOnce()
-    const retained = context.text.mock.calls.at(-1)?.[0]
+    expect(
+      redisplayed.filter((item) => item.type === 'inputImage')
+    ).toHaveLength(1)
+    const text = redisplayed.find((item) => item.type === 'inputText')
+    if (!text || text.type !== 'inputText') throw new Error('Missing receipt')
+    const retained = JSON.parse(text.text)
     expect(retained.toolOutcome).toMatchObject({
       status: 'success',
       settlement: 'completed'

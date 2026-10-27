@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.ai-server.json",
   "compilerOptions": {
+    "allowJs": true,
     "lib": [
       "ES2022",
       "ES2023.Array",

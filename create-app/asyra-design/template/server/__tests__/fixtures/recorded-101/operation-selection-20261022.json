@@ -1,0 +1,25 @@
+{
+  "source": {
+    "run": "knowledge-quality-knowledge-taipei-101-1792643796914",
+    "provider": "4d4b5088-b6bc-4ae8-9f28-beda6f9f8c06",
+    "inputs": [
+      "9-input.json",
+      "12-input.json"
+    ],
+    "note": "Saved first query fragment plus selected guide; not a complete assembly of the discarded unscoped query. Bytes are native execution receipts, not redacted payload sizes. No model timing attribution."
+  },
+  "query": {
+    "query": "prepare_and_apply_design",
+    "view": "usage"
+  },
+  "firstQueryBytes": 23072,
+  "selectedGuideBytes": 22457,
+  "selectedScope": {
+    "operation": "draft",
+    "nodeTypes": [
+      "group",
+      "projected-face",
+      "pattern"
+    ]
+  }
+}

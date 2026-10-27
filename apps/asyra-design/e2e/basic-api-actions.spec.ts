@@ -28,8 +28,10 @@ for (const scenario of [
     const fixture = await page.evaluate(async (scenario) => {
       const { elementApis, transactionApis } =
         await import('../src/common-apis')
-      const elementId = transactionApis.runTransaction(() =>
-        elementApis.createVectorElementFromSinglePoint('a', { x: 10, y: 20 })
+      const elementId = transactionApis.runTransaction(
+        () =>
+          elementApis.createVectorElementFromSinglePoint('a', { x: 10, y: 20 })
+            .value
       )
       if (!elementId) throw new Error('Vector creation failed')
       transactionApis.runTransaction(() => {

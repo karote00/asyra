@@ -13,7 +13,7 @@ const scalar = {
 }
 const nonnegative = { type: 'number', minimum: 0, maximum: limits.dimension }
 const key = { type: 'string', minLength: 1, maxLength: 160 }
-const note = { type: 'string', minLength: 1, maxLength: 500 }
+const note = { type: 'string', minLength: 1, maxLength: 500, pattern: '\\S' }
 const property = { enum: ['x', 'y', 'width', 'height'] }
 export const surfaceMotifsSchema = {
   type: 'array',
@@ -84,12 +84,12 @@ export const designConstructionSchema = {
       }
     },
     description:
-      'Optional common world-space linear fields. Distinct start/end points use the same units as face vertices: phase=dot(p-start,end-start)/lengthSquared(end-start). Projected faces or pattern faces select materialField instead of fill; no palette override. The backend converts phase to normalized native gradients per face/instance. Does not create live constraints or shared Fill identities. Other node kinds do not accept materialField.'
+      'World phase=dot(p-start,end-start)/lengthSquared(end-start). Distinct endpoints use face-vertex units. Faces/pattern faces use materialField instead of fill/palettes. Owner normalizes gradients per face/instance; no live constraints/shared Fill IDs.'
   },
   brief: {
     type: 'object',
     additionalProperties: false,
-    required: ['intent', 'viewpoint', 'sources', 'assumptions', 'checks'],
+    required: ['intent', 'viewpoint', 'sources', 'assumptions'],
     properties: {
       intent: note,
       viewpoint: note,
@@ -97,11 +97,22 @@ export const designConstructionSchema = {
       assumptions: { type: 'array', maxItems: 16, items: note },
       checks: {
         type: 'array',
+        description:
+          'Optional numeric layout checks. Omitted means no requested checks, never a visual or mechanical pass.',
         maxItems: limits.checks,
         items: {
           type: 'object',
           additionalProperties: false,
           required: ['key', 'property', 'expected', 'tolerance'],
+          anyOf: [
+            { properties: { property: { enum: ['x', 'y'] } } },
+            {
+              properties: {
+                property: { enum: ['width', 'height'] },
+                expected: nonnegative
+              }
+            }
+          ],
           properties: {
             key,
             property,
@@ -112,7 +123,7 @@ export const designConstructionSchema = {
       }
     },
     description:
-      'Compact design intent, requested viewpoint, actual source notes and unverified assumptions. Numeric checks measure final parent-local native layout boxes (use the explicit draft key of the node being checked); tolerance is in drawing pixels. A pass is not visual fidelity approval. Do not invent source evidence.'
+      'Intent/viewpoint, actual sources, unverified assumptions. Numeric checks: final parent-local native boxes, explicit keys, pixel tolerances. No invented evidence or visual approval.'
   },
   relations: {
     type: 'array',
@@ -143,7 +154,7 @@ export const designConstructionSchema = {
       }
     },
     description:
-      'Absolute-layout native siblings only; no vector targets or sources. target.property = source.property * factor(default 1) + offset(default 0). $parent uses local zero-origin parent box. Supports proportional sizing and exact alignment/spacing without manual coordinate arithmetic. For x/y only, targetAnchor (0=start, 0.5=center, 1=end) subtracts that fraction of target width/height; e.g. parent centerX with targetAnchor 0.5 centers a child. Dependencies resolve in any order; cycles and duplicate assignments fail. Flow layout handles row/column/grid. Relations are preparation instructions, not live constraints.'
+      'Native absolute-layout siblings only; no vectors. target.property=source.property*factor(default 1)+offset(default 0). $parent: zero-origin local box. x/y targetAnchor subtracts that fraction of target width/height (0=start,.5=center,1=end). Order-independent; cycles/duplicate assignments reject. Row/column/grid use layout. No live constraints.'
   },
   projection: {
     type: 'object',
@@ -160,10 +171,10 @@ export const designConstructionSchema = {
       'Orthographic; Z up; degrees; scale=pixels/world unit. x=originX+scale*(cos(a)*x-sin(a)*y); y=originY+scale*(sin(e)*(sin(a)*x+cos(a)*y)-cos(e)*z). Viewer=(sin(a)*cos(e),cos(a)*cos(e),sin(e)); angles 0..90 expose +X/+Y. Visible faces far-to-near; no auto-fit/invented depth/perspective/hidden-face removal.'
   }
 }
-export const projectedFaceSchema = {
+const projectedFaceGeometrySchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['key', 'name', 'type'],
+  required: ['key', 'name'],
   oneOf: [
     { required: ['vertices'], properties: { ellipse: false } },
     { required: ['ellipse'], properties: { vertices: false } }
@@ -203,7 +214,7 @@ export const projectedFaceSchema = {
         }
       },
       description:
-        'Analytic ellipse: independent nonzero world radii encode size/direction; equal perpendicular radii=circle. Creates an editable oval with rotation/world material phase; no segments/approximation. Node/extent budgets apply; edge-on rejects.'
+        'Independent nonzero world radii set size/direction; equal perpendicular radii form a circle. Creates an editable oval with rotation/world material phase, without sampling. Node/extent limits apply; edge-on rejects.'
     },
     vertices: {
       type: 'array',
@@ -218,10 +229,16 @@ export const projectedFaceSchema = {
     }
   },
   description:
-    'Shared-projection planar root child/member: ordered editable polygon/oval. Owner computes x/y/width/height/rotation. Signed offsets valid; Group preserves workspace geometry, Frame reports overflow. Reject degenerate/nonplanar/excess geometry.'
+    'Planar root child/member under shared projection; editable polygon/oval. Owner computes geometry/rotation. Signed offsets allowed; Group preserves workspace geometry, Frame reports overflow. Reject degenerate/nonplanar/excess geometry.'
 }
 
-const worldPoint = projectedFaceSchema.properties.vertices.items
+export const projectedFaceSchema = {
+  allOf: [projectedFaceGeometrySchema],
+  required: ['type'],
+  properties: { type: projectedFaceGeometrySchema.properties.type }
+}
+
+const worldPoint = projectedFaceGeometrySchema.properties.vertices.items
 export const surfaceGridSchema = {
   type: 'object',
   additionalProperties: false,
@@ -250,7 +267,7 @@ export const surfaceGridSchema = {
         }
       ],
       description:
-        'Corners or {face:key}: unique same-scope four-vertex projected-face; forward references allowed, no ellipse.'
+        'Corners or {face:key}: unique same-scope 4-vertex face; distinct grid.key; display name. Forward OK; no ellipse.'
     },
     rows: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
     columns: { type: 'integer', minimum: 1, maximum: limits.expandedNodes },
@@ -268,7 +285,7 @@ export const surfaceGridSchema = {
     }
   },
   description:
-    'Shared-projection root child/member. Convex planar corners:(0,0),(1,0),(1,1),(0,1). Uniform cells; local u/v, world offset; bilinear vectors. fills overrides fill cyclically by row-major cell; full list for irregular paint. cell-major:cells/motifs; motif-major:motifs/cells; cells row-major. Keys:gridKey-cellIndex-motifKey. Cost:rows*columns*resolved motifs + other nodes. Budgets/windows apply; no approximation/clipping/lighting/hidden-face removal. Irregulars explicit.'
+    'Projected root child/member. Convex planar corners:(0,0),(1,0),(1,1),(0,1). Uniform cells, local u/v, world offset, bilinear vectors. fills overrides fill cyclically per row-major cell; irregular paint needs a list. cell-major=cells/motifs; motif-major=motifs/cells; cells row-major. Keys:gridKey-cellIndex-motifKey. Cost:rows*columns*resolved motifs + other nodes; budgets/windows apply. No clipping/lighting/hidden-face removal/approximation.'
 }
 
 export const designPatternSchema = {
@@ -336,36 +353,26 @@ export const designPatternSchema = {
         ]
       },
       description:
-        'Flat face/grid members; unique keys, root projection, no nesting/new parent. Order:instance/member/grid; palettes restart per instance; world fields translate. Keys:patternKey-instanceIndex-memberOutputKey; keys/names <=160 chars.'
+        'Flat face/grid members, unique keys, root projection; no nesting/parent. Order:instance/member/grid. Palettes restart; world fields translate per instance. Keys:patternKey-instanceIndex-memberOutputKey; keys/names <=160 chars.'
     },
     faces: {
       type: 'array',
       minItems: 1,
       items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['key', 'name'],
-        oneOf: projectedFaceSchema.oneOf,
-        anyOf: [
-          { properties: { materialField: false } },
-          { properties: { fill: false } }
-        ],
+        allOf: [projectedFaceGeometrySchema],
         properties: {
+          type: false,
           key: { ...key, maxLength: 40 },
-          name: { ...key, maxLength: 60 },
-          fill: projectedFaceSchema.properties.fill,
-          materialField: key,
-          vertices: projectedFaceSchema.properties.vertices,
-          ellipse: projectedFaceSchema.properties.ellipse
+          name: { ...key, maxLength: 60 }
         }
       }
     },
     fills: {
       type: 'array',
       minItems: 1,
-      items: projectedFaceSchema.properties.fill
+      items: projectedFaceGeometrySchema.properties.fill
     }
   },
   description:
-    'Absolute root; shared projection. faces XOR members; members forbids fills. origin+axes translation, last axis fastest. Order:instance/member/grid. faces fills cycle by original instance index; otherwise retain materials. No lighting/sorting/clipping/inference; irregulars explicit. Cost:root+selected instances*objects/points; omitted ranges cost zero. Primitive limits apply; windows uncapped by 1000; automatic apply slices.'
+    'Absolute projected root: origin+axes translate, last axis fastest. Order:instance/member/grid. faces fills cycle by original index; other materials unchanged. No lighting/sorting/clipping/inference; irregulars explicit. Cost:root+selected instances*objects/points; omitted ranges=0. Primitive limits apply; automatic windows allow >1000 total.'
 }

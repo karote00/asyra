@@ -1,5 +1,14 @@
 import { DesignPreparationLimits as limits } from '../src/ai/prepared-design'
 
+export class DesignKeyConflictError extends Error {
+  constructor(readonly conflicts: { key: string; paths: string[] }[]) {
+    super(
+      'Invalid design construction: duplicate keys. Replace the conflicting source keys at the reported paths.'
+    )
+    this.name = 'DesignKeyConflictError'
+  }
+}
+
 interface Point {
   x: number
   y: number
@@ -31,20 +40,28 @@ const point = (v: unknown): Point => {
 export const resolveSurfaceBoundaries = (input: unknown): unknown => {
   if (!record(input) || !Array.isArray(input.children)) return input
   let remaining = limits.expandedNodes - 1
-  const scope = (members: unknown[], patterns = true): unknown[] => {
+  const scope = (
+    members: unknown[],
+    path: string,
+    patterns = true
+  ): unknown[] => {
     remaining -= members.length
     if (remaining < 0)
       throw new Error('Invalid surface source: source node limit exceeded.')
     let index: Map<unknown, Record<string, unknown> | null> | undefined
     let changed = false
-    const result = members.map((member) => {
+    const result = members.map((member, memberIndex) => {
       if (!record(member)) return member
       if (
         patterns &&
         member.type === 'pattern' &&
         Array.isArray(member.members)
       ) {
-        const resolved = scope(member.members, false)
+        const resolved = scope(
+          member.members,
+          `${path}/${memberIndex}/members`,
+          false
+        )
         if (resolved === member.members) return member
         changed = true
         return { ...member, members: resolved }
@@ -67,11 +84,21 @@ export const resolveSurfaceBoundaries = (input: unknown): unknown => {
         return invalid()
       if (!index) {
         index = new Map()
-        for (const item of members)
+        const paths = new Map<string, string[]>()
+        for (const [position, item] of members.entries())
           if (record(item)) {
             const key = item.key
             index.set(key, index.has(key) ? null : item)
+            if (typeof key === 'string') {
+              const locations = paths.get(key) ?? []
+              locations.push(`${path}/${position}/key`)
+              paths.set(key, locations)
+            }
           }
+        const conflicts = [...paths]
+          .filter(([, locations]) => locations.length > 1)
+          .map(([key, locations]) => ({ key, paths: locations }))
+        if (conflicts.length) throw new DesignKeyConflictError(conflicts)
       }
       const target = index.get(reference.face)
       if (
@@ -87,7 +114,7 @@ export const resolveSurfaceBoundaries = (input: unknown): unknown => {
     })
     return changed ? result : members
   }
-  const children = scope(input.children)
+  const children = scope(input.children, '/children')
   return children === input.children ? input : { ...input, children }
 }
 /** Native ovals have object cost; explicit polygons own path command cost. */

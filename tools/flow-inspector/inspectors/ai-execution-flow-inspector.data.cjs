@@ -89,9 +89,18 @@
         ],
         outputs: ['artifact:tool-program'],
         conditions: [
+          'Preset typography value constraints are public immutable standard schemas shared by existing native property validators and App edit declarations; preserve legal values, defaults, state-dependent checks and input isolation without a second validator or registry.',
+          'Registered owner contracts are the only schema/example/route authority. Selected usage publishes executable JSON Schema using standard local references, not a parameter dialect. Prune only unreachable alternatives; preserve full/field discovery, bounds, cross-field constraints and executable owner recovery. Runtime recipe proof may exclude an opaque sibling using necessary root-property constraints on guaranteed inputs, but never admits selected opaque or overlapping branches. Permanent per-entry tests execute delivered examples and real semantic owners, reject missing coverage, and measure bytes/work without extra prerequisite calls or mutation replay.',
+          'Ordinary usage publishes executable owner-specific fieldQuery from the existing exact selector and canonical navigation, without refresh-selector reconstruction or eager all-field reads. Unavailable field scopes use compact root/branch navigation without traversing unrelated leaves, preserving original issues, successful siblings and exact recovery. Shared-path multi-owner queries, deep/full constraints and retained refresh remain valid; no pointer inference, new cache, preliminary call or mutation replay. Verify saved mixed input, downstream reference selection, byte budgets and traversal counts through delivered examples.',
+          'Native adapter selects direct tools and standard Responses transport from its executable public model metadata. Request-owned configuration is cleaned on every terminal path; no global edits, interpreter, generated forwarding program, duplicate cache or test-only launcher. Other provider adapters consume the same public JSON owner contracts independently.',
+          'Optional ID allocation uses existing on-demand Core API discovery and dispatch; deliver exact source-key/reference/document-identity distinctions and valid owner examples without preloading or a mandatory query. Individual registered API audits inspect true declarations and owners, not regex matches or malformed-input admission alone.',
+          'Core and App property patch discovery preserve the canonical required records array, including records:[] with ordinary values and empty no-op; ordinary value updates retain their independent updateElementProperties route.',
+          'Validate each published executable example against its registered route before delivery; audit registered APIs individually against actual input/output/status owners. Initial guidance treats first visible content as a good-to-have experience goal, not a mandatory stage, deadline or completion criterion. Permit useful editable progress and necessary research first; do not force previews, splitting or extra calls for timing. Preserve real input validation, reference obligations, completion review and first-content observation without forced order.',
+          'Selected mutation batch-operation usage derives complete invocation, selected argument/result constraints and recovery from admitted action and existing batch owners using standard JSON Schema projection. Preserve exact selection, target binding, inspection policy, ordered partial receipts, cancellation and no-replay recovery. Omit unrelated operation enums/result branches; menu guidance uses the existing exact usage query. Full/schema paths and complete menus remain independent. No new registry, execution route, model call or cache; unavailable/ambiguous owners fail explicitly.',
           'Existing invocation middleware and direct result inspection pass input/output stage to the host validator. Recipe invocation forwards this contract; App diagnostics use arguments for inputs and output for results while preserving schema references, observed results and settlement. Validation never retries execution.',
           'Forward settled conversation messages unchanged through existing provider input, with interpretation guidance only when history is present and no first-use guidance growth. Prior messages are historical context, not current evidence, replayable operations or caller-held Knowledge. Current instructions prevail; explicit omissions cannot be guessed. Preserve request-scoped native/Knowledge lifetimes, no extra requests, refresh and no-replay recovery.',
           'App Knowledge delivery projects document source and replacedSource to id/revision only after exact provenance equality with one same-reply source record. Complete sources remain authoritative; mismatches or ambiguity stay explicit. Runtime immutable results, advisory trust, override order, context identities and retainedFrom remain unchanged. Project before existing bounded paging with linear metadata-only work; no body scan, new state, added call, inferred model receipt or write replay. Published same-reply resolution and actual consumer tests must preserve all provenance through reuse, rehydrate and cancellation.',
+          'Exact fromResult redisplay uses existing request-owned Knowledge and discovery result maps with selected ids/names. Preserve original resolved dependencies/overrides, immutable full text, complete selected contracts and view/scope limits without source reads or schema reprojection. New selected identities cannot imply possession of omitted content. Recheck current permissions, generation/context or registry revision, cancellation and bounded lifetime. Missing/foreign/stale results recover by ordinary selected reads; no fuzzy goal authority, new store, model call or replay.',
           'Cross-query Knowledge reuse is explicit caller-held result input to the existing Runtime session. Retain full compositions and immutable wire responses in its existing bounded map. Only equal resolved target/source/replacedSource/text becomes retainedFrom in ordered documents; complete sources and new constraints remain. Opaque result identities isolate sessions. Recheck permission, generation, context and cancellation; missing/foreign/evicted references return read-only recovery without reuseFrom. Rehydrate restores full advice; ordinary reads stay complete. Page retries keep bytes stable, no extra calls, new store, inferred model receipt or write replay.',
           'Selected projected-face usage delivers explicit vertices and projected native ovals from the canonical schema/examples in the same acquisition. Preserve complete cross-field limits and recovery, and execute the actual returned example through the existing main workflow without new tools or preliminary discovery.',
           'Optional Knowledge ids scope metadata to registered roots and visible children through Runtime knowledge access; omit ids for the complete catalog. No name-prefix hierarchy, topic allowlist, eager bodies or new state. Hidden/missing roots never broaden. Selected cycles reject; unrelated graphs do not participate. Direct reads and required dependencies outside navigation remain valid. Local execution-flow validation runs existing Runtime and App consumer suites before the Inspector proof; any consumer failure blocks that local gate.',
@@ -105,7 +114,7 @@
           'Deliver mixed-component pattern selection, complete member constraints and executable canonical examples through existing selected discovery and main-tool dispatch. Preserve bounded delivery, valid face-only patterns, partial receipts and no replay; no additional preflight, tool or inferred geometry.',
           'Existing startup and selected usage deliver canonical aggregate expansion limits and draft/parts selection before submission. Count grid cells times motifs, selected pattern instances times faces, vector placements and all ordinary/container nodes. Work windows and compressed templates do not increase artifact capacity. Reuse ordered parts with actual owner receipts; no mandatory preflight, new counter or replay. Safe capacity plans proceed through the main tool; genuine budget rejection preserves no-write status and retained source recovery.',
           'Explicit local evaluation windows stop App tool work and interrupt the active native work turn at cutoff. Only after acknowledgement start a bounded public report turn in the same thread. Deny App operations and final drawing actions during reporting; preserve transport errors and ordinary requests.',
-          'Query checks existing exact identity indexes before lexical matching; exact hits reuse names resolution, ambiguity handling and action/native routes without descriptive matches. Preserve query default menus, usage/full contracts and no-match lexical/category exploration. Exact query rejects nonzero inventory offset; content paging, revision checks, refresh and no-replay recovery remain. Related catalog growth does not inflate exact delivery or add exchanges.',
+          'Query checks existing exact identity indexes before lexical matching; exact hits reuse names resolution, ambiguity handling and action/native routes without descriptive matches. One unambiguous native exact query accepts inputScope through the same canonical projection as names; no view returns full selected schemas and usage returns the selected guide. Unscoped query preserves default menus. Fuzzy or action-only queries cannot acquire a native scope; ambiguity remains explicit and invalid scope uses owner choices. Preserve schemaPaths exclusion, usage/full contracts and no-match lexical/category exploration. Exact query rejects nonzero inventory offset; content paging, revision checks, refresh and no-replay recovery remain. Related catalog growth does not inflate exact delivery or add exchanges.',
           'The existing selection reply and direct selected usage distinguish draft roots from child nodeTypes, including nested containers. Every draft guide retains group/frame root constraints. Selecting optionalInputs includes documentation without making fields required; changing only the root or omitting an already documented plan needs no reread. Preserve nested-frame discovery, dimensions, group restrictions, criteria-before-review and no-replay recovery without new state or exchanges.',
           'Workflow menu and unscoped usage expose owner-declared next-part selection conditions in the existing read. Distinguish independent world faces, translated multi-face repeats and four-corner planar grids without inferred scope, required Knowledge or planning calls. Opted-in selection usage replaces long prose and nested output-path inventories, retaining routes, root inputs and valid examples. Selected usage preserves complete constraints/results/recovery; full/field reads remain independent. Focused query plus guide uses at most two replies with less total delivery, invariant under unrelated catalog growth; first-part grid and later grid continuation both use actual owners without replay.',
           'Exact lookup applies one schemaPaths list independently to each identity; different per-tool fields use separate same-round queries. Preserve whole requested scope per identity and successful siblings, publish explicit narrower valid-path recovery, and preserve scoped recovery and the existing full refresh route. Discovery owner aggregates all/some/no requested identity coverage as success/partial/failed through invocation and bounded pages; completed read settlement is not coverage. Missing/ambiguous identities are unavailable; empty lexical search, menus and valid pagination remain successful. Published forwarding assembles partial-result pages without promoting coverage or replaying writes.',
@@ -113,7 +122,7 @@
           'Default provider instructions omit exhaustive tool names. Existing purpose/exact discovery is the normal route; explicit category pagination retains intentional complete inventory. Unrelated catalog growth does not inflate selected small-task delivery or calls; native deferred registration remains separate.',
           'Exact discovery projects owner-declared operation/node scopes from canonical schemas. Preserve full applicable cross-field constraints, successful/partial/recovery outputs, registered routes and lifecycle; reject unsupported or ambiguous scopes without fallback. Usage lists immediate fields and union branch roots at argument-wrapper boundaries, not exhaustive branch leaves; exact field lookup/recovery remains available. Menu/usage exposes choices, known scope needs no extra lookup; full/field queries stay independent. Scope survives refresh and continuations. No new executor, registry, cache or mutation replay.',
           'Knowledge discovery exposes optional children from the existing authorized metadata catalog; navigation never triggers reads. Existing descriptions expose parent sufficiency and detailed-child selection conditions before body reads; choose by the unresolved decision, not hierarchy depth, without a prerequisite parent read or automatic selector. Direct selected leaf reads resolve only mandatory references/extends/overrides, preserving restrictions, revisions, deduplication and explicit failures. Thin parent guidance never eagerly loads siblings. Existing refresh, paging, cancellation and no-Knowledge bypass remain; no duplicate registry, cache or model call.',
-          'Discovery descriptions and native instructions share one executable informational forwarding example owned by the existing App delivery helper. Query-scoped Code Mode store/load retains validated contiguous pages and final parsed data; each exec prints one bounded original page. Identical replay requires no tool call; gaps, mixed revisions and invalid sizes reject without replacing valid state. Read failures preserve retained state. Fresh keys and normal refresh handle changed or lost context; no mutation replay or native limit increase.',
+          'Discovery and provider instructions describe the same direct bounded tool replies. Follow contiguous revision-bound pages via returned next arguments. Existing owner result handles supply explicit redisplay and refresh; never replay mutations or increase native limits. Real native successor requests prove exact text delivery.',
           'Discovery and Knowledge owners deliver complete small results or bounded revision-bound JSON fragments through existing read routes. Preserve all constraints and advice; a last fragment does not certify prior coverage. Existing delivery ownership retains continuation content, with request/query/revision, permission, cancellation and disposal checks. Prior App returns do not prove model receipt. No duplicate store, product replay or output-limit increase.',
           'Workflow outcomes include required measurement/capture delivery: failed follow-up after acknowledged writes is partial with preserved write settlement, parts and check-only recovery. Delivered negative judgments and explicit deferral remain valid. Compact/full replies agree; incomplete results never become successful recipe bindings.',
           'Delivered App material advice distinguishes selected-owner local overrides from explicit shared-source edits, reset and detach; local correction never requires detachment and portable Knowledge remains advisory.',
@@ -142,7 +151,7 @@
           'Deliver bounded model-authored current-work messages through existing progress without replacing them with tool labels or introducing an extra model request; messages are intent, never success evidence',
           'Return admission, execution, decoding and delivery failures to the model without aborting the turn; preserve acknowledged work and unknown settlement explicitly; Stop and broken transport or provider protocol remain terminal',
           'Document completion confirms the existing captured durable publication target, never calls a full serializer to imply persistence. Explicit export exposes a browser-owned downloadable immutable artifact and typed bounded metadata; remove raw document serializer AI routes without changing Framework APIs or retaining aliases.',
-          'Deliver admitted original pixels through the native image helper using the published string-result recipe. Save under a fresh caller-selected Code Mode key before display; recovery loads that result without producer calls. Verify actual native successor image bytes/order and separate receipt success, native delivery, unavailable live visibility and visual verdict. Reuse existing bindChecks after criteria definition; no redraw, recapture, new retention owner or automatic retry.',
+          'Deliver admitted original pixels directly as native inputImage content beside structured receipt text. Preserve bytes/order and existing inspection identities for explicit redisplay and binding without redraw or recapture. Verify real native successor requests separately from visual judgments; no generated forwarding code or new retention owner.',
           'Distinguish usable output, unavailable preparation and partial receipts from transport completion',
           'Resolve exact semantic operation identities and categories against current admitted schemas; never infer an adapter from lexical similarity',
           'Batch schema, admission and discovery use the same admitted action set. Explicit review/capture advertises the actual native wrapper and input wrapping; ambiguous or missing registration is unavailable. All lookup/recovery views preserve this route. Compact lexical menus include native/saved capabilities without consuming full schema delivery; explicit usage/full views work with every selector and preserve page/revision boundaries; schema fragments require exact identities; reference research stays separate and no query automatically dispatches another tool.',
@@ -156,7 +165,7 @@
           'One immutable registered delivery declaration identifies an owner-produced model view and its exact schema. Complete typed results feed internal checks, resources and recipes before external projection; missing or invalid delivery preserves execution settlement and never replays writes.',
           'Resolve prepared target identities at the unique registered argument path; reject conflicts and ambiguity before dispatch; preserve reference order for aligned new-value patches',
           'Validate supplied union discriminators and report only the applicable branch when uniquely selected; preserve ambiguous alternatives',
-          'Use native discovery and Code Mode; configured model and effort remain unchanged',
+          'Use native deferred discovery and direct JSON tool calls with direct text/image results; configured model, effort and output limits remain unchanged',
           'Startup scoped-lookup guidance derives selected owner choices and a validated query example from the canonical main-tool declaration before the first query. Invalid scopes name failed fields and current choices through the existing failed/not-started channel; no inferred aliases, extra menu prerequisite, exhaustive startup catalog or mutation replay.',
           'All discovery pages share count/offset/complete/next. Returned continuations carry the request-local catalog revision; host invalidation refreshes the existing inventory, but only changed ordered descriptors advance that revision. Failed/no-op library operations preserve page identity; fingerprint work occurs only on inventory refresh without retaining page snapshots; stale continuations require an explicit selector restart without silently skipping changed entries. Validate continuation arguments through the same input owner and registered category choices. Count returned API and native-tool entries together, reject invalid boundaries and continuations at invocation output, and accept empty complete results. Compact menus do not consume exact-schema delivery.',
           'Keep shared guidance concise and expose task-specific image procedures through discovered tool definitions',
@@ -188,6 +197,7 @@
           'Selected grid usage includes inline and root-local shared motifs with an executable owner example; preserve exact constraints and recovery without increasing first-read bytes, pages or lookups. Known direct calls remain legal.',
           'Resolve mixed exact action and native tool lookups from actual registered groups with distinct execution routes; same-name action and native wrapper each deliver their actual input contract in the first exact lookup with independent revision/recovery accounting; preserve known matches when another name is missing',
           'Preflight every binding shape, registered path and argument conflict for an operation before resolving retained sources. Report independent issues with operation/target/argument locations together; targets supply omitted slots, never overwrite explicit values. Cardinality is declared on the canonical element-identity argument schema: all, each or one. Bind only annotated slots; reserve all paths before lookup, permit at most one fan-out, require exact-one anchors, reject incompatible union paths and preserve input order without Cartesian expansion.',
+          'App provider composition owns direct untrusted Knowledge tool-result delivery. Real successor requests prove complete same-turn content without duplicate bodies or extra turns. Retained data alone does not prove delivery; preserve exact dependency matching, source, override, order, paging and explicit full recovery without new cache or replay.',
           'Selected material-method and representative-review Knowledge decisions deliver their necessary closure in one complete bounded reply. Optional invocation examples and parameter walkthroughs remain discoverable children, never eager references; preserve representation limits, truthful receipts and no-replay recovery. Explicit detailed or multi-topic reads retain pagination and rehydrate.',
           'Review ready retained parts with partial visual checks; leave other criteria pending without waiting for whole-structure approval'
         ],
@@ -206,6 +216,21 @@
           'existing request-local Knowledge session map: selected IDs, contexts, generation, context epoch and explicit reuse selection; immutable full/wire results, 64-query capacity, invalidation and disposal'
         ],
         implementationBoundary: [
+          'packages/preset/src/props/components/text-component.ts',
+          'packages/preset/src/index.ts',
+          'packages/preset/src/__tests__/native-text.test.ts',
+          'docs/ai/framework/packages/preset.md',
+          'apps/asyra-design/src/ai/design-edit-action.ts',
+          'apps/asyra-design/src/ai/__tests__/design-edit-action.test.ts',
+
+          'apps/asyra-design/src/ai/design-fill.ts',
+          'apps/asyra-design/e2e/fixtures/basic-api-cases.ts',
+          'apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts',
+          'apps/asyra-design/server/__tests__/registered-api-cases.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/missing-brief-checks-20261027.json',
+          'apps/asyra-design/src/ai/__tests__/tool-schema.test.ts',
+
+          'apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts',
           'apps/asyra-design/server/__tests__/image-delivery.integration.test.ts',
           'apps/asyra-design/test-data/knowledge-evaluation/native-delivery.mjs',
           'apps/asyra-design/test-data/knowledge-evaluation/fixtures/native-delivery/inspection.png',
@@ -231,6 +256,10 @@
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/operation-selection-20261022.json',
           'apps/asyra-design/server/local-vector-artifact.ts',
           'apps/asyra-design/server/__tests__/local-vector-artifact.test.ts',
+          'packages/ai-agent-runtime/src/recipe-schema.ts',
+          'packages/ai-agent-runtime/src/__tests__/recipe-admission.test.ts',
+          'packages/ai-agent-runtime/TOOL_SPECIFICATION.md',
+          'docs/ai/framework/packages/ai-agent-runtime.md',
           'packages/ai-agent-runtime/src/tool-contract.ts',
           'packages/ai-agent-runtime/src/recipe-execution.ts',
           'packages/ai-agent-runtime/src/json-value.ts',
@@ -270,6 +299,8 @@
           'apps/asyra-design/server/local-tool-store.ts',
           'apps/asyra-design/server/__tests__/local-tool-store.test.ts',
           'apps/asyra-design/server/local-ai-provider.ts',
+          'apps/asyra-design/server/native-provider-config.ts',
+          'apps/asyra-design/server/__tests__/native-provider-config.test.ts',
           'apps/asyra-design/server/local-design-workflow.ts',
           'apps/asyra-design/server/design-workflow-discovery.ts',
           'apps/asyra-design/server/__tests__/local-design-workflow.test.ts',
@@ -339,9 +370,13 @@
           'apps/asyra-design/package.json',
           'apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts',
           'apps/asyra-design/server/__tests__/review-usage.integration.test.ts',
+          'apps/asyra-design/server/__tests__/batch-usage.integration.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/batch-usage-20261026.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/review-usage-20261025.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/discovery-delivery-20261020.json',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/invalid-query-scope-20261022.json',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/exact-query-scope-20261027.json',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/field-query-recovery-20261027.json',
           'apps/asyra-design/server/__tests__/local-design-tools.test.ts',
           'apps/asyra-design/server/local-reference-tools.ts',
           'apps/asyra-design/server/__tests__/ai-domain-prompt.test.ts',
@@ -352,7 +387,6 @@
           'apps/asyra-design/src/ai/basic-api-results.ts',
           'apps/asyra-design/src/ai/arrangement-action.ts',
           'apps/asyra-design/src/ai/organization-action.ts',
-          'apps/asyra-design/src/ai/design-edit-action.ts',
           'apps/asyra-design/src/ai/review-action.ts',
           'apps/asyra-design/src/ai/prescribed-position-action.ts',
           'apps/asyra-design/src/ai/__tests__/prescribed-position-action.test.ts',
@@ -376,6 +410,11 @@
           'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts'
         ],
         specRefs: [
+          '#unified-public-tool-contract-delivery',
+          '#identity-allocation-and-composed-owner-receipts',
+          '#pre-execution-guidance-and-recoverable-input-validation',
+          '#first-visible-change-admission',
+          '#selected-retained-information-delivery',
           '#image-result-delivery-and-recovery',
           '#main-workflow-visual-judgment-handoff',
           '#compact-workflow-delivery',
@@ -397,6 +436,7 @@
           '#shared-tool-contract',
           '#capability-discovery-and-composition',
           '#selected-operation-usage-guide',
+          '#selected-batch-operation-usage',
           '#selective-nested-knowledge-delivery',
           '#cross-query-knowledge-dependency-delivery',
           '#face-referenced-surface-boundaries'
@@ -420,6 +460,8 @@
           'artifact:retained-capacity-plan'
         ],
         conditions: [
+          'Optional omitted construction checks mean no requested checks, never a passed review. Supplied notes and numeric checks match canonical semantics. Input failures retain source and exact issues with executable repair; known missing object fields may be corrected under full schema validation, but unknown/prototype/array-insertion paths and stale identities reject. Preparation and recovery never replay applied work or discard workflow context. Rejected never-started parts retain every draft and preserve ordered envelope context in one main recovery guide; empty replacements reuse only fully validated retained source. Incomplete retention or envelope errors never advertise a complete executable guide. Execution failures preserve remaining-only recovery.',
+          'Source keys identify nodes independently of boundary references and display names. Ambiguous face/grid references report exact duplicate source paths before writes and reuse retained-source field repair without guessed names, changed geometry or replay; preserve unique references and explicit corners.',
           'The backend Group-bounds entry consumes only the existing public Utils geometry-bounds module and its pure point-transform dependency. No Utils barrel, unrelated helpers, lodash, Core, Render, DOM or registration enters this graph; preserve the single analytic bounds owner.',
           'Prepared oval dimensions and rotation pass through official admission without repeating world projection. The shared pure geometry owner derives current transformed bounds; world fields use local paint coordinates. Explicit vertices remain polygons.',
           'Planar ellipse center/u/v and explicit polygon vertices are exclusive face inputs; segments is invalid. Construction prepares existing oval descriptors through shared projection once per template, preserving world extents, local paint, rotation, identities and pattern order. Public preset geometry supplies transformed bounds. Ordinary object budgets apply without sampled paths. No render access, approximation, new tool/cache or canonical writes in prepare.',
@@ -475,6 +517,9 @@
           'request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failed image acquisition remains retryable; page candidate inventory survives representative failure for explicit pagination and is superseded by a successful explicit candidate selection; original image delivery once per attachment with explicit refresh'
         ],
         implementationBoundary: [
+          'apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts',
+          'apps/asyra-design/server/__tests__/fixtures/recorded-101/missing-brief-checks-20261027.json',
+
           'packages/utils/package.json',
           'packages/utils/src/render/geometry-bounds.ts',
           'packages/utils/src/render/geometry.ts',
@@ -540,6 +585,8 @@
           'apps/asyra-design/server/__tests__/design-preparation.test.ts'
         ],
         specRefs: [
+          '#unified-public-tool-contract-delivery',
+          '#pre-execution-guidance-and-recoverable-input-validation',
           '#face-referenced-surface-boundaries',
           '#projected-ovals',
           '#shared-normalized-motifs',
@@ -570,6 +617,7 @@
         ],
         outputs: ['artifact:execution-receipt'],
         conditions: [
+          'Identity allocation delegates through Core to the existing idCounter: validate the complete ordered registered-type list before allocation, preserve namespace and loaded positions, return immutable IDs without document writes/history, and reject exhaustion without prefix consumption. Composed geometry/material/mapping consumers preserve canonical changed and target receipts through existing interpretation; no void/truthiness success, speculative reread or replay.',
           'Core owns ordinary creation input normalization and delivers ordered descriptors directly to Scene Tree without unused envelopes or a second projection. Preserve default/override ordering, supplied/generated IDs, caller isolation, empty and scalar/plural input, complete frozen results and geometry/materials/order/parentage. Scene Tree admission, transaction failure, acknowledged partial results, remaining-only recovery, history and durable collaboration/reload remain authoritative. Prove actual work counts through real owners; no cache, extra exchange, skipped validation, compatibility path or replay.',
           'Scene Tree owns the detached frozen ordered ID result of each ordinary creation batch. Core request/facade and App adapters forward the same result without further copies. Preserve all identities/order, scalar and empty semantics, invalid input/parent rejection, isolation from mutable input/membership, old snapshots, complete and compact receipts, partial failure/cancellation, history, durable reload and no-replay recovery. No new cache, transport, compatibility copy, batch enlargement or UI snapshot change; prove actual downstream copy counts through real owners.',
           'Original retained oval rotation is admitted; changed transforms or binding reject. Group normalization preserves world placement and material validity. Official creation and preset rendering own application, never a direct tool render call. Shared Utils analytic oval bounds feed Preset normalization and Core scene world bounds/zoom-fit; preserve ancestor translation, invalid hierarchy and other shapes.',
@@ -642,6 +690,9 @@
           'Preset UI observer lifetime and exact immutable published element map and flattened identities; canonical structural deltas only'
         ],
         implementationBoundary: [
+          'packages/utils/src/sid/idCounter.ts',
+          'packages/utils/src/sid/__tests__/idCounter.test.ts',
+          'apps/asyra-design/src/ai/__tests__/identity-and-composed-receipts.integration.test.ts',
           'apps/asyra-design/server/__tests__/creation-results.integration.test.ts',
           'packages/utils/src/render/geometry-bounds.ts',
           'packages/utils/src/render/__tests__/geometry-bounds.test.ts',
@@ -841,6 +892,7 @@
           'apps/asyra-design/e2e/basic-api-actions.spec.ts'
         ],
         specRefs: [
+          '#identity-allocation-and-composed-owner-receipts',
           '#ordinary-creation-input-normalization',
           '#ordinary-creation-result-handoff',
           '#creation-batch-ui-projection',
@@ -873,6 +925,9 @@
         ],
         outputs: ['artifact:inspection-evidence', 'artifact:prepared-review'],
         conditions: [
+          'Publish unchanged computed-field selection limits from the Core snapshot owner through its public export and App schema; preserve full and empty selections without extra reads or new cache.',
+          'Admit unit-only supersedes with declared unitId, exact revision and redesign reason before capture, bind and record. Whole-criterion correction removes only the invalid supersedes field using retained image assignments and existing binding; never invent units, recapture, replay or weaken scope/whole-view protection.',
+          'Workspace mechanical review consumes canonical non-geometric root metadata and ordered descendants without requiring or fabricating root bounds. Preserve actual child geometry/text and Frame checks, hidden-node semantics, subtree membership/order stamps, local invalidation, load retirement, cancellation and retained verdict reuse. Final review consumes that receipt; unavailable checks expose existing retained findings and query recovery without redraw, recapture, replay or a new state owner. Empty mechanical scope never certifies visual acceptance.',
           'Selected computed fields flow from the Core facade through its request adapter and Element to the existing Computed snapshot owner before materialization. Read only requested own enumerable values once; never enumerate or copy omitted fields. Core validates before access and detaches the owner result. Full reads remain independently valid. Preserve current values, workspace/empty/missing semantics, verdicts, coverage, local invalidation, cancellation and no-replay recovery; no new cache, exchange or canonical write. Prove counts through real owners and the default reviewer.',
           'Mechanical reviewer structural reads use existing scalar Core metadata and complete ordered child queries only for nonempty containers. Never save or clone full elements or unused props for structural fields. Preserve the existing verdict cache, local invalidation, computed/text work, complete findings/coverage, cancellation, mixed-source rejection and no-replay recovery; no new cache, API, exchange or canonical write. Prove actual save/copy counts through the default adapter and real owners.',
           'Image capture target preflight consumes one current scalar Core metadata observation for existence, type and childCount; never save or clone full children/properties for eligibility. Preserve missing/noncurrent/empty/scope guards, existing snapshot framing and pixels, read-only state, evidence invalidation, partial results and failed-only retry. No cache, fallback full-data query, new exchange or replay. Count preflight copying through real canonical owners separately from necessary snapshot work.',
@@ -966,6 +1021,9 @@
           'runtime-issued visual receipt, target/subtree or local region, canonical dependency IDs and regional membership, criterion inspection bindings; request lifetime, complete immutable source recipe, explicit criterion/key coverage, deterministic findings, element count, canonical attachment context/stamp, exact requirement/reference/source assertion evidence and supplied predecessor findings/currency'
         ],
         implementationBoundary: [
+          'packages/core/src/types/scene-tree.ts',
+          'packages/core/src/contracts/index.ts',
+          'apps/asyra-design/server/__tests__/review-usage.integration.test.ts',
           'packages/core/src/apis/scene-tree.ts',
           'packages/core/src/apis/create-apis.ts',
           'packages/core/src/__tests__/scene-tree-api.test.ts',
@@ -1059,6 +1117,8 @@
           'apps/asyra-design/server/__tests__/local-operation-tools.test.ts'
         ],
         specRefs: [
+          '#pre-execution-guidance-and-recoverable-input-validation',
+          '#workspace-mechanical-review',
           '#computed-snapshot-selection',
           '#mechanical-review-structural-reads',
           '#image-inspection-target-preflight',
@@ -1084,10 +1144,7 @@
           'ordered public tool progress and execution summaries',
           'settled work, request cancellation and owned retained-query identities'
         ],
-        outputs: [
-          'artifact:visible-outcome',
-          'observed request resource release or explicit cleanup failure'
-        ],
+        outputs: ['artifact:visible-outcome'],
         conditions: [
           'Keep request objective, stage intent and call purpose separate. Primary-agent public commentary supplies concrete stage intent before input preparation; retire it at the next principal start; fresh idle commentary may replace settled context. Completed call identities cannot rejoin a purpose through replayed or late start events. Tool completion records only its canonical outcome, never an inferred model stage. Never copy inherited text as authored call purpose.',
           'Every ordered invocation start/end updates canonical activity even when its projected text is unchanged. Completion removes live call ownership and retains its canonical receipt in existing closed-call metadata as explicitly settled context. Explicit request-commentary completion retires that purpose. With no active root or fresh commentary show the latest group settlement as completed, partial, failed or outcome-unconfirmed. Generic end events cannot prove success; preserve every root identity until the group settles. Never use the original objective as idle fallback. Genuinely live common principal invocation purpose takes presentation precedence over retained stage context. Display meaningful observed work separately from authored purpose; queued/admission events identify preparation for the known operation until execution starts; repeated admission does not revive queued wording after execution. Diagnostics preserve every phase. With no active calls, identify retained prose as stage context rather than ongoing execution. Independent concurrent principal work uses shared purpose rather than the latest sibling; descendant purposes remain diagnostic. Reducer decisions record selected purpose identity/source, accepted live-leaf phase label and active-call count. Rejected events cannot change diagnostic phase; completion removes the finished phase and exposes surviving leaves or the provider. Raw incoming phases remain separate event evidence.',
@@ -1208,6 +1265,7 @@
         ],
         outputs: ['artifact:execution-trace'],
         conditions: [
+          'Ordinary drawing and quality evaluation prompts expose optional Knowledge resources without a reading prerequisite or fixed stage. Existing scenario composition preserves request requirements, attachments and deadlines; observations record actual use, and zero reads are valid. Preserve historical prompts and distinguish changed prompt conditions. No forced-reading arm, model run or additional orchestration is implied.',
           'A bounded multi-turn consultation or drawing observation preserves the ordinary predecessor answer before submitting the follow-up. Only the final request uses the existing evaluation self-report window; a first-turn process watchdog and the final report watchdog share the original work deadline. A terminal partial predecessor may continue only after its ordinary answer, request identity and document are saved and App input is idle; preserve partial status and send only the declared follow-up. Missing evidence, unsettled or non-idle input, failed/cancelled outcome or expiry stops the sequence. A captured final partial report is not artwork acceptance. Ordinary answers cannot substitute for attributed final reports; no direct diagnostic product mutation, second result store or automatic retry.',
           'E2E source drift, unplanned participant navigation or closure invalidates environment continuity separately from strict save/history/collaboration assertions. One explicit planned reload permits one runtime replacement only. Preserve named phases, original errors and unavailable evidence in existing Playwright attachments; no automatic retry, weakened assertion or product owner mutation.',
           'Record the explicit evaluation artifact limit alongside the unchanged production ceiling; obtain actual delivered policy and recovery behavior from linked provider records. A lower test budget cannot certify an untriggered overflow or recovery.',
@@ -1279,6 +1337,11 @@
           'apps/asyra-design/src/app/__tests__/ai-conversation-panel.test.tsx',
           'apps/asyra-design/test-data/knowledge-evaluation/README.md',
           'apps/asyra-design/test-data/knowledge-evaluation/run-101.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/architecture-101.json',
+          'apps/asyra-design/test-data/knowledge-evaluation/quality-cases.json',
+          'apps/asyra-design/test-data/knowledge-evaluation/quality.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/architecture-protocol.mjs',
+          'apps/asyra-design/test-data/knowledge-evaluation/__tests__/architecture-protocol.test.mjs',
           'apps/asyra-design/test-data/knowledge-evaluation/run-consultation.mjs',
           'apps/asyra-design/test-data/knowledge-evaluation/__tests__/consultation.test.mjs',
           'apps/asyra-design/test-data/knowledge-evaluation/capture-lifecycle.mjs',

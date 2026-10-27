@@ -4,11 +4,16 @@ import {
   AiDocumentInteractionTargetProps,
   CANVAS_BACKGROUND_COLOR
 } from '../constants'
-import type { CollaborationSessionNotification } from '../collaboration/lifecycle'
+import { DocumentRecoveryControls } from './document-recovery-controls'
+import type {
+  CollaborationDebugHandle,
+  CollaborationSessionNotification
+} from '../collaboration/lifecycle'
 import { createEmptyDocument } from '../config/empty-document'
 import { getConfiguredCollaborationMode } from './collaboration-mode'
 import AiDrawingProgressIndicator from './ai-drawing-progress-indicator'
 import { StatusToastStack } from './status-toast-stack'
+import { TextCanvasEditor } from './text-canvas-editor'
 
 export interface CanvasContextMenuInvocation {
   clientX: number
@@ -29,6 +34,9 @@ const RenderApp: React.FC<RenderAppProps> = ({
   const lifecycleRef = useRef<Promise<void>>(Promise.resolve())
   const [collaborationNotification, setCollaborationNotification] =
     useState<CollaborationSessionNotification>()
+
+  const [recoverySession, setRecoverySession] =
+    useState<CollaborationDebugHandle>()
 
   const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
     if (
@@ -102,10 +110,14 @@ const RenderApp: React.FC<RenderAppProps> = ({
         }
         if (handle) {
           setCollaborationNotification(handle.getSessionState().notification)
+          setRecoverySession(
+            handle.getSessionState().recoveryAvailable ? handle : undefined
+          )
           unsubscribeCollaborationState = handle.onSessionStateChange(
             (state) => {
               if (active) {
                 setCollaborationNotification(state.notification)
+                setRecoverySession(state.recoveryAvailable ? handle : undefined)
               }
             }
           )
@@ -127,6 +139,17 @@ const RenderApp: React.FC<RenderAppProps> = ({
       })
     }
   }, [])
+
+  useEffect(() => {
+    if (!recoverySession) return
+    const guard = (event: BeforeUnloadEvent) => {
+      if (!recoverySession.hasUnpersistedChanges()) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', guard)
+    return () => window.removeEventListener('beforeunload', guard)
+  }, [recoverySession])
 
   useEffect(
     () => () => {
@@ -160,7 +183,14 @@ const RenderApp: React.FC<RenderAppProps> = ({
             : [])
         ]}
       />
+      {recoverySession && (
+        <DocumentRecoveryControls
+          session={recoverySession}
+          reopen={() => window.location.reload()}
+        />
+      )}
       <AiDrawingProgressIndicator />
+      <TextCanvasEditor />
     </div>
   )
 }

@@ -1,0 +1,35 @@
+{
+  "derivation": "Exact saved native query arguments, verified against original tool_started payload digests. No runtime tmp dependency.",
+  "calls": [
+    {
+      "runId": "1793087598839",
+      "callId": "call_TXautwB9zFOhJ8fKUXPtzyOS",
+      "inputBytes": 110,
+      "inputSha256": "2e680c9cc5633302f48b9e276c47f6e326798b56878e49d6ea84c1f0fc4d611a",
+      "recordedStatus": "rejected",
+      "input": {
+        "query": "prepare_and_apply_design",
+        "view": "usage",
+        "inputScope": {
+          "operation": "draft",
+          "nodeTypes": ["pattern"]
+        }
+      }
+    },
+    {
+      "runId": "1793091171388",
+      "callId": "call_bcRb1GaDING7unOHCERwebj6",
+      "inputBytes": 117,
+      "inputSha256": "a5370aba7fda0272130a7a1208a26f41fd3acd3d5500a2f1afa6846716a415bc",
+      "recordedStatus": "rejected",
+      "input": {
+        "query": "prepare_and_apply_design",
+        "view": "usage",
+        "inputScope": {
+          "operation": "draft",
+          "nodeTypes": ["projected-face"]
+        }
+      }
+    }
+  ]
+}

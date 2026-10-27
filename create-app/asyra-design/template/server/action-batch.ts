@@ -1,3 +1,9 @@
+import {
+  createExecutionRecordSink,
+  createRecordCollector,
+  ExecutionRecordCollectionError,
+  createFileRecordCollector
+} from '@asyra/ai-agent-runtime/node'
 import type {
   AiToolProgress,
   ExecuteAiBatch
@@ -11,8 +17,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createBatchExchange } from './batch-exchange'
 import {
   ACTION_BATCH_ENDPOINT,
+  AI_EXECUTION_RECORD_ENDPOINT,
   AI_BATCH_RECEIPT_HEADER,
-  AI_BATCH_EXECUTION_HEADER
+  AI_BATCH_EXECUTION_HEADER,
+  AI_BATCH_MAXIMUM_REQUEST_BYTES
 } from '../src/ai/action-batch-endpoint'
 import type {
   AiActionBatch,
@@ -38,7 +46,6 @@ const sampleImage = hasRegisteredSample
 const sampleImageDigest = sampleImage
   ? createHash('sha256').update(sampleImage).digest('hex')
   : undefined
-const maximumRequestBytes = 16 * 1024 * 1024
 let sampleActionBatchPromise: Promise<AiActionBatch> | undefined
 
 type MiddlewareNext = (error?: unknown) => void
@@ -283,7 +290,7 @@ const readJsonBody = async (
     const bytes =
       typeof chunk === 'string' ? Buffer.from(chunk) : Buffer.from(chunk)
     size += bytes.byteLength
-    if (size > maximumRequestBytes) {
+    if (size > AI_BATCH_MAXIMUM_REQUEST_BYTES) {
       throw new ActionBatchServerError(
         'ACTION_BATCH_INVALID_INPUT',
         'The action-batch request is too large.'
@@ -303,16 +310,47 @@ const readJsonBody = async (
 
 export const createActionBatchMiddleware = (
   options: {
+    readonly createRecordingSink?: () => ReturnType<
+      typeof createExecutionRecordSink
+    >
     readonly requestModelActionBatch?: RequestModelActionBatch
   } = {}
 ) => {
   const exchange = createBatchExchange()
-  return async (
+  const collector = options.createRecordingSink
+    ? createRecordCollector({ createSink: options.createRecordingSink })
+    : createFileRecordCollector({
+        directory:
+          process.env.AI_EXECUTION_RECORD_DIR?.trim() || 'tmp/ai-executions'
+      })
+
+  const middleware = async (
     request: IncomingMessage,
     response: ServerResponse,
     next: MiddlewareNext
   ): Promise<void> => {
     const url = new URL(request.url ?? '/', 'http://app.local')
+    if (url.pathname === AI_EXECUTION_RECORD_ENDPOINT) {
+      if (request.method !== 'POST' || !admitsLocalProviderRequest(request)) {
+        sendJson(response, 403, { code: 'AI_RECORD_DELIVERY_FORBIDDEN' })
+        return
+      }
+      try {
+        const records = await readJsonBody(
+          request,
+          new AbortController().signal
+        )
+        sendJson(response, 200, await collector.accept(records))
+      } catch (error) {
+        sendJson(response, 400, {
+          code:
+            error instanceof ExecutionRecordCollectionError
+              ? error.code
+              : 'AI_RECORD_DELIVERY_INCOMPLETE'
+        })
+      }
+      return
+    }
     if (url.pathname !== ACTION_BATCH_ENDPOINT) {
       next()
       return
@@ -391,6 +429,7 @@ export const createActionBatchMiddleware = (
                 type: 'activity',
                 tool: event.tool,
                 status: event.status,
+                ...(event.activity ? { activity: event.activity } : {}),
                 ...(event.message ? { message: event.message } : {})
               }) + '\n'
             )
@@ -440,4 +479,5 @@ export const createActionBatchMiddleware = (
       request.removeListener('aborted', abort)
     }
   }
+  return Object.assign(middleware, { dispose: () => collector.dispose() })
 }

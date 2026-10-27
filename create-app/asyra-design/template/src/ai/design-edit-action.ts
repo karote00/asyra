@@ -1,5 +1,12 @@
+import {
+  toolResultIds,
+  toolResultObject,
+  toolResultStatus,
+  toolResultString,
+  actionToolSemantics
+} from './tool-contract'
 import { runAiMutation, type AiActionDefinition } from '@asyra/ai-agent-runtime'
-import { DEFAULT_TEXT_DATA } from '@asyra/preset'
+import { TEXT_PROPERTY_VALUE_SCHEMAS } from '@asyra/preset'
 import {
   editDesignElement,
   type DesignElementEdit
@@ -9,16 +16,29 @@ import { AiActionNames } from '../constants'
 export const createDesignEditAction = (
   edit: typeof editDesignElement = editDesignElement
 ): AiActionDefinition<DesignElementEdit> => ({
+  ...actionToolSemantics(
+    AiActionNames.UPDATE_DESIGN_ELEMENT,
+    toolResultObject({
+      status: toolResultStatus,
+      compositionId: toolResultString,
+      appliedElementIds: toolResultIds
+    })
+  ),
   name: AiActionNames.UPDATE_DESIGN_ELEMENT,
   description:
-    'Revise one existing editable object after reading its context. Change its name, parent-local geometry, native text/typography, or an existing primary fill/stroke color. Preserve other fields and objects. Returns the edited object for rendered review. Does not add missing fills/strokes or change vector path points.',
+    'Revise a known editable object as an item of execute_design_batch; read context only if required identities or values are unknown. Change its name, parent-local geometry, native text/typography, or an existing primary fill/stroke color. Preserve other fields and objects. Returns the edited object for rendered review. Does not add missing fills/strokes or change vector path points.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
     required: ['elementId'],
     properties: {
-      elementId: { type: 'string', minLength: 1, maxLength: 256 },
-      name: { type: 'string', minLength: 1, maxLength: 160 },
+      elementId: {
+        'x-design-element-binding': 'each',
+        type: 'string',
+        minLength: 1,
+        maxLength: 256
+      },
+      name: { type: 'string', minLength: 1, maxLength: 160, pattern: '\\S' },
       properties: {
         type: 'object',
         additionalProperties: false,
@@ -36,12 +56,7 @@ export const createDesignEditAction = (
               { type: 'number', exclusiveMinimum: 0, maximum: 100000 }
             ])
           ),
-          ...Object.fromEntries(
-            Object.entries(DEFAULT_TEXT_DATA).map(([key, value]) => [
-              key,
-              { type: typeof value }
-            ])
-          )
+          ...TEXT_PROPERTY_VALUE_SCHEMAS
         }
       },
       fillColor: {

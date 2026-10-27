@@ -22,6 +22,11 @@ import type {
   LocalComputedDataUpdate
 } from '@asyra/scene-tree'
 
+export const ComputedFieldSelectionLimits = Object.freeze({
+  fields: 64,
+  fieldName: 128
+})
+
 export interface SceneTreeRawAPIs {
   sceneTreeInit: () => void
   sceneTreeLoadData: (data: SceneTreeRawData) => void

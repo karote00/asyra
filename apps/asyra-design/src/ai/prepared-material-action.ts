@@ -1,4 +1,5 @@
 import lodash from 'lodash'
+import { requireMutationReceipt } from './basic-api-results'
 import { subscribeToFileLoadComplete } from '@asyra/core'
 import { PropertyTypes, type FillGradientData } from '@asyra/utils'
 import {
@@ -213,7 +214,14 @@ export const createPreparedMaterialApplication = (
       AiActionNames.APPLY_PREPARED_MATERIAL,
       toolResultObject({
         status: toolResultStatus,
-        appliedCount: toolResultCount,
+        changed: { type: 'boolean' },
+        acceptedIds: toolResultIds,
+        unavailableIds: toolResultIds,
+        appliedCount: {
+          ...toolResultCount,
+          description:
+            'Accepted target count, including legal no-op targets; changed reports aggregate document mutation.'
+        },
         appliedElementIds: toolResultIds,
         materialProvenance: toolResultObject({
           status: { enum: ['available', 'unavailable'] },
@@ -221,6 +229,7 @@ export const createPreparedMaterialApplication = (
         })
       })
     ),
+    revision: 3,
     name: AiActionNames.APPLY_PREPARED_MATERIAL,
     description:
       'Apply compiled world-material values only to their original creation members after canonical document geometry and binding checks, independent of viewport zoom or pan. Reports the changed dependency on rejection; numerical diagnostics do not authorize stale-source application. Preserves geometry and unrelated owners through local Fill overrides; does not approve visual quality. Uses request-local preparation provenance; reload requires fresh explicit source preparation.',
@@ -295,20 +304,23 @@ export const createPreparedMaterialApplication = (
           }
         })()
         const ids = updates.map((item) => item.elementId)
-        apis.update(
-          ids,
-          0,
-          updates.map(({ gradient, color }) => ({
-            kind: 'gradient',
-            gradient,
-            color
-          })),
-          { undoable: true, sharedDelivery: 'immediate' }
+        const mutation = requireMutationReceipt(
+          apis.update(
+            ids,
+            0,
+            updates.map(({ gradient, color }) => ({
+              kind: 'gradient',
+              gradient,
+              color
+            })),
+            { undoable: true, sharedDelivery: 'immediate' }
+          ),
+          ids
         )
         // A canonical local override may allocate a new binding. Retain only that
         // accepted relation change; never silently bless an unexpected geometry change.
         const unavailableElementIds: string[] = []
-        for (const id of ids) {
+        for (const id of mutation.acceptedIds) {
           try {
             const current = apis.read(id)
             if (
@@ -326,9 +338,9 @@ export const createPreparedMaterialApplication = (
           unavailableElementIds.push(id)
         }
         return {
-          status: 'complete',
-          appliedCount: ids.length,
-          appliedElementIds: ids,
+          ...mutation,
+          appliedCount: mutation.acceptedIds.length,
+          appliedElementIds: mutation.acceptedIds,
           materialProvenance: {
             status: unavailableElementIds.length ? 'unavailable' : 'available',
             unavailableElementIds
