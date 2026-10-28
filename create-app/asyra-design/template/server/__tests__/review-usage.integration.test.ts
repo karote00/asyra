@@ -1,3 +1,5 @@
+import sharp from 'sharp'
+import { createLocalImageTools } from '../local-image-tools'
 import { expect, it, vi } from 'vitest'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import type { InspectionDependencyChange } from '../../src/common-apis/inspection-dependencies'
@@ -75,6 +77,20 @@ async function verifySelectedReviewFlow() {
     createAiInspectionAction(undefined, evidence),
     createInspectionValidationAction(evidence)
   ].map((definition) => observeAiAction(definition))
+  const referencePixels = await sharp({
+    create: { width: 1, height: 1, channels: 4, background: '#abcdef' }
+  })
+    .png()
+    .toBuffer()
+  const referenceImages = createLocalImageTools({
+    metadata: {
+      imageAttachments: [
+        {
+          dataUrl: `data:image/png;base64,${referencePixels.toString('base64')}`
+        }
+      ]
+    }
+  })
   const dispatched: string[] = []
   const tools = createLocalOperationTools(
     actions.map((definition) => createAiToolContract(definition)),
@@ -97,6 +113,9 @@ async function verifySelectedReviewFlow() {
       )
     }),
     {
+      validateReferences: referenceImages.validateReferences,
+      prepareReferences: referenceImages.prepareReferences,
+      resolveSources: referenceImages.resolveSources,
       getNativeTools: () =>
         tools.definitions.map((definition) => ({
           ...definition,
@@ -185,7 +204,44 @@ async function verifySelectedReviewFlow() {
       }))
     })
   try {
-    await call('define_design_criteria', plan)
+    const planned = await call('define_design_criteria', plan)
+    const referenceGuide = (
+      await call('describe_design_apis', {
+        names: ['select_design_references'],
+        view: 'usage'
+      })
+    ).tools[0]
+    expect(referenceGuide.usageGuide.parameters).toBeDefined()
+    const reference = referenceImages.validateReferences([0])[0]
+    const selection = {
+      referenceImageIndexes: [0],
+      requirementRevision: planned.requirementRevision,
+      referenceDecisions: [
+        {
+          referenceId: reference.referenceId,
+          status: 'accepted',
+          reason: 'Compare supplied appearance',
+          uses: [
+            {
+              id: 'appearance-reference',
+              criterionId: 'appearance',
+              unitId: 'left',
+              purpose: 'visual',
+              region: 'whole',
+              limitations: []
+            }
+          ]
+        }
+      ]
+    }
+    expect(
+      operationInputIssue(selection, referenceGuide.usageGuide.parameters)
+    ).toBeUndefined()
+    const selected = await call(referenceGuide.execution.tool, selection)
+    expect(selected.toolOutcome.status, JSON.stringify(selected)).toBe(
+      'success'
+    )
+    const referenceUse = selected.referenceDecisions[0].uses[0].receipt
     bytes = 0
     reads = 0
     queryBytes = 0
@@ -204,9 +260,14 @@ async function verifySelectedReviewFlow() {
     const captureArgs = structuredClone(invocation.arguments)
     captureArgs.inspections[0].elementId = ids[0]
     captureArgs.inspections[0].checks = [
-      { criterionId: 'appearance', unitId: 'left' }
+      {
+        criterionId: 'appearance',
+        unitId: 'left',
+        referenceUses: [referenceUse]
+      }
     ]
     const first = await call(invocation.tool, captureArgs)
+    expect(first.next.arguments.checks[0].referenceUses).toEqual([referenceUse])
     expect(first.reviewOperation).toBe('capture')
     expect(first.accepted).toBe(false)
     expect(first.inspectionIds, JSON.stringify(first)).toHaveLength(1)

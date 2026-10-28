@@ -203,7 +203,7 @@ execution or substitutes for current registry validation.
 Exact name/operation lookup also supports `view: "usage"` and `schemaPaths`
 (JSON Pointers into the canonical input schema). Usage includes purpose,
 execution route and nested property/schema-definition paths, with compact effect/composition/lifecycle
-metadata. Ordinary unscoped usage omits full validation schemas. Selected usage publishes the
+metadata. Exploratory usage and unselected owner operation scopes remain menus. Exact tools without an operation scope and selected scopes publish the
 complete selected input contract as standard JSON Schema with owner result and
 recovery guidance. Exact full lookup retains all validation schemas.
 Fragment replies include exact selected values and transitive local reference dependencies; they are partial documentation,
@@ -1876,12 +1876,12 @@ continue through the same request-local acquisition owner.
 
 ### Selected batch-operation usage
 
-A selected admitted mutation batch action queried with view=usage includes the complete
+A selected admitted batch action queried with view=usage includes the complete
 existing execute_design_batch invocation contract and that action's canonical
-arguments, results and recovery, rendered as usage rather than raw schemas. Derive
+arguments, results and recovery, using standard JSON Schema in the usage guide. Derive
 from registered owners: no copied operation allowlist, new executor or state. Name,
 semantic operation and explicit usage queries preserve their existing selection
-and ambiguity rules. Read-only actions retain compact navigation. Mutation menu entries point to the exact selected usage acquisition.
+and ambiguity rules. Read-only and mutation actions have the same completeness obligation. Exploratory menu entries point to the exact selected usage acquisition.
 
 Keep target field/path cardinality, artifact and retained snapshot selectors,
 current admission, inspection policy, ordered partial receipts and retry-only-pending
@@ -3695,8 +3695,11 @@ replaying acknowledged writes or rereading unrelated document data.
 
 ### Actionable usage projection
 
-Unscoped usage views derive root input paths, output pointers and element-slot cardinality from the
-canonical descriptor. Owner-authored examples are published only when they validate
+Exploratory usage and unselected owner-scoped tools derive root input paths and
+choices from the canonical descriptor. Exact non-scoped tools deliver their
+complete canonical parameters in usageGuide, regardless of read/prepare/mutation
+effect or native/batch/final-response route. Selected guides retain output paths and element-binding navigation as well as result
+constraints, lifecycle and recovery; input paths alone never establish readiness. Owner-authored examples are published only when they validate
 against its current input schema and are wrapped in its actual native, batch or final
 response route. Native conversion retains common examples at the complete union scope,
 not inside alternatives that reject those inputs. Example identities are illustrative, never live credentials. Missing
@@ -3711,7 +3714,7 @@ full retrieval includes the complete contract and examples. Navigation includes
 local schema-definition paths without recursively expanding references. Fragments
 retain ancestor constraints and local reference closure and remain partial documentation.
 An unknown path is recoverable and never dispatches a drawing action. Exact lookup
-still defaults to full; route-only usage is optional, not a prerequisite. A known
+still defaults to full; exploratory navigation is optional, not a prerequisite. A known
 contract can execute directly, including without Knowledge. Explicit recovery keeps
 view/paths and never retries a previously completed product write.
 
@@ -3733,7 +3736,7 @@ identities cannot silently stand in for a native scoped owner. Invalid scope
 values use that owner's existing choices and recovery, without another menu.
 
 Without inputScope, representation is unchanged: query without view is a menu,
-usage is usage, full retains canonical restrictions. Exact queries need no additional lookup and no
+usage is a menu only when selection is unresolved; otherwise it supplies the complete selected contract. Full retains canonical restrictions. Exact queries need no additional lookup and no
 inventory offset; a nonzero offset rejects rather than falling back to lexical
 search. Existing content paging, registry revision checks, refresh and no-replay
 recovery remain. No new selector, registry, result store or limit is introduced.
@@ -4238,3 +4241,29 @@ result, stale identity and recovery cases. Format-only admission, mocked delegat
 and provider transport success do not prove the requested operation completed.
 The existing verification gate must fail when a registered entry lacks required
 coverage; local evidence does not claim model adoption or universal correctness.
+
+### Unified usage acquisition
+
+Exact selection without owner-declared operation choices is sufficient to obtain
+an executable usage contract. Selected scopes retain the same promise. General
+search/category and unresolved scopes are navigation; their next action selects
+the owner/operation, not delivery-failure refresh. Reuse existing coverage and
+nextAction metadata to distinguish these results. Missing or invalid owner examples
+are explicit, but canonical parameters/results may not be omitted for that reason.
+Do not infer current IDs, receipts, permissions or runtime preconditions from an
+example. Native, read, prepare, batch and final-response routes follow the same
+selection rule, retaining their actual execution envelopes and lifecycle.
+
+Usage parameters are standard JSON Schema; usage is not schema-free. Complete
+selected guides preserve local references, cross-field restrictions and result
+semantics from their owner. Execution still validates runtime state. Reacquisition
+of missing content selects the required scope; refresh repeats the same scope only
+for lost delivery/context and never executes anything. Full/field queries,
+request-local retained reads, bounded paging and partial lookup remain valid.
+
+DoD: enumerate actual registrations through discovery, execute delivered examples
+and non-example inputs using only delivered constraints, and prove reference
+receipts reach downstream consumers. Preserve invalid/cancelled/stale/partial
+recovery without replay. Count total request/response bytes and continuation calls
+for the saved acquisition and unrelated-catalog growth; improve the complete path,
+not merely a single reply. No new state, cache, tools or higher byte budget.

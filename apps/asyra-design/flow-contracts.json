@@ -79,6 +79,15 @@
       ],
       "cases": [
         {
+          "id": "compose.unified-usage",
+          "stepId": "compose",
+          "testName": "execution proof delivers complete non-scoped usage without mutation or a full lookup",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/ai-domain-prompt.ts"
+          ]
+        },
+        {
           "id": "compose.attachment-reference",
           "stepId": "compose",
           "testName": "execution proof prepares explicit attachment uses through the existing owner without prerequisite validation",

@@ -1,3 +1,8 @@
+import {
+  workflowInputScopes,
+  workflowUsageParameters
+} from '../design-workflow-discovery'
+import { readCompleteInformation } from './tool-contract-assertions'
 // @vitest-environment jsdom
 import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 import { createLocalReferenceTools } from '../local-reference-tools'
@@ -26,10 +31,12 @@ const execute = vi.fn(async () => {
 })
 const operations = createLocalOperationTools(actions, designs, execute, {
   getNativeTools: () =>
-    [...main.definitions, ...images.definitions].map((d) => ({
-      ...d,
-      namespace: 'design'
-    }))
+    owners.flatMap((owner) =>
+      owner.definitions.map((d) => ({
+        ...d,
+        namespace: owner === operations ? 'design_operations' : 'design'
+      }))
+    )
 })
 const main = createLocalDesignWorkflow(designs, operations)
 const images = createLocalImageTools({})
@@ -162,4 +169,106 @@ it('retains an explicit per-API audit inventory from actual registrations when r
       2
     )
   )
+})
+
+it.each(native)(
+  '$definition.name delivers a complete exact usage or explicit owner scope menu',
+  async ({ definition }) => {
+    const query = operations.definitions.find(
+      (d) => d.name === 'describe_design_apis'
+    )
+    if (!query) throw new Error('Missing discovery definition')
+    const namespace = operations.definitions.includes(definition)
+      ? 'design_operations'
+      : 'design'
+    const args = { names: [`${namespace}.${definition.name}`], view: 'usage' }
+    const text = await readCompleteInformation(
+      async (input) =>
+        (await invokeLocalTool(operations, query, input, signal)).text,
+      args
+    )
+    const entry = JSON.parse(text).tools[0]
+    expect(entry, text.slice(0, 1000)).toBeDefined()
+    const scopes = workflowInputScopes(definition.inputSchema)
+    if (scopes) {
+      expect(entry.inputScopes).toEqual(scopes)
+      expect(entry.definition.nextAction).toBe('select-operation-scope')
+    } else {
+      expect(entry.usageGuide?.parameters, definition.name).toEqual(
+        workflowUsageParameters(definition.inputSchema)
+      )
+      expect(entry.definition.nextAction).toBe(
+        'execute-with-delivered-contract'
+      )
+      expect(entry.usageGuide.results.success).toEqual(
+        workflowUsageParameters(definition.outputSchema)
+      )
+    }
+    expect(execute).not.toHaveBeenCalled()
+  }
+)
+
+it.each(runtime.actionDefinitions)(
+  '$name selected action usage retains parameters independently of its effect',
+  async (action) => {
+    const query = operations.definitions.find(
+      (d) => d.name === 'describe_design_apis'
+    )
+    if (!query) throw new Error('Missing discovery definition')
+    const args = { names: [action.name], view: 'usage' }
+    const text = await readCompleteInformation(
+      async (input) =>
+        (await invokeLocalTool(operations, query, input, signal)).text,
+      args
+    )
+    const entry = JSON.parse(text).apis[0]
+    expect(entry, text.slice(0, 1000)).toBeDefined()
+    expect(entry.usageGuide).toBeDefined()
+    const admitted = designs
+      .modelActions(actions)
+      .find((entry) => entry.name === action.name)
+    if (!admitted) throw new Error('Missing admitted action')
+    expect(
+      entry.usageGuide.operationParameters ?? entry.usageGuide.parameters
+    ).toEqual(workflowUsageParameters(admitted.inputSchema))
+    expect(entry.definition.nextAction).toBe('execute-with-delivered-contract')
+    expect(execute).not.toHaveBeenCalled()
+  }
+)
+
+it('executes a delivered final-response contract through its real control owner without a batch', async () => {
+  const definition = operations.definitions.find(
+    (d) => d.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const args = { names: ['report_outcome'], view: 'usage' }
+  const text = await readCompleteInformation(
+    async (input) =>
+      (await invokeLocalTool(operations, definition, input, signal)).text,
+    args
+  )
+  const tool = JSON.parse(text).apis[0]
+  expect(tool.execution.kind).toBe('final-response')
+  const input = {
+    outcome: 'unsupported',
+    message: 'This request is outside the available capability.'
+  }
+  expect(operationInputIssue(input, tool.usageGuide.parameters)).toBeUndefined()
+  expect(
+    operationInputIssue(
+      { ...input, message: '   ' },
+      tool.usageGuide.parameters
+    )
+  ).toBeDefined()
+  const owner = runtime.actionDefinitions.find(
+    (d) => d.name === tool.execution.action
+  )
+  if (!owner) throw new Error('Missing final response owner')
+  const reply = await owner.execute(input as never, { signal } as never)
+  expect(reply).toMatchObject({
+    status: 'no-change',
+    outcome: 'unsupported',
+    message: input.message
+  })
+  expect(execute).not.toHaveBeenCalled()
 })

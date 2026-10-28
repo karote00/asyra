@@ -1,3 +1,4 @@
+import { operationInputIssue } from '../operation-input-schema'
 import { deliverPreparedDesign } from '../../src/ai/prepared-design'
 import { admitPreparedDesignDelivery } from '../../src/ai/prepared-design-admission'
 import type { PreparedElementDescriptor } from '../../src/common-apis'
@@ -178,16 +179,15 @@ it('execution proof resolves batched semantic identities and applies ordered rea
   const operations = createLocalOperationTools(actions, designs, execute)
   const signal = new AbortController().signal
   const discovery = JSON.parse(
-    await operations.call(
-      'describe_design_apis',
+    await readCompleteInformation(
+      (args) => operations.call('describe_design_apis', args, signal),
       {
         operations: [
           'fill.updateFillsAtIndex',
           'hierarchy.moveElementsRelative'
         ],
         view: 'usage'
-      },
-      signal
+      }
     )
   )
   expect(discovery.apis).toHaveLength(2)
@@ -10843,4 +10843,49 @@ it('execution proof delivers automatic mechanical scope without accumulating can
     stale: 0,
     unverified: 0
   })
+})
+
+it('execution proof delivers complete non-scoped usage without mutation or a full lookup', async () => {
+  const execute = vi.fn(async () => {
+    throw new Error('Lookup must not dispatch')
+  })
+  const tools = createOperationOwner(
+    [
+      {
+        name: AiActionNames.APPLY_PREPARED_DESIGN,
+        description: 'Apply',
+        inputSchema: {}
+      }
+    ],
+    { modelActions: (v) => v, resolveBatch: (v) => v },
+    execute,
+    {
+      getNativeTools: () =>
+        tools.definitions.map((d) => ({ ...d, namespace: 'design_operations' }))
+    }
+  )
+  const definition = tools.definitions.find(
+    (d) => d.name === 'describe_design_apis'
+  )
+  if (!definition) throw new Error('Missing discovery definition')
+  const signal = new AbortController().signal
+  const query = { names: ['read_design_checks'], view: 'usage' }
+  const raw = await readCompleteInformation(
+    async (args) =>
+      (await invokeLocalTool(tools, definition, args, signal)).text,
+    query
+  )
+  const entry = JSON.parse(raw).tools[0]
+  expect(entry.usageGuide?.parameters).toBeDefined()
+  expect(entry.definition.nextAction).toBe('execute-with-delivered-contract')
+  const target = tools.definitions.find((d) => d.name === entry.execution.tool)
+  if (!target) throw new Error('Missing discovered execution definition')
+  const input = {}
+  expect(
+    operationInputIssue(input, entry.usageGuide.parameters)
+  ).toBeUndefined()
+  const result = await invokeLocalTool(tools, target, input, signal)
+  expect(result.success).toBe(true)
+  expect(JSON.parse(result.text).toolOutcome.status).toBe('success')
+  expect(execute).not.toHaveBeenCalled()
 })

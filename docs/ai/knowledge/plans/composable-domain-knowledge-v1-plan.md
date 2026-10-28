@@ -97,6 +97,145 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Closed slice - Unified usage delivery responsibility
+
+Follow-up authorization (2026-10-28): review the bounded diff and direct consumers,
+repair only demonstrated defects under U1-U5, then perform one live Taipei 101
+observation with gpt-6-astra / medium, no video, 900000 ms work and the existing
+60000 ms report allowance. Keep the production 10,000-node budget and optional
+Knowledge. Preserve raw I/O, source, first-content timing, report, images and reload
+evidence; do not change source during the run, run CI or push. This supersedes the
+implementation phase's no-model restriction only for this single observation.
+Review verified all 894 files in the accepted Inspector snapshot remain identical;
+no additional implementation defect was found. Existing formal results remain
+applicable rather than being inferred from old completion labels.
+
+Baseline: b91886aab76f1689a3cf8d1e5dab68ae51af19de. Owner step: compose.
+Evidence: saved 2026-10-28 reference selection acquisition returned 2,432-byte
+navigation, then a 5,372-byte full definition, then identical navigation. The
+2,209-byte canonical input was absent from navigation. Evidence establishes
+incomplete delivery, not the model's private reason for rereading.
+
+Selection, not effect or native/batch implementation, decides completeness.
+Exploratory selectors and an unselected owner-declared operation scope remain
+menus. Exact non-scoped tools and scoped selections deliver complete canonical
+parameters, applicable result constraints, lifecycle, route and recovery in the
+existing usageGuide. Batch routes retain their real invocation envelope. Full,
+field, paging, refresh and retained reads remain valid. Examples are illustrative
+owner data; absence cannot remove parameters or imply unavailable execution.
+Remove superseded effect-specific completeness rules and schema-free claims.
+
+Step Execution Card: compose consumes current admitted descriptors, exact
+selectors, owner scopes and request-local retained information; produces selected
+contracts or explicit menus through existing bounded delivery. Bypass discovery
+for already-known contracts. Failure remains with lookup/admission and the actual
+execution owner. No new registry, cache, executor, model call, permission or mutable
+state. Allowed contributors: current schema projection, owner examples, native
+and action route adapters. Forbidden: model-inferred constraints, invented live
+credentials, rendering, document mutation during lookup and automatic replay.
+Boundary: local-operation-tools.ts, ai-domain-prompt.ts, owner example declarations
+in local-design-review.ts when needed, existing discovery/audit/batch/review/proof
+and prompt tests, formal recorded fixture, App test mapping/scripts and release notes, this plan,
+ai-execution-flow spec, Inspector, current public update note and generated counterparts. Execution-owner
+semantics and Framework packages are unchanged. Static/rendering/history owners
+are outside mutation scope. Inspect direct consumers only after the red cases.
+
+Admission: structural contract passed; candidate 9efd7941-7d10-4925-8c4b-a368f4398e38
+failed only compose.unified-usage with 81 existing cases preserved. Contract review
+ddc132d0f83108d9ff7dfd7bdb4675325b50a657ce50ec92cf32bc8b534b3e63
+accepted without blockers. Formal discovery regression fails on absent parameters;
+entry audit retains the failing acquisition cases before production changes.
+
+Consumer review: preserve existing output-path and element-binding navigation in
+complete usage. Complete-contract consumers execute without redundantly fetching
+the same union branch. Exploratory consumers preserve the menu-to-field route and
+its byte/call bounds; exact multi-entry contracts retain complete paged delivery.
+Independent field-query tests retain their strict checks.
+Run Node discovery/proof and DOM owner consumers in their declared environments.
+This refinement keeps U1-U5 and the compose admission unchanged. A formal
+work-count regression also excludes scope navigation from full/field queries
+and retained redisplay; only usage acquisition needs that projection.
+
+Local outcome (2026-10-28): U1-U5 validated. Saved reference acquisition falls
+from 10,416 bytes / three queries to 6,086 bytes / one query; excluding the
+repeated baseline usage still gives 7,919 bytes / two queries. Counts include
+selected request/response content and every continuation. Startup guidance is
+30,294 bytes under the unchanged 30,327-byte bound. Exact multi-entry contracts
+can still need pages; exploratory field acquisition remains independently valid.
+
+Final validation: App server integration 2,780 passed / two existing opt-in skips,
+including 934 registration-driven delivery cases; Runtime 459 and Preset 37 passed.
+Production and flow types, scoped lint (one unchanged console warning), naming 15,
+public docs, generated template equivalence and Inspector catalog pass. Inspector
+attempt d1678a64-00bd-4c72-a91b-8406e95d6329 passes all 82 cases on source
+0b8fc5a0d992d9c6991e23a233c20957ff02649f261ac0a4b07d49bfce3792fe.
+Logs and preserved red cases: tmp/unified-usage-20261028/. Broader static viewer
+checks expose an unchanged, unrelated canonical projection/collaboration contract
+with no terminal route for property-intent-result; that owner is outside this
+slice and its assertion is unchanged. No model/101/CI run or push. Live reduction
+in model rereads and elapsed time remains unobserved.
+
+Live follow-up (2026-10-28): one authorized gpt-6-astra / medium run, no video,
+production 10,000-node budget and optional Knowledge. Run
+knowledge-quality-knowledge-taipei-101-1793128210956 ended work normally at
+842.064 seconds, reported for 13.457 seconds and settled partial at 856.327 seconds.
+First content appeared at 452.492 seconds. All 33 App calls returned operation
+success; selected reference usage executed without a separate full or repeated
+usage lookup. Nine discovery calls included two legitimate continuation pages,
+two exploratory searches and one field lookup. Final visual acceptance remained
+false (two of seven required checks passed); no elapsed-time improvement is claimed.
+Full provider I/O, ten exact image assets, report, source and checkpoint were
+preserved. Fresh-context reload retained root order and durable sequence 482;
+source verification and owned-service cleanup passed. Recovery failures were not
+observed live. The two largest event-free gaps remain unexplained even after native
+boundary reconciliation. Evidence and detailed report are in
+`tmp/knowledge-evaluation/knowledge-quality-knowledge-taipei-101-1793128210956/`.
+This observation does not expand implementation scope or lower U1-U5. No push or CI.
+
+
+Closeout authorization (2026-10-28): the user accepts usage on its formal local
+proof and the two same-source observations, and authorizes the task-branch push.
+Repeat run 1793166909239 used identical source, prompt and attachments. All 28 App
+calls completed without lookup rejection, delivery failure or refresh; selected
+contracts reached actual owners. First content contained 3,855 applied elements
+at 165.067 seconds, versus 2,321 at 452.492 seconds previously. Timing alone is
+not a closure criterion. The main owner completed a naturally oversized extension
+in two retained partitions without geometry resubmission. Visual defects led to
+targeted deletion, correction and re-review; final recorded coverage was 7/7.
+Work stopped at the 900-second deadline, followed by reporting, with no further
+App calls. This does not prove unobserved failure recovery or independent visual
+quality. Preserve U1-U5; no further usage implementation is required by these
+observations. Full evidence and comparison are retained under
+`tmp/knowledge-evaluation/knowledge-quality-knowledge-taipei-101-1793166909239/`.
+Before push, all 894 accepted Inspector source files were rehashed with zero
+changes. This closes only the usage slice; Task 3 and the overall plan stay open.
+The next issue is read-only evidence analysis until separately authorized.
+
+Fixed DoD:
+- U1: every registered entry is classified through actual discovery; cover native,
+  read, prepare, batch mutation, final-response, scoped and exploratory routes.
+  Exact non-scoped delivery must not depend on effect. Preserve ambiguity.
+- U2: execute actual delivered invocations through existing dispatch/real owners;
+  no test-only full-schema lookup may supply missing execution information. Cover
+  a non-example read and reference selection with downstream receipt consumption.
+- U3: preserve all nested, cross-field, local-reference and runtime restrictions;
+  examples are optional, completeness is not. Keep full and field queries.
+- U4: distinguish scope acquisition from identical-content refresh. Preserve page
+  identity, cancellation, stale/foreign retained recovery, partial results and
+  no replay. Lookup itself cannot mutate or repeat preparation/capture.
+- U5: saved acquisition uses fewer total bytes and calls, counting input/output
+  and every page. Unrelated catalog growth cannot increase selected content.
+  Keep budgets unchanged and measure owner work/call counts with semantic output.
+
+Sequence: review spec/Inspector and admit; add formal red regressions using saved
+payloads and current registrations; implement compose; run consumer suites,
+production/flow types, scoped lint, naming and source-bound Inspector proof;
+review changed flow and direct consumers, regenerate affected artifacts. Existing
+Server baseline type diagnostics remain outside this slice. No model, 101 or CI.
+Stop on a required execution-owner change, new state, lost constraints or inability
+to preserve accepted paging/recovery. Do not broaden scope or lower U1-U5.
+
+
 ### Unified public tool contracts and executable API coverage - 2026-10-27
 
 Status: implementation and applicable formal local validation complete on 2026-10-28.

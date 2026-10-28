@@ -18,7 +18,7 @@
         },
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "502a6ac0317a999cadb7e58e0875231a8e56ab6b3f7c5f9ce985a50d49f98480"
+          "sha256": "51029426c5f18af4d498ada0312c9e917094a108cc93b2d3cb1f121de5e2a103"
         }
       ]
     },
@@ -914,11 +914,11 @@
     },
     {
       "id": "updates/unified-tool-contracts-r1",
-      "pageSha256": "f4c610f19c1107fc65bcdea7f09b25e7a59b8fadcdbce93550ee941bd4e0a07d",
+      "pageSha256": "4f0b893d41ee61755494a852cee80d35580d463856f4bc62240481825e875515",
       "sources": [
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "502a6ac0317a999cadb7e58e0875231a8e56ab6b3f7c5f9ce985a50d49f98480"
+          "sha256": "51029426c5f18af4d498ada0312c9e917094a108cc93b2d3cb1f121de5e2a103"
         },
         {
           "path": "apps/asyra-design/server/local-design-workflow.ts",

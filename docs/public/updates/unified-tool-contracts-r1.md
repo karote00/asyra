@@ -9,8 +9,11 @@ must preserve the registered input/output schemas, execution identity, cancellat
 and result settlement. The generated Design template follows the canonical App.
 
 Exact discovery and field queries use the existing describe_design_apis owner.
-Use its returned execution route and fieldQuery arguments. A usage menu is not a
-full schema; selected workflow usage includes standard JSON Schema parameters.
+Use its returned execution route and fieldQuery arguments. Exploratory usage is a menu. Exact usage for owners without operation scopes,
+and selected scoped usage, include complete standard JSON Schema parameters,
+result contracts and recovery for the returned execution route. Examples are
+optional; missing examples never remove necessary constraints. Complete usage
+can span bounded pages; do not fetch the same fields again once they are present.
 Preserve local references and cross-field restrictions. General search, complete
 schemas, bounded continuation pages, refresh and explicit retained redisplay remain
 available. Do not infer successful coverage from a completed read alone.

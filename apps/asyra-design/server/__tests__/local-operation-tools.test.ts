@@ -4465,8 +4465,12 @@ it('retrieves usage and exact schema fragments without consuming full definition
     tools
       .call('describe_design_apis', args, new AbortController().signal)
       .then(JSON.parse)
-  const usage = (await read({ names: [action.name], view: 'usage' })).apis[0]
+  const usage = (
+    await read({ query: 'Arrange supplied elements', view: 'usage' })
+  ).apis[0]
   expect(usage.description).toBe(action.description)
+  expect(usage.usageGuide).toBeUndefined()
+  expect(usage.definition.nextAction).toBe('select-exact-tool')
   expect(usage.inputSchema).toBeUndefined()
   expect(usage.inputFields).toContain('/properties/rows')
   expect(usage.definition.coverage).toBe('usage')
@@ -9358,7 +9362,10 @@ describe('context entry navigation and recovery', () => {
     async (route) => {
       const t = await setup()
       try {
-        const usage = await t.read(t.saved.usageQuery)
+        const usage = await t.read({
+          query: 'structural retained output',
+          view: 'usage'
+        })
         const entry = route === 'action' ? usage.apis[0] : usage.tools[0]
         expect(entry.inputSchema).toBeUndefined()
         const branch = entry.inputFields.find((path: string) =>
@@ -9622,7 +9629,9 @@ it('keeps union navigation compact while fragments preserve escaped references a
         new AbortController().signal
       )
     )
-  const usage = (await read({ names: [action.name], view: 'usage' })).apis[0]
+  const usage = (
+    await read({ query: 'immutable original evidence', view: 'usage' })
+  ).apis[0]
   expect(usage.inputFields).toEqual([
     '/oneOf/0',
     '/properties/token',
@@ -9727,21 +9736,15 @@ it('prepares only explicit reference uses and preserves selection through failed
       })
     ).text
   ).tools[0]
-  expect(usage.fieldQuery).toBeDefined()
-  expect(
-    (await call(usage.fieldQuery.tool, usage.fieldQuery.arguments)).success
-  ).toBe(true)
-  const fields = JSON.parse(
-    (
-      await call(usage.fieldQuery.tool, {
-        ...usage.fieldQuery.arguments,
-        schemaPaths: usage.inputFields
-      })
-    ).text
-  ).tools[0]
-  expect(
-    fields.schemaFragments.map((fragment: { path: string }) => fragment.path)
-  ).toEqual(usage.inputFields)
+  expect(usage.usageGuide?.parameters).toBeDefined()
+  expect(usage.description).toContain(AiDesignToolIds.DEFINE_DESIGN_CRITERIA)
+  const delivered = usage.usageGuide.parameters
+  expect(delivered.properties.referenceDecisions.items.required).toContain(
+    'uses'
+  )
+  expect(delivered.properties.requirementRevision.description).toContain(
+    'Required when recording decisions'
+  )
   const originalStats = sharp.prototype.stats
   const stats = vi.spyOn(sharp.prototype, 'stats')
   const timeout = vi.spyOn(sharp.prototype, 'timeout')

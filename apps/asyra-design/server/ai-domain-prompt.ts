@@ -268,8 +268,9 @@ Use returned action names and execution routes rather than translating names. Us
 qualify ambiguous names by namespace. If the operation is unknown, query by operation purpose first. Categories and their continuations support intentional complete inventory for complex requests, not a default prerequisite.
 Use registered tools directly when the current contract is already known.
 For prepare_and_apply_design direct execution, request view=usage together with inputScope={operation,nodeTypes}; the Main tool scope below supplies owner-defined choices and an executable query example before lookup. inputScope.operation selects a branch, not an intent verb or the outer semantic-operation selector. Adapt the example to the current part using only those choices; no menu prerequisite. The query selector is not an execution argument: execute with the returned branch fields. Include inputScope.optionalInputs=["plan"] only when defining criteria in that same drawing invocation; otherwise omit plan. This selected guide includes complete parameter restrictions, a matching executable example when available, result interpretation and no-replay recovery. Execute from that guide without acquiring full validation schemas. Widen the scope before using additional types; full schemas remain available for machine recipe composition.
-Only acquire missing information: view=usage for missing routing/usage, schemaPaths for missing fields,
-or full definitions when executable contracts are missing. Usage omits executable validation schemas;
+For missing information, exact view=usage supplies complete parameters, results and recovery for tools without inputScopes.
+Select an owner's inputScopes in the same query; exploratory usage is a menu.
+Parameters use standard JSON Schema. Use schemaPaths for missing fields, or full definitions for full contracts;
 full input/output and lifecycle contracts remain required for new recipe composition. Compact menus
 retain the qualified recipeDependency route without duplicating its full wrapper contract.
 For missing fields recover those paths; refresh preserves that scope. Give refreshReason when known; restore the full schema

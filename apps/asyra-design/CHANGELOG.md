@@ -1,5 +1,44 @@
 # @asyra/asyra-design
 
+## Pending unified usage acquisition
+
+```update-note
+{
+  "change": "unified-usage-acquisition",
+  "owner": "Design information delivery",
+  "summary": "Deliver complete selected usage across native, read, prepare, batch and final-response entries from canonical owners, with explicit navigation, runtime prerequisites and recovery.",
+  "sources": [
+    "apps/asyra-design/flow-contracts.json",
+    "apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts",
+    "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/usage-acquisition-20261028.json",
+    "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+    "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
+    "apps/asyra-design/server/ai-domain-prompt.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "create-app/asyra-design/template/server/__tests__/api-delivery-audit.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/discovery-delivery.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/fixtures/recorded-101/usage-acquisition-20261028.json",
+    "create-app/asyra-design/template/server/__tests__/local-operation-tools.test.ts",
+    "create-app/asyra-design/template/server/__tests__/review-usage.integration.test.ts",
+    "create-app/asyra-design/template/server/ai-domain-prompt.ts",
+    "create-app/asyra-design/template/server/local-design-review.ts",
+    "create-app/asyra-design/template/server/local-operation-tools.ts",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/source-map.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "integration",
+  "guides": [
+    "docs/public/updates/unified-tool-contracts-r1.md"
+  ],
+  "reason": "Consumers can execute from complete selected usage without a redundant full read. Exploratory menus, scoped selection, field queries, bounded pages and refresh remain available; no document migration or replay is required."
+}
+```
+
 ## Pending exact query scope handoff
 
 ```update-note

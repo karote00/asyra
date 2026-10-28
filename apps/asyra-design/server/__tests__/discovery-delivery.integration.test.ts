@@ -1,3 +1,5 @@
+import * as workflowDiscovery from '../design-workflow-discovery'
+import usageAcquisition from './fixtures/recorded-101/usage-acquisition-20261028.json'
 import fieldRecovery from './fixtures/recorded-101/field-query-recovery-20261027.json'
 import { createLocalKnowledgeTools } from '../local-knowledge'
 import sampledEllipse from './fixtures/recorded-101/projected-ellipse-20261024.json'
@@ -188,13 +190,22 @@ it('delivers recorded full contracts and publishes executable high-level usage w
     const usage = (
       await call('describe_design_apis', { names: [name], view: 'usage' })
     ).value.tools[0]
-    expect(Buffer.byteLength(JSON.stringify(usage))).toBeLessThan(
-      Buffer.byteLength(
-        JSON.stringify(
-          full.tools.find((tool: { name: string }) => tool.name === name)
+    if (usage.usageGuide) {
+      // Exact non-scoped usage now promises the whole input, not a smaller menu.
+      expect(usage.usageGuide.parameters).toBeDefined()
+      expect(usage.definition.nextAction).toBe(
+        'execute-with-delivered-contract'
+      )
+    } else {
+      expect(Buffer.byteLength(JSON.stringify(usage))).toBeLessThan(
+        Buffer.byteLength(
+          JSON.stringify(
+            full.tools.find((tool: { name: string }) => tool.name === name)
+          )
         )
       )
-    )
+      expect(usage.definition.nextAction).toBe('select-operation-scope')
+    }
     expect(usage.invocationExample.illustrative).toBe(true)
     const invocation = usage.invocationExample.invocation
     expect(invocation.tool).toBe(name)
@@ -1243,7 +1254,7 @@ it('selects complete next-part guides in two replies without unrelated catalog g
         view: 'usage',
         inputScope: { operation: 'draft', nodeTypes }
       })
-      expect(run.deliveries).toHaveLength(2)
+      expect(run.deliveries.length).toBe(2)
       expect(run.deliveries.reduce((n, bytes) => n + bytes, 0)).toBeLessThan(
         operationSelection.firstQueryBytes +
           operationSelection.selectedGuideBytes
@@ -3360,4 +3371,174 @@ it('bounds failed field navigation and traversal independently of unrelated nest
     JSON.stringify({ measurement: 'failed-navigation-work', small, large }) +
       '\n'
   )
+})
+
+it('delivers complete exact usage without examples and lowers the saved acquisition cost without extra owner work', async () => {
+  const run = setup()
+  // Both acquisition paths start with the same established owner prerequisites.
+  const criteria = (
+    await run.call('describe_design_apis', {
+      names: ['define_design_criteria'],
+      view: 'usage'
+    })
+  ).value.tools[0]
+  const invocation = criteria.invocationExample.invocation
+  expect((await run.call(invocation.tool, invocation.arguments)).success).toBe(
+    true
+  )
+  const acquisitionStart = run.deliveries.length
+  const queryStart = run.calls.length
+  const input = usageAcquisition.calls[0].input
+  const query = await run.call('describe_design_apis', input)
+  const tool = query.value.tools[0]
+  expect(tool.usageGuide?.parameters).toBeDefined()
+  expect(tool.definition.nextAction).toBe('execute-with-delivered-contract')
+  expect(tool.invocationExample.available).toBe(false)
+  const parameters = tool.usageGuide.parameters
+  expect(parameters.properties.referenceDecisions.items.required).toEqual([
+    'referenceId',
+    'status',
+    'reason',
+    'uses'
+  ])
+  expect(
+    operationInputIssue({ referenceImageIndexes: [-1] }, parameters)
+  ).toBeDefined()
+  expect(
+    operationInputIssue({ referenceImageIndexes: [], extra: true }, parameters)
+  ).toBeDefined()
+  // No full/schema-path query supplies the execution input.
+  const reply = await run.call(tool.execution.tool, {
+    referenceImageIndexes: []
+  })
+  expect(reply.success, reply.text).toBe(true)
+  expect(reply.value.referenceImageIndexes).toEqual([])
+  expect(run.compile).not.toHaveBeenCalled()
+  expect(run.execute).not.toHaveBeenCalled()
+  const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
+  const before = usageAcquisition.calls.reduce(
+    (sum, call) => sum + bytes(call.input) + bytes(call.output),
+    0
+  )
+  const acquisition = run.replies
+    .slice(acquisitionStart, -1)
+    .reduce(
+      (total, delivery) =>
+        total + bytes(delivery.input) + Buffer.byteLength(delivery.raw),
+      0
+    )
+  const withoutRepeatedUsage = usageAcquisition.calls
+    .slice(0, 2)
+    .reduce((sum, call) => sum + bytes(call.input) + bytes(call.output), 0)
+  expect(acquisition).toBeLessThan(before)
+  expect(acquisition).toBeLessThan(withoutRepeatedUsage)
+  expect(
+    run.calls
+      .slice(queryStart)
+      .filter((name) => name === 'describe_design_apis')
+  ).toHaveLength(1)
+  expect(run.deliveries.length - acquisitionStart).toBe(2)
+  const restored = await run.call(
+    'describe_design_apis',
+    tool.definition.recover.arguments
+  )
+  expect(restored.value.tools[0].usageGuide).toEqual(tool.usageGuide)
+  const enlarged = setup(1000)
+  const more = await enlarged.call('describe_design_apis', input)
+  expect(more.value.tools[0]).toEqual(tool)
+  expect(enlarged.deliveries).toHaveLength(1)
+  expect(run.compile).not.toHaveBeenCalled()
+  expect(run.execute).not.toHaveBeenCalled()
+  process.stdout.write(
+    JSON.stringify({
+      measurement: 'complete-usage-acquisition',
+      before,
+      withoutRepeatedUsage,
+      after: acquisition,
+      beforeCalls: usageAcquisition.calls.length,
+      afterCalls: 1
+    }) + '\n'
+  )
+})
+
+it('keeps exploration separate from executable exact usage and preserves qualified query and partial lookup', async () => {
+  const run = setup()
+  const exact = (
+    await run.call('describe_design_apis', {
+      query: 'design.select_design_references',
+      view: 'usage'
+    })
+  ).value.tools[0]
+  expect(exact.usageGuide.parameters).toBeDefined()
+  expect(exact.definition.nextAction).toBe('execute-with-delivered-contract')
+  const menu = (
+    await run.call('describe_design_apis', {
+      query: 'comparison references',
+      view: 'usage'
+    })
+  ).value
+  expect(menu.tools.length).toBeGreaterThan(0)
+  for (const entry of menu.tools) {
+    expect(entry.usageGuide).toBeUndefined()
+    expect(['select-exact-tool', 'select-operation-scope']).toContain(
+      entry.definition.nextAction
+    )
+  }
+  const partial = await run.call('describe_design_apis', {
+    names: ['select_design_references', 'missing_tool'],
+    view: 'usage'
+  })
+  expect(partial.value.toolOutcome.status).toBe('partial')
+  expect(partial.value.tools[0].usageGuide.parameters).toEqual(
+    exact.usageGuide.parameters
+  )
+  const fields = await run.call(exact.fieldQuery.tool, {
+    ...exact.fieldQuery.arguments,
+    schemaPaths: ['/properties/referenceDecisions'],
+    refresh: true,
+    refreshReason: 'missing-fields'
+  })
+  expect(fields.value.tools[0].definition.coverage).toBe('partial')
+  expect(
+    fields.value.tools[0].schemaFragments[0].schema.items.required
+  ).toContain('uses')
+  expect(run.execute).not.toHaveBeenCalled()
+  expect(run.compile).not.toHaveBeenCalled()
+})
+
+it('derives usage scope navigation only for usage and reuses retained delivery without reprojection', async () => {
+  const run = setup()
+  const scopes = vi.spyOn(workflowDiscovery, 'workflowInputScopes')
+  try {
+    const full = await run.call('describe_design_apis', {
+      names: ['read_design_checks']
+    })
+    expect(full.value.tools[0].inputSchema).toBeDefined()
+    expect(scopes).not.toHaveBeenCalled()
+    const fields = await run.call('describe_design_apis', {
+      names: ['read_design_checks'],
+      schemaPaths: ['/properties']
+    })
+    expect(fields.value.tools[0].schemaFragments).toHaveLength(1)
+    expect(scopes).not.toHaveBeenCalled()
+    const usage = await run.call('describe_design_apis', {
+      names: ['read_design_checks'],
+      view: 'usage'
+    })
+    expect(usage.value.tools[0].usageGuide.parameters).toBeDefined()
+    expect(scopes).toHaveBeenCalledTimes(1)
+    scopes.mockClear()
+    const retained = await run.call('describe_design_apis', {
+      fromResult: usage.value.resultKey,
+      names: ['read_design_checks']
+    })
+    expect(retained.value.tools[0].usageGuide).toEqual(
+      usage.value.tools[0].usageGuide
+    )
+    expect(scopes).not.toHaveBeenCalled()
+    expect(run.compile).not.toHaveBeenCalled()
+    expect(run.execute).not.toHaveBeenCalled()
+  } finally {
+    scopes.mockRestore()
+  }
 })

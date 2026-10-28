@@ -3218,7 +3218,7 @@
       "wordCount": 694
     },
     {
-      "contentSha256": "f4c610f19c1107fc65bcdea7f09b25e7a59b8fadcdbce93550ee941bd4e0a07d",
+      "contentSha256": "4f0b893d41ee61755494a852cee80d35580d463856f4bc62240481825e875515",
       "description": "Pending direct-tool integration, canonical constraints and retained recovery without replay.",
       "headings": [
         {
@@ -3241,7 +3241,7 @@
       "path": "updates/unified-tool-contracts-r1.md",
       "section": "Extend",
       "title": "Adopt unified direct tool contracts",
-      "wordCount": 355
+      "wordCount": 396
     }
   ],
   "releaseHistory": [
