@@ -1,19 +1,26 @@
+import layout from './reference/pantry-layout.json'
+import {
+  COUNTERTOP_REFERENCE,
+  pantryPitcher,
+  pantryTumbler,
+  pantryBrush,
+  pantryCounterPlant
+} from '../assets/pantry-counterware'
 import { frameNightLight } from '../assets/frame-night-light'
 import {
   pantryShelfPlant,
   pantrySmallShelfPlant,
   pantryShelfSucculent
 } from '../assets/pantry-shelf-plant'
-import { dishTray, soapPump, utensilPair } from '../assets/pantry-accessories'
 import { ellipsoid } from '../assets/geometry'
 import { catalogAsset, part } from '../assets/catalog'
 import { mug } from '../assets/desk-items'
 import { pantryVessel, pantryCounterBottle } from '../assets/pantry-vessels'
 import { OFFICE_FLOORS, OFFICE_FIT } from './office-layout'
-import { addPrint } from './room-furnishing-helpers'
+import { addPrint, meshBounds } from './room-furnishing-helpers'
 import type { OfficeComposer } from './office-interior'
 
-/** Original pantry: fridge/dispenser on the west wall; counter on the north wall. */
+/** Owner-approved pantry layout; retained catalog assets keep their geometry. */
 export function addPantryFurnishings(c: OfficeComposer) {
   const { add, block, plant } = c,
     p = OFFICE_FIT.parameters
@@ -43,11 +50,10 @@ export function addPantryFurnishings(c: OfficeComposer) {
     [0.59, 0.91],
     [2.42, rear - 0.018, 2.13]
   )
-  const counterDepth = 0.5 * 1.25,
+  const counterDepth = layout.preparation.d,
     fridgeScale = 1.35,
-    fridgeY = rear - counterDepth - 0.02 - 0.26 * fridgeScale,
-    fridgeShift = fridgeY - 1.7,
-    fridgeX = left + 0.26 * fridgeScale + 0.012
+    fridgeY = layout.fridge.y + 0.297 * fridgeScale,
+    fridgeX = layout.fridge.x + layout.fridge.w / 2
   add(
     'fridge',
     'pantry-fridge',
@@ -57,26 +63,30 @@ export function addPantryFurnishings(c: OfficeComposer) {
         : part
     ),
     [fridgeX, fridgeY, floor],
-    90,
+    0,
     [fridgeScale, fridgeScale, fridgeScale]
   )
   add(
     'water-dispenser',
     'water-dispenser',
     catalogAsset('water-dispenser'),
-    [left + 0.17 * 0.95 + 0.012, 1.07, floor],
+    [
+      layout.dispenser.x + 0.17 * 0.95,
+      layout.dispenser.y + layout.dispenser.d / 2,
+      floor
+    ],
     90,
     [0.95, 0.95, 0.95]
   )
   plant(
     'pantry-fridge-plant',
-    [fridgeX, 1.51 + fridgeShift, floor + 1.15 * fridgeScale],
+    [fridgeX - 0.19, fridgeY, floor + 1.15 * fridgeScale],
     1.35,
     { color: 0x956a48, form: 'shrub' }
   )
   add('pantry-fridge-night-light', 'frame-night-light', frameNightLight(), [
-    fridgeX,
-    1.84 + fridgeShift,
+    fridgeX + 0.14,
+    fridgeY,
     floor + 1.15 * fridgeScale
   ])
   // Thin removable papers lie on the existing front face; the door geometry is unchanged.
@@ -87,8 +97,8 @@ export function addPantryFurnishings(c: OfficeComposer) {
   ] as const)
     block(
       'pantry-fridge-note-' + i,
-      [0.003, 0.065, 0.082],
-      [fridgeX + 0.26 * fridgeScale + 0.0015, y + fridgeShift, z],
+      [0.065, 0.003, 0.082],
+      [fridgeX + y - 1.7, fridgeY - 0.26 * fridgeScale - 0.0015, z],
       color,
       'plain',
       0
@@ -97,16 +107,23 @@ export function addPantryFurnishings(c: OfficeComposer) {
     'pantry-fridge-magnet',
     'round-magnet',
     [
-      part('magnet', ellipsoid([0.003, 0.023, 0.023], 16, 8), 0x434747, 'plain')
+      part('magnet', ellipsoid([0.023, 0.003, 0.023], 16, 8), 0x434747, 'plain')
     ],
-    [fridgeX + 0.26 * fridgeScale + 0.003, 1.51 + fridgeShift, 1.67]
+    [fridgeX - 0.19, fridgeY - 0.26 * fridgeScale - 0.003, 1.67]
   )
   const counterTop = floor + 0.8,
-    counterRight = 1.77,
-    counterWidth = counterRight - left,
-    counterX = (left + counterRight) / 2,
+    counterWidth = layout.preparation.w,
+    counterX = layout.preparation.x + counterWidth / 2,
     counterFront = rear - counterDepth,
     counterBodyWidth = counterWidth - 0.04
+  const sinkX = layout.mainSink.x + layout.mainSink.w / 2,
+    sinkShift = sinkX - 2.34
+  const positions = COUNTERTOP_REFERENCE.placement
+  const position = (key: keyof typeof positions): [number, number, number] => [
+    positions[key][0] + sinkShift,
+    rear - positions[key][1],
+    counterTop
+  ]
   block(
     'coffee-counter-body',
     [counterBodyWidth, counterDepth - 0.04, 0.745],
@@ -131,28 +148,26 @@ export function addPantryFurnishings(c: OfficeComposer) {
     'wood',
     0.008
   )
-  for (const side of [-1, 1]) {
-    block(
-      'coffee-counter-door-' + side,
-      [counterBodyWidth / 2 - 0.012, 0.022, 0.68],
-      [
-        counterX + (side * counterBodyWidth) / 4,
-        counterFront + 0.009,
-        floor + 0.4
-      ],
-      0xb99160,
-      'wood',
-      0.004
-    )
-    block(
-      'coffee-counter-handle-' + side,
-      [0.016, 0.025, 0.075],
-      [counterX + side * 0.041, counterFront - 0.015, floor + 0.61],
-      0x6c6352,
-      'metal',
-      0.003
-    )
-  }
+  block(
+    'coffee-counter-door',
+    [counterBodyWidth - 0.012, 0.022, 0.68],
+    [counterX, counterFront + 0.009, floor + 0.4],
+    0xb99160,
+    'wood',
+    0.004
+  )
+  block(
+    'coffee-counter-handle',
+    [0.016, 0.025, 0.075],
+    [
+      layout.preparation.x + counterWidth - 0.07,
+      counterFront - 0.015,
+      floor + 0.61
+    ],
+    0x6c6352,
+    'metal',
+    0.003
+  )
   add(
     'sink',
     'sink-cabinet',
@@ -167,88 +182,103 @@ export function addPantryFurnishings(c: OfficeComposer) {
       if (part.id === 'door--1') return { ...part, color: 0x65594d }
       return part
     }),
-    [2.34, rear - 0.3125, floor],
+    [sinkX, rear - 0.3125, floor],
     0,
     [1.25, 1.25, 1.25]
   )
-  plant('pantry-preparation-plant', [0.99, rear - 0.15, counterTop], 1.25, {
-    color: 0x65523d,
-    form: 'lanceolate'
-  })
-  add(
-    'pantry-counter-mug',
-    'ceramic-mug',
-    mug(),
-    [1.25, rear - 0.16, counterTop],
-    0,
-    [2.4, 2.4, 2.4]
-  )
-  add('pantry-dish-tray', 'dish-tray', dishTray(), [
-    1.46,
-    rear - 0.43,
-    counterTop
-  ])
+  const group = [
+    {
+      id: 'pantry-preparation-plant',
+      asset: 'plant-lanceolate',
+      parts: pantryCounterPlant('preparation'),
+      footprint: layout.counterObjects.plant
+    },
+    {
+      id: 'pantry-counter-pitcher',
+      asset: 'water-pitcher',
+      parts: pantryPitcher(),
+      footprint: layout.counterObjects.pitcher
+    },
+    {
+      id: 'pantry-counter-tumbler',
+      asset: 'insulated-tumbler',
+      parts: pantryTumbler(),
+      footprint: layout.counterObjects.tumbler
+    }
+  ]
+  for (const item of group) {
+    const bounds = meshBounds(item.parts)
+    const x = item.footprint.x - bounds[0][0]
+    const y = item.footprint.y - bounds[1][0]
+    add(item.id, item.asset, item.parts, [x, y, counterTop])
+  }
   add('pantry-counter-bottle', 'counter-green-bottle', pantryCounterBottle(), [
-    1.51,
-    rear - 0.08,
+    layout.counterBottleCenter[0],
+    layout.counterBottleCenter[1],
     counterTop
   ])
-  const shelfWidth = 2 - left
+  const shelf = layout.shelf
   block(
     'pantry-shelf',
-    [shelfWidth, 0.24, 0.033],
-    [(left + 2) / 2, rear - 0.125, 1.96],
+    [shelf.w, shelf.d, 0.033],
+    [shelf.x + shelf.w / 2, shelf.y + shelf.d / 2, 1.96],
     0xc3a06c,
     'wood',
     0.005
   )
-  for (const [i, fraction, vessel] of [
-    [0, 0.18, 'shelf-spice-jar'],
-    [1, 0.33, 'shelf-cream-jar'],
-    [2, 0.51, 'shelf-sage-jar'],
-    [3, 0.67, 'shelf-brown-jar'],
-    [4, 0.8, 'shelf-amber-jar']
-  ] as const)
-    add(
-      'pantry-canister-' + i,
-      vessel,
-      vessel === 'shelf-spice-jar'
-        ? pantrySmallShelfPlant()
-        : pantryVessel(vessel),
-      [left + fraction * shelfWidth, rear - 0.14, 1.9765]
-    )
-  add('pantry-canister-5', 'shelf-succulent', pantryShelfSucculent(), [
-    left + 0.92 * shelfWidth,
-    rear - 0.14,
-    1.9765
-  ])
-  add('pantry-shelf-plant', 'plant-shrub', pantryShelfPlant(), [
-    left + 0.06 * shelfWidth,
-    rear - 0.12,
-    1.9765
-  ])
-  plant('pantry-sink-plant', [2.79, rear - 0.18, counterTop], 1.15, {
-    color: 0xe8dbc3,
-    form: 'lanceolate'
-  })
+  const retained = [
+    {
+      id: 'pantry-shelf-plant',
+      asset: 'plant-shrub',
+      parts: pantryShelfPlant()
+    },
+    {
+      id: 'pantry-canister-0',
+      asset: 'shelf-spice-jar',
+      parts: pantrySmallShelfPlant()
+    },
+    {
+      id: 'pantry-canister-2',
+      asset: 'shelf-sage-jar',
+      parts: pantryVessel('shelf-sage-jar')
+    },
+    {
+      id: 'pantry-canister-3',
+      asset: 'shelf-brown-jar',
+      parts: pantryVessel('shelf-brown-jar')
+    },
+    {
+      id: 'pantry-canister-5',
+      asset: 'shelf-succulent',
+      parts: pantryShelfSucculent()
+    }
+  ]
+  let shelfLeft = shelf.x + shelf.endMargin
+  for (const item of retained) {
+    const bounds = meshBounds(item.parts)
+    add(item.id, item.asset, item.parts, [
+      shelfLeft - bounds[0][0],
+      shelf.y + shelf.d / 2 - (bounds[1][0] + bounds[1][1]) / 2,
+      1.9765
+    ])
+    shelfLeft += bounds[0][1] - bounds[0][0] + shelf.gap
+  }
+  add(
+    'pantry-sink-plant',
+    'plant-lanceolate',
+    pantryCounterPlant('sink'),
+    position('sinkPlant')
+  )
+  const cup = COUNTERTOP_REFERENCE.sinkCup
   add(
     'pantry-sink-mug',
     'ceramic-mug',
-    mug(),
-    [2.73, rear - 0.49, counterTop],
-    0,
-    [1.1, 1.1, 1.1]
+    mug(Number.parseInt(cup.color.slice(1), 16)),
+    position('sinkCup'),
+    cup.rotationDegrees,
+    [cup.uniformScale, cup.uniformScale, cup.uniformScale]
   )
-  add('pantry-sink-utensils', 'utensil-pair', utensilPair(), [
-    2.73,
-    rear - 0.49,
-    counterTop
-  ])
-  add('pantry-soap-pump', 'soap-pump', soapPump(), [
-    2.52,
-    rear - 0.075,
-    counterTop
-  ])
+  add('pantry-sink-brush', 'brush', pantryBrush(), position('sinkCup'))
   add(
     'pantry-floor-jar',
     'porcelain-floor-jar',
@@ -259,7 +289,7 @@ export function addPantryFurnishings(c: OfficeComposer) {
     'pantry-dark-cup',
     'ceramic-mug',
     mug(0x424e44),
-    [1.84, rear - 0.13, counterTop],
+    [1.84 + sinkShift, rear - 0.13, counterTop],
     0,
     [1.1, 1.1, 1.1]
   )

@@ -31,7 +31,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
     'discussion-print',
     'Better\nAgents\nHappier\nPeople',
     [0.75, 1.06],
-    [west + 0.042, 1.71, 2.1],
+    [west + 0.042, 2.46, 2.1],
     90
   )
   add(
@@ -101,7 +101,7 @@ export function addDiscussionFurnishings(c: OfficeComposer, tableTop: number) {
     'discussion-side-bookcase',
     'low-bookcase',
     catalogAsset('low-bookcase'),
-    [west + 0.17, 0.83, floor],
+    [west + 0.17, 1.33, floor],
     90,
     [0.72, 0.72, 0.72]
   )

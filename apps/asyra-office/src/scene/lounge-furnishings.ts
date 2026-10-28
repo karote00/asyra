@@ -20,7 +20,7 @@ export function addLoungeFurnishings(c: OfficeComposer, top: number) {
     OFFICE_SEATING.find((i) => i.id === 'lounge-coffee-table'),
     'lounge table'
   )
-  addRug(c, 'lounge-rug', [2.05, 1.7, 0.012], [1.58, -1.26, floor], 0x89848b)
+  addRug(c, 'lounge-rug', [2.05, 1.7, 0.012], [1.58, -1.01, floor], 0x89848b)
   add('lounge-table-mug', 'ceramic-mug', mug(), [
     table.position[0] - 0.22,
     table.position[1] - 0.16,
@@ -138,7 +138,7 @@ export function addLoungeFurnishings(c: OfficeComposer, top: number) {
     [part('stem', cylinder(0.009, lampZ - floor + 0.16), 0x65503d, 'metal')],
     [lampX, lampY - 0.012, (floor + lampZ + 0.16) / 2]
   )
-  plant('lounge-floor-plant', [west + 0.25, -0.52, floor], 1.85, {
+  plant('lounge-floor-plant', [west + 0.25, -0.02, floor], 1.85, {
     color: 0x3d3a32,
     form: 'rosette'
   })

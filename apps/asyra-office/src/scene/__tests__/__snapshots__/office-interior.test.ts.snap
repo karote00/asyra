@@ -1,8 +1,8 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`accepted structural composition > preserves every exterior assembly and label from before the interior refactor 1`] = `
+exports[`accepted structural composition > records the approved rear-neighborhood translation with unchanged front and side assets 1`] = `
 {
-  "count": 404,
-  "digest": "36d730386dffa6ae2a165af7e2f75d8281881025b18a877afb09a955915d912f",
+  "count": 476,
+  "digest": "39426cb7744e787bf7ae268cc072c0017830dab16a11b8eda2045e71fe3753c7",
 }
 `;

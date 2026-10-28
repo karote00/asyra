@@ -228,3 +228,96 @@ See `FRAME-NIGHT-LIGHT.md` for its complete dimensions, two owner photographs,
 single-part five-view reference, replaceable appearance and bottom light source.
 The second photograph establishes perpendicular crossed arches, not parallel
 frames. Both assets are available through the existing asset review route.
+
+
+## Countertop group - owner clarification, 2026-10-28
+
+The owner identifies the preparation group as a brown potted plant, a white
+handled water pitcher and a small white insulated tumbler. The approved layout
+places the plant at the rear left beside the recessed fridge, the pitcher at
+the rear right and the tumbler at the front right. This supersedes the former
+two-wall corner and straight-row placement. The pitcher is not an enlarged mug.
+The approved pantry crop remains the asset appearance authority. `sourceVariants.countertopReview`
+is the executable construction recipe; its dimensions are inferred defaults for
+the accepted room, not physical measurements recovered from the raster image.
+
+The enlarged owner crop is preserved as `reference-preparation-counter.png`.
+It establishes the retained small-sink asset: the front silver object has a
+recessed bowl and a narrow right-side fitting. The approved layout omits this
+asset from the preparation counter and keeps its construction recipe for reuse.
+Hidden plumbing and legible markings are not recovered from this crop.
+
+All dimensions below are metres. The pitcher is 0.255 high with a 0.099 rim
+radius, 0.005 wall and 0.007 base. Base radius is 97% of rim radius, keeping the
+walls nearly vertical. Its lip extends 0.018 toward -X. The opposite handle has
+a straight outer section and 0.012-radius corners, 0.055 reach and 0.007 tube
+radius. A plain 0.004-thick gray insert has its center 0.006 below the lip;
+a flat dark central region has radius 0.018. This represents the visible top
+regions only, not an inferred button or opening mechanism. Defaults are body
+#E8E4DF, insert #B9B5BB and center #716B76. All remain independently recolorable.
+The white insulated tumbler is 0.190 high with a 0.034 body radius and separate
+fitted 0.019-high lid. It has no handle and defaults to #E9E7E2.
+
+The preparation basin is 0.480 wide and 0.250 deep. It extends 0.090 below
+counter contact Z=0 and 0.010 above it. The rim is 0.021 wide, and the metal
+floor is 0.013 thick, giving interior floor Z=-0.077. The outer edge radius is
+0.012; the cavity edge radius is 0.009. Remove the matching 0.462 by 0.232
+aperture from both the wooden worktop and the upper cabinet body, with cutter
+Z=-0.095..0.035 to clear the metal bottom. The basin must not overlay solid wood. External cabinet extents,
+fronts, handles and plinth are unchanged. The right fitting centerline starts
+at (0.2295,0.028,0.010), rises to 0.170 and bends 0.065 toward the bowl; tube
+radius is 0.006. Its base radius is 0.012. No broad divider or invented plates.
+Metal defaults to #AAAFA9 with roughness 0.48 (bowl) / 0.40 (fitting).
+
+The rear green bottle receives a pale #E0D5D0 curved label over local
+Z=0.035..0.104 and angles 220..320 degrees before its existing 0.9 uniform
+scale. Its label-inclusive unscaled envelope is 0.0878 by 0.0878 by 0.160.
+No legible label text is inferred.
+
+### Approved staggered placement - 2026-10-28
+
+The approved top-view configuration replaces the former corner and straight-row
+placements. Runtime layout is owned by
+`apps/asyra-office/src/scene/reference/pantry-layout.json`. The three original
+objects retain their complete mesh geometry and sizes. Plant sits at left rear,
+pitcher at right rear, tumbler at right front. Their full leaf/handle envelopes
+fit inside the 0.83781 by 0.625 preparation top without overlap. The prior fixed
+10/20 cm row rule is superseded by explicit owner approval to reposition them.
+The small green bottle moves to the clear left-front worktop area, using the
+layout's counterBottleCenter rather than its old pitcher-intersecting anchor.
+All bases remain at countertop Z=1.18. Build each parts array once, measure once
+and reuse it for placement. No render-time geometry construction is introduced.
+
+Remove only the preparation sink's scene instance. Preserve preparationSink,
+cutPreparationOpening, their specifications and geometry tests for reuse. The
+current worktop and cabinet are complete uncut solids, not a patched opening.
+The main sink and its supported cup, brush, plant and dark cup are translated
+together by +0.0375 in X; their geometry, scale and relative positions remain.
+The stored largest white shelf jar and tiny narrow-neck bottle likewise remain
+available from their factories and specifications.
+
+The preparation pot is nearly straight, maximum radius 0.104, base radius 0.096,
+height 0.210 and wall 0.005. Soil top is 0.195. Existing individual lanceolate
+leaves use seed 611 and source scale 1.35; foliage XY/Z factors are 0.80/0.70,
+relocated from the source soil datum to the new soil top. Default pot #675044.
+The main-sink plant is unchanged: seed 607, scale 1.35, foliage XY/Z factors
+1.08/1.12, default pot #E8DBC3. The main-sink cup uses the existing ceramic
+mug at scale 1.62, rotated -90 degrees, with one 0.215-high brush. Its support
+is outside the actual offset basin, not an assumed centered cutout.
+The unsupported soap dispenser and paired wooden utensils remain absent from
+the scene. The dark vessel left of the main sink is unchanged; the owner's
+clarification identified the preparation group, not that vessel.
+
+Colors, materials and overall XYZ dimensions remain replaceable. No shadow or
+lighting is baked into these parts. Formal geometry/support checks and actual
+hardware-rendered close-ups are separate evidence; neither grants owner approval.
+
+#### Placement after building expansion
+
+The owner-directed 2026-10-28 rear extension translates every pantry smallware
+anchor +1.00 m Y with its support. The preparation plant, pitcher, tumbler and
+green bottle retain the approved staggered relationship; shelf items keep their
+order, gaps and size. Main-sink accessories and floor jar also follow +1.00 m Y.
+All local geometry, X/Z coordinates, colors/materials and stored-asset status
+remain unchanged. Current placement comes from the scene layout and its wall
+datum, not from the earlier proposal's absolute world coordinates.

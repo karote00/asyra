@@ -54,7 +54,7 @@ function bounds(id: string, partId?: string) {
   return result
 }
 describe('accepted structural composition', () => {
-  it('preserves every exterior assembly and label from before the interior refactor', () => {
+  it('records the approved rear-neighborhood translation with unchanged front and side assets', () => {
     const hash = createHash('sha256')
     let count = 0
     for (const a of scene.assemblies) {

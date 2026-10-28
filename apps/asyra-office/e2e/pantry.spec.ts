@@ -57,22 +57,36 @@ test('pantry source review captures appliances, shelf and sink at readable scale
   // Native-resolution source-angle crop keeps the refrigerator light readable.
   await page.screenshot({
     clip: {
-      x: bounds.x + bounds.width * 0.11,
-      y: bounds.y + bounds.height * 0.29,
-      width: bounds.width * 0.22,
-      height: bounds.height * 0.21
+      x: bounds.x + bounds.width * 0.22,
+      y: bounds.y + bounds.height * 0.25,
+      width: bounds.width * 0.25,
+      height: bounds.height * 0.19
     },
     path: info.outputPath('fridge-night-light-close.png')
   })
   await page.screenshot({
     clip: {
-      x: bounds.x + bounds.width * 0.32,
-      y: bounds.y + bounds.height * 0.18,
-      width: bounds.width * 0.42,
-      height: bounds.height * 0.32
+      x: bounds.x + bounds.width * 0.42,
+      y: bounds.y + bounds.height * 0.27,
+      width: bounds.width * 0.27,
+      height: bounds.height * 0.2
     },
     path: info.outputPath('shelf-condiments-close.png')
   })
+  for (const [name, left, top, width, height] of [
+    ['preparation-counter-close', 0.38, 0.43, 0.25, 0.36],
+    ['sink-counter-close', 0.54, 0.54, 0.34, 0.4]
+  ] as const) {
+    await page.screenshot({
+      clip: {
+        x: bounds.x + bounds.width * left,
+        y: bounds.y + bounds.height * top,
+        width: bounds.width * width,
+        height: bounds.height * height
+      },
+      path: info.outputPath(name + '.png')
+    })
+  }
   const x = bounds.x + bounds.width / 2,
     y = bounds.y + bounds.height / 2
   await page.mouse.move(x, y)
@@ -100,7 +114,7 @@ test('pantry source review captures appliances, shelf and sink at readable scale
       url: page.url(),
       viewport: page.viewportSize(),
       renderer: graphics,
-      reference: 'approved-office-reference.jpg - original pantry crop',
+      reference: 'pantry-top-layout-proposal.png - owner approved 2026-10-28',
       geometry: 'production scene',
       acceptance: 'requires image inspection; capture is not visual acceptance'
     }),

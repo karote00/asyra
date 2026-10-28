@@ -138,53 +138,30 @@ hidden geometry. Color and material remain replaceable per named region.
 - Dispenser: retain 1.12 m catalog height and 0.95 room scale. Cabinet top is
   0.64 m and bottle span 0.48 m in catalog space, giving a 0.75 height ratio.
   Preserve two taps, separate ring geometry and original floor contact.
-- Refrigerator: retain 1.35 uniform scale, west-wall orientation and current door
-  split. Notes attach to the flat front at local Y=-0.26, not the handles. Top
-  support is Z=1.9325. A warm-pot compact shrub and a pale lidded jar stand on it.
-  Jar diameter is 0.116 m and height 0.25625 m; lid is separately recolorable.
-- Shelf: X span [0.1776932207, 2.0000], depth 0.24 m, thickness 0.033 m,
-  top Z=1.9765. Its left edge meets the inside white wall; its rear edge is
-  5 mm clear of the north wall. Contents use fractions of that full span,
-  keeping the shrub at fraction 0.06 and the six vessels below from left to right.
-  All vessel bases remain on the shelf top; centers use Y=rear-0.14.
-  Rounded X values below are explanatory; the fraction formula is authoritative.
-
-| Vessel | Span fraction | X (m) | Diameter | Height envelope | Visible regions |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Small plant pot | 0.18 | 0.505708 | 0.1 | 0.12 | body |
-| Large cream | 0.33 | 0.779054 | 0.207 | 0.34 | body, collar, lid, lid-center, upper-label |
-| Medium pale/green | 0.51 | 1.107070 | 0.182 | 0.285 | body, collar, lid, lid-center, front-label, upper-label |
-| Brown | 0.67 | 1.398639 | 0.161 | 0.215 | body, neck-rim, collar, lid, lid-center |
-| Tall ochre | 0.8 | 1.635539 | 0.105 | 0.255 | body, head, lid |
-| Blue-gray crock | 0.92 | 1.854215 | 0.185 | 0.303 | body, rim-band, utensil-0, utensil-1, utensil-2, spoon-bowl, spatula-blade, green-head |
-
-The leftmost shelf flowering plant uses its own low ochre vessel, tapered leaves and pale-yellow blooms from the pantry-smallware source recipe. The second pot contains small foliage; the third item has no yellow lower label. Remaining labels are local front patches, not full bands. The counter bottle remains a separate profile.
-
-- Preparation counter: top Z=1.18, X span [0.1776932207, 1.7700],
-  Y span [1.9970995177, 2.6220995177], thickness 0.035 m. Left and rear top edges
-  meet the existing white and north walls. Keep the 7.5 mm gap to the separate
-  sink countertop. Both worktops have depth 0.625 m and identical front/back Y extents. Move
-  the whole refrigerator forward 0.0739004823 m, including notes, magnet, plant
-  and storage jar, to retain 20 mm clearance behind it. Refrigerator center
-  Y=1.6260995177; its rear is Y=1.9770995177. Do not shorten the worktop
-  to compensate for appliance collisions. Body is 40 mm narrower and shallower than the top,
-  height 0.745 m, centered at (0.9738466104, 2.3095995177, 0.7775).
-  The two front doors each measure 0.7641533896 x 0.022 x 0.68 m,
-  centers X=0.5857699155 and 1.3619233052, Y=2.0060995177, Z=0.7800.
-  Handles share X=counter-center +/- 0.041, Y=1.9820995177, Z=0.9900.
-  Plinth is 1.4923067793 x 0.505 x 0.05 m, centered
-  at (0.9738466104, 2.3295995177, 0.4050). Replace the unsupported box coffee machine with
-  a dark-pot lanceolate plant, enlarged pale mug and shallow dish tray. Tray envelope is
-  0.24 x 0.16 x 0.108 m with a separate base, four rims, central upright
-  and its foot. The former two circular plates were invented and are removed.
-  The low-resolution source does not identify the upright object's function.
+- Refrigerator: retain 1.35 scale and the upper-small/lower-large door split.
+  The owner-approved top-view layout rotates it toward the aisle and recesses it
+  at the rear left. Notes/magnet remain on its actual front; the top plant and
+  framed night-light follow its position. Top support remains Z=1.9325.
+- Shelf: approved width 1.05 m, depth 0.24 m, thickness 0.033 m, top Z=1.9765.
+  Starts at the preparation counter's left edge and extends over the main sink's
+  left strip. Retain flower pot, small plant, ochre jar, cork jar and succulent.
+  Use complete-envelope widths with 0.03 m gaps and approximately 0.03331 m end
+  margins. Omit largest cream jar and tiny bottle instances; preserve the assets.
+- Preparation counter: X span [0.9696932207,1.8075], Y span
+  [1.9970995177,2.6220995177], top Z=1.18 and thickness 0.035 m. One door replaces
+  the two-door arrangement; body is 0.04 m narrower/shallower than the top with
+  height 0.745 m. Left hinge, right-side handle, existing wood appearance.
+  Keep the 7.5 mm gap to the unchanged full-size main sink. Both countertop
+  depths remain 0.625 m. Remove the small basin instance and construct uncut
+  worktop/body solids; its independent asset/specification remains available.
+  Approved staggered smallware and exact floor anchors are owned by
+  `apps/asyra-office/src/scene/reference/pantry-layout.json`.
 - Sink: retain basin width/depth and 1.25 uniform scale; shift basin, drain,
   faucet and all cabinet/worktop clearance cuts 60 mm left in asset space. Worktop
   default is wood `#C7A575`; left door default is `#65594D`. The right drawers and
   end panel retain their wood regions. The dark cup stays entirely left of
-  X=1.9525, the basin's left opening edge. Soap pump sits behind the opening.
-  Pump envelope is 0.058 x 0.065 x 0.12 m; neck radius is 0.007 m. Two utensils
-  occupy the right mug, with their tips at 0.186 and 0.211 m above the counter.
+  X=1.9775, the basin's left opening edge. The right white cup holds one brush.
+  The unsupported soap pump and paired wooden utensils are absent from the scene.
 - The right white-pot plant uses the distinct soil-rooted lanceolate variant. The pale-blue
   floor jar rests on the white floor band at (3.02, 1.9620995177, 0.38), diameter
   0.128 m, height 0.200 m. It is not placed on a new wall or raised floor.
@@ -197,24 +174,27 @@ or exterior tree construction. Geometry and lighting remain separate.
 
 Appearance batching reuses the existing cream, dark-green, terracotta, blue-grey
 and metal families where visually equivalent. Refrigerator notes and the round
-magnet use existing plain-surface colors. Tray metal and pump metal share
-`#AAAFA9` at roughness 0.65. Whole-scene draw groups retain the existing limit
+magnet use existing plain-surface colors. Preparation basin metal uses `#AAAFA9` at roughness 0.48 and its fitting uses 0.40. Whole-scene draw groups retain the existing limit
 of fewer than 160; do not relax the gate to accommodate smallware.
 
-### Final pantry composition refinements - 2026-10-27
+### Current pantry composition authority - 2026-10-28
 
-The accepted upper-small/lower-large refrigerator and 70% static dispenser
-remain unchanged. Preparation plant centre is (0.99, rear-0.15), uniform scale
-1.25, dark-brown pot. White mug centre is (1.25, rear-0.16), uniform scale
-2.4; tray centre (1.46, rear-0.43). The rear bottle is at (1.51, rear-0.08),
-scale 0.9, behind and to the right of the mug with separated X extents.
-Shelf shrub scale is 1.1, rooted at span fraction 0.06.
-They remain separate and supported at counter Z=1.18. Sink plant centre is
-(2.79, rear-0.18), scale 1.15; the dark cup is (1.84, rear-0.13), entirely
-left of the shifted basin. The preparation cabinet now extends to the white wall with the dimensions
-above. The sink cabinet retains its own front intervals and depth; corrected
-shadows reveal both units' recesses and handles.
+The approved top-view layout supersedes previous west-wall fridge, full-span
+shelf and corner-row placement instructions. Runtime placement is owned by
+`apps/asyra-office/src/scene/reference/pantry-layout.json`; the product plan
+records owner approval. Asset geometry remains in the existing pantry and
+pantry-smallware specifications. Retain original sizes/materials for the sink,
+appliances and smallware. Main sink accessories move +0.0375 m in X with their
+parent group. Do not restore stored instances merely because their factories
+and geometry tests remain present. Geometry and lighting stay separate.
 
-The vessel table above uses the current unscaled source-variant envelopes.
-Per-vessel profiles and replaceable material regions are authoritative in `../pantry-smallware/pantry-smallware-model-spec.json`
-and its geometry supplement; never restore the old repeated-cylinder shapes.
+#### Owner-directed room expansion
+
+The 2026-10-28 four-room expansion moves the pantry rear wall and complete
+approved appliance/counter/shelf group +1.00 m in world Y. The pantry front
+boundary moves +0.50 m, giving 0.50 m additional clear depth. The dispenser
+also moves +1.00 m, placing its complete footprint within the extended west
+wall. Geometry, dimensions, X/Z coordinates, rotation, appearance and relative
+fridge/dispenser clearance are unchanged. Current world anchors are in
+scene/reference/pantry-layout.json; the earlier top-view proposal records the
+pre-expansion approval and is not the current world-coordinate authority.

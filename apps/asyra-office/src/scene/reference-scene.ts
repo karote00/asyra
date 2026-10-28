@@ -131,7 +131,7 @@ export const PLACES = [
     name: 'Work room',
     description: 'Desk, shelves, ideas',
     icon: 'table',
-    target: [-2, -1.45, OFFICE_FLOORS.work + 0.55] as Vec
+    target: [-2, -1.2, OFFICE_FLOORS.work + 0.55] as Vec
   },
   {
     id: 'trees',
@@ -145,21 +145,23 @@ export const PLACES = [
     name: 'Tea point',
     description: 'Coffee, chats, ideas',
     icon: 'cup',
-    target: referencePoint([856, 302], 2, OFFICE_FLOORS.pantry + 0.55)
+    target: referencePoint([856, 302], 2, OFFICE_FLOORS.pantry + 0.55).map(
+      (v, axis) => (axis === 1 ? v + 1 : v)
+    ) as Vec
   },
   {
     id: 'lounge',
     name: 'Lounge',
     description: 'Room to slow down',
     icon: 'sofa',
-    target: [1.55, -1.75, OFFICE_FLOORS.lounge + 0.4] as Vec
+    target: [1.55, -1.5, OFFICE_FLOORS.lounge + 0.4] as Vec
   },
   {
     id: 'table',
     name: 'Meeting corner',
     description: 'Small room, big ideas',
     icon: 'table',
-    target: [-1.48, 1.78, OFFICE_FLOORS.discussion + 0.55] as Vec
+    target: [-1.48, 2.53, OFFICE_FLOORS.discussion + 0.55] as Vec
   },
   {
     id: 'park',
@@ -256,17 +258,25 @@ export function createReferenceScene(
     ],
     [0, -4.5, -0.17]
   )
-  block('street-rear', [25, 2, 0.12], [0, 4.3, -0.17], 0x5c5e61, 'stone')
+  // Owner-authorized rear neighborhood translation; front and side streets stay fixed.
+  const rearOffset = 2
+  block(
+    'street-rear',
+    [25, 2, 0.12],
+    [0, 4.3 + rearOffset, -0.17],
+    0x5c5e61,
+    'stone'
+  )
   block('street-left', [2, 22, 0.12], [-5, 0, -0.16], 0x5c5e61, 'stone')
   block(
     'sidewalk-foundation',
-    [10, 7.6, 0.2],
-    [0.8, -0.1, -0.04],
+    [10, 7.6 + rearOffset, 0.2],
+    [0.8, -0.1 + rearOffset / 2, -0.04],
     0xb5aa94,
     'stone'
   )
   for (let i = -7; i < 11; i++)
-    for (let j = -6; j < 6; j++)
+    for (let j = -6; j < 6 + rearOffset / 0.5; j++)
       block(
         `paving-${i}-${j}`,
         [0.49, 0.49, 0.07],
@@ -436,8 +446,8 @@ export function createReferenceScene(
     [
       [-3.65, -2.5, 0.1],
       [3.25, -3.2, 0.1],
-      [-3.65, 2.8, 0.1],
-      [4.3, 2.7, 0.1]
+      [-3.65, 2.8 + rearOffset, 0.1],
+      [4.3, 2.7 + rearOffset, 0.1]
     ] as Vec[]
   ).entries())
     add(
@@ -457,9 +467,9 @@ export function createReferenceScene(
       [-3.6, 1.9, 0.1],
       [-4, -5.6, -0.1],
       [4.35, 2.4, 0.1],
-      [-4, 5.4, 0.1],
-      [2.3, 5.5, 0.1],
-      [6.5, 5.4, 0.1]
+      [-4, 5.4 + rearOffset, 0.1],
+      [2.3, 5.5 + rearOffset, 0.1],
+      [6.5, 5.4 + rearOffset, 0.1]
     ] as Vec[]
   ).entries())
     add(`tree-${i}`, 'street-tree-leafy', treeParts[i], pos, i * 11, [
@@ -473,7 +483,7 @@ export function createReferenceScene(
     block(
       `shop-${i}`,
       [2.8, 2.3, height],
-      [x, 7, height / 2 - 0.1],
+      [x, 7 + rearOffset, height / 2 - 0.1],
       [0xc9b796, 0xd6c4a7, 0xbfb6a2][i % 3],
       'plaster',
       0.04
@@ -481,7 +491,7 @@ export function createReferenceScene(
     block(
       `shop-roof-${i}`,
       [2.95, 2.45, 0.14],
-      [x, 7, height - 0.03],
+      [x, 7 + rearOffset, height - 0.03],
       0xb2a790,
       'stone',
       0.012
@@ -489,7 +499,7 @@ export function createReferenceScene(
     block(
       `shop-cornice-${i}`,
       [2.89, 0.16, 0.15],
-      [x, 5.8, height - 0.28],
+      [x, 5.8 + rearOffset, height - 0.28],
       0xe6dac2,
       'stone',
       0.01
@@ -497,7 +507,7 @@ export function createReferenceScene(
     block(
       `shop-base-${i}`,
       [2.84, 0.11, 0.26],
-      [x, 5.81, 0.08],
+      [x, 5.81 + rearOffset, 0.08],
       0x9d967f,
       'stone',
       0.01
@@ -505,7 +515,7 @@ export function createReferenceScene(
     block(
       `shop-door-${i}`,
       [0.53, 0.07, 1.45],
-      [x, 5.78, 0.72],
+      [x, 5.78 + rearOffset, 0.72],
       0x826a4b,
       'wood',
       0.008
@@ -513,7 +523,7 @@ export function createReferenceScene(
     block(
       `shop-door-glass-${i}`,
       [0.4, 0.012, 0.77],
-      [x, 5.738, 0.95],
+      [x, 5.738 + rearOffset, 0.95],
       0x647a7c,
       'plain',
       0.003
@@ -523,7 +533,7 @@ export function createReferenceScene(
         asset(
           `shop-window-${i}-${z}-${dx}`,
           'window-four-pane',
-          [x + dx, 5.77, z - 0.475],
+          [x + dx, 5.77 + rearOffset, z - 0.475],
           0,
           [0.77 / 1.82, 0.7, 0.95 / 1.28]
         )
@@ -531,7 +541,7 @@ export function createReferenceScene(
     block(
       `shop-sign-${i}`,
       [1.8, 0.06, 0.37],
-      [x, 5.72, 1.95],
+      [x, 5.72 + rearOffset, 1.95],
       0x6a6251,
       'wood'
     )
@@ -539,7 +549,7 @@ export function createReferenceScene(
       ['BOOKS', 'CAFÉ', 'FLOWERS', 'BAKERY', 'STUDIO'][i],
       1.6,
       0.27,
-      [x, 5.68, 1.95],
+      [x, 5.68 + rearOffset, 1.95],
       '#ede3d1',
       '#6a6251'
     )
@@ -547,7 +557,7 @@ export function createReferenceScene(
       `awning-${i}`,
       'striped-shop-awning',
       awning({ width: 2.2, moduleWidth: 0.22, palette: [0x7c8b81, 0xe9dec6] }),
-      [x, 5.78, 1.42]
+      [x, 5.78 + rearOffset, 1.42]
     )
   }
   // Static modular actors are explicitly synthetic; no provider work is inferred.

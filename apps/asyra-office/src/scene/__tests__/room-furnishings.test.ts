@@ -1,6 +1,5 @@
 import { requiredSpecValue } from '../../assets/specification'
 import { beforeAll, expect, it } from 'vitest'
-import { OFFICE_STRUCTURE } from '../office-layout'
 import { createReferenceScene } from '../reference-scene'
 import type { AssetPart } from '../../assets/catalog'
 
@@ -84,13 +83,13 @@ it('supports sink accessories on the solid counter strip, outside the basin', ()
   const countertop = requiredSpecValue(parts.get('sink'), 'sink').find(
     (p) => p.id === 'countertop'
   )
-  // The catalog cutout is 0.50 m wide, enlarged uniformly by 1.25.
-  const cutoutRight = 2.34 + (0.5 * 1.25) / 2
+  // The basin is offset toward the left of the cabinet, not centered on it.
+  const cutoutRight = bounds('sink', 'basin-outer')[0][1]
   for (const id of ['pantry-sink-mug', 'pantry-sink-plant']) {
     const b = bounds(id, id.endsWith('plant') ? 'pot' : undefined)
     expect(b[2][0], id).toBeCloseTo(0.38 + 0.64 * 1.25, 5)
     expect(b[0][0], id).toBeGreaterThan(cutoutRight)
-    expect(b[0][1], id).toBeLessThan(2.34 + (0.9 * 1.25) / 2)
+    expect(b[0][1], id).toBeLessThan(bounds('sink', 'countertop')[0][1])
   }
   expect(countertop).toBeDefined()
 })
@@ -111,14 +110,14 @@ it('keeps the lounge side print and lamp below their actual stepped wall tops', 
   expect(bounds('lounge-side-print')[2][1]).toBeLessThan(1.131485)
   expect(bounds('lounge-sconce')[2][1]).toBeLessThan(1.57716)
 })
-it('places the pantry appliances along the west wall with front faces pointing into the room', () => {
+it('places the rotated fridge behind the dispenser with its door facing the aisle', () => {
   const fridge = bounds('fridge'),
     dispenser = bounds('water-dispenser')
   expect(fridge[0][0]).toBeGreaterThan(0.1776932207)
   expect(dispenser[0][0]).toBeGreaterThan(0.1776932207)
   expect(dispenser[1][1]).toBeLessThan(fridge[1][0])
-  expect(bounds('fridge', 'upper-door')[0][0]).toBeGreaterThan(
-    bounds('fridge', 'cabinet')[0][1] - 0.02
+  expect(bounds('fridge', 'upper-door')[1][0]).toBeLessThan(
+    bounds('fridge', 'cabinet')[1][0]
   )
   for (const id of ['fridge', 'water-dispenser', 'sink'])
     expect(bounds(id)[2][0], id).toBeCloseTo(0.38, 5)
@@ -163,10 +162,10 @@ it('uses the source pantry objects instead of an unsupported coffee machine', ()
   expect(parts.has('coffee-machine')).toBe(false)
   expect(parts.has('pantry-fridge-night-light')).toBe(true)
   expect(parts.has('pantry-preparation-plant')).toBe(true)
-  expect(parts.has('pantry-dish-tray')).toBe(true)
+  expect(parts.has('pantry-preparation-sink')).toBe(false)
   expect(
     [...parts.keys()].filter((id) => /^pantry-canister-\d+$/.test(id))
-  ).toHaveLength(6)
+  ).toHaveLength(4)
   expect(bounds('pantry-fridge-night-light')[2][0]).toBeCloseTo(
     bounds('fridge')[2][1],
     5
@@ -189,7 +188,7 @@ it('uses a compact leafy crown above the refrigerator rather than a sparse uprig
 it('attaches fridge notes directly to the upper door and grounds the right floor jar', () => {
   const door = bounds('fridge', 'upper-door')
   for (let i = 0; i < 3; i++)
-    expect(bounds('pantry-fridge-note-' + i)[0][0]).toBeCloseTo(door[0][1], 5)
+    expect(bounds('pantry-fridge-note-' + i)[1][1]).toBeCloseTo(door[1][0], 5)
   const jar = bounds('pantry-floor-jar'),
     band = bounds('pantry-floor-band')
   expect(jar[2][0]).toBeCloseTo(band[2][1], 5)
@@ -199,7 +198,9 @@ it('attaches fridge notes directly to the upper door and grounds the right floor
   }
 })
 it('supports the dark cup beside the sink opening rather than across the basin', () => {
-  expect(bounds('pantry-dark-cup')[0][1]).toBeLessThan(2.34 - (0.5 * 1.25) / 2)
+  expect(bounds('pantry-dark-cup')[0][1]).toBeLessThan(
+    bounds('sink', 'basin-outer')[0][0]
+  )
 })
 
 it('distinguishes the blue succulent pot and rounded porcelain floor jar', () => {
@@ -220,19 +221,18 @@ it('distinguishes the blue succulent pot and rounded porcelain floor jar', () =>
   )
 })
 
-it('supports every source vessel and keeps the small rear counter bottle behind the mug', () => {
+it('supports every source vessel and retains the separate small counter bottle', () => {
   const top = bounds('coffee-counter-top')
   const bottle = bounds('pantry-counter-bottle')
   expect(bottle[2][0]).toBeCloseTo(top[2][1], 6)
-  const mug = bounds('pantry-counter-mug')
-  expect(bottle[1][0] + bottle[1][1]).toBeGreaterThan(mug[1][0] + mug[1][1])
-  expect(bottle[0][0]).toBeGreaterThan(mug[0][1])
+  const mug = bounds('pantry-counter-pitcher')
+  expect(bottle[1][1]).toBeLessThan(mug[1][0])
   for (const axis of [0, 1]) {
     expect(bottle[axis][0]).toBeGreaterThan(top[axis][0])
     expect(bottle[axis][1]).toBeLessThan(top[axis][1])
   }
   const shelf = bounds('pantry-shelf')
-  for (let i = 0; i < 6; i++) {
+  for (const i of [0, 2, 3, 5]) {
     const jar = bounds('pantry-canister-' + i)
     expect(jar[2][0]).toBeCloseTo(shelf[2][1], 6)
     for (const axis of [0, 1]) {
@@ -248,46 +248,32 @@ it('spreads pantry foliage naturally while retaining its supported pot and small
     'sink plant'
   ).filter((p) => p.id.startsWith('leaf-'))
   expect(foliage.length).toBeGreaterThanOrEqual(10)
-  const tray = bounds('pantry-dish-tray'),
-    mug = bounds('pantry-counter-mug')
-  expect(tray[0][0]).toBeGreaterThan(mug[0][0])
-  expect(tray[1][1]).toBeLessThan(mug[1][0])
   const cup = bounds('pantry-dark-cup'),
     basin = bounds('sink', 'basin-outer')
   expect(cup[0][1]).toBeLessThan(basin[0][0])
 })
 
-it('runs the pantry shelf and preparation cabinet to the white side wall without intersecting the refrigerator', () => {
-  const wall = requiredSpecValue(
-    OFFICE_STRUCTURE.walls.find((w) => w.id === 'pantry-divider'),
-    'pantry white divider'
-  )
-  const inside = wall.cross + wall.thickness / 2
+it('fits the shortened cabinet and shelf beside the recessed fridge', () => {
   const shelf = bounds('pantry-shelf'),
-    top = bounds('coffee-counter-top')
-  expect(shelf[0][0]).toBeCloseTo(inside, 6)
-  expect(top[0][0]).toBeCloseTo(inside, 6)
-  const fridge = bounds('fridge')
+    top = bounds('coffee-counter-top'),
+    fridge = bounds('fridge')
+  expect(shelf[0][0]).toBeCloseTo(top[0][0], 6)
+  expect(top[0][0] - fridge[0][1]).toBeCloseTo(0.04, 6)
   for (const id of [
     'coffee-counter-top',
     'coffee-counter-body',
-    'coffee-counter-door--1',
-    'coffee-counter-door-1'
-  ]) {
-    const b = bounds(id)
-    expect(b[1][0], id).toBeGreaterThan(fridge[1][1])
-  }
-  const body = bounds('coffee-counter-body')
-  expect(body[0][0] - inside).toBeCloseTo(0.02, 6)
-  expect(top[0][1]).toBeCloseTo(1.77, 6)
+    'coffee-counter-door'
+  ])
+    expect(bounds(id)[0][0]).toBeGreaterThan(fridge[0][1])
+  expect(bounds('coffee-counter-body')[0][0] - top[0][0]).toBeCloseTo(0.02, 6)
   const sink = bounds('sink', 'countertop')
   expect(sink[0][0] - top[0][1]).toBeCloseTo(0.0075, 6)
   expect(top[2][1]).toBeCloseTo(sink[2][1], 6)
 })
 
-it('keeps the left shelf plant near the corner after extending the shelf to the wall', () => {
+it('keeps the complete flower foliage near the shortened shelf left edge', () => {
   const shelf = bounds('pantry-shelf'),
-    pot = bounds('pantry-shelf-plant', 'pot')
+    pot = bounds('pantry-shelf-plant')
   expect(pot[0][0] - shelf[0][0]).toBeGreaterThan(0)
   expect(pot[0][0] - shelf[0][0]).toBeLessThan(0.08)
 })
@@ -300,15 +286,14 @@ it('aligns the preparation and sink worktop fronts and backs at the same depth',
   expect(prep[1][1] - prep[1][0]).toBeCloseTo(0.625, 6)
 })
 it('retains the substantial reference sizes and left grouping of pantry smallware', () => {
-  const cream = bounds('pantry-canister-1'),
-    mug = bounds('pantry-counter-mug')
-  expect(cream[0][1] - cream[0][0]).toBeGreaterThan(0.2)
-  expect(cream[2][1] - cream[2][0]).toBeCloseTo(0.34, 5)
+  const cream = bounds('pantry-canister-2'),
+    mug = bounds('pantry-counter-pitcher')
+  expect(cream[0][1] - cream[0][0]).toBeCloseTo(0.18, 5)
+  expect(cream[2][1] - cream[2][0]).toBeCloseTo(0.285, 5)
   expect(mug[2][1] - mug[2][0]).toBeGreaterThan(0.2)
-  expect(bounds('pantry-preparation-plant', 'pot')[0][1]).toBeLessThan(
-    mug[0][0]
-  )
-  expect(mug[0][1]).toBeLessThan(1.45)
+  const pot = bounds('pantry-preparation-plant', 'pot')
+  expect((pot[0][0] + pot[0][1]) / 2).toBeLessThan((mug[0][0] + mug[0][1]) / 2)
+  expect(mug[0][1]).toBeLessThan(bounds('coffee-counter-top')[0][1])
 })
 
 it('uses the shelf source plant low ochre vessel and tapering foliage instead of the fridge shrub instance', () => {
@@ -331,7 +316,7 @@ it('places a small leafy plant in the second shelf pot', () => {
   const pot = bounds('pantry-canister-0', 'body')
   expect(bounds('pantry-canister-0')[2][1]).toBeGreaterThan(pot[2][1] + 0.04)
   expect(bounds('pantry-canister-0')[2][1]).toBeLessThan(
-    bounds('pantry-canister-1')[2][1]
+    bounds('pantry-canister-2')[2][1]
   )
 })
 
@@ -364,27 +349,45 @@ it('places the new framed light at the existing refrigerator anchor with emissio
   expect(lamp.find((p) => p.id === 'light-core')?.emissiveIntensity).toBe(1.75)
 })
 
-it('places four condiment containers and one succulent after the two plants', () => {
-  const ids = [
-    'shelf-cream-jar',
-    'shelf-sage-jar',
-    'shelf-brown-jar',
-    'shelf-amber-jar',
-    'shelf-succulent'
-  ]
-  for (let i = 0; i < ids.length; i++) {
-    const assembly = requiredSpecValue(
-      scene.assemblies.find((a) => a.id === 'pantry-canister-' + (i + 1)),
+it('retains the two condiment jars and succulent after the two plants', () => {
+  for (const [i, asset] of [
+    [2, 'shelf-sage-jar'],
+    [3, 'shelf-brown-jar'],
+    [5, 'shelf-succulent']
+  ] as const) {
+    const a = requiredSpecValue(
+      scene.assemblies.find((a) => a.id === 'pantry-canister-' + i),
       'shelf assembly'
     )
-    expect(assembly.asset).toBe(ids[i])
-    expect(bounds(assembly.id)[2][0]).toBeCloseTo(
-      bounds('pantry-shelf')[2][1],
-      6
-    )
-    if (i > 0)
-      expect(bounds(assembly.id)[0][0]).toBeGreaterThan(
-        bounds('pantry-canister-' + i)[0][1]
-      )
+    expect(a.asset).toBe(asset)
+    expect(bounds(a.id)[2][0]).toBeCloseTo(bounds('pantry-shelf')[2][1], 6)
   }
+})
+
+it('supports the staggered plant, pitcher and tumbler on the shortened countertop', () => {
+  const plant = bounds('pantry-preparation-plant'),
+    pitcher = bounds('pantry-counter-pitcher'),
+    tumbler = bounds('pantry-counter-tumbler')
+  expect(pitcher[0][0] - plant[0][1]).toBeCloseTo(0.1, 6)
+  expect(tumbler[1][1]).toBeLessThan(pitcher[1][0])
+  const top = bounds('coffee-counter-top')
+  for (const id of [
+    'pantry-preparation-plant',
+    'pantry-counter-pitcher',
+    'pantry-counter-tumbler'
+  ]) {
+    const b = bounds(id, id.endsWith('plant') ? 'pot' : undefined)
+    expect(b[2][0]).toBeCloseTo(top[2][1], 6)
+    for (const axis of [0, 1]) {
+      expect(b[axis][0]).toBeGreaterThan(top[axis][0])
+      expect(b[axis][1]).toBeLessThan(top[axis][1])
+    }
+  }
+  expect(parts.has('pantry-counter-mug')).toBe(false)
+  expect(parts.has('pantry-soap-pump')).toBe(false)
+})
+
+it('omits the stored preparation basin and unsupported tray from the current scene', () => {
+  expect(parts.has('pantry-preparation-sink')).toBe(false)
+  expect(parts.has('pantry-dish-tray')).toBe(false)
 })

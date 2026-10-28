@@ -1429,14 +1429,15 @@ actual app's overview, room views and enlarged details in addition to tests.
 
 The pantry furnishing owner compares the original crop left to right. It uses the
 revised dispenser height split, refrigerator-top shrub/jar, six individually sized
-and colored shelf vessels, preparation plant/mug/dish tray, wood sink top, dark
-left door, utensil mug, soap pump and white floor-band jar. The unsupported box
+and colored shelf vessels, preparation plant/rear insulated tumbler/handled pitcher/preparation basin, wood sink top,
+dark left door, a single-brush cup and white floor-band jar. The unsupported
+soap pump is absent from the scene. The unsupported box
 coffee machine is absent. Numeric composition defaults and source uncertainty
 are recorded in `assets/asyra-office/models/pantry/GEOMETRY-SUPPLEMENT.md`.
 
 `pantry-smallware` exposes independent body/lid color without modifying geometry.
-`pantry-accessories` owns regular closed tray, utensil and pump parts with a Z=0
-support origin. The small-plants `shrub` recipe reuses the closed blade generator
+`pantry-accessories` retains reusable utensil and pump constructors.
+`preparation-sink` owns the recessed bowl and matching countertop/body aperture. The small-plants `shrub` recipe reuses the closed blade generator
 with a compact crown and bounded triangle count; existing default plant forms
 stay unchanged. All work occurs during scene construction, never camera frames.
 The accepted structure, other rooms and exterior are outside this correction.
@@ -1544,3 +1545,80 @@ The previous fifth jar recipe is removed, without a compatibility alias for an
 unpersisted synthetic preview. Current dimensions, default colors and the source
 crop are documented in `pantry-smallware/GEOMETRY-SUPPLEMENT.md`. Shelf positions,
 original two plants and unrelated room geometry remain unchanged.
+
+
+### Countertop group and approved pantry layout - 2026-10-28
+
+`pantry-counterware.ts` consumes `sourceVariants.countertopReview` for hollow
+pitcher geometry, fitted-lid tumbler, brush and distinct plant crowns. The
+approved numeric scene layout lives in `scene/reference/pantry-layout.json`;
+production does not import review diagrams or evidence. Compose-office reuses
+existing catalogAsset, meshBounds, block and placement helpers. Each retained
+asset is built once at scene creation and measured once for envelope alignment.
+No render/cache/framework changes are required.
+
+Refrigerator retains 1.35 scale, rotates to face the aisle, and moves into the
+rear-left space. Top plant/light and front papers/magnet follow its new position
+and orientation. The dispenser retains 0.95 scale and west-wall orientation at
+the outer wall end; its complete footprint is outside the reserved 90-degree
+fridge-door sector. This is geometric planning clearance, not an opening UI.
+
+Preparation width is 0.83781 m with one left-hinged door, right-side handle and
+uncut 0.625 m deep worktop. The preparation-sink instance is absent; its geometry,
+specification, aperture utility and formal asset tests remain reusable. Full-size
+main sink stays at 1.25 scale, translates +0.0375 m in X, and ends at X=2.94.
+Its accessories translate with it. The separate floor jar remains unchanged.
+
+Retain the countertop plant, pitcher and tumbler at approved staggered anchors;
+the older 10/20 cm straight-row requirement is superseded. The green bottle moves
+to the clear front-left strip to avoid the pitcher. The shortened 1.05 m shelf
+retains the flower pot, small plant, ochre jar, cork jar and succulent at original
+sizes. Store the large white jar and tiny bottle without deleting their assets.
+The shelf extends above the main sink's left region as shown in the approved plan.
+
+Hardware pantry review uses the existing production scene and camera controls,
+with enlarged shelf, appliances and countertop crops. Formal layout checks cover
+full-size sink geometry, support, separation, stored asset availability and the
+fridge/dispenser sector. Image inspection remains separate from automated passes.
+
+### Four-room depth expansion - 2026-10-28
+
+The owner's explicit metric expansion supersedes the earlier image-derived depth
+allocation, but not retained asset appearance. The front remains Y=-2.42 and
+the rear wall moves from Y=2.702099517721014 to 3.702099517721014. Intermediate
+cream/green and lounge walls move +0.50 Y, retaining their stepped heights and
+X extents. West wall runs, pantry divider, lounge high return, foundation and
+white floor band extend continuously; every room remains at Z=0.38.
+
+Using inner-wall rectangular zones, with open boundaries projected along the
+existing room edges and without deducting furniture:
+
+| Zone | Width (m) | Clear depth (m) | Rectangular area (m2) |
+| --- | ---: | ---: | ---: |
+| Work | 3.00480 | 3.02077 | 9.07680 |
+| Discussion | 2.95769 | 2.77133 | 8.19674 |
+| Lounge | 2.73520 | 2.82134 | 7.71695 |
+| Pantry | 2.76231 | 2.99076 | 8.26139 |
+
+These are comparable scene zoning estimates, not surveyed enclosed-room areas.
+The pantry return occupies approximately 0.07889 m2 within its rectangle.
+
+The existing fit-room-seating.py maps table anchors by their retained source
+depth fractions into the expanded rooms; scales, yaw and X positions stay fixed.
+Tabletop attachments follow their table. Lower-room rugs move +0.25 Y; items
+attached to the shifted rear partitions move +0.50 Y. Rear-wall attachments
+and the complete approved pantry layout move +1.00 Y. The dispenser now fits
+fully along the pantry divider, while retaining its fridge opening clearance.
+All asset recipes, stored small sink/jars, light intensity and materials remain.
+
+The rear neighborhood separately moves +2.00 Y: rear road, five shop groups
+including signs/windows/awnings, three rear-row trees and two rear corner lamps.
+The sidewalk base and rear paving continue to the relocated road. The front
+street, side street, entrance, riverside and other side trees remain fixed.
+Rear road near edge is Y=5.30, leaving 1.51790 m from the new slab rear edge.
+This is the owner's temporary rear-neighborhood arrangement for later revision.
+
+The pre-expansion numeric fixture is test-only. Production reads only current
+scene reference specifications; no review artifact or historical geometry is
+loaded as a fallback. Formal room-depth/support/clearance tests and hardware
+whole-building/pantry review cover this revision. No opening animation is added.

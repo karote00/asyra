@@ -1,13 +1,12 @@
 import { requiredSpecValue } from '../specification'
 import pantry from '../../../../../assets/asyra-office/models/pantry/pantry-model-spec.json'
 import { expect, it } from 'vitest'
-import { dishTray, soapPump, utensilPair } from '../pantry-accessories'
+import { soapPump, utensilPair } from '../pantry-accessories'
 import { meshBounds } from '../../scene/room-furnishing-helpers'
 
-it('keeps the pump, tray and utensils inside their source-sized support envelopes', () => {
+it('keeps the pump and utensils inside their source-sized support envelopes', () => {
   for (const [parts, width, depth, height] of [
     [soapPump(), 0.058, 0.065, 0.12],
-    [dishTray(), 0.24, 0.16, 0.108],
     [utensilPair(), 0.055, 0.04, 0.211]
   ] as const) {
     const b = meshBounds(parts)
@@ -42,11 +41,4 @@ it('aligns the sink basin and its cabinet clearance left of the drawer column', 
       throw new Error('Missing sink clearance')
     expect(component.subtract[0].centre[0]).toBeCloseTo(-0.06, 6)
   }
-})
-
-it('reconstructs the reference tray upright detail without invented round plates', () => {
-  const tray = dishTray()
-  expect(tray.some((p) => p.id === 'upright')).toBe(true)
-  expect(tray.some((p) => p.id.startsWith('dish-'))).toBe(false)
-  expect(meshBounds(tray)[2][1]).toBeGreaterThan(0.09)
 })

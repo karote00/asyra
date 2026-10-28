@@ -68,7 +68,7 @@ test('structural review records the actual hardware renderer and enlarged walls'
         graphics,
         closeView: 'Overview followed by two normal Zoom in actions',
         scene:
-          'Production room furnishings composition; structure and lighting unchanged',
+          'Production room furnishings composition; owner-directed four-room depth expansion, unchanged lighting',
         acceptance:
           'Backend and runtime checks only; inspect both images before any visual acceptance'
       },

@@ -4,7 +4,7 @@ import { createReferenceScene } from '../reference-scene'
 import type { AssetPart } from '../../assets/catalog'
 import depthReference from '../reference/lower-room-measurements.json'
 
-// The owner reopened only lower-room depth; all other accepted coordinates remain.
+// Historical lower-room fit followed by the owner-authorized four-room expansion.
 const run = depthReference.eastFloorRun
 const direction = run.rear.map((n, k) => n - run.front[k])
 const fraction =
@@ -16,7 +16,7 @@ const datum = depthReference.baseline
 const shift =
   (datum.rearInnerY - datum.frontInnerY) * fraction -
   (datum.loungeRearInnerY - datum.frontInnerY)
-function revisedVertices(name: string, vertices: number[][]) {
+function preExpansionVertices(name: string, vertices: number[][]) {
   return vertices.map(([x, y, z]) => {
     if (
       [
@@ -38,6 +38,28 @@ function revisedVertices(name: string, vertices: number[][]) {
       return [x, datum.frontInnerY + (y - datum.frontInnerY) * ratio, z]
     }
     if (name === 'white pantry floor band' && y < 0) return [x, y + shift, z]
+    return [x, y, z]
+  })
+}
+
+function revisedVertices(name: string, vertices: number[][]) {
+  return preExpansionVertices(name, vertices).map(([x, y, z]) => {
+    if (['discussion rear', 'pantry rear'].includes(name)) return [x, y + 1, z]
+    if (
+      [
+        'A - cream divider',
+        'B - green divider',
+        'lounge rear left',
+        'lounge rear middle',
+        'lounge rear right',
+        'lounge T return'
+      ].includes(name)
+    )
+      return [x, y + 0.5, z]
+    if (name === 'west wall') return [x, y > 2 ? y + 1 : y, z]
+    if (name === 'pantry divider' || name === 'white pantry floor band')
+      return [x, y + (y > 2 ? 1 : 0.5), z]
+    if (name === 'lounge left return') return [x, y > -0.1 ? y + 0.5 : y, z]
     return [x, y, z]
   })
 }

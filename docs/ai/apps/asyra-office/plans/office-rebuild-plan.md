@@ -3095,3 +3095,311 @@ this route. Run bounded review groups rather than increasing the suite limit.
 This is test infrastructure within the current render-review task, not a
 production rendering or camera behavior change. Revalidate Office and shared
 checks; other validated source inputs are unchanged.
+
+### Pantry countertop reference correction - 2026-10-28
+
+Task association: Complete reference scene implementation, current checkpoint
+72e5851f9. Scope is the two countertop groups only; preserve shelf contents,
+appliances, cabinets, structure, renderer and exterior. The owner identifies the
+left group as a plant beside the refrigerator, a small white insulated tumbler
+behind that plant, and a white handled water pitcher on its right. The former
+mug interpretation is superseded. Source-visible tray, rear bottle and sink-side
+cup/plant require enlarged comparison. Do not infer hidden product branding.
+
+Step card - construct-asset: approved source plus the owner's clarification and
+countertop specification produce named, grounded geometry through existing
+Office lathe/tube/plant primitives and the public spatial contract. Boundary:
+Office assets and their direct specs/tests. No renderer patch, provider data,
+new dependency or cache. Cases: hollow pitcher with lip and handle, insulated
+cup with fitted lid, broad thin tray, labeled rear bottle and single brush.
+Prove regression failures before asset edits; run asset tests before composition.
+
+Step card - compose-office (after construct-asset checks): consume these assets
+and the approved existing worktops; produce spatial-scene with a rear tumbler,
+front plant, pitcher to its right and a broad foreground tray. The sink-side
+white cup sits immediately left/front of its plant, not at the front edge.
+Remove the unsupported soap dispenser from this scene. Failure owner remains
+compose-office, boundary src/scene; render-spatial remains unchanged. Cases:
+source-relative proportions/order, support, clearances and unchanged surrounding
+assemblies. Gates: focused geometry/composition tests, naming, lint/typecheck,
+Office build, hardware pantry E2E with native-resolution countertop crops.
+Stop for an unresolved identity or a required out-of-scope structural change.
+Image inspection is separate from automated correctness; owner visual acceptance
+and whole-plan closure remain open. No push is requested for this correction.
+
+
+Countertop correction evidence: the existing tray test was strengthened and
+failed on its 0.24 m width; the new composition case failed on the missing
+rear tumbler before scene edits. The completed slice passes all 282 Office
+unit tests, naming (15 checks), Office lint and typechecked production build.
+After the final preparation-crown adjustment, all 35 directly affected tests
+pass again. Hardware pantry capture passes on the actual 5194 production scene.
+Native preparation/sink crops were inspected; the broad upright was narrowed
+and the preparation crown reduced to avoid reaching into the pitcher lip.
+Evidence: `tmp/pantry-counter-review/` logs and
+`apps/asyra-office/test-results/pantry-counter-final/` screenshots. Existing
+structure, cabinets, appliances, shelf and exterior are unchanged. The unresolved
+dark sink-side vessel is not reinterpreted by the preparation-group clarification.
+Owner visual acceptance and whole-plan completion remain open; no push occurred.
+
+
+### Countertop correction revision - enlarged reference, 2026-10-28
+
+The previous engineering checks did not validate the reference interpretation.
+The new enlarged crop shows a recessed silver basin with a narrow right-side
+fitting, not a flat tray with a divider. The owner requests correction, especially
+placement. Replace that interpretation at construct-asset, then compose-office;
+keep the same active plan and scope. The plant must sit immediately behind the
+refrigerator, with the tumbler behind it and the pitcher to its right. Use source
+relationships and support/collision constraints rather than arbitrary evenly
+spaced X positions. The pitcher needs near-vertical walls and a squarer handle;
+its dark gray top region is represented as a plain recessed insert, without
+invented branding or mechanisms.
+
+Construct-asset card: inputs are the enlarged owner crop and the clarified
+identities; outputs are the revised pitcher/pot and a recessed basin with a
+right-side fitting. Office asset primitives (box, tube, lathe, subtractSolid)
+already own the needed construction; Preset rendering is unchanged. Scope:
+pantry-counterware, pantry-accessories, new preparation-sink, their direct tests
+and pantry specs. Cases prove below-worktop cavity, raised rim, right-side tube,
+near-cylindrical pitcher and direct support. No generic replacement renderer.
+
+Compose-office card: revise only preparation-group placement and the necessary
+matching aperture in the existing counter body/top. Preserve the cabinet's
+external envelope, fronts, shelf, appliances, main sink and other rooms. Cases:
+plant-to-fridge gap at most 0.12 m, pitcher-to-pot gap at most 0.10 m, rear
+tumbler, true opening through the wooden worktop and narrow fitting at the
+basin right. The prior tests remain green despite the source mismatch; add
+failing relationship/cavity regressions first. Gates: affected unit tests,
+naming, app lint/build and hardware pantry E2E with inspected native crops.
+Scope stops at these surfaces; unreadable markings stay absent. Self-review:
+the necessary aperture belongs to this correction, not structural refitting;
+the prior numeric spacing is superseded, and no acceptance follows from tests
+alone. No commit/push or whole-plan completion is requested.
+
+
+Revision validation: the two new source-relationship/composition tests and the
+pitcher geometry test failed before implementation. After construction and
+placement changes, the full Office run passed 284/285 cases; the remaining
+case asserted the superseded X-separated row. It was replaced with explicit
+right/rear ordering plus positive Y clearance, consistent with the enlarged
+source. The final affected four files pass 38/38 cases; other full-run tests
+are unchanged. App lint, naming (15 cases), typechecked build and hardware
+pantry E2E pass. Do not describe the earlier all-green engineering run as
+visual acceptance of the rejected tray/spacing.
+
+Visual scope: `e2e/pantry.spec.ts`, APP_URL `http://127.0.0.1:5194/`, Tea point,
+1800 x 1200 CSS viewport at DPR 2, unchanged production camera and renderer.
+Command: `OFFICE_HARDWARE_REVIEW=1 yarn workspace @asyra/asyra-office test:e2e
+e2e/pantry.spec.ts --output=test-results/pantry-counter-position-final`.
+The native preparation crop was inspected after each position revision. The
+plant/fridge gap, rear tumbler, tight pitcher grouping and right-rear bottle now
+follow the enlarged source relationships. The former tray/divider is absent;
+the basin has a real below-top cavity and matching aperture. The source does
+not resolve fine pitcher-top markings or hidden plumbing, so these are not
+claimed as recovered details. Final screenshot:
+`apps/asyra-office/test-results/pantry-counter-position-final/pantry-pantry-source-revie-df746--and-sink-at-readable-scale/preparation-counter-close.png`.
+Logs are under `tmp/pantry-counter-review/revision-*`. Owner visual review remains
+pending; no commit or push was requested or performed for this correction.
+
+
+### Owner-directed corner layout - 2026-10-28
+
+This instruction supersedes the reference's placement for three preparation
+objects only. Scope: compose-office placement, its direct JSON/docs and formal
+placement tests; no asset shape/material, cabinet, other object or renderer
+changes. Put the complete plant envelope 0.10 m from each inside corner wall,
+including foliage. Place the pitcher to its right with 0.10 m edge clearance,
+and the insulated tumbler to the pitcher's right with 0.20 m edge clearance.
+Keep pitcher/tumbler back envelopes 0.10 m from the wallpaper face. These are
+scene-metre starting clearances for the requested visual spacing; inspect the
+actual camera rather than treating a pixel gap as physical distance.
+
+Compose-office card: inputs are current constructed parts, current inner wall
+faces and explicit gap defaults; output is the same spatial scene with this
+three-object row. Reuse the existing meshBounds helper and each constructed
+parts array once during scene creation; no per-frame work, second construction,
+new cache or framework behavior. Remove superseded literal anchors for these
+three objects. Formal cases replace the prior fridge-adjacent/staggered layout
+and must first fail, then prove complete-envelope wall and inter-object gaps,
+worktop support and unchanged structure. Gates: focused placement tests, naming,
+lint/typecheck, hardware pantry capture and inspection. No commit/push requested.
+
+Validation: the new clearance case first failed on the former placement
+(0.509268 m left clearance instead of 0.10 m). After the placement change,
+all 29 room-furnishing tests pass, including unchanged structure and exterior.
+Naming, scoped ESLint, app typecheck and diff whitespace checks pass. Hardware
+pantry E2E passes 1/1 using the existing production scene at APP_URL
+`http://127.0.0.1:5194/`, 1800 x 1200 CSS pixels and DPR 2. Inspected both
+`preparation-counter-close.png` and `pantry-worktops.png` under
+`apps/asyra-office/test-results/pantry-corner-layout/pantry-pantry-source-revie-df746--and-sink-at-readable-scale/`.
+The elevated view confirms plant, pitcher, tumbler ordering and clear wall
+separation. The refrigerator partly occludes the plant from the source angle;
+the requested corner position is retained rather than moved for visibility.
+Rechecked compose-office ownership: only these three placement anchors changed,
+with no structural or renderer changes. Owner visual review remains pending.
+
+### Pantry top-view layout proposal - 2026-10-28
+
+Planning only, associated with this rebuild plan. Scope is a dimensioned top-view
+proposal and its source data, using the current approved structure and actual
+asset envelopes. Do not change runtime geometry, current placement specifications,
+the Inspector contract or the live app. No commit or push is requested. Closure
+requires reviewing the drawing, numerical fit, retained shelf objects and explicit
+unapproved consequences; production collision/animation validation comes later.
+
+Review drawing: [Pantry top view](../../../../../assets/asyra-office/models/pantry/review/pantry-top-layout-proposal.png).
+Editable SVG and metre-based JSON are beside it with the same basename. These are
+proposed authoring dimensions, not measurements recovered from the reference image.
+The user authorized a rotated/recessed refrigerator concept, a shorter shelf,
+storing the largest white jar and the tiny bottle second from the right, and moving
+the dispenser to the outer end of the side wall. Storing means omitting instances,
+not deleting their reusable assets.
+
+The refrigerator retains the current 1.35 scale: 0.702 wide and 0.75195 deep
+including its front projection. Proposed rear/left gaps are 0.05; these are virtual
+layout allowances, not manufacturer ventilation requirements. Its front faces the
+same aisle as the cabinets. A proposed right hinge and 90-degree opening use a
+conservative 0.752-radius swept sector, including a 0.05 allowance. The dispenser
+retains its 0.95 scale, rotates with its existing wall-facing arrangement unchanged,
+and moves to Y maximum 1.12 with a 0.012 wall-plane gap. Its footprint straddles the
+existing wall endpoint rather than sitting entirely alongside the wall. The
+nearest corner remains 0.05243 outside that swept sector. This is a 2D planning
+check, not proof of drawer extraction or simultaneous 3D door operation. A wider
+fridge opening would require recalculation.
+
+The latest owner correction preserves the complete main sink geometry, scale and
+appearance, placing the group at the far right. Measured catalog bounds at the
+existing 1.25 scale give a countertop width of 1.125 and depth of 0.625; full
+assembly depth including projections is 0.651875. The basin envelope is 0.65
+wide and 0.4125 deep, offset within its counter. These measured values replace
+the earlier proposal's assumed 0.625-wide basin and narrowed cabinet. Translate
+the entire sink group and its supported accessories together, without rescaling.
+The proposed right edge is 2.94, giving countertop left X=1.815.
+
+The preparation counter starts 0.04 after the refrigerator and ends 0.0075
+before the main sink. Available width is 0.83781, with the existing 0.625 depth.
+The owner permits a single-door cabinet and explicitly removes the small
+preparation sink from this layout. Retain its reusable geometry, specification,
+reference and tests. Later implementation should construct an uncut preparation
+worktop and body, not fill the former opening with patch geometry. Keep the
+separate preparationSink and cutPreparationOpening authoring utilities available
+for future configurations. The currently running app is unchanged by this plan.
+
+The owner also permits repositioning the countertop objects. The former straight
+row and its 10/20 cm gap constraint no longer control this proposal. Preserve all
+three asset sizes: plant at left rear, pitcher at right rear, tumbler at right
+front. Use complete geometry envelopes, including foliage and pitcher handle.
+Relative to preparation left X and rear wallpaper-side Y datum:
+
+- Plant envelope left offset 0.03; rear offset 0.03.
+- Pitcher envelope left is 0.10 beyond the plant right; rear offset 0.08.
+- Tumbler envelope left offset 0.71; front Y is 0.51 forward of rear datum.
+
+The plant is beside the fridge rather than in the former two-wall corner. All
+three measured XY envelopes fit the counter and do not intersect each other.
+The JSON drawing source records these candidate positions. They are a layout
+proposal, not a claim of completed production placement or 3D collision review.
+
+The shelf stays 1.05 wide and 0.24 deep, starting above the preparation counter
+and extending over the left part of the main sink zone. Retain the flower pot,
+small plant, ochre-content jar, cork jar and succulent in that order. Measured
+mesh-envelope widths total 0.86337, allowing four 0.03 gaps and approximately
+0.03331 at each end without rescaling. Store pantry-canister-1 and
+pantry-canister-4; preserve their reusable assets. Shelf icons convey order,
+not geometry. Fridge-top plant and light remain retained with new anchors to be
+checked during implementation. Other rooms and exterior remain out of scope.
+
+Review checks: actual asset bounds were read from the existing catalog/factories;
+full-size sink dimensions, single-door counter width, complete countertop object
+envelopes, pairwise XY separation and shelf capacity were numerically checked.
+The revised drawing is visually inspected before delivery. No app implementation,
+commit or push is part of this planning revision.
+
+### Approved pantry layout implementation - 2026-10-28
+
+Owner approved the revised top-view proposal and requested implementation.
+Compose-office Step Execution Card: inputs are the approved pantry layout,
+existing catalog assets and current shell; output is the same spatial scene
+with a recessed, rotated fridge, outer-end dispenser, single-door preparation
+cabinet, unchanged full-size sink translated right, shortened shelf and staggered
+smallware. The preparation sink and two stored shelf vessels remain available
+as assets but absent from the scene. Source: the preceding proposal section and
+its SVG/JSON; Inspector: compose-office, lines 316-355, same App owner, no bypass,
+no cache, renderer-owned writes and independent document copies forbidden.
+Scope: scene composition, direct tests, pantry documents and hardware pantry
+review. Preserve approved architecture, exterior, other rooms, all retained
+asset geometry/materials and lighting. No animated opening feature is added;
+door envelopes prove the bounded 90-degree planning clearance only.
+
+Promote approved placement values to scene/reference/pantry-layout.json; runtime
+must not import the review diagram or diagnostics. Existing meshBounds, block,
+catalogAsset and placeParts own construction/placement; no Framework capability
+is missing. Construct each retained asset once per scene and reuse its parts for
+envelope placement; no per-frame work or new cache. Existing asset identities are
+preserved. New single cabinet door identifiers are App-local, not persisted keys.
+Add failing formal layout cases before implementation, then reconcile superseded
+room-placement tests. Gates: naming, focused geometry/composition tests, app
+typecheck/lint/build, hardware pantry E2E and enlarged image inspection. Stop on
+an unapproved geometry change or unresolved collision. No commit/push requested.
+
+Implementation validation: six new layout regressions failed on the previous
+composition before implementation. A separate bottle/pitcher overlap regression
+failed before relocating the green bottle to the preparation counter front left.
+The completed Office suite passed 290 tests in 55 files; the final six layout
+cases also passed after strengthening solid-top triangle coverage and fridge-top
+wall-clearance assertions. Naming, app typecheck/build, app lint and diff
+whitespace checks passed. The production build retains its existing chunk-size
+warning. No retained asset was resized to make the arrangement fit.
+
+Hardware Chrome pantry review passed at APP_URL http://127.0.0.1:5194/, with
+a 1800 x 1200 CSS viewport and device pixel ratio 2. Evidence is in
+apps/asyra-office/test-results/pantry-approved-layout-final/. The source-angle,
+elevated worktops and appliance-front views were inspected, followed by enlarged
+preparation-counter, sink-counter, shelf and fridge-top light crops. Review
+confirmed the single full countertop, five separated shelf items, staggered
+smallware and unchanged main sink assembly at the right edge. Door clearance is
+a conservative geometric envelope check, not an animated opening demonstration.
+The compose-office owner contract was rechecked at closure; architecture,
+exterior and other rooms remain outside this revision. No commit or push made.
+
+### Four-room depth expansion - 2026-10-28
+
+Owner requests a 1.00 m rearward building extension, allocated as 0.50 m
+additional depth to each of the four rooms. The entrance/frontage, X bounds,
+wall heights/thicknesses, common floor elevation and asset shapes remain fixed.
+Move internal front/rear room partitions by +0.50 Y and rear walls by +1.00 Y;
+extend their continuous returns, floor band, floor and foundation. Move rear
+pantry furniture and dispenser by +1.00 Y, retaining relative clearance; move
+central table groups by the existing source-relative room-depth mapping. Rugs
+move +0.25 Y in the lower rooms; neither asset shape nor scale changes.
+Wall-mounted objects follow their supporting wall. Owner separately authorizes
+rear street, shops and their associated rear scenery to move +2.00 Y as a group
+for later review. Front and side street objects remain fixed.
+
+Step Execution Card: compose-office (Inspector lines 316-355), App-owned
+approved construction/layout and catalog inputs to artifact:spatial-scene.
+No bypass, renderer-owned writes, new canonical state or cache. Allowed files:
+scene composition/reference inputs, direct tests/E2E, this plan, implementation
+docs and the matching Inspector condition. Existing block/placeParts/wall
+construction APIs already implement the required geometry; no new Framework
+capability or dependency. Preserve existing naming/asset identities.
+Formal cases: four exact +0.50 m room depths, fixed frontage/heights/widths,
+connected wall runs and extended ground support, unchanged asset dimensions,
+retained pantry clearance, +2.00 rear scenery with fixed front/side scenery.
+Gates: naming; focused geometry then Office suite; app build/lint; hardware
+whole-building and pantry visual tests followed by enlarged screenshot review.
+Stop on unresolved collisions or unapproved asset changes. No commit or push.
+
+Validation outcome: all 56 Office test files / 294 tests passed, including the
+four expansion cases first demonstrated failing before implementation. Office
+lint, naming, typecheck/build and the focused Inspector contract passed. Eight
+hardware-browser visual cases passed against the live app at port 5194.
+Reviewed the enlarged pantry, building close-up, overhead and rear views and
+work/discussion/lounge oblique views: connected walls, shared floor, supported
+attachments and dispenser placement remain intact. Rear road clearance from
+the extended slab is 1.51790 m. Existing deferred furniture and shadow artifacts
+are outside this revision; this does not certify full reference-image parity.
+Evidence: apps/asyra-office/test-results/four-room-expansion/ and
+apps/asyra-office/test-results/four-room-expansion-rooms/. Local changes remain
+uncommitted and unpushed for owner review.

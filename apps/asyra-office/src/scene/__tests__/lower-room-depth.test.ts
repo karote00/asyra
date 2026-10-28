@@ -15,18 +15,18 @@ it('gives both lower rooms the reference floor-depth allocation', () => {
   const work = structure.walls.find((w) => w.id === 'work-back-partition')
   if (!lounge || !work) throw new Error('Missing lower-room boundary')
   expect(lounge.cross - lounge.thickness / 2 - frontInnerY).toBeCloseTo(
-    depth,
+    depth + 0.5,
     6
   )
   expect(work.cross - work.thickness / 2 - frontInnerY).toBeCloseTo(
-    depth + workRearInnerY - loungeRearInnerY,
+    depth + workRearInnerY - loungeRearInnerY + 0.5,
     6
   )
   expect(structure.foundation.outline).toEqual([
     [-3.1, -2.51],
     [3.1, -2.51],
-    [3.1, 2.782099517721014],
-    [-3.1, 2.782099517721014]
+    [3.1, 3.782099517721014],
+    [-3.1, 3.782099517721014]
   ])
   expect(new Set(Object.values(structure.floors))).toEqual(new Set([0.38]))
 })

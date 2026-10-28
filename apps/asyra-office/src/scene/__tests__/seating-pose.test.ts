@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { expect, it } from 'vitest'
 import structure from '../reference/office-structure.json'
+import baseline from './fixtures/building-before-expansion.json'
 import seating from '../reference/office-seating.json'
 import evidence from '../reference/seating-measurements.json'
 
@@ -48,9 +47,20 @@ for (const [room, source] of Object.entries(evidence.roomPlacement.rooms)) {
     }
   })
 }
-it('preserves the owner-accepted deeper structural specification byte for byte', () => {
-  const file = readFileSync('src/scene/reference/office-structure.json')
-  expect(createHash('sha256').update(file).digest('hex')).toBe(
-    '0e7da49b9bc6dcb89cc6f49fa4a69f7c9bb38500fd1fb38b4d44e746e5e156f7'
-  )
+it('preserves the accepted non-depth structural contract during authorized expansion', () => {
+  expect(structure.shell).toEqual(baseline.structure.shell)
+  expect(structure.floors).toEqual(baseline.structure.floors)
+  expect(structure.doorScale).toBe(baseline.structure.doorScale)
+  for (const key of [
+    'doorX',
+    'doorWidth',
+    'doorHeight',
+    'rearTop',
+    'pantryTop',
+    'creamTop',
+    'greenTop',
+    'loungeTop',
+    'loungeRightTop'
+  ] as const)
+    expect(structure.parameters[key]).toBe(baseline.structure.parameters[key])
 })

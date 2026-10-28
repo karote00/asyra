@@ -1,5 +1,5 @@
 {
-  "approval": "Owner requested deeper lower rooms on 2026-10-27; prior approved snapshot remains the unchanged-geometry baseline.",
+  "approval": "Owner-authorized 2026-10-28 extension: fixed frontage, rear +1.00 m, intermediate partitions +0.50 m; each room gains 0.50 m depth. Earlier reference fit remains historical.",
   "approvedSnapshotSha256": "d86f7e7b55db77a90a75bf4ff7449581d8cd53c0aa58753722a89c93b239cd5d",
   "parameters": {
     "azimuth": 38.41091408711091,
@@ -16,21 +16,21 @@
     "returnTop": 1.705174098353056,
     "facadeTop": 1.7428581921662738,
     "pantryX": 0.09769322070160588,
-    "creamY": 0.27076997683030246,
+    "creamY": 0.7707699768303025,
     "creamEnd": -1.5038033714710735,
     "greenStart": -1.1909684622865548,
     "greenEnd": -0.18136489173651738,
     "loungeX": 0.13479691378046768,
-    "loungeY": 0.06134347286816344,
-    "returnLength": 1.0817541171916436,
-    "pantryFront": 1.0862561746681618,
-    "discussionFront": 0.09209763018356132,
+    "loungeY": 0.5613434728681634,
+    "returnLength": 1.5817541171916436,
+    "pantryFront": 1.5862561746681618,
+    "discussionFront": 0.5920976301835613,
     "facadeEnd": 0.2047969137804677,
     "doorX": -0.38715148069634353,
     "doorWidth": 0.8238967889536225,
     "doorHeight": 1.0770217060417837,
     "discussionEnd": -0.34330106617014944,
-    "rearY": 2.702099517721014,
+    "rearY": 3.702099517721014,
     "loungeSplit": 1.3483293890410468,
     "loungeRightTop": 1.8341284372629167,
     "fov": 13.345241665720485
@@ -55,8 +55,8 @@
     "outline": [
       [-3.1, -2.51],
       [3.1, -2.51],
-      [3.1, 2.782099517721014],
-      [-3.1, 2.782099517721014]
+      [3.1, 3.782099517721014],
+      [-3.1, 3.782099517721014]
     ],
     "bottom": 0.03,
     "top": 0.355
@@ -65,7 +65,7 @@
     {
       "id": "left-wall",
       "start": -2.42,
-      "end": 0.09209763018356132,
+      "end": 0.5920976301835613,
       "cross": -3.02,
       "base": 0.38,
       "top": 2.992672772401046,
@@ -80,8 +80,8 @@
     },
     {
       "id": "discussion-left-wall",
-      "start": 0.09209763018356132,
-      "end": 2.702099517721014,
+      "start": 0.5920976301835613,
+      "end": 3.702099517721014,
       "cross": -3.02,
       "base": 0.38,
       "top": 2.992672772401046,
@@ -98,7 +98,7 @@
       "id": "back-wall",
       "start": -3.02,
       "end": -0.34330106617014944,
-      "cross": 2.702099517721014,
+      "cross": 3.702099517721014,
       "base": 0.38,
       "top": 2.992672772401046,
       "endTop": 2.992672772401046,
@@ -114,7 +114,7 @@
       "id": "pantry-back-wall",
       "start": 0.09769322070160588,
       "end": 3.1,
-      "cross": 2.702099517721014,
+      "cross": 3.702099517721014,
       "base": 0.38,
       "top": 2.878262867675208,
       "endTop": 2.878262867675208,
@@ -130,7 +130,7 @@
       "id": "work-back-partition",
       "start": -3.02,
       "end": -1.5038033714710735,
-      "cross": 0.27076997683030246,
+      "cross": 0.7707699768303025,
       "base": 0.38,
       "top": 2.3395045793007845,
       "endTop": 2.3395045793007845,
@@ -146,7 +146,7 @@
       "id": "work-divider",
       "start": -1.1909684622865548,
       "end": -0.18136489173651738,
-      "cross": 0.27076997683030246,
+      "cross": 0.7707699768303025,
       "base": 0.38,
       "top": 2.1435541213707063,
       "endTop": 2.1435541213707063,
@@ -156,8 +156,8 @@
     },
     {
       "id": "pantry-divider",
-      "start": 1.0862561746681618,
-      "end": 2.702099517721014,
+      "start": 1.5862561746681618,
+      "end": 3.702099517721014,
       "cross": 0.09769322070160588,
       "base": 0.38,
       "top": 2.878262867675208,
@@ -174,7 +174,7 @@
       "id": "lounge-divider",
       "start": 0.13479691378046768,
       "end": 1.3483293890410468,
-      "cross": 0.06134347286816344,
+      "cross": 0.5613434728681634,
       "base": 0.38,
       "top": 1.5771608580828143,
       "endTop": 1.5771608580828143,
@@ -190,7 +190,7 @@
       "id": "lounge-middle-wall",
       "start": 1.3483293890410468,
       "end": 1.805160428776189,
-      "cross": 0.06134347286816344,
+      "cross": 0.5613434728681634,
       "base": 0.38,
       "top": 1.7097128145770428,
       "endTop": 1.7097128145770428,
@@ -202,7 +202,7 @@
       "id": "lounge-right-wall",
       "start": 1.805160428776189,
       "end": 3.1,
-      "cross": 0.06134347286816344,
+      "cross": 0.5613434728681634,
       "base": 0.38,
       "top": 1.8341284372629167,
       "endTop": 1.8341284372629167,
@@ -212,8 +212,8 @@
     },
     {
       "id": "lounge-rear-return",
-      "start": 0.06134347286816344,
-      "end": 0.5346098467280653,
+      "start": 0.5613434728681634,
+      "end": 1.0346098467280653,
       "cross": 1.9029785866895716,
       "base": 0.38,
       "top": 1.8341284372629167,
@@ -242,7 +242,7 @@
     {
       "id": "lounge-left-return",
       "start": -1.0204106443234804,
-      "end": 0.06134347286816322,
+      "end": 0.5613434728681632,
       "cross": 0.13479691378046768,
       "base": 0.38,
       "top": 1.705174098353056,
@@ -306,7 +306,7 @@
   ],
   "floorBand": [
     [2.94, 3.1],
-    [0.1313434728681635, 2.622099517721014],
+    [0.6313434728681635, 3.622099517721014],
     [0.355, 0.38]
   ],
   "doorScale": 0.49632336683953165,
@@ -323,9 +323,9 @@
   },
   "lowerRoomRevision": {
     "source": "lower-room-measurements.json",
-    "partitionShiftY": 0.8778071080404242,
-    "loungeDepth": 2.3213434728681634,
-    "workDepth": 2.5207699768303025,
-    "status": "Implemented for visual review; floor contacts inferred from partially occluded reference."
+    "partitionShiftY": 1.3778071080404242,
+    "loungeDepth": 2.8213434728681634,
+    "workDepth": 3.0207699768303025,
+    "status": "Current depths include the owner-directed additional 0.50 m on 2026-10-28."
   }
 }

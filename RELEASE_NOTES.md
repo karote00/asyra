@@ -22,7 +22,7 @@
 {
   "change": "office-furnished-pantry-review",
   "owner": "Asyra Office development",
-  "summary": "Add reference-based room furnishings, transparent pantry vessels, two night-light variants and held-key camera controls; retain reviewed geometry and formal asset/visual checks.",
+  "summary": "Add reference-based room furnishings, transparent pantry vessels, two night-light variants, the approved recessed-fridge/single-door pantry layout, four-room depth expansion, rear-neighborhood relocation and held-key camera controls; retain reviewed geometry and formal asset/visual checks.",
   "sources": [
     "apps/asyra-office/e2e/interior.spec.ts",
     "apps/asyra-office/playwright.config.ts",
@@ -47,6 +47,10 @@
     "apps/asyra-office/src/assets/frame-night-light.ts",
     "apps/asyra-office/src/assets/low-stool.ts",
     "apps/asyra-office/src/assets/pantry-accessories.ts",
+    "apps/asyra-office/src/assets/pantry-counterware.ts",
+    "apps/asyra-office/src/assets/preparation-sink.ts",
+    "apps/asyra-office/src/assets/__tests__/preparation-sink.test.ts",
+    "apps/asyra-office/src/assets/__tests__/pantry-counterware.test.ts",
     "apps/asyra-office/src/assets/pantry-details.ts",
     "apps/asyra-office/src/assets/pantry-night-light.ts",
     "apps/asyra-office/src/assets/pantry-shelf-plant.ts",

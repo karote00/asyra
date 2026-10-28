@@ -43,16 +43,16 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     desk.position[1] + 0.09,
     deskTop
   ])
-  addRug(c, 'work-rug', [1.55, 1.08, 0.012], [-0.99, -1.45, floor], 0x708775)
+  addRug(c, 'work-rug', [1.55, 1.08, 0.012], [-0.99, -1.2, floor], 0x708775)
   add(
     'work-stool',
     'square-low-stool',
     lowStool(),
-    [-0.35, -0.1, floor],
+    [-0.35, 0.4, floor],
     0,
     [1.15, 1.15, 1.15]
   )
-  plant('work-floor-plant', [-2.68, -1.36, floor], 1.3, {
+  plant('work-floor-plant', [-2.68, -1.11, floor], 1.3, {
     color: 0x956a48,
     form: 'rosette'
   })
@@ -62,7 +62,7 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     'work-print',
     'A\nBrighter\nDay',
     [0.54, 0.74],
-    [wallX + 0.017, -1.56, 2.05],
+    [wallX + 0.017, -1.31, 2.05],
     90
   )
   for (const [level, z] of [
@@ -74,7 +74,7 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
       'work-shelf-' + level,
       'wall-shelf-plank',
       catalogAsset('wall-shelf-plank'),
-      [wallX + 0.002, -0.41, z],
+      [wallX + 0.002, 0.09, z],
       90,
       [1.22, 1.22, 1.22]
     )
@@ -83,16 +83,16 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
         block(
           'work-book-' + i,
           [0.14, 0.038, 0.19],
-          [wallX + 0.1, -0.64 + i * 0.045, z + 0.0427 + 0.095],
+          [wallX + 0.1, -0.14 + i * 0.045, z + 0.0427 + 0.095],
           [0x365b72, 0x77999c, 0xe9d9b5, 0x927257, 0x42675c][i],
           'plain',
           0.001
         )
     } else {
-      plant('work-shelf-plant-' + level, [wallX + 0.11, -0.59, z + 0.0427], 1.0)
+      plant('work-shelf-plant-' + level, [wallX + 0.11, -0.09, z + 0.0427], 1.0)
       plant(
         'work-shelf-plant-' + level + '-right',
-        [wallX + 0.11, -0.23, z + 0.0427],
+        [wallX + 0.11, 0.27, z + 0.0427],
         0.85
       )
     }
@@ -101,7 +101,7 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
   block(
     'work-side-table-top',
     [0.45, 0.32, 0.032],
-    [-0.87, -0.04, tableZ],
+    [-0.87, 0.46, tableZ],
     0xbb946b,
     'wood',
     0.007
@@ -111,16 +111,16 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
       block(
         `work-side-table-leg-${x}-${y}`,
         [0.028, 0.028, 0.554],
-        [-0.87 + x * 0.188, -0.04 + y * 0.124, floor + 0.277],
+        [-0.87 + x * 0.188, 0.46 + y * 0.124, floor + 0.277],
         0x584c39,
         'wood',
         0.003
       )
-  plant('work-side-plant', [-0.82, -0.04, tableZ + 0.016], 1.25)
+  plant('work-side-plant', [-0.82, 0.46, tableZ + 0.016], 1.25)
   block(
     'work-side-book',
     [0.19, 0.13, 0.023],
-    [-1, -0.1, tableZ + 0.0275],
+    [-1, 0.4, tableZ + 0.0275],
     0xe3d5b9,
     'plain',
     0.002

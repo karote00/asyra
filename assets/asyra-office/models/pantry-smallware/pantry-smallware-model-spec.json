@@ -631,7 +631,7 @@
         ]
       },
       "counter-green-bottle": {
-        "size": [0.086, 0.086, 0.16],
+        "size": [0.0878, 0.0878, 0.16],
         "regions": [
           {
             "id": "body",
@@ -668,6 +668,16 @@
             ],
             "color": "#C19D5A",
             "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "label",
+            "kind": "label",
+            "radius": 0.043,
+            "zRange": [0.035, 0.104],
+            "angles": [220, 320],
+            "color": "#E0D5D0",
+            "roughness": 0.9,
             "opacity": 1
           }
         ],
@@ -1241,6 +1251,82 @@
         ],
         "stemRadius": 0.0035,
         "stemColor": "#727741"
+      }
+    },
+    "countertopReview": {
+      "reference": "reference-preparation-counter.png",
+      "authority": "Owner-approved top-view layout 2026-10-28 supersedes earlier corner and straight-row placements. Asset geometry remains source-based; scene/reference/pantry-layout.json owns approved scene placement. Preparation sink remains reusable but is not composed.",
+      "pitcher": {
+        "radius": 0.099,
+        "height": 0.255,
+        "wall": 0.005,
+        "base": 0.007,
+        "spoutReach": 0.018,
+        "handleReach": 0.055,
+        "handleRadius": 0.007,
+        "color": "#E8E4DF",
+        "baseRadiusRatio": 0.97,
+        "handleCornerRadius": 0.012,
+        "insertColor": "#B9B5BB",
+        "insertInset": 0.006,
+        "centerColor": "#716B76",
+        "centerRadius": 0.018
+      },
+      "tumbler": {
+        "radius": 0.034,
+        "height": 0.19,
+        "lidHeight": 0.019,
+        "color": "#E9E7E2"
+      },
+      "sinkCup": {
+        "uniformScale": 1.62,
+        "rotationDegrees": -90,
+        "color": "#E8E4DF"
+      },
+      "plants": {
+        "preparation": {
+          "scale": 1.35,
+          "seed": 611,
+          "color": "#675044",
+          "foliageWidth": 0.8,
+          "foliageRise": 0.7
+        },
+        "sink": {
+          "scale": 1.35,
+          "seed": 607,
+          "color": "#E8DBC3",
+          "foliageWidth": 1.08,
+          "foliageRise": 1.12
+        }
+      },
+      "placement": {
+        "sinkCup": [2.66, 0.32],
+        "sinkPlant": [2.805, 0.18]
+      },
+      "placementConvention": "Baseline main-sink accessory anchors: [world X, distance forward from inner rear wall]. Translate these together with the unchanged main sink. Countertop smallware and separate green bottle positions belong to the approved scene layout.",
+      "brush": {
+        "height": 0.215,
+        "shaftRadius": 0.003,
+        "headRadii": [0.009, 0.006, 0.02]
+      },
+      "appearance": "All colors and materials remain replaceable. No baked shadows. No unrelated soap pump is placed on the worktops.",
+      "preparationSink": {
+        "width": 0.48,
+        "depth": 0.25,
+        "drop": 0.09,
+        "rimRise": 0.01,
+        "rimWidth": 0.021,
+        "floorThickness": 0.013,
+        "faucetRadius": 0.006,
+        "faucetHeight": 0.17,
+        "color": "#AAAFA9"
+      },
+      "preparationPot": {
+        "radius": 0.104,
+        "baseRadius": 0.096,
+        "height": 0.21,
+        "soilHeight": 0.195,
+        "wall": 0.005
       }
     }
   }
