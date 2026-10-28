@@ -29,7 +29,7 @@
     "apps/asyra-office/src/scene/__tests__/pantry-layout.test.ts",
     "apps/asyra-office/src/scene/reference/pantry-layout.json",
     "assets/asyra-office/models/pantry-smallware/reference-preparation-counter.png",
-    "assets/asyra-office/models/pantry/review/pantry-top-layout-proposal.json",
+    "assets/asyra-office/models/pantry/review/pantry-top-layout-proposal-layout.json",
     "assets/asyra-office/models/pantry/review/pantry-top-layout-proposal.png",
     "assets/asyra-office/models/pantry/review/pantry-top-layout-proposal.svg",
     "apps/asyra-office/e2e/interior.spec.ts",
