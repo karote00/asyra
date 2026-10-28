@@ -1026,6 +1026,7 @@
               "artifact:prepared-review"
             ],
             "conditions": [
+              "Visual coverage, pending-criterion and correction projections select main-agent results through the existing result store before cloning payloads. Preserve all selected judgments, detached full/exact reads and explicit selected count scope. Mechanical blockers remain independent; prevalidation and committed-state reads cannot share stale snapshots. Preserve local passes, whole-view/deferred obligations, invalidation, cancellation and no replay. No cache, extra model call, capture or write; prove actual clone work and semantic equivalence through dispatcher/reviewer/store consumers.",
               "Publish unchanged computed-field selection limits from the Core snapshot owner through its public export and App schema; preserve full and empty selections without extra reads or new cache.",
               "Admit unit-only supersedes with declared unitId, exact revision and redesign reason before capture, bind and record. Whole-criterion correction removes only the invalid supersedes field using retained image assignments and existing binding; never invent units, recapture, replay or weaken scope/whole-view protection.",
               "Workspace mechanical review consumes canonical non-geometric root metadata and ordered descendants without requiring or fabricating root bounds. Preserve actual child geometry/text and Frame checks, hidden-node semantics, subtree membership/order stamps, local invalidation, load retirement, cancellation and retained verdict reuse. Final review consumes that receipt; unavailable checks expose existing retained findings and query recovery without redraw, recapture, replay or a new state owner. Empty mechanical scope never certifies visual acceptance.",
@@ -1124,6 +1125,7 @@
               "runtime-issued visual receipt, target/subtree or local region, canonical dependency IDs and regional membership, criterion inspection bindings; request lifetime, complete immutable source recipe, explicit criterion/key coverage, deterministic findings, element count, canonical attachment context/stamp, exact requirement/reference/source assertion evidence and supplied predecessor findings/currency"
             ],
             "implementationBoundary": [
+              "apps/asyra-design/test-data/knowledge-evaluation/visual-result-selection-20261028.json",
               "packages/core/src/types/scene-tree.ts",
               "packages/core/src/contracts/index.ts",
               "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
@@ -1220,6 +1222,7 @@
               "apps/asyra-design/server/__tests__/local-operation-tools.test.ts"
             ],
             "specRefs": [
+              "#visual-review-result-selection",
               "#pre-execution-guidance-and-recoverable-input-validation",
               "#workspace-mechanical-review",
               "#computed-snapshot-selection",

@@ -97,6 +97,118 @@ explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
 
+### Closed slice - Visual review result read scope
+
+Baseline: 4e08e6b9d4626c8818798cf9cc353f6025b9e13e. Evidence: run
+1793166909239, raw provider be3ae97b-7ea3-41a2-a3c6-880b08fee0e6,
+output payloads 136, 244, 422 and 458 record four useful visual assessments.
+The result store contains 8, 11, 12 and 12 results respectively. Current
+reviewState clones all results before selecting main-agent judgments;
+correctionContext and pendingCriterionIds also discard already-cloned tool data.
+Do not remove quality checks or infer a wall-time saving from this observation.
+
+Step Execution Card - inspect / visual result selection:
+- Contract: ai-execution-flow, Visual review result selection. Inspector inspect
+  inputs remain current requirements, retained judgments, receipts and dependency
+  changes; outputs remain current evidence, coverage, correction and acceptance.
+- Owner: existing Design result store selects by its typed origin before snapshot
+  cloning. Review consumes its main-agent selection. Full and exact-ID reads
+  remain independent. Prevalidation and post-commit reads remain distinct; their
+  revisions can differ. No retained computation or new state is introduced.
+- Allowed contributors: existing result store, reviewer, input admission and
+  dependency validation. Forbidden: inferred origin from IDs, a tool allowlist,
+  new cache/index/registry, model calls, omitted mechanical blockers or replay.
+- Boundary: design-check-results.ts, local-design-review.ts, direct store/review
+  and execution-flow tests, saved-input fixture, existing formal proof mapping,
+  this plan/spec/Inspector, App change note and generated template/workspace.
+  Failure owner remains inspect. Capture/render/write/persistence owners do not
+  change; their existing correction/history integration remains a regression gate.
+- Conditions: select only an explicit origin; omitted selection retains full
+  existing semantics. Count scope reflects selection; every returned result stays
+  detached. Missing, empty and passed-result selection remain deterministic.
+- Fixed D1-D8: formal saved-input red regression; actual review/dispatcher/store
+  clone counts and bytes decrease with unrelated mechanical results; unchanged
+  coverage, acceptance, statuses, revisions and correction; mechanical fail/stale/
+  unverified still block completion; preserve local passes, whole-view, deferred
+  obligations and invalidation; preflight/commit/cancellation and snapshot
+  isolation; no added calls/capture/writes/replay; direct-consumer, production/flow
+  types, lint, naming and source-bound Inspector gates with bounded self-review.
+- Formal cases: empty/mixed/full/exact-ID/passed reads; observed failure then local
+  recovery then final acceptance; mechanical blocker retained; stale-image retry,
+  cancellation and independent pass; unrelated result growth changes neither
+  visual snapshot bytes nor returned coverage. Measure actual structuredClone
+  work after seed writes, not only calls to a mocked store.
+- Sequence: update contracts and structural admission; add formal red case and
+  source-bound candidate, accept reviewed mapping; implement only this owner;
+  run focused consumers then complete execution-flow verification; sync artifacts.
+- Stop on a required mutation-owner change, incompatible public output, new state
+  or weaker quality/invalidity checks. No model/101, CI, push or broader audit.
+
+Verification revision - captured fixture boundary:
+The local red case proves redundant cloning; the first two isolated candidates
+instead fail before that assertion because workspace source capture deliberately
+excludes __tests__ dependencies. Inspector implementation locations do not add
+runtime snapshot inputs. Keep the same D1-D8 and existing capture policy: place the
+single permanent saved-input fixture under the existing test-data/knowledge-evaluation
+owner, declare that exact file in workspaceSources, and import it from the formal
+proof. Remove its superseded test-directory location and regenerate the template.
+Do not modify snapshot tooling, loosen assertions, or treat missing-module failure
+as the original product regression. Review confirms the exact source declaration
+is supported by sourceInputPath, preserves one fixture authority and introduces no
+runtime lookup or model call. Re-run source-bound candidate and accept its reviewed
+mapping before the final complete execution-flow gate.
+
+Outcome (2026-10-28): D1-D8 passed locally. The existing store read accepts a
+typed origin selection before cloning. Visual coverage, pending criteria and
+correction projections use it; full and exact reads, selected count scope, detached
+snapshots and prevalidation/post-commit freshness remain intact. Pending-only
+selection retains pendingIds rather than scanning passed results. No cache, added
+model/capture request, document write or replay path was introduced.
+
+Formal saved-input red evidence (tmp/visual-result-selection-20261028/red.log):
+with 1 unrelated mechanical result the actual dispatcher/reviewer/store flow made
+26 unnecessary clones (34,528 serialized bytes); with 200 it made 5,200 clones
+(6,913,140 bytes). Both are now zero. These are deterministic clone-work
+measurements, not saved-run network volume, heap allocation totals or timing claims.
+Formal tests preserve correction evidence, complete coverage, local pass retention,
+stale-image recovery, cancellation, snapshot isolation, and mechanical fail/stale/
+unverified blocking. Existing correction integration also verifies actual mutation
+owners, unfinished-only recovery, Undo/Redo and save/load.
+
+Validation: 219 focused cases; production and flow-proof types; ESLint with no
+errors (one unchanged console warning); naming 15/15; complete
+`yarn test:design-execution-flow` passed (Runtime 459, Preset 37, App 2,782).
+The two existing opt-in skips are installed native registration and large-document
+bootstrap; neither changed and neither is claimed passed. Public documentation and
+update guidance passed. Canonically generated template counterparts are byte-equal;
+the superseded fixture location is absent.
+
+Initial structural admission and mapping acceptance preceded implementation.
+The first isolated candidates lacked the fixture; those failures are preserved
+separately from the genuine clone regression. Revised fixture capture passed all
+83 cases in candidate 2755ad27-c869-49bc-97ad-a7bf85cc3151, accepted review
+b92a939ea56e86b05fc979c24f9eff7c070202071aa44b88a5e88fbac77fdbe2.
+Final verify a9c225d3-f46c-4a56-8d70-a12c1e0470c5 passed at revision 163,
+source b7389b28ecbf2fefedb300da16198b48c16517dcee9f89fbf9fe6b17162e605e.
+Bounded self-review covered the changed owner, all four visual read consumers,
+mechanical completion authority, direct regression tests and source capture. No
+remaining in-scope defect was found. No model/101, CI or push was performed;
+end-to-end model timing and visual quality effects remain unmeasured.
+
+Follow-up observation and publication authorization (2026-10-28): the user
+requested one 720000 ms 101 work window plus at most 60000 ms reporting, then
+closure and push. Run 1793173740052 used gpt-6-astra / medium without video and
+without source changes. First content appeared at 133.842 seconds with 3,087
+created elements; the saved document has 19,584 scene-tree elements. The visual
+flow retained a failed representative judgment, its corrected pass, and incomplete
+whole-request coverage (1/9 passed). It did not promote capture success to final
+acceptance. Work stopped at the deadline, report completed within its allowance,
+and persistence/reload evidence completed. Runtime clone counts were not measured;
+local D1-D8 remains the work-reduction proof. Two preparation rejections recovered
+through retained drafts; their causes are separate from this closed read-selection
+slice. Source-bound evidence was rechecked against all 895 captured files with no
+mismatch. Push is now authorized; CI and further model runs are not authorized.
+
 ### Closed slice - Unified usage delivery responsibility
 
 Follow-up authorization (2026-10-28): review the bounded diff and direct consumers,

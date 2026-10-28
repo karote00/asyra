@@ -1332,9 +1332,8 @@ export const createLocalDesignReview = (
       >
     >(
       results
-        .read({ includePassed: true })
-        .items.filter((item) => item.origin === 'main-agent')
-        .map((item) => [item.id, item])
+        .read({ includePassed: true, origin: 'main-agent' })
+        .items.map((item) => [item.id, item])
     )
     for (const item of replacements) current.set(item.id, item)
     const pending = required.flatMap((item) => {
@@ -1385,12 +1384,8 @@ export const createLocalDesignReview = (
     ...new Set([
       ...reviewState().coverage.pending.map((item) => item.criterionId),
       ...results
-        .read()
-        .items.flatMap((item) =>
-          item.origin === 'main-agent' && item.criterionId
-            ? [item.criterionId]
-            : []
-        )
+        .read({ origin: 'main-agent' })
+        .items.flatMap((item) => (item.criterionId ? [item.criterionId] : []))
     ])
   ]
   const resolveSelectedUse = (
@@ -1853,18 +1848,16 @@ export const createLocalDesignReview = (
       const coverage = reviewState().coverage
       const pending = new Map(
         results
-          .read()
-          .items.filter(
-            (item) =>
-              item.origin === 'main-agent' && item.criterionId !== undefined
-          )
+          .read({ origin: 'main-agent' })
+          .items.filter((item) => item.criterionId !== undefined)
           .map((item) => [item.id, item])
       )
       // Coverage can require re-review of a retained pass (for example missing whole-view evidence).
       const missing = coverage.pending.filter((item) => !pending.has(item.id))
       for (const item of results.read({
         ids: missing.map((item) => item.id),
-        includePassed: true
+        includePassed: true,
+        origin: 'main-agent'
       }).items)
         pending.set(item.id, item)
       const obligations = new Map(

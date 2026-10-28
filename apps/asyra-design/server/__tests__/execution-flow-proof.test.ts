@@ -10889,3 +10889,229 @@ it('execution proof delivers complete non-scoped usage without mutation or a ful
   expect(JSON.parse(result.text).toolOutcome.status).toBe('success')
   expect(execute).not.toHaveBeenCalled()
 })
+
+it('execution proof selects visual results before cloning mechanical evidence', async () => {
+  const fixture = (
+    await import('../../test-data/knowledge-evaluation/visual-result-selection-20261028.json')
+  ).default
+  for (const mechanicalCount of [1, 200]) {
+    const store = createDesignCheckResults()
+    const mechanicalIds = new Set<string>()
+    for (let i = 0; i < mechanicalCount; i++) {
+      const id = `mechanical-${i}`
+      mechanicalIds.add(id)
+      store.record({
+        id,
+        origin: 'tool',
+        status: 'pass',
+        evidence: 'Canonical evidence '.repeat(64),
+        dependencies: { geometry: '1' }
+      })
+    }
+    const invalid = new Set<string>()
+    let sequence = 0
+    const execute = vi.fn(
+      async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+        context: {},
+        actionResults: batch.actions.map(
+          (action): AiBatchReceipt['actionResults'][number] => {
+            const args = action.arguments as {
+              elementId?: string
+              evidence?: { receiptId?: string }
+              scope?: unknown
+            }
+            if (action.name === AiActionNames.VALIDATE_INSPECTION_EVIDENCE)
+              return {
+                actionId: action.id,
+                actionName: action.name,
+                result: {
+                  current: !invalid.has(args.evidence?.receiptId ?? ''),
+                  validatedAt: {
+                    sessionId: 'selected-results',
+                    revision: sequence
+                  },
+                  coverage: { complete: args.scope !== undefined }
+                }
+              }
+            expect(action.name).toBe(AiActionNames.INSPECT_DRAWING)
+            return {
+              actionId: action.id,
+              actionName: action.name,
+              result: {
+                available: true,
+                image: { dataUrl: 'data:image/png;base64,AA==' },
+                evidence: {
+                  sessionId: 'selected-results',
+                  revision: ++sequence,
+                  receiptId: `image-${sequence}`
+                }
+              }
+            }
+          }
+        )
+      })
+    )
+    const tools = createOperationOwner(
+      [
+        AiActionNames.INSPECT_DRAWING,
+        AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+      ].map((name) => ({ name, description: name, inputSchema: {} })),
+      {
+        modelActions: (actions) => actions,
+        resolveBatch: (value) => value,
+        checkResults: store
+      },
+      execute,
+      { reviewTargetId: 'composition' }
+    )
+    const signal = new AbortController().signal
+    const call = async (
+      name: string,
+      input: Record<string, unknown>,
+      selectedSignal = signal
+    ) => JSON.parse(await tools.call(name, input, selectedSignal))
+    await call(AiDesignToolIds.DEFINE_DESIGN_CRITERIA, {
+      phase: 'plan',
+      method: 'Review the retained drawing',
+      references: [],
+      criteria: fixture.criteria,
+      structureCriteria: [],
+      detailRequired: false
+    })
+    let copied = 0
+    let copiedBytes = 0
+    const clone = globalThis.structuredClone
+    const spy = vi
+      .spyOn(globalThis, 'structuredClone')
+      .mockImplementation((value) => {
+        if (
+          value &&
+          typeof value === 'object' &&
+          'origin' in value &&
+          value.origin === 'tool' &&
+          'id' in value &&
+          mechanicalIds.has(String(value.id))
+        ) {
+          copied++
+          copiedBytes += Buffer.byteLength(JSON.stringify(value))
+        }
+        return clone(value)
+      })
+    try {
+      const capture = async (criterionId: string, unitId?: string) =>
+        call(AiDesignToolIds.REVIEW_DRAWING, {
+          phase: 'visual',
+          final: false,
+          inspections: [
+            {
+              elementId: 'composition',
+              view: 'overview',
+              checks: [{ criterionId, ...(unitId ? { unitId } : {}) }]
+            }
+          ]
+        })
+      const overall = await capture('overall')
+      const ornament = await capture('ornament', 'ornaments')
+      const submit = async (
+        reply: typeof overall,
+        judgment: (typeof fixture.judgments)[number],
+        final = false
+      ) =>
+        call(AiDesignToolIds.REVIEW_DRAWING, {
+          ...reply.next.arguments,
+          final,
+          checks: reply.next.arguments.checks.map((check: object) => ({
+            ...check,
+            status: judgment.status,
+            evidence: judgment.evidence
+          }))
+        })
+      const failed = await submit(overall, fixture.judgments[0])
+      expect(failed.accepted).toBe(false)
+      expect(failed.correction.checks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            criterionId: 'overall',
+            status: 'fail',
+            evidence: fixture.judgments[0].evidence
+          })
+        ])
+      )
+      await submit(ornament, fixture.judgments[1])
+      const correctedOrnament = await capture('ornament', 'ornaments')
+      await submit(correctedOrnament, fixture.judgments[2])
+      const correctedOverall = await capture('overall')
+      const final = await submit(correctedOverall, fixture.judgments[3], true)
+      expect(final.accepted).toBe(true)
+      expect(final.coverage).toEqual({ required: 2, passed: 2, pending: [] })
+      expect(final.results.counts.pass).toBe(mechanicalCount + 2)
+      expect(final.correction.checks).toEqual([])
+      const aborted = new AbortController()
+      aborted.abort()
+      const beforeCancel = execute.mock.calls.length
+      await expect(
+        call(
+          AiDesignToolIds.REVIEW_DRAWING,
+          correctedOverall.next.arguments,
+          aborted.signal
+        )
+      ).rejects.toThrow()
+      expect(execute.mock.calls.length).toBe(beforeCancel)
+      invalid.add('image-4')
+      await tools.validateCompletion(signal)
+      expect(store.firstPending('main-agent')).toMatchObject({
+        status: 'stale'
+      })
+      const independent = store.read({
+        ids: ['visual-unit:["ornament","ornaments"]'],
+        includePassed: true
+      })
+      expect(independent.items[0].status).toBe('pass')
+      const current = await capture('overall')
+      expect((await submit(current, fixture.judgments[3], true)).accepted).toBe(
+        true
+      )
+      // The mechanical owner still blocks completion; no visual selection may hide it.
+      spy.mockRestore()
+      for (const status of ['fail', 'stale', 'unverified'] as const) {
+        store.record({
+          id: 'mechanical-0',
+          origin: 'tool',
+          status,
+          evidence: 'Geometry needs verification',
+          dependencies: { geometry: '2' }
+        })
+        expect(
+          (await submit(current, fixture.judgments[3], true)).accepted
+        ).toBe(false)
+        expect(store.firstPending('tool')).toEqual({
+          id: 'mechanical-0',
+          status
+        })
+      }
+      expect(
+        execute.mock.calls.every(([batch]) =>
+          batch.actions.every((action) =>
+            [
+              AiActionNames.INSPECT_DRAWING,
+              AiActionNames.VALIDATE_INSPECTION_EVIDENCE
+            ].includes(action.name as never)
+          )
+        )
+      ).toBe(true)
+      // eslint-disable-next-line no-console -- Deterministic work evidence for the formal proof.
+      console.log(
+        JSON.stringify({
+          measurement: 'visual-result-selection',
+          mechanicalCount,
+          copied,
+          copiedBytes
+        })
+      )
+      expect.soft(copied).toBe(0)
+      expect.soft(copiedBytes).toBe(0)
+    } finally {
+      spy.mockRestore()
+    }
+  }
+})

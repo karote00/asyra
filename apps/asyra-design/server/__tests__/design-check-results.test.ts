@@ -583,3 +583,64 @@ it('labels selected counts separately from request counts without rescanning evi
     counts: { pass: 1, unverified: 1 }
   })
 })
+
+it('selects result origin before cloning while retaining full and exact reads', () => {
+  const store = createDesignCheckResults()
+  for (const [id, origin, status] of [
+    ['mechanical', 'tool', 'fail'],
+    ['visual-pass', 'main-agent', 'pass'],
+    ['visual-fail', 'main-agent', 'fail']
+  ] as const)
+    store.record({
+      id,
+      origin,
+      status,
+      evidence: id,
+      dependencies: { source: '1' }
+    })
+  const clone = vi.spyOn(globalThis, 'structuredClone')
+  try {
+    const selection = { includePassed: true, origin: 'main-agent' as const }
+    const result = store.read(selection)
+    expect(result.items.map((item) => item.id)).toEqual([
+      'visual-pass',
+      'visual-fail'
+    ])
+    expect(result.countsScope).toBe('selected-checks')
+    expect(result.counts).toEqual({ pass: 1, fail: 1, stale: 0, unverified: 0 })
+    expect(clone.mock.calls).toHaveLength(2)
+    result.items[0].dependencies.source = 'external'
+    expect(store.read(selection).items[0].dependencies.source).toBe('1')
+    const pending = store.read({ origin: 'main-agent' })
+    expect(pending.items.map((item) => item.id)).toEqual(['visual-fail'])
+    expect(pending.countsScope).toBe('selected-checks')
+    expect(pending.counts).toEqual({
+      pass: 0,
+      fail: 1,
+      stale: 0,
+      unverified: 0
+    })
+    expect(pending.visitedResults).toBe(2)
+    expect(
+      store
+        .read({ ...selection, ids: ['mechanical', 'visual-pass', 'missing'] })
+        .items.map((item) => item.id)
+    ).toEqual(['visual-pass'])
+    expect(store.read({ ...selection, ids: [] }).items).toEqual([])
+    expect(store.read({ includePassed: true }).items).toHaveLength(3)
+    expect(
+      store.read({ ids: ['mechanical'], includePassed: true }).items[0].status
+    ).toBe('fail')
+    store.invalidate(['source'], 'Changed source')
+    expect(
+      store.read(selection).items.every((item) => item.status === 'stale')
+    ).toBe(true)
+    expect(store.firstPending('tool')).toEqual({
+      id: 'mechanical',
+      status: 'stale'
+    })
+    expect(createDesignCheckResults().read(selection).items).toEqual([])
+  } finally {
+    clone.mockRestore()
+  }
+})

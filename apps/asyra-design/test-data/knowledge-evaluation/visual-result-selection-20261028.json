@@ -1,0 +1,46 @@
+{
+  "source": {
+    "runId": "1793166909239",
+    "provider": "be3ae97b-7ea3-41a2-a3c6-880b08fee0e6",
+    "outputPayloads": [244, 422, 458],
+    "derivation": "Retain overall and ornament criteria and judgments. Tests obtain fresh owner bindings; omit historical reference receipts and unrelated geometry."
+  },
+  "criteria": {
+    "overall": {
+      "requirement": "全棟台北101從基座至尖頂，固定俯視三分之四視角，透明背景，無施工設備與文字",
+      "description": "整體輪廓、八段竹節、頂面、基座關係與一致視角",
+      "verification": "visual",
+      "requiredUnits": []
+    },
+    "ornament": {
+      "requirement": "依特寫重現可見金屬如意裝飾的形狀與材質",
+      "description": "雙渦卷、中央圓鈕及向下細長吊墜，金屬反射",
+      "verification": "visual",
+      "requiredUnits": ["ornaments"]
+    }
+  },
+  "judgments": [
+    {
+      "criterionId": "overall",
+      "status": "fail",
+      "evidence": "完整八段、基座至尖端及一致俯視投影已見；但冠部固定寬翼片與尖塔束帶出現懸空延伸，須修正貼附。屋頂及基座仍需可見分格細節。"
+    },
+    {
+      "criterionId": "ornament",
+      "unitId": "ornaments",
+      "status": "fail",
+      "evidence": "銀色反射與中央圓鈕、長柄及吊墜可辨識，但主分格遮住如意；上方渦卷仍像封閉圓環，需修正遮擋與卷心銜接。"
+    },
+    {
+      "criterionId": "ornament",
+      "unitId": "ornaments",
+      "status": "pass",
+      "evidence": "遮擋已清除；雙卷雲頭、卷心連接、中央凸鈕、窄長柄及下方圓盤對應附件可見構造。金屬亮帶、暗槽、厚邊和投影可辨；此為選定視角的向量詮釋，非逐像素複製。"
+    },
+    {
+      "criterionId": "overall",
+      "status": "pass",
+      "evidence": "現況從裙樓與塔座到尖端完整，八個外挑竹節及縮小冠部清楚，固定俯視三分之四視角一致、頂面可見。玻璃窗格與金屬裝飾完整，懸空束帶已修正。無背景場景、文字或施工設備；空拍僅用於廣義量體關係，未聲稱其支持精確未知幾何。"
+    }
+  ]
+}

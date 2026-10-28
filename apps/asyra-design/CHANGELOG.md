@@ -1,5 +1,34 @@
 # @asyra/asyra-design
 
+## Pending visual review result selection
+
+```update-note
+{
+  "change": "visual-review-result-selection",
+  "owner": "Design result store",
+  "summary": "Select visual judgments before copying result payloads for coverage, pending criteria and correction context.",
+  "sources": [
+    "apps/asyra-design/flow-contracts.json",
+    "apps/asyra-design/server/__tests__/design-check-results.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/test-data/knowledge-evaluation/visual-result-selection-20261028.json",
+    "apps/asyra-design/server/design-check-results.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "create-app/asyra-design/template/server/__tests__/design-check-results.test.ts",
+    "create-app/asyra-design/template/test-data/knowledge-evaluation/visual-result-selection-20261028.json",
+    "create-app/asyra-design/template/server/design-check-results.ts",
+    "create-app/asyra-design/template/server/local-design-review.ts",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/source-map.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Internal result selection preserves full and exact reads, mechanical blockers, independent passes, invalidation and recovery. No public tool, stored-document change, cache or migration is introduced."
+}
+```
+
 ## Pending unified usage acquisition
 
 ```update-note

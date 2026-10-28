@@ -50,6 +50,7 @@
         "e2e/fixtures/execution-continuity.json",
         "test-data/knowledge-evaluation/architecture-101.json",
         "test-data/knowledge-evaluation/quality-cases.json",
+        "test-data/knowledge-evaluation/visual-result-selection-20261028.json",
         "test-data/knowledge-evaluation/quality.mjs",
         "test-data/knowledge-evaluation/architecture-protocol.mjs",
         "test-data/knowledge-evaluation/native-boundaries.mjs",
@@ -885,6 +886,16 @@
             "apps/asyra-design/src/ai/review-action.ts",
             "apps/asyra-design/src/common-apis/design-review.ts"
           ]
+        },
+        {
+          "id": "inspect.visual-result-selection",
+          "stepId": "inspect",
+          "testName": "execution proof selects visual results before cloning mechanical evidence",
+          "implementationPaths": [
+            "apps/asyra-design/server/design-check-results.ts",
+            "apps/asyra-design/server/local-design-review.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/visual-result-selection-20261028.json"
+          ]
         }
       ],
       "handoffs": [
@@ -953,12 +964,20 @@
         {
           "routeId": "inspect-to-compose",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence", "inspect.current-contract"]
+          "caseIds": [
+            "inspect.current-evidence",
+            "inspect.current-contract",
+            "inspect.visual-result-selection"
+          ]
         },
         {
           "routeId": "inspect-to-settle",
           "decision": "required",
-          "caseIds": ["inspect.current-evidence", "inspect.current-contract"]
+          "caseIds": [
+            "inspect.current-evidence",
+            "inspect.current-contract",
+            "inspect.visual-result-selection"
+          ]
         },
         {
           "routeId": "prepare-to-inspect",

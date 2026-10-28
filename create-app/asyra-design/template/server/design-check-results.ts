@@ -543,7 +543,13 @@ export const createDesignCheckResults = () => {
         ...(end < total ? { nextOffset: end } : {})
       }
     },
-    read(options: { includePassed?: boolean; ids?: string[] } = {}) {
+    read(
+      options: {
+        includePassed?: boolean
+        ids?: string[]
+        origin?: DesignCheckResult['origin']
+      } = {}
+    ) {
       const selectedCounts = { pass: 0, fail: 0, unverified: 0, stale: 0 }
       const items: DesignCheckResult[] = []
       const ids =
@@ -552,7 +558,11 @@ export const createDesignCheckResults = () => {
       for (const id of ids) {
         const result = results.get(id)
         visitedResults++
-        if (!result) continue
+        if (
+          !result ||
+          (options.origin !== undefined && result.origin !== options.origin)
+        )
+          continue
         selectedCounts[result.status]++
         if (options.includePassed || result.status !== 'pass') {
           const { recheck: _recheck, ...publicResult } = result
@@ -560,10 +570,15 @@ export const createDesignCheckResults = () => {
         }
       }
       return {
-        countsScope: options.ids
-          ? ('selected-checks' as const)
-          : ('request-checks' as const),
-        counts: { ...(options.ids ? selectedCounts : counts) },
+        countsScope:
+          options.ids || options.origin !== undefined
+            ? ('selected-checks' as const)
+            : ('request-checks' as const),
+        counts: {
+          ...(options.ids || options.origin !== undefined
+            ? selectedCounts
+            : counts)
+        },
         items,
         visitedResults
       }

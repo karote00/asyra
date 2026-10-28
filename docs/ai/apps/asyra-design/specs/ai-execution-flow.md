@@ -925,6 +925,27 @@ continuity, deferred work, failure isolation, reuse work counts and lower total
 handoff bytes/calls including initial metadata and guidance. Live AI adoption and
 first-frame improvement remain unobserved until separately authorized.
 
+### Visual review result selection
+
+Visual coverage, correction context and pending-criterion discovery consume only
+main-agent judgments from the existing request result store. Select that origin
+before cloning result payloads; unrelated mechanical evidence must not be copied
+into these projections. Preserve all main-agent judgments, including non-required
+units and deferred obligations. Do not infer origin from names or ID prefixes.
+
+Full and exact-ID result reads remain available and detached. Selected summaries
+identify their selected population. Pending-only origin selection keeps the existing
+pending candidate scope; full and exact selections retain their respective scope.
+Mechanical failures, stale/unverified evidence,
+whole-view requirements, local passes and dependency invalidation keep their current
+completion authority. Prevalidation and post-commit projections use their own current
+state; no cache, extra model request, capture or mutation replay is introduced.
+
+Formal tests exercise the actual review-to-result-store flow, proving smaller clone
+work with mixed and growing mechanical evidence while preserving output, failure,
+cancellation, isolation and recovery semantics. Source geometry, history and saved
+documents remain unchanged.
+
 ### Primary-agent visual comparison
 
 The primary drawing agent compares original request, retained criteria, applicable
