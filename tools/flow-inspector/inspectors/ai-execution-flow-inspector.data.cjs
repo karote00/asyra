@@ -89,6 +89,7 @@
         ],
         outputs: ['artifact:tool-program'],
         conditions: [
+          'Recovery composes preparation-owned arguments with workflow controls without restoring consumed preparation selectors. Ordered remaining-only recovery consumes the failed part guide, preserves raw unstarted inputs, completed parents and continuation identities, and never replays applied work.',
           'Preset typography value constraints are public immutable standard schemas shared by existing native property validators and App edit declarations; preserve legal values, defaults, state-dependent checks and input isolation without a second validator or registry.',
           'Usage completeness follows exact selection, not effect or implementation route. Exact non-scoped native, read, prepare, batch and final-response tools deliver canonical parameters/results, actual envelope and recovery; unresolved owner scopes and exploration remain explicit menus. Missing examples never remove required contracts. Separate scope acquisition from same-scope refresh, preserve paging and retained reads, and prove complete acquisition cost plus real consumer results without another cache or replay.',
           'Registered owner contracts are the only schema/example/route authority. Selected usage publishes executable JSON Schema using standard local references, not a parameter dialect. Prune only unreachable alternatives; preserve full/field discovery, bounds, cross-field constraints and executable owner recovery. Runtime recipe proof may exclude an opaque sibling using necessary root-property constraints on guaranteed inputs, but never admits selected opaque or overlapping branches. Permanent per-entry tests execute delivered examples and real semantic owners, reject missing coverage, and measure bytes/work without extra prerequisite calls or mutation replay.',
@@ -217,6 +218,7 @@
           'existing request-local Knowledge session map: selected IDs, contexts, generation, context epoch and explicit reuse selection; immutable full/wire results, 64-query capacity, invalidation and disposal'
         ],
         implementationBoundary: [
+          'apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json',
           'packages/preset/src/props/components/text-component.ts',
           'packages/preset/src/index.ts',
           'packages/preset/src/__tests__/native-text.test.ts',
@@ -412,6 +414,7 @@
           'packages/ai-agent-runtime/src/__tests__/multi-batch.test.ts'
         ],
         specRefs: [
+          '#retained-material-preparation-recovery',
           '#unified-public-tool-contract-delivery',
           '#identity-allocation-and-composed-owner-receipts',
           '#pre-execution-guidance-and-recoverable-input-validation',
@@ -463,6 +466,7 @@
           'artifact:retained-capacity-plan'
         ],
         conditions: [
+          'Preparation-owned repair arguments preserve materialSourceId only for retained input before material resolution. Resolved retained source already embeds immutable linearFields; repair consumes those values without reinjection. Preserve genuine inline/source conflict, current ownership, geometry validation and cancellation; no new retained state or writes.',
           'Optional omitted construction checks mean no requested checks, never a passed review. Supplied notes and numeric checks match canonical semantics. Input failures retain source and exact issues with executable repair; known missing object fields may be corrected under full schema validation, but unknown/prototype/array-insertion paths and stale identities reject. Preparation and recovery never replay applied work or discard workflow context. Rejected never-started parts retain every draft and preserve ordered envelope context in one main recovery guide; empty replacements reuse only fully validated retained source. Incomplete retention or envelope errors never advertise a complete executable guide. Execution failures preserve remaining-only recovery.',
           'Source keys identify nodes independently of boundary references and display names. Ambiguous face/grid references report exact duplicate source paths before writes and reuse retained-source field repair without guessed names, changed geometry or replay; preserve unique references and explicit corners.',
           'The backend Group-bounds entry consumes only the existing public Utils geometry-bounds module and its pure point-transform dependency. No Utils barrel, unrelated helpers, lodash, Core, Render, DOM or registration enters this graph; preserve the single analytic bounds owner.',
@@ -520,6 +524,7 @@
           'request-local source-page candidate relationships and current selected image URL; validated byte digest reuses decoding and attachment identity; in-flight URL reuse for the same cancellation scope; attribution projected per caller; failed image acquisition remains retryable; page candidate inventory survives representative failure for explicit pagination and is superseded by a successful explicit candidate selection; original image delivery once per attachment with explicit refresh'
         ],
         implementationBoundary: [
+          'apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json',
           'apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts',
           'apps/asyra-design/server/__tests__/fixtures/recorded-101/missing-brief-checks-20261027.json',
 
@@ -588,6 +593,7 @@
           'apps/asyra-design/server/__tests__/design-preparation.test.ts'
         ],
         specRefs: [
+          '#retained-material-preparation-recovery',
           '#unified-public-tool-contract-delivery',
           '#pre-execution-guidance-and-recoverable-input-validation',
           '#face-referenced-surface-boundaries',
@@ -1122,7 +1128,7 @@
           'apps/asyra-design/server/__tests__/local-operation-tools.test.ts'
         ],
         specRefs: [
-        '#visual-review-result-selection',
+          '#visual-review-result-selection',
           '#pre-execution-guidance-and-recoverable-input-validation',
           '#workspace-mechanical-review',
           '#computed-snapshot-selection',

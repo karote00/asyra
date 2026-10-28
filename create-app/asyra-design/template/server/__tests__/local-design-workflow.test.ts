@@ -1,3 +1,8 @@
+import {
+  createLocalToolLeases,
+  type LocalToolOwnership
+} from '../local-tool-leases'
+import materialRepair from '../../test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json'
 import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import briefFixture from './fixtures/recorded-101/brief-capacity-20261024.json'
 import { projectWorkflowInput } from '../design-workflow-discovery'
@@ -67,12 +72,17 @@ const draft = {
     }
   ]
 }
-const setup = (registered: AiActionDescription[] = actions) => {
+const setup = (
+  registered: AiActionDescription[] = actions,
+  ownership?: LocalToolOwnership
+) => {
   const compile = vi.fn(prepareDesignAsync)
-  const designs = createLocalDesignTools(
-    registered,
-    createDesignPreparationSession(prepareDesign, compile)
+  const session = createDesignPreparationSession(
+    prepareDesign,
+    compile,
+    ownership
   )
+  const designs = createLocalDesignTools(registered, session)
   const execute = vi.fn(
     async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
       context: { selection: ['root'] },
@@ -94,6 +104,7 @@ const setup = (registered: AiActionDescription[] = actions) => {
   const operations = createLocalOperationTools(registered, designs, execute)
   return {
     designs,
+    session,
     operations,
     workflow: createLocalDesignWorkflow(designs, operations),
     compile,
@@ -3315,3 +3326,354 @@ it.each(['direct', 'faces', 'members'] as const)(
     })
   }
 )
+
+const materialRecoverySource = () => ({
+  type: 'group',
+  name: 'Material surfaces',
+  projection: nonplanar.projection,
+  children: [
+    {
+      type: 'projected-face',
+      key: 'surface',
+      name: 'Surface',
+      materialField: 'glassL',
+      vertices: [
+        { x: 0, y: 0, z: 0 },
+        { x: 100, y: 0, z: 0 },
+        { x: 100, y: 0, z: 100 },
+        { x: 0, y: 0, z: 100 }
+      ]
+    }
+  ]
+})
+
+it.each(['prepare_design', 'prepare_and_apply_design'])(
+  'preserves unresolved material source in the delivered %s input repair',
+  async (name) => {
+    const f = setup()
+    const seed = f.session.prepare({
+      ...draft,
+      linearFields: materialRepair.linearFields
+    })
+    const owner = name === 'prepare_design' ? f.designs : f.workflow
+    const definition = owner.definitions.find((tool) => tool.name === name)
+    if (!definition) throw new Error('Missing preparation definition')
+    const call = async (args: unknown) =>
+      JSON.parse(
+        (
+          await invokeLocalTool(
+            owner,
+            definition,
+            args,
+            new AbortController().signal
+          )
+        ).text
+      )
+    const source = materialRecoverySource()
+    const invalid = {
+      ...source,
+      children: source.children.map((child) => ({ ...child, vertices: [] }))
+    }
+    const rejected = await call({
+      draft: invalid,
+      materialSourceId: seed.artifactId,
+      ...(name === 'prepare_and_apply_design' ? { inspection: 'defer' } : {})
+    })
+    expect(rejected.toolOutcome.settlement).toBe('not-started')
+    expect(f.execute).not.toHaveBeenCalled()
+    expect(f.compile).not.toHaveBeenCalled()
+    const next = structuredClone(rejected.repairGuide.arguments)
+    next.repair.replacements.forEach(
+      (replacement: { path: string; value?: unknown }) => {
+        expect(replacement.path).toBe('/children/0/vertices')
+        replacement.value = source.children[0].vertices
+      }
+    )
+    const repaired = await call(next)
+    expect(repaired.toolOutcome).toMatchObject({
+      status: name === 'prepare_design' ? 'success' : 'partial',
+      settlement: 'completed'
+    })
+    if (name === 'prepare_and_apply_design') {
+      expect(repaired.completedSteps).toEqual([
+        'prepare_design',
+        'apply_prepared_design'
+      ])
+      expect(repaired.toolOutcome.issues).toEqual([
+        {
+          code: 'FOLLOWUP_UNAVAILABLE',
+          message: 'Mechanical checking is not registered in this app.'
+        }
+      ])
+    }
+    expect(next.materialSourceId).toBe(seed.artifactId)
+    expect(f.session.recipe(repaired.artifactId).recipe).toEqual({
+      ...source,
+      linearFields: materialRepair.linearFields
+    })
+    expect(f.compile).toHaveBeenCalledOnce()
+    expect(f.execute).toHaveBeenCalledTimes(name === 'prepare_design' ? 0 : 1)
+  }
+)
+
+it('uses the failed part owner guide without replaying completed material work', async () => {
+  const f = setup()
+  const seed = f.session.prepare({
+    ...draft,
+    linearFields: materialRepair.linearFields
+  })
+  const source = materialRecoverySource()
+  const invalid = structuredClone(source)
+  invalid.children[0].vertices[3].y = 10
+  const input = {
+    parts: [
+      {
+        key: 'prior',
+        repair: {
+          draftId: f.session.retainRejectedDraft(draft),
+          replacements: []
+        }
+      },
+      {
+        key: 'surface',
+        parentPart: 'prior',
+        materialSourceId: seed.artifactId,
+        repair: {
+          draftId: f.session.retainRejectedDraft(invalid),
+          replacements: []
+        }
+      },
+      {
+        key: 'later',
+        parentPart: 'prior',
+        materialSourceId: seed.artifactId,
+        repair: {
+          draftId: f.session.retainRejectedDraft(source),
+          replacements: []
+        }
+      }
+    ],
+    inspection: 'defer',
+    message: 'Add surfaces'
+  }
+  const rejected = JSON.parse(
+    await f.workflow.call(
+      'prepare_and_apply_design',
+      input,
+      new AbortController().signal
+    )
+  )
+  expect(rejected.failedPart).toBe('surface')
+  expect(rejected.parts[0].completedSteps).toContain('apply_prepared_design')
+  expect(f.execute).toHaveBeenCalledTimes(1)
+  const next = structuredClone(rejected.recoveryInvocation.arguments)
+  expect(next.parts.map((part: { key: string }) => part.key)).toEqual([
+    'surface',
+    'later'
+  ])
+  next.parts[0].repair.replacements[0].value = source.children[0].vertices
+  const repaired = JSON.parse(
+    await f.workflow.call(
+      rejected.recoveryInvocation.name,
+      next,
+      new AbortController().signal
+    )
+  )
+  expect(repaired.failedPart).toBeUndefined()
+  expect(
+    repaired.parts.every((part: { completedSteps: string[] }) =>
+      part.completedSteps.includes('apply_prepared_design')
+    )
+  ).toBe(true)
+  expect(next.parts[0]).not.toHaveProperty('materialSourceId')
+  expect(next.parts[1].materialSourceId).toBe(seed.artifactId)
+  expect(f.execute).toHaveBeenCalledTimes(3)
+  for (const [batch] of f.execute.mock.calls.slice(1))
+    expect(batch.actions[0].arguments).toMatchObject({ parentId: 'root' })
+  for (const part of repaired.parts)
+    expect(f.session.recipe(part.artifactId).recipe).toEqual({
+      ...source,
+      linearFields: materialRepair.linearFields
+    })
+})
+
+it('retains material conflicts and source ownership without writes or replay', async () => {
+  const leases = createLocalToolLeases({
+    requestId: 'material-recovery',
+    capacity: 32
+  })
+  const f = setup(actions, {
+    ...leases,
+    requestId: 'material-recovery',
+    publish: (handle, release, validate) =>
+      leases.publish({ handle, release, validate })
+  })
+  const seed = f.session.prepare({
+    ...draft,
+    linearFields: materialRepair.linearFields
+  })
+  const source = materialRecoverySource()
+  const call = async (args: unknown) =>
+    JSON.parse(
+      await f.workflow.call(
+        'prepare_and_apply_design',
+        args,
+        new AbortController().signal
+      )
+    )
+  const conflict = await call({
+    draft: { ...source, linearFields: materialRepair.linearFields },
+    materialSourceId: seed.artifactId
+  })
+  expect(conflict.message).toBe(
+    'materialSourceId conflicts with inline linearFields.'
+  )
+  expect(conflict.completedSteps).toEqual([])
+  const invalid = structuredClone(source)
+  invalid.children[0].vertices[3].y = 10
+  const rejected = await call({
+    draft: invalid,
+    materialSourceId: seed.artifactId,
+    inspection: 'defer'
+  })
+  const next = structuredClone(rejected.repairGuide.arguments)
+  next.repair.replacements[0].value = source.children[0].vertices
+  await expect(
+    f.workflow.call('prepare_and_apply_design', next, AbortSignal.abort())
+  ).rejects.toThrow()
+  const foreign = setup()
+  const foreignResult = JSON.parse(
+    await foreign.workflow.call(
+      'prepare_and_apply_design',
+      next,
+      new AbortController().signal
+    )
+  )
+  expect(foreignResult.toolOutcome.settlement).toBe('not-started')
+  expect(foreign.execute).not.toHaveBeenCalled()
+  f.session.release([seed.artifactId])
+  const repaired = await call(next)
+  expect(repaired.failedStep).toBeUndefined()
+  expect(f.session.recipe(repaired.artifactId).recipe).toEqual({
+    ...source,
+    linearFields: materialRepair.linearFields
+  })
+  expect(f.execute).toHaveBeenCalledOnce()
+  await leases.dispose()
+  const expired = await call(next)
+  expect(expired.toolOutcome.settlement).toBe('not-started')
+  expect(f.execute).toHaveBeenCalledOnce()
+})
+
+it('preserves material selectors for all raw parts retained by input admission', async () => {
+  const f = setup()
+  const seed = f.session.prepare({
+    ...draft,
+    linearFields: materialRepair.linearFields
+  })
+  const source = materialRecoverySource()
+  const invalid = {
+    ...source,
+    children: source.children.map((child) => ({ ...child, vertices: [] }))
+  }
+  const request = {
+    parts: [
+      { key: 'first', materialSourceId: seed.artifactId, draft: invalid },
+      {
+        key: 'next',
+        parentPart: 'first',
+        materialSourceId: seed.artifactId,
+        draft: source
+      }
+    ],
+    inspection: 'defer',
+    message: 'Recover raw parts'
+  }
+  const rejected = JSON.parse(
+    (
+      await invokeLocalTool(
+        f.workflow,
+        f.workflow.definitions[0],
+        request,
+        new AbortController().signal
+      )
+    ).text
+  )
+  expect(rejected.toolOutcome.settlement).toBe('not-started')
+  expect(f.execute).not.toHaveBeenCalled()
+  expect(f.compile).not.toHaveBeenCalled()
+  const next = structuredClone(rejected.repairGuide.arguments)
+  expect(
+    next.parts.map(
+      (part: { materialSourceId: string }) => part.materialSourceId
+    )
+  ).toEqual([seed.artifactId, seed.artifactId])
+  expect(next.parts.every((part: object) => !('draft' in part))).toBe(true)
+  next.parts[0].repair.replacements[0].value = source.children[0].vertices
+  const repaired = JSON.parse(
+    await f.workflow.call(
+      rejected.repairGuide.tool,
+      next,
+      new AbortController().signal
+    )
+  )
+  expect(repaired.failedPart).toBeUndefined()
+  expect(f.execute).toHaveBeenCalledTimes(2)
+  expect(f.compile).toHaveBeenCalledTimes(2)
+  for (const part of repaired.parts)
+    expect(f.session.recipe(part.artifactId).recipe).toEqual({
+      ...source,
+      linearFields: materialRepair.linearFields
+    })
+})
+
+it('repairs resolved material directly after the original source expires', async () => {
+  const f = setup()
+  const source = materialRecoverySource()
+  const seed = f.session.prepare({
+    ...draft,
+    linearFields: materialRepair.linearFields
+  })
+  const invalid = structuredClone(source)
+  invalid.children[0].vertices[3].y = 10
+  const definition = f.designs.definitions.find(
+    (tool) => tool.name === 'prepare_design'
+  )
+  if (!definition) throw new Error('Missing preparation definition')
+  const call = async (args: unknown) =>
+    JSON.parse(
+      (
+        await invokeLocalTool(
+          f.designs,
+          definition,
+          args,
+          new AbortController().signal
+        )
+      ).text
+    )
+  const rejected = await call({
+    draft: invalid,
+    materialSourceId: seed.artifactId
+  })
+  expect(rejected.geometryIssue.code).toBe('NONPLANAR_FACE')
+  f.session.release([seed.artifactId])
+  const next = structuredClone(rejected.repairGuide.arguments)
+  next.repair.replacements[0].value = source.children[0].vertices
+  const repaired = await call(next)
+  expect(repaired.toolOutcome.status).toBe('success')
+  expect(f.session.recipe(repaired.artifactId).recipe).toEqual({
+    ...source,
+    linearFields: materialRepair.linearFields
+  })
+  expect(next).not.toHaveProperty('materialSourceId')
+  expect(f.execute).not.toHaveBeenCalled()
+  const rawExpired = await call({
+    draft: source,
+    materialSourceId: seed.artifactId
+  })
+  expect(rawExpired).toMatchObject({
+    available: false,
+    settlement: 'not-started'
+  })
+  expect(f.execute).not.toHaveBeenCalled()
+})

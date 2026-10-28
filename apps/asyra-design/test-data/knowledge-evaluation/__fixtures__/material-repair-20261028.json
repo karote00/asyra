@@ -1,0 +1,952 @@
+{
+  "evidence": {
+    "run": "1793173740052",
+    "provider": "210fec18-1017-4ef7-9379-bcc1e7bcb356",
+    "inputs": [
+      {
+        "file": "174-input.json",
+        "sha256": "c8fb3b936dcb874754dff669c898ad1f7a08946dbee7b259757d332dd459af3e"
+      },
+      {
+        "file": "181-input.json",
+        "sha256": "ec19930019020c39b2b5ba3f937a2af90f2247504238e46de1eced0a6644bb05"
+      },
+      {
+        "file": "81-input.json",
+        "sha256": "0c1aa741b204ba7ff97b1027839ffea52b6bd1f36507247a1f23e97255978c61"
+      }
+    ],
+    "derivation": "Original failing draft and corrected vertices preserved. Material fields extracted from preceding preparation; request-local source IDs are replaced by newly prepared handles in tests.",
+    "materialReceipt": {
+      "file": "82-output.json",
+      "sha256": "84ab572e9244ecb9f324827f2c929c24a8f146c172642f49b3c605f59c9a0dad"
+    }
+  },
+  "input": {
+    "message": "建立商場裙樓、收分塔基及入口結構",
+    "inspection": "defer",
+    "materialSourceId": "86616224-6116-494c-9b16-0b929eb57829",
+    "draft": {
+      "type": "group",
+      "name": "Taipei 101 · podium and tapering base",
+      "projection": {
+        "azimuth": 35,
+        "elevation": 25,
+        "scale": 1,
+        "originX": 10000,
+        "originY": 47000
+      },
+      "fillTemplates": {
+        "stone": "#9BACA8",
+        "lit": "#CDCEC0",
+        "dark": "#234249",
+        "rail": "#8DA8A5",
+        "roof": "#657D7C",
+        "edge": "#D6DAD0",
+        "window": {
+          "gradientType": "linear",
+          "gradientHandles": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0.3
+            }
+          ],
+          "gradientStops": [
+            {
+              "position": 0,
+              "color": "#25484D",
+              "opacity": 1
+            },
+            {
+              "position": 0.4,
+              "color": "#6F999A",
+              "opacity": 1
+            },
+            {
+              "position": 0.6,
+              "color": "#3A666D",
+              "opacity": 1
+            },
+            {
+              "position": 1,
+              "color": "#8DADAA",
+              "opacity": 1
+            }
+          ]
+        }
+      },
+      "motifTemplates": {
+        "podiumWindows": [
+          {
+            "key": "glass",
+            "name": "Recessed podium glazing",
+            "vertices": [
+              {
+                "u": 0.12,
+                "v": 0.17
+              },
+              {
+                "u": 0.87,
+                "v": 0.17
+              },
+              {
+                "u": 0.87,
+                "v": 0.85
+              },
+              {
+                "u": 0.12,
+                "v": 0.85
+              }
+            ],
+            "fill": {
+              "template": "window"
+            }
+          },
+          {
+            "key": "jamb",
+            "name": "Podium column highlight",
+            "vertices": [
+              {
+                "u": 0.04,
+                "v": 0
+              },
+              {
+                "u": 0.12,
+                "v": 0
+              },
+              {
+                "u": 0.12,
+                "v": 1
+              },
+              {
+                "u": 0.04,
+                "v": 1
+              }
+            ],
+            "fill": {
+              "template": "edge"
+            }
+          },
+          {
+            "key": "lintel",
+            "name": "Stone window lintel",
+            "vertices": [
+              {
+                "u": 0.09,
+                "v": 0.85
+              },
+              {
+                "u": 0.91,
+                "v": 0.85
+              },
+              {
+                "u": 0.91,
+                "v": 0.93
+              },
+              {
+                "u": 0.09,
+                "v": 0.93
+              }
+            ],
+            "fill": {
+              "template": "lit"
+            }
+          }
+        ],
+        "towerWindows": [
+          {
+            "key": "jamb",
+            "name": "Tower-base mullion",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 0.06,
+                "v": 0
+              },
+              {
+                "u": 0.06,
+                "v": 1
+              },
+              {
+                "u": 0,
+                "v": 1
+              }
+            ],
+            "fill": {
+              "template": "rail"
+            }
+          },
+          {
+            "key": "spandrel",
+            "name": "Tower-base floor recess",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0
+              },
+              {
+                "u": 1,
+                "v": 0.16
+              },
+              {
+                "u": 0,
+                "v": 0.16
+              }
+            ],
+            "fill": {
+              "template": "dark"
+            }
+          },
+          {
+            "key": "rail",
+            "name": "Tower-base floor rail",
+            "vertices": [
+              {
+                "u": 0,
+                "v": 0.16
+              },
+              {
+                "u": 1,
+                "v": 0.16
+              },
+              {
+                "u": 1,
+                "v": 0.2
+              },
+              {
+                "u": 0,
+                "v": 0.2
+              }
+            ],
+            "fill": {
+              "template": "rail"
+            }
+          }
+        ]
+      },
+      "children": [
+        {
+          "type": "projected-face",
+          "key": "podL",
+          "name": "Podium shaded stone facade",
+          "vertices": [
+            {
+              "x": -7400,
+              "y": 5300,
+              "z": 0
+            },
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 0
+            },
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 2400
+            },
+            {
+              "x": -7400,
+              "y": 5300,
+              "z": 2400
+            }
+          ],
+          "fill": {
+            "template": "stone"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "podR",
+          "name": "Podium sunlit stone facade",
+          "vertices": [
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 0
+            },
+            {
+              "x": 6100,
+              "y": -5700,
+              "z": 0
+            },
+            {
+              "x": 6100,
+              "y": -5700,
+              "z": 2400
+            },
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 2400
+            }
+          ],
+          "fill": {
+            "template": "lit"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "podgridL",
+          "name": "Podium left bays",
+          "boundary": {
+            "face": "podL"
+          },
+          "rows": 4,
+          "columns": 24,
+          "motifs": {
+            "template": "podiumWindows"
+          },
+          "order": "motif-major"
+        },
+        {
+          "type": "surface-grid",
+          "key": "podgridR",
+          "name": "Podium right bays",
+          "boundary": {
+            "face": "podR"
+          },
+          "rows": 4,
+          "columns": 20,
+          "motifs": {
+            "template": "podiumWindows"
+          },
+          "order": "motif-major"
+        },
+        {
+          "type": "projected-face",
+          "key": "podroof",
+          "name": "Visible podium roof",
+          "vertices": [
+            {
+              "x": -7400,
+              "y": -5700,
+              "z": 2400
+            },
+            {
+              "x": 6100,
+              "y": -5700,
+              "z": 2400
+            },
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 2400
+            },
+            {
+              "x": -7400,
+              "y": 5300,
+              "z": 2400
+            }
+          ],
+          "fill": {
+            "template": "roof"
+          }
+        },
+        {
+          "type": "surface-grid",
+          "key": "roofseams",
+          "name": "Roof paving seams",
+          "boundary": {
+            "face": "podroof"
+          },
+          "rows": 16,
+          "columns": 20,
+          "order": "motif-major",
+          "motifs": [
+            {
+              "key": "seam",
+              "name": "Roof tile edge",
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 0.018,
+                  "v": 0
+                },
+                {
+                  "u": 0.018,
+                  "v": 1
+                },
+                {
+                  "u": 0,
+                  "v": 1
+                }
+              ],
+              "fill": {
+                "template": "rail"
+              }
+            },
+            {
+              "key": "seam2",
+              "name": "Roof transverse edge",
+              "vertices": [
+                {
+                  "u": 0,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0
+                },
+                {
+                  "u": 1,
+                  "v": 0.018
+                },
+                {
+                  "u": 0,
+                  "v": 0.018
+                }
+              ],
+              "fill": {
+                "template": "rail"
+              }
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "parapetL",
+          "name": "Podium parapet front",
+          "vertices": [
+            {
+              "x": -7400,
+              "y": 5300,
+              "z": 2310
+            },
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 2310
+            },
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 2530
+            },
+            {
+              "x": -7400,
+              "y": 5300,
+              "z": 2530
+            }
+          ],
+          "fill": {
+            "template": "stone"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "parapetR",
+          "name": "Podium parapet side",
+          "vertices": [
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 2310
+            },
+            {
+              "x": 6100,
+              "y": -5700,
+              "z": 2310
+            },
+            {
+              "x": 6100,
+              "y": -5700,
+              "z": 2530
+            },
+            {
+              "x": 6100,
+              "y": 5300,
+              "z": 2530
+            }
+          ],
+          "fill": {
+            "template": "edge"
+          }
+        },
+        {
+          "type": "projected-face",
+          "key": "baseL",
+          "name": "Tapered lower tower shaded glass",
+          "vertices": [
+            {
+              "x": -3500,
+              "y": 3500,
+              "z": 2400
+            },
+            {
+              "x": 3500,
+              "y": 3500,
+              "z": 2400
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 12000
+            },
+            {
+              "x": -2500,
+              "y": 2500,
+              "z": 12000
+            }
+          ],
+          "materialField": "glassL"
+        },
+        {
+          "type": "projected-face",
+          "key": "baseR",
+          "name": "Tapered lower tower light glass",
+          "vertices": [
+            {
+              "x": 3500,
+              "y": 3500,
+              "z": 2400
+            },
+            {
+              "x": 3500,
+              "y": -3500,
+              "z": 2400
+            },
+            {
+              "x": 2500,
+              "y": -2500,
+              "z": 12000
+            },
+            {
+              "x": 2500,
+              "y": 2500,
+              "z": 12000
+            }
+          ],
+          "materialField": "glassR"
+        },
+        {
+          "type": "surface-grid",
+          "key": "baseWinL",
+          "name": "Lower tower left windows",
+          "boundary": {
+            "face": "baseL"
+          },
+          "rows": 23,
+          "columns": 28,
+          "motifs": {
+            "template": "towerWindows"
+          },
+          "order": "motif-major"
+        },
+        {
+          "type": "surface-grid",
+          "key": "baseWinR",
+          "name": "Lower tower right windows",
+          "boundary": {
+            "face": "baseR"
+          },
+          "rows": 23,
+          "columns": 28,
+          "motifs": {
+            "template": "towerWindows"
+          },
+          "order": "motif-major"
+        },
+        {
+          "type": "pattern",
+          "key": "buttressL",
+          "name": "Shaded splayed base columns",
+          "origin": {
+            "x": -2750,
+            "y": 0,
+            "z": 0
+          },
+          "axes": [
+            {
+              "count": 5,
+              "step": {
+                "x": 1200,
+                "y": 0,
+                "z": 0
+              }
+            }
+          ],
+          "faces": [
+            {
+              "key": "front",
+              "name": "Splayed stone pier",
+              "vertices": [
+                {
+                  "x": -250,
+                  "y": 3530,
+                  "z": 2400
+                },
+                {
+                  "x": 250,
+                  "y": 3530,
+                  "z": 2400
+                },
+                {
+                  "x": 130,
+                  "y": 3180,
+                  "z": 5500
+                },
+                {
+                  "x": -130,
+                  "y": 3180,
+                  "z": 5500
+                }
+              ],
+              "fill": {
+                "template": "stone"
+              }
+            },
+            {
+              "key": "light",
+              "name": "Pier bevel",
+              "vertices": [
+                {
+                  "x": 250,
+                  "y": 3530,
+                  "z": 2400
+                },
+                {
+                  "x": 330,
+                  "y": 3400,
+                  "z": 2400
+                },
+                {
+                  "x": 180,
+                  "y": 3070,
+                  "z": 5500
+                },
+                {
+                  "x": 130,
+                  "y": 3180,
+                  "z": 5500
+                }
+              ],
+              "fill": {
+                "template": "edge"
+              }
+            }
+          ]
+        },
+        {
+          "type": "pattern",
+          "key": "buttressR",
+          "name": "Sunlit splayed base columns",
+          "origin": {
+            "x": 0,
+            "y": -2750,
+            "z": 0
+          },
+          "axes": [
+            {
+              "count": 5,
+              "step": {
+                "x": 0,
+                "y": 1200,
+                "z": 0
+              }
+            }
+          ],
+          "faces": [
+            {
+              "key": "front",
+              "name": "Sunlit stone pier",
+              "vertices": [
+                {
+                  "x": 3530,
+                  "y": -250,
+                  "z": 2400
+                },
+                {
+                  "x": 3530,
+                  "y": 250,
+                  "z": 2400
+                },
+                {
+                  "x": 3180,
+                  "y": 130,
+                  "z": 5500
+                },
+                {
+                  "x": 3180,
+                  "y": -130,
+                  "z": 5500
+                }
+              ],
+              "fill": {
+                "template": "lit"
+              }
+            },
+            {
+              "key": "bevel",
+              "name": "Pier bevel highlight",
+              "vertices": [
+                {
+                  "x": 3530,
+                  "y": 250,
+                  "z": 2400
+                },
+                {
+                  "x": 3400,
+                  "y": 330,
+                  "z": 2400
+                },
+                {
+                  "x": 3070,
+                  "y": 180,
+                  "z": 5500
+                },
+                {
+                  "x": 3180,
+                  "y": 130,
+                  "z": 5500
+                }
+              ],
+              "fill": {
+                "template": "edge"
+              }
+            }
+          ]
+        },
+        {
+          "type": "projected-face",
+          "key": "canopy",
+          "name": "Entrance canopy",
+          "vertices": [
+            {
+              "x": -1000,
+              "y": 5300,
+              "z": 650
+            },
+            {
+              "x": 1800,
+              "y": 5300,
+              "z": 650
+            },
+            {
+              "x": 1800,
+              "y": 5900,
+              "z": 560
+            },
+            {
+              "x": -1000,
+              "y": 5900,
+              "z": 560
+            }
+          ],
+          "fill": {
+            "template": "window"
+          }
+        },
+        {
+          "type": "pattern",
+          "key": "steps",
+          "name": "Entrance stair treads",
+          "origin": {
+            "x": 0,
+            "y": 5900,
+            "z": 0
+          },
+          "axes": [
+            {
+              "count": 6,
+              "step": {
+                "x": 0,
+                "y": -70,
+                "z": 24
+              }
+            }
+          ],
+          "faces": [
+            {
+              "key": "tread",
+              "name": "Stone stair tread",
+              "vertices": [
+                {
+                  "x": -1200,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 2000,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 2000,
+                  "y": -70,
+                  "z": 0
+                },
+                {
+                  "x": -1200,
+                  "y": -70,
+                  "z": 0
+                }
+              ],
+              "fill": {
+                "template": "stone"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "replacements": [
+    {
+      "path": "/children/12/faces/1/vertices",
+      "value": [
+        {
+          "x": 250,
+          "y": 3530,
+          "z": 2400
+        },
+        {
+          "x": 330,
+          "y": 3400,
+          "z": 2400
+        },
+        {
+          "x": 210,
+          "y": 3050,
+          "z": 5500
+        },
+        {
+          "x": 130,
+          "y": 3180,
+          "z": 5500
+        }
+      ]
+    },
+    {
+      "path": "/children/13/faces/1/vertices",
+      "value": [
+        {
+          "x": 3530,
+          "y": 250,
+          "z": 2400
+        },
+        {
+          "x": 3400,
+          "y": 330,
+          "z": 2400
+        },
+        {
+          "x": 3050,
+          "y": 210,
+          "z": 5500
+        },
+        {
+          "x": 3180,
+          "y": 130,
+          "z": 5500
+        }
+      ]
+    }
+  ],
+  "linearFields": {
+    "glassL": {
+      "frame": "world",
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "end": {
+        "x": 0,
+        "y": 0,
+        "z": 44800
+      },
+      "gradientStops": [
+        {
+          "position": 0,
+          "color": "#163B40",
+          "opacity": 1
+        },
+        {
+          "position": 0.2,
+          "color": "#2C5860",
+          "opacity": 1
+        },
+        {
+          "position": 0.42,
+          "color": "#1B454F",
+          "opacity": 1
+        },
+        {
+          "position": 0.6,
+          "color": "#456F78",
+          "opacity": 1
+        },
+        {
+          "position": 0.73,
+          "color": "#255664",
+          "opacity": 1
+        },
+        {
+          "position": 1,
+          "color": "#72979B",
+          "opacity": 1
+        }
+      ]
+    },
+    "glassR": {
+      "frame": "world",
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "end": {
+        "x": 0,
+        "y": 0,
+        "z": 44800
+      },
+      "gradientStops": [
+        {
+          "position": 0,
+          "color": "#29545A",
+          "opacity": 1
+        },
+        {
+          "position": 0.23,
+          "color": "#4F7B7E",
+          "opacity": 1
+        },
+        {
+          "position": 0.43,
+          "color": "#3B747B",
+          "opacity": 1
+        },
+        {
+          "position": 0.6,
+          "color": "#7BA4A5",
+          "opacity": 1
+        },
+        {
+          "position": 0.78,
+          "color": "#4F858D",
+          "opacity": 1
+        },
+        {
+          "position": 1,
+          "color": "#A0BBBA",
+          "opacity": 1
+        }
+      ]
+    }
+  }
+}

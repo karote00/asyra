@@ -293,6 +293,7 @@ export const createLocalDesignWorkflow = (
       const {
         draft: _draft,
         repair: _repair,
+        materialSourceId: _materialSource,
         ...context
       } = args as Record<string, unknown>
       return {
@@ -525,7 +526,12 @@ export const createLocalDesignWorkflow = (
         return deliver(prepared)
       if (!prepared.available || !prepared.applicable) {
         if (prepared.repairGuide) {
-          const { draft: _draft, repair: _repair, ...context } = input
+          const {
+            draft: _draft,
+            repair: _repair,
+            materialSourceId: _materialSource,
+            ...context
+          } = input
           prepared.repairGuide = {
             ...prepared.repairGuide,
             tool: AiDesignToolIds.PREPARE_AND_APPLY_DESIGN,
@@ -1028,17 +1034,28 @@ export const createLocalDesignWorkflow = (
         const remaining = parts.slice(start).map((part) => {
           const failed = completed.find((entry) => entry.key === part.key)
           const guide = failed?.repairGuide as
-            { arguments?: { repair?: unknown } } | undefined
-          const repair =
+            | { arguments?: { repair?: unknown; materialSourceId?: unknown } }
+            | undefined
+          const preparationRecovery =
             failed?.failedStep === preparation?.name &&
             failed?.settlement === 'not-started'
-              ? (guide?.arguments?.repair ?? part.repair)
-              : part.repair
+              ? guide?.arguments
+              : undefined
+          const repair = preparationRecovery?.repair ?? part.repair
           if (!repair || typeof repair !== 'object') return
           let restored: Record<string, unknown> & {
             key: string
             repair: object
           } = { ...part, repair }
+          if (preparationRecovery?.repair) {
+            const { materialSourceId: _materialSource, ...context } = restored
+            restored = {
+              ...context,
+              ...(preparationRecovery.materialSourceId === undefined
+                ? {}
+                : { materialSourceId: preparationRecovery.materialSourceId })
+            }
+          }
           if (
             part.parentPart !== undefined &&
             !pendingKeys.has(String(part.parentPart))

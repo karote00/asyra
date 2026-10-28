@@ -11115,3 +11115,106 @@ it('execution proof selects visual results before cloning mechanical evidence', 
     }
   }
 })
+
+it('execution proof follows saved material recovery without reinjecting resolved fields', async () => {
+  const saved = (
+    await import('../../test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json')
+  ).default
+  const session = createDesignPreparationSession()
+  const actions = [
+    {
+      name: AiActionNames.APPLY_PREPARED_DESIGN,
+      description: 'Apply',
+      inputSchema: {}
+    }
+  ]
+  const designs = createLocalDesignTools(actions, session)
+  const seed = session.prepare({
+    type: 'group',
+    name: 'Material source',
+    linearFields: saved.linearFields,
+    children: [
+      { type: 'rect', key: 'seed', name: 'Seed', width: 10, height: 10 }
+    ]
+  })
+  const execute = vi.fn(
+    async (batch: AiActionBatch): Promise<AiBatchReceipt> => ({
+      context: {},
+      actionResults: batch.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        result: {
+          status: 'complete',
+          compositionId: 'created-root',
+          appliedElementIds: ['created-root'],
+          keyToId: { root: 'created-root' },
+          roleToElementIds: { root: ['created-root'] }
+        }
+      }))
+    })
+  )
+  const workflow = createLocalDesignWorkflow(
+    designs,
+    createOperationOwner(actions, designs, execute)
+  )
+  const signal = new AbortController().signal
+  const call = async (args: unknown) =>
+    JSON.parse(
+      (await invokeLocalTool(workflow, workflow.definitions[0], args, signal))
+        .text
+    )
+  const rejected = await call({
+    ...saved.input,
+    materialSourceId: seed.artifactId
+  })
+  expect(rejected.geometryIssue).toMatchObject({
+    code: 'NONPLANAR_FACE',
+    path: saved.replacements[0].path
+  })
+  expect(execute).not.toHaveBeenCalled()
+  const next = structuredClone(rejected.repairGuide.arguments)
+  next.repair.replacements = saved.replacements
+  const repaired = await call(next)
+  expect(repaired.toolOutcome, JSON.stringify(repaired)).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  // This boundary fixture intentionally has no browser mechanical reviewer.
+  // Completed writes must remain partial until that independent follow-up exists.
+  expect(repaired.completedSteps).toEqual([
+    'prepare_design',
+    'apply_prepared_design'
+  ])
+  expect(repaired.toolOutcome.issues).toEqual([
+    {
+      code: 'FOLLOWUP_UNAVAILABLE',
+      message: 'Mechanical checking is not registered in this app.'
+    }
+  ])
+  expect(next).not.toHaveProperty('materialSourceId')
+  expect(next).not.toHaveProperty('draft')
+  expect(execute).toHaveBeenCalledTimes(1)
+  const corrected = structuredClone(saved.input.draft)
+  for (const { path, value } of saved.replacements) {
+    const keys = path.slice(1).split('/')
+    let node = corrected as unknown as Record<string, unknown>
+    for (const key of keys.slice(0, -1))
+      node = node[key] as Record<string, unknown>
+    const key = keys.at(-1)
+    if (!key) throw new Error('Missing replacement field')
+    node[key] = value
+  }
+  expect(session.recipe(repaired.artifactId).recipe).toEqual({
+    ...corrected,
+    linearFields: saved.linearFields
+  })
+  const expected = prepareDesign(
+    { ...corrected, linearFields: saved.linearFields },
+    repaired.artifactId
+  )
+  expect(session.resolve(repaired.artifactId)).toEqual(expected)
+  expect(repaired.elementCount).toBe(5067)
+  expect(Buffer.byteLength(JSON.stringify(next))).toBeLessThan(
+    Buffer.byteLength(JSON.stringify(saved.input)) / 5
+  )
+})

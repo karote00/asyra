@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 - unified public tool contracts and per-API semantic verification active; closure gates are pending.**
+Status: **Task 3 - retained material preparation recovery closed on local verification; one authorized observation complete.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -38,7 +38,7 @@ changes are admitted; historical test results do not admit a new proposal.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: the five-part unified public tool contract correction below, including admitted owner changes, permanent per-API tests and bounded self-review. No model runs, CI inspection, push or Knowledge content changes.
+- Current scope: retained material preparation recovery, fixed D1-D6 below, then the single explicitly authorized 12-minute observation. No CI inspection, push or Knowledge content changes.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -96,6 +96,131 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Closed slice - Retained material preparation recovery
+
+Baseline: 367b9f6b53de94f3c9fe83106d0d0e7574f2eda3. Saved run
+1793173740052, provider 210fec18-1017-4ef7-9379-bcc1e7bcb356,
+payloads 174/177, 181/184 and 188/197 show a nonplanar source retained after
+material resolution. Compose restores materialSourceId into its repair guide;
+the next call conflicts with the retained linearFields. Removing that selector
+and making an unchanged name replacement succeeds. This is a recovery handoff
+error, not permission to weaken geometry or material validation.
+
+Step Execution Card - prepare / retained recovery arguments:
+- Product contract: Retained material preparation recovery. Inspector prepare
+  consumes semantic input and owned handles, emits prepared artifacts or retained
+  recovery. Existing preparation session and rejected-draft store own snapshots.
+- Complete repair arguments reflect the retained source: pre-resolution input
+  rejection preserves the material selector; post-resolution failures reuse the
+  embedded immutable fields. No new state, cache or inferred provenance.
+- Allowed files: local-design-tools.ts and existing preparation/workflow tests,
+  execution-flow-proof.test.ts, one permanent saved-input fixture, existing
+  plan/spec/Inspector/mapping, App change note and generated outputs.
+- Forbidden contributors: canonical writes in preparation, implicit material
+  override, guessed geometry, a second recovery store, model calls or replay.
+- Gates D1-D6 below; stop on a needed new state owner or weaker admission.
+
+Step Execution Card - compose / executable preparation recovery:
+- Consume preparation-owned repair arguments and preserve only workflow context;
+  never reintroduce a consumed selector from the original invocation. Ordered
+  parts consume the failed part's returned guide, retain parents/order and omit
+  completed parts. Raw prevalidation and unstarted siblings keep needed selectors.
+- Allowed file: local-design-workflow.ts and its direct tests/proof. Inputs,
+  outputs, existing registered tools and failure owner remain compose. Simple
+  independent edits bypass this flow. No model-stage, rendering or persistence
+  changes. Current artifact/request lifetime and true cancellation remain intact.
+- Boundary includes upstream prepare and downstream apply receipts; applied
+  writes and geometry/material compilation semantics remain unchanged.
+
+Fixed DoD:
+1. D1: extract the saved material/nonplanarity case into a permanent fixture;
+   execute the actual returned guide and prove failure before implementation.
+2. D2: resolved source repairs once using only explicit changed fields; no full
+   source, material resend or cosmetic rename; geometry/material/order/references
+   equal direct corrected preparation.
+3. D3: raw pre-resolution failure preserves the required source and recovers;
+   genuine inline-field/source conflict still rejects before any write.
+4. D4: independent preparation, single workflow and ordered parts preserve
+   completed results, parent links, cancellation, expired/foreign handles and
+   remaining-only recovery without replay.
+5. D5: validate delivered input/output through actual invocation; measure recovery
+   bytes and calls, no added preliminary call, cache or state; preserve geometry
+   admission and existing local-result/history/persistence consumers.
+6. D6: focused owner/consumer tests, production and proof types, lint/naming,
+   source-bound Inspector verification, generated artifact/docs checks and bounded
+   self-review pass before one live observation. No CI inspection.
+
+Sequence: contract update and structural admission; formal red case and reviewed
+candidate admission; prepare then compose owner corrections with focused checks;
+complete frozen gates and self-review. Then one explicitly authorized 101 run:
+720000 ms work, at most 60000 ms report, gpt-6-astra / medium, no video,
+10000-object production limit. Preserve full input/output, source, report and
+screenshots. Separate deterministic recovery proof from actually observed AI
+behavior; an unexercised recovery is not a live pass. No automatic rerun or push.
+
+Local verification checkpoint:
+- Raw provider payload hashes 81/82/174/181 confirm the original material source,
+  failing source and explicit correction. The fixture preserves those values;
+  source IDs are recreated only within each test request.
+- Red candidate 2fe19f0d-8099-40cf-b17c-4de85c638838 fails only the new saved-case
+  recovery; the prior 83 cases pass. Reviewed admission
+  5f2e3fdeb784b9287f8661da54eb4cefc32a27f4c680d43a36bc2b0e644efcb9 accepted.
+- 258 focused tests pass. The saved 5067-element corrected artifact is exactly
+  equal to direct preparation; recovery is 486 bytes versus 6192 bytes for source.
+  Raw and resolved input, single/parts, material conflict, cancellation, foreign
+  handles, actual request disposal and remaining-only execution are covered.
+- Boundary fixtures omit browser mechanical review deliberately; their completed
+  writes retain the exact FOLLOWUP_UNAVAILABLE partial result. This is not a
+  whole-drawing quality claim. Core write/history/persistence owners are unchanged.
+- Production/proof types and naming pass. Scoped lint has no errors; the existing
+  proof console warning is unchanged. Generated App files match their source.
+  Full execution gate passes: Runtime 459, Preset 37, App 2789 plus two existing
+  opt-in skips, and Inspector 84 cases. Verify f02eefc3-2013-4707-87aa-306079c08165,
+  revision 165, source 9b568f2683776d41efc2ef57af2bbed143daa8a0fdcdd747180fe9214ee04a4b.
+  Documentation/update checks pass. Bounded self-review confirms only the two
+  existing preparation/compose files changed production behavior; genuine
+  conflicts, raw selectors, partial receipts and disposal remain covered.
+  D1-D6 local gates are complete.
+
+Authorized observation and closure:
+- Run 1793178457558 completed with gpt-6-astra / medium, no video, the 10000-object
+  production limit and 720-second work / 60-second report caps. Work ended
+  naturally at 715.486 seconds; report took 20.104 seconds; UI settled partial
+  at 735.812 seconds. First content was 175.044 seconds with 2319 elements.
+- 29 App calls: 28 usable and one genuine nonplanar rejection. AI repaired it
+  through the returned retained source in 543 bytes without full draft resend
+  or replay; 328 elements applied. Two material-source preparations succeeded.
+  The rejected draft had no materialSourceId, so the combined original material
+  recovery branch remains unobserved live and is closed by formal local evidence.
+- 14668 elements created, 16 deleted; checkpoint contains 14653 entries including
+  workspace. Final visual coverage is 4/7; overall/base fail and scale unverified.
+  Partial is an accurate incomplete-artwork result, not a tool success override.
+- All 2887 source files matched the frozen manifest before closeout docs. Complete
+  input/output, ten images, AI report, screenshots, checkpoint and fresh-context
+  reload are preserved; durable sequence 467/467. Agent-started services exited.
+- See [the complete observation report](../evaluations/2026-10-28-retained-material-recovery-101.md)
+  for every call, inter-call interval, unrecorded event gap and quality limits.
+  No additional run, product change, CI inspection or push follows this closure.
+
+Push preflight correction:
+- The naming gate detected the original saved draft's historical display separator
+  in the new formal fixture. Move only the permanent fixture to the existing
+  `__fixtures__` category and update test/mapping/template references; preserve
+  every fixture byte and keep the naming guard unchanged. Revalidate imports,
+  source-bound proof and generated outputs before the authorized push.
+- Pre-push test typing also found a direct property access on an unknown action
+  result in the new regression. Use the existing object assertion without changing
+  its parent-ID expectation. The broader server test config lacks DOM/Vite types
+  for browser-connected imports; verify the same file set with those environment
+  declarations, without disabling strict checks or changing production behavior.
+- Final path/typing correction checks: 174 direct tests and 84 source-bound proof
+  cases pass; verification 5d850645-f7e8-4de5-849d-0cc56ae94d43, revision 166,
+  source b6bb9b258f30aa7beaa8cb87e522d910b8ed20914cab5d380793c84ba95c4ba0.
+  Fixture SHA-256 e85d671be691fe736e992f691651ae9aba85d4928080862651a36e050c19774b
+  is unchanged. Naming and strict server/proof types pass; generated counterparts
+  match. The earlier live observation remains tied to its original source archive.
+
 
 ### Closed slice - Visual review result read scope
 

@@ -922,7 +922,7 @@
         },
         {
           "path": "apps/asyra-design/server/local-design-workflow.ts",
-          "sha256": "f12d8e112a7330971b55d290c7c60020701487248754eefd25e6394be98973f9"
+          "sha256": "241b3ed8cb1b1219103fa07ddf78f6e40f5083263473ca05479f78a41dec77e5"
         },
         {
           "path": "packages/ai-agent-runtime/src/recipe-schema.ts",

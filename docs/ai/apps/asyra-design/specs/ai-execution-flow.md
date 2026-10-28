@@ -4288,3 +4288,21 @@ receipts reach downstream consumers. Preserve invalid/cancelled/stale/partial
 recovery without replay. Count total request/response bytes and continuation calls
 for the saved acquisition and unrelated-catalog growth; improve the complete path,
 not merely a single reply. No new state, cache, tools or higher byte budget.
+
+### Retained material preparation recovery
+
+The preparation owner publishes executable repair arguments for the exact
+retained source. Input rejected before material resolution retains the necessary
+materialSourceId. After successful resolution, retained source already contains
+immutable linearFields and its repair must not inject that selector again.
+Compose preserves workflow controls but consumes the preparation owner's
+arguments as authoritative, including in remaining-only ordered-part recovery.
+Unstarted siblings retain their own required inputs. Do not discard required
+selectors indiscriminately or relax a genuine inline-fields/source conflict.
+
+Execute returned guides with only explicit corrected fields. Preserve geometry,
+materials, painter order, references, completed parts and parent relationships;
+no geometry resend, cosmetic rename, new cache or replay is required. Foreign or
+expired source and cancellation retain ordinary owner failures without writes.
+Formal saved-input tests must cover both retention stages, direct preparation,
+main workflow and ordered parts, and compare corrected output to direct preparation.

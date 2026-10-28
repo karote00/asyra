@@ -1,5 +1,34 @@
 # @asyra/asyra-design
 
+## Pending retained material recovery
+
+```update-note
+{
+  "change": "retained-material-recovery",
+  "owner": "Design preparation and workflow composition",
+  "summary": "Publish retained-source repair inputs at the preparation owner and preserve their material-resolution stage through single and ordered recovery.",
+  "sources": [
+    "apps/asyra-design/flow-contracts.json",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
+    "apps/asyra-design/server/local-design-tools.ts",
+    "apps/asyra-design/server/local-design-workflow.ts",
+    "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json",
+    "create-app/asyra-design/template/server/__tests__/local-design-workflow.test.ts",
+    "create-app/asyra-design/template/server/local-design-tools.ts",
+    "create-app/asyra-design/template/server/local-design-workflow.ts",
+    "create-app/asyra-design/template/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/source-map.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Uses existing repair guides and request-local source storage without a new API, cache, document format or migration. Genuine material conflicts and remaining-only recovery remain intact."
+}
+```
+
 ## Pending visual review result selection
 
 ```update-note

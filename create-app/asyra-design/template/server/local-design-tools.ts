@@ -436,7 +436,8 @@ export const createLocalDesignTools = (
   }
   const retainInputFailure = (
     draft: unknown,
-    issues: readonly OperationInputIssue[]
+    issues: readonly OperationInputIssue[],
+    materialSourceId?: string
   ) => {
     const retained = retainDraft(draft)
     const fieldIssues = issues.filter(
@@ -467,6 +468,7 @@ export const createLocalDesignTools = (
             repairGuide: {
               tool: AiDesignToolIds.PREPARE_DESIGN,
               arguments: {
+                ...(materialSourceId === undefined ? {} : { materialSourceId }),
                 repair: {
                   draftId: retained.draftId,
                   replacements: paths.map((path) => ({ path }))
@@ -499,7 +501,13 @@ export const createLocalDesignTools = (
       const budget = inspectDesignBudget(args.draft, expandedNodeLimit)?.budget
       return {
         recovery: 'correct_input',
-        ...retainInputFailure(args.draft, issues),
+        ...retainInputFailure(
+          args.draft,
+          issues,
+          typeof args.materialSourceId === 'string'
+            ? args.materialSourceId
+            : undefined
+        ),
         ...(budget ? { budget } : {})
       }
     },

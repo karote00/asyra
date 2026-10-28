@@ -51,6 +51,7 @@
         "test-data/knowledge-evaluation/architecture-101.json",
         "test-data/knowledge-evaluation/quality-cases.json",
         "test-data/knowledge-evaluation/visual-result-selection-20261028.json",
+        "test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json",
         "test-data/knowledge-evaluation/quality.mjs",
         "test-data/knowledge-evaluation/architecture-protocol.mjs",
         "test-data/knowledge-evaluation/native-boundaries.mjs",
@@ -79,6 +80,16 @@
         "observe"
       ],
       "cases": [
+        {
+          "id": "compose.material-repair",
+          "stepId": "compose",
+          "testName": "execution proof follows saved material recovery without reinjecting resolved fields",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-design-tools.ts",
+            "apps/asyra-design/server/local-design-workflow.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/material-repair-20261028.json"
+          ]
+        },
         {
           "id": "compose.unified-usage",
           "stepId": "compose",
