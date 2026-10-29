@@ -4594,3 +4594,45 @@ Validation: run both initially affected scene suites, the complete Office suite,
 Office lint/typecheck, naming, scoped repository/document checks and committed-
 head admission. Push only after those pass; report exact-head CI separately.
 The owner retains merge and whole-plan closeout authority.
+
+### CI recovery-fixture follow-up - 2026-10-30
+
+The Office job passed all 351 tests on `4a6d0e588`, but PR-wide CI remained
+blocked by Design's preparation-failure recovery E2E. Both remote attempts of
+run `40897459843` stopped when a new fourth rectangle stayed local after retry.
+The source showed the recovery warning while the peer retained three elements.
+
+This bounded merge-checkpoint follow-up changes only that E2E fault fixture and
+its validation notes. It does not change Office assets, collaboration runtime,
+Inspector step semantics, assertions about document convergence, or deadlines.
+The existing `recover-document-session` observation entry identifies the joint
+case; it is not evidence that the production lifecycle owner is faulty.
+
+The fixture previously enabled its injected preparation failure on every page
+initialization, then relied on removing the module route to disable it after
+retry. Keeping the instrumented module across reloads reproduced the failure
+locally and exposed `Injected preparation failure` on the next real edit.
+This proves that a retained instrumented module can re-enable the test fault;
+the original CI artifacts did not record the browser's exact cache decision.
+
+The fault switch now lives in page-session storage and remains disabled across
+retry and reload. The module route deliberately remains installed through the
+entire case, so cache eviction cannot determine success. The isolated peer's
+ordinary module remains untouched. Existing publication-outcome observation
+also exposes any renewed send failure, while all original Undo/Redo, rollback,
+download, peer convergence and durable-reload checks remain intact.
+
+Validation scope: reproduce the fault with the retained instrumented module,
+repeat the repaired case, run the full collaboration E2E producer with freshly
+built workspace packages and `CI=1`, and pass Design lint/typecheck, naming,
+plan checks and committed-head admission. Whole-PR CI must be reported
+separately after push; a green Office job alone does not close this follow-up.
+
+Local result: the retained-module regression failed with the injected error,
+then passed three repetitions after the fixture correction. The full corrected
+collaboration producer passed 19 cases with three existing opt-in cases skipped
+in 3.9 minutes (`b504f3c7-9e70-4684-8168-3defbf90968a`). A forced workspace
+build passed all 25 tasks. Design typecheck and lint passed (28 existing lint
+warnings, zero errors); naming and eight plan/task-context checks passed.
+Main `88b4f291f9f7ff91785062463359f210d54bce56` remains included. Remote
+validation is still pending at this local checkpoint.
