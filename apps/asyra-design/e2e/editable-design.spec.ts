@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import {
   createTestDocumentIdentity,
   waitForAppReady,
@@ -113,7 +114,7 @@ test('the Agent applies editable text, hierarchy and curves in one durable Undo'
           {
             id: 'apply-design',
             name: 'apply_prepared_design',
-            arguments: { design },
+            arguments: { design: deliverPreparedDesign(design) },
             summary: 'Create the editorial design'
           }
         ]

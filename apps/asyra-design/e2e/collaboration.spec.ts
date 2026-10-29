@@ -4,6 +4,7 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import type { RawInputEvent } from '@asyra/utils'
 import { installGeneratedActionBatchInterceptor } from './action-batch-interceptor'
 import type { PreparedDrawingArtifact } from '../src/ai/prepared-drawing-artifact'
+import type { CanonicalChange } from '../src/collaboration/app-protocol-types'
 import {
   createRectangle,
   dragSelectedElementBy,
@@ -1066,12 +1067,12 @@ const classifyFactoryPublicationsInApp = (page: Page) =>
     const { prepareDocumentPublication } =
       await import('/src/collaboration/document-publication.ts')
     const { testRuntimeState } = await import('../src/testing/runtime-access')
-    const canonicalRequests: string[][] = []
+    const canonicalRequests: (readonly CanonicalChange[])[] = []
     const processor = operationsModule.createPublicationProcessor({
       decideRemotePublication: (publication) => publication,
       applyRemoteCanonicalChangeSlices: ({ slices }) => {
         slices.forEach((changes) => {
-          canonicalRequests.push(changes.map(({ kind }) => kind))
+          canonicalRequests.push(changes)
         })
       }
     })
@@ -1283,11 +1284,40 @@ test('16-item server response publishes each finite member with one Undo and Red
     /updateComputedData|updateComputedDataPatch/
   )
 
-  expect(await classifyFactoryPublicationsInApp(page)).toEqual([
-    ...Array.from({ length: expectedMemberCount }, () => ['element-creation']),
-    ...Array.from({ length: expectedMemberCount }, () => ['element-removal']),
-    ...Array.from({ length: expectedMemberCount }, () => ['element-creation'])
-  ])
+  const canonical = await classifyFactoryPublicationsInApp(page)
+  expect(canonical).toHaveLength(expectedMemberCount * 3)
+  const created = canonical.slice(0, expectedMemberCount)
+  const removed = canonical.slice(expectedMemberCount, expectedMemberCount * 2)
+  const restored = canonical.slice(expectedMemberCount * 2)
+  expect(created.map((changes) => changes.map(({ kind }) => kind))).toEqual(
+    Array.from({ length: expectedMemberCount }, () => ['element-creation'])
+  )
+  expect(restored).toEqual(created)
+  const createdProperties = created.flatMap((changes) =>
+    changes.flatMap((change) =>
+      change.kind === 'element-creation' ? change.properties : []
+    )
+  )
+  const retiredProperties = removed.flatMap(([element, ...properties]) => {
+    expect(element.kind).toBe('element-removal')
+    return properties.flatMap((change) => {
+      expect(change).toEqual({
+        kind: 'property-components',
+        updates: [],
+        removals: expect.any(Array)
+      })
+      if (change.kind !== 'property-components')
+        throw new Error(
+          'Expected exact property retirement after element removal'
+        )
+      expect(change.removals?.length).toBeGreaterThan(0)
+      return change.removals ?? []
+    })
+  })
+  const byId = <Value extends { id: string }>(values: Value[]) =>
+    values.sort((left, right) => left.id.localeCompare(right.id))
+  expect(createdProperties.length).toBeGreaterThan(0)
+  expect(byId(retiredProperties)).toEqual(byId(createdProperties))
 })
 
 test('16-item AI response converges through the ordinary two-actor publication path', async ({

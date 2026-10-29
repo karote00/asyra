@@ -2,7 +2,7 @@ import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { readFileSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
-import { expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { createLocalDesignTools } from '../local-design-tools'
 import {
   createDesignPreparationSession,
@@ -729,73 +729,88 @@ const measureVectorDelivery = <T>(
   )
 }
 
-it.each(vectorDeliveryFixture.cases)(
-  'omits repeated vector IDs from $name without changing canonical values or compile work',
-  async (saved) => {
-    const compile = vi.fn<typeof prepareDesignAsync>(
-      (signal, input, _identity, ...rest) =>
-        prepareDesignAsync(signal, input, saved.source.identity, ...rest)
-    )
-    const session = createDesignPreparationSession(prepareDesign, compile)
-    const owner = createLocalDesignTools(actions, session)
-    const receipt = JSON.parse(
-      await owner.call(
-        'prepare_design',
-        { draft: saved.input.draft },
-        new AbortController().signal
+describe.each(vectorDeliveryFixture.cases)(
+  'recorded vector delivery - $name',
+  (saved) => {
+    let compile: ReturnType<typeof vi.fn<typeof prepareDesignAsync>>
+    let owner: ReturnType<typeof createLocalDesignTools>
+    let source: PreparedDesign
+    let receipt: { artifactId: string }
+    beforeAll(async () => {
+      compile = vi.fn<typeof prepareDesignAsync>(
+        (signal, input, _identity, ...rest) =>
+          prepareDesignAsync(signal, input, saved.source.identity, ...rest)
       )
-    )
-    const source = session.resolve(receipt.artifactId)
-    expect(
-      createHash('sha256')
-        .update(JSON.stringify(canonicalValue(source)))
-        .digest('hex')
-    ).toBe(saved.source.canonicalSha256)
-    const batch = {
-      batchId: 'apply',
-      actions: [
-        {
-          id: 'apply',
-          name: AiActionNames.APPLY_PREPARED_DESIGN,
-          arguments: { artifactId: receipt.artifactId },
-          summary: 'Apply retained vectors'
-        }
-      ]
-    }
-    const delivered = owner.resolveBatch(batch).actions[0].arguments as {
-      design: PreparedDesignDelivery
-    }
-    const encoded = JSON.stringify(delivered)
-    expect(admitPreparedDesignDelivery(JSON.parse(encoded).design)).toEqual(
-      JSON.parse(JSON.stringify(source))
-    )
-    expect(compile).toHaveBeenCalledTimes(1)
-    expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(
-      saved.source.inputBytes * 0.86
-    )
-    const baseline = { ...delivered, design: capturedVectorBaseline(source) }
-    expect(Buffer.byteLength(JSON.stringify(baseline))).toBe(
-      saved.source.inputBytes
-    )
-    expect(admitCapturedVectorBaseline(baseline.design)).toEqual(
-      JSON.parse(JSON.stringify(source))
-    )
-    console.info(
-      JSON.stringify({
-        measurement: 'vector-delivery',
-        case: saved.name,
-        baselineBytes: saved.source.inputBytes,
-        deliveredBytes: Buffer.byteLength(encoded),
-        compileCalls: compile.mock.calls.length,
-        baseline: measureVectorDelivery(
-          () => capturedVectorBaseline(source),
-          admitCapturedVectorBaseline
-        ),
-        compact: measureVectorDelivery(
-          () => deliverPreparedDesign(source),
-          admitPreparedDesignDelivery
+      const session = createDesignPreparationSession(prepareDesign, compile)
+      owner = createLocalDesignTools(actions, session)
+      receipt = JSON.parse(
+        await owner.call(
+          'prepare_design',
+          { draft: saved.input.draft },
+          new AbortController().signal
         )
-      })
+      )
+      source = session.resolve(receipt.artifactId)
+    }, 5000)
+    it('omits repeated vector IDs without changing canonical values or compile work', () => {
+      expect(
+        createHash('sha256')
+          .update(JSON.stringify(canonicalValue(source)))
+          .digest('hex')
+      ).toBe(saved.source.canonicalSha256)
+      const batch = {
+        batchId: 'apply',
+        actions: [
+          {
+            id: 'apply',
+            name: AiActionNames.APPLY_PREPARED_DESIGN,
+            arguments: { artifactId: receipt.artifactId },
+            summary: 'Apply retained vectors'
+          }
+        ]
+      }
+      const delivered = owner.resolveBatch(batch).actions[0].arguments as {
+        design: PreparedDesignDelivery
+      }
+      const encoded = JSON.stringify(delivered)
+      expect(admitPreparedDesignDelivery(JSON.parse(encoded).design)).toEqual(
+        JSON.parse(JSON.stringify(source))
+      )
+      expect(compile).toHaveBeenCalledTimes(1)
+      expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(
+        saved.source.inputBytes * 0.86
+      )
+      const baseline = { ...delivered, design: capturedVectorBaseline(source) }
+      expect(Buffer.byteLength(JSON.stringify(baseline))).toBe(
+        saved.source.inputBytes
+      )
+      expect(admitCapturedVectorBaseline(baseline.design)).toEqual(
+        JSON.parse(JSON.stringify(source))
+      )
+    })
+    it.each(['baseline', 'compact'] as const)(
+      'measures unchanged pack, encode, parse and admission work - %s',
+      (representation) => {
+        const measurements =
+          representation === 'baseline'
+            ? measureVectorDelivery(
+                () => capturedVectorBaseline(source),
+                admitCapturedVectorBaseline
+              )
+            : measureVectorDelivery(
+                () => deliverPreparedDesign(source),
+                admitPreparedDesignDelivery
+              )
+        expect(compile).toHaveBeenCalledTimes(1)
+        console.info(
+          JSON.stringify({
+            measurement: 'vector-delivery',
+            case: saved.name,
+            representation,
+            ...measurements
+          })
+        )
+      }
     )
   }
 )

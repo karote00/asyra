@@ -112,11 +112,15 @@ export function canonicalPublicationSlices(
     for (const { channel, change } of deliveries) {
       if (channel === SharedDataChannelNames.PROPS) {
         const value = change as PropsChange
-        if (
-          value.action === PROPS_ACTIONS.ADD_PROPERTY ||
-          value.action === PROPS_ACTIONS.REMOVE_PROPERTY
-        )
+        if (value.action === PROPS_ACTIONS.ADD_PROPERTY) continue
+        if (value.action === PROPS_ACTIONS.REMOVE_PROPERTY && 'data' in value) {
+          changes.push({
+            kind: 'property-components',
+            updates: [],
+            removals: value.data
+          })
           continue
+        }
         if (
           value.action !== PROPS_ACTIONS.UPDATE_PROPERTY ||
           !('id' in value) ||

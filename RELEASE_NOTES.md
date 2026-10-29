@@ -1,5 +1,75 @@
 # Asyra Release Notes
 
+## Pending - Rebased CI consumer and proof repair
+
+```update-note
+{
+  "change": "rebased-ci-consumer-and-proof-repair",
+  "owner": "App consumers and repository verification",
+  "summary": "Preserve Starter accepted target IDs, Sim property retirement, Design capture identities and original transaction failures. Compare exact durable JSON values across binary transport and checkpoint storage. Synchronize browser delivery fixtures and Inspector case coverage without weakening geometry, history, persistence or timeout checks.",
+  "reason": "Core receipt changes and proof-input moves left direct consumers and CI assumptions out of sync. Retain complete geometry, recovery assertions and existing timeout guards while removing test-only quadratic lookup and separating timing phases.",
+  "impact": "no-action",
+  "sources": [
+    "apps/asyra-design/e2e/ai-conversation-flow.spec.ts",
+    "apps/asyra-design/e2e/ai-inspection-evidence.spec.ts",
+    "apps/asyra-design/e2e/ai-linear-material.spec.ts",
+    "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
+    "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
+    "apps/asyra-design/e2e/collaboration.spec.ts",
+    "apps/asyra-design/e2e/design-containers.spec.ts",
+    "apps/asyra-design/e2e/design-organization.spec.ts",
+    "apps/asyra-design/e2e/drawing-inspection.spec.ts",
+    "apps/asyra-design/e2e/editable-design-variants.spec.ts",
+    "apps/asyra-design/e2e/editable-design.spec.ts",
+    "apps/asyra-design/e2e/fill-patch.spec.ts",
+    "apps/asyra-design/e2e/fixtures/action-usage-cases.ts",
+    "apps/asyra-design/e2e/fixtures/receipt-provider.mjs",
+    "apps/asyra-design/e2e/indexed-design-query.spec.ts",
+    "apps/asyra-design/e2e/local-ai-provider.spec.ts",
+    "apps/asyra-design/e2e/undo-redo.spec.ts",
+    "apps/asyra-design/e2e/vector-gradient-fill.spec.ts",
+    "apps/asyra-design/e2e/vector-render-invariants.spec.ts",
+    "apps/asyra-design/flow-contracts.json",
+    "apps/asyra-design/package.json",
+    "apps/asyra-design/playwright-functional-flow-contracts.json",
+    "apps/asyra-design/server/__tests__/design-patterns.test.ts",
+    "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/document-canonical-reducer.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/image-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/information-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/local-query-artifacts.test.ts",
+    "apps/asyra-design/server/__tests__/model-delivery-boundary.integration.test.ts",
+    "apps/asyra-design/server/__tests__/native-output-observation.integration.test.ts",
+    "apps/asyra-design/server/__tests__/prepared-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/prepared-publication.integration.test.ts",
+    "apps/asyra-design/server/document-canonical-reducer.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts",
+    "apps/asyra-design/src/ai/retained-fill-action.ts",
+    "apps/asyra-sim/src/storage/__tests__/publication-repository.test.ts",
+    "apps/asyra-sim/src/storage/publication-journal.ts",
+    "apps/starter-app/src/common-apis/items.ts",
+    "apps/starter-app/src/init/__tests__/init-app.test.ts",
+    "apps/starter-app/vitest.config.ts",
+    "docs/ai/apps/asyra-design/rules/testing-contracts.md",
+    "docs/ai/apps/asyra-design/specs/ai-execution-flow.md",
+    "docs/ai/apps/asyra-design/specs/functional-failure-responsibilities.md",
+    "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
+    "docs/ai/knowledge/plans/composable-domain-knowledge-v1-plan.md",
+    "docs/public/generated/source-map.json",
+    "scripts/docs/__tests__/public-content-contract.test.mjs",
+    "tools/flow-inspector/control-plane/__tests__/contracts.test.cjs",
+    "tools/flow-inspector/control-plane/__tests__/localization-runtime.test.cjs",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/design-functional-flow-inspector.data.cjs",
+    "tools/flow-inspector/inspectors/socket-authoritative-document-persistence-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "guides": []
+}
+```
+
 ## Pending unified direct tool contracts
 
 ```update-note

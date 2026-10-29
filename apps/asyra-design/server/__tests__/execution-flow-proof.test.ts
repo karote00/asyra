@@ -8065,15 +8065,14 @@ const proveDeadlineQueryCleanup = async (
     'deadline' | 'cancel' | 'disconnect' | 'report-failure' | 'release-failure',
   observations: CleanupProofObservation[]
 ) => {
-  vi.resetModules()
+  // Each case owns/disposes its runtime and restores Core below. Re-importing
+  // the complete source graph per case is not part of the cleanup contract.
   vi.stubGlobal('window', {})
   const { requestLocalAiActionBatch } = await import('../local-ai-provider')
   const { createAiAgentRuntime } = await import('@asyra/ai-agent-runtime')
   const { createAiRuntimeInput } = await import('../../src/ai/runtime-input')
   const { createAiTransactionRunner } = await import('../../src/ai/transaction')
   const { default: core } = await import('../../src/contexts')
-  const { applyPreset, PresetProfiles, PresetDefaults } =
-    await import('@asyra/preset')
   const hostModule = await import('../local-tool-host')
   const retainedModule =
     await import('../../src/common-apis/retained-design-context')
@@ -8084,10 +8083,6 @@ const proveDeadlineQueryCleanup = async (
       createRetainedDesignContext(source, observe, { maxBytes: 4000 })
     )
   const eventOffset = observations.length
-  applyPreset(core, {
-    profile: PresetProfiles.CUSTOM,
-    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
-  })
   const initial = await core.save()
   core.load({
     version: '1.0.0',
@@ -8678,6 +8673,15 @@ it('execution proof separates bounded work from same-thread self-report without 
   ).toEqual(['evaluation-thread', 'evaluation-thread'])
   expect(packets.some((p) => p.method === 'turn/interrupt')).toBe(true)
   expect(executeBatch).not.toHaveBeenCalled()
+  vi.resetModules()
+  vi.stubGlobal('window', {})
+  const { default: cleanupCore } = await import('../../src/contexts')
+  const { applyPreset, PresetProfiles, PresetDefaults } =
+    await import('@asyra/preset')
+  applyPreset(cleanupCore, {
+    profile: PresetProfiles.CUSTOM,
+    defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]
+  })
   for (const mode of [
     'deadline',
     'cancel',

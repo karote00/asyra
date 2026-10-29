@@ -1,3 +1,4 @@
+import { admitPreparedDesignDelivery } from '../src/ai/prepared-design-admission'
 import { expect, test, type Page } from '@playwright/test'
 import correction from '../server/__tests__/fixtures/recorded-101/material-correction-20261019.json' with { type: 'json' }
 import recorded from '../server/__tests__/fixtures/recorded-101/material-field-20261019.json' with { type: 'json' }
@@ -139,11 +140,9 @@ test('recorded world material reaches real tools, local checks, history, peer an
         }
       ]
     })
-    const prepared = batch.actions[0].arguments.design as {
-      entries: { elementId: string; descriptor: Record<string, unknown> }[]
-      keyToId: Record<string, string>
-      rootId: string
-    }
+    const prepared = admitPreparedDesignDelivery(
+      batch.actions[0].arguments.design
+    )
     const applied = (await execute(batch)) as {
       actionResults: { result: unknown }[]
     }
@@ -389,7 +388,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
     const { readFileSync } = await import('node:fs')
     const method = readFileSync(
       new URL(
-        '../knowledge/design.architectural-illustration.md',
+        '../knowledge/design.architectural-illustration.materials.correction.md',
         import.meta.url
       ),
       'utf8'
@@ -735,6 +734,7 @@ test('recorded world material reaches real tools, local checks, history, peer an
         ['author', page],
         ['peer', peer]
       ] as const) {
+        if (client.url() === 'about:blank' || client.isClosed()) continue
         await testInfo.attach(`material-failure-${name}`, {
           body: JSON.stringify(
             await client.evaluate(async () => {
@@ -800,6 +800,7 @@ test('native field sampling stays continuous across the rendered join of transla
   await waitForAppReady(page)
   await connected(page)
   const result = await page.evaluate(async (prepared) => {
+    const { deliverPreparedDesign } = await import('../src/ai/prepared-design')
     const { core } = await import('../src/testing/runtime-access')
     const { createAiRuntimeInput } = await import('../src/ai/runtime-input')
     const input = createAiRuntimeInput({
@@ -820,7 +821,7 @@ test('native field sampling stays continuous across the rendered join of transla
         'Continuous panels',
         async (runMutation) =>
           action.execute(
-            { design: prepared },
+            { design: deliverPreparedDesign(prepared) },
             { signal: new AbortController().signal, runMutation }
           )
       )
@@ -913,10 +914,9 @@ test('source material revisions update original faces, extend coherently and sur
       }
     ]
   })
-  const design = creation.actions[0].arguments.design as {
-    rootId: string
-    keyToId: Record<string, string>
-  }
+  const design = admitPreparedDesignDelivery(
+    creation.actions[0].arguments.design
+  )
   const createdReceipt = (await execute(creation)) as {
     actionResults: { result: unknown }[]
   }

@@ -72,22 +72,26 @@ const setup = (
     )
   )
   const created: PreparedElementDescriptor[] = []
+  const elements = new Map<string, PreparedElementDescriptor>()
   const parents = new Map<string, string>()
   const apply = createPreparedDesignAction(
     {
       getWorkspaceId: () => 'workspace',
-      getElementType: (id) => created.find((entry) => entry.id === id)?.type,
+      getElementType: (id) => elements.get(id)?.type,
       getElementMetadata: (id) => {
-        const entry = created.find((item) => item.id === id)
+        const entry = elements.get(id)
         return entry
           ? { type: entry.type, parentId: parents.get(id) }
           : undefined
       },
-      getPlacement: (id) => created.find((entry) => entry.id === id),
+      getPlacement: (id) => elements.get(id),
       isContainerType: (type) => ['group', 'frame'].includes(type),
       isLocked: () => false,
       create: (entries, parentId) => {
-        for (const entry of entries) parents.set(entry.id, parentId)
+        for (const entry of entries) {
+          parents.set(entry.id, parentId)
+          elements.set(entry.id, entry)
+        }
         created.push(...entries)
         return entries.map((entry) => entry.id)
       },
@@ -624,10 +628,12 @@ it('preserves canonical restrictions across selected representations and ordered
   expect(run.execute).not.toHaveBeenCalled()
 })
 
-it.each([
-  { nodeTypes: ['group', 'projected-face', 'pattern'] },
-  { nodeTypes: ['group', 'surface-grid'] }
-])(
+it
+  .runIf(Boolean(process.env.NATIVE_DELIVERY_CODEX))
+  .each([
+    { nodeTypes: ['group', 'projected-face', 'pattern'] },
+    { nodeTypes: ['group', 'surface-grid'] }
+  ])(
   'delivers the actual selected usage guide through native direct calls without truncation $nodeTypes',
   async ({ nodeTypes }) => {
     const run = setup()

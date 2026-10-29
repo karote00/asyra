@@ -1,12 +1,18 @@
 import { defineConfig } from 'vitest/config'
 import { fileURLToPath } from 'node:url'
 
-const packageSource = (name: string) =>
-  fileURLToPath(new URL(`../../packages/${name}/src/index.ts`, import.meta.url))
+const packageSource = (name: string, entry = 'index') =>
+  fileURLToPath(
+    new URL(`../../packages/${name}/src/${entry}.ts`, import.meta.url)
+  )
 
 export default defineConfig({
   resolve: {
     alias: {
+      '@asyra/utils/geometry-bounds': packageSource(
+        'utils',
+        'render/geometry-bounds'
+      ),
       '@asyra/core': packageSource('core'),
       '@asyra/factory': packageSource('factory'),
       '@asyra/feature-system': packageSource('feature-system'),

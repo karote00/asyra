@@ -363,12 +363,20 @@ test('saved multi-face detail uses current targets and preserves sibling passes 
 
 test('ordered multi-face preparation preserves an acknowledged prefix and retries only the corrected part', async ({
   page
-}) => {
+}, testInfo) => {
   const document = createTestDocumentIdentity()
   await page.goto(document.url)
   await waitForAppReady(page)
   await connected(page)
   const { workflow, signal, designs } = await runtime(page)
+  await page.evaluate(async () => {
+    const runtime = await import('../src/testing/runtime-access')
+    runtime.testRuntimeState.set(
+      'ordered-prefix-initial',
+      await runtime.core.save()
+    )
+    runtime.startSharedPublicationCapture('ordered-prefix-publications')
+  })
   const example = designPreparationExamples.find(
     (e) => e.draft.name === 'Repeated visible detail'
   )
@@ -441,6 +449,19 @@ test('ordered multi-face preparation preserves an acknowledged prefix and retrie
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(prefix)
   await redo(page)
   await expect.poll(() => getCoreDocumentDigest(page)).toEqual(complete)
+  await testInfo.attach('ordered-prefix-publication-replay', {
+    contentType: 'application/json',
+    body: JSON.stringify(
+      await page.evaluate(async () => {
+        const runtime = await import('../src/testing/runtime-access')
+        return {
+          initial: runtime.testRuntimeState.get('ordered-prefix-initial'),
+          publications: runtime.readTestCapture('ordered-prefix-publications'),
+          final: await runtime.core.save()
+        }
+      })
+    )
+  })
   await expect
     .poll(() => getPersistedDocumentDigest(document.fileId))
     .toEqual(complete)

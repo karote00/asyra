@@ -1,5 +1,8 @@
 import { expect, it, vi } from 'vitest'
-import { createAiActionRegistry } from '@asyra/ai-agent-runtime'
+import {
+  createAiActionRegistry,
+  AiTransactionSettlementError
+} from '@asyra/ai-agent-runtime'
 import { createLocalOperationTools } from '../../../server/local-operation-tools'
 import { prepareOperationBatch } from '../../../server/local-operation-batch'
 vi.mock('../../contexts', () => ({ default: {} }))
@@ -926,4 +929,27 @@ it('preserves an output contract failure after a malformed owner receipt', async
     inspection: { settlement: 'completed' }
   })
   expect(update).toHaveBeenCalledTimes(1)
+})
+
+it('preserves transaction settlement and the original rejection without replay', async () => {
+  const update = vi.fn(changedReceipt)
+  const action = createRetainedFillAction({ get: () => snapshot } as never, {
+    targets,
+    metadata: () => ({}),
+    update
+  })
+  for (const status of ['rolled-back', 'committed', 'unknown'] as const) {
+    const cause = new Error('Retained query stale')
+    const settlement = new AiTransactionSettlementError(cause, status)
+    await expect(
+      action.execute(input, {
+        signal: new AbortController().signal,
+        runMutation: async () => {
+          throw settlement
+        }
+      })
+    ).rejects.toBe(settlement)
+    expect(settlement.cause).toBe(cause)
+  }
+  expect(update).not.toHaveBeenCalled()
 })

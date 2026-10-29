@@ -18,7 +18,7 @@
         },
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "18c7c8353bbf6e9e536e023f3a8f95e5819d0e95ed828b192e48a2f385a687db"
+          "sha256": "54b9771fdb781cfd59e7702d2d56b3bc4779682e410b8862666f6d20e37ab568"
         }
       ]
     },
@@ -104,7 +104,7 @@
         },
         {
           "path": "docs/ai/apps/asyra-design/specs/socket-authoritative-document-session.md",
-          "sha256": "6dd0b2d7606cb708e7ae6b1fad5e29c8929c489421ec728dbb5312941ce4474b"
+          "sha256": "d6360496df659ca50aec0f709d50bd60d76f3d59ac234adc46710895db69841e"
         }
       ]
     },
@@ -918,7 +918,7 @@
       "sources": [
         {
           "path": "apps/asyra-design/server/local-operation-tools.ts",
-          "sha256": "18c7c8353bbf6e9e536e023f3a8f95e5819d0e95ed828b192e48a2f385a687db"
+          "sha256": "54b9771fdb781cfd59e7702d2d56b3bc4779682e410b8862666f6d20e37ab568"
         },
         {
           "path": "apps/asyra-design/server/local-design-workflow.ts",

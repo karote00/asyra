@@ -10,6 +10,7 @@ import {
 import { requireMutationReceipt } from './basic-api-results'
 import {
   AiActionExecutionError,
+  AiTransactionSettlementError,
   AiToolContractError,
   runAiMutation,
   type AiActionDefinition
@@ -405,7 +406,11 @@ export const createRetainedFillAction = (
         }
       })
     } catch (error) {
-      if (context.signal.aborted || error instanceof AiToolContractError)
+      if (
+        context.signal.aborted ||
+        error instanceof AiToolContractError ||
+        error instanceof AiTransactionSettlementError
+      )
         throw error
       throw new AiActionExecutionError(
         error instanceof Error ? error.message : 'Retained fill mapping failed.'

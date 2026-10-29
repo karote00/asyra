@@ -1,3 +1,4 @@
+import { admitPreparedDesignDelivery } from '../src/ai/prepared-design-admission'
 import { expect, test, type Page } from '@playwright/test'
 import type { AiActionBatch } from '@asyra/ai-agent-runtime'
 import { createLocalDesignTools } from '../server/local-design-tools'
@@ -117,10 +118,7 @@ test('retained anchor reaches real hierarchy, rejects ambiguity, and preserves p
       }
     ]
   })
-  const design = packet.actions[0].arguments.design as {
-    rootId: string
-    keyToId: Record<string, string>
-  }
+  const design = admitPreparedDesignDelivery(packet.actions[0].arguments.design)
   await execute(packet)
   const readOrder = (client: Page) =>
     client.evaluate(async (rootId) => {

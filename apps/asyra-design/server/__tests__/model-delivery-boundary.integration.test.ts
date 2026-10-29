@@ -195,3 +195,98 @@ it.each(['native', 'registered'])(
     }
   }
 )
+
+it('delivers the operation-owned capture identity through the real host for reuse without recapture', async () => {
+  const { createAiInspectionAction } = await import('../../src/ai/inspection')
+  const action = createAiToolContract(createAiInspectionAction())
+  const image = { dataUrl: 'data:image/png;base64,aW1hZ2U=' }
+  const dispatch = vi.fn(async (batch) => ({
+    context: {},
+    actionResults: batch.actions.map((entry: { id: string; name: string }) => ({
+      actionId: entry.id,
+      actionName: entry.name,
+      result: {
+        available: true,
+        image,
+        evidence: { sessionId: 'capture', revision: 0, receiptId: 'first' }
+      }
+    }))
+  }))
+  const host = createLocalToolHost({
+    requestId: 'capture-delivery',
+    signal: new AbortController().signal,
+    store: {
+      read: async () => undefined,
+      list: async () => [],
+      write: async () => {
+        throw new Error('Unexpected persistence')
+      }
+    },
+    capacity: 32,
+    receiptCapacity: 8,
+    artifactCapacity: 64,
+    limits: {
+      steps: 16,
+      bindings: 240,
+      bindingDepth: 32,
+      bytes: 24000,
+      issues: 8
+    },
+    createGroups: () => [
+      {
+        name: 'operations',
+        description: 'Actual capture owner',
+        owner: createLocalOperationTools(
+          [action],
+          {
+            modelActions: (value) => value,
+            resolveBatch: (value) => value
+          },
+          dispatch
+        )
+      }
+    ]
+  })
+  try {
+    const definition = host
+      .definitions()
+      .find((entry) => entry.name === action.name)
+    if (!definition) throw new Error('Missing actual capture definition')
+    const result = await host.invoke({
+      name: definition.registeredName,
+      input: { arguments: { elementId: 'panel' } }
+    })
+    const value = JSON.parse(result.text)
+    expect(value, result.text).toMatchObject({
+      actionResults: [
+        {
+          result: {
+            available: true,
+            image,
+            inspectionId: expect.any(String),
+            revision: 0
+          }
+        }
+      ]
+    })
+    expect(
+      operationContractIssue(
+        value,
+        modelToolResultSchemas(definition, 'host').outputSchema,
+        { stage: 'output' }
+      )
+    ).toBeUndefined()
+    const binding = value.actionResults[0].result.inspectionId
+    const read = await host.invoke({
+      name: 'operations.read_design_checks',
+      input: {
+        ids: [`inspection:${binding}`],
+        includePassed: true
+      }
+    })
+    expect(JSON.parse(read.text).toolOutcome.status).toBe('success')
+    expect(dispatch).toHaveBeenCalledTimes(1)
+  } finally {
+    await host.dispose()
+  }
+})

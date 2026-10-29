@@ -730,6 +730,7 @@ const data = {
       cacheDimensions: [],
       implementationBoundary: [
         'apps/asyra-design/src/ai/document-export.ts',
+        'apps/asyra-design/src/ai/server-action-batch-provider.ts',
         'apps/asyra-design/src/ai/runtime-input.ts',
         'apps/asyra-design/src/features/ai-agent/index.ts',
         'apps/asyra-design/src/ai/startup.ts',
@@ -810,6 +811,7 @@ const data = {
       ],
       cacheDimensions: [],
       implementationBoundary: [
+        'apps/asyra-design/src/ai/prepared-material-action.ts',
         'apps/asyra-design/src/ai/prepared-design.ts',
         'apps/asyra-design/src/ai/prepared-design-admission.ts',
         'apps/asyra-design/src/ai/design-actions.ts',

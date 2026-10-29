@@ -349,7 +349,12 @@ it.each([
       await import('../../src/ai/context-action')
     const { createRetainedFillAction } =
       await import('../../src/ai/retained-fill-action')
-    const update = vi.fn()
+    const update = vi.fn((entries: readonly { elementId: string }[]) => ({
+      value: null,
+      acceptedIds: entries.map((entry) => entry.elementId),
+      unavailableIds: [],
+      changed: entries.length > 0
+    }))
     const measurement = measuredReview()
     const observed: ReturnType<typeof app.read>[] = []
     const read = createDocumentContextAction((query, signal) => {
@@ -438,6 +443,13 @@ it.each([
         }
       ]
     })
+    const dependencyRevision = (name: string) => {
+      const definition = host
+        .definitions()
+        .find((entry) => entry.registeredName === name)
+      if (!definition) throw new Error(`Missing exposed dependency: ${name}`)
+      return definition.revision
+    }
     const literal = (value: unknown) => ({ kind: 'literal', value })
     const binding = (field: string) => ({
       kind: 'step',
@@ -456,7 +468,7 @@ it.each([
         {
           id: 'query',
           tool: 'design_operations.read_design_context',
-          revision: 5,
+          revision: dependencyRevision('design_operations.read_design_context'),
           input: {
             kind: 'object',
             fields: { arguments: literal(query) }
@@ -465,7 +477,7 @@ it.each([
         {
           id: 'map',
           tool: 'design_operations.map_retained_fills',
-          revision: 6,
+          revision: dependencyRevision('design_operations.map_retained_fills'),
           input: {
             kind: 'object',
             fields: {

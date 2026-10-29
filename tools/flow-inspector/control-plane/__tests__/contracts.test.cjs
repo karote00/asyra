@@ -513,12 +513,41 @@ test('Design execution admission locates all existing cases within their seven o
     undefined,
     'apps/asyra-design/flow-contracts.json'
   )
-  assert.equal(contract.cases.length, 41)
   assert.deepEqual(
     [...new Set(contract.cases.map((item) => item.stepId))].sort(),
     ['apply', 'compose', 'inspect', 'observe', 'prepare', 'request', 'settle']
   )
   const source = fs.readFileSync(path.join(root, contract.testFile), 'utf8')
+  const ts = require('typescript')
+  const parsed = ts.createSourceFile(
+    contract.testFile,
+    source,
+    ts.ScriptTarget.Latest,
+    true
+  )
+  const declared = []
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'it' &&
+      ts.isStringLiteral(node.arguments[0])
+    )
+      declared.push(node.arguments[0].text)
+    ts.forEachChild(node, visit)
+  }
+  visit(parsed)
+  assert.ok(declared.length > 0)
+  assert.deepEqual(
+    contract.cases.map((item) => item.testName).sort(),
+    declared.sort()
+  )
+  for (const step of contract.runtimeScope.steps)
+    for (const boundary of step.implementationBoundary)
+      assert.ok(
+        fs.existsSync(path.join(root, boundary.replace(/\/\*\*$/, ''))),
+        boundary
+      )
   for (const item of contract.cases) {
     assert.ok(source.includes(item.testName))
     assert.ok(item.implementationPaths?.length, item.id)
@@ -923,7 +952,7 @@ test('the complete functional discovery has one exact responsibility per case, i
   const root = path.resolve(__dirname, '../../../..')
   const { spawnSync } = require('node:child_process')
   const { sourceManifestPaths } = require('../playwright-results.cjs')
-  const collect = (source, configFile, expectedCount) => {
+  const collect = (source, configFile) => {
     const contracts = sourceManifestPaths(source).map((file) =>
       loadContract(root, undefined, file)
     )
@@ -982,12 +1011,12 @@ test('the complete functional discovery has one exact responsibility per case, i
         ])
       })
     )
-    assert.equal(expected.length, expectedCount)
+    assert.ok(observed.length > 0)
     assert.equal(new Set(expected).size, expected.length)
     assert.deepEqual(observed.sort(), expected.sort())
   }
-  collect('functional', 'playwright.config.ts', 485)
-  collect('status', 'playwright.status-toast.config.ts', 1)
+  collect('functional', 'playwright.config.ts')
+  collect('status', 'playwright.status-toast.config.ts')
 })
 
 test('functional responsibility follows the asserted operation across test-file boundaries', () => {

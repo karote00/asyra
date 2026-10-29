@@ -404,19 +404,18 @@ test('retained region fills use current positions, keep Undo, and reject stale s
       )
       input.mappings[0].snapshotId = shared.snapshotId
       input.mappings[0].leaseId = shared.leaseId
-      let conflict = ''
-      try {
-        await runner.run(
-          'Conflicting shared mapping',
-          (runMutation) => action.execute(input, { signal, runMutation }),
-          { signal }
-        )
-      } catch (error) {
-        conflict = String(
-          error instanceof Error && error.cause ? error.cause : error
-        )
-      }
-      const afterConflict = readColors()
+      // A local Fill edit masks the shared source per target; it does not
+      // reject distinct local colors or mutate the common source.
+      await runner.run(
+        'Map local overrides of shared fills',
+        (runMutation) => action.execute(input, { signal, runMutation }),
+        { signal }
+      )
+      const localMapped = readColors()
+      await historyApis.undo()
+      const localUndone = readColors()
+      await historyApis.redo()
+      const localRedone = readColors()
       const refreshed = store.read(
         {
           scope: 'ids',
@@ -441,8 +440,9 @@ test('retained region fills use current positions, keep Undo, and reject stale s
       await historyApis.undo()
       const sharedUndone = readColors()
       return {
-        conflict,
-        afterConflict,
+        localMapped,
+        localUndone,
+        localRedone,
         sharedMapped,
         sharedUndone,
         mapped,
@@ -462,10 +462,11 @@ test('retained region fills use current positions, keep Undo, and reject stale s
   expect(result.afterRejected).toEqual(result.mapped)
   expect(result.stale).toContain('stale')
   expect(result.transferredRows).toBe(0)
-  expect(result.conflict).toMatch(/conflict/i)
-  expect(result.afterConflict).toEqual(['#000000', '#000000', '#000000'])
+  expect(result.localMapped).toEqual(result.mapped)
+  expect(result.localUndone).toEqual(['#000000', '#000000', '#000000'])
+  expect(result.localRedone).toEqual(result.localMapped)
   expect(result.sharedMapped).toEqual(['#abcdef', '#abcdef', '#abcdef'])
-  expect(result.sharedUndone).toEqual(result.afterConflict)
+  expect(result.sharedUndone).toEqual(result.localMapped)
 })
 
 test('retained regions invalidate on ancestor moves, new matches and Undo', async ({

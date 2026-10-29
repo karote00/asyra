@@ -961,9 +961,41 @@ export const createLocalOperationTools = (
       )
       .map((action) => [action.name, action])
   )
-  const registered = modelActions.filter(
-    (action) => allowed.has(action.name) && !finalActions.has(action.name)
-  )
+  const registered = modelActions
+    .filter(
+      (action) => allowed.has(action.name) && !finalActions.has(action.name)
+    )
+    .map((action) => {
+      if (
+        action.name !== AiActionNames.INSPECT_DRAWING ||
+        !('outputSchema' in action) ||
+        !isRecord(action.outputSchema)
+      )
+        return action
+      // The operation owner enriches a browser capture before publishing it.
+      // Acquisition and projection must describe that enriched result together.
+      return {
+        ...action,
+        revision: (action.revision ?? 1) + 1,
+        outputSchema: {
+          ...action.outputSchema,
+          properties: {
+            ...(isRecord(action.outputSchema.properties)
+              ? action.outputSchema.properties
+              : {}),
+            inspectionId: toolResultString,
+            revision: toolResultCount
+          },
+          required: [
+            ...(Array.isArray(action.outputSchema.required)
+              ? action.outputSchema.required
+              : []),
+            'inspectionId',
+            'revision'
+          ]
+        }
+      }
+    })
   // Explicit review/capture owns evidence processing outside edit batches.
   const batchActions = registered.filter(
     (action) =>

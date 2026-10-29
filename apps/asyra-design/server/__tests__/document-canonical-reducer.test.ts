@@ -34,6 +34,92 @@ const apply = (
 ): AppDocumentData => applyCanonicalChangesToDocument(document, changes)
 
 describe('backend canonical document reducer', () => {
+  it('retires an exact binary record after JSON storage normalizes signed zero', () => {
+    const component = {
+      id: 'fill',
+      type: 'fill',
+      samples: [
+        { x: 1, y: -0 },
+        { x: 0, y: 2 }
+      ]
+    }
+    const created = apply(initialDocument(), [
+      {
+        kind: 'property-components',
+        creations: [component],
+        updates: []
+      }
+    ])
+    expect(Object.is(component.samples[0].y, -0)).toBe(true)
+    expect(
+      Object.is(
+        (created.props.fill.samples as typeof component.samples)[0].y,
+        0
+      )
+    ).toBe(true)
+    const removed = apply(created, [
+      {
+        kind: 'property-components',
+        removals: [component],
+        updates: []
+      }
+    ])
+    expect(removed.props).toEqual({})
+    expect(created.props.fill).toBeDefined()
+  })
+
+  it.each([
+    {
+      samples: [
+        { x: 1, y: 0.001 },
+        { x: 0, y: 2 }
+      ]
+    },
+    { samples: [{ x: 1 }, { x: 0, y: 2 }] },
+    {
+      samples: [
+        { x: 1, y: '0' },
+        { x: 0, y: 2 }
+      ]
+    },
+    {
+      samples: [
+        { x: 0, y: 2 },
+        { x: 1, y: 0 }
+      ]
+    }
+  ])(
+    'rejects a truly stale retirement and preserves its durable prefix: %j',
+    (fields) => {
+      const component = {
+        id: 'fill',
+        type: 'fill',
+        samples: [
+          { x: 1, y: -0 },
+          { x: 0, y: 2 }
+        ]
+      }
+      const created = apply(initialDocument(), [
+        {
+          kind: 'property-components',
+          creations: [component],
+          updates: []
+        }
+      ])
+      const before = structuredClone(created)
+      expect(() =>
+        apply(created, [
+          {
+            kind: 'property-components',
+            removals: [{ ...component, ...fields }],
+            updates: []
+          }
+        ])
+      ).toThrow('stale or duplicate property retirement')
+      expect(created).toEqual(before)
+    }
+  )
+
   it.each([16, 1024])(
     'validates local layer changes without reading %i unrelated property graphs',
     (count) => {

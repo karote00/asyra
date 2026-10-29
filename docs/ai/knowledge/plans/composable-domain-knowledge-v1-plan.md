@@ -495,6 +495,104 @@ Cost baseline correction - existing user approval applies:
 - Step remains compose, same owners/consumers, tests and exclusions. Self-review:
   this corrects the approved comparator, not production transport or valid values.
 
+Rebased CI repair - 2026-10-30:
+
+- Baseline: f53f747e9 on main b0c1d8ce7; retained failure evidence is run 40910660766. Reproduce failures on the rebased source before correcting them.
+- Bounded scope: Starter Item consumers of Core mutation receipts; Sim journal
+  replay and its direct canonical owner if required by the failing restore case;
+  Design offline delivery and large-fixture test lifecycle; public documentation
+  inventory assertions; Inspector case discovery and moved proof inputs. Include
+  their direct tests, active contracts, generated Inspector bundle and release
+  notes. Do not change product limits, valid values, timeout guards or assertions
+  merely to obtain a green result.
+- Verification corrections must retain exact source-to-case coverage rather than
+  fixed historical counts. Offline native-client checks require an explicitly
+  available native executable; ordinary App contract coverage must remain runnable
+  without one. Do not replace real native evidence with simulated success.
+- Inspector compose card: preserve all tool inputs/results/recovery semantics;
+  repair the declared proof input path to its current tracked owner, and verify
+  admission, source capture and localization against that same source. No new
+  owner, cache, route or alternate registry. Other test-only corrections do not
+  change governed product semantics or require invented Inspector steps.
+- Gates: focused red/green regressions, affected App types/build/tests, complete
+  Inspector control-plane contracts/localization, public-documentation contracts,
+  applicable offline delivery checks, Design E2E suites previously blocked at
+  build, lint/naming and commit-bound checks. Review the diff and direct consumers,
+  then push the validated head with an exact remote lease and inspect its CI.
+- Sim storage card: robot-workcell-v0 section 10 and the existing storage step
+  require ordered publication replay through Core without echo or local history.
+  Consume original property-removal deliveries and emit canonical exact-record
+  removals at that position; do not change Core subtree semantics or suppress
+  duplicate-restore errors. Boundary: publication-journal and its storage tests;
+  the existing bootstrap lifetime regression is the real downstream gate. No
+  migration, new cache, inferred deletion, reordered restore or snapshot capture.
+  Rebased bootstrap regression reproduces an active-property collision because
+  this adapter currently drops REMOVE_PROPERTY deliveries.
+- Bounded follow-up from the rebased full gates: reconcile local query recipe
+  fixtures with the exact exposed dependency revisions and mutation receipts;
+  reconcile the failing browser consumers with current prepared delivery and
+  public mutation results. Discover only from the retained failing test report,
+  each failing call site and its direct owner. Preserve complete save/reload,
+  history, collaboration and geometry assertions. Diagnose the separate exact
+  property-retirement failure at its first canonical owner before any runtime
+  correction; never normalize away a persistence mismatch. Keep the Inspector
+  timeout guard and diagnose its captured execution independently of load.
+- Apply-step correction: the real retained-fill browser failure loses its original
+  admission reason when its action rewraps a transaction-settlement error. Preserve
+  the existing transaction error and cause unchanged through the action boundary;
+  retain settlement, cancellation and committed results without replay. Boundary:
+  retained-fill-action and its direct unit/browser consumers. First reproduce
+  propagation with the actual Runtime settlement error, then verify missing and
+  stale targets through the real browser transaction owner.
+- Inspect-step correction: actual host delivery projects an enriched inspection
+  through the raw browser schema and discards inspectionId/revision. The existing
+  operation owner must declare the fields it adds, and use that same declaration
+  for acquisition and delivery. Preserve unavailable-image recovery, independent
+  bindings and no recapture. Formal host regression and the failing public review
+  browser case must retain the image handle through binding and final assessment.
+  Boundary: local-operation-tools and direct delivery/browser tests, existing
+  inspect contract; no browser-state change or additional registry.
+- Materialization-step investigation card: consume the actual encoded publication
+  from prepared creation and history replay, current durable document and ordered
+  changes; require the same saved property graph and reject genuinely stale
+  retirement without acknowledging or replaying a failed prefix. Owner and failure
+  owner: materialize-backend-document in the socket persistence Inspector, backend
+  materialization spec. Allowed: existing codec, organizer and canonical reducer;
+  forbidden: browser save fallback, changed geometry, inferred deletion or waived
+  equality. Boundary: document-canonical-reducer and its direct formal tests plus
+  the already-failing repeated-detail browser case. First preserve a failing
+  actual-codec regression; stop if the difference cannot be explained by the
+  documented durable representation. No state, cache or alternative route.
+- Remaining full-suite evidence: all-invalid capture assertions now follow the
+  existing failed status and exact recovery shape; vector anchor receipts expose
+  their payload under value. Preserve their real downstream history assertions.
+  Workspace durability and vector gradient pixels passed isolated repetition but
+  failed during the eight-worker full suite. Retain failure diagnostics and exact
+  assertions; do not treat passing repeats as root-cause proof. CI's existing
+  single-worker policy remains unchanged.
+- After validated push, inspect PR 362 every five minutes and repair any failed
+  applicable check through the same local gates before pushing again. Stop the
+  monitor once the latest pushed revision passes all applicable checks.
+- Collaboration consumer correction: the full browser gate proves its old
+  element-removal-only classification omits required property retirement.
+  Preserve finite publication count and order, exact restored creation records,
+  and complete identity/value equality between created and retired properties.
+  Correct only this test consumer; do not suppress canonical property removals
+  or change runtime behavior. Verify the focused case and full collaboration gate.
+- Rebased local verification: Design server 3,066 passed (14 opt-in skips),
+  separate offline native delivery 99 passed, AI 784 passed, local 684 Vitest
+  and 216 Node cases passed. Functional browser 504 passed (16 skips), isolated
+  status 1 passed, collaboration 19 passed (3 skips), render contracts 3 passed.
+  Inspector control-plane 617 passed (57 skips), Board 32 passed (2 skips),
+  flow UI and selected rerun 2 passed each; package/installed consumer gates pass.
+  Production types/build, direct lint/naming, generated docs/workspace and root
+  proof gates pass. Skips are not passes. Preserve the two intermittent observations
+  above as unresolved causes despite final full-suite success; remote CI remains
+  separate evidence for the pushed revision.
+- Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
+  reference notes/images. Preserve existing work and do not claim remote success
+  from local checks alone.
+
 CI merge preparation - 2026-10-30:
 - Scope: restore the existing Utils ES2020 build and declare the existing App
   integration-test dependencies. Keep all runtime contracts, test assertions,

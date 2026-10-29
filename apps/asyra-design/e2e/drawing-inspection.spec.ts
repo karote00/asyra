@@ -8,7 +8,8 @@ import {
   waitForAppReady,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
-  getPersistedDocumentDigest
+  getPersistedDocumentDigest,
+  getPersistedDocumentCheckpoint
 } from './test-utils'
 
 test('large composition overview covers every corner while native regions preserve detail', async ({
@@ -135,7 +136,9 @@ test('workspace overview preserves independent roots, visual order and read-only
     )
     .toBe('connected')
   const ids = await page.evaluate(async () => {
-    const { core } = await import('../src/testing/runtime-access')
+    const { core, startDocumentPublicationCapture } =
+      await import('../src/testing/runtime-access')
+    startDocumentPublicationCapture('workspace-overview-publications')
     const { transactionApis, fillApis } = await import('../src/common-apis')
     return transactionApis.runTransaction(() => {
       const roots = core.createElementsInParent(
@@ -164,9 +167,29 @@ test('workspace overview preserves independent roots, visual order and read-only
   })
   const before = await getCoreDocumentDigest(page)
   const depth = await getUndoHistoryDepth(page)
-  await expect
-    .poll(() => getPersistedDocumentDigest(document.fileId))
-    .toEqual(before)
+  try {
+    await expect
+      .poll(() => getPersistedDocumentDigest(document.fileId))
+      .toEqual(before)
+  } catch (error) {
+    const runtime = await page.evaluate(async () => {
+      const { core, getActiveCollaborationHandle, readTestCapture } =
+        await import('../src/testing/runtime-access')
+      return {
+        document: await core.save(),
+        session: getActiveCollaborationHandle()?.getSessionState(),
+        publications: readTestCapture('workspace-overview-publications')
+      }
+    })
+    await testInfo.attach('workspace-overview-persistence', {
+      body: JSON.stringify({
+        runtime,
+        checkpoint: await getPersistedDocumentCheckpoint(document.fileId)
+      }),
+      contentType: 'application/json'
+    })
+    throw error
+  }
   const captured = await page.evaluate(async (ids) => {
     const {
       core,

@@ -1711,7 +1711,17 @@ test('public review handoffs retain independent evidence and recover before runt
         })
         expect(unavailable).toMatchObject({
           accepted: false,
-          status: 'partial'
+          status: 'failed',
+          inspectionIds: [],
+          recordedChecks: [],
+          failedInspections: [
+            expect.objectContaining({
+              code: 'INSPECTION_TARGET_UNAVAILABLE',
+              inspection: expect.objectContaining({
+                elementId: 'missing-review-target'
+              })
+            })
+          ]
         })
         expect((await settled()).actions[0].arguments).toMatchObject({
           outcome: 'unsupported'
@@ -1916,6 +1926,20 @@ for (const mode of [
       await import('../server/design-check-results')
     const { prescribedPositionsSchema } =
       await import('../src/ai/prescribed-position-contract')
+    // Element-target expansion metadata belongs to the registered tool, not
+    // the recipe's own input binding language. Keep every value constraint.
+    const { 'x-design-element-binding': _binding, ...positionElementSchema } =
+      prescribedPositionsSchema.items.properties.elementId
+    const positionsSchema = {
+      ...prescribedPositionsSchema,
+      items: {
+        ...prescribedPositionsSchema.items,
+        properties: {
+          ...prescribedPositionsSchema.items.properties,
+          elementId: positionElementSchema
+        }
+      }
+    }
     type ProviderInput =
       import('../src/ai/action-batch-protocol').AiProviderInput
     type Receipt = import('../src/ai/action-batch-protocol').AiBatchReceipt
@@ -2216,7 +2240,7 @@ for (const mode of [
                   type: 'string',
                   enum: ['set-prescribed-child-position']
                 },
-                positions: prescribedPositionsSchema
+                positions: positionsSchema
               }
             }
             const recipe = {
@@ -3388,7 +3412,7 @@ test('published representative guidance reaches real capture and completion with
   const { AiDesignToolIds } = await import('../src/constants/ai-design')
   const text = readFileSync(
     new URL(
-      '../knowledge/design.architectural-illustration.md',
+      '../knowledge/design.architectural-illustration.materials.review.md',
       import.meta.url
     ),
     'utf8'

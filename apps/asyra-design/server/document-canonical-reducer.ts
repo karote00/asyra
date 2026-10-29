@@ -1,4 +1,3 @@
-import { isDeepStrictEqual } from 'node:util'
 import { isRecord, isNonBlankString } from '../src/collaboration/wire-values'
 import { DocumentPersistenceError } from './document-persistence-error'
 import {
@@ -22,8 +21,26 @@ const fail = (message: string): never => {
 const cloneJson = <Value>(value: Value): Value =>
   JSON.parse(JSON.stringify(value)) as Value
 
-const sameJson = (left: unknown, right: unknown): boolean =>
-  isDeepStrictEqual(left, right)
+// Compare the durable JSON value: binary -0 and checkpoint 0 are the same
+// number, while every field, reference and array position remains significant.
+const sameJson = (left: unknown, right: unknown): boolean => {
+  if (left === right) return true
+  if (Array.isArray(left) || Array.isArray(right))
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => sameJson(value, right[index]))
+    )
+  if (!isRecord(left) || !isRecord(right)) return false
+  const keys = Object.keys(left)
+  return (
+    keys.length === Object.keys(right).length &&
+    keys.every(
+      (key) => Object.hasOwn(right, key) && sameJson(left[key], right[key])
+    )
+  )
+}
 
 const createWorkingDocument = (document: AppDocumentData): AppDocumentData => ({
   ...document,

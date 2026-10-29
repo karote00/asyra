@@ -696,10 +696,7 @@
           "testName": "execution proof distinguishes inspection lookup coverage from completed reads",
           "implementationPaths": [
             "apps/asyra-design/server/local-operation-tools.ts",
-            "apps/asyra-design/server/local-information-delivery.ts",
-            "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
-            "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
-            "apps/asyra-design/server/__tests__/fixtures/recorded-101/field-query-recovery-20261027.json"
+            "apps/asyra-design/server/local-information-delivery.ts"
           ]
         },
         {
@@ -1055,7 +1052,8 @@
         "inspect.current-evidence",
         "inspect.scoped-dependencies",
         "inspect.regional-units",
-        "inspect.regional-pixels"
+        "inspect.regional-pixels",
+        "inspect.visual-result-selection"
       ],
       "mutation": {
         "file": "apps/asyra-design/server/local-operation-tools.ts",

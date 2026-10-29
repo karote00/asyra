@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import compositionMaterials from './fixtures/recorded-101/composition-materials-20261022.json'
 import componentSelection from './fixtures/recorded-101/component-selection-20261022.json'
 import translatedComponent from './fixtures/recorded-101/translated-component-20261022.json'
@@ -977,18 +978,18 @@ it('preserves every saved ornament contour, material and painter position with e
   // The coordinate contract bounds both world/projected values to 100,000.
   const close = (a: unknown, b: unknown): void => {
     if (typeof a === 'number' && typeof b === 'number')
-      expect(Math.abs(a - b)).toBeLessThanOrEqual(budget)
+      assert.ok(Math.abs(a - b) <= budget)
     else if (Array.isArray(a) && Array.isArray(b)) {
-      expect(a).toHaveLength(b.length)
+      assert.equal(a.length, b.length)
       a.forEach((v, i) => close(v, b[i]))
     } else if (a && b && typeof a === 'object' && typeof b === 'object') {
-      expect(Object.keys(a)).toEqual(Object.keys(b))
+      assert.deepEqual(Object.keys(a), Object.keys(b))
       for (const k of Object.keys(a))
         close(
           (a as Record<string, unknown>)[k],
           (b as Record<string, unknown>)[k]
         )
-    } else expect(a).toEqual(b)
+    } else assert.deepEqual(a, b)
   }
   expect(actual).toHaveLength(output.elementCount - 1)
   expect(before.sourceWork.projectionCalls).toBe(
@@ -1073,20 +1074,22 @@ const compactComponent = (count = 2) => ({
 // Numeric comparison includes every coordinate/control/fill component, not only bounds.
 const equivalentValue = (actual: unknown, expected: unknown) => {
   if (typeof expected === 'number') {
-    expect(actual).toBeCloseTo(expected, 7)
+    assert.equal(typeof actual, 'number')
+    assert.ok(Math.abs((actual as number) - expected) < 0.5 * 10 ** -7)
   } else if (Array.isArray(expected)) {
-    expect(Array.isArray(actual)).toBe(true)
-    expect(actual).toHaveLength(expected.length)
+    assert.ok(Array.isArray(actual))
+    assert.equal(actual.length, expected.length)
     expected.forEach((value, index) =>
       equivalentValue((actual as unknown[])[index], value)
     )
   } else if (expected && typeof expected === 'object') {
-    expect(Object.keys(actual as object).sort()).toEqual(
+    assert.deepEqual(
+      Object.keys(actual as object).sort(),
       Object.keys(expected).sort()
     )
     for (const [key, value] of Object.entries(expected))
       equivalentValue((actual as Record<string, unknown>)[key], value)
-  } else expect(actual).toEqual(expected)
+  } else assert.deepEqual(actual, expected)
 }
 
 it('expands the recorded mixed component once per template with equivalent geometry and fewer input bytes', () => {

@@ -19,7 +19,6 @@ Formal offline tests must inspect the real successor request for full text, nati
 images, exact search routing, paging, failures and cancellation. A stored result is
 not proof of model receipt. Generated templates use this same production path.
 
-
 Registered App editing actions execute directly, including deletion and replacement,
 with ordinary grouped Undo. The App prompt owns contextual permission questions
 for external-tool use or security concerns through request_clarification; it does
@@ -108,7 +107,10 @@ Chosen-method advice exposes one executable advisory route: choose the method,
 initially separate local material/join and whole-result obligations, apply a ready
 part, capture its actual representative region, consume the returned binding and
 record a primary-agent judgment before repeating that unresolved shared choice.
-Capture/binding success is not a judgment; record success is not a pass. Exact
+Capture/binding success is not a judgment; record success is not a pass.
+The operation adapter declares and delivers its enriched inspectionId and revision
+with successful standalone captures. Model projection must preserve those handles
+so binding reuses the retained image without another capture. Exact
 `recordedChecks` criterion/unit/status/revision and retained pending obligations
 control interpretation; local pass can coexist with overall pending. Capture/bind
 returns a non-final submission; the primary agent explicitly sets final on the
@@ -663,6 +665,8 @@ Only declared element-list arguments accept these references; point/segment IDs
 remain ordinary explicit arrays. Resolve all references and validate their exact
 request, lease, workspace and revision inside synchronous mutation admission.
 Stale/released references reject before writes; no automatic reselection or replay.
+Retained-fill actions preserve transaction-settlement errors and their original
+admission causes unchanged; action wrapping must not discard known settlement.
 `read_design_context` with `scope=snapshot, delivery=receipt` retrieves immutable
 historical evidence and explicitly reports whether its targets are current. It
 cannot refresh stale target authority. Normal page/reference reads still require
@@ -3531,8 +3535,6 @@ inspection policy and material source. The model supplies corrected field values
 it need not reconstruct workflow context. Neither old draft nor previous replacement
 values are copied into the template. Standalone preparation keeps its own route.
 
-
-
 Structural mutation receipts and materialized queries share the retained-context
 owner and bounded byte storage. There is no fixed query-count quota. Historical receipts remain recoverable while retained, never current edit
 authority. Pinned data cannot be evicted to admit unrelated work.
@@ -4150,7 +4152,6 @@ total bytes and required contract reads through capture/bind and record, includi
 pagination, against the retained saved-query case. Do not weaken schema constraints,
 raise delivery limits or add discovery prerequisites. This is not a requirement to
 inspect before first drawing and does not establish model adoption or timing gains.
-
 
 ### Knowledge source identity delivery
 

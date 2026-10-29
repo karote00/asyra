@@ -235,7 +235,7 @@ test('batch recolor preserves independent fill values and replays as one commit'
         ids.map((elementId) => ({ elementId, color: '#654321' }))
       )
     }, setup.ids)
-  ).toEqual([true, true])
+  ).toEqual(['changed', 'changed'])
   const expected = setup.before.map((fill) => ({ ...fill, color: '#654321' }))
   await expect.poll(readAll).toEqual(expected)
   expect((await getTransactionSnapshot(page)).undoCount).toBe(
@@ -620,7 +620,10 @@ test('Stroke batches preserve intervening fields and multi-owner Undo/Redo', asy
     if (!second) throw new Error('Second target missing')
     const ids = [first, second]
     const targets = ids.map((elementId) => {
-      const strokeId = strokeApis.addStroke(elementId)
+      const receipt = strokeApis.addStroke(elementId)
+      if (!receipt.changed || receipt.unavailableIds.length)
+        throw new Error('Stroke creation did not settle')
+      const strokeId = receipt.value
       if (!strokeId) throw new Error('Missing created Stroke')
       return { elementId, strokeId }
     })
@@ -718,6 +721,7 @@ test('prepared shared fills remain canonical across slices, edits, Undo and pers
   })
   const design = session.resolve(prepared.artifactId)
   await page.evaluate(async (design) => {
+    const { deliverPreparedDesign } = await import('../src/ai/prepared-design')
     const { createPreparedDesignAction } =
       await import('../src/ai/design-actions')
     const { createAiTransactionRunner } = await import('../src/ai/transaction')
@@ -725,7 +729,7 @@ test('prepared shared fills remain canonical across slices, edits, Undo and pers
       'Prepared shared fill test',
       (runMutation) =>
         createPreparedDesignAction().execute(
-          { design },
+          { design: deliverPreparedDesign(design) },
           { signal: new AbortController().signal, runMutation }
         )
     )

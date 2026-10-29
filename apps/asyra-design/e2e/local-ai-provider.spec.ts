@@ -1138,7 +1138,10 @@ test('canonical fill reference edits and plural record patches have distinct con
   )
   expect(evidence.rejected).toContain('fills')
   expect(evidence.afterRejection).toEqual(evidence.before)
-  expect(evidence.ids).toEqual([evidence.elementId])
+  expect(evidence.ids).toMatchObject({
+    acceptedIds: [evidence.elementId],
+    changed: true
+  })
   expect(evidence.after.fills).toEqual([
     expect.objectContaining({
       id: evidence.fillId,
@@ -1248,6 +1251,8 @@ test('ready design parts continue in an existing container with one undo entry',
   )
   const result = await page.evaluate(
     async ({ first, second }) => {
+      const { deliverPreparedDesign } =
+        await import('../src/ai/prepared-design')
       const { core } = await import('../src/testing/runtime-access')
       const { createPreparedDesignAction } =
         await import('../src/ai/design-actions')
@@ -1262,7 +1267,7 @@ test('ready design parts continue in an existing container with one undo entry',
         async (runMutation) => {
           const context = { signal: new AbortController().signal, runMutation }
           const receipt = await action.execute(
-            { design: first, response: 'compact' },
+            { design: deliverPreparedDesign(first), response: 'compact' },
             context as never
           )
           initialSurface = core.getElementComputedData(first.keyToId.surface, [
@@ -1273,7 +1278,7 @@ test('ready design parts continue in an existing container with one undo entry',
           ])
           await action.execute(
             {
-              design: second,
+              design: deliverPreparedDesign(second),
               parentId: receipt.compositionId,
               response: 'compact'
             },

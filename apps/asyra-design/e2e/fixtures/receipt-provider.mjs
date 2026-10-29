@@ -4,6 +4,12 @@ import readline from 'node:readline'
 import process from 'node:process'
 import { readFileSync } from 'node:fs'
 import { URL } from 'node:url'
+if (process.argv.slice(2).join(' ') === 'debug models --bundled') {
+  process.stdout.write(
+    JSON.stringify({ models: [{ slug: 'fixture-model' }] }) + '\n'
+  )
+  process.exit(0)
+}
 const recorded = JSON.parse(
   readFileSync(
     new URL(

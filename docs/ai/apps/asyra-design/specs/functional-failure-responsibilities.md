@@ -258,6 +258,8 @@ Authority: [Execute an Agent request](ai-execution-flow.md).
 
 Implementation entry points:
 
+- `apps/asyra-design/src/ai/server-action-batch-provider.ts`
+
 - `apps/asyra-design/src/features/ai-agent/index.ts`
 - `apps/asyra-design/src/ai/startup.ts`
 - `apps/asyra-design/src/ai/transaction.ts`
@@ -285,6 +287,8 @@ Admit and apply prepared editable content through ordinary design actions. Prese
 Authority: [Apply prepared design](design-preparation.md).
 
 Implementation entry points:
+
+- `apps/asyra-design/src/ai/prepared-material-action.ts`
 
 - `apps/asyra-design/src/ai/prepared-design.ts`
 - `apps/asyra-design/src/ai/prepared-design-admission.ts`
@@ -338,7 +342,6 @@ stop range. Reversed and outside-shape handles retain this definition. Moving a
 handle changes colors at fixed shape positions while stop colors remain unchanged.
 Browser pixel assertions must use actual pixel-center coordinates and exclude
 editor overlays; a point 10% inside a shape is not its boundary or a gradient stop.
-
 
 Authority: [Render native materials](../../../framework/packages/render-engine-pixi.md).
 

@@ -1,6 +1,7 @@
 import { createServer, type ServerResponse } from 'node:http'
 import { writeFile } from 'node:fs/promises'
 import { prepareDesign } from '../server/design-preparation'
+import { deliverPreparedDesign } from '../src/ai/prepared-design'
 import { expect, test } from '@playwright/test'
 import { createPreparedDrawingArtifact } from './action-batch-interceptor'
 import {
@@ -78,7 +79,10 @@ for (const count of [16, 320, 1280]) {
             {
               id: 'apply',
               name: 'apply_prepared_design',
-              arguments: { design, response: 'compact' },
+              arguments: {
+                design: deliverPreparedDesign(design),
+                response: 'compact'
+              },
               summary: 'Create repeated visible vectors'
             }
           ]
@@ -1937,7 +1941,7 @@ for (const width of [360, 1280]) {
       let action = {
         id: 'draw',
         name: 'apply_prepared_design',
-        arguments: { design: initial } as unknown,
+        arguments: { design: deliverPreparedDesign(initial) } as unknown,
         summary: 'Create the design'
       }
       if (requests > 1)
