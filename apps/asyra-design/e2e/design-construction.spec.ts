@@ -47,7 +47,12 @@ const layeredFixture = JSON.parse(
     'utf8'
   )
 )
-import { getPersistedDocumentDigest } from './test-utils'
+import {
+  captureBrowserErrors,
+  getCapturedBrowserErrors,
+  getPersistedDocumentCheckpoint,
+  getPersistedDocumentDigest
+} from './test-utils'
 import { expect, test } from '@playwright/test'
 import {
   createDesignPreparationSession,
@@ -64,6 +69,31 @@ import {
   undo,
   redo
 } from './test-utils'
+
+const captureConstructionCollaboration = (
+  page: import('@playwright/test').Page,
+  reset = false
+) =>
+  page.evaluate(async (resetOutcomes) => {
+    const { RuntimeDiagnosticEvents } =
+      await import('../src/constants/runtime-diagnostics')
+    const operations = resetOutcomes
+      ? ['collaboration:reset-outcomes']
+      : ['collaboration:get-status', 'collaboration:read-outcomes']
+    return operations.map((operation) => {
+      const detail: { operation: string; response?: unknown; error?: string } =
+        {
+          operation
+        }
+      document.dispatchEvent(
+        new CustomEvent(RuntimeDiagnosticEvents.REQUEST, { detail })
+      )
+      if (detail.error) throw new Error(detail.error)
+      if (!Object.hasOwn(detail, 'response'))
+        throw new Error(`Missing diagnostic response: ${operation}`)
+      return { operation, at: Date.now(), response: detail.response }
+    })
+  }, reset)
 
 const editorial = {
   type: 'frame',
@@ -869,6 +899,10 @@ for (const scenario of [
               )
             )
             .toBe('connected')
+        for (const actor of [page, peer]) {
+          captureBrowserErrors(actor)
+          await captureConstructionCollaboration(actor, true)
+        }
       }
       const before = await getCoreDocumentDigest(page)
       const depth = await getUndoHistoryDepth(page)
@@ -942,12 +976,45 @@ for (const scenario of [
         await historyApis.undo()
       })
       expect(await getCoreDocumentDigest(page)).toEqual(before)
-      if (peer)
-        await expect
-          .poll(() =>
-            getCoreDocumentDigest(peer as import('@playwright/test').Page)
-          )
-          .toEqual(before)
+      if (peer) {
+        try {
+          await expect
+            .poll(() =>
+              getCoreDocumentDigest(peer as import('@playwright/test').Page)
+            )
+            .toEqual(before)
+          expect(
+            (await captureConstructionCollaboration(peer))[1].response
+          ).toMatchObject({ failed: 0 })
+        } catch (error) {
+          try {
+            const diagnostics = await Promise.allSettled([
+              captureConstructionCollaboration(page),
+              captureConstructionCollaboration(peer),
+              getPersistedDocumentCheckpoint(fileId)
+            ])
+            await test.info().attach('construction-peer-undo-diagnostics', {
+              contentType: 'application/json',
+              body: JSON.stringify({
+                expected: before,
+                actorErrors: getCapturedBrowserErrors(page),
+                peerErrors: getCapturedBrowserErrors(peer),
+                diagnostics: diagnostics.map((result) =>
+                  result.status === 'fulfilled'
+                    ? result
+                    : { status: result.status, reason: String(result.reason) }
+                )
+              })
+            })
+          } catch (diagnosticError) {
+            test.info().annotations.push({
+              type: 'diagnostic-capture-failed',
+              description: String(diagnosticError)
+            })
+          }
+          throw error
+        }
+      }
       await page.evaluate(async () => {
         const { historyApis } = await import('../src/common-apis/history')
         await historyApis.redo()

@@ -6,7 +6,7 @@
 {
   "change": "rebased-ci-consumer-and-proof-repair",
   "owner": "App consumers and repository verification",
-  "summary": "Preserve Starter accepted target IDs, Sim property retirement, Design capture identities and original transaction failures. Compare exact durable JSON values across binary transport and checkpoint storage. Synchronize browser delivery fixtures and Inspector case coverage without weakening geometry, history, persistence or timeout checks.",
+  "summary": "Preserve Starter accepted target IDs, Sim property retirement, Design capture identities and original transaction failures. Compare exact durable JSON values across binary transport and checkpoint storage. Synchronize browser delivery fixtures and Inspector case coverage without weakening geometry, history, persistence or timeout checks. Keep offline evidence fixtures inside their checkout and retain original peer Undo publication diagnostics.",
   "reason": "Core receipt changes and proof-input moves left direct consumers and CI assumptions out of sync. Retain complete geometry, recovery assertions and existing timeout guards while removing test-only quadratic lookup and separating timing phases.",
   "impact": "no-action",
   "sources": [
@@ -16,6 +16,7 @@
     "apps/asyra-design/e2e/ai-repeated-detail.spec.ts",
     "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
     "apps/asyra-design/e2e/collaboration.spec.ts",
+    "apps/asyra-design/e2e/design-construction.spec.ts",
     "apps/asyra-design/e2e/design-containers.spec.ts",
     "apps/asyra-design/e2e/design-organization.spec.ts",
     "apps/asyra-design/e2e/drawing-inspection.spec.ts",
@@ -47,6 +48,9 @@
     "apps/asyra-design/server/local-operation-tools.ts",
     "apps/asyra-design/src/ai/__tests__/retained-fill-action.test.ts",
     "apps/asyra-design/src/ai/retained-fill-action.ts",
+    "apps/asyra-design/test-data/knowledge-evaluation/__tests__/analysis.test.mjs",
+    "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-boundaries.test.mjs",
+    "apps/asyra-design/test-data/knowledge-evaluation/__tests__/public-activity.test.mjs",
     "apps/asyra-sim/src/storage/__tests__/publication-repository.test.ts",
     "apps/asyra-sim/src/storage/publication-journal.ts",
     "apps/starter-app/src/common-apis/items.ts",

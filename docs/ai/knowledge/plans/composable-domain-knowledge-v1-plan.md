@@ -605,6 +605,29 @@ Rebased CI repair - 2026-10-30:
   existing evidence assertions and per-case cleanup are unchanged. Review found
   and removed duplicate root derivation and parent creation in analysis tests.
   Remote CI completion remains required; no model or 101 run is part of this fix.
+- Repeated CI collaboration observation: the same 2,310-member face-boundary
+  case fails its peer Undo digest in both remote attempts but passes three local
+  repetitions and the complete nine-case construction file. Do not retry blindly
+  or enlarge the five-second assertion. Extend only this formal case's evidence
+  using the existing runtime diagnostic request service and browser-error capture:
+  record local-send/remote-process outcomes, original publication failure and
+  durable checkpoint when peer convergence fails, then rethrow the original
+  assertion. No new runtime observer, cache, publication or recovery behavior.
+  Verify the full construction file, direct lint and production types before
+  pushing the diagnostic enhancement with the validated fixture-root correction.
+- Peer evidence validation: all nine construction browser cases pass with the
+  existing five-second convergence assertion; production types and direct
+  lint/naming pass. Successful peer Undo also asserts zero publication failures
+  through the same diagnostic service used by failure capture. Capture failure
+  remains a report annotation and cannot replace the original assertion error.
+- Inspector CI attempt comparison: the unchanged ordinary Design localization
+  case passed in 116.49 seconds on attempt 1 and reached its 120-second guard on
+  attempt 2. Preserve that guard and inspect the five original baseline/fault/
+  recovery runs before changing the proof owner; a passing repeat alone cannot
+  establish its cause. No new broad audit or product behavior change is authorized
+  by this timing observation.
+  Focused local reproduction passes in 66.62 seconds; its five retained original
+  runner logs remain available for attribution. This is not a timing-cause fix.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.
