@@ -1,3 +1,4 @@
+import { useReferenceSceneFixture } from './fixtures/reference-scene'
 import { beforeAll, expect, it } from 'vitest'
 import { readSpatialDescriptor } from '@asyra/preset/spatial-contract'
 import { createReferenceScene, buildSpatialMeshes } from '../reference-scene'
@@ -50,22 +51,26 @@ function expanded(source: AssetPart[]): AssetPart[] {
 
 const parts = new Map<string, AssetPart[]>()
 let labels: ReturnType<typeof createReferenceScene>['labels']
+const referenceSceneFixture = useReferenceSceneFixture()
 beforeAll(() => {
-  const scene = createReferenceScene()
+  const scene = referenceSceneFixture()
   labels = scene.labels
   let offset = 0
   for (const a of scene.assemblies) {
-    parts.set(
-      a.id,
-      expanded(scene.parts.slice(offset, offset + a.parts.length))
-    )
+    parts.set(a.id, scene.parts.slice(offset, offset + a.parts.length))
     offset += a.parts.length
   }
 })
+const expandedParts = new Map<string, AssetPart[]>()
 function item(id: string) {
   const value = parts.get(id)
   if (!value) throw new Error(`Missing discussion furnishing ${id}`)
-  return value
+  let result = expandedParts.get(id)
+  if (!result) {
+    result = expanded(value)
+    expandedParts.set(id, result)
+  }
+  return result
 }
 const bounds = (id: string) => meshBounds(item(id))
 it('renders a dated calendar above the console instead of a text poster', () => {
@@ -538,7 +543,7 @@ it('constructs the new conifer with fine needles and a charcoal tapered pot', ()
 })
 
 it('admits the completed scene geometry through the public spatial contract', () => {
-  const scene = createReferenceScene()
+  const scene = referenceSceneFixture()
   for (const entry of buildSpatialMeshes(scene, {})) {
     expect(
       () => readSpatialDescriptor(entry.descriptor),

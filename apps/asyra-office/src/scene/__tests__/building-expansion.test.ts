@@ -1,13 +1,14 @@
+import { useReferenceSceneFixture } from './fixtures/reference-scene'
 import { beforeAll, expect, it } from 'vitest'
 import baseline from './fixtures/building-before-expansion.json'
 import structure from '../reference/office-structure.json'
-import { createReferenceScene } from '../reference-scene'
 import { meshBounds } from '../room-furnishing-helpers'
 import type { AssetPart } from '../../assets/catalog'
 
 const parts = new Map<string, AssetPart[]>()
+const referenceSceneFixture = useReferenceSceneFixture()
 beforeAll(() => {
-  const scene = createReferenceScene()
+  const scene = referenceSceneFixture()
   let offset = 0
   for (const a of scene.assemblies) {
     parts.set(a.id, scene.parts.slice(offset, offset + a.parts.length))

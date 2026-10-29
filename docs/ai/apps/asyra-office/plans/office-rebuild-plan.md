@@ -4563,3 +4563,34 @@ cavity, support-foot, shelf/wall clearance and closed-leaf checks pass. Botanica
 identity, selected pot forms and pigment details are implemented; exact hidden
 geometry remains reconstructed rather than claimed as photographically measured.
 This is the owner review candidate. No commit or push was performed.
+
+
+### CI scene-fixture correction - 2026-10-29
+
+Bounded follow-up to the merge checkpoint on `5f3c3f3a8`: repair the Office
+geometry test setup, its direct fixture helpers and validation notes; preserve
+all production geometry, placement, materials, renderer settings and deadlines.
+No Inspector step semantics change or new product acceptance is involved.
+
+CI run `40891578094`, Office job `123510130431`, reproduced eight failed files:
+five complete-scene setup hooks exceeded 10 seconds, and three tests exceeded
+the same per-test limit. The remaining 257 assertions passed; 91 were skipped
+by failed hooks. Local scene assertions pass, but that does not establish CI
+setup suitability. Whole-scene setup took about 11.6-17.2 seconds in CI.
+
+The affected file-scoped fixtures now prepare the real coffee and sugar solids
+in separate bounded hooks, then assemble the complete real scene with those
+outputs. Temporary spies accept only the actual default calls and are restored
+in `finally`; no empty/reduced asset or cross-file cache is used. The fixture
+getter retains only the current file's read-only scene. Asset factories remain
+unchanged and direct asset/appearance assertions continue to call them normally.
+Discussion geometry expands instances lazily for the assembly being inspected,
+instead of expanding every street tree during setup. Full-scene descriptor
+admission still examines every descriptor. Existing 10-second test/hook guards,
+serial file execution and all assertions remain in force. The existing failing
+CI cases are the regression evidence for this test-fixture repair.
+
+Validation: run both initially affected scene suites, the complete Office suite,
+Office lint/typecheck, naming, scoped repository/document checks and committed-
+head admission. Push only after those pass; report exact-head CI separately.
+The owner retains merge and whole-plan closeout authority.

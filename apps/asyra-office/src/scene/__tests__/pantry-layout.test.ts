@@ -1,5 +1,5 @@
+import { useReferenceSceneFixture } from './fixtures/reference-scene'
 import { beforeAll, expect, it } from 'vitest'
-import { createReferenceScene } from '../reference-scene'
 import { meshBounds } from '../room-furnishing-helpers'
 import { catalogAsset, placeParts, type AssetPart } from '../../assets/catalog'
 import { preparationSink } from '../../assets/preparation-sink'
@@ -7,8 +7,9 @@ import { pantryVessel } from '../../assets/pantry-vessels'
 import { requiredSpecValue } from '../../assets/specification'
 
 const parts = new Map<string, AssetPart[]>()
+const referenceSceneFixture = useReferenceSceneFixture()
 beforeAll(() => {
-  const scene = createReferenceScene()
+  const scene = referenceSceneFixture()
   let offset = 0
   for (const a of scene.assemblies) {
     parts.set(a.id, scene.parts.slice(offset, offset + a.parts.length))

@@ -1,5 +1,29 @@
 # Asyra Release Notes
 
+## Pending - Bounded Office scene fixtures
+
+```update-note
+{
+  "change": "office-bounded-scene-fixtures",
+  "owner": "Asyra Office verification",
+  "summary": "Prepare real optical assets and full-scene assembly in separate bounded test hooks; expand only inspected discussion assemblies. Preserve every scene assertion and existing timeout.",
+  "sources": [
+    "apps/asyra-office/src/assets/__tests__/street-detail.test.ts",
+    "apps/asyra-office/src/assets/__tests__/vegetation-contract.test.ts",
+    "apps/asyra-office/src/scene/__tests__/building-expansion.test.ts",
+    "apps/asyra-office/src/scene/__tests__/discussion-reference.test.ts",
+    "apps/asyra-office/src/scene/__tests__/pantry-layout.test.ts",
+    "apps/asyra-office/src/scene/__tests__/room-furnishings.test.ts",
+    "apps/asyra-office/src/scene/__tests__/scene.test.ts",
+    "apps/asyra-office/src/scene/__tests__/structure-stage.test.ts",
+    "apps/asyra-office/src/scene/__tests__/fixtures/reference-scene.ts"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Test setup correction only; production geometry, appearance, composition and public APIs are unchanged."
+}
+```
+
 ## Pending - Office room checkpoint
 
 ```update-note

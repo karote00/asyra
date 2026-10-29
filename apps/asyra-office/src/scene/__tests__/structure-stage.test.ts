@@ -1,3 +1,4 @@
+import { useReferenceSceneFixture } from './fixtures/reference-scene'
 import { describe, expect, it } from 'vitest'
 import { createReferenceScene } from '../reference-scene'
 import {
@@ -8,9 +9,11 @@ import {
 } from '../office-layout'
 import source from '../reference/interior-landmarks.json'
 
+const referenceSceneFixture = useReferenceSceneFixture()
+
 describe('single-storey structural review', () => {
   it('defaults to regular furnishings without resurrecting rejected curved seating', () => {
-    const scene = createReferenceScene()
+    const scene = referenceSceneFixture()
     const ids = new Set(scene.assemblies.map((a) => a.id))
     expect(ids.has('office-slab')).toBe(true)
     expect(ids.has('desk')).toBe(true)

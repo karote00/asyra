@@ -1,3 +1,4 @@
+import { useReferenceSceneFixture } from './fixtures/reference-scene'
 import { requiredSpecValue } from '../../assets/specification'
 import { beforeAll, expect, it } from 'vitest'
 import { createReferenceScene } from '../reference-scene'
@@ -5,8 +6,9 @@ import type { AssetPart } from '../../assets/catalog'
 
 let scene: ReturnType<typeof createReferenceScene>
 const parts = new Map<string, AssetPart[]>()
+const referenceSceneFixture = useReferenceSceneFixture()
 beforeAll(() => {
-  scene = createReferenceScene()
+  scene = referenceSceneFixture()
   let offset = 0
   for (const a of scene.assemblies) {
     parts.set(a.id, scene.parts.slice(offset, offset + a.parts.length))

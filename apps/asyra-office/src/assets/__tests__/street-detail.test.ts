@@ -1,7 +1,8 @@
 import { expect, it } from 'vitest'
-import { createReferenceScene } from '../../scene/reference-scene'
+import { useReferenceSceneFixture } from '../../scene/__tests__/fixtures/reference-scene'
+const referenceSceneFixture = useReferenceSceneFixture()
 it('uses independent cover and frame parts instead of tubes painted over the street', () => {
-  const scene = createReferenceScene()
+  const scene = referenceSceneFixture()
   const assembly = scene.assemblies.find((a) => a.id === 'manhole')
   expect(assembly?.parts).toEqual(['frame', 'cover'])
   expect(scene.assemblies.some((a) => a.id.startsWith('cover-ring-'))).toBe(

@@ -1,3 +1,4 @@
+import { useReferenceSceneFixture } from './fixtures/reference-scene'
 import { requiredSpecValue } from '../../assets/specification'
 import { OFFICE_STRUCTURE } from '../office-layout'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
@@ -7,8 +8,9 @@ import { createSceneController } from '../controller'
 // All geometry assertions below read the same immutable-input scene.
 // Construction/lifecycle behavior has its own dedicated tests.
 let referenceScene: ReturnType<typeof createReferenceScene>
+const referenceSceneFixture = useReferenceSceneFixture()
 beforeAll(() => {
-  referenceScene = createReferenceScene()
+  referenceScene = referenceSceneFixture()
 })
 
 describe('current reference composition', () => {

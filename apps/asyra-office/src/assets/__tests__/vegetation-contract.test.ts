@@ -2,10 +2,11 @@ import { requiredSpecValue } from '../specification'
 import { expect, it } from 'vitest'
 import { leaf, tree } from '../vegetation'
 import { planter } from '../plants'
-import { createReferenceScene } from '../../scene/reference-scene'
+import { useReferenceSceneFixture } from '../../scene/__tests__/fixtures/reference-scene'
+const referenceSceneFixture = useReferenceSceneFixture()
 
 it('publishes the catalog canopy without scene-specific density or size multipliers', () => {
-  const scene = createReferenceScene()
+  const scene = referenceSceneFixture()
   let offset = 0
   const leaves = scene.assemblies.flatMap((assembly) => {
     const parts = scene.parts.slice(offset, offset + assembly.parts.length)
