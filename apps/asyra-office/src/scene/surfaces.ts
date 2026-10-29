@@ -74,7 +74,7 @@ export function labelMeshes(
       throw new Error('Printed artwork was not prepared')
     const printed =
       label.artwork && source
-        ? sampleArtwork(source, label.artwork.corners)
+        ? sampleArtwork(source, label.artwork.corners, label.artwork.resolution)
         : undefined
     const canvas = document.createElement('canvas')
     canvas.width = 256

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="660" viewBox="0 0 512 660">
+  <title>October 2026 calendar</title>
+  <desc>Static Monday-first wall calendar. October 1 is Thursday. Reconstructed date, not recovered from the source photograph.</desc>
+  <rect width="512" height="660" fill="#f2eadc"/>
+  <g fill="#493e34" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
+    <text x="256" y="97" font-size="35" letter-spacing="4">OCTOBER</text>
+    <text x="256" y="142" font-size="24" letter-spacing="5">2026</text>
+  </g>
+  <path d="M32 178H480 M32 238H480 M32 302H480 M32 366H480 M32 430H480 M32 494H480 M32 558H480 M32 238V558 M96 238V558 M160 238V558 M224 238V558 M288 238V558 M352 238V558 M416 238V558 M480 238V558" fill="none" stroke="#b8aa95" stroke-width="1.5"/>
+  <g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" font-size="17" fill="#75634e">
+    <text x="64" y="216">MON</text>
+    <text x="128" y="216">TUE</text>
+    <text x="192" y="216">WED</text>
+    <text x="256" y="216">THU</text>
+    <text x="320" y="216">FRI</text>
+    <text x="384" y="216">SAT</text>
+    <text x="448" y="216">SUN</text>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" font-size="28" fill="#493e34">
+    <text data-date="2026-10-01" x="256" y="290">1</text>
+    <text data-date="2026-10-02" x="320" y="290">2</text>
+    <text data-date="2026-10-03" x="384" y="290">3</text>
+    <text data-date="2026-10-04" x="448" y="290" fill="#a96746">4</text>
+    <text data-date="2026-10-05" x="64" y="354">5</text>
+    <text data-date="2026-10-06" x="128" y="354">6</text>
+    <text data-date="2026-10-07" x="192" y="354">7</text>
+    <text data-date="2026-10-08" x="256" y="354">8</text>
+    <text data-date="2026-10-09" x="320" y="354">9</text>
+    <text data-date="2026-10-10" x="384" y="354">10</text>
+    <text data-date="2026-10-11" x="448" y="354" fill="#a96746">11</text>
+    <text data-date="2026-10-12" x="64" y="418">12</text>
+    <text data-date="2026-10-13" x="128" y="418">13</text>
+    <text data-date="2026-10-14" x="192" y="418">14</text>
+    <text data-date="2026-10-15" x="256" y="418">15</text>
+    <text data-date="2026-10-16" x="320" y="418">16</text>
+    <text data-date="2026-10-17" x="384" y="418">17</text>
+    <text data-date="2026-10-18" x="448" y="418" fill="#a96746">18</text>
+    <text data-date="2026-10-19" x="64" y="482">19</text>
+    <text data-date="2026-10-20" x="128" y="482">20</text>
+    <text data-date="2026-10-21" x="192" y="482">21</text>
+    <text data-date="2026-10-22" x="256" y="482">22</text>
+    <text data-date="2026-10-23" x="320" y="482">23</text>
+    <text data-date="2026-10-24" x="384" y="482">24</text>
+    <text data-date="2026-10-25" x="448" y="482" fill="#a96746">25</text>
+    <text data-date="2026-10-26" x="64" y="546">26</text>
+    <text data-date="2026-10-27" x="128" y="546">27</text>
+    <text data-date="2026-10-28" x="192" y="546">28</text>
+    <text data-date="2026-10-29" x="256" y="546">29</text>
+    <text data-date="2026-10-30" x="320" y="546">30</text>
+    <text data-date="2026-10-31" x="384" y="546">31</text>
+  </g>
+  <path d="M208 604H304" stroke="#b8aa95" stroke-width="2"/>
+</svg>

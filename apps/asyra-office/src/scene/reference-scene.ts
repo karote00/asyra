@@ -636,9 +636,10 @@ export function buildSpatialMeshes(
         metalness: p.metalness ?? 0,
         environmentIntensity: p.environmentIntensity ?? 0,
         opacity: p.opacity ?? 1,
+        ...(p.optics ? { optics: p.optics } : {}),
         wireframe: false,
         selectable: false,
-        castShadow: (p.opacity ?? 1) === 1,
+        castShadow: (p.opacity ?? 1) === 1 && !p.optics,
         receiveShadow: true,
         ...(p.distant
           ? {
@@ -657,7 +658,7 @@ export function buildSpatialMeshes(
     // Transparent objects need independent sorting; opaque parts retain material batching.
     const opaqueKey = `${p.material}-${p.color}-${p.roughness}-${p.metalness ?? (p.material === 'metal' ? 0.35 : 0)}-${p.emissive ?? 0}-${p.emissiveIntensity ?? 0}-${p.environmentIntensity ?? 0}`
     const key =
-      (p.opacity ?? 1) < 1
+      (p.opacity ?? 1) < 1 || p.optics
         ? `${opaqueKey}-alpha-${p.opacity}-${index}`
         : opaqueKey
     let group = groups.get(key)
@@ -689,9 +690,11 @@ export function buildSpatialMeshes(
           metalness: p.metalness ?? (p.material === 'metal' ? 0.35 : 0),
           environmentIntensity: p.environmentIntensity ?? 0,
           opacity: p.opacity ?? 1,
+          ...(p.optics ? { optics: p.optics } : {}),
           wireframe: false,
           selectable: false,
-          castShadow: p.material !== 'water' && (p.opacity ?? 1) === 1,
+          castShadow:
+            p.material !== 'water' && (p.opacity ?? 1) === 1 && !p.optics,
           receiveShadow: true,
           ...(distant
             ? {

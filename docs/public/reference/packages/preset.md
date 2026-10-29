@@ -178,3 +178,89 @@ global scene environment or changes non-opted-in materials. Combine it with the
 existing `metalness` and `roughness` fields to control metal highlights; it does
 not change emission or bloom. The standard and distant material paths retain the
 same reflection settings.
+
+
+## Optional spatial optical materials
+
+A mesh may supply `optics` with `transmission` (0..1), `ior` (1..2.333),
+`thickness` (finite nonnegative scene units), `attenuationColor` (24-bit RGB),
+and `attenuationDistance` (finite positive scene units). All five fields are
+required when opting in. Admission detaches and freezes this object. Appearance
+updates reuse geometry and material; distant instances copy the same settings.
+Omitting optics resets transmission and thickness to zero, IOR to 1.5 and
+attenuation to white/infinite distance, without enabling a transmission pass.
+
+The provider uses MeshPhysicalMaterial. Opted-in optical volumes render front
+faces, avoiding repeated absorption from double-sided boundaries; ordinary
+meshes retain double-sided rendering. `opacity` remains independently validated
+alpha coverage. Use one for fully covered optical surfaces. Lower opacity adds
+alpha compositing and is not a replacement for physical absorption. Optical
+meshes must retain their independent material and sorting boundaries when an
+app batches ordinary opaque objects.
+
+Transmission is screen-space, not recursive ray tracing: transparent objects
+nested inside other transmissive objects may be missing from the sampled
+background. Fully transmissive glass around transmissive liquid and ice is not
+a supported claim of physically accurate nested media. No photographic caustics
+or multiple-medium light transport is promised. The Office cup currently uses
+reflective alpha glass and ice with transmissive liquid as an explicit hybrid;
+its photographic appearance review remains open.
+
+
+### Ordered transmission capture
+
+`optics.captureLayer` optionally selects a nonnegative safe integer. Increasing
+ranks represent enclosing surfaces. The Preset provider captures completed lower
+ranks and ordinary scene objects, excluding equal-rank peers. Higher ranks
+contribute back faces through native transmission sampling, outermost first and
+without depth writes. Original visibility, side, depth writes, render order,
+render target, tone mapping and XR state are restored even on a capture failure.
+Omitting the rank retains Three.js native transmission.
+
+Targets are shared per active rank and resized to the current drawing buffer.
+Each flush refreshes one capture per camera-visible recipient rank; seven pieces at one rank do
+not require seven captures. Target allocation is reused, captured output is not.
+Ranks removed from the scene and engine disposal release targets. Offscreen ranks retain allocation but do not redraw; camera frustum, layers, material visibility and explicit culling opt-out determine admission each flush. Native renderer transmission
+passes may also run inside these captures; the rank count is not a total draw-call
+or GPU-time budget. The provider requires render-target support.
+
+Within a synchronous flush, equivalent visible shadow casters share completed
+shadow maps across capture and main passes. Different caster visibility/material
+sides or explicit dirty requests recompute. Nothing is reused across flushes.
+Enclosing back-face material variants retain shader programs, synchronize source
+values and release when their sources disappear or are disposed.
+
+Native transmission and the main scene retain their ordinary rendering path,
+without an additional opaque framebuffer for ordinary or single-rank transmission.
+Multiple admitted ranks may share opaque work as described below.
+
+This is an ordered screen-space approximation, not a multi-medium ray tracer.
+Equal-rank objects do not refract one another. Enclosing absorption may be sampled
+more than once around embedded objects, producing overly dark regions; do not
+claim physically correct nested liquid/ice from this option. The Office coffee
+microscope currently records this as an open visual limitation.
+
+
+## Authored triangle normals
+
+Triangle shapes may provide `normals`: one finite unit XYZ vector per position,
+in the same local coordinate system. Admission validates unit length (tolerance
+0.0001), detaches and freezes the array, and includes it in geometry equality.
+The spatial renderer uploads authored normals unchanged. Without this field,
+it computes ordinary area-weighted vertex normals. A normal-only change
+invalidates geometry; pose and appearance changes reuse geometry. This is
+independent of `SpatialSurface.normals`, which describes a texture normal map.
+
+### Same-flush opaque work in ordered optical rendering
+
+When multiple ordered optical ranks are visible, Preset captures opaque radiance
+and depth once at full resolution with linear half-float color and four-sample
+antialiasing. Later native optical passes sample that completed opaque result,
+preserving depth occlusion and applying tone/color conversion at their own output
+boundary. The allocation is reusable; pixels are always recomputed per flush.
+Ordinary transmission and single-rank scenes add no opaque target or prepass.
+Non-opaque shadow casters and scene override materials retain native rendering
+because their shadow/pass inputs cannot use this prepass contract. Renderer
+state and source material visibility are restored even on failure. The replay
+mesh is removed before bloom and overlays. This does not alter asset geometry,
+materials, physical resolution or camera integration.

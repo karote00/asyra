@@ -2,12 +2,20 @@ import { emptyMesh, type Mesh, type Vec } from './geometry'
 interface Point {
   p: Vec
   uv: number[]
+  n?: Vec
 }
 interface Face {
   vertices: Point[]
   normal: Vec
   w: number
   region: number
+}
+function interpolatedNormal(
+  a: Vec | undefined,
+  b: Vec | undefined,
+  t: number
+): { n?: Vec } {
+  return a && b ? { n: a.map((v, k) => v + t * (b[k] - v)) as Vec } : {}
 }
 const epsilon = 1e-8
 const dot = (a: Vec, b: Vec) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
@@ -67,7 +75,8 @@ function split(
         (plane.w - dot(plane.normal, a.p)) / dot(plane.normal, sub(c.p, a.p))
       const point: Point = {
         p: a.p.map((v, k) => v + t * (c.p[k] - v)) as Vec,
-        uv: a.uv.map((v, k) => v + t * (c.uv[k] - v))
+        uv: a.uv.map((v, k) => v + t * (c.uv[k] - v)),
+        ...interpolatedNormal(a.n, c.n, t)
       }
       f.push(point)
       b.push(point)
@@ -123,7 +132,10 @@ class SolidTree {
   invert() {
     const invert = (p: Face): Face => ({
       ...p,
-      vertices: [...p.vertices].reverse(),
+      vertices: [...p.vertices].reverse().map((v) => ({
+        ...v,
+        ...(v.n ? { n: v.n.map((n) => -n) as Vec } : {})
+      })),
       normal: p.normal.map((v) => -v) as Vec,
       w: -p.w
     })
@@ -148,17 +160,23 @@ class SolidTree {
     this.back?.clipTo(other)
   }
 }
-function polygons(mesh: Mesh, region: number): Face[] {
+function polygons(mesh: Mesh, region: number, authored: boolean): Face[] {
   const faces: Face[] = []
   for (let i = 0; i < mesh.indices.length; i += 3) {
     const f = face(
       mesh.indices.slice(i, i + 3).map((id) => ({
         p: mesh.positions.slice(id * 3, id * 3 + 3) as Vec,
-        uv: mesh.uvs.slice(id * 2, id * 2 + 2)
+        uv: mesh.uvs.slice(id * 2, id * 2 + 2),
+        ...(mesh.normals
+          ? { n: mesh.normals.slice(id * 3, id * 3 + 3) as Vec }
+          : {})
       })),
       region
     )
-    if (f) faces.push(f)
+    if (f) {
+      if (authored) for (const v of f.vertices) v.n ??= [...f.normal]
+      faces.push(f)
+    }
   }
   return faces
 }
@@ -167,11 +185,12 @@ export function subtractSolid(outer: Mesh, cutter: Mesh): Mesh {
   return subtractSolids(outer, [cutter])
 }
 
-export function subtractSolids(outer: Mesh, cutters: Mesh[]): Mesh {
-  let faces = polygons(outer, 0)
+export function subtractSolids(outer: Mesh, cutters: Mesh[]): SolidMesh {
+  const authored = Boolean(outer.normals || cutters.some((c) => c.normals))
+  let faces = polygons(outer, 0, authored)
   for (const [i, cutter] of cutters.entries()) {
     const a = new SolidTree(faces),
-      b = new SolidTree(polygons(cutter, i + 1))
+      b = new SolidTree(polygons(cutter, i + 1, authored))
     a.invert()
     a.clipTo(b)
     b.clipTo(a)
@@ -182,11 +201,16 @@ export function subtractSolids(outer: Mesh, cutters: Mesh[]): Mesh {
     a.invert()
     faces = a.all()
   }
-  return triangulateSolid(faces)
+  return triangulateSolid(faces, authored)
 }
 
 /** Share every cut vertex along both adjacent faces before triangulating. */
-function triangulateSolid(faces: Face[]): Mesh {
+interface SolidMesh extends Mesh {
+  /** Original solid is 0; cutter boundaries retain their one-based input index. */
+  triangleRegions: number[]
+}
+
+function triangulateSolid(faces: Face[], authored: boolean): SolidMesh {
   const key = (p: Vec) => p.map((v) => Math.round(v * 1e9)).join(',')
   const points = new Map<string, Vec>()
   for (const f of faces)
@@ -240,14 +264,21 @@ function triangulateSolid(faces: Face[]): Mesh {
       a,
       ...inner.map(([t, p]) => ({
         p,
-        uv: a.uv.map((u, k) => u + t * (b.uv[k] - u))
+        uv: a.uv.map((u, k) => u + t * (b.uv[k] - u)),
+        ...interpolatedNormal(a.n, b.n, t)
       }))
     ]
   }
-  const mesh = emptyMesh(),
-    vertices = new Map<string, number>()
+  const mesh: SolidMesh = {
+    ...emptyMesh(),
+    triangleRegions: [],
+    ...(authored ? { normals: [] } : {})
+  }
+  const vertices = new Map<string, number>()
   const index = (p: Point, region: number) => {
-    const k = [region, ...p.p, ...p.uv]
+    const length = p.n ? Math.hypot(...p.n) : 1
+    const normal = p.n?.map((v) => v / length)
+    const k = [region, ...p.p, ...p.uv, ...(normal ?? [])]
       .map((v) => Math.round(v * 1e9))
       .join(',')
     const found = vertices.get(k)
@@ -255,6 +286,7 @@ function triangulateSolid(faces: Face[]): Mesh {
     const id = mesh.positions.length / 3
     mesh.positions.push(...p.p)
     mesh.uvs.push(...p.uv)
+    if (normal && mesh.normals) mesh.normals.push(...normal)
     vertices.set(k, id)
     return id
   }
@@ -262,10 +294,16 @@ function triangulateSolid(faces: Face[]): Mesh {
     const boundary = f.vertices.flatMap((v, i) =>
       splitEdge(v, f.vertices[(i + 1) % f.vertices.length])
     )
-    const centre: Point = { p: [0, 0, 0], uv: [0, 0] }
+    const centre: Point = {
+      p: [0, 0, 0],
+      uv: [0, 0],
+      ...(authored ? { n: [0, 0, 0] as Vec } : {})
+    }
     for (const v of boundary) {
       for (let k = 0; k < 3; k++) centre.p[k] += v.p[k] / boundary.length
       for (let k = 0; k < 2; k++) centre.uv[k] += v.uv[k] / boundary.length
+      if (centre.n && v.n)
+        for (let k = 0; k < 3; k++) centre.n[k] += v.n[k] / boundary.length
     }
     const ci = index(centre, f.region)
     for (let i = 0; i < boundary.length; i++) {
@@ -273,6 +311,7 @@ function triangulateSolid(faces: Face[]): Mesh {
         b = boundary[(i + 1) % boundary.length]
       if (!face([centre, a, b], f.region)) continue
       mesh.indices.push(ci, index(a, f.region), index(b, f.region))
+      mesh.triangleRegions.push(f.region)
     }
   }
   return mesh

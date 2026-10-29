@@ -24,6 +24,7 @@ export function batchStaticColors(
       state.distant ||
       state.selectable ||
       state.opacity !== 1 ||
+      state.optics ||
       !entry.visible ||
       shape.kind !== 'triangles' ||
       shape.colors
@@ -36,7 +37,8 @@ export function batchStaticColors(
     const key = JSON.stringify([
       state,
       surface ? surfaces.get(surface) : null,
-      Boolean(shape.uvs)
+      Boolean(shape.uvs),
+      Boolean(shape.normals)
     ])
     let group = groups.get(key)
     if (!group) {
@@ -51,7 +53,8 @@ export function batchStaticColors(
     const positions: number[] = [],
       indices: number[] = [],
       colors: number[] = [],
-      uvs: number[] = []
+      uvs: number[] = [],
+      normals: number[] = []
     for (const entry of entries) {
       const { shape, color } = entry.descriptor
       if (shape.kind !== 'triangles')
@@ -61,6 +64,7 @@ export function batchStaticColors(
       for (const value of shape.positions) positions.push(value)
       for (const index of shape.indices) indices.push(index + offset)
       for (const value of shape.uvs ?? []) uvs.push(value)
+      for (const value of shape.normals ?? []) normals.push(value)
       for (let i = 0; i < shape.positions.length; i += 3) colors.push(...rgb)
     }
     const first = entries[0]
@@ -75,6 +79,7 @@ export function batchStaticColors(
             positions,
             indices,
             colors,
+            ...(normals.length ? { normals } : {}),
             ...(first.descriptor.shape.kind === 'triangles' &&
             first.descriptor.shape.uvs
               ? { uvs }

@@ -15,6 +15,8 @@ export type SpatialShape =
   | {
       kind: 'triangles'
       positions: readonly number[]
+      /** Optional unit vertex normals in the same local coordinates as positions. */
+      normals?: readonly number[]
       colors?: readonly number[]
       uvs?: readonly number[]
       indices: readonly number[]
@@ -47,6 +49,16 @@ export type SpatialDescriptor =
       instances?: readonly SpatialInstance[]
       distant?: { shape: SpatialShape; maxError: number; pixelError?: number }
       surface?: SpatialSurface
+      /** Physical light transmission; opacity remains surface coverage, not transparency. */
+      optics?: {
+        /** Optional ordered capture rank; lower ranks are visible through higher ranks. */
+        captureLayer?: number
+        transmission: number
+        ior: number
+        thickness: number
+        attenuationColor: number
+        attenuationDistance: number
+      }
       roughness?: number
       metalness?: number
       /** Opt-in shared studio reflection intensity; zero keeps the environment disabled. */

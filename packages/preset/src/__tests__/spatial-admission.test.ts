@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { expect, it, vi } from 'vitest'
 import {
+  readSpatialShape,
+  sameSpatialShape,
   readSpatialDescriptor,
   readSpatialSurface,
   type SpatialDescriptor
@@ -305,3 +307,89 @@ it.each([-1, Infinity, NaN, '1'])(
     ).toThrow(/material/)
   }
 )
+
+it('admits immutable physical optics and rejects invalid optical parameters', () => {
+  const optics = {
+    transmission: 1,
+    ior: 1.33,
+    thickness: 0.06,
+    attenuationColor: 0xa85a16,
+    attenuationDistance: 0.08
+  }
+  const accepted = readSpatialDescriptor({ ...input(), optics })
+  if (accepted.kind !== 'mesh') throw new Error('Expected mesh')
+  expect(accepted.optics).toEqual(optics)
+  expect(Object.isFrozen(accepted.optics)).toBe(true)
+  optics.thickness = 99
+  expect(accepted.optics?.thickness).toBe(0.06)
+  for (const patch of [
+    { transmission: -1 },
+    { transmission: 1.1 },
+    { ior: 0.9 },
+    { ior: 3 },
+    { thickness: -1 },
+    { thickness: NaN },
+    { attenuationColor: -1 },
+    { attenuationDistance: 0 },
+    { attenuationDistance: Infinity }
+  ])
+    expect(() =>
+      readSpatialDescriptor({
+        ...input(),
+        optics: { ...accepted.optics, ...patch }
+      })
+    ).toThrow()
+  expect(
+    readSpatialDescriptor({ ...input(), opacity: 0.4, optics: accepted.optics })
+  ).toMatchObject({ opacity: 0.4, optics: accepted.optics })
+})
+
+it('preserves ordered optical capture layers and rejects invalid ranks', () => {
+  const optics = {
+    transmission: 1,
+    ior: 1.5,
+    thickness: 0.01,
+    attenuationColor: 0xffffff,
+    attenuationDistance: 1,
+    captureLayer: 2
+  }
+  const result = readSpatialDescriptor({ ...input(), optics })
+  expect(result).toMatchObject({ optics: { captureLayer: 2 } })
+  for (const captureLayer of [-1, 0.5, NaN, Infinity, '2'])
+    expect(() =>
+      readSpatialDescriptor({ ...input(), optics: { ...optics, captureLayer } })
+    ).toThrow()
+})
+
+it('retains immutable authored unit normals and compares their geometry identity', () => {
+  const normals = [0, 0.6, 0.8, 0, 0.6, 0.8, 0, 0.6, 0.8]
+  const shape = {
+    kind: 'triangles',
+    positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    indices: [0, 1, 2],
+    normals
+  }
+  const accepted = readSpatialShape(shape)
+  expect(accepted).toHaveProperty('normals', normals)
+  expect(
+    Object.isFrozen(accepted.kind === 'triangles' && accepted.normals)
+  ).toBe(true)
+  normals[0] = 9
+  expect(accepted.kind === 'triangles' && accepted.normals?.[0]).toBe(0)
+  const changed = readSpatialShape({
+    ...shape,
+    normals: [0, 0, 1, 0, 0, 1, 0, 0, 1]
+  })
+  expect(sameSpatialShape(accepted, changed)).toBe(false)
+  for (const invalid of [
+    [1, 0, 0],
+    Array(9).fill(0),
+    Array(9).fill(NaN),
+    Array(9).fill(1),
+    [0, 0, '1', 0, 0, 1, 0, 0, 1],
+    [0, 0, true, 0, 0, 1, 0, 0, 1]
+  ])
+    expect(() => readSpatialShape({ ...shape, normals: invalid })).toThrow(
+      'Invalid spatial shape'
+    )
+})

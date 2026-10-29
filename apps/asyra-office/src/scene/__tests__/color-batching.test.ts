@@ -125,3 +125,19 @@ it('preserves texture identity and every UV while batching colors on one surface
     ])
   ).toHaveLength(2)
 })
+
+it('keeps transmissive media independent and forwards physical optical properties', () => {
+  const a = part('optical-a', box([1, 1, 1]), 0xffffff)
+  a.optics = {
+    transmission: 1,
+    ior: 1.33,
+    thickness: 0.06,
+    attenuationColor: 0xab5511,
+    attenuationDistance: 0.08
+  }
+  const b = { ...a, id: 'optical-b' }
+  const meshes = compose([a, b])
+  expect(meshes).toHaveLength(2)
+  expect(meshes[0].descriptor.optics).toEqual(a.optics)
+  expect(meshes[1].descriptor.optics).toEqual(b.optics)
+})

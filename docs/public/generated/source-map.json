@@ -542,7 +542,7 @@
     },
     {
       "id": "updates/held-input-and-spatial-materials-r1",
-      "pageSha256": "aa1726704044a38ae28166710d5740524e1fa040cd0b70124e82c23f541d5f10",
+      "pageSha256": "298f5243b08fb47c7f009bc00874accaefac6d85450ad8cbb9182e3e124a786c",
       "sources": [
         {
           "path": "docs/ai/framework/packages/input-system.md",
@@ -672,7 +672,7 @@
     },
     {
       "id": "reference/packages/preset",
-      "pageSha256": "b4da8598a9204f170bd22cdb34d4573ed01a09381e841931ea609732c1a5d2e7",
+      "pageSha256": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
       "sources": [
         {
           "path": "docs/ai/framework/packages/preset.md",

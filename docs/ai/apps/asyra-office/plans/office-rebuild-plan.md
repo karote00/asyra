@@ -3403,3 +3403,977 @@ are outside this revision; this does not certify full reference-image parity.
 Evidence: apps/asyra-office/test-results/four-room-expansion/ and
 apps/asyra-office/test-results/four-room-expansion-rooms/. Local changes remain
 uncommitted and unpushed for owner review.
+
+### Discussion room reference correction - 2026-10-28
+
+Bounded task: repair the upper-left room's regular furnishings against the
+approved 1280 x 800 image, crop [438, 66, 770, 330]. Preserve the expanded shell,
+seating transforms, all other rooms and exterior. Correct the undersized left
+print, omitted tall foliage, low rear console, generic tabletop foliage and
+missing right low cabinet. Source silhouettes and relative support/order govern;
+occluded backs are construction assumptions, not measured image facts. Rejected
+upholstery and occupants stay absent pending Blender review.
+
+Step Execution Card: compose-office, Inspector lines 316-355, current procedural
+room-furnishings contract in implementation.md. Inputs are existing catalog
+geometry, approved structure/layout and source image; output is spatial-scene.
+App scene composition is the sole contributor and failure owner. No renderer
+writes, cached derivatives, diagnostic output or bypass. Reuse existing leaf,
+planter, mug, rounded geometry, print and public spatial composition APIs.
+Scope: discussion scene composition/helpers, permanent direct regression/E2E
+cases, current implementation/plan and release source declarations. No shared
+asset defaults, other rooms, shell, light/filter or dependency edits. Formal
+cases: print/wall proportion, tabletop foliage identity/support, rear console
+above tabletop, left/right storage and plant support/clearance. Test these on
+old source first, then repair. Gates: focused cases, Office suite, lint/naming,
+build and hardware discussion overview/oblique/detail screenshots. Stop for
+unresolved source ambiguity that would change accepted structure or assets.
+
+Validation checkpoint: 57 Office test files / 298 tests, Office lint, naming
+and typecheck/build passed. Both hardware discussion visual cases passed on
+the live app at port 5194. Inspected source-angle, overhead and enlarged
+storage captures at 2520 x 2284 source resolution. Formal bounds verify plant
+clearance and tabletop, console and cabinet support. The enlarged images
+still show overly regular tall foliage; full reference appearance is not
+accepted at this checkpoint. Upholstered chairs and occupants remain deferred
+to Blender. New room changes remain local and uncommitted for review.
+Evidence: apps/asyra-office/test-results/discussion-reference-review/ and
+apps/asyra-office/test-results/discussion-microscope/.
+
+### Left discussion tree and cabinet correction - 2026-10-28
+
+The owner's enlarged reference supersedes the three-row climbing-plant
+interpretation. The first wrong owner is compose-office: the plant recipe is
+planar and the low cabinet is on the wrong side of the tree. Replace only the
+left plant with connected, irregular, overlapping foliage clusters tapering to
+a narrow crown; retain distinct closed leaves and full depth. Move the existing
+small low cabinet beside it under the print, not in front of it. Keep the rear
+plant, other furnishings, shell, camera, materials infrastructure and exterior
+unchanged. Hidden branches are construction assumptions, not recovered detail.
+
+Step Execution Card: same compose-office inputs, output, contributor boundary,
+failure owner and no-bypass condition as the discussion slice above. Change
+discussion-details.ts, discussion-furnishings.ts, their formal tests, existing
+discussion E2E and these current docs only. Reuse existing leaf/tube/lathe and
+placement APIs. New source-space cases must first reject the current planar
+crown and wrong cabinet order: lower/middle crown wider than apex, substantial
+depth in both ground axes, no wall contact, cabinet beside tree and below print.
+Run focused geometry, Office tests/lint/build/naming and live hardware discussion
+screenshots. Inspect enlarged leaf silhouette and cabinet relation before
+acceptance. No push, shared asset rewrite or new dependency. This revised
+approach replaces the failed three parallel stems for the left plant only.
+
+Validation outcome: the new formal case first failed on 0.135 m crown depth;
+the first volumetric iteration then failed the upper-crown span check at
+0.176 m and showed separated bead-shaped lobes in the live screenshot. The
+final overlapping-lobe recipe passes all five discussion cases and the full
+57-file / 299-test Office suite. Naming, Office lint and typecheck/build pass.
+Hardware discussion E2E passes against http://127.0.0.1:5194/ using the Meeting
+corner preset and normal orbit/zoom, with 2520 x 2284 canvas captures. Inspected
+the source-angle and overhead/detail captures: continuous tapered foliage,
+full crown depth, wall clearance and low cabinet beside the tree are present.
+Evidence: apps/asyra-office/test-results/discussion-tree-final/. Fine botanical
+details hidden by the low-resolution source are not claimed as exact recovery.
+Other room furnishings and the separate rear-console plant are unchanged.
+Changes remain local for owner visual review; no commit or push in this slice.
+
+### Left side table contents - 2026-10-28
+
+Owner accepts the enlarged-source interpretation: an open wooden side table,
+one empty gray vessel on top, and one upright ivory rectangular storage basket
+underneath. Replace the two cylindrical baskets and closed side/back boards;
+retain the existing table position, footprint and tabletop height. This is an
+approved interpretation of ambiguous pixels, not recovered object identity.
+Step Execution Card: compose-office owns the same artifact inputs and spatial
+scene output, with no bypass or renderer-owned writes. Scope is the open branch
+of discussionStorage, direct regression/E2E and current docs. Preserve the
+closed right cabinet, tree, shell, other rooms and camera presets. Reuse existing
+box/lathe/placement APIs; no new dependency. First prove the old construction
+fails the single rectangular basket, open four-leg table and supported hollow
+vessel checks. Then run focused tests, Office lint/build/naming and live hardware
+discussion screenshots with enlarged table inspection. No commit or push.
+
+Validation: the new case first failed because the old recipe emitted two
+baskets. All 35 focused discussion/room-furnishings tests now pass, as do naming,
+Office lint and typecheck/build. Hardware discussion E2E passed at the existing
+port 5194. Inspected source-angle and enlarged overhead screenshots: the gray
+vessel is visibly hollow, the four-leg table is open and the single ivory basket
+stands below its top. Front partitions still partly occlude the basket in the
+source-angle view; its dimensions/support are also checked in source geometry.
+Evidence: apps/asyra-office/test-results/discussion-side-table/. Current changes
+are local, uncommitted and unpushed.
+
+### Crisp discussion poster - 2026-10-28
+
+Owner rejects photographic blur on the large print above the side table.
+compose-office must select newly authored crisp artwork with the same four
+lines (Better / Agents / Happier / People), cream paper and small ochre smile.
+Preserve frame, placement, proportions and all other scene objects. Existing
+artwork preparation/label composition and the public Asyra spatial surface
+contract remain the rendering path. Add an explicit per-artwork sample size
+within the existing 512 limit; other artwork retains its existing resolution.
+Scope: authored SVG, discussion source selection, artwork metadata/surface
+sampling, direct regression/E2E and current docs. No global sharpening, font
+dependency, original-reference edit or lighting change. First prove the existing
+64-pixel output fails a 512-pixel request, then inspect the real app enlarged.
+Gates: focused artwork/surface/discussion tests, lint/naming/build and hardware
+discussion visual review. No commit or push.
+
+Validation: the surface-path regression first failed (64 instead of 512).
+All 45 focused tests pass after authored SVG selection and explicit resolution
+propagation; Office lint, naming, typecheck and build pass. Hardware discussion
+E2E passed at port 5194 and generated an unscaled native-browser poster crop.
+Inspected that crop and the room overview: all four lines and the ochre smile
+are readable, with the frame/placement retained. Evidence:
+apps/asyra-office/test-results/discussion-poster-final/. The host's handwritten
+font affects glyph style; exact original letterforms are not claimed. No
+commit or push in this slice.
+
+### Crisp rear discussion note - 2026-10-28
+
+Owner requests the small rear-wall board to be crisp as well. Original tiny
+lettering is unreadable; retain the existing scene copy Small steps / Every day
+as an explicit reconstruction assumption. compose-office selects a new authored
+SVG using the existing per-artwork 512 resolution. Preserve its frame, dimensions,
+position, large poster and all other scene geometry. Scope: small-note SVG,
+discussion source selection, direct tests/E2E crop and current docs. Existing
+Asyra spatial surfaces and artwork preparation suffice; no new renderer behavior,
+dependency or original-reference mutation. First demonstrate the old crop fails
+the explicit-resolution check; then run focused artwork/discussion tests,
+lint/naming/build and hardware room review with a readable rear-note crop.
+No commit or push.
+
+Rear-note validation: old source failed the explicit 512 resolution case;
+all 46 focused artwork/surface/discussion/room tests now pass. Naming, Office
+lint and typecheck/build pass. Hardware discussion review uses the live app at
+port 5194 and normal orbit/zoom to expose the rear note. Its native-browser crop
+shows readable copy and unchanged framing. Evidence:
+apps/asyra-office/test-results/discussion-note-final/. Exact original words
+remain unknown; the retained scene copy is documented as an assumption.
+Changes remain local, uncommitted and unpushed.
+
+### Rear console object correction - 2026-10-28
+
+Owner identifies three tabletop objects, left to right: small plant, perfume
+bottle, large plant. The note frame and console share a left edge. Bounded
+compose-office slice: discussion furnishing composition, its local geometry,
+direct tests, visual review and these current specifications. Preserve the
+console, shell, other room contents and exterior. Reuse existing lathe, part,
+placement and closed-leaf APIs; no new dependency or rendering path. First
+prove regressions for edge alignment, bottle identity, support and volumetric
+rear foliage. Then implement, run focused tests/naming/lint/build, inspect
+hardware room overview and enlarged console. No commit or push.
+
+Validation: before implementation, alignment failed by 0.28 m and the old
+rear crown depth/width was 0.261. All 48 focused discussion, furnishing,
+surface and artwork tests now pass. Naming, Office lint and typecheck/build
+pass. Hardware E2E passed at the existing port 5194; inspected both the native
+room screenshot and enlarged console crop. The crop exposes the small plant,
+capped white perfume bottle and full-depth larger plant, grounded separately
+on the tabletop. Frame and console left X both equal -1.23. Perspective and
+the wall-to-table depth offset affect their apparent screen alignment. The
+source-angle view still occludes the rear console behind the accepted pantry
+divider; the normal elevated orbit exposes it without changing the structure.
+Evidence: apps/asyra-office/test-results/discussion-console-final/. This slice
+does not claim completion of the other furnishings or exact recovery of the
+low-resolution image's hidden perfume details. No commit or push.
+
+### Layered discussion trees - 2026-10-28
+
+The owner rejects both crowns: scattered round leaves do not reproduce the
+enlarged reference. Previous depth/taper tests pass but cannot detect this
+shape error. Revised compose-office approach replaces spherical leaf sampling
+with connected radial branch tiers and overlapping, curved, downward-pointing
+elliptic leaves. Both trees share this construction at their current scales.
+Scope: discussion tree helper, its source-space regressions, existing hardware
+review crops and current specifications. Preserve pots, positions, perfume,
+boards, all other plants and the shell. Existing mesh/part/placement contracts
+suffice; no new dependency, lighting or renderer change. Test visible tier
+scalloping and full-depth tapered crown before implementation; then inspect
+both trees in overview and native-resolution detail. Run focused tests, naming,
+Office lint/build and hardware E2E. The reviewed plan addresses the first wrong
+owner (crown construction), not downstream material camouflage. Exact hidden
+branch topology remains an explicit reconstruction, not recoverable evidence.
+No commit or push.
+
+Visual iteration: two native close-ups rejected the first tier recipe. It
+created umbrella rings and exposed central stem; the radius-at-three-heights
+oracle could pass while gaps remained elsewhere. Replace that oracle with
+a continuous crown-envelope lower bound and explicit drooping-leaf geometry.
+Keep the same compose-office scope. Use closer tiers toward the apex, deeper
+leaf curvature, and staggered attachment heights; remove the flat bridge rings.
+Review both full crowns, not just the overhead console view. This revised
+construction supersedes the sparse tier/bridge specification above.
+
+Final bounded validation: 41 discussion/furnishing tests pass, including the
+continuous crown envelope and both central stems ending inside apex foliage.
+The new coverage oracle failed on an empty band at local Z=1.60 m before
+correction; the tip oracle also failed before shortening the exposed stem.
+Naming, Office lint and typecheck/build pass. Hardware E2E passed on port
+5194. Inspected both final native crops in
+apps/asyra-office/test-results/discussion-trees-reviewed/: the tall tree has
+layered downward-curving broad leaves and covered tier gaps, and the console
+uses the same scaled crown with wall clearance. This is a reconstruction of
+the reference silhouette, not a claim to recover every low-resolution leaf.
+Owner appearance approval remains separate from formal gate results.
+Other plants, furnishings, structure and exterior are preserved. No commit
+or push.
+
+### Photo-directed conifer replacement - 2026-10-28
+
+The owner supplies a new clear conifer reference, superseding the broad-leaf
+interpretation for both discussion trees. Bounded compose-office work replaces
+only their shared crown/pot construction, necessary placement/sizing after the
+owner's pending choice, direct tests, native visual crops and current docs.
+Use fine closed needle geometry on connected twig sprays and upward-reaching
+branches; preserve all other plants, furniture and structure. New source image
+shows charcoal tapered pots and a crown approximately two thirds of total
+height in width. Existing lathe/tube/mesh composition APIs own the geometry;
+no existing conifer recipe was found in the app. No dependency, renderer or
+lighting changes. First fail source-space checks for fine foliage, pot identity
+and the new proportions. Then inspect both live sizes, run focused tests,
+naming/lint/build and hardware review. The older broad-leaf predicates are
+superseded only where this new reference changes the contract. No commit/push.
+
+
+The first clear-photo implementation failed visual review: flat repeated sprays
+left large ladder-shaped gaps. A permanent front-projection foliage oracle
+failed at 61.6% inner-envelope coverage before the bounded correction. The
+revised owner uses irregular branch heights/azimuths, independently rolled
+sprays, broader fine needles and continuous core coverage. The old broad-leaf
+recipe is fully replaced for these two plants only.
+
+The public spatial admission regression also caught excessive expanded geometry.
+The owner now uses existing Asyra geometry instances for all leaf/twig sprays;
+no framework limit or batching workaround was introduced. The existing asset
+preview registry is a direct consumer added solely to inspect this same room
+factory from unobstructed views. This bounded review addition does not alter
+rendering, camera ownership or any other asset.
+
+Historical sizing assumption, superseded by the branch-first section below:
+pending the owner's sizing preference, the initial implementation kept
+the clear photo's proportions and fits the existing spaces: nominal floor-tree
+height 1.04 m and console-tree height 0.42 m, at unchanged anchors. Current
+construction and defaults are documented in implementation.md. Actual visual
+review includes the two room instances plus front, right, three-quarter and
+close-up captures at the same live app URL. No commit or push is authorized
+by this task.
+
+Validation: 62 focused scene/furnishing/discussion/preview tests pass, including
+final public spatial admission and the new foliage-coverage regression. Naming,
+Office lint and typecheck/production build pass. The build retains its existing
+large-chunk warning. Two hardware E2E cases pass at http://127.0.0.1:5194/;
+artifacts are in apps/asyra-office/test-results/discussion-conifer-dense/.
+Inspected the native room crops and the production asset's front, right and
+close-up captures: dense fine foliage, irregular taper and charcoal pot are
+present; no broad-leaf tiers or wall intersections remain. Exact botanical
+branch identity is not claimed. Owner appearance review and optional sizing
+preference remained separate at that checkpoint. The subsequent owner reply
+resolves the sizing approach below. No commit/push was performed.
+
+### Branch-first discussion conifer sizing - 2026-10-28
+
+The owner's answer supersedes the uniform-shrink assumption: determine branch
+lengths from available space, then attach foliage to those branches. Preserve
+the pre-shrink floor/console heights (2.26/0.8588 m) and anchors. The bounded
+compose-office correction is the discussion tree generator, its room/preview
+consumers, formal geometry and live visual tests, and this construction spec.
+Existing lathe/tube and Asyra instance APIs remain the owners of mesh generation
+and submission. Build once per scene lifetime. Furniture, walls, other plants,
+lighting and exterior are excluded; no commit/push.
+
+Execution: first fail room-height oracles while retaining wall/support clearance
+checks. Generate branch endpoints from independent height and crown radius,
+reserve space for attached sprays, and place uniformly shaped leaves on the
+resulting twigs. Pot dimensions are independent of crown height. No final tree
+squashing, clipping or leaf-position patches. Verify connected foliage, unchanged
+needle shape, independent branch reach, unchanged adjacent furnishings, public
+spatial admission, naming/lint/build and the existing two hardware review cases.
+
+Outcome: restored both room heights and separated crown reach from pot sizing.
+The initial height correction failed the formal inner-silhouette coverage oracle
+at 65.2% for both room profiles. Branch/core density now follows vertical span
+relative to spray size; leaves attach to the actual branch tube stations with
+uniform instance scale and an orthonormal basis. The formal regression suite
+also verifies unchanged needle prototypes, independent pot sizing and final
+wall/support clearances.
+
+Validation: 53 focused discussion/furnishing/preview tests and two hardware
+E2E cases pass. Naming, Office lint and production build pass; the existing
+large-chunk warning remains. Live review artifacts are in
+`apps/asyra-office/test-results/discussion-branch-growth-final/`. Room crops and
+single-asset close-ups were inspected for branch-connected fine foliage and
+contact errors. Geometry checks do not establish photo-identical proportions:
+the tall narrow room profiles intentionally adapt branch reach, and owner
+appearance review is still separate. Current dimensions, generation formulas,
+material regions and rendered triangle counts are recorded in implementation.md.
+No commit or push was performed.
+
+### Discussion wall calendar correction - 2026-10-28
+
+Owner identifies the small board above the rear console as a calendar. Bounded
+compose-office work replaces its authored SVG content and label, updates the
+calendar regression and current documentation. Retain frame identity, dimensions,
+wall attachment, console-left alignment and all other furnishings. Existing
+authored-artwork preparation and 512-pixel surface remain the owners; no new
+rendering or date subsystem. October 2026 is an explicit static reconstruction
+choice, not a claim about the unreadable reference month.
+
+The old test incorrectly required motivational text. Its replacement fails
+before implementation and checks calendar identity plus all 31 dates in correct
+Monday-first cells. Gates: focused discussion tests, existing room visual review,
+Office lint/typecheck, naming and scoped diff review. No commit/push.
+
+Validation: 20 discussion regression tests pass, including date-cell placement
+and retained console alignment. Office lint/typecheck and naming pass. The
+hardware room E2E case passes at http://127.0.0.1:5194/; its native elevated
+calendar crop was inspected and shows the month, weekdays and numbered grid
+on the existing frame. Artifacts: apps/asyra-office/test-results/discussion-calendar/.
+No geometry, other artwork or furniture was changed in this correction.
+
+### Discussion tableware identity correction - 2026-10-28
+
+Bounded compose-office correction replaces the incorrect pitcher/handled mug
+with owner-identified Americano glass, white sugar jar and handleless wide cup.
+Scope: direct tableware recipes/composition, formal regression, existing room
+visual review and current docs. Table geometry, notebook, plant, room structure
+and other rooms are excluded. Reuse existing lathe/part/opacity contracts.
+The new identity/contents/position regression fails before implementation on the
+missing Americano. Gates: discussion and room furnishing tests, Office lint and
+typecheck, naming, live hardware room screenshots and focused diff review.
+No commit/push.
+
+Validation: 50 discussion/room tests pass. After reducing the glass shell alpha
+from 0.22 to 0.08 to avoid a milky appearance, the focused contents/position
+regression passes again. Office lint/typecheck and naming pass. The hardware
+room case passes at http://127.0.0.1:5194/; native close-up crop shows coffee
+below the transparent empty rim, a separate closed sugar jar, and an open cup
+without a handle. Source and elevated views retain the notebook/plant layout.
+Artifacts: apps/asyra-office/test-results/discussion-tableware-final/.
+Spec records dimensions, placements, replaceable colors and the alpha-glass
+limitation. No commit or push was performed.
+
+### Open sugar jar with a leaning removable lid - 2026-10-28
+
+Owner approves option B and requires the lid to lean on both jar and table.
+Bounded compose-office work completes the ongoing glass/sugar correction:
+existing tableware asset, direct formal/E2E checks, reference preservation and
+specification. No changes to room layout or other objects; future opening,
+scooping and closing actions are documented only. Stable existing part IDs
+remain authoritative; the local closed/leaning pose parameter adds no persisted
+identity or compatibility path. Existing lathe, rigid mesh transform and solid
+subtraction helpers own construction; there is no new framework renderer.
+
+Test-first: the tabletop-support oracle fails on the seated lid before changes.
+The lid is rigidly tilted and its supporting placement derived from geometry.
+Sugar cubes are separately identifiable and physically stacked. Required gates:
+discussion/furnishing regression tests, Office lint/typecheck, naming and native
+room close-up review. Stop after static appearance and specification are checked;
+no commit/push or character-animation implementation.
+
+Validation: 53 discussion/room regression tests pass, including lid/table
+contact, lid/jar proximity below 2 mm, visible cube height, retained closed
+construction and public scene admission. Office lint/typecheck and naming pass.
+The hardware room case passes at http://127.0.0.1:5194/; native table crop and
+closer view were inspected for the open mouth, leaning lid, spoon and transparent
+coffee vessel. Artifacts: apps/asyra-office/test-results/discussion-leaning-lid-final/.
+The specification and saved choice image distinguish static geometry from the
+future character-action contract. No commit/push or animation was performed.
+
+### Discussion tabletop placement and loose sugar - 2026-10-28
+
+Bounded compose-office correction: turn the notebook 90 degrees, place the
+Americano immediately before it, deepen the coffee appearance, and loosen the
+individual sugar cube orientations. Preserve the leaning lid, teaspoon, table,
+room, plants and other furnishings. Reuse the existing part/mesh placement and
+material contracts; no animation, framework changes, commit or push.
+
+Three new/strengthened regression cases failed on the previous color, notebook
+orientation and uniform cube orientations before production changes. The new
+cube layout preserves 16 separate identities with deterministic yaw/offsets.
+Formal checks verify non-overlapping conservative envelopes, support beneath
+upper cubes, inner-wall clearance, seated-lid clearance and spoon-bowl space.
+The notebook footprint is 150 x 220 mm; the glass has a 22 mm gap before it.
+Coffee is #160C07 at opacity 0.96; glass-wall opacity is 0.04 to avoid a grey
+veil over the dark contents while preserving the separate clear lip and base.
+
+Validation: 55 discussion/room tests, Office lint/typecheck and naming pass.
+The hardware discussion E2E passes against http://127.0.0.1:5194/. Inspected the
+native table crop and elevated view for placement, dark coffee and separate
+rotated cubes. Final artifacts: apps/asyra-office/test-results/discussion-table-layout-final/.
+The normal angle still occludes some cubes behind the leaning lid; the elevated
+view exposes their differing orientations. No refraction or animated physics
+is claimed.
+
+### Silver teaspoon and initial-camera coffee placement - 2026-10-29
+
+Owner correction within compose-office: the coffee belongs above-right of the
+sugar jar in the initial camera. Move it to table +[0.02,-0.06] and the notebook
+to +[-0.03,0.11], preserving its orientation and the 22 mm front gap. Sugar,
+lid, spoon geometry and other furnishings remain fixed. The teaspoon uses
+opaque silver #C5C9CA, metalness 1, roughness 0.16 and environment intensity 1
+through the existing Asyra material descriptor; it is not emissive.
+
+The initial-camera projection and actual rendered metalness regressions failed
+before the fix. All 60 discussion, room and material cases now pass, as do
+Office lint/typecheck and naming. Hardware discussion E2E passes; initial
+overview, native table crop and elevated close-up were inspected. Evidence:
+apps/asyra-office/test-results/discussion-silver-position/. No commit or push.
+
+### Tableware review correction - 2026-10-29
+
+The owner rejected the notebook's screen direction and the near-black vessel
+appearance. Previous checks proved world-axis ordering and material values,
+not the requested screen relationship or readable clear-glass construction.
+Replace that closure approach within compose-office: preserve the coffee's
+approved position above-right of sugar, put the notebook above-left of coffee
+in the initial camera, and review the transparent shell, lip, base and liquid
+together. Keep dark Americano contents distinct from the colorless vessel.
+Scope: discussion tableware/placement, their formal tests, existing hardware
+review and specification only. Reuse current Asyra alpha/material/mesh support;
+no renderer changes, painted highlights, extra overlay geometry or refraction
+claims. Tests must fail first for screen ordering and near-opaque liquid; then
+verify clear regions, tabletop clearance, retained spoon/lid, native initial
+and close camera evidence. Completion requires visual inspection, not only
+passing alpha assertions. This replaces the prior 22 mm world-Y placement
+constraint. Self-review confirms no room, plant, sugar or camera mutation.
+
+Result: notebook +[-0.16,0.06] passes the actual initial-camera left/above
+projection while coffee stays +[0.02,-0.06]. The glass keeps its existing
+geometry and separate clear regions. Dark-brown coffee uses a translucent
+side/base and a separately shaded real liquid surface without overlapping
+caps. Formal regressions were red first; 60 scoped tests, Office lint/typecheck
+and naming now pass. The hardware room case passes. Native close-up inspection
+confirms the notebook direction, clear upper vessel and visible liquid level;
+the material remains alpha-based rather than physically refractive glass.
+Evidence: apps/asyra-office/test-results/discussion-clear-glass-final/.
+No commit, push, room changes or camera changes.
+
+### Owner-selected tapered coffee tumbler - 2026-10-29
+
+Compose-office asset-only replacement: use the owner's new clear tumbler photo
+for the Americano vessel. Infer a 90 mm mouth, 105 mm height, 64 mm lower body
+and 14 mm thick rounded glass base; these are construction defaults, not
+measured product dimensions. Retain dark Americano and the approved table
+position, notebook, sugar and silver spoon. Reuse existing lathe and alpha
+material contracts. Scope: tableware geometry, tests, reference image and
+current specifications; no room, camera or renderer changes. Validate the
+taper, thick base, lip continuity, liquid containment and actual app view.
+
+Validation: the new dimension oracle failed against the previous 76 mm rim
+before implementation. All 61 focused tests, app lint/typecheck, naming checks
+and the hardware discussion review now pass. Inspected the native tabletop
+crop and closer scene capture: the taper, clear headspace and thick base are
+visible, and the notebook/coffee/sugar placement is preserved. This closes the
+shape replacement, not photographic glass/refraction equivalence. Evidence:
+`apps/asyra-office/test-results/discussion-tapered-glass/`. No commit or push.
+
+### Iced Americano contents - 2026-10-29
+
+Step: compose-office, existing discussion tableware construction. Replace only
+the drink contents from the owner's iced-coffee photo: warm brown translucent
+liquid at 96 mm, five irregular floating ice cubes and two submerged cubes.
+Keep the approved 90 x 105 mm tumbler, table pose and every other furnishing.
+Reuse existing lathe, rounded box, solid subtraction and alpha/environment
+material contracts. Separate actual liquid and ice boundaries; no photo texture,
+painted highlights, emission or renderer changes. Photo refraction/absorption
+is not claimed. Mutation scope: recipe, direct regression tests, reference,
+spec and this plan. Gates: geometry/liquid containment and placement tests, app
+lint/typecheck, naming and live hardware discussion capture with inspection.
+Stop when those checks and bounded visual review are complete; no push.
+
+Validation: the new fill-height oracle failed on the prior 75 mm fill, and the
+ice opacity oracle rejected the first overly white iteration (0.62). Final
+ice opacity is 0.24. All 62 focused tests, app lint/typecheck, naming and live
+hardware discussion review pass. Inspected the native tabletop crop and
+overhead capture from APP_URL=http://127.0.0.1:5194/. Ice, fill height and unchanged
+table placement are visible. The side liquid still lacks photographic optical
+absorption and refraction; do not report full reference appearance parity.
+Evidence: apps/asyra-office/test-results/discussion-iced-coffee-final/.
+No commit or push.
+
+### Coffee transparency correction - 2026-10-29
+
+Revised bounded plan after rejected optical appearance. Owner: compose-office
+asset construction and its existing preview, using the same public spatial
+material contract. Preserve cup shape, ice poses, table pose and other assets.
+First incorrect boundary: every CSG cut surface inherited the outer coffee
+alpha, including interfaces with ice. Wall alpha also accumulates through four
+glass surfaces; duplicating liquid vertices destroyed smooth surface normals.
+Retain CSG face provenance, assign an explicit index-matched liquid/ice interface
+with zero alpha, retain indexed vertices within each material region, and set
+exterior alpha from complete-path transparency bounds rather than one surface.
+This is still alpha-based approximation, not physical refraction/absorption.
+Scope: tableware, solid-subtraction triangle provenance, production-factory
+preview, direct unit/E2E tests, current spec/release note. No framework/shader,
+room, placement, light, other-asset or dependency changes. Gates: failing
+provenance/accumulated-alpha/shared-vertex tests first; focused scene/CSG/preview
+tests, app lint/typecheck/naming, live full-scene and single-cup front/side/top
+microscope captures. Do not claim full photo parity if optical differences remain.
+
+#### Optical-material owner revision
+
+The rejected microscope proves alpha-only blending cannot meet the requested
+coffee appearance. The owner's instruction to adjust after the proposed
+material-capability repair authorizes this necessary render-spatial segment.
+Replace the earlier no-framework implementation assumption with an opt-in
+neutral optics descriptor (transmission, ior, thickness, attenuation colour and
+distance). Input: admitted spatial mesh. Output: physical transmissive material
+through the existing provider. Owner/contributor: Preset; public descriptor:
+render-engine. No renderer canonical writes, app-specific shader or custom
+render loop. Validate immutable numeric admission, material updates and default
+behaviour before the compose-office consumer adopts it. Same shape/pose, alpha
+materials elsewhere unchanged. Tests: admission, engine lifecycle/material
+reuse, app batching isolation, same-source microscope and scene captures.
+Screen-space transmission remains an approximation, especially nested media.
+
+#### Nested-media visual review revision
+
+The live microscope rejected fully transmissive nested shells: the outer glass
+samples the opaque background instead of the inner coffee, and DoubleSide
+transmission repeatedly applies the liquid absorption on back faces. The next
+bounded render-spatial correction uses front faces for opted-in closed optical
+volumes, with regression coverage for returning to the ordinary double-sided
+path when optics is removed. The compose-office consumer retains low-alpha
+reflective glass/ice and uses physical absorption only for liquid. This is an
+explicit hybrid realtime material, not physically complete nested refraction.
+No new scene objects, lights, camera offsets or photograph textures are allowed.
+Keep existing shape and placement oracles; change material oracles to assert
+complete glass-path visibility, separate liquid attenuation, and independent
+unbatched optical surfaces. Run admission/material lifecycle, source geometry,
+preview and live microscope checks. If the visual still differs, report that
+remaining limit rather than claiming reference parity. This replaces the prior
+assumption that every nested region can use screen-space transmission.
+
+
+Optical coverage revision: alpha coverage may coexist with optics; admission
+retains its existing 0..1 validation independently of transmission. Added a
+failing admission case before removing the erroneous opacity-one restriction.
+The final hybrid candidate preserves the glass and visible ice, but microscope
+review still rejects the cloudy coffee and incomplete refractive cues. Keep
+visual acceptance open; numerical tests and screenshots do not override this
+finding. Live server was restarted with project ownership verified; successor
+PID 57266 serves the same APP_URL. No commit or push in this task.
+
+
+Validation checkpoint: 60 shared rendering/admission/resource tests and 42
+focused Office source/preview/batching tests pass. App lint/typecheck, naming,
+render-engine/Preset builds and two hardware-browser screenshot scenarios pass.
+Inspected full-scene tabletop plus native 2884 x 1680 cup captures. These gates
+verify geometry, forwarding and runtime safety only; visual acceptance remains
+FAILED for cloudy liquid and incomplete ice refraction. Final candidate evidence:
+apps/asyra-office/test-results/discussion-hybrid-optics/. No photographic
+appearance completion claim is permitted from these passing mechanical gates.
+
+### Layered transmission correction - 2026-10-29
+
+Supersedes the failed hybrid candidate above. The approved research follow-up
+keeps the tumbler geometry and table placement, and repairs the first incorrect
+render-spatial boundary: screen-space capture omitted nested transparent contents.
+Reuse Three.js PhysicalMaterial and its transmission shader chunks; Preset owns
+optional ordered capture layers, with no dependency, app-specific shader, extra
+animation loop or baked photograph. This is ordered screen-space approximation,
+not recursive multi-medium path tracing.
+
+Step execution card - render-spatial (Inspector step 12; implementation Foundation):
+inputs remain admitted preview/spatial meshes. Optional optics.captureLayer is a
+nonnegative integer; increasing layers represent enclosing media. Each layer
+captures ordinary scene objects and completed lower optical layers, excluding
+its own layer. Higher enclosing layers contribute back faces sampled through the
+native opaque background, without reading unfinished custom targets. Same-layer
+peers do not refract each other. Outputs remain visible
+Office through the same Core provider. Preset alone owns capture targets, shader
+binding and teardown; render-engine owns the neutral descriptor. Non-opted-in
+materials retain native behavior. No canonical writes, new clock, app identities,
+scene recoloring or camera workaround. Scope: these spatial owner files and their
+direct tests, current public/spec/Inspector documentation. Tests prove admission,
+ordered visibility, one capture per distinct active layer per flush, target reuse
+and resize, current uniforms, state restoration on error, removal and disposal.
+No retained scene-result cache: every requested flush recaptures current content.
+
+Then compose-office consumes the proven descriptor for clear glass, coffee and
+ice at full coverage. Existing shape, layout, liquid/ice contacts and non-coffee
+assets remain fixed. Formal geometry/material tests precede the consumer change.
+Final gates: naming, shared focused tests/builds, app focused tests/typecheck/lint,
+and live hardware microscope plus actual tabletop captures. Inspect empty glass,
+liquid and ice separately and together. Remaining visual mismatch blocks visual
+completion, even with passing tests. No push or dependency installation.
+
+Design review: the layer order removes the capture feedback cycle; capture textures
+are linear and tone mapping occurs only on final output. Reuse native absorption
+and refraction math, not a new optical model. The cost is proportional to active
+layers, not the number of ice pieces. Missing capture-capable driver fails explicitly.
+
+Step execution card - compose-office: consumes the existing tableware factory
+and admitted optics from render-spatial; produces the same scene parts at the
+approved placement. Scope: discussion-tableware, direct geometry/material tests,
+production-factory preview controls, discussion E2E and current specs. No room,
+plant, sugar, notebook, camera, lighting or dependency mutation. The shared
+57-case focused gate passes. Five strengthened consumer regressions fail on the
+old alpha candidate before this change. Require full-coverage optical glass,
+liquid and ice, preserved physical contacts and live multi-angle visual review.
+
+Visual iteration - enclosing media: the first live capture exposed white ice
+because its background omitted the surrounding liquid. Reopen only render-spatial
+capture composition: include higher-layer back faces using native sampling;
+restore material sides and sampler selection even on failure. Retain one capture
+per layer and the existing asset geometry. Strengthen the visibility and failure
+oracles before implementation, then repeat the same microscope and room views.
+
+Capture depth correction: enclosing back faces must render outermost first with
+depth writes disabled, before completed inner contents. Otherwise a near inner
+glass wall occludes those contents. Preserve and restore original material depth
+writes and mesh order, including failure paths. The new depth/order regression
+fails on the prior candidate before the owner correction.
+
+Review checkpoint - not visually accepted: live room capture confirms tabletop
+visibility through the glass base/wall. The five-view production-factory capture
+still shows excessive dark absorption around submerged ice and does not match
+the owner reference. The visibility and depth/order tests now detect the two
+capture defects corrected above; they do not prove physically correct nested
+transport. Stop parameter-only patching. The next optical iteration must address
+medium-path absorption ownership before changing colors, geometry or approving
+this asset. No visual completion or remote push is authorized by test success.
+
+Final checkpoint: targeted shared tests (58), app tableware/preview tests (35),
+and the additional upward-winding regression pass. Naming, scoped ESLint, app
+typecheck, Preset build and app production build pass. The live five-view review
+also exposes an incorrect pale top surface; upward source winding passes, so
+do not reverse faces or mask this with another cap. Empty/liquid-only isolation
+and physically consistent nested absorption remain unfinished. No commit or push.
+
+Bounded visual replan - surface glare: GPU draw inspection confirms the actual
+liquid-surface shader receives transmission 1, thickness 0.075 m and the intended
+attenuation; the source upward-winding test also passes. The next compose-office
+slice isolates the excessive studio reflection contribution on the planar top.
+Add an actual top-view centre-pixel brown-versus-white regression before reducing
+the asset's environment reflection intensity. Keep Core/Preset, geometry, camera,
+lighting and body absorption fixed. This does not resolve nested path absorption
+and cannot authorize overall visual acceptance. The GPU probe is read-only and
+retained as a formal E2E diagnostic, not an alternate rendered product.
+
+#### Surface glare result - incomplete visual acceptance
+
+The actual GPU probe confirmed native optical uniforms and upward surface
+winding. The top-view regression failed on the previous surface reflection
+intensity (red 230 versus blue 221), then passed after reducing only surface
+environment intensity from 0.60 to 0.08. All five production-asset views were
+captured and inspected. The pale disc is corrected, but submerged ice still
+produces dark blocks and exposed ice looks brown rather than clear. This is
+not a visually accepted asset and no commit or push closes this work.
+
+Evidence: `apps/asyra-office/test-results/discussion-top-glare-correction/`.
+The permanent read-only WebGL probe records optical uniforms and the top-view
+centre pixel in E2E artifacts. This narrow colour regression does not establish
+shape or full material fidelity. A further bounded rendering design is needed
+to account for medium path lengths without counting enclosing coffee absorption
+twice; repeated opacity, colour or geometry adjustments are not a solution.
+
+### Owner correction - floating ice and dark Americano
+
+Task contract: correct all seven ice solids to straddle the liquid plane and
+replace the red-orange default absorption with dark coffee brown. Preserve the
+approved tumbler, fill level, table placement, glass optics and other furnishings.
+Owner: `construct-asset`, using the existing asset factory, mesh transforms and
+optical material descriptor; `compose-office` continues consuming the same asset.
+No shared renderer edits, new dependencies, commits or pushes in this slice.
+
+Step execution card: inputs are the owner's latest screenshot and explicit
+correction; output is the existing named asset regions with corrected ice poses
+and default liquid attenuation. Preconditions: source bounds prove every ice
+solid crosses Z=96 mm and remains within the glass; paired convex solids must
+not overlap. Regression gates cover floating placement and dark neutral-brown
+absorption before production edits, then focused source tests, app type/lint and
+the maintained live-browser coffee/tabletop review. Inspect all five coffee views
+plus the actual tabletop. Nested-media artifacts remain separately unapproved;
+this bounded correction must not claim to solve them by darkening the drink.
+
+The source regressions caught both buried cubes and the red-orange absorption.
+The first floating layout failed convex separation for ice 0/6; moving the
+outer cube 2 mm outwards preserves glass clearance and makes all pairs disjoint.
+The darker coffee exposed excessive grey studio reflection on the liquid top:
+the existing live top-colour regression failed (R=108, B=98). Reduce only the
+liquid-surface environment contribution to 0.005; glass and ice reflection
+settings remain unchanged. Retain the same regression and inspect the result.
+
+Validation: 38 focused source tests, two live-browser review cases, app
+typecheck, scoped ESLint and the 15-case naming gate pass. Five production
+coffee views and the actual room tabletop were inspected at full screenshot
+resolution. The lower floating-ice placement error and red-orange default are
+corrected. Ice still has excessive dark optical regions immediately below the
+surface; overall coffee visual approval remains open. Runtime review uses
+http://127.0.0.1:5194/ and the same `americanoGlass` factory for room and asset
+views. Screenshots: `apps/asyra-office/test-results/discussion-floating-final/`.
+
+### Sugar ceramic surface continuity - 2026-10-29
+
+Bounded correction: remove triangulation-induced shading on the sugar vessel,
+leaning lid and knob. Preserve the profile, spoon opening, lid contact, sugar,
+materials, transforms and unrelated assets. No lighting or coffee changes.
+Current CSG introduces polygon-centre vertices; recomputed normals make those
+centres flat while boundary vertices are smooth, producing star-shaped facets.
+
+Step card - render-spatial (12): admit optional finite unit vertex normals on
+neutral triangle shapes, detach/freeze/compare them, and upload them unchanged.
+Meshes without authored normals keep ordinary geometry-normal computation.
+Scope: render-engine spatial type, Preset spatial admission/geometry and tests.
+Step card - construct-asset: smooth lathe normals follow profile tangents; CSG
+interpolates source normals and preserves sharp cutter faces. Transform normals
+with inverse scale and rotation. Scope: Office geometry, subtraction, tableware.
+Step card - compose-office/preview-asset: preserve normals through existing
+batching and preview the same sugar factory. No alternate review geometry.
+Gates: first failing admission/renderer and source-continuity regression tests,
+focused tests, naming, scoped lint/typecheck and hardware live-app closeups of
+body, rim, knob, lid and spoon notch. Update implementation contracts. Stop when
+these bounded defects pass; do not expand to other rendering defects or push.
+
+Validation: the original code failed authored-normal admission/upload and all
+three source-continuity regressions. The correction passes 60 focused Preset
+checks and 48 Office checks, renderer/Preset builds, Office typecheck, scoped
+ESLint and naming (15 checks). Two hardware E2E cases passed on
+http://127.0.0.1:5194/ (owned Vite PID 75049): room context and the production
+sugar factory at Front, Right, Top, Three-quarter and Cap detail. Evidence is in
+`apps/asyra-office/test-results/sugar-surface-review/`. Inspected the five asset
+views plus the room tabletop screenshot: the reported ceramic starbursts and
+triangular shading are gone; the sharp spoon opening and leaning lid remain.
+The existing piecewise profile silhouette is unchanged. This review does not
+approve unrelated coffee optics or the entire Office scene. No commit or push.
+
+### Full-scene keyboard navigation latency - 2026-10-29
+
+Bounded task: diagnose and correct held-key camera lag in the full furnished
+scene, preserving geometry, materials, transparency, resolution and placement.
+Association: office-rebuild-plan; compose-office camera handoff to render-spatial
+(step 12) remains authoritative. Discovery is limited to keyboard/camera submit,
+spatial flush, optical capture, shadow and bloom passes, and their direct tests.
+First collect live hardware frame intervals, draw/triangle counts and CPU samples
+using the same full-scene route. Add a permanent failing owner work-count test
+before changing implementation. Any retained work must identify dependencies,
+invalidation and disposal. Scope permits those rendering owners, direct tests,
+review instrumentation and corresponding contract/docs; no unrelated asset,
+input behavior, package/dependency or scene-content changes. Stop after focused
+correctness/work-count tests and a same-scenario before/after measurement with
+visual preservation; do not claim portable FPS or push.
+
+Step execution card - render-spatial (12): consume the admitted preview/office
+scene after projection and instance-detail updates. Share completed Three shadow
+maps between optical captures and the final scene only while the camera, scene,
+visible caster identities and caster material sides are unchanged. Geometry,
+transforms, lights and instance partitions are frozen for this synchronous flush;
+no state survives into the next flush. Optical capture changes visibility and
+material sides, so these are checked before each pass, including descendants.
+A changed caster configuration must render its own shadows. Explicit dirty
+requests, disabled shadows and manual shadow scheduling retain Three semantics.
+Allowed contributor/boundary: Preset spatial renderer and capture orchestration;
+forbid app-specific shading, lower resolution/detail, or extra animation loops.
+Spec: implementation.md Foundation / Ordered optical capture. Failure owner:
+render-spatial. Gates: failing engine work-count regression, shadow signature
+changes and error restoration tests, focused capture/bloom/engine tests, naming,
+lint/build, and hardware navigation/visual comparison. Stop at this bounded owner
+correction before considering any further measured bottleneck.
+
+Step execution card - render-spatial / stable optical materials: same inputs,
+outputs, boundary and exclusions as above. The first shadow correction reduced
+GPU submissions from 1111 to 916 and triangles from 107.6M to 83.6M per frame,
+but median/p95 intervals remain 33.3/50ms on this hardware. CPU profiling also
+shows repeated material-program preparation. Retain one enclosing back-face
+material per active source physical material, synchronize values from the source,
+share the same optical uniforms, and invalidate its program only on source
+program changes. Preserve source side/depth-write and all capture ordering.
+Release on source removal, capture removal or teardown. First prove the current
+source material version churn with a formal test, then verify value updates,
+identity reuse, disposal and hardware visual parity.
+
+Bounded iteration replan - render-spatial: stable material variants also leave
+median/p95 at 33.4/50ms, with about 83.4M submitted triangles. These corrections
+do not resolve the primary whole-scene redraw cost. Reuse the opaque scene's
+linear color and depth within one flush: render it once at unchanged resolution
+and MSAA, then replay its color/depth through a full-screen render pass for
+ordered captures, native transmission backgrounds and final scene rendering.
+Continue drawing real transparent/transmissive meshes with native material math.
+The opaque pass contains all shadow casters; if a translucent object casts
+shadows, use the existing individual passes because their shadow inputs differ.
+No replacement asset geometry or lower-quality LoD is permitted. The replay
+quad is a renderer-owned framebuffer operation, not scene/model content.
+Retained allocation: resize-aware color/depth target plus replay material; output
+valid only within this flush/camera. Restore source materials, background, target,
+auto-clear, tone mapping and shadow flags on error; dispose at engine teardown.
+Formal regression: each ordinary opaque mesh reaches scene drawing once per
+flush instead of every optical pass. Gates include source material/geometry
+preservation, mixed parent/child visibility, shadow eligibility, state restoration,
+resize/disposal, and fixed-camera hardware screenshot comparison before/after.
+
+Validation - full-scene navigation: the new source-work oracle failed with four
+opaque scene submissions per flush before the shared framebuffer, then passed
+with one. Focused renderer/capture/bloom/state/lifecycle tests: 50 passed. Naming,
+scoped ESLint, Preset build and Office typecheck passed. Hardware E2E scope:
+`e2e/navigation-performance.spec.ts` plus the discussion reference review case
+in `e2e/discussion.spec.ts`, using APP_URL http://127.0.0.1:5194/. Both passed.
+The live owned Vite listener is PID 80564. No commit or push.
+
+Apple M3 Max / Chrome, 1800x1200 viewport, DPR 2, same full-scene zoom and held-D
+scenario (35 sampled moving intervals): baseline median/p95 33.3/50ms; final
+16.7/33.4ms. Indexed GPU submissions median 1111 to 367; submitted triangles
+107553453 to 27618127. These are local measurements, not portable FPS gates.
+Slow frames remain; this does not claim zero dropped frames. Permanent diagnostic
+coverage records timing and work without a hardware-independent time threshold.
+Evidence: `apps/asyra-office/test-results/navigation-baseline/`,
+`navigation-optical-before/`, and `navigation-opaque-candidate/`.
+
+Inspected matched initial overview and tabletop closeup screenshots, including
+coffee/glass, occlusion, plant shapes and cast shadows. No obvious appearance or
+placement regression was found. Whole-image mean channel differences are below
+0.41/255 (overview) and 0.13/255 (tabletop); HDR framebuffer quantization and
+edge sampling are not bit-identical. These checks preserve the existing scene;
+they do not newly approve unrelated asset fidelity or existing coffee optics.
+
+### Navigation regression recovery - 2026-10-29
+
+The owner reports worse navigation at both overview and close range. The prior
+35-interval, single-scale measurement does not establish sustained responsiveness;
+discard its performance acceptance claim. Keep its raw evidence for comparison.
+This iteration stays in render-spatial (12), its direct camera caller, formal
+navigation/capture/engine tests and these contracts. Preserve all asset geometry,
+resolution, appearance, keyboard semantics and approved placement; no commit or
+push. Do not change unrelated dirty files or reduce scene quality.
+
+Step execution card: consume the same admitted scene/camera, produce the same
+visible Office. First record sustained overview and close-range round trips,
+including all animation intervals rather than only intervals with draw calls.
+Remove the new opaque full-screen replay stage: ordinary native transmission
+must not incur a second engine-owned color/depth render. Prove this with a failing
+engine regression before changing production code. Keep independent shadow and
+stable-material corrections only if same-source measurements support them.
+Inspect optical capture visibility as a direct consumer: captures for entirely
+offscreen recipients must not force scene redraws. Any further correction needs
+its own failing work/correctness oracle and explicit input lifetime.
+
+Allowed files: Preset spatial renderer/capture helpers and their tests, Office
+navigation E2E, existing implementation/package docs and render-spatial contract.
+Failure owner: render-spatial. No asset mutation, framebuffer quality reduction,
+app-specific optical workaround or extra production animation loop. Gates:
+focused tests, naming/lint, Preset build, Office typecheck, sustained far/near
+hardware runs and matched live scene review. Stop at bounded recovery and report
+remaining stalls honestly; FPS/count reductions alone do not prove user acceptance.
+
+Step execution card - render-spatial / optical capture admission: the formal
+regressions fail because moving all three recipients outside the camera still
+submits three captures, and excluded camera layers still submit one. Before
+capturing, update world matrices and use the native camera frustum, material
+visibility, camera layers and frustum-culling opt-out to select recipient ranks.
+Retain allocated targets while their ranks remain in the scene, avoiding churn
+when panning away and back. Recompute admission each flush; never reuse captured
+pixels across camera movement. Parent transforms and camera return must refresh
+correct captures. No opaque replay, quality reduction or asset change. Existing
+ordered contents, back faces, shader bindings and failure cleanup remain intact.
+Gates add offscreen/return, parent motion, camera layers, material visibility and
+culling opt-out to the focused tests. The native-transmission regression failed
+with three engine draws instead of two, then passed after removing opaque replay.
+
+Recovery evidence: 45 focused renderer tests and four hardware navigation/visual
+E2E cases pass. Scoped ESLint, Office typecheck, Preset build and the Inspector
+contract pass. Final evidence lives in
+`apps/asyra-office/test-results/navigation-recovery-final/`.
+
+On Apple M3 Max / Chrome at 1800x1200 and DPR 2, four 1.25-second directional
+segments produce mean/p95 intervals of 35.21/50.1ms (overview), 21.69/33.4ms
+(room) and 16.67/16.7ms (close). All sampled intervals are retained. The close
+case is zoom 12; zoom 6 still includes several rooms and must not be described
+as a tabletop closeup. This is a diagnostic measurement, not user acceptance.
+
+Opaque replay removal alone did not improve overview performance: the preceding
+replay-enabled overview measured 23.57ms mean. Do not claim the rollback is a
+complete performance fix or that its removal proves the reported root cause.
+The proven correction is camera admission: offscreen recipients no longer cause
+three unnecessary scene captures; parent movement, layers, visibility and return
+are covered by regression tests. Full-scene stalls remain unresolved.
+
+Matched tabletop screenshots were inspected against the pre-replay evidence:
+no visible placement, geometry or material change was found. Live IAB screenshot
+verification could not finish because the browser connector failed to bind the
+existing tab. The existing app URL still serves from owned Vite PID 96061; the
+server remains running. No commit or push.
+
+### Sustained navigation replan - 2026-10-29
+
+User rejects the recovery: all viewing distances still feel unsmooth. The
+previous rollback is not performance acceptance. Scope remains render-spatial
+(12), its camera/instance-detail callers, permanent tests and direct documents.
+Preserve scene geometry, resolution, material appearance and movement semantics.
+No commit or push. Fixed discovery: sample sustained navigation CPU stacks and
+GPU submissions; trace only the dominant renderer/update owners and their native
+Three implementation. First isolate repeated work, then add a failing work-count
+and correctness regression before changing the canonical owner. Validate the
+same overview/room/close routes and matched optical screenshots; preserve the
+live server. Do not substitute pass counts or 60Hz-limited sampling for proof of
+user smoothness.
+
+Step 12 execution card: input admitted scene/camera, output equivalent visible
+Office; Preset owns render stages and derived geometry, Core owns input updates.
+No app-specific optical output, extra animation loop or quality reduction.
+Existing native optical ordering, camera admission and resource lifetime remain
+required. Profiling is opt-in in the existing navigation test so it does not
+contaminate unprofiled comparisons. Gates: focused red/green regressions, naming,
+lint/typecheck/build, sustained hardware navigation and optical visual review.
+Self-review: the former rollback alone regressed overview timings, so this
+iteration must establish a causal work reduction before making a speed claim.
+
+Step 12 refinement after profiling: CPU samples spend most elapsed time idle;
+repeated opaque scene submissions dominate the remaining GPU workload. The
+source inspection confirms native transmission redraws opaque content inside
+each ordered capture. Use a lazy same-flush opaque color/depth prepass only for
+multiple admitted capture layers. Ordinary transmission and scenes with optical
+shadow casters stay native because their shadow inputs differ. Preserve full
+resolution, MSAA, linear HDR and exact depth, then apply output conversion in
+the consumer pass. Prepass shadows remain valid only while non-opaque objects
+do not cast shadows. Restore all source materials, renderer flags and targets
+on failure; remove the replay mesh before bloom/overlays. No cross-frame pixel
+reuse. This replaces the blanket rollback approach; native-only scenes must
+still incur no additional target. Formal tests must prove opaque work once,
+native bypass, correct lifecycle/resize and error restoration before production
+edits. The plan and render-spatial contract allow this bounded renderer repair;
+visual equivalence and sustained frame measurements decide acceptance.
+
+Measured outcome of the bounded same-flush repair: on the current live panel's
+468 x 675 CSS viewport at DPR 2, sustained overview navigation changed from
+19.61 ms mean / 33.4 ms p95 to 16.78 ms mean / 16.8 ms p95. Room navigation
+changed from 20.33 / 33.4 ms to 16.78 / 16.7 ms. Close navigation remains
+approximately 16.67 ms. Overview median indexed triangles submitted across all
+passes fell from 87.37 million to 27.00 million; these are cumulative submissions,
+not unique scene geometry. Measurements are refresh-rate limited and are not
+proof of smoothness on every display.
+
+At 1800 x 1200 CSS pixels, overview improved from 35.21 ms mean / 50.1 ms p95
+to 25.95 / 33.4 ms. This is still above a 60 Hz frame budget and remains an open
+performance limitation. Do not mark all-view navigation performance complete.
+Evidence: `navigation-panel-baseline`, `navigation-opaque-panel`, and
+`navigation-opaque-wide` under the app's ignored `test-results` directory.
+The four focused renderer suites pass 49 tests; naming, scoped lint, Preset
+build, Office typecheck and the Inspector check pass. Seven browser cases pass
+across the two new runs, including the tabletop visual review. Matched tabletop
+images and the actual live overview were inspected without an observed geometry
+or material change. The IAB connector was recovered, the existing app reloaded,
+and held-key movement exercised there before restoring Overview. Vite PID 96061
+remains serving port 5194 for user inspection. No commit or push.
+
+### Owner-requested push checkpoint - 2026-10-29
+
+Scope: publish the accumulated discussion-room assets, authored surface normals,
+ordered optical rendering and measured same-flush work reduction, with their
+tests, references and public guidance. Original source is `f2d78c5a7`; fetched
+main remains included, so no rebase is necessary. This checkpoint does not close
+whole-scene visual acceptance or large-viewport navigation performance.
+
+Local validation: Office's full run passed 333 tests and exposed two stale test
+assumptions. Limit the street canopy assertion to the six street-tree assemblies
+so newly admitted indoor conifers are not counted as street leaves. Keep the
+tabletop construction-count test on the real scene composition but stub unrelated
+expensive optical solids, whose geometry and rendering have independent tests.
+The original 10-second timeout stays unchanged. Both corrected files pass all
+8 tests; unchanged Office files retain their full-run results. Preset passes
+408 tests, Render Engine passes 11 tests and its type contract, and the four
+discussion hardware browser cases pass. Preset/Render Engine/Office builds,
+scoped ESLint, naming, Inspector and document checks pass. Refresh generated
+public indexes and the Inspector workspace bundle; include the pending optical
+and authored-normal adoption guidance and package Changeset. The app server
+remains running. Commit-dependent checks and remote status follow publication.

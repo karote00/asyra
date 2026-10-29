@@ -103,3 +103,31 @@ it('uses the production porcelain surface in asset review and retains it across 
   expect(submit).toHaveBeenCalledOnce()
   control.dispose()
 })
+
+it('keeps production iced Americano geometry and optical materials across microscope cameras', () => {
+  const submit = vi.fn(),
+    submitCamera = vi.fn()
+  const control = createAssetReviewController(
+    { submit, submitCamera },
+    'iced-americano',
+    { width: 1000, height: 900 }
+  )
+  const source = submit.mock.calls[0][0].meshes
+  expect(
+    source.filter(
+      (m: { descriptor: { optics?: { captureLayer?: number } } }) =>
+        m.descriptor.optics?.captureLayer === 0
+    ).length
+  ).toBe(7)
+  expect(
+    source.some(
+      (m: { descriptor: { optics?: { ior: number } } }) =>
+        m.descriptor.optics?.ior === 1.33
+    )
+  ).toBe(true)
+  for (const view of ['Front', 'Right', 'Top', 'Cap detail'] as const)
+    control.setView(view)
+  expect(submit).toHaveBeenCalledOnce()
+  expect(submitCamera).toHaveBeenCalledTimes(4)
+  control.dispose()
+})

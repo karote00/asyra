@@ -1394,7 +1394,7 @@ asset dimensions remain governed by their numeric specifications.
 | Room       | Regular additions                                                                                                                                | Source and support constraints                                                                                                                                                                                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Work       | Open laptop, mouse, cup, oval rug, orange low stool, three wall shelves, books, framed print, small side table and plants                        | Laptop lid/desk-edge ratio 41/89; uniform laptop scale. Actual desk top supports all desktop items. Shelves attach to the west interior face; their 35 mm thickness scales uniformly by 1.22. Rug is 1.55 x 1.08 x 0.012 m. Stool uses the approved 0.36 x 0.36 x 0.30 m asset at uniform 1.15 scale. |
-| Discussion | Left wood wall boards, framed print, clock, small rear note, rear console, low side bookcase, cups, book and plants                              | Clock wall stays cream. Clock scale 1.35. Console top is 0.8375 m above the common floor. Table decorations consume the already constructed table's top plane.                                                                                                                                        |
+| Discussion | Left wood wall boards, framed print, clock, small rear calendar, rear console, low side bookcase, cups, book and plants                              | Clock wall stays cream. Clock scale 1.35. Console top is 0.8375 m above the common floor. Table decorations consume the already constructed table's top plane.                                                                                                                                        |
 | Pantry     | Left-only alternating wallpaper, right print, fridge, dispenser, coffee counter, sink cabinet, coffee machine, shelf, canisters, mugs and plants | Wallpaper ends at X=1.90; the right print is on plain wall. Fridge/dispenser rotate 90 degrees to face +X. Their scales are 1.35 and 0.95. Counter height is 0.80 m above floor. Sink accessories rest on the solid right strip outside the basin, not in its opening.                                |
 | Lounge     | Oval rug, narrow two-tier side table, framed side print, six clipped photographs, wall lettering, lamp, table book/cup and plants                | Rug is 2.05 x 1.70 x 0.012 m. Side print remains below the low return's 1.131485 m top; the lamp head stays below the adjacent 1.57716 m wall top. Coffee-table and floor supports derive from the accepted table and shared floor.                                                                   |
 
@@ -1622,3 +1622,388 @@ The pre-expansion numeric fixture is test-only. Production reads only current
 scene reference specifications; no review artifact or historical geometry is
 loaded as a fallback. Formal room-depth/support/clearance tests and hardware
 whole-building/pantry review cover this revision. No opening animation is added.
+
+### Discussion-room reference furnishings - 2026-10-28
+
+The upper-left discussion room retains its expanded shell, common floor,
+round-table geometry/placement and deferred upholstery. This pass corrects
+regular furnishings using the approved 1280 x 800 image region
+[438,66]..[770,330]. Measurements below are construction dimensions mapped into
+the expanded room; the low-resolution image does not uniquely determine hidden
+backs or physical scale. Existing asset recipes remain authoritative for mugs,
+pointed leaves, pots and the round table. Other rooms do not consume these local
+storage/foliage compositions.
+
+| Item | Current construction and source relationship |
+| --- | --- |
+| Left print | 1.15 m along wall x 1.50 m high; center Y=2.46, Z=2.04; thin existing frame on the west interior face. Owner requires crisp artwork rather than enlarged reference blur. `src/scene/reference/discussion-poster.svg` reauthors the four lines Better / Agents / Happier / People and small ochre smile on cream paper. SVG source is 768 x 1008; its full extent is sampled to an explicit 512 x 512 albedo/neutral-normal surface, with the physical frame restoring the portrait aspect. No scene, shadows or furniture pixels are projected. |
+| Left conifer | Floor-supported at west interior X+0.36 and Y=1.48, nominal height 2.26 m, crown-radius budget 0.33 m, seed 37. The owner's clear conifer photo supersedes the previous broad-leaf interpretation. Dense connected fine foliage, irregular three-dimensional branches, a pointed apex and charcoal tapered pot. The owner's branch-first instruction supersedes shrinking the whole tree. Branch reach is determined independently of height, then fine foliage is attached to the branches. The floor pot remains 0.28 m wide and 0.24 m high. Inspect the foreground-occluded base from the elevated room view. |
+| Rear calendar | 0.38 x 0.48 m, center X=-1.04/Z=2.26; frame left edge X=-1.23 is derived from the console left edge, not independently positioned. Frame dimensions and wall mounting retained. Clear authored `src/scene/reference/discussion-note.svg` (512 x 660) replaces the photographic crop and uses a 512 x 512 surface. Owner correction identifies this object as a calendar, not a text poster. Static October 2026 artwork has a Monday-first seven-column grid, 31 dates, and October 1 on Thursday. Month/year are reconstruction choices because the reference cannot resolve them; this is not a live date widget. |
+| Rear console | 1.08 x 0.29 m, 35 mm top thickness; center X=-0.69, 160 mm from rear wall. Top center is actual table top +0.23 m. Four 33 mm legs terminate at the underside and floor. |
+| Console contents | Owner-corrected order: small brown-potted pointed plant at X=-1.02, white perfume bottle at X=-0.65, and larger tapered plant at X=-0.43. All bases consume the actual console top. Plants sit 160 mm from the rear wall; perfume sits 180 mm from it. Their horizontal envelopes do not overlap. The larger plant uses the same full-depth conifer recipe at nominal height 0.8588 m, crown-radius budget 0.125 m and seed 71. Its crown retains a clear rear-wall gap and stays inside the console footprint. |
+| Table contents | Dark-brown pointed-leaf pot at table +[0.12,0.22]; cream handleless wide-mouth cup at +[0.27,0.01]; tapered transparent Americano tumbler at +[0.02,-0.06], before the notebook; short white sugar jar at +[-0.015,-0.18], beside the glass. Cream notebook remains at +[-0.16,0.06]. All consume the existing table top. |
+| Left side table | Owner-approved interpretation of the enlarged source: open wooden side table, empty gray vessel on top and one upright ivory rectangular basket below. Table footprint 0.56 x 0.34 m, tabletop height 0.55 m, top thickness 25 mm. Four 30 mm square legs centered at local X=+/-0.24 and Y=+/-0.13 reach from floor to the top underside. No side/back boards or lower shelf. Rotated 90 degrees along west wall at Y=2.16, west interior X+0.19, beside the tree below the print. |
+| Side-table contents | One open fabric basket, 0.30 x 0.23 x 0.39 m, centered below the table on the floor. Wall/base thickness 12 mm; open top with 135 mm clearance to the tabletop underside. One empty gray ceramic vessel, maximum diameter 216 mm and height 150 mm, placed at local [0,-0.015,0.55]. The vessel has a 10 mm rim, recessed interior and 22 mm solid bottom; no handle, soil or plant. |
+| Right low cabinet | Same outer dimensions, separate inset front field and four frame rails. Front faces the aisle; right edge stays 10 mm inside the pantry divider face. Center Y=1.98; small pot on its top and separate floor plant to its front-left. |
+
+Storage default wood is #B49164 and inset field #B59774. The left side table
+has #705739 legs, one #D4C6B0 fabric basket and a #89868B empty ceramic vessel.
+The source cannot establish the hidden item identities; this interpretation
+was explicitly accepted by the owner. Dimensions above are construction values
+within the retained table footprint, not recovered photographic measurements.
+Conifer defaults are #536B36/#718344/#8B9B50 for three foliage regions,
+#4D5935 for stems, #393638 for the charcoal pot and #3F3428 for soil.
+Table pot default remains #42372D. These are separable material regions;
+color/material overrides remain presentation inputs. Existing whole-instance
+XYZ placement remains supported; the crown is generated from independent height, branch reach and pot dimensions before scene placement.
+
+The clear owner reference is retained at
+`assets/asyra-office/models/small-plants/review/discussion-conifer-owner-reference.png`.
+It defines the new plant type and visible silhouette. Hidden branch topology
+and absolute size are reconstruction choices, not measured botanical facts.
+The owner clarified that available space should control branch lengths before
+foliage grows. That supersedes the temporary uniform-shrink assumption. The
+floor/console heights are restored to 2.26/0.8588 m; anchors and surrounding
+furniture remain fixed. The tree can be tall and narrow without stretching
+individual leaves or reducing the whole object.
+
+Current generator inputs (metres, before placement):
+
+| Profile | Nominal total height | Crown-radius budget | Pot diameter | Pot height | Seed |
+| --- | --- | --- | --- | --- | --- |
+| Reference construction | 1.20 | 0.44 | 0.26 | 0.22 | Supplied by caller |
+| Floor tree | 2.26 | 0.33 | 0.28 | 0.24 | 37 |
+| Console tree | 0.8588 | 0.125 | 0.1064 | 0.0912 | 71 |
+
+The height and radius are construction inputs, not a claim that every generated
+leaf tip lies exactly on that envelope. Clearance checks use expanded final
+geometry, including rotated needle instances. The narrow room profiles adapt
+the reference's branch/foliage type to the available footprint; they do not
+preserve the photograph's original crown-width-to-height ratio. Do not infer
+photo-identical proportions or owner appearance approval from passing geometry
+tests.
+
+The reference recipe has nominal height 1.20 m and crown-radius budget 0.44 m. The open tapered pot has maximum
+diameter 0.26 m, height 0.22 m and base diameter 0.17 m; its lathed profile
+includes an inner wall and solid bottom. Soil lies at Z=0.20 m. For a requested height H, pot height Hp and crown radius R, let F=R/0.44
+and Vh=(H-Hp)/0.98. Branch count N=ceil(96*max(1,Vh/F)) and core count
+C=ceil(36*max(1,Vh/F)) maintain foliage spacing as the trunk becomes taller.
+The trunk runs from 0.55Hp to H-0.04F and ends inside the leader foliage.
+For branch index b=0..N-1, t=b/(N-1) and V(i)=(sin(i*91.73+seed*17.17)+1)/2:
+
+- Canonical base z=0.245+0.765t+(V(b+309)-0.5)*0.045.
+- Azimuth=b*2.39996+V(b)*1.1 radians.
+- Radial reach=(0.315*(1-t)^0.76+0.012)*(0.83+0.17*V(b+71))*F m.
+- Tip rise=-0.035+0.11t+0.085*V(b+109) m. Branch centerline
+  P(u)=[cos(azimuth)*reach*u, sin(azimuth)*reach*u, Hp+(z+rise*u*u-0.22)*Vh].
+  Tube stations include every spray attachment u, so foliage consumes the actual
+  branch centerline rather than a separately approximated curve.
+- Five paired spray ranks attach at u=0.17+0.18r, r=0..4, plus one tip
+  spray per branch. Side sprays face 0.75 radial + 0.65 signed tangent
+  horizontally and -0.15+0.65t+0.7V(b*17+r+side) vertically. Their scale is
+  (1.16-0.64t)*(0.8+0.2V(b*13+2r+side))*F. Tip sprays have upward component
+  -0.05+0.8t and uniform scale (0.9-0.5t)*F.
+- C upright core sprays cover Z=Hp+0.05F..H-0.075F, at a 0.012F radial offset.
+  Each spray additionally
+  rolls around its own axis by (V(sprayIndex+907)-0.5)*2.1 radians, avoiding
+  identical flat fans and repeated empty branch tiers.
+
+Each shared spray contains one 120 mm central twig, six paired lateral twig
+nodes, and 85 closed tapered needles. Each needle is 18 mm long, 7.2 mm wide
+and 4.4 mm thick before local rank scaling. Its six-vertex closed geometry
+has eight triangles. The 12 lateral twigs carry six rank needles and one
+terminal needle each; the central twig has one terminal needle. Sprays are
+geometric parts, not alpha cards, opaque crown fillers or baked foliage images.
+
+The reference recipe has 1,092 spray instances (96*11+36), 92,820 needles and
+742,560 leaf triangles. The taller narrow floor tree has 264 branches and 99
+core sprays (3,003 instances, 2,042,040 leaf triangles); the console tree has
+265 branches and 100 core sprays (3,015 instances, 2,050,200 leaf triangles).
+These are near-detail construction counts, not a scene performance budget. The same leaf mesh is shared by all three tint groups;
+twig geometry is likewise instanced. Main branches/trunk and pot remain regular
+meshes. This uses the existing public Asyra instance contract and prevents
+color batching from expanding the foliage into an invalid oversized geometry
+array. Instancing reduces stored geometry and submission work, not the number
+of rendered triangles; no performance or distant-LoD claim follows from it.
+Construction runs once per scene lifetime, never per camera frame. The existing
+single-asset review route `?review=discussion-conifer` calls the same factory
+at the floor-tree size and seed, with no separate demonstration geometry.
+
+Height changes trunk/branch attachment elevations. Crown radius changes branch
+reach and the isotropic size of attached sprays, with space reserved for their
+full leaf extent. It does not squash a completed mesh. Branch and core counts
+increase with vertical span relative to spray size to prevent sparse ladders.
+Needle prototype coordinates remain identical across profiles. Each instance
+has one scalar scale and an orthonormal basis. Pot geometry is sized separately:
+floor diameter/height 280/240 mm, console diameter/height 106.4/91.2 mm.
+The outer placement is applied once at the unchanged anchors. Other plants,
+walls, lighting, furniture and exterior geometry are unchanged.
+
+Source-space regression coverage includes support contacts, crown depth,
+wall/neighbor clearance, fine leaf edges, apex coverage, stable instance counts,
+and final scene admission through the public spatial contract. A 64 x 64 front
+projection requires at least 85% foliage coverage inside the inner tapered
+silhouette, with coordinates normalized to each profile's branch height/radius.
+It covers reference, floor and console profiles. The original sparse reference
+was 61.6%; restoring room heights without adapting branch spacing yielded 65.2%
+for both room profiles and was also rejected. This predicate detects excessive gaps but does not replace reference
+comparison of the actual front, right, three-quarter and close-up app renders.
+
+Formal regression cases verify source-relative print/crown height, tabletop
+support/plant identity, console height, floor-supported storage and rear foliage
+wall clearance. Hardware source-angle, overhead and enlarged storage captures
+cover occluded contacts. Rejected chairs and people remain absent; this is not a
+claim that the complete furnished room matches the reference yet.
+Additional source-space cases reject a planar middle crown, an overly narrow
+upper crown, an apex wider than the body, and a cabinet on the wrong side of
+the tree. Their numeric bounds describe the documented construction envelope;
+reference appearance still requires visual inspection.
+
+The large print defaults to paper #F2EADC, lettering #493E34 and smile #B58A4F.
+Its editable SVG uses a handwritten font stack (Chalkboard SE, Comic Sans MS,
+cursive); the exact glyph family depends on fonts available on the host, without
+installing or bundling a third-party font. Artwork preparation decodes this
+source once per scene. The generic artwork `resolution` input uses the existing
+validated 2..512 range; omitted values retain the previous 64-pixel crop behavior.
+The rear calendar uses the same cream paper and dark ink, with Arial/Helvetica
+sans-serif dates, fine grid lines and muted terracotta Sundays. Its full SVG
+extent is sampled through the same preparation path. Existing discussion-note
+asset identity, frame size, placement and console-left alignment are preserved. Other room
+artwork remains unchanged.
+
+Rear-console perfume construction: 100 x 75 x 230 mm overall, rounded ivory
+body 165 mm high with 12 mm corner radius, narrowing circular shoulder to a
+28 mm neck. A 33 x 28 x 42 mm champagne-metal cap spans Z=188..230 mm,
+overlapping the neck to form a seated closure. A small 62 x 52 mm warm-ivory
+front label carries no invented branding. Defaults: body #ECE5D8, label
+#DCD1C0, cap #B79A61 (metalness 0.75, roughness 0.28). Parts retain independent
+material/color replacement and whole-instance XYZ sizing. These hidden-shape
+and physical-size details are explicit construction choices from the enlarged
+reference and owner's perfume identification, not recovered measurements.
+
+### Discussion tableware correction - 2026-10-28
+
+Owner interpretation of the enlarged table reference supersedes the pitcher
+and handled mug: tapered clear Americano tumbler before the notebook, a short white
+sugar jar beside it, and a wide-mouth handleless cup next to the rear-right
+plant. The table and plant remain unchanged. The notebook sits above-left of
+the coffee in the initial camera, at table
++[-0.16,0.06], retaining its 150 x 220 mm X/Y footprint. The glass remains
+at +[0.02,-0.06]. Screen directions override the superseded world-Y gap rule.
+From the initial camera, the coffee base is above and to the right of the sugar
+jar base. Use actual initial-camera projection to verify this relation, not
+world-axis labels. The sugar jar stays at +[-0.015,-0.18]; the notebook keeps
+its 150 x 220 mm orientation behind the glass.
+
+Dimensions below are explicit construction defaults inferred for the existing
+table, not measurements recoverable from the low-resolution image. The reusable
+asset recipes live in `src/assets/discussion-tableware.ts`; existing Asyra asset
+parts, lathe geometry, placement and public spatial material contracts remain the owners.
+
+| Object | Geometry and contents | Default appearance | Table-relative XY (m) |
+| --- | --- | --- | --- |
+| Americano | 90 mm maximum diameter, 105 mm tall; 64 mm lower body, 2.4 mm radial wall and 14 mm clear rounded base. Separate coffee volume extends from Z=15 to 96 mm, leaving 9 mm headspace; seven floating ice cubes displace liquid; no ice is suspended at the bottom. Separate physical lip/base regions meet the shell without overlapping faces. No handle, milk, foam or label. | All optical regions use opacity 1 and transmission 1. Glass #FFFFFF, roughness 0.08, IOR 1.5, wall/lip thickness 0.0024 m and base thickness 0.014 m, capture layer 2; environment intensity 1.00 on the wall and 0.40 on lip/base. Liquid white albedo with #332218 attenuation, IOR 1.33, attenuation distance 0.06 m, layer 1; body thickness 0.055 m/roughness 0.035; surface thickness 0.075 m/roughness 0.015/environment intensity 0.005. Ice #FFFFFF, IOR 1.31, thickness 0.02 m, roughness 0.04, environment intensity 0.50, layer 0. Glass/ice attenuation is white at 1 m. Ordered screen-space approximation; visual acceptance remains open. | [0.02,-0.06] |
+| Sugar jar | Low round-bellied body: 112 mm maximum diameter, 44 mm high, 82 mm mouth opening and 6 mm base. Separate 94 mm lid gives a closed total height of 60 mm. Default is open, with lid leaning against the front of the jar and touching the tabletop. Sixteen individual 12 mm cubes and one concave metal teaspoon remain separate parts. | White ceramic #F5F1E7, roughness 0.32; sugar #FFFAF0; spoon #C5C9CA, metalness 1.00, roughness 0.16, environment intensity 1.00. | [-0.015,-0.18] |
+| Handleless cup | 100 mm mouth diameter, 85 mm high, 4 mm wall and 6 mm base; open hollow tapered vessel, empty interior, no handle or spout. | Cream ceramic #E8DBC0, roughness 0.38. | [0.27,0.01] |
+
+All bases consume the actual meeting-table top. Glass/coffee and ceramic colors
+are recipe parameters; each region retains its separate replaceable material.
+The liquid side/base and top surface partition one closed boundary, without
+duplicate caps. Liquid, glass and ice use full-coverage physical transmission
+with ordered captures. Glass walls, lip and base remain separate colorless
+regions. Existing whole-instance XYZ sizing applies before placement. This is
+not full nested refraction.
+The coffee color parameter controls attenuation, not the liquid surface albedo.
+The owner-corrected default #332218 is dark coffee brown rather than the previous
+red-orange #87360F. This changes liquid absorption only; glass and ice remain
+colourless. It does not resolve repeated absorption in nested optical captures.
+
+#### Owner-selected tapered tumbler - 2026-10-29
+
+Reference: `assets/asyra-office/models/desk-items/review/americano-tapered-glass-owner-reference.png`.
+Use its wide mouth, tapered sides and rounded heavy base. The photograph is a
+shape/material reference; retain Americano contents, omit its water bubbles and
+checkerboard background. Dimensions are inferred construction defaults because
+the photo contains no scale. Whole-instance XYZ scaling and replaceable glass
+and coffee colors remain available through existing asset contracts.
+
+All profile pairs below are [radius, height] in millimetres; revolve 360 degrees
+with 64 radial segments. The origin is the base centre on the tabletop.
+
+| Region | Profile |
+| --- | --- |
+| Outer wall | [32,14] -> [45,102] |
+| Inner wall | [42.6,102] -> [29.6,14] |
+| Rounded lip | [45,102], [45,103], [44.2,105], [43.2,105], [42.6,103], [42.6,102] |
+| Heavy base | [0,0], [26,0], [28,0.6], [30,2.5], [31.2,5], [31.7,9], [32,14], [29.6,14], [0,14] |
+| Coffee base/side before ice displacement | [0,15], [29.3,15], [41.3,96] |
+| Coffee surface before ice displacement | [41.3,96] -> [0,96] |
+
+Wall, lip and base share exact boundary rings without overlapping faces.
+The liquid has at least 0.3 mm radial clearance and 1 mm bottom clearance from
+the cavity. Its surface is a separate real boundary region, not a duplicate
+cap. The thickness is actual geometry, with no painted reflection highlights.
+The cup uses full-coverage glass transmission with environment reflections
+and a separate liquid optical medium. It does not reproduce photographic nested refraction or caustics;
+the supplied photo must not become a texture on the cup.
+
+#### Iced Americano contents - 2026-10-29
+
+Use `assets/asyra-office/models/desk-items/review/iced-americano-owner-reference.png`
+for brown translucent liquid, high fill and irregular ice. Retain the previous
+owner-selected tapered tumbler and table pose, not this new photo's rounded
+stemless glass or coaster. These are inferred construction defaults, not
+physical measurements from the photo. No milk, foam, bubbles or painted lighting.
+
+Seven independent rounded ice solids use 3 mm corner radii. Dimensions, centres
+and rotations are below in mm and XYZ degrees. The owner correction requires
+all seven cubes to float: each crosses the Z=96 mm liquid plane, remains mostly
+below it and has its highest point below the 105 mm rim. Two smaller centre
+pieces fit between the five larger pieces without intersecting neighbouring ice
+or the glass. This is a static arrangement, not a buoyancy simulation.
+
+| Ice | XYZ size | XYZ centre | XYZ rotation |
+| --- | --- | --- | --- |
+| 0 | 19,20,20 | 27,0,87 | 12,-8,17 |
+| 1 | 20,19,21 | 8,24.7,86 | -9,11,61 |
+| 2 | 19,21,20 | -21,15.3,88 | 8,7,-23 |
+| 3 | 21,19,22 | -21,-15.3,86 | -12,-6,38 |
+| 4 | 19,20,20 | 8,-24.7,87 | 9,-13,85 |
+| 5 | 11,10,12 | -7,-1,91 | 18,14,29 |
+| 6 | 10,11,12 | 7,1,91.5 | -16,9,-31 |
+
+Subtract the ice solids from the closed liquid boundary, then partition its
+horizontal top into the separate liquid-surface material. Do not draw a full
+opaque disc through the ice. Ice, coffee and glass retain independent geometry
+and appearance parameters. Everything is static; no melting or fluid simulation.
+Liquid CSG provenance distinguishes original external faces from ice-contact
+faces. Contact faces retain geometry with zero alpha to avoid duplicate tint;
+indexed vertices remain shared within each region for smooth normals. Optical
+liquid meshes are excluded from static opaque batching and opaque shadow casting.
+The renderer supports screen-space transmission and attenuation, but not complete
+nested-media transport. Do not imitate amber highlights using emissive ice or
+baked lighting. The current ordered capture shows the tabletop through glass in the live room,
+but the submerged portions of floating ice can still produce dark regions because the enclosing absorption
+is sampled again by the outer liquid. This appearance is not approved and
+photographic equivalence is not claimed. Passing automated gates does not close
+this visual limitation.
+
+#### Removable sugar lid and future character interaction
+
+The owner selected the open option B from
+`assets/asyra-office/models/desk-items/review/discussion-sugar-options.png`, with
+a subsequent correction: the lid must lean against the jar and table, rather
+than being absent or lying flat. The image is a design comparison, not app
+render evidence; the latest leaning instruction overrides its missing lid.
+
+`sugarJar(color, lidPose)` accepts `leaning` (default) and `closed`. Both poses
+use identical vessel, lid, teaspoon and cube geometry. The lid alone receives a
+rigid pose change; it is not resized, clipped or replaced between states. In
+the default pose it rotates 65 degrees about local X. Its lowest mesh point
+is translated onto local Z=0 (the supporting tabletop). Its Y translation is
+derived from the jar's outer radial profile using lid vertices and triangle
+interior samples, with 0.05 mm clearance at the closest jar contact. The knob
+faces outward. The front-side placement avoids the coffee, notebook and cup.
+
+Ceramic body and lid use authored unit normals derived from the radial profile
+tangents. Boolean slot cuts interpolate those normals over the retained curved
+surface, including new polygon-centre vertices; cutter faces keep separate
+plane normals. Normal transformation uses inverse scale then rotation, with
+no translation. Both static batch passes and Preset triangle admission preserve
+these normals. Do not regenerate them from the irregular CSG triangulation: that
+produces radial starbursts and triangular creases. This is geometry shading, not
+a ceramic texture; material, dimensions, slot and lid support remain unchanged.
+
+The body and fitted lid retain a 10 mm wide spoon slot on local +X, from
+Z=37.5 mm upward. The teaspoon has a concave 30 x 20 mm bowl inside the jar,
+a connected rising handle through the slot, and a rounded tip at local
+[95,0,65] mm. Its part identity remains separate in canonical asset data.
+Sugar retains 16 separate cubes in supported layers of 9, 5 and 2. Each cube
+has a different frozen yaw and XY offset; do not render aligned rows of cubes.
+Nominal support centres use 18 mm spacing with offsets up to 0.4 mm per axis,
+centres at Z=12/24/36 mm, 12 mm cube edges and 1 mm edge rounding. The top
+cubes reach Z=42 mm, visible below the 44 mm rim and below the seated lid.
+Yaw uses ((index * 137.508 + 17) % 80) - 40 degrees; XY offsets use
+[sin(index * 2.41), cos(index * 1.73)] * 0.4 mm. This deterministic static
+arrangement preserves identities across rebuilds. Cubes must remain supported,
+inside the inner wall, mutually non-intersecting and clear of the spoon bowl.
+
+Future interaction requirements (specified, not implemented in this stage):
+
+1. Pick up the lid by its knob, lift clear of the rim, then place it in the
+   leaning pose with both supports preserved.
+2. Pick up the teaspoon; place exactly one existing cube into its bowl, then
+   transfer that cube to the explicitly selected destination cup.
+3. Return the spoon to the jar through its slot.
+4. Pick up the leaning lid, lift it clear of the table/jar, align the slot with
+   the resting spoon, and seat the lid on the rim.
+
+Keep the part identities `vessel`, `lid`, `teaspoon`, and `sugar-cube-N` separate
+in canonical asset data. A future interaction owner must track lid pose, utensil
+attachment, cube identity/count and destination-cup identity; cubes must neither
+be duplicated nor disappear during handoffs. Interrupted actions retain the
+last valid attachment state. Current static rendering may batch compatible
+materials and does not provide independently animated render nodes, grasping,
+IK, collision physics or these actions yet. Runtime interaction work must
+resolve that ownership without replacing the reviewed geometry.
+
+### Ordered optical capture
+
+The current coffee correction supersedes the failed alpha/physical hybrid.
+Spatial optics may declare captureLayer (nonnegative integer). Lower layers are
+captured before enclosing higher layers; peers are excluded from their own
+capture. Higher enclosing back faces contribute through native background
+sampling, never through unfinished custom targets. Enclosing back faces render
+outermost first without depth writes, then original sides/order/depth writes are
+restored. The same Core renderer owns all passes and resource cleanup. Linear
+capture prevents repeated tone mapping. This supports nested visible contents
+but does not claim recursive physically exact refraction. Geometry and existing
+room placement remain unchanged. Full coverage (opacity 1) is the coffee asset
+baseline; attenuation, not alpha paint, controls liquid absorption.
+
+### Per-flush shadow reuse
+
+After projection and instance-detail updates, Preset renders a synchronous set of
+optical and main passes. Geometry, transforms, lights and instance partitions
+remain fixed during that set. Visible shadow caster identities and material
+visibility, side and shadowSide are compared between passes, including visible
+descendants. Identical configurations share Three's completed shadow maps; changed
+configurations and explicit dirty requests recompute. Manual shadow scheduling
+remains native. This state is discarded at the end of every flush, so camera,
+scene and asset edits cannot retain stale shadows into another frame. Renderer
+auto-update state is restored even when a draw fails. Resolution, geometry,
+materials, optical sampling and shadow quality remain unchanged.
+
+Enclosing optical passes retain a back-face material variant per active source
+material instead of repeatedly changing the original material's side and shader
+version. Each variant synchronizes source values and shares optical uniforms;
+source program version changes invalidate its program. Removed or disposed
+sources, removed capture layers and engine teardown release the variant. Final
+rendering and error recovery restore the original material reference.
+
+### Camera-visible optical capture
+
+Ordered captures admit recipient ranks through the current camera frustum,
+camera layers, material visibility and explicit frustum-culling opt-out. World
+matrices update before admission, so camera return and parent movement cannot
+reuse stale visibility. Only ranks with visible recipients redraw their capture;
+scene-present targets retain their allocation while offscreen and refresh before
+being used again. Removing a rank or destroying the engine releases its target.
+Ordinary native transmission adds no engine-owned prepass. Multiple admitted
+ordered ranks use the same-flush sharing described below. No captured pixels
+are retained across flushes. Geometry, resolution, optical material math,
+shadow quality and the keyboard movement contract are unchanged.
+
+### Same-flush opaque work in ordered optical rendering
+
+When multiple ordered optical ranks are visible, Preset captures opaque radiance
+and depth once at full resolution with linear half-float color and four-sample
+antialiasing. Later native optical passes sample that completed opaque result,
+preserving depth occlusion and applying tone/color conversion at their own output
+boundary. The allocation is reusable; pixels are always recomputed per flush.
+Ordinary transmission and single-rank scenes add no opaque target or prepass.
+Non-opaque shadow casters and scene override materials retain native rendering
+because their shadow/pass inputs cannot use this prepass contract. Renderer
+state and source material visibility are restored even on failure. The replay
+mesh is removed before bloom and overlays. This does not alter asset geometry,
+materials, physical resolution or camera integration.

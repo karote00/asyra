@@ -46,6 +46,32 @@ drivers fail explicitly. Preset owns resource resizing, reuse and cleanup.
 
 ## Preservation and verification
 
+### Optical surfaces and authored normals
+
+The same pending candidate also adds optional mesh `optics`: `transmission`
+in [0, 1], `ior` in [1, 2.333], nonnegative world-space `thickness`, 24-bit sRGB
+`attenuationColor`, positive world-space `attenuationDistance`, and optional
+nonnegative safe-integer `captureLayer`. These values are validated together;
+omitting optics preserves zero transmission. Use increasing capture layers for
+ordered nested optical media and review their screen-space limitations. Keep
+transparent regions separate from opaque batching. This is not a volumetric
+path tracer; photographic equivalence is not guaranteed.
+
+Triangle descriptors may supply `normals`, with one finite unit vector per
+position, length tolerance 0.0001. Omit the field to retain computed normals.
+Use authored normals to preserve smooth curved surfaces and intentional hard
+edges. Matching package declarations are required before adopting these fields;
+apps persisting them must explicitly update their own admission schemas.
+
+Preset reuses opaque linear color, depth and unchanged shadows only within one
+flush when multiple optical layers are visible. It keeps ordinary rendering
+native and bypasses opaque reuse when non-opaque objects cast shadows. Targets
+resize and dispose with the engine; there is no cross-frame image cache or app
+configuration to migrate. Resolution, geometry and optical parameters remain
+unchanged. Verify admission, authored normals, ordered capture, render-state
+restoration and disposal, then inspect nested media in the adopting app. Office
+large-viewport navigation and photographic optical acceptance remain open.
+
 Keep app-owned key maps, modifiers, editing rules, camera timing, appearance
 parameters, custom fields and persistence semantics. These APIs do not migrate
 stored documents. If an app persists descriptors, its existing schema must

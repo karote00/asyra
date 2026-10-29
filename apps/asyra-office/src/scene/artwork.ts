@@ -1,5 +1,7 @@
 export interface ArtworkRegion {
   source: string
+  /** Explicit authored print resolution; omitted photographic crops retain 64. */
+  resolution?: number
   /** Printed image corners only, ordered top-left, top-right, bottom-right, bottom-left. */
   corners: readonly (readonly number[])[]
 }

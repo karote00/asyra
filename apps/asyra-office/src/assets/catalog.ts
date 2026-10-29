@@ -1,3 +1,4 @@
+import type { SpatialDescriptor } from '@asyra/preset/spatial-contract'
 import armchairPanels from './generated/armchair-panels.json'
 import {
   bottleSurface,
@@ -53,6 +54,7 @@ export interface AssetPart {
   environmentIntensity?: number
   emissive?: number
   emissiveIntensity?: number
+  optics?: Extract<SpatialDescriptor, { kind: 'mesh' }>['optics']
   opacity?: number
   material: SurfaceKind
   instances?: GeometryInstance[]

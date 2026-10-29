@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest'
 import { buildSpatialMeshes } from '../reference-scene'
+import { sugarJar } from '../../assets/discussion-tableware'
 import { frameNightLight } from '../../assets/frame-night-light'
 import { part, type AssetPart } from '../../assets/catalog'
 import { box } from '../../assets/geometry'
@@ -53,4 +54,18 @@ it('does not batch an environment-reflective material together with an ordinary 
   expect(meshes.map((m) => m.descriptor.environmentIntensity).sort()).toEqual([
     0, 1
   ])
+})
+
+it('renders the sugar teaspoon as opaque reflective silver metal', () => {
+  const spoon = sugarJar().find((part) => part.id === 'teaspoon')
+  if (!spoon) throw new Error('Missing teaspoon')
+  const [mesh] = buildSpatialMeshes(
+    { parts: [spoon], assemblies: [], labels: [] },
+    {}
+  )
+  expect(mesh.descriptor.metalness).toBe(1)
+  expect(mesh.descriptor.roughness).toBeLessThanOrEqual(0.18)
+  expect(mesh.descriptor.environmentIntensity).toBe(1)
+  expect(mesh.descriptor.opacity).toBe(1)
+  expect(mesh.descriptor.emissiveIntensity).toBe(0)
 })

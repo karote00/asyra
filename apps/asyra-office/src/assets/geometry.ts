@@ -1,3 +1,4 @@
+import { meshNormals, transformNormal, latheNormals } from './geometry-normals'
 import {
   readSpatialShape,
   type SpatialShape,
@@ -8,6 +9,7 @@ export interface Mesh {
   positions: number[]
   indices: number[]
   uvs: number[]
+  normals?: number[]
 }
 export const vec = (a: readonly number[]): Vec => [a[0], a[1], a[2]]
 export const add = (a: readonly number[], b: readonly number[]): Vec => [
@@ -35,6 +37,14 @@ export function append(
   scale: Vec = [1, 1, 1]
 ) {
   const offset = target.positions.length / 3
+  if (target.normals || source.normals) {
+    target.normals ??= meshNormals(target)
+    const normals = meshNormals(source)
+    for (let i = 0; i < normals.length; i += 3)
+      target.normals.push(
+        ...transformNormal(normals.slice(i, i + 3), rotation, scale)
+      )
+  }
   for (let i = 0; i < source.positions.length; i += 3) {
     let [x, y, z] = source.positions.slice(i, i + 3).map((n, a) => n * scale[a])
     const [a, b, c] = rotation.map((n) => (n * Math.PI) / 180)
@@ -123,9 +133,11 @@ export function box(
 }
 export function lathe(
   profile: readonly (readonly number[])[],
-  segments = 24
+  segments = 24,
+  smooth = false
 ): Mesh {
   const m = emptyMesh()
+  if (smooth) m.normals = latheNormals(profile, segments)
   for (let j = 0; j < profile.length; j++)
     for (let i = 0; i <= segments; i++) {
       const [r, z] = profile[j],
@@ -286,6 +298,13 @@ export function toSpatial(mesh: Mesh): SpatialShape {
   return readSpatialShape({
     kind: 'triangles',
     positions: p,
+    ...(mesh.normals
+      ? {
+          normals: mesh.normals.flatMap((n, i, values) =>
+            i % 3 === 0 ? [n, values[i + 2], -values[i + 1]] : []
+          )
+        }
+      : {}),
     indices: mesh.indices,
     uvs: mesh.uvs
   })

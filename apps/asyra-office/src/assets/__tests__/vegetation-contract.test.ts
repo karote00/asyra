@@ -6,7 +6,17 @@ import { createReferenceScene } from '../../scene/reference-scene'
 
 it('publishes the catalog canopy without scene-specific density or size multipliers', () => {
   const scene = createReferenceScene()
-  const leaves = scene.parts.filter((p) => p.instances)
+  let offset = 0
+  const leaves = scene.assemblies.flatMap((assembly) => {
+    const parts = scene.parts.slice(offset, offset + assembly.parts.length)
+    offset += assembly.parts.length
+    return /^tree-[0-5]$/.test(assembly.id)
+      ? parts.filter((part) => part.instances)
+      : []
+  })
+  expect(
+    scene.assemblies.filter((a) => /^tree-[0-5]$/.test(a.id))
+  ).toHaveLength(6)
   expect(leaves.flatMap((p) => p.instances ?? [])).toHaveLength(6 * 3264)
   for (const instance of leaves.flatMap((p) => p.instances ?? []))
     expect(instance.scale).toBeLessThanOrEqual(2.2)

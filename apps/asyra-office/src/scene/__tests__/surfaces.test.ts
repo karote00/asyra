@@ -1,5 +1,60 @@
 import { expect, it } from 'vitest'
 import { createSurfaces } from '../surfaces'
+it('preserves an authored high-resolution print through the live label surface path', async () => {
+  const { vi } = await import('vitest')
+  const { labelMeshes } = await import('../surfaces')
+  const context = {
+    fillText: vi.fn(),
+    getImageData: () => ({ data: new Uint8ClampedArray(256 * 256 * 4) })
+  }
+  const spy = vi
+    .spyOn(HTMLCanvasElement.prototype, 'getContext')
+    .mockReturnValue(context as unknown as CanvasRenderingContext2D)
+  try {
+    const artwork = {
+      source: '/crisp.svg',
+      corners: [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1]
+      ],
+      resolution: 512
+    }
+    const [result] = labelMeshes(
+      [
+        {
+          text: 'Better\nAgents\nHappier\nPeople',
+          width: 1.114,
+          height: 1.464,
+          position: [0, 0, 0],
+          rotation: 0,
+          color: '#473c30',
+          background: '#ede4d1',
+          artwork
+        }
+      ],
+      new Map([
+        [
+          '/crisp.svg',
+          {
+            width: 2,
+            height: 2,
+            data: new Uint8ClampedArray([
+              0, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255
+            ])
+          }
+        ]
+      ])
+    )
+    expect(result.descriptor.surface?.width).toBe(512)
+    expect(result.descriptor.surface?.height).toBe(512)
+    expect(result.descriptor.surface?.albedo).toHaveLength(512 * 512 * 4)
+    expect(context.fillText).not.toHaveBeenCalled()
+  } finally {
+    spy.mockRestore()
+  }
+})
 it('constructs wall lettering from glyph runs without a rectangular backing or filled counters', async () => {
   const { vi } = await import('vitest')
   const { labelMeshes } = await import('../surfaces')

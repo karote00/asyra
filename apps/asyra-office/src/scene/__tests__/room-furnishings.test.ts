@@ -134,8 +134,9 @@ it('grounds shelf objects and keeps source printed artwork bounded to real frame
       ).toBeCloseTo(top, 5)
   }
   for (const label of scene.labels.filter((l) => l.artwork)) {
-    expect(label.width).toBeLessThan(0.6)
-    expect(label.height).toBeLessThan(0.6)
+    const discussionPrint = label.text === 'Better\nAgents\nHappier\nPeople'
+    expect(label.width).toBeLessThan(discussionPrint ? 1.15 : 0.6)
+    expect(label.height).toBeLessThan(discussionPrint ? 1.5 : 0.6)
     expect(requiredSpecValue(label.artwork, 'artwork').corners).toHaveLength(4)
   }
 })

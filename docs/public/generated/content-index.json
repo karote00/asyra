@@ -1795,7 +1795,7 @@
       "wordCount": 1820
     },
     {
-      "contentSha256": "aa1726704044a38ae28166710d5740524e1fa040cd0b70124e82c23f541d5f10",
+      "contentSha256": "298f5243b08fb47c7f009bc00874accaefac6d85450ad8cbb9182e3e124a786c",
       "description": "Integrate continuous keyboard controls and opt-in emissive, bloom and reflection effects while preserving app-owned behavior.",
       "headings": [
         {
@@ -1815,6 +1815,10 @@
           "title": "Preservation and verification"
         },
         {
+          "depth": 3,
+          "title": "Optical surfaces and authored normals"
+        },
+        {
           "depth": 2,
           "title": "Canonical sources"
         }
@@ -1830,7 +1834,7 @@
       "path": "updates/held-input-and-spatial-materials-r1.md",
       "section": "Extend",
       "title": "Adopt held keyboard input and spatial material effects",
-      "wordCount": 593
+      "wordCount": 818
     },
     {
       "contentSha256": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
@@ -2321,7 +2325,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "b4da8598a9204f170bd22cdb34d4573ed01a09381e841931ea609732c1a5d2e7",
+      "contentSha256": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -2387,6 +2391,22 @@
         {
           "depth": 2,
           "title": "Optional spatial environment reflections"
+        },
+        {
+          "depth": 2,
+          "title": "Optional spatial optical materials"
+        },
+        {
+          "depth": 3,
+          "title": "Ordered transmission capture"
+        },
+        {
+          "depth": 2,
+          "title": "Authored triangle normals"
+        },
+        {
+          "depth": 3,
+          "title": "Same-flush opaque work in ordered optical rendering"
         }
       ],
       "id": "reference/packages/preset",
@@ -2397,7 +2417,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 1217
+      "wordCount": 1940
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",

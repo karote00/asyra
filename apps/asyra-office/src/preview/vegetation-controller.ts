@@ -1,3 +1,8 @@
+import {
+  discussionTree,
+  DISCUSSION_CONIFER_SIZES
+} from '../scene/discussion-details'
+import { americanoGlass, sugarJar } from '../assets/discussion-tableware'
 import { pantryShelfSucculent } from '../assets/pantry-shelf-plant'
 import { frameNightLight } from '../assets/frame-night-light'
 import { pantryNightLight } from '../assets/pantry-night-light'
@@ -37,6 +42,9 @@ import { part, type AssetPart } from '../assets/catalog'
 import type { ReviewSnapshot, ReviewView } from './controller'
 
 export const REVIEW_ASSETS = {
+  'sugar-jar': 'Sugar jar - ceramic, leaning lid and spoon',
+  'iced-americano': 'Iced Americano - glass, liquid and ice',
+  'discussion-conifer': 'Discussion room - photo-directed conifer',
   'shelf-succulent': 'Shelf - blue succulent pot',
   'pantry-night-light': 'Night-light - original glass shade',
   'frame-night-light': 'Night-light - bronze frame',
@@ -85,6 +93,10 @@ export function createAssetReviewController(
   build?: () => AssetPart[]
 ) {
   const construct = () => {
+    if (asset === 'sugar-jar') return sugarJar()
+    if (asset === 'iced-americano') return americanoGlass()
+    if (asset === 'discussion-conifer')
+      return discussionTree(DISCUSSION_CONIFER_SIZES.floor, 37)
     if (asset === 'shelf-succulent') return pantryShelfSucculent()
     if (asset === 'pantry-night-light') return pantryNightLight()
     if (asset === 'frame-night-light') return frameNightLight()

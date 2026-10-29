@@ -67,6 +67,15 @@ const setup = (
     render: vi.fn(),
     dispose: vi.fn()
   }
+  let renderTarget: THREE.WebGLRenderTarget | null = null
+  Object.assign(driver, {
+    getRenderTarget: () => renderTarget,
+    getActiveCubeFace: () => 0,
+    getActiveMipmapLevel: () => 0,
+    setRenderTarget: (value: THREE.WebGLRenderTarget | null) => {
+      renderTarget = value
+    }
+  })
   configureDriver?.(driver)
   let pending: FrameRequestCallback | undefined
   const engine = new ThreeEngine({
@@ -831,3 +840,188 @@ it.each([false, true])(
     engine.destroy()
   }
 )
+
+it('updates transmissive optical materials without rebuilding geometry and resets when omitted', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const optics = {
+    transmission: 1,
+    ior: 1.33,
+    thickness: 0.06,
+    attenuationColor: 0xa85a16,
+    attenuationDistance: 0.08
+  }
+  const handle = add({ ...box, optics })
+  engine.execute({ type: 'flush' })
+  const scene = vi.mocked(driver.render).mock.calls[0]?.[0]
+  if (!scene) throw new Error('Missing render scene')
+  const mesh = scene.getObjectsByProperty('isMesh', true)[0] as THREE.Mesh
+  const material = mesh.material as THREE.MeshPhysicalMaterial
+  expect(material.isMeshPhysicalMaterial).toBe(true)
+  expect(material.transmission).toBe(1)
+  expect(material.side).toBe(THREE.FrontSide)
+  expect(material.ior).toBe(1.33)
+  expect(material.thickness).toBe(0.06)
+  expect(material.attenuationColor.getHex()).toBe(0xa85a16)
+  expect(material.attenuationDistance).toBe(0.08)
+  expect(material.opacity).toBe(1)
+  expect(material.transparent).toBe(false)
+  const geometry = mesh.geometry
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: {
+      [SPATIAL_PROPERTY]: {
+        ...box,
+        optics: { ...optics, transmission: 0.8, thickness: 0.01 }
+      }
+    }
+  })
+  engine.execute({ type: 'flush' })
+  expect(mesh.geometry).toBe(geometry)
+  expect(mesh.material).toBe(material)
+  expect(material.transmission).toBe(0.8)
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: { [SPATIAL_PROPERTY]: box }
+  })
+  engine.execute({ type: 'flush' })
+  expect(material.transmission).toBe(0)
+  expect(material.side).toBe(THREE.DoubleSide)
+  expect(material.thickness).toBe(0)
+  expect(mesh.geometry).toBe(geometry)
+  engine.destroy()
+})
+
+it('uploads authored normals and invalidates geometry only when their values change', () => {
+  const { engine, driver, add } = setup()
+  add(camera)
+  const normals = [0, 0.6, 0.8, 0, 0.6, 0.8, 0, 0.6, 0.8]
+  const descriptor: SpatialDescriptor = {
+    ...box,
+    shape: {
+      kind: 'triangles',
+      positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      indices: [0, 1, 2],
+      normals
+    }
+  } as SpatialDescriptor
+  const handle = add(descriptor)
+  const mesh = () => {
+    engine.execute({ type: 'flush' })
+    for (const [scene] of vi.mocked(driver.render).mock.calls) {
+      const item = scene.getObjectsByProperty('isMesh', true)[0]
+      if (item instanceof THREE.Mesh) return item
+    }
+    throw new Error('Missing mesh')
+  }
+  const before = mesh().geometry
+  expect(Array.from(before.getAttribute('normal').array)).toEqual(
+    normals.map(Math.fround)
+  )
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: { [SPATIAL_PROPERTY]: { ...descriptor, position: [1, 0, 0] } }
+  })
+  expect(mesh().geometry).toBe(before)
+  engine.execute({
+    type: 'update-object',
+    object: handle,
+    properties: {
+      [SPATIAL_PROPERTY]: {
+        ...descriptor,
+        shape: { ...descriptor.shape, normals: [0, 0, 1, 0, 0, 1, 0, 0, 1] }
+      }
+    }
+  })
+  expect(mesh().geometry).not.toBe(before)
+  expect(Array.from(mesh().geometry.getAttribute('normal').array)).toEqual([
+    0, 0, 1, 0, 0, 1, 0, 0, 1
+  ])
+  engine.destroy()
+})
+
+it('leaves ordinary transmission on the native scene path without an extra full-screen capture', () => {
+  const fixture = setup()
+  fixture.add(camera)
+  fixture.add({
+    ...box,
+    optics: {
+      transmission: 1,
+      ior: 1.5,
+      thickness: 0.01,
+      attenuationColor: 0xffffff,
+      attenuationDistance: 1
+    }
+  })
+  fixture.driver.render = vi.fn()
+  fixture.engine.execute({ type: 'flush' })
+  // One scene render and one overlay render. Native transmission owns its background.
+  expect(fixture.driver.render).toHaveBeenCalledTimes(2)
+  fixture.engine.destroy()
+})
+
+it('shares invariant shadows across optical passes and the scene, but refreshes next flush', () => {
+  let shadowPasses = 0
+  let opaquePasses = 0
+  let target: THREE.WebGLRenderTarget | null = null
+  const fixture = setup((driver) => {
+    Object.assign(driver, {
+      shadowMap: {
+        enabled: true,
+        type: THREE.PCFSoftShadowMap,
+        autoUpdate: true,
+        needsUpdate: false
+      },
+      xr: { enabled: false },
+      getRenderTarget: () => target,
+      getActiveCubeFace: () => 0,
+      getActiveMipmapLevel: () => 0,
+      setRenderTarget: (value: THREE.WebGLRenderTarget | null) => {
+        target = value
+      },
+      render: vi.fn((scene: THREE.Scene) => {
+        if (!scene.getObjectsByProperty('isDirectionalLight', true).length)
+          return
+        scene.traverseVisible((object) => {
+          if (
+            object instanceof THREE.Mesh &&
+            object.castShadow &&
+            !Array.isArray(object.material) &&
+            object.material.visible
+          )
+            opaquePasses++
+        })
+        const shadow = (driver as unknown as THREE.WebGLRenderer).shadowMap
+        if (shadow.enabled && (shadow.autoUpdate || shadow.needsUpdate)) {
+          shadowPasses++
+          shadow.needsUpdate = false
+        }
+      })
+    })
+  })
+  fixture.add(camera)
+  fixture.add({ ...box, castShadow: true })
+  for (const captureLayer of [0, 1, 2])
+    fixture.add({
+      ...box,
+      castShadow: false,
+      optics: {
+        transmission: 1,
+        ior: 1.33,
+        thickness: 0.06,
+        attenuationColor: 0xa85a16,
+        attenuationDistance: 0.08,
+        captureLayer
+      }
+    })
+  fixture.engine.execute({ type: 'flush' })
+  expect(shadowPasses).toBe(1)
+  expect(opaquePasses).toBe(1)
+  fixture.engine.execute({ type: 'flush' })
+  expect(shadowPasses).toBe(2)
+  expect(opaquePasses).toBe(2)
+  fixture.engine.destroy()
+})

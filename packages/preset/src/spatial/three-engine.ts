@@ -1,3 +1,5 @@
+import { createShadowFrame } from './shadow-frame.js'
+import { TransmissionCapture } from './transmission-capture.js'
 import { ReflectionEnvironment } from './reflection-environment.js'
 import { EmissiveBloom, requireBloomRenderer } from './emissive-bloom.js'
 import {
@@ -119,6 +121,7 @@ const makeGeometry = (shape: SpatialShape): THREE.BufferGeometry => {
       for (const [name, values] of [
         ['position', shape.positions],
         ['color', shape.colors],
+        ['normal', shape.normals],
         ['uv', shape.uvs]
       ] as const) {
         if (!values) continue
@@ -136,7 +139,7 @@ const makeGeometry = (shape: SpatialShape): THREE.BufferGeometry => {
       for (let i = 0; i < shape.indices.length; i++)
         indices[i] = shape.indices[i]
       geometry.setIndex(new THREE.BufferAttribute(indices, 1))
-      geometry.computeVertexNormals()
+      if (!shape.normals) geometry.computeVertexNormals()
       return geometry
     }
   }
@@ -216,6 +219,7 @@ export class ThreeEngine implements RenderEngine {
   private driver: GraphicsDriver | null = null
   private bloom?: EmissiveBloom
   private readonly reflections = new ReflectionEnvironment()
+  private readonly transmissionCapture = new TransmissionCapture()
   private root: ObjectRecord | null = null
   private width = 1
   private height = 1
@@ -400,15 +404,30 @@ export class ThreeEngine implements RenderEngine {
         this.screen.position.set(command.position.x, command.position.y, 0)
         this.screen.scale.set(command.scale.x, command.scale.y, 1)
         break
-      case 'flush':
+      case 'flush': {
+        const draw = createShadowFrame(this.requireDriver())
         this.syncProjection()
         this.updateInstanceDetail()
-        this.requireDriver().clear()
-        this.requireDriver().render(this.scene, this.camera)
+        const driver = this.requireDriver()
+        const width = Math.max(1, Math.round(this.width * this.pixelRatio))
+        const height = Math.max(1, Math.round(this.height * this.pixelRatio))
+        this.transmissionCapture.render(
+          driver as THREE.WebGLRenderer,
+          this.scene,
+          this.camera,
+          width,
+          height,
+          draw,
+          () => {
+            driver.clear()
+            draw(this.scene, this.camera)
+          }
+        )
         this.bloom?.render(this.scene, this.camera)
         this.requireDriver().clearDepth()
         this.requireDriver().render(this.screen, this.screenCamera)
         break
+      }
     }
     return { commandType: command.type, status, object, resource }
   }
@@ -534,6 +553,7 @@ export class ThreeEngine implements RenderEngine {
     this.scene.clear()
     this.screen.clear()
     this.reflections.dispose()
+    this.transmissionCapture.dispose()
     this.bloom?.dispose()
     this.bloom = undefined
     this.driver?.dispose()
@@ -667,7 +687,7 @@ export class ThreeEngine implements RenderEngine {
       !reusable
     ) {
       const geometry = makeGeometry(spatial.shape)
-      const material = new THREE.MeshStandardMaterial({
+      const material = new THREE.MeshPhysicalMaterial({
         color: spatial.color,
         vertexColors:
           spatial.shape.kind === 'triangles' && Boolean(spatial.shape.colors),
@@ -733,7 +753,7 @@ export class ThreeEngine implements RenderEngine {
       if (record.content instanceof THREE.Mesh) {
         record.content.castShadow = spatial.castShadow ?? false
         record.content.receiveShadow = spatial.receiveShadow ?? false
-        const material = record.content.material as THREE.MeshStandardMaterial
+        const material = record.content.material as THREE.MeshPhysicalMaterial
         const transparent = spatial.opacity < 1
         if (
           material.transparent !== transparent ||
@@ -747,6 +767,16 @@ export class ThreeEngine implements RenderEngine {
         material.wireframe = spatial.wireframe
         material.roughness = spatial.roughness ?? 0.65
         material.metalness = spatial.metalness ?? 0.12
+        const optics = spatial.optics
+        const side = optics ? THREE.FrontSide : THREE.DoubleSide
+        if (material.side !== side) material.needsUpdate = true
+        material.side = side
+        material.transmission = optics?.transmission ?? 0
+        this.transmissionCapture.apply(material, optics?.captureLayer)
+        material.ior = optics?.ior ?? 1.5
+        material.thickness = optics?.thickness ?? 0
+        material.attenuationColor.setHex(optics?.attenuationColor ?? 0xffffff)
+        material.attenuationDistance = optics?.attenuationDistance ?? Infinity
         this.reflections.apply(
           material,
           spatial.environmentIntensity ?? 0,
@@ -756,7 +786,11 @@ export class ThreeEngine implements RenderEngine {
         material.emissiveIntensity = spatial.emissiveIntensity ?? 0
         for (const child of record.content.children)
           if (child instanceof THREE.InstancedMesh) {
-            ;(child.material as THREE.MeshStandardMaterial).copy(material)
+            ;(child.material as THREE.MeshPhysicalMaterial).copy(material)
+            this.transmissionCapture.apply(
+              child.material as THREE.MeshPhysicalMaterial,
+              optics?.captureLayer
+            )
             child.receiveShadow = record.content.receiveShadow
             child.castShadow = record.content.castShadow
           }

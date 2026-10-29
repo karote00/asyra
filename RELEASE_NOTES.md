@@ -16,6 +16,50 @@
 }
 ```
 
+## Pending - Spatial optical material contract
+
+```update-note
+{
+  "change": "spatial-optical-material-contract",
+  "owner": "Preset spatial rendering",
+  "summary": "Add validated opt-in transmission, refractive index, thickness, attenuation and authored normals. Preserve ordered optical layers while reusing opaque color, depth and shadows within a flush. Keep optical surfaces independent of Office opaque batching. Nested-media photographic acceptance and wide-viewport navigation performance remain open.",
+  "sources": [
+    "packages/render-engine/src/spatial.ts",
+    "packages/preset/src/spatial/spatial-contract.ts",
+    "packages/preset/src/spatial/three-engine.ts",
+    "packages/preset/src/spatial/opaque-frame.ts",
+    "packages/preset/src/spatial/shadow-frame.ts",
+    "packages/preset/src/spatial/transmission-capture.ts",
+    "packages/preset/src/__tests__/opaque-frame.test.ts",
+    "packages/preset/src/__tests__/shadow-frame.test.ts",
+    "packages/preset/src/__tests__/transmission-capture.test.ts",
+    "apps/asyra-office/e2e/navigation-performance.spec.ts",
+    "apps/asyra-office/e2e/optics-probe.ts",
+    "apps/asyra-office/src/assets/geometry.ts",
+    "apps/asyra-office/src/assets/geometry-normals.ts",
+    "apps/asyra-office/src/assets/__tests__/sugar-surface.test.ts",
+    "apps/asyra-office/src/assets/__tests__/vegetation-contract.test.ts",
+    "apps/asyra-office/src/scene/__tests__/seating-construction.test.ts",
+    "apps/asyra-office/src/scene/artwork.ts",
+    "tools/flow-inspector/inspectors/asyra-office-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js",
+    "docs/public/generated/api-index.json",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/package-reference.json",
+    "docs/public/generated/source-map.json",
+    "packages/preset/src/__tests__/spatial-admission.test.ts",
+    "packages/preset/src/__tests__/spatial-engine.test.ts",
+    "apps/asyra-office/src/assets/solid-subtraction.ts",
+    "apps/asyra-office/src/assets/__tests__/solid-regions.test.ts",
+    "apps/asyra-office/src/scene/color-batching.ts",
+    "apps/asyra-office/src/scene/__tests__/color-batching.test.ts"
+  ],
+  "impact": "integration",
+  "guides": ["docs/public/updates/held-input-and-spatial-materials-r1.md"],
+  "reason": "Existing descriptors retain zero transmission. Consumers may opt in after reviewing screen-space nested-media limits; Office coffee remains under visual review."
+}
+```
+
 ## Pending - Office furnished pantry review
 
 ```update-note
@@ -24,6 +68,18 @@
   "owner": "Asyra Office development",
   "summary": "Add reference-based room furnishings, transparent pantry vessels, two night-light variants, the approved recessed-fridge/single-door pantry layout, four-room depth expansion, rear-neighborhood relocation and held-key camera controls; retain reviewed geometry and formal asset/visual checks.",
   "sources": [
+    "assets/asyra-office/models/small-plants/review/discussion-conifer-owner-reference.png",
+    "apps/asyra-office/src/preview/vegetation-controller.ts",
+    "apps/asyra-office/e2e/discussion.spec.ts",
+    "apps/asyra-office/src/scene/discussion-details.ts",
+    "apps/asyra-office/src/assets/discussion-tableware.ts",
+    "assets/asyra-office/models/desk-items/review/discussion-sugar-options.png",
+    "assets/asyra-office/models/desk-items/review/americano-tapered-glass-owner-reference.png",
+    "assets/asyra-office/models/desk-items/review/iced-americano-owner-reference.png",
+    "apps/asyra-office/src/scene/reference/discussion-poster.svg",
+    "apps/asyra-office/src/scene/reference/discussion-note.svg",
+    "apps/asyra-office/src/scene/__tests__/discussion-reference.test.ts",
+    "apps/asyra-office/src/scene/__tests__/metal-material.test.ts",
     "apps/asyra-office/src/scene/__tests__/building-expansion.test.ts",
     "apps/asyra-office/src/scene/__tests__/fixtures/building-before-expansion.json",
     "apps/asyra-office/src/scene/__tests__/pantry-layout.test.ts",
