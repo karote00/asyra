@@ -686,6 +686,49 @@ Rebased CI repair - 2026-10-30:
   readiness changed; production owners and all strict equality guards remain
   unchanged. This bounded correction does not resolve the two server timeout
   observations, which remain a separate CI follow-up.
+- Revised observation iteration after run 40962785044: the same peer Undo
+  timeout persists, while the batch-usage timeout does not recur and the
+  prepared-delivery 30-second timeout remains. The retained visible peer profile
+  contains 68 render flushes and four of five Undo publication commits; the last
+  publication is still applying. This rules out treating the earlier transport
+  correction as a complete convergence repair. Preserve both remote failures.
+- Next bounded step: use the existing canonical element count only as a negative
+  precondition for expensive digest polling. A mismatched count cannot satisfy
+  the exact document oracle, so return pending without saving, cloning or hashing;
+  a matching count must still pass the entire independent digest. Keep one
+  five-second polling guard, with no additional readiness timeout. Scope remains
+  the existing E2E digest helper and construction case. First prove the current
+  helper saves a large document even when the known target count cannot match,
+  using a real Core save hook; then require zero saves on a mismatch and a real
+  full digest on a matching count. Retain original exact geometry, history,
+  collaboration and durable reload checks. No production scheduling changes or
+  cache. Run the complete construction file and unchanged direct-consumer checks
+  as applicable. Attribution to the remote deadline remains unconfirmed until
+  the exact-head remote case passes; server timeout diagnosis remains separate.
+- Server attribution boundary: the failed prepared-delivery case completed its
+  4,114-entry/130-publication UI assertion before reaching 32.656 seconds, but
+  existing output cannot locate the remaining delay. Add bounded elapsed phase
+  records to that existing formal test for composition, preparation, dispatch,
+  exact geometry/history/reload and repair. Keep the 30-second guard, every full
+  fixture assertion and the real owners. This is diagnostic coverage, not a
+  server repair. Do not alter the serialization owner merely because local CPU
+  samples include cloning; any runtime optimization needs its own demonstrated
+  redundant-work regression inside the existing scope.
+- Negative-precondition proof: the strengthened real-browser case fails before
+  implementation because the helper hashes the 16,762,246-byte document despite
+  a different target count. After correction the real Core save hook observes
+  zero saves for the mismatch and one save for a matching count, whose digest
+  equals the complete earlier snapshot. All nine construction cases pass in
+  2.6 minutes, preserving original strict convergence, history and reload.
+  The default unguarded digest path and independent Node oracle are unchanged;
+  the prior 190 other direct-consumer passes retain that unchanged-path evidence.
+  All 35 prepared-delivery tests pass locally; the timed real-owner case takes
+  13.674 seconds with bounded phase records. This does not establish the cause
+  of its 32.656-second remote failure or close remote convergence attribution.
+  The final face-boundary regression passes again after lint cleanup (31.5
+  seconds). Production types, naming, formatting and scoped lint pass; lint
+  retains diagnostic console warnings. No timeout, fixture or equality oracle
+  was relaxed. Self-review confirms the count is never an acceptance result.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.

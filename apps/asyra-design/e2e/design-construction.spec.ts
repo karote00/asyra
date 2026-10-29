@@ -907,6 +907,11 @@ for (const scenario of [
         }
       }
       const before = await getCoreDocumentDigest(page)
+      const beforeCount = await page.evaluate(async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getCanonicalElementCount()
+      )
       const depth = await getUndoHistoryDepth(page)
       await page.getByRole('button', { name: 'Open Agent' }).click()
       await page
@@ -980,10 +985,44 @@ for (const scenario of [
       const after = await getCoreDocumentDigest(digestPage)
       expect(Object.keys(digestTransport as object)).toEqual(Object.keys(after))
       expect(digestTransport).toEqual(after)
+      await page.evaluate(async () => {
+        const { core, testRuntimeState } =
+          await import('../src/testing/runtime-access')
+        let saveCount = 0
+        testRuntimeState.set('construction-digest-save-count', saveCount)
+        core.registerSaveHook((data) => {
+          testRuntimeState.set('construction-digest-save-count', ++saveCount)
+          return data
+        })
+      })
+      expect(await getCoreDocumentDigest(page, beforeCount)).toBeNull()
+      expect(
+        await page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).testRuntimeState.get(
+            'construction-digest-save-count'
+          )
+        )
+      ).toBe(0)
+      const afterCount = await page.evaluate(async () =>
+        (
+          await import('../src/testing/runtime-access')
+        ).core.getCanonicalElementCount()
+      )
+      expect(await getCoreDocumentDigest(page, afterCount)).toEqual(after)
+      expect(
+        await page.evaluate(async () =>
+          (await import('../src/testing/runtime-access')).testRuntimeState.get(
+            'construction-digest-save-count'
+          )
+        )
+      ).toBe(1)
       if (peer)
         await expect
           .poll(() =>
-            getCoreDocumentDigest(peer as import('@playwright/test').Page)
+            getCoreDocumentDigest(
+              peer as import('@playwright/test').Page,
+              afterCount
+            )
           )
           .toEqual(after)
       await page.getByRole('button', { name: 'Close Agent panel' }).click()
@@ -1002,7 +1041,10 @@ for (const scenario of [
         try {
           await expect
             .poll(() =>
-              getCoreDocumentDigest(peer as import('@playwright/test').Page)
+              getCoreDocumentDigest(
+                peer as import('@playwright/test').Page,
+                beforeCount
+              )
             )
             .toEqual(before)
           expect(
@@ -1068,7 +1110,10 @@ for (const scenario of [
       if (peer)
         await expect
           .poll(() =>
-            getCoreDocumentDigest(peer as import('@playwright/test').Page)
+            getCoreDocumentDigest(
+              peer as import('@playwright/test').Page,
+              afterCount
+            )
           )
           .toEqual(after)
       await expect

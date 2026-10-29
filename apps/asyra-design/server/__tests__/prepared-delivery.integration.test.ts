@@ -374,6 +374,18 @@ it.each([
 )
 
 it('executes resolver delivery through the dispatcher and real Core with full receipts and durable history', async () => {
+  let phaseStartedAt = performance.now()
+  const recordPhase = (phase: string) => {
+    const completedAt = performance.now()
+    console.info(
+      JSON.stringify({
+        measurement: 'prepared-delivery-owner-phase',
+        phase,
+        durationMs: completedAt - phaseStartedAt
+      })
+    )
+    phaseStartedAt = completedAt
+  }
   vi.stubGlobal('window', {})
   const { default: core } = await import('@asyra/core')
   const { default: factory } = await import('@asyra/factory')
@@ -455,6 +467,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     return receipt
   })
   const operations = createLocalOperationTools(definitions, designs, dispatch)
+  recordPhase('composition')
   try {
     const prepared = JSON.parse(
       await designs.call(
@@ -463,6 +476,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
         new AbortController().signal
       )
     )
+    recordPhase('preparation')
     await operations.call(
       AiDesignToolIds.EXECUTE_DESIGN_BATCH,
       {
@@ -476,6 +490,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
       },
       new AbortController().signal
     )
+    recordPhase('dispatch')
     expect(dispatch).toHaveBeenCalledTimes(1)
     expect(compile).toHaveBeenCalledTimes(1)
     expect(receipt?.failure).toBeUndefined()
@@ -553,6 +568,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     }
     for (const [parent, ids] of children)
       expect(created.sceneTree.elements[parent].children).toEqual(ids)
+    recordPhase('geometry-and-receipts')
     expect(factory.getUndoHistoryDepth()).toBe(1)
     factory.undo()
     expect((await core.save()).sceneTree).toEqual(initial.sceneTree)
@@ -560,12 +576,14 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     const restored = await core.save()
     expect(restored.props).toEqual(created.props)
     expect(restored.sceneTree).toEqual(created.sceneTree)
+    recordPhase('undo-redo')
     core.load(created)
     const reloaded = await core.save()
     expect(reloaded.props).toEqual(created.props)
     expect(reloaded.sceneTree).toEqual(created.sceneTree)
     expect(core.getUIProperty('flattenedElementIds')).toEqual(expectedIds)
     expect(uiSnapshots).toEqual(savedSnapshots)
+    recordPhase('reload')
     const recoveryDesigns = createLocalDesignTools(definitions)
     const recoveryOperations = createLocalOperationTools(
       definitions,
@@ -595,6 +613,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     expect(rejected.settlement).toBe('not-started')
     expect(dispatch).toHaveBeenCalledTimes(1)
     expect(await core.save()).toEqual(reloaded)
+    recordPhase('rejected-recovery')
     const request = { ...rejected.repairGuide.arguments, inspection: 'defer' }
     request.repair.replacements[0].value = nonplanar.replacement
     const repaired = JSON.parse(
@@ -604,6 +623,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
         signal
       )
     )
+    recordPhase('repair-dispatch')
     expect(repaired.failedStep).toBeUndefined()
     expect(dispatch).toHaveBeenCalledTimes(2)
     const withFin = await core.save()
@@ -619,6 +639,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     expect(await core.save()).toEqual(withFin)
     core.load(withFin)
     expect(await core.save()).toEqual(withFin)
+    recordPhase('repaired-history-and-reload')
   } finally {
     uiSubscription?.unsubscribe()
     await runtime.dispose()

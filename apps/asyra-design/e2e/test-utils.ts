@@ -252,13 +252,25 @@ const createDocumentDigest = (documentState: unknown): DocumentDigest => {
   }
 }
 
+export function getCoreDocumentDigest(page: Page): Promise<DocumentDigest>
+export function getCoreDocumentDigest(
+  page: Page,
+  expectedElementCount: number
+): Promise<DocumentDigest | null>
 export async function getCoreDocumentDigest(
-  page: Page
-): Promise<DocumentDigest> {
-  return page.evaluate(async () => {
-    const data = await (
-      await import('../src/testing/runtime-access')
-    ).core.save()
+  page: Page,
+  expectedElementCount?: number
+): Promise<DocumentDigest | null> {
+  return page.evaluate(async (expectedElementCount) => {
+    const { core } = await import('../src/testing/runtime-access')
+    // A different count cannot match the full document. Avoid blocking remote
+    // replay with save/clone/hash work while that cheap precondition is false.
+    if (
+      expectedElementCount !== undefined &&
+      core.getCanonicalElementCount() !== expectedElementCount
+    )
+      return null
+    const data = await core.save()
     // Keep the browser oracle independent of the Node persistence digest.
     // Only the digest crosses the automation bridge, never the full document.
     const sortValue = (value: unknown): unknown => {
@@ -290,7 +302,7 @@ export async function getCoreDocumentDigest(
         value.toString(16).padStart(2, '0')
       ).join('')
     }
-  })
+  }, expectedElementCount)
 }
 
 export async function getPersistedDocumentCheckpoint(
