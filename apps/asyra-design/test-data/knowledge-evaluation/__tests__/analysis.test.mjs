@@ -1,5 +1,5 @@
 /* global structuredClone, Response */
-import test from 'node:test'
+import test, { before } from 'node:test'
 import { Buffer } from 'node:buffer'
 import assert from 'node:assert/strict'
 import { summarizeCalls, verifyPreservation, readPayload } from '../analyze.mjs'
@@ -9,8 +9,23 @@ import { URL, fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import process from 'node:process'
 
+const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+
+before(() => {
+  fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
+})
+
+test('temporary evidence fixtures stay inside their owning checkout', () => {
+  assert.equal(
+    path.join(
+      root,
+      'apps/asyra-design/test-data/knowledge-evaluation/__tests__/analysis.test.mjs'
+    ),
+    fileURLToPath(import.meta.url)
+  )
+})
+
 test('analysis refuses incomplete capture rather than emitting a successful report', () => {
-  const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-capture-test-')
   )
@@ -171,7 +186,6 @@ test('content arms use identical prompts and ablation preserves metadata only', 
 })
 
 test('content fixture restores original bytes after failed execution', async () => {
-  const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-fixture-test-')
   )
@@ -198,7 +212,6 @@ test('content fixture restores original bytes after failed execution', async () 
 import { captureCheckpoint } from '../checkpoint.mjs'
 
 test('streamed checkpoint evidence requires the exact persistence receipt and canonical document', async () => {
-  const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-checkpoint-test-')
   )
@@ -260,8 +273,6 @@ test('quality receipt rejects missing, extra and duplicated editable text and wr
 })
 
 test('analysis requires exact request records, complete Runtime evidence and every required capture stage', () => {
-  const root = fileURLToPath(new URL('../../../../../', import.meta.url))
-  fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-analysis-review-')
   )
@@ -454,7 +465,6 @@ test('analysis requires exact request records, complete Runtime evidence and eve
 })
 
 test('payload evidence refuses missing, corrupted and escaped content', () => {
-  const root = fileURLToPath(new URL('../../../../../', import.meta.url))
   const directory = fs.mkdtempSync(
     path.join(root, 'tmp/knowledge-payload-review-')
   )
@@ -480,7 +490,6 @@ test('payload evidence refuses missing, corrupted and escaped content', () => {
 test('submitted image restoration verifies exact files and every delivery identity', async () => {
   const { createHash } = await import('node:crypto')
   const { restoreToolImages } = await import('../analyze.mjs')
-  const root = fileURLToPath(new URL('../../../../../', import.meta.url))
   const directory = fs.mkdtempSync(path.join(root, 'tmp/image-evidence-'))
   const pixels = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6CwAAAABJRU5ErkJggg==',

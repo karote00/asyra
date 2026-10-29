@@ -1,4 +1,4 @@
-import test from 'node:test'
+import test, { before } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -7,7 +7,22 @@ import { DatabaseSync } from 'node:sqlite'
 import { createHash } from 'node:crypto'
 import { restorePublicActivity } from '../public-activity.mjs'
 
-const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
+const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+
+before(() => {
+  fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
+})
+
+test('temporary evidence fixtures stay inside their owning checkout', () => {
+  assert.equal(
+    path.join(
+      root,
+      'apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-boundaries.test.mjs'
+    ),
+    fileURLToPath(import.meta.url)
+  )
+})
+
 const hash = (value) => createHash('sha256').update(value).digest('hex')
 const pending = {
   status: 'available',

@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
 import { captureNativeBoundaries } from '../native-boundaries.mjs'
-import test from 'node:test'
+import test, { before } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -15,8 +15,23 @@ import { createExecutionRecordSink } from '@asyra/ai-agent-runtime/node'
 import { restorePublicActivity } from '../public-activity.mjs'
 import { readPayload } from '../analyze.mjs'
 
+const root = fileURLToPath(new URL('../../../../../', import.meta.url))
+
+before(() => {
+  fs.mkdirSync(path.join(root, 'tmp'), { recursive: true })
+})
+
+test('temporary evidence fixtures stay inside their owning checkout', () => {
+  assert.equal(
+    path.join(
+      root,
+      'apps/asyra-design/test-data/knowledge-evaluation/__tests__/public-activity.test.mjs'
+    ),
+    fileURLToPath(import.meta.url)
+  )
+})
+
 test('real recording restores public Unicode activity and partial CLI evidence without certifying completion', async () => {
-  const root = fileURLToPath(new URL('../../../../../..', import.meta.url))
   const directory = fs.mkdtempSync(path.join(root, 'tmp/public-activity-test-'))
   try {
     const sink = createExecutionRecordSink(directory)

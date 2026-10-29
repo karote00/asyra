@@ -589,6 +589,22 @@ Rebased CI repair - 2026-10-30:
   proof gates pass. Skips are not passes. Preserve the two intermittent observations
   above as unresolved causes despite final full-suite success; remote CI remains
   separate evidence for the pushed revision.
+- CI attempt 2 follow-up: eight offline evidence tests fail before their assertions
+  because three test files resolve their temporary fixture root one directory
+  above the checkout. Correct only these test fixture owners and add executable
+  checkout-containment assertions before allocating fixtures; create the checkout
+  temporary parent explicitly. Preserve every evidence, provenance, failure and
+  cleanup assertion. Verify the containment regression fails first, then run all
+  three files, the complete offline Node test group, formatting, lint and naming.
+  No product, Inspector flow, timeout or CI-selection semantics change. The
+  previous server timeouts passed on the same source; their causes remain
+  unconfirmed rather than claimed repaired by a retry.
+- Fixture-root validation: all three new containment assertions failed on the
+  previous root. Corrected roots pass all 21 focused tests and all 219 offline
+  Node cases, including the eight CI failures. Direct lint and naming pass;
+  existing evidence assertions and per-case cleanup are unchanged. Review found
+  and removed duplicate root derivation and parent creation in analysis tests.
+  Remote CI completion remains required; no model or 101 run is part of this fix.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.
