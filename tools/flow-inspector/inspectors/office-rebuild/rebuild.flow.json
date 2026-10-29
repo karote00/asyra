@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "projectId": "asyra-office",
+  "flowId": "rebuild",
+  "revision": 61,
+  "definition": {
+    "title": "Asyra Office rebuild",
+    "purpose": "Implement the approved office as a procedural scene; preserve individual asset review and explicit manual acceptance.",
+    "nodes": [
+      {
+        "id": "wall",
+        "title": "Wall asset harness",
+        "objective": "Validate the first procedural wall through the real provider.",
+        "owner": "Asyra Office",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "technical",
+            "title": "Geometry, lifecycle, app and browser gates pass",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "wall-harness-gates"
+            }
+          },
+          {
+            "id": "visual",
+            "title": "User accepts wall model views",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-office/implementation.md#stage-1---wall-asset-harness"
+        ],
+        "implementationRefs": [
+          "apps/asyra-office/src/assets/",
+          "apps/asyra-office/src/preview/"
+        ],
+        "actions": []
+      },
+      {
+        "id": "scene",
+        "title": "Procedural office scene",
+        "objective": "Construct the implemented reference objects and synthetic navigation using the official renderer without Blender.",
+        "owner": "Asyra Office",
+        "required": true,
+        "applicable": true,
+        "dependsOn": [],
+        "criteria": [
+          {
+            "id": "technical",
+            "title": "Construction, lifetime, interaction and browser gates pass",
+            "kind": "automated",
+            "selector": {
+              "producer": "custom",
+              "identity": "office-scene-gates"
+            }
+          },
+          {
+            "id": "visual",
+            "title": "User accepts implemented scene objects against the approved reference",
+            "kind": "manual"
+          }
+        ],
+        "specRefs": [
+          "docs/ai/apps/asyra-office/implementation.md#complete-scene---current-execution-contract"
+        ],
+        "implementationRefs": [
+          "apps/asyra-office/src/assets/",
+          "apps/asyra-office/src/scene/",
+          "apps/asyra-office/src/ui/",
+          "apps/asyra-office/src/main.tsx",
+          "apps/asyra-office/e2e/scene.spec.ts"
+        ],
+        "actions": []
+      }
+    ],
+    "criteria": [
+      {
+        "id": "product",
+        "title": "Complete office requirements and later asset stages accepted",
+        "kind": "manual"
+      }
+    ]
+  },
+  "current": {
+    "observations": [
+      {
+        "nodeId": "wall",
+        "criterionId": "technical",
+        "kind": "automated",
+        "status": "passed",
+        "binding": "aa2ef1fa34269e1fb64daab1cbd996033e60eb7fd9817f888525481d0e226b8e",
+        "actor": "Codex local validation",
+        "at": "2026-10-25T11:13:03.692Z",
+        "executionId": "sha256:0bb11ac2cec873a15271988f9aed2a90be33e0d742db6ddbe265875f86c1580c",
+        "caseId": "wall-harness-gates",
+        "summary": "16 Vitest cases and 2 real-browser cases pass; typecheck, lint, naming, build, static Inspector and update guidance pass. Screenshots inspected at 1082 x 672; user visual acceptance remains pending. Build retains an existing shared-bundle size warning."
+      },
+      {
+        "nodeId": "scene",
+        "criterionId": "technical",
+        "kind": "automated",
+        "status": "failed",
+        "binding": "e094be28d21f28785c10126a938815162a8eb8d813de01041215eb7fd3615180",
+        "actor": "Codex local validation",
+        "at": "2026-10-26T13:28:46.977Z",
+        "executionId": "sha256:51dbfc9a893bdb55bc4db361bf96524abb21c73dc4bec904e260a31416d73c0b",
+        "caseId": "office-scene-gates",
+        "summary": "Incomplete. Pantry east parapet and flat rear end are live; 21 earlier structural cases, 8 projection/exterior cases, app type/lint/naming, and 7 actual-app capture cases passed. Source/app crops plus above/rear views were inspected; exterior digest unchanged. Owner then identified wrong west-divider topology. New actual near/distant same-plane/ordered-members regression is red. Two full constrained candidates failed and were not applied. Offline foot ablation keeps 21 marks within retained limits but leaves the source foot 73.203 px away; this diagnostic is not live and is not proof of source impossibility. Direction requested before changing visible proportions in a separate structural correction drawing. The original target is preserved. Whole-building room proportions and source fidelity remain unaccepted; shadow banding deferred. No commit or push."
+      }
+    ],
+    "notes": [
+      {
+        "id": "approved-structure-application",
+        "nodeId": "scene",
+        "actor": "Codex local validation",
+        "text": "2026-10-26: Owner-approved building structure applied through normal app composition. Forty focused structure tests, two exterior/crown cases, typecheck/build, lint, 15 naming checks and one hardware-browser case pass. Overview and enlarged 964x902 captures inspected; current IAB reloaded and inspected. Evidence: assets/asyra-office/models/architecture/review/live-approved-structure-overview.png, live-approved-structure-close.png and live-approved-structure-record.json. Frozen approved snapshot SHA d86f7e7b55db77a90a75bf4ff7449581d8cd53c0aa58753722a89c93b239cd5d. Earlier green-depth/parapet report describes the superseded source revision. Full scene criterion is not cleared by this bounded structural milestone; furnishings, lighting banding and full product validation remain deferred. No commit or push."
+      }
+    ],
+    "progress": [],
+    "sources": [
+      {
+        "nodeId": "wall",
+        "revision": "sha256:0bb11ac2cec873a15271988f9aed2a90be33e0d742db6ddbe265875f86c1580c"
+      },
+      {
+        "nodeId": "scene",
+        "revision": "sha256:214c858b24d61befdb5e686869ab8187642f55c3d320ef60289a23f4d8595c89"
+      }
+    ],
+    "warnings": []
+  }
+}

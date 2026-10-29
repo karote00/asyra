@@ -8,6 +8,7 @@ export {
 export { PresetApplyError } from './composition/error.js'
 export type {
   SpatialLighting,
+  SpatialBloom,
   SpatialPresentationOptions
 } from './spatial/lighting.js'
 export type {

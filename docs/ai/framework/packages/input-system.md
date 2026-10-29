@@ -44,10 +44,24 @@ Normalize raw keyboard/mouse/pointer input into framework input events.
   boundary. Keyboard listeners belong to `host`; pointer/wheel listeners belong
   to `pointerTarget`, defaulting to `host`. Repeating the same pair is
   idempotent.
-- Keyboard key release bookkeeping runs in host capture phase even when an
-  app-owned editor stops propagation. Capture only clears the released key and
-  its timer; it neither prevents native editing nor dispatches combinations.
-  Shortcut dispatch remains in bubble phase so editor isolation is preserved.
+- Ordinary keyboard combinations retain exact chord matching and bubble-phase
+  dispatch. Release bookkeeping clears the released key and timer in capture
+  phase, even when an editor stops propagation.
+- Keyboard combinations may opt into `keyboardMode: 'held'`. Their `keys` are
+  observed alternatives, not an exact chord. Snapshots contain all held
+  non-modifier keys plus live modifier flags and `keyboard` metadata: `phase`
+  (`down`, `up`, `cancel`), `changedKey`, `target`, `repeat`, and `isComposing`.
+  Held state does not expire with the ordinary key-repeat timer. Modifier
+  changes while an observed key is held also publish snapshots. The `modifiers`
+  chord filter is not applied in held mode; callback admission owns modifier,
+  editable-target and IME policy. Do not use held mode for pointer combinations.
+- Held keydown dispatch runs in bubble phase; accepted callbacks prevent the
+  native keydown default. Returning `false` suppresses dispatch and preserves
+  that default. Held release dispatch runs in capture phase without preventing
+  native editing; it must reach consumers even when an editor stops propagation.
+  Blur, focus changes, composition start, hidden documents and host detach cancel
+  held state. Scene consumers must unregister and stop their own scheduled work
+  on disposal. Runtime reset attempts all cleanup even if cancellation throws.
 - `switchWatchedElement(element)` derives the element's owning `Window`. A
   target/document switch removes exact prior listeners before attaching the new
   host/target pair.

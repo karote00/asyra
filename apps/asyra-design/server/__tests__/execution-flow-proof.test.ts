@@ -3981,6 +3981,10 @@ it('execution proof preserves issued history direction across the App feature ha
     const input = new InputSystem()
     const callbacks = new Map<string, EventListener[]>()
     input.attachBrowserHost({
+      document: {
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn()
+      },
       addEventListener: (name: string, callback: EventListener) => {
         callbacks.set(name, [...(callbacks.get(name) ?? []), callback])
       },

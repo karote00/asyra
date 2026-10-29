@@ -13,5 +13,13 @@ export interface RawInputEvent {
   keys: KeyboardKey[]
   modifiers: ModifierKeys
   pointer: PointerEventData
+  /** Present only for opt-in held keyboard registrations. */
+  keyboard?: {
+    phase: 'down' | 'up' | 'cancel'
+    changedKey: KeyboardKey | null
+    target: EventTarget | null
+    repeat: boolean
+    isComposing: boolean
+  }
   detail?: DetailType
 }

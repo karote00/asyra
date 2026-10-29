@@ -3,6 +3,18 @@
 Design status: **Wall v5, floor v7 with its independent material PNG, and partition v5 were approved on 2026-10-06. Stair and door retain their 2026-10-04 design approval. Window v6 and its 45-degree frame geometry were approved for commit on 2026-10-06; colour and materials are outside this approval.**
 This delivery contains images and documents, with no Blender, GLB, animation, or app implementation. This group is approved design documentation.
 
+## Current building-instance specification - 2026-10-29
+
+The reusable part dimensions below remain asset defaults. The accepted expanded
+single-floor assembly uses the app's
+[current structure specification](../../../../apps/asyra-office/src/scene/reference/office-structure.json)
+and [room construction](../../../../docs/ai/apps/asyra-office/implementation.md#four-room-depth-expansion---2026-10-28).
+The work-room green divider retains its total envelope but explicitly uses a
+20 mm white cap; green material covers the body and sides. The scene's optional
+physical `capHeight` is applied after overall sizing, with positive beveled body
+and cap regions. Omitting it preserves the reusable wall's default proportions.
+This instance override does not change every architectural wall's cap.
+
 ## Reference and units
 
 The central office is the primary reference; neighbouring shops are secondary references for the window only. The entrance door follows the user's close-up: the narrow same-colour left panel and the right main leaf form one complete unit. Do not omit the left panel or replace it with wall.

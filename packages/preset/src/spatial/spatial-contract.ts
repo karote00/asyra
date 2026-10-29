@@ -42,6 +42,8 @@ export function sameSpatialShape(a: SpatialShape, b: SpatialShape): boolean {
       return (
         b.kind === 'triangles' &&
         equal(a.positions, b.positions) &&
+        ((!a.normals && !b.normals) ||
+          (!!a.normals && !!b.normals && equal(a.normals, b.normals))) &&
         ((!a.uvs && !b.uvs) || (!!a.uvs && !!b.uvs && equal(a.uvs, b.uvs))) &&
         ((!a.colors && !b.colors) ||
           (!!a.colors && !!b.colors && equal(a.colors, b.colors))) &&
@@ -73,7 +75,7 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
     )
   }
   if (value.kind !== 'triangles') return false
-  const { positions, indices, colors, uvs } = value
+  const { positions, indices, colors, uvs, normals } = value
   if (
     !Array.isArray(positions) ||
     positions.length < 9 ||
@@ -83,6 +85,8 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
     indices.length < 3 ||
     indices.length > 3000000 ||
     indices.length % 3 !== 0 ||
+    (normals !== undefined &&
+      (!Array.isArray(normals) || normals.length !== positions.length)) ||
     (colors !== undefined &&
       (!Array.isArray(colors) || colors.length !== positions.length)) ||
     (uvs !== undefined &&
@@ -103,6 +107,17 @@ export function isSpatialShape(value: unknown): value is SpatialShape {
     // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
     for (let i = 0; i < uvs.length; i++)
       if (!Number.isFinite(uvs[i])) return false
+  if (Array.isArray(normals))
+    for (let i = 0; i < normals.length; i += 3) {
+      if (
+        !Number.isFinite(normals[i]) ||
+        !Number.isFinite(normals[i + 1]) ||
+        !Number.isFinite(normals[i + 2])
+      )
+        return false
+      const length = Math.hypot(normals[i], normals[i + 1], normals[i + 2])
+      if (!Number.isFinite(length) || Math.abs(length - 1) > 1e-4) return false
+    }
   const vertices = positions.length / 3
   // eslint-disable-next-line @typescript-eslint/prefer-for-of -- Profiled numeric admission avoids iterator overhead.
   for (let i = 0; i < indices.length; i++) {
@@ -119,7 +134,7 @@ export function readSpatialShape(value: unknown): SpatialShape {
   // detach those arrays directly, then validate the exact retained snapshot.
   let snapshot: unknown = record(value) ? { ...value } : value
   if (record(snapshot) && snapshot.kind === 'triangles') {
-    for (const key of ['positions', 'colors', 'indices', 'uvs']) {
+    for (const key of ['positions', 'colors', 'indices', 'uvs', 'normals']) {
       const source = snapshot[key]
       if (!Array.isArray(source)) continue
       if (source.length > 3000000) throw new Error('Invalid spatial shape')
@@ -134,6 +149,7 @@ export function readSpatialShape(value: unknown): SpatialShape {
     shape = {
       kind: 'triangles',
       positions: Object.freeze(snapshot.positions),
+      ...(snapshot.normals ? { normals: Object.freeze(snapshot.normals) } : {}),
       ...(snapshot.uvs ? { uvs: Object.freeze(snapshot.uvs) } : {}),
       ...(snapshot.colors ? { colors: Object.freeze(snapshot.colors) } : {}),
       indices: Object.freeze(snapshot.indices)
@@ -201,6 +217,8 @@ export function readSpatialInstances(
 }
 
 export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
+  let admittedOptics: Extract<SpatialDescriptor, { kind: 'mesh' }>['optics']
+
   if (record(value) && admittedDescriptors.has(value))
     return value as SpatialDescriptor
   if (record(value)) {
@@ -280,6 +298,59 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
             !Array.isArray(value.distant.shape.uvs))))
     )
       throw new Error('Surface textures require UV coordinates')
+    if (
+      (value.emissive !== undefined &&
+        (!Number.isInteger(value.emissive) ||
+          (value.emissive as number) < 0 ||
+          (value.emissive as number) > 0xffffff)) ||
+      (value.emissiveIntensity !== undefined &&
+        (typeof value.emissiveIntensity !== 'number' ||
+          !Number.isFinite(value.emissiveIntensity) ||
+          value.emissiveIntensity < 0))
+    )
+      throw new Error('Invalid spatial emissive material')
+    if (
+      value.environmentIntensity !== undefined &&
+      (typeof value.environmentIntensity !== 'number' ||
+        !Number.isFinite(value.environmentIntensity) ||
+        value.environmentIntensity < 0)
+    )
+      throw new Error('Invalid spatial environment material')
+    if (value.optics !== undefined) {
+      const optics = value.optics
+      if (
+        !record(optics) ||
+        typeof optics.transmission !== 'number' ||
+        !Number.isFinite(optics.transmission) ||
+        optics.transmission < 0 ||
+        optics.transmission > 1 ||
+        typeof optics.ior !== 'number' ||
+        !Number.isFinite(optics.ior) ||
+        optics.ior < 1 ||
+        optics.ior > 2.333 ||
+        typeof optics.thickness !== 'number' ||
+        !Number.isFinite(optics.thickness) ||
+        optics.thickness < 0 ||
+        !Number.isInteger(optics.attenuationColor) ||
+        (optics.attenuationColor as number) < 0 ||
+        (optics.attenuationColor as number) > 0xffffff ||
+        !positive(optics.attenuationDistance) ||
+        (optics.captureLayer !== undefined &&
+          (!Number.isSafeInteger(optics.captureLayer) ||
+            (optics.captureLayer as number) < 0))
+      )
+        throw new Error('Invalid spatial optical material')
+      admittedOptics = Object.freeze({
+        ...(optics.captureLayer !== undefined
+          ? { captureLayer: optics.captureLayer as number }
+          : {}),
+        transmission: optics.transmission,
+        ior: optics.ior,
+        thickness: optics.thickness,
+        attenuationColor: optics.attenuationColor as number,
+        attenuationDistance: optics.attenuationDistance as number
+      })
+    }
     for (const key of ['roughness', 'metalness']) {
       const n = value[key]
       if (
@@ -334,8 +405,12 @@ export function readSpatialDescriptor(value: unknown): SpatialDescriptor {
           ...(value.surface === undefined
             ? {}
             : { surface: readSpatialSurface(value.surface) }),
+          ...(admittedOptics ? { optics: admittedOptics } : {}),
           roughness: value.roughness ?? 0.65,
           metalness: value.metalness ?? 0.12,
+          environmentIntensity: value.environmentIntensity ?? 0,
+          emissive: value.emissive ?? 0,
+          emissiveIntensity: value.emissiveIntensity ?? 0,
           color: value.color,
           opacity: value.opacity,
           wireframe: value.wireframe,

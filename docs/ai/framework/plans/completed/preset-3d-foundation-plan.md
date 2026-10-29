@@ -111,7 +111,7 @@ Direct source anchors:
   [rendering](../../../apps/asyra-fieldscope/modules/rendering.md),
   [FieldScope layer](../../../../../apps/asyra-fieldscope/src/render-app/spatial-layer.ts).
 - [Office implementation](../../../apps/asyra-office/implementation.md) and
-  [product requirements](../../../apps/asyra-office/asyra-office-product-plan.md).
+  [product requirements](../../../apps/asyra-office/plans/office-rebuild-plan.md).
 
 Observed design constraints to resolve, not unproven bug claims:
 

@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+:root {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+}
+canvas {
+  display: block;
+}
+button {
+  cursor: pointer;
+}

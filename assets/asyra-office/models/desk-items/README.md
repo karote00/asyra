@@ -20,3 +20,21 @@ Each drawing provides front, right, back, top and oblique views. One laptop incl
 The laptop follows the requested Apple-style appearance, with a small white apple-shaped rear emblem. Its hidden front and underside are explicit simplified completions, not a reconstruction of a particular commercial model. Metric dimensions are design choices. Generated image perspectives and key layouts are approximate; JSON fixes construction. Future models require comparison after separate authorization; this package does not establish 100% reconstruction.
 
 The display is a separate front-facing surface region with normalized UVs and a plain dark preview material. The app will supply the user's current work content. No screenshot, UI, video, reflection or animation is baked into the model. The mug is empty. Lighting and any future drink content belong to the app.
+
+## Discussion tableware additions - 2026-10-29
+
+The discussion table does not reuse the generic empty mug below as a substitute.
+Its complete numeric construction and appearance handoff is the
+[discussion tableware specification](../../../../docs/ai/apps/asyra-office/implementation.md#discussion-tableware-correction---2026-10-28),
+implemented by `apps/asyra-office/src/assets/discussion-tableware.ts` and its
+optical/solid helpers. It specifies the transparent tapered tumbler, separate
+dark Americano volume and seven floating ice solids; low white sugar vessel,
+leaning removable lid, sixteen loose sugar cubes and concave silver spoon; and
+a separate handleless wide-mouth cup. Pose, glass profiles, ice transforms,
+clearances, material regions and initial-camera notebook relations are documented
+there. The owner photos remain in this batch's `review/` directory.
+
+The current room revision is included in the partial merge checkpoint. The
+layered optical approximation is not a physical fluid simulation or a claim of
+photographic nested refraction. Future lid/spoon/cube actions are not implemented;
+separate named parts preserve that future construction boundary.

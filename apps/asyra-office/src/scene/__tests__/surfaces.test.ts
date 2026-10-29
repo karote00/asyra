@@ -1,0 +1,215 @@
+import { expect, it } from 'vitest'
+import { createSurfaces } from '../surfaces'
+it('preserves an authored high-resolution print through the live label surface path', async () => {
+  const { vi } = await import('vitest')
+  const { labelMeshes } = await import('../surfaces')
+  const context = {
+    fillText: vi.fn(),
+    getImageData: () => ({ data: new Uint8ClampedArray(256 * 256 * 4) })
+  }
+  const spy = vi
+    .spyOn(HTMLCanvasElement.prototype, 'getContext')
+    .mockReturnValue(context as unknown as CanvasRenderingContext2D)
+  try {
+    const artwork = {
+      source: '/crisp.svg',
+      corners: [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1]
+      ],
+      resolution: 512
+    }
+    const [result] = labelMeshes(
+      [
+        {
+          text: 'Better\nAgents\nHappier\nPeople',
+          width: 1.114,
+          height: 1.464,
+          position: [0, 0, 0],
+          rotation: 0,
+          color: '#473c30',
+          background: '#ede4d1',
+          artwork
+        }
+      ],
+      new Map([
+        [
+          '/crisp.svg',
+          {
+            width: 2,
+            height: 2,
+            data: new Uint8ClampedArray([
+              0, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255
+            ])
+          }
+        ]
+      ])
+    )
+    expect(result.descriptor.surface?.width).toBe(512)
+    expect(result.descriptor.surface?.height).toBe(512)
+    expect(result.descriptor.surface?.albedo).toHaveLength(512 * 512 * 4)
+    expect(context.fillText).not.toHaveBeenCalled()
+  } finally {
+    spy.mockRestore()
+  }
+})
+it('constructs wall lettering from glyph runs without a rectangular backing or filled counters', async () => {
+  const { vi } = await import('vitest')
+  const { labelMeshes } = await import('../surfaces')
+  const data = new Uint8ClampedArray(256 * 256 * 4)
+  for (let y = 100; y < 160; y++)
+    for (let x = 100; x < 140; x++)
+      if (x < 105 || x >= 135 || y < 105 || y >= 155)
+        data[(y * 256 + x) * 4 + 3] = 255
+  const context = {
+    fillRect: vi.fn(),
+    fillText: vi.fn(),
+    getImageData: () => ({ data })
+  }
+  const spy = vi
+    .spyOn(HTMLCanvasElement.prototype, 'getContext')
+    .mockReturnValue(context as unknown as CanvasRenderingContext2D)
+  try {
+    const [result] = labelMeshes([
+      {
+        kind: 'lettering',
+        text: 'O',
+        width: 0.4,
+        height: 0.6,
+        position: [0, 0, 0],
+        rotation: 0,
+        color: '#504838',
+        background: 'transparent'
+      }
+    ])
+    const descriptor = result.descriptor
+    expect(descriptor.kind).toBe('mesh')
+    if (descriptor.kind !== 'mesh' || descriptor.shape.kind !== 'triangles')
+      throw new Error('Missing glyph triangles')
+    expect(descriptor.surface).toBeUndefined()
+    expect(context.fillRect).not.toHaveBeenCalled()
+    const { positions, indices } = descriptor.shape
+    expect(indices.length).toBeGreaterThan(6)
+    for (let i = 0; i < indices.length; i += 3) {
+      const vertices = indices
+        .slice(i, i + 3)
+        .map((j) => positions.slice(j * 3, j * 3 + 2))
+      // Every triangle belongs to the border of the O, never its empty counter.
+      expect(
+        vertices.every((p) => Math.abs(p[0]) < 0.1 && Math.abs(p[1]) < 0.15)
+      ).toBe(false)
+      const cx = vertices.reduce((s, p) => s + p[0], 0) / 3,
+        cy = vertices.reduce((s, p) => s + p[1], 0) / 3
+      expect(Math.abs(cx) < 0.1 && Math.abs(cy) < 0.15).toBe(false)
+    }
+  } finally {
+    spy.mockRestore()
+  }
+})
+it('generates valid byte-range material pixels without baking directional light', () => {
+  const surfaces = createSurfaces()
+  for (const surface of Object.values(surfaces)) {
+    expect(
+      surface.albedo.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)
+    ).toBe(true)
+    expect(surface.normals.slice(0, 4)).toEqual([128, 128, 255, 255])
+  }
+})
+it('maps the canvas top row to the top of a scene label', async () => {
+  const { vi } = await import('vitest')
+  const { labelMeshes } = await import('../surfaces')
+  const context = {
+    fillRect: vi.fn(),
+    fillText: vi.fn(),
+    getImageData: () => ({ data: new Uint8ClampedArray(256 * 256 * 4) })
+  }
+  const spy = vi
+    .spyOn(HTMLCanvasElement.prototype, 'getContext')
+    .mockReturnValue(context as unknown as CanvasRenderingContext2D)
+  try {
+    const [label] = labelMeshes([
+      {
+        text: 'Office',
+        width: 1,
+        height: 0.5,
+        position: [0, 0, 0],
+        rotation: 0,
+        color: '#fff',
+        background: '#333'
+      }
+    ])
+    const shape = label.descriptor.shape
+    expect(shape.kind).toBe('triangles')
+    if (shape.kind === 'triangles')
+      expect(shape.uvs).toEqual([0, 1, 1, 1, 1, 0, 0, 0])
+  } finally {
+    spy.mockRestore()
+  }
+})
+
+it('paints blue porcelain flowers on a light glaze with a continuous wrap and no baked relief', () => {
+  const surface = createSurfaces()['porcelain-floral']
+  expect(surface).toBeDefined()
+  if (!surface) throw new Error('Missing porcelain decoration')
+  let blue = 0
+  for (let i = 0; i < surface.albedo.length; i += 4) {
+    if (surface.albedo[i + 2] > surface.albedo[i] + 30) blue++
+  }
+  expect(surface.albedo.every((n, i) => i % 4 !== 3 || n === 255)).toBe(true)
+  expect(
+    surface.normals.every((n, i) => n === [128, 128, 255, 255][i % 4])
+  ).toBe(true)
+  expect(blue / (surface.width * surface.height)).toBeGreaterThan(0.08)
+  expect(blue / (surface.width * surface.height)).toBeLessThan(0.4)
+  for (let y = 0; y < surface.height; y++) {
+    const first = y * surface.width * 4,
+      last = first + (surface.width - 1) * 4
+    expect(surface.albedo.slice(first, first + 4)).toEqual(
+      surface.albedo.slice(last, last + 4)
+    )
+  }
+})
+
+it('antialiases the porcelain ink edges instead of retaining stair-step binary pixels', () => {
+  const surface = createSurfaces()['porcelain-floral']
+  if (!surface) throw new Error('Missing porcelain surface')
+  const pixels = surface.albedo
+  expect(
+    pixels.some(
+      (r, i) => i % 4 === 0 && r > 69 && r < 235 && pixels[i + 2] > r + 15
+    )
+  ).toBe(true)
+})
+
+it('provides distinct replaceable ingredient grains with neutral lighting and continuous seams', () => {
+  const surfaces = createSurfaces()
+  const firstPixels: number[][] = []
+  for (const kind of [
+    'granulated',
+    'ground-spice',
+    'dried-herbs',
+    'peppercorns'
+  ] as const) {
+    const surface = surfaces[kind]
+    if (!surface) throw new Error('Missing ingredient surface: ' + kind)
+    expect(
+      new Set(surface.albedo.filter((_, i) => i % 4 === 0)).size
+    ).toBeGreaterThan(8)
+    expect(
+      surface.normals.every((v, i) => v === [128, 128, 255, 255][i % 4])
+    ).toBe(true)
+    for (let y = 0; y < surface.height; y++) {
+      const start = y * surface.width * 4
+      expect(surface.albedo.slice(start, start + 4)).toEqual(
+        surface.albedo.slice(
+          start + (surface.width - 1) * 4,
+          start + surface.width * 4
+        )
+      )
+    }
+    firstPixels.push(surface.albedo.slice(0, 256))
+  }
+  expect(new Set(firstPixels.map((v) => JSON.stringify(v))).size).toBe(4)
+})

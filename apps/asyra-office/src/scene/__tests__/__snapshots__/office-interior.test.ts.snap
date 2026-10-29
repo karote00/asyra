@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`accepted structural composition > records the approved rear-neighborhood translation with unchanged front and side assets 1`] = `
+{
+  "count": 476,
+  "digest": "39426cb7744e787bf7ae268cc072c0017830dab16a11b8eda2045e71fe3753c7",
+}
+`;

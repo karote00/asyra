@@ -1,0 +1,978 @@
+{
+  "reference": "assets/asyra-office/models/architecture/review/approved-office-reference.jpg",
+  "imageSize": [
+    1280,
+    800
+  ],
+  "viewport": [
+    220,
+    44,
+    845,
+    756
+  ],
+  "description": "Manually traced visible structural endpoints in the approved image; pixels, not independently authored world dimensions. Hidden floor intersections are excluded.",
+  "points": {
+    "rear-left-top": [
+      578,
+      74
+    ],
+    "discussion-rear-end-top": [
+      758,
+      132
+    ],
+    "pantry-rear-left-top": [
+      794,
+      145
+    ],
+    "pantry-rear-right-top": [
+      1003,
+      225
+    ],
+    "pantry-divider-front-top": [
+      699,
+      199
+    ],
+    "work-left-front-top": [
+      287,
+      218
+    ],
+    "discussion-left-front-top": [
+      437,
+      145
+    ],
+    "work-partition-left-top": [
+      397,
+      200
+    ],
+    "work-partition-right-top": [
+      498,
+      238
+    ],
+    "green-partition-left-top": [
+      520,
+      257
+    ],
+    "green-partition-right-top": [
+      591,
+      285
+    ],
+    "green-partition-right-bottom": [
+      591,
+      370
+    ],
+    "lounge-return-front-top": [
+      630,
+      343
+    ],
+    "lounge-return-rear-top": [
+      678,
+      320
+    ],
+    "lounge-wall-left-top": [
+      683,
+      337
+    ],
+    "lounge-wall-right-top": [
+      897,
+      407
+    ],
+    "facade-right-top": [
+      591,
+      448
+    ],
+    "door-left-top": [
+      498,
+      439
+    ],
+    "door-right-top": [
+      558,
+      464
+    ],
+    "door-right-bottom": [
+      558,
+      552
+    ],
+    "lounge-wall-step-low": [
+      767,
+      365
+    ],
+    "lounge-wall-step-top": [
+      767,
+      359
+    ]
+  },
+  "furniture": {
+    "lounge-planter": {
+      "mesh": "planterVessel",
+      "box": [
+        656,
+        443,
+        676,
+        468
+      ],
+      "floor": "lounge",
+      "yaw": 0
+    },
+    "desk": {
+      "mesh": "desk",
+      "box": [
+        358,
+        308,
+        508,
+        389
+      ],
+      "floor": "work",
+      "yaw": 0
+    },
+    "desk-chair": {
+      "mesh": "chair",
+      "box": [
+        422,
+        299,
+        480,
+        367
+      ],
+      "floor": "work",
+      "yaw": 0
+    },
+    "meeting-table": {
+      "mesh": "teaTable",
+      "box": [
+        569,
+        222,
+        655,
+        287
+      ],
+      "floor": "discussion",
+      "yaw": 0
+    },
+    "meeting-chair-left": {
+      "mesh": "teaChair",
+      "box": [
+        537,
+        209,
+        600,
+        282
+      ],
+      "floor": "discussion",
+      "yaw": 65
+    },
+    "meeting-chair-right": {
+      "mesh": "teaChair",
+      "box": [
+        630,
+        224,
+        682,
+        294
+      ],
+      "floor": "discussion",
+      "yaw": -65
+    },
+    "fridge": {
+      "mesh": "fridge",
+      "box": [
+        716,
+        234,
+        777,
+        344
+      ],
+      "floor": "pantry",
+      "yaw": 90
+    },
+    "water-dispenser": {
+      "mesh": "dispenserBody",
+      "box": [
+        700,
+        300,
+        735,
+        347
+      ],
+      "floor": "pantry",
+      "yaw": 90
+    },
+    "sink": {
+      "mesh": "sink",
+      "box": [
+        879,
+        316,
+        980,
+        388
+      ],
+      "floor": "pantry",
+      "yaw": 0
+    },
+    "lounge-sofa": {
+      "mesh": "sofa",
+      "box": [
+        675,
+        407,
+        812,
+        508
+      ],
+      "floor": "lounge",
+      "yaw": 0
+    },
+    "lounge-side-chair": {
+      "mesh": "armchair",
+      "box": [
+        744,
+        474,
+        815,
+        541
+      ],
+      "floor": "lounge",
+      "yaw": -65,
+      "yawRange": [
+        -90,
+        90
+      ],
+      "rotationEvidence": "Front-left ground contact is visible. Near-front and rear-right tips are partly hidden by border plants: retain uncertainty boxes rather than invent exact ground points. Orange silhouette maximum X=815 is visible at image rows 478..485.",
+      "contactPixels": {
+        "foot-1": [
+          749,
+          534
+        ]
+      },
+      "occludedContactBoxes": {
+        "foot-2": [
+          774,
+          538,
+          779,
+          544
+        ],
+        "foot-4": [
+          798,
+          523,
+          805,
+          531
+        ]
+      }
+    },
+    "lounge-coffee-table": {
+      "mesh": "coffeeTable",
+      "box": [
+        678,
+        474,
+        755,
+        519
+      ],
+      "floor": "lounge",
+      "yaw": 0
+    }
+  },
+  "mounted": {
+    "work-art": {
+      "box": [
+        301,
+        232,
+        349,
+        319
+      ],
+      "axis": 0,
+      "wall": "work"
+    },
+    "meeting-art": {
+      "box": [
+        492,
+        110,
+        566,
+        229
+      ],
+      "axis": 0,
+      "wall": "discussion"
+    },
+    "pantry-art": {
+      "box": [
+        906,
+        207,
+        958,
+        310
+      ],
+      "axis": 1,
+      "wall": "pantry"
+    },
+    "lounge-art": {
+      "box": [
+        828,
+        392,
+        880,
+        451
+      ],
+      "axis": 1,
+      "wall": "lounge"
+    },
+    "wall-clock": {
+      "box": [
+        603,
+        110,
+        658,
+        174
+      ],
+      "axis": 1,
+      "wall": "discussion",
+      "circle": true
+    },
+    "small-print-0": {
+      "box": [
+        719,
+        376,
+        737,
+        400
+      ],
+      "axis": 1,
+      "wall": "lounge"
+    },
+    "small-print-1": {
+      "box": [
+        765,
+        384,
+        782,
+        412
+      ],
+      "axis": 1,
+      "wall": "lounge"
+    },
+    "small-print-2": {
+      "box": [
+        785,
+        377,
+        801,
+        405
+      ],
+      "axis": 1,
+      "wall": "lounge"
+    },
+    "small-print-3": {
+      "box": [
+        785,
+        403,
+        802,
+        424
+      ],
+      "axis": 1,
+      "wall": "lounge"
+    },
+    "small-print-4": {
+      "box": [
+        806,
+        394,
+        824,
+        423
+      ],
+      "axis": 1,
+      "wall": "lounge"
+    },
+    "small-print-5": {
+      "box": [
+        811,
+        421,
+        829,
+        443
+      ],
+      "axis": 1,
+      "wall": "lounge"
+    }
+  },
+  "details": {
+    "workRugBox": [
+      463,
+      365,
+      616,
+      423
+    ],
+    "wallpaperEndTop": [
+      900,
+      185
+    ],
+    "dispenserBottleBox": [
+      708,
+      269,
+      730,
+      304
+    ],
+    "continuousWestWall": true,
+    "fridgeFrontCorners": {
+      "leftTop": [
+        743,
+        248
+      ],
+      "rightTop": [
+        775,
+        237
+      ],
+      "leftBottom": [
+        743,
+        337
+      ],
+      "rightBottom": [
+        775,
+        324
+      ],
+      "backLeftTop": [
+        718,
+        240
+      ]
+    },
+    "loungeRugBox": [
+      641,
+      463,
+      801,
+      531
+    ],
+    "sinkCounterCorners": {
+      "frontLeft": [
+        885,
+        328
+      ],
+      "frontRight": [
+        975,
+        360
+      ],
+      "backRight": [
+        996,
+        347
+      ]
+    },
+    "sinkCounterAuthority": "Trace exposed counter top vertices, excluding faucet, cup, plant and lower cabinet. The source front-left edge is partly actor-occluded; use the visible continuation at the cabinet boundary. The visible lower-right corner of the left cabinet door supplies vertical height evidence; coplanar countertop points alone do not resolve the height/depth ambiguity.",
+    "sinkDoorLowerRight": [
+      930,
+      390
+    ],
+    "loungeWallContour": {
+      "sourceCrop": [
+        730,
+        328,
+        832,
+        425
+      ],
+      "edge": "Top-front cap boundary, not the wall center plane.",
+      "construction": "Two consecutive coplanar wall sections with horizontal tops and one rise. Explicit owner correction: no third wall and no sloping top.",
+      "tracePixels": [
+        [
+          683,
+          337
+        ],
+        [
+          767,
+          365
+        ],
+        [
+          767,
+          359
+        ],
+        [
+          897,
+          407
+        ]
+      ],
+      "supersededInterpretation": "Earlier single-step and three-section traces mixed front and rear/top-face edges. The owner confirmed two level wall sections with one height difference.",
+      "supersededEndMarks": {
+        "left": [
+          680,
+          333
+        ],
+        "right": [
+          904,
+          402
+        ],
+        "reason": "Mixed rear/center cap marks are not front-edge silhouette corners."
+      },
+      "rejectedThirdSectionMarks": {
+        "points": {
+          "lounge-wall-right-step-low": [
+            800,
+            370
+          ],
+          "lounge-wall-right-step-top": [
+            800,
+            359
+          ]
+        },
+        "reason": "The point [800,370] is on the high front cap edge; [800,359] is on the top-face rear edge. They do not form another front-edge height step."
+      },
+      "terminalPlane": "The exposed terminal face meets the east outer body plane, eastX + exteriorThickness/2, rather than the side-wall centerline. Validate this shell-boundary inference against the same source endpoint."
+    },
+    "entranceOpening": {
+      "sourceCrop": [
+        475,
+        405,
+        615,
+        580
+      ],
+      "edge": "Opening boundary on the facade front body face; excludes wall cap and frame outside the opening.",
+      "visibleCorners": [
+        "door-left-top",
+        "door-right-top",
+        "door-right-bottom"
+      ],
+      "occludedCorner": "Lower-left opening corner is hidden by the sign. Derive it from the rectangular opening at the shared floor; do not use it as image evidence.",
+      "supersededWallMarks": {
+        "door-left-top": [
+          490,
+          417
+        ],
+        "door-right-top": [
+          582,
+          451
+        ],
+        "door-left-bottom": [
+          490,
+          529
+        ],
+        "door-right-bottom": [
+          582,
+          563
+        ]
+      },
+      "measurementTolerancePixels": 4
+    },
+    "loungeReturnOccludedFoot": {
+      "rejectedPixel": [
+        636,
+        486
+      ],
+      "sourceCrop": [
+        610,
+        330,
+        705,
+        515
+      ],
+      "reason": "The pixel belongs to the foreground terracotta pot bottom/floor region. The return wall foot is occluded by that plant; it is not a visible structural corner. Derive the hidden foot from the shared first-floor plane without inventing a replacement image landmark."
+    },
+    "loungeRearBranch": {
+      "sourceCrop": [
+        740,
+        320,
+        870,
+        405
+      ],
+      "visibleCorners": {
+        "frontLeft": [
+          800,
+          359
+        ],
+        "frontRight": [
+          817,
+          367
+        ],
+        "backLeft": [
+          833,
+          343
+        ]
+      },
+      "occludedCornerBox": {
+        "backRight": [
+          840,
+          345,
+          855,
+          355
+        ]
+      },
+      "authority": "Short perpendicular return behind the main lounge crown; front cap edge abuts the main cap rear face. Same crown elevation and shared first floor. Three visible points determine the profile; the agent obscures the back-right corner. Do not relabel the front-left corner as a third main-wall height step.",
+      "maximumVisibleErrorPixels": 4
+    },
+    "pantryParapet": {
+      "sourceCrop": [
+        885,
+        335,
+        1015,
+        435
+      ],
+      "backCorners": {
+        "inner": [
+          988,
+          370
+        ],
+        "outer": [
+          999,
+          374
+        ]
+      },
+      "outerTopEdgeSamples": [
+        [
+          930,
+          405
+        ],
+        [
+          960,
+          390
+        ],
+        [
+          980,
+          381
+        ]
+      ],
+      "occludedFrontOuterBox": [
+        895,
+        405,
+        915,
+        422
+      ],
+      "maximumErrorPixels": 4,
+      "authority": "Visible low east wall and cap. Back corners and outer top edge are distinct from the fascia below. Front contact is partly hidden by the lounge end. Rear high endpoint is the exposed rear-wall end face, not an independent perpendicular high return. Infer front/back cap elevations from the full continuous edge, retaining the shared floor and rectangular footprint; equal cap elevation is not independently established by this image."
+    },
+    "westRoomDivider": {
+      "sourceCrop": [
+        370,
+        180,
+        635,
+        395
+      ],
+      "authority": "Owner clarification: the cream and green walls are adjacent on one partition line between the west rooms. Enlarged approved image shows a visible gap between their ends. The cream member is left/taller; the green member is right/lower. Both start on the shared floor.",
+      "constraints": [
+        "same center plane",
+        "cream end before green start",
+        "visible opening between ends",
+        "green crown below cream crown",
+        "no independent green depth"
+      ]
+    }
+  },
+  "printedArtwork": {
+    "small-print-0": [
+      [
+        722,
+        383
+      ],
+      [
+        734,
+        387
+      ],
+      [
+        734,
+        396
+      ],
+      [
+        722,
+        392
+      ]
+    ],
+    "small-print-1": [
+      [
+        767,
+        389
+      ],
+      [
+        779,
+        393
+      ],
+      [
+        779,
+        405
+      ],
+      [
+        767,
+        401
+      ]
+    ],
+    "small-print-2": [
+      [
+        788,
+        382
+      ],
+      [
+        798,
+        385
+      ],
+      [
+        798,
+        398
+      ],
+      [
+        788,
+        395
+      ]
+    ],
+    "small-print-3": [
+      [
+        788,
+        408
+      ],
+      [
+        799,
+        411
+      ],
+      [
+        799,
+        418
+      ],
+      [
+        788,
+        415
+      ]
+    ],
+    "small-print-4": [
+      [
+        809,
+        401
+      ],
+      [
+        821,
+        405
+      ],
+      [
+        821,
+        417
+      ],
+      [
+        809,
+        413
+      ]
+    ],
+    "small-print-5": [
+      [
+        814,
+        428
+      ],
+      [
+        826,
+        432
+      ],
+      [
+        826,
+        438
+      ],
+      [
+        814,
+        434
+      ]
+    ],
+    "work-art": [
+      [
+        303,
+        247
+      ],
+      [
+        341,
+        233
+      ],
+      [
+        341,
+        300
+      ],
+      [
+        303,
+        313
+      ]
+    ],
+    "meeting-art": [
+      [
+        495,
+        140
+      ],
+      [
+        555,
+        117
+      ],
+      [
+        555,
+        198
+      ],
+      [
+        495,
+        222
+      ]
+    ],
+    "pantry-art": [
+      [
+        910,
+        213
+      ],
+      [
+        954,
+        230
+      ],
+      [
+        954,
+        301
+      ],
+      [
+        910,
+        285
+      ]
+    ]
+  },
+  "pantryShelf": {
+    "cornerOrder": [
+      "frontLeft",
+      "frontRight",
+      "backLeft",
+      "backRight"
+    ],
+    "thicknessMetres": 0.035,
+    "authority": "Visible right top corners exclude cast shadow. Left corners are partly occluded by shelf plants; record image ranges, not invented exact points. Rear edge against rear wall. Thickness retained from shelf construction.",
+    "canisters": [
+      [
+        815,
+        214,
+        833,
+        244
+      ],
+      [
+        833,
+        224,
+        851,
+        254
+      ],
+      [
+        849,
+        233,
+        865,
+        260
+      ]
+    ],
+    "visibleCorners": {
+      "frontRight": [
+        879,
+        267
+      ],
+      "backRight": [
+        893,
+        261
+      ]
+    },
+    "occludedCornerBoxes": {
+      "frontLeft": [
+        775,
+        230,
+        785,
+        240
+      ],
+      "backLeft": [
+        780,
+        221,
+        797,
+        235
+      ]
+    }
+  },
+  "indoorPlants": {
+    "sink-plant": {
+      "seed": 709,
+      "potBox": [
+        962,
+        332,
+        986,
+        353
+      ],
+      "foliageBox": [
+        951,
+        292,
+        992,
+        337
+      ],
+      "support": "sink",
+      "potColor": "#EEE7D8"
+    },
+    "lounge-table-plant": {
+      "seed": 812,
+      "potBox": [
+        693,
+        476,
+        707,
+        488
+      ],
+      "foliageBox": [
+        689,
+        458,
+        712,
+        477
+      ],
+      "support": "lounge-coffee-table",
+      "potColor": "#758581"
+    },
+    "room-edge-plant-2": {
+      "seed": 606,
+      "potBox": [
+        656,
+        443,
+        676,
+        468
+      ],
+      "foliageBox": [
+        649,
+        423,
+        684,
+        449
+      ],
+      "support": "lounge-floor",
+      "potColor": "#46382C"
+    }
+  },
+  "floorContract": {
+    "storeyCount": 1,
+    "finishedFloor": 0.38,
+    "authority": "Owner clarification: every room is on the same first floor. Perspective screen height is not floor elevation. The existing entry datum sets the world-space origin, not a recovered absolute measurement.",
+    "forbidden": [
+      "independent room elevations",
+      "interior stairs",
+      "raised room platforms"
+    ]
+  },
+  "footprintContract": {
+    "shape": "rectangle",
+    "boundarySource": "Intersections of the existing exterior wall planes: west/east wall centers plus half their thickness, front facade plane minus half its thickness, rear wall plane plus half its thickness.",
+    "occlusionEvidence": {
+      "pixels": [
+        [
+          670,
+          560
+        ],
+        [
+          845,
+          545
+        ]
+      ],
+      "interpretation": "Foreground decorations obscure the floor. These pixels are not foundation corners and must not trim the lounge footprint."
+    },
+    "ownerCorrection": "The lower-right room is rectangular, including the floor hidden by plants and decoration."
+  },
+  "shell": {
+    "westX": -3.02,
+    "eastX": 3.02,
+    "frontY": -2.42,
+    "exteriorThickness": 0.16,
+    "facadeThickness": 0.18,
+    "partitionThickness": 0.14,
+    "capDepthRatio": 1.1250000000000002,
+    "provenance": "Existing normalized shell dimensions, centralized without changing values. Width fixes similarity scale; these are not recovered absolute building dimensions. Foundation bounds follow body faces, not foreground occluders."
+  },
+  "visibleFloorSamples": {
+    "description": "Centers of visibly exposed floor planks, inspected at 4x original resolution. Containment evidence only; not calibrated world points or hidden wall-foot measurements. All samples must share the owner-required first-floor plane.",
+    "samples": [
+      {
+        "id": "pantry-west-clear-floor",
+        "room": "pantry",
+        "pixel": [
+          790,
+          350
+        ]
+      },
+      {
+        "id": "pantry-east-clear-floor",
+        "room": "pantry",
+        "pixel": [
+          910,
+          389
+        ]
+      },
+      {
+        "id": "discussion-clear-floor",
+        "room": "discussion",
+        "pixel": [
+          610,
+          301
+        ]
+      }
+    ],
+    "excluded": [
+      {
+        "pixel": [
+          805,
+          360
+        ],
+        "reason": "Short wall-return cap, not a floor patch."
+      }
+    ]
+  }
+}

@@ -159,8 +159,8 @@
         "."
       ],
       "sourceDigests": {
-        "contract": "f66cd80062c5ff2ed6ad0cc3f3e333e6ce5b4f20f00e146086c0b442314e73aa",
-        "guide": "d4990de2edfd7ab0a66fa92c5c80581df004b98b4db2f15afe1e45d689b6ec08",
+        "contract": "51128162da8c4a4d78fb7c986bedb8dbbd676dd7bbe19d15b910b549cc109c16",
+        "guide": "b9e7ff8e3337a63aaba2da4164cb56d8d82503f7223ce22c93736569a878aaa5",
         "manifest": "7d303cc2e703afefa9aacaaf9ff0be1f3c627f8d7470ba738b7e5364ee596728"
       },
       "version": "0.5.5"
@@ -213,8 +213,8 @@
         "./spatial-engine"
       ],
       "sourceDigests": {
-        "contract": "d5388ada5dc580aa95250faf28c3937fa2b9dbdb12b0bac6e2e5a20dbed70004",
-        "guide": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
+        "contract": "954c2a688a62d2a4462458673139c79b00152c35d23a526feb8861b70d1c9607",
+        "guide": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
         "manifest": "faeadb90e225de890dabcaf27c479aab9d863760855f05712ffe744af93ebd8c"
       },
       "version": "0.5.8"

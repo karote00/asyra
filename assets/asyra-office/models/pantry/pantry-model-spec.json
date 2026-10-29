@@ -67,10 +67,10 @@
       "emission": 0
     },
     "bottle": {
-      "baseColorSRGB": "#789DBB",
-      "roughness": 0.45,
+      "baseColorSRGB": "#63AFD0",
+      "roughness": 0.22,
       "metallic": 0,
-      "alpha": 1,
+      "alpha": 0.42,
       "transmission": 0,
       "emission": 0
     },
@@ -87,6 +87,14 @@
       "roughness": 0.8,
       "metallic": 0,
       "alpha": 1,
+      "transmission": 0,
+      "emission": 0
+    },
+    "bottle-water": {
+      "baseColorSRGB": "#258CBF",
+      "roughness": 0.12,
+      "metallic": 0,
+      "alpha": 0.62,
       "transmission": 0,
       "emission": 0
     }
@@ -116,16 +124,16 @@
         {
           "partId": "lower-door",
           "primitive": "rounded-box",
-          "size": [0.508, 0.04, 0.698],
-          "centre": [0, -0.24, 0.409],
+          "size": [0.508, 0.04, 0.64],
+          "centre": [0, -0.24, 0.38],
           "material": "cream",
           "radius": 0.018
         },
         {
           "partId": "upper-door",
           "primitive": "rounded-box",
-          "size": [0.508, 0.04, 0.37],
-          "centre": [0, -0.24, 0.955],
+          "size": [0.508, 0.04, 0.428],
+          "centre": [0, -0.24, 0.926],
           "material": "cream",
           "radius": 0.018
         },
@@ -133,7 +141,7 @@
           "partId": "lower-handle",
           "primitive": "rounded-box",
           "size": [0.019, 0.022, 0.17],
-          "centre": [-0.207, -0.286, 0.62],
+          "centre": [-0.207, -0.286, 0.592],
           "material": "grey",
           "radius": 0.008
         },
@@ -141,7 +149,7 @@
           "partId": "lower-handle-mount--1",
           "primitive": "rounded-box",
           "size": [0.017, 0.025, 0.014],
-          "centre": [-0.207, -0.2675, 0.5469999999999999],
+          "centre": [-0.207, -0.2675, 0.519],
           "material": "grey",
           "radius": 0.004
         },
@@ -149,7 +157,7 @@
           "partId": "lower-handle-mount-1",
           "primitive": "rounded-box",
           "size": [0.017, 0.025, 0.014],
-          "centre": [-0.207, -0.2675, 0.6930000000000001],
+          "centre": [-0.207, -0.2675, 0.665],
           "material": "grey",
           "radius": 0.004
         },
@@ -157,7 +165,7 @@
           "partId": "upper-handle",
           "primitive": "rounded-box",
           "size": [0.019, 0.022, 0.13],
-          "centre": [-0.207, -0.286, 0.94],
+          "centre": [-0.207, -0.286, 0.992],
           "material": "grey",
           "radius": 0.008
         },
@@ -165,7 +173,7 @@
           "partId": "upper-handle-mount--1",
           "primitive": "rounded-box",
           "size": [0.017, 0.025, 0.014],
-          "centre": [-0.207, -0.2675, 0.8869999999999999],
+          "centre": [-0.207, -0.2675, 0.939],
           "material": "grey",
           "radius": 0.004
         },
@@ -173,7 +181,7 @@
           "partId": "upper-handle-mount-1",
           "primitive": "rounded-box",
           "size": [0.017, 0.025, 0.014],
-          "centre": [-0.207, -0.2675, 0.993],
+          "centre": [-0.207, -0.2675, 1.045],
           "material": "grey",
           "radius": 0.004
         },
@@ -222,7 +230,8 @@
         "left-side handles",
         "plain rear, no cable or compressor"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "sourceDoorSplit": "Owner correction (2026-10-27) overrides both reference images: small upper freezer Z=0.712..1.140 (0.428 m); large lower refrigerator Z=0.060..0.700 (0.640 m); 12 mm gap. Door heights are exchanged, handle assemblies move up 0.212 m, and body/total extents remain unchanged."
     },
     {
       "moduleId": "water-dispenser",
@@ -232,15 +241,15 @@
         {
           "partId": "cabinet",
           "primitive": "rounded-box",
-          "size": [0.32, 0.34, 0.77],
-          "centre": [0, 0, 0.405],
+          "size": [0.32, 0.34, 0.623797468],
+          "centre": [0, 0, 0.328101266],
           "material": "cream",
           "radius": 0.016,
           "subtract": [
             {
               "primitive": "rounded-box",
-              "size": [0.225, 0.12, 0.205],
-              "centre": [0, -0.135, 0.584],
+              "size": [0.225, 0.12, 0.166075949],
+              "centre": [0, -0.135, 0.473113924],
               "radius": 0.012
             }
           ]
@@ -248,24 +257,24 @@
         {
           "partId": "plinth",
           "primitive": "rounded-box",
-          "size": [0.285, 0.3, 0.01],
-          "centre": [0, 0, 0.015],
+          "size": [0.285, 0.3, 0.008101266],
+          "centre": [0, 0, 0.012151899],
           "material": "dark",
           "radius": 0.003
         },
         {
           "partId": "bay-back",
           "primitive": "rounded-box",
-          "size": [0.216, 0.006, 0.194],
-          "centre": [0, -0.073, 0.584],
+          "size": [0.216, 0.006, 0.157164557],
+          "centre": [0, -0.073, 0.473113924],
           "material": "grey",
           "radius": 0.006
         },
         {
           "partId": "drip-tray",
           "primitive": "rounded-box",
-          "size": [0.228, 0.112, 0.016],
-          "centre": [0, -0.136, 0.481],
+          "size": [0.228, 0.112, 0.012962025],
+          "centre": [0, -0.136, 0.389670886],
           "material": "grey",
           "radius": 0.005,
           "grooves": {
@@ -280,8 +289,8 @@
         {
           "partId": "lower-door",
           "primitive": "rounded-box",
-          "size": [0.258, 0.008, 0.36],
-          "centre": [0, -0.173, 0.251],
+          "size": [0.258, 0.008, 0.29164557],
+          "centre": [0, -0.173, 0.203341772],
           "material": "cream",
           "radius": 0.01
         },
@@ -290,15 +299,15 @@
           "primitive": "cylinder",
           "radius": 0.012,
           "length": 0.074,
-          "centre": [-0.046, -0.112, 0.681],
+          "centre": [-0.046, -0.112, 0.551696203],
           "material": "grey",
           "axis": "Y"
         },
         {
           "partId": "tap-lever--1",
           "primitive": "rounded-box",
-          "size": [0.018, 0.036, 0.01],
-          "centre": [-0.046, -0.126, 0.7],
+          "size": [0.018, 0.036, 0.008101266],
+          "centre": [-0.046, -0.126, 0.567088608],
           "material": "red",
           "radius": 0.003
         },
@@ -307,45 +316,59 @@
           "primitive": "cylinder",
           "radius": 0.012,
           "length": 0.074,
-          "centre": [0.046, -0.112, 0.681],
+          "centre": [0.046, -0.112, 0.551696203],
           "material": "grey",
           "axis": "Y"
         },
         {
           "partId": "tap-lever-1",
           "primitive": "rounded-box",
-          "size": [0.018, 0.036, 0.01],
-          "centre": [0.046, -0.126, 0.7],
+          "size": [0.018, 0.036, 0.008101266],
+          "centre": [0.046, -0.126, 0.567088608],
           "material": "blue",
           "radius": 0.003
+        },
+        {
+          "partId": "bottle-water",
+          "primitive": "lathe-fill",
+          "sourcePartId": "bottle",
+          "fillRatio": 0.7,
+          "wallInsetMetres": 0.002,
+          "material": "bottle-water"
         },
         {
           "partId": "bottle",
           "primitive": "lathe",
           "centreXY": [0, 0],
           "profileZR": [
-            [0.79, 0.042],
-            [0.815, 0.042],
-            [0.84, 0.1],
-            [0.86, 0.125],
-            [1.055, 0.125],
-            [1.085, 0.116],
-            [1.108, 0.088],
+            [0.64, 0.021],
+            [0.67, 0.024],
+            [0.7, 0.024],
+            [0.716, 0.024],
+            [0.722, 0.033],
+            [0.73, 0.033],
+            [0.735, 0.033],
+            [0.76, 0.082],
+            [0.782, 0.116],
+            [0.794, 0.123],
+            [1.09, 0.123],
+            [1.105, 0.112],
+            [1.115, 0.085],
             [1.12, 0]
           ],
           "material": "bottle",
           "rings": {
-            "centresZ": [0.902, 1.016],
-            "height": 0.012,
-            "extraRadius": 0.004
+            "centresZ": [0.812, 0.866, 1.024, 1.08],
+            "height": 0.032,
+            "extraRadius": 0.008
           }
         },
         {
           "partId": "tap-nozzle--1",
           "primitive": "cylinder",
           "radius": 0.009,
-          "length": 0.026,
-          "centre": [-0.046, -0.149, 0.661],
+          "length": 0.021063291,
+          "centre": [-0.046, -0.149, 0.535493671],
           "material": "grey",
           "axis": "Z"
         },
@@ -353,8 +376,8 @@
           "partId": "tap-nozzle-1",
           "primitive": "cylinder",
           "radius": 0.009,
-          "length": 0.026,
-          "centre": [0.046, -0.149, 0.661],
+          "length": 0.021063291,
+          "centre": [0.046, -0.149, 0.535493671],
           "material": "grey",
           "axis": "Z"
         },
@@ -363,8 +386,8 @@
           "primitive": "cylinder",
           "axis": "Z",
           "radius": 0.003,
-          "length": 0.01,
-          "centre": [-0.046, -0.126, 0.695],
+          "length": 0.008101266,
+          "centre": [-0.046, -0.126, 0.563037975],
           "material": "grey"
         },
         {
@@ -372,8 +395,8 @@
           "primitive": "cylinder",
           "axis": "Z",
           "radius": 0.003,
-          "length": 0.01,
-          "centre": [0.046, -0.126, 0.695],
+          "length": 0.008101266,
+          "centre": [0.046, -0.126, 0.563037975],
           "material": "grey"
         },
         {
@@ -411,16 +434,40 @@
           "length": 0.01,
           "centre": [0.12, 0.13, 0.005],
           "material": "dark"
+        },
+        {
+          "partId": "bottle-cap",
+          "primitive": "lathe",
+          "centreXY": [0, 0],
+          "profileZR": [
+            [0.64, 0.025],
+            [0.643, 0.027],
+            [0.661, 0.027],
+            [0.666, 0.025],
+            [0.668, 0]
+          ],
+          "material": "cream"
         }
       ],
       "overallSize": [0.32, 0.362, 1.12],
       "source": "Water dispenser with a blue bottle to the left of the refrigerator",
       "decisions": [
         "two taps, red and blue levers",
-        "opaque stylized blue bottle",
-        "closed lower storage door"
+        "translucent blue plastic jug, neck down, four broad reinforcing ribs, no label",
+        "closed lower storage door",
+        "Static water fills 70 percent of the inset cavity volume, with a horizontal surface and air above; no animation"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "sourceProportions": {
+        "authority": "Original approved pantry crop, bottle roughly three quarters of the visible cabinet height; replaces the earlier small-bottle interpretation.",
+        "cabinetTopMetres": 0.64,
+        "bottleHeightMetres": 0.48,
+        "overallHeightMetres": 1.12,
+        "bottleToCabinetHeightRatio": 0.75,
+        "uncertainty": "A single oblique image does not determine hidden geometry; retain the approved footprint and total height.",
+        "jugPhotoReference": "review/dispenser-jug-photo-reference.png",
+        "jugPhotoNotes": "Owner-supplied upright product photo; rotate 180 degrees for installation. Four barrel ribs and a narrow neck; no label. Preserve the 0.48 m installed bottle span. Alpha 0.42 is a visual default, not a measured physical transmission coefficient."
+      }
     },
     {
       "moduleId": "sink-cabinet",
@@ -438,7 +485,7 @@
             {
               "primitive": "rounded-box",
               "size": [0.54, 0.35, 0.16],
-              "centre": [0, -0.005, 0.58],
+              "centre": [-0.06, -0.005, 0.58],
               "radius": 0.025
             }
           ]
@@ -462,7 +509,7 @@
             {
               "primitive": "rounded-box",
               "size": [0.5, 0.31, 0.08],
-              "centre": [0, -0.005, 0.635],
+              "centre": [-0.06, -0.005, 0.635],
               "radius": 0.025
             }
           ]
@@ -471,14 +518,14 @@
           "partId": "basin-outer",
           "primitive": "rounded-box",
           "size": [0.52, 0.33, 0.13],
-          "centre": [0, -0.005, 0.575],
+          "centre": [-0.06, -0.005, 0.575],
           "material": "basin",
           "radius": 0.025,
           "subtract": [
             {
               "primitive": "rounded-box",
               "size": [0.488, 0.298, 0.16],
-              "centre": [0, -0.005, 0.607],
+              "centre": [-0.06, -0.005, 0.607],
               "radius": 0.02
             }
           ]
@@ -488,7 +535,7 @@
           "primitive": "cylinder",
           "radius": 0.018,
           "length": 0.001,
-          "centre": [0, -0.005, 0.5275],
+          "centre": [-0.06, -0.005, 0.5275],
           "material": "dark",
           "axis": "Z"
         },
@@ -515,44 +562,22 @@
           "radius": 0.005
         },
         {
-          "partId": "door-1",
-          "primitive": "rounded-box",
-          "size": [0.427, 0.023, 0.51],
-          "centre": [0.2175, -0.2365, 0.323],
-          "material": "oak",
-          "radius": 0.004,
-          "panelRecess": {
-            "innerWidth": 0.357,
-            "innerHeight": 0.44,
-            "depth": 0.004,
-            "border": 0.035
-          }
-        },
-        {
-          "partId": "handle-1",
-          "primitive": "rounded-box",
-          "size": [0.018, 0.013, 0.065],
-          "centre": [0.036, -0.265, 0.51],
-          "material": "dark",
-          "radius": 0.005
-        },
-        {
           "partId": "faucet",
           "primitive": "bezier-tube",
           "radius": 0.012,
           "material": "grey",
           "segments": [
             [
-              [0, 0.17, 0.64],
-              [0, 0.17, 0.7],
-              [0, 0.17, 0.785],
-              [0, 0.17, 0.81]
+              [-0.06, 0.17, 0.64],
+              [-0.06, 0.17, 0.7],
+              [-0.06, 0.17, 0.785],
+              [-0.06, 0.17, 0.81]
             ],
             [
-              [0, 0.17, 0.81],
-              [0, 0.17, 0.874],
-              [0, 0.04, 0.874],
-              [0, 0.04, 0.81]
+              [-0.06, 0.17, 0.81],
+              [-0.06, 0.17, 0.874],
+              [-0.06, 0.04, 0.874],
+              [-0.06, 0.04, 0.81]
             ]
           ],
           "endCaps": true
@@ -562,7 +587,7 @@
           "primitive": "cylinder",
           "radius": 0.024,
           "length": 0.012,
-          "centre": [0, 0.17, 0.646],
+          "centre": [-0.06, 0.17, 0.646],
           "material": "grey",
           "axis": "Z"
         },
@@ -570,7 +595,7 @@
           "partId": "faucet-lever",
           "primitive": "rounded-box",
           "size": [0.055, 0.014, 0.012],
-          "centre": [0.039, 0.17, 0.664],
+          "centre": [-0.021, 0.17, 0.664],
           "material": "grey",
           "radius": 0.004
         },
@@ -591,31 +616,101 @@
           "material": "dark"
         },
         {
-          "partId": "handle-mount-lower-1",
+          "partId": "drawer-front-lower",
           "primitive": "rounded-box",
-          "size": [0.012, 0.018, 0.012],
-          "centre": [0.036, -0.2515, 0.4875],
-          "radius": 0.002,
-          "material": "dark"
+          "size": [0.2075, 0.023, 0.251],
+          "centre": [0.10975, -0.2365, 0.1935],
+          "radius": 0.004,
+          "material": "oak"
         },
         {
-          "partId": "handle-mount-upper-1",
+          "partId": "handle-drawer-lower",
           "primitive": "rounded-box",
-          "size": [0.012, 0.018, 0.012],
-          "centre": [0.036, -0.2515, 0.5325],
+          "size": [0.07, 0.013, 0.012],
+          "centre": [0.10975, -0.265, 0.2685],
+          "radius": 0.003,
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-lower-mount--1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.08474999999999999, -0.2515, 0.2685],
           "radius": 0.002,
-          "material": "dark"
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-lower-mount-1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.13475, -0.2515, 0.2685],
+          "radius": 0.002,
+          "material": "grey"
+        },
+        {
+          "partId": "drawer-front-upper",
+          "primitive": "rounded-box",
+          "size": [0.2075, 0.023, 0.251],
+          "centre": [0.10975, -0.2365, 0.4525],
+          "radius": 0.004,
+          "material": "oak"
+        },
+        {
+          "partId": "handle-drawer-upper",
+          "primitive": "rounded-box",
+          "size": [0.07, 0.013, 0.012],
+          "centre": [0.10975, -0.265, 0.5275],
+          "radius": 0.003,
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-upper-mount--1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.08474999999999999, -0.2515, 0.5275],
+          "radius": 0.002,
+          "material": "grey"
+        },
+        {
+          "partId": "handle-drawer-upper-mount-1",
+          "primitive": "rounded-box",
+          "size": [0.01, 0.018, 0.01],
+          "centre": [0.13475, -0.2515, 0.5275],
+          "radius": 0.002,
+          "material": "grey"
+        },
+        {
+          "partId": "end-panel",
+          "primitive": "rounded-box",
+          "size": [0.2075, 0.023, 0.51],
+          "centre": [0.32725, -0.2365, 0.323],
+          "radius": 0.004,
+          "material": "oak"
         }
       ],
       "nominalSize": [0.9, 0.5215, 0.87],
       "source": "Wooden sink cabinet below the poster on the right of the pantry",
       "decisions": [
-        "single centred basin",
-        "two front cabinet doors",
+        "single basin centred 0.06 m left of cabinet centre; faucet and all cavity cuts follow",
+        "one left front door, two stacked right drawers and a narrow right end panel",
         "plain rear and underside",
         "no plumbing interior"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "frontAuthority": {
+        "reference": "../architecture/review/approved-office-reference.jpg",
+        "sourceRegionPixels": [885, 328, 983, 390],
+        "rule": "The approved complete-office image takes precedence over the former two-door recipe for the active reconstruction. Keep the left door, split the former right half into two stacked drawer fronts and a narrow end panel. Image spans determine the visible subdivision; retained hidden cabinet depth and lower extents are authored construction.",
+        "defaultFrontIntervalsX": {
+          "leftDoor": [-0.431, -0.004],
+          "drawers": [0.006, 0.2135],
+          "endPanel": [0.2235, 0.431]
+        },
+        "defaultDrawerGapMetres": 0.008,
+        "defaultColumnGapMetres": 0.01,
+        "replaceableAppearance": true
+      },
+      "basinAuthority": "The source basin sits above the left cabinet door rather than above the drawer column. Shift basin, drain, faucet and both clearance cuts together by -0.06 m; retain measured basin width and depth, front intervals and total cabinet extents."
     },
     {
       "moduleId": "coffee-machine",

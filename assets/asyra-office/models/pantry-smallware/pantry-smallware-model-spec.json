@@ -77,53 +77,22 @@
       "moduleId": "pantry-canister",
       "unitCount": 1,
       "reviewDrawing": "review/01-pantry-canister-v1.png",
-      "size": [
-        0.09,
-        0.09,
-        0.125
-      ],
+      "size": [0.09, 0.09, 0.125],
       "source": "Central office pantry shelf jars; exact parts and hidden geometry authored",
       "components": [
         {
           "partId": "body",
           "primitive": "revolved closed profile",
           "profile": [
-            [
-              0,
-              0
-            ],
-            [
-              0.039,
-              0
-            ],
-            [
-              0.042,
-              0.001
-            ],
-            [
-              0.043,
-              0.004
-            ],
-            [
-              0.043,
-              0.114
-            ],
-            [
-              0.041,
-              0.117
-            ],
-            [
-              0.039,
-              0.117
-            ],
-            [
-              0.039,
-              0.006
-            ],
-            [
-              0,
-              0.006
-            ]
+            [0, 0],
+            [0.039, 0],
+            [0.042, 0.001],
+            [0.043, 0.004],
+            [0.043, 0.114],
+            [0.041, 0.117],
+            [0.039, 0.117],
+            [0.039, 0.006],
+            [0, 0.006]
           ],
           "material": "ceramic"
         },
@@ -131,38 +100,14 @@
           "partId": "lid",
           "primitive": "revolved closed profile",
           "profile": [
-            [
-              0,
-              0.116
-            ],
-            [
-              0.0385,
-              0.116
-            ],
-            [
-              0.0385,
-              0.117
-            ],
-            [
-              0.044,
-              0.117
-            ],
-            [
-              0.045,
-              0.118
-            ],
-            [
-              0.045,
-              0.124
-            ],
-            [
-              0.044,
-              0.125
-            ],
-            [
-              0,
-              0.125
-            ]
+            [0, 0.116],
+            [0.0385, 0.116],
+            [0.0385, 0.117],
+            [0.044, 0.117],
+            [0.045, 0.118],
+            [0.045, 0.124],
+            [0.044, 0.125],
+            [0, 0.125]
           ],
           "material": "wood"
         }
@@ -172,63 +117,29 @@
       "moduleId": "takeaway-cup",
       "unitCount": 1,
       "reviewDrawing": "review/02-takeaway-cup-v1.png",
-      "size": [
-        0.08,
-        0.08,
-        0.12
-      ],
+      "size": [0.08, 0.08, 0.12],
       "source": "Small park seating drinks; exact lid and sleeve authored",
       "components": [
         {
           "partId": "body",
           "primitive": "revolved closed profile",
           "profile": [
-            [
-              0,
-              0
-            ],
-            [
-              0.0245,
-              0
-            ],
-            [
-              0.026,
-              0.0015
-            ],
-            [
-              0.037,
-              0.108
-            ],
-            [
-              0.037,
-              0.112
-            ],
-            [
-              0.0355,
-              0.112
-            ],
-            [
-              0.0355,
-              0.108
-            ],
-            [
-              0.0245,
-              0.004
-            ],
-            [
-              0,
-              0.004
-            ]
+            [0, 0],
+            [0.0245, 0],
+            [0.026, 0.0015],
+            [0.037, 0.108],
+            [0.037, 0.112],
+            [0.0355, 0.112],
+            [0.0355, 0.108],
+            [0.0245, 0.004],
+            [0, 0.004]
           ],
           "material": "paper"
         },
         {
           "partId": "sleeve",
           "primitive": "open conical band",
-          "zBounds": [
-            0.035,
-            0.075
-          ],
+          "zBounds": [0.035, 0.075],
           "innerRadiusFormula": "0.026+0.011*(z-0.0015)/0.1065",
           "radialThickness": 0.001,
           "material": "kraft"
@@ -237,60 +148,24 @@
           "partId": "lid",
           "primitive": "revolved closed profile",
           "profile": [
-            [
-              0,
-              0.111
-            ],
-            [
-              0.038,
-              0.111
-            ],
-            [
-              0.04,
-              0.113
-            ],
-            [
-              0.04,
-              0.116
-            ],
-            [
-              0.038,
-              0.118
-            ],
-            [
-              0.036,
-              0.12
-            ],
-            [
-              0.034,
-              0.12
-            ],
-            [
-              0.0335,
-              0.119
-            ],
-            [
-              0,
-              0.119
-            ]
+            [0, 0.111],
+            [0.038, 0.111],
+            [0.04, 0.113],
+            [0.04, 0.116],
+            [0.038, 0.118],
+            [0.036, 0.12],
+            [0.034, 0.12],
+            [0.0335, 0.119],
+            [0, 0.119]
           ],
           "material": "lid"
         },
         {
           "partId": "sip-opening",
           "operation": "subtract elliptical prism from lid only",
-          "centreXY": [
-            0,
-            -0.026
-          ],
-          "semiAxesXY": [
-            0.007,
-            0.0025
-          ],
-          "zBounds": [
-            0.11,
-            0.121
-          ],
+          "centreXY": [0, -0.026],
+          "semiAxesXY": [0.007, 0.0025],
+          "zBounds": [0.11, 0.121],
           "perimeterSegments": 48,
           "cutFaceMaterial": "lid"
         }
@@ -311,5 +186,1148 @@
     "labels",
     "animation",
     "manufacturing fit"
-  ]
+  ],
+  "sourceVariants": {
+    "reference": "../architecture/review/approved-office-reference.jpg",
+    "units": "metres",
+    "interpretation": "Visible pantry vessel classes and proportions reconstructed from the approved oblique source. Hidden profiles and internal wall thickness are authored. These variants do not replace the separately approved plain pantry-canister.",
+    "angularIntervals": 64,
+    "distantAngularIntervals": 24,
+    "vessels": {
+      "shelf-spice-jar": {
+        "size": [0.1, 0.1, 0.12],
+        "preserveFullDetail": true,
+        "regions": [
+          {
+            "id": "body",
+            "kind": "lathe",
+            "profile": [
+              [0, 0],
+              [0.0415, 0],
+              [0.0485, 0.008],
+              [0.05, 0.02],
+              [0.05, 0.095],
+              [0.048, 0.11199999999999999],
+              [0.045000000000000005, 0.12],
+              [0.043000000000000003, 0.12],
+              [0.046000000000000006, 0.11199999999999999],
+              [0.048, 0.095],
+              [0.048, 0.02],
+              [0.04000000000000001, 0.005],
+              [0, 0.005]
+            ],
+            "color": "#8D7657",
+            "roughness": 0.85,
+            "opacity": 1
+          }
+        ]
+      },
+      "shelf-cream-jar": {
+        "size": [0.207, 0.207, 0.34],
+        "preserveFullDetail": true,
+        "regions": [
+          {
+            "id": "body",
+            "kind": "lathe",
+            "profile": [
+              [0, 0],
+              [0.09649999999999999, 0],
+              [0.10049999999999999, 0.004],
+              [0.1025, 0.012],
+              [0.1025, 0.03],
+              [0.1025, 0.282],
+              [0.09949999999999999, 0.297],
+              [0.09749999999999999, 0.297],
+              [0.10049999999999999, 0.282],
+              [0.10049999999999999, 0.03],
+              [0.09849999999999999, 0.006],
+              [0, 0.006]
+            ],
+            "color": "#E8F0EE",
+            "roughness": 0.1,
+            "opacity": 0.16,
+            "environmentIntensity": 0.3
+          },
+          {
+            "id": "contents",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.008],
+              [0.09699999999999999, 0.008],
+              [0.09799999999999999, 0.012],
+              [0.09899999999999999, 0.23299999999999998],
+              [0.08414999999999999, 0.237],
+              [0.04455, 0.239],
+              [0, 0.238]
+            ],
+            "color": "#E9DFC7",
+            "roughness": 0.95,
+            "opacity": 1,
+            "surface": "granulated",
+            "topProfileIndex": 3,
+            "uvAspectRatio": 4
+          },
+          {
+            "id": "collar",
+            "kind": "lathe",
+            "profile": [
+              [0.1, 0.276],
+              [0.103, 0.276],
+              [0.103, 0.302],
+              [0.1, 0.302],
+              [0.1, 0.276]
+            ],
+            "color": "#AAAFA9",
+            "roughness": 0.65,
+            "opacity": 1,
+            "surface": "metal"
+          },
+          {
+            "id": "lid",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.299],
+              [0.1, 0.299],
+              [0.1025, 0.303],
+              [0.1025, 0.313],
+              [0.098, 0.325],
+              [0.084, 0.333],
+              [0, 0.333]
+            ],
+            "color": "#EEE8D9",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "lid-center",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.333],
+              [0.022, 0.333],
+              [0.023, 0.337],
+              [0.018, 0.34],
+              [0, 0.34]
+            ],
+            "color": "#65523D",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "front-label",
+            "kind": "label",
+            "radius": 0.1025,
+            "zRange": [0.135, 0.175],
+            "angles": [-154, -67],
+            "color": "#C9AF63",
+            "roughness": 0.95,
+            "opacity": 1
+          }
+        ],
+        "contentsInterpretation": {
+          "name": "White sugar",
+          "certainty": "Inferred from source color and texture; ingredient identity is not confirmed.",
+          "fillTopMetres": 0.239,
+          "wallThicknessMetres": 0.002
+        }
+      },
+      "shelf-sage-jar": {
+        "size": [0.182, 0.182, 0.285],
+        "preserveFullDetail": true,
+        "regions": [
+          {
+            "id": "body",
+            "kind": "lathe",
+            "profile": [
+              [0, 0],
+              [0.08399999999999999, 0],
+              [0.088, 0.004],
+              [0.09, 0.012],
+              [0.09, 0.03],
+              [0.09, 0.21600000000000003],
+              [0.087, 0.231],
+              [0.08499999999999999, 0.231],
+              [0.088, 0.21600000000000003],
+              [0.088, 0.03],
+              [0.086, 0.006],
+              [0, 0.006]
+            ],
+            "color": "#E8F0EE",
+            "roughness": 0.1,
+            "opacity": 0.16,
+            "environmentIntensity": 0.3
+          },
+          {
+            "id": "contents",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.008],
+              [0.08449999999999999, 0.008],
+              [0.08549999999999999, 0.012],
+              [0.0865, 0.17099999999999999],
+              [0.073525, 0.175],
+              [0.038925, 0.177],
+              [0, 0.176]
+            ],
+            "color": "#B9A16A",
+            "roughness": 0.95,
+            "opacity": 1,
+            "surface": "ground-spice",
+            "topProfileIndex": 3,
+            "uvAspectRatio": 4
+          },
+          {
+            "id": "collar",
+            "kind": "lathe",
+            "profile": [
+              [0.085, 0.219],
+              [0.09, 0.219],
+              [0.09, 0.247],
+              [0.085, 0.247],
+              [0.085, 0.219]
+            ],
+            "color": "#AAAFA9",
+            "roughness": 0.65,
+            "opacity": 1,
+            "surface": "metal"
+          },
+          {
+            "id": "lid",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.247],
+              [0.09, 0.247],
+              [0.09, 0.261],
+              [0.082, 0.272],
+              [0.058, 0.279],
+              [0, 0.279]
+            ],
+            "color": "#AAAFA9",
+            "roughness": 0.65,
+            "opacity": 1,
+            "surface": "metal"
+          },
+          {
+            "id": "lid-center",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.278],
+              [0.017, 0.278],
+              [0.018, 0.282],
+              [0.012, 0.285],
+              [0, 0.285]
+            ],
+            "color": "#EEE8D9",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "front-label",
+            "kind": "label",
+            "radius": 0.09,
+            "zRange": [0.055, 0.151],
+            "angles": [-146, -52],
+            "color": "#7D8655",
+            "roughness": 0.95,
+            "opacity": 1
+          }
+        ],
+        "contentsInterpretation": {
+          "name": "Ochre dry seasoning; exact ingredient unknown",
+          "certainty": "Inferred from source color and texture; ingredient identity is not confirmed.",
+          "fillTopMetres": 0.177,
+          "wallThicknessMetres": 0.002
+        }
+      },
+      "shelf-brown-jar": {
+        "size": [0.161, 0.161, 0.215],
+        "preserveFullDetail": true,
+        "regions": [
+          {
+            "id": "body",
+            "kind": "lathe",
+            "profile": [
+              [0, 0],
+              [0.074, 0],
+              [0.078, 0.004],
+              [0.08, 0.012],
+              [0.08, 0.03],
+              [0.08, 0.145],
+              [0.079, 0.153],
+              [0.076, 0.161],
+              [0.072, 0.17],
+              [0.07, 0.177],
+              [0.07, 0.183],
+              [0.073, 0.185],
+              [0.073, 0.188],
+              [0.071, 0.19],
+              [0.069, 0.19],
+              [0.0685, 0.185],
+              [0.068, 0.177],
+              [0.07, 0.17],
+              [0.074, 0.161],
+              [0.077, 0.153],
+              [0.078, 0.145],
+              [0.078, 0.03],
+              [0.076, 0.006],
+              [0, 0.006]
+            ],
+            "color": "#E8F0EE",
+            "roughness": 0.1,
+            "opacity": 0.16,
+            "environmentIntensity": 0.3
+          },
+          {
+            "id": "contents",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.008],
+              [0.0745, 0.008],
+              [0.0755, 0.012],
+              [0.0765, 0.129],
+              [0.065025, 0.133],
+              [0.034425, 0.135],
+              [0, 0.134]
+            ],
+            "color": "#8A6341",
+            "roughness": 0.95,
+            "opacity": 1,
+            "surface": "ground-spice",
+            "topProfileIndex": 3,
+            "uvAspectRatio": 4
+          },
+          {
+            "id": "lid",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.176],
+              [0.0665, 0.176],
+              [0.0675, 0.182],
+              [0.0685, 0.19],
+              [0.0705, 0.204],
+              [0.0708, 0.209],
+              [0.07, 0.212],
+              [0.068, 0.214],
+              [0.064, 0.215],
+              [0, 0.215]
+            ],
+            "color": "#A47B55",
+            "roughness": 0.97,
+            "opacity": 1,
+            "surface": "cork",
+            "topProfileIndex": 5
+          }
+        ],
+        "contentsInterpretation": {
+          "name": "Brown ground spice",
+          "certainty": "Inferred from source color and texture; ingredient identity is not confirmed.",
+          "fillTopMetres": 0.135,
+          "wallThicknessMetres": 0.002,
+          "glassTopMetres": 0.19
+        },
+        "constructionReference": "reference-cork-jar.png"
+      },
+      "porcelain-floor-jar": {
+        "size": [0.128, 0.128, 0.2],
+        "regions": [
+          {
+            "id": "body",
+            "kind": "lathe",
+            "profile": [
+              [0, 0],
+              [0.041, 0],
+              [0.048, 0.004],
+              [0.056, 0.015],
+              [0.061, 0.03],
+              [0.064, 0.055],
+              [0.064, 0.085],
+              [0.062, 0.105],
+              [0.058, 0.125],
+              [0.051, 0.141],
+              [0.045, 0.149],
+              [0.041, 0.153],
+              [0.041, 0.162],
+              [0.038, 0.162],
+              [0.038, 0.153],
+              [0.041999999999999996, 0.149],
+              [0.047999999999999994, 0.141],
+              [0.055, 0.125],
+              [0.059, 0.105],
+              [0.061, 0.085],
+              [0.061, 0.055],
+              [0.057999999999999996, 0.03],
+              [0.053, 0.015],
+              [0.045, 0.004],
+              [0.038, 0.004],
+              [0, 0.004],
+              [0, 0]
+            ],
+            "color": "#EEE8D9",
+            "roughness": 0.85,
+            "opacity": 1,
+            "surface": "porcelain-floral"
+          },
+          {
+            "id": "neck-band",
+            "kind": "lathe",
+            "profile": [
+              [0.041, 0.15],
+              [0.0413, 0.15],
+              [0.0413, 0.162],
+              [0.041, 0.162],
+              [0.041, 0.15]
+            ],
+            "color": "#77999C",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "foot-band",
+            "kind": "lathe",
+            "profile": [
+              [0.04825, 0.004],
+              [0.05625, 0.015],
+              [0.0564, 0.015],
+              [0.0484, 0.004],
+              [0.04825, 0.004]
+            ],
+            "color": "#77999C",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "lid",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.16],
+              [0.039999999999999994, 0.16],
+              [0.044, 0.162],
+              [0.044, 0.166],
+              [0.041999999999999996, 0.1739],
+              [0.022, 0.179],
+              [0, 0.179]
+            ],
+            "color": "#EEE8D9",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "lid-knob",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.179],
+              [0.006, 0.179],
+              [0.009000000000000001, 0.18109999999999998],
+              [0.01128, 0.18425],
+              [0.012, 0.18844999999999998],
+              [0.0114, 0.19265],
+              [0.009000000000000001, 0.19684999999999997],
+              [0.0048000000000000004, 0.19937],
+              [0.0, 0.19999999999999998]
+            ],
+            "color": "#77999C",
+            "roughness": 0.85,
+            "opacity": 1
+          }
+        ]
+      },
+      "counter-green-bottle": {
+        "size": [0.0878, 0.0878, 0.16],
+        "regions": [
+          {
+            "id": "body",
+            "kind": "lathe",
+            "profile": [
+              [0, 0],
+              [0.034, 0],
+              [0.041, 0.005],
+              [0.043, 0.025],
+              [0.043, 0.11],
+              [0.034, 0.125],
+              [0.032, 0.145],
+              [0.028, 0.145],
+              [0.03, 0.125],
+              [0.039, 0.11],
+              [0.039, 0.025],
+              [0.031, 0.005],
+              [0, 0.005]
+            ],
+            "color": "#C19D5A",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "lid",
+            "kind": "lathe",
+            "profile": [
+              [0, 0.142],
+              [0.032, 0.142],
+              [0.035, 0.146],
+              [0.035, 0.155],
+              [0.032, 0.16],
+              [0, 0.16]
+            ],
+            "color": "#C19D5A",
+            "roughness": 0.85,
+            "opacity": 1
+          },
+          {
+            "id": "label",
+            "kind": "label",
+            "radius": 0.043,
+            "zRange": [0.035, 0.104],
+            "angles": [220, 320],
+            "color": "#E0D5D0",
+            "roughness": 0.9,
+            "opacity": 1
+          }
+        ],
+        "preserveFullDetail": true
+      },
+      "shelf-amber-jar": {
+        "size": [0.06197058823529412, 0.06197058823529412, 0.1505],
+        "preserveFullDetail": true,
+        "regions": [
+          {
+            "id": "body",
+            "kind": "lathe",
+            "profile": [
+              [0.0, 0.0],
+              [0.027444117647058824, 0.0],
+              [0.029804901960784315, 0.0023607843137254904],
+              [0.03098529411764706, 0.007082352941176471],
+              [0.03098529411764706, 0.017705882352941175],
+              [0.03098529411764706, 0.0708235294117647],
+              [0.028329411764705884, 0.08026666666666668],
+              [0.02065686274509804, 0.08970980392156863],
+              [0.013574509803921568, 0.10033333333333334],
+              [0.012394117647058825, 0.10623529411764705],
+              [0.012394117647058825, 0.1357450980392157],
+              [0.014164705882352942, 0.13692549019607844],
+              [0.014164705882352942, 0.1392862745098039],
+              [0.011213725490196079, 0.1392862745098039],
+              [0.011213725490196079, 0.10623529411764705],
+              [0.012394117647058825, 0.10092352941176472],
+              [0.019476470588235296, 0.09089019607843138],
+              [0.027149019607843137, 0.08085686274509804],
+              [0.029804901960784315, 0.0708235294117647],
+              [0.029804901960784315, 0.017705882352941175],
+              [0.02862450980392157, 0.0035411764705882355],
+              [0.0, 0.0035411764705882355]
+            ],
+            "color": "#E8F0EE",
+            "roughness": 0.1,
+            "opacity": 0.16,
+            "environmentIntensity": 0.3
+          },
+          {
+            "id": "contents",
+            "kind": "lathe",
+            "profile": [
+              [0.0, 0.004721568627450981],
+              [0.02773921568627451, 0.004721568627450981],
+              [0.028329411764705884, 0.007082352941176471],
+              [0.028919607843137258, 0.0690529411764706],
+              [0.026558823529411763, 0.07790588235294119],
+              [0.019476470588235296, 0.08675882352941176],
+              [0.01652549019607843, 0.0903],
+              [0.0, 0.0903]
+            ],
+            "color": "#C49346",
+            "roughness": 0.95,
+            "opacity": 1,
+            "surface": "ground-spice",
+            "topProfileIndex": 6,
+            "uvAspectRatio": 4
+          },
+          {
+            "id": "lid",
+            "kind": "lathe",
+            "profile": [
+              [0.0, 0.13869607843137255],
+              [0.014164705882352942, 0.13869607843137255],
+              [0.015345098039215686, 0.1398764705882353],
+              [0.015345098039215686, 0.14931960784313725],
+              [0.014164705882352942, 0.1505],
+              [0.0, 0.1505]
+            ],
+            "color": "#926846",
+            "roughness": 0.85,
+            "opacity": 1
+          }
+        ],
+        "contentsInterpretation": {
+          "name": "Ochre condiment in a chili-style bottle; ingredient not confirmed",
+          "certainty": "Inferred from source color and texture; ingredient identity is not confirmed.",
+          "fillTopMetres": 0.0903,
+          "wallThicknessMetres": 0.0011803921568627452,
+          "glassTopMetres": 0.1392862745098039
+        }
+      }
+    },
+    "appearance": "Opaque regions reuse the established pantry palette and 0.85 roughness so independently modeled objects can share existing material batches. Per-region caller colors remain replaceable; glass retains opacity 0.30 and roughness 0.15.",
+    "counterBottle": {
+      "vessel": "counter-green-bottle",
+      "uniformScale": 0.9,
+      "colors": {
+        "body": "#43564D",
+        "lid": "#8D7657"
+      },
+      "source": "Small narrow bottle behind the white preparation-counter mug, below the shelf."
+    },
+    "refinement": "Enlarged shelf crop: open brown cup, localized front labels on pale cream/sage canisters, distinct shallow lids, brown jar with narrow neck rim, tall turned ochre mill-like object, blue-gray crock with separate spoon/spatula/green heads. Visible inference only: unreadable text and exact product identity are not claimed.",
+    "shelfPlant": {
+      "seed": 62421,
+      "potColor": "#C19D5A",
+      "potProfile": [
+        [0, 0],
+        [0.046, 0],
+        [0.058, 0.009],
+        [0.068, 0.075],
+        [0.071, 0.099],
+        [0.07, 0.108],
+        [0.064, 0.108],
+        [0.063, 0.099],
+        [0.06, 0.075],
+        [0.051, 0.009],
+        [0, 0.009]
+      ],
+      "soilRadius": 0.06,
+      "soilTop": 0.099,
+      "foliageBase": 0.1,
+      "sourceBase": 0.13,
+      "verticalScale": 1.25,
+      "bottomSpread": 1.5,
+      "topSpread": 0.55,
+      "taperHeight": 0.24,
+      "reference": "Owner confirmed a flowering plant: pale-yellow/gold blossoms above and among the leaves, in a low ochre pot. Flower species and exact petal count are unresolved in the source.",
+      "flowers": {
+        "petalColor": "#EAD48C",
+        "centerColor": "#C19D5A",
+        "stemColor": "#526C3C",
+        "stemRadius": 0.0016,
+        "petalCount": 5,
+        "petalRadii": [0.0075, 0.013, 0.0025],
+        "petalOffset": 0.01,
+        "centerRadii": [0.0055, 0.0055, 0.0035],
+        "instances": [
+          {
+            "position": [-0.065, -0.075, 0.23],
+            "rotation": [55, -15, -18],
+            "scale": 0.9
+          },
+          {
+            "position": [0.065, -0.045, 0.245],
+            "rotation": [45, 10, 15],
+            "scale": 1
+          },
+          {
+            "position": [0.013, -0.045, 0.26],
+            "rotation": [55, -8, 30],
+            "scale": 0.85
+          },
+          {
+            "position": [-0.008, 0.005, 0.29],
+            "rotation": [35, 8, -10],
+            "scale": 0.9
+          },
+          {
+            "position": [-0.083, 0.005, 0.255],
+            "rotation": [35, -30, 12],
+            "scale": 0.75
+          }
+        ]
+      }
+    },
+    "smallShelfPlant": {
+      "seed": 23114,
+      "foliageScale": [0.32, 0.32, 0.4],
+      "sourceBase": 0.13,
+      "foliageBase": 0.115,
+      "soilRadius": 0.045,
+      "soilTop": 0.112,
+      "reference": "Owner confirmed the second shelf item is a small leafy plant in the existing brown pot, not an empty vessel."
+    },
+    "nightLight": {
+      "reference": "reference-fridge-night-light.png",
+      "interpretation": "Owner-confirmed night-light, not a storage jar. A warm central diffuser sits inside clear glass above a dark base; a pale cap and thin top loop finish the silhouette. Dimensions are inferred from the crop, not measured manufacturing data.",
+      "size": [0.136, 0.136, 0.3],
+      "appearance": "All region colors are replaceable. The diffuser uses neutral emissive material color and intensity, independent of scene illumination; no bloom or illumination of nearby surfaces is implied.",
+      "angularIntervals": 64,
+      "regions": [
+        {
+          "id": "base",
+          "profile": [
+            [0, 0],
+            [0.05, 0],
+            [0.06, 0.004],
+            [0.066, 0.012],
+            [0.068, 0.025],
+            [0.066, 0.055],
+            [0.06, 0.068],
+            [0.053, 0.075],
+            [0, 0.075]
+          ],
+          "color": "#665447",
+          "roughness": 0.68,
+          "opacity": 1
+        },
+        {
+          "id": "glass-shade",
+          "profile": [
+            [0.049, 0.075],
+            [0.055, 0.075],
+            [0.057, 0.085],
+            [0.057, 0.213],
+            [0.053, 0.225],
+            [0.05, 0.225],
+            [0.054, 0.212],
+            [0.054, 0.086],
+            [0.049, 0.078],
+            [0.049, 0.075]
+          ],
+          "color": "#E2E5E2",
+          "roughness": 0.16,
+          "opacity": 0.22
+        },
+        {
+          "id": "diffuser",
+          "profile": [
+            [0, 0.091],
+            [0.028, 0.091],
+            [0.034, 0.097],
+            [0.037, 0.11],
+            [0.037, 0.18],
+            [0.033, 0.194],
+            [0.025, 0.201],
+            [0, 0.201]
+          ],
+          "color": "#FFDBA0",
+          "roughness": 0.65,
+          "opacity": 1,
+          "emissive": "#FFB35C",
+          "emissiveIntensity": 1.75
+        },
+        {
+          "id": "lower-ring",
+          "profile": [
+            [0.048, 0.072],
+            [0.059, 0.072],
+            [0.06, 0.077],
+            [0.059, 0.083],
+            [0.048, 0.083],
+            [0.048, 0.072]
+          ],
+          "color": "#B5ABA1",
+          "roughness": 0.4,
+          "opacity": 1
+        },
+        {
+          "id": "cap",
+          "profile": [
+            [0, 0.222],
+            [0.053, 0.222],
+            [0.061, 0.226],
+            [0.062, 0.232],
+            [0.058, 0.241],
+            [0.043, 0.252],
+            [0.025, 0.261],
+            [0, 0.263]
+          ],
+          "color": "#D8D1CC",
+          "roughness": 0.45,
+          "opacity": 1
+        }
+      ],
+      "loop": {
+        "id": "top-loop",
+        "radius": 0.003,
+        "color": "#B5ABA1",
+        "roughness": 0.42,
+        "path": [
+          [0.02, 0, 0.277],
+          [0.0196157, 0, 0.2809018],
+          [0.0184776, 0, 0.2846537],
+          [0.0166294, 0, 0.2881114],
+          [0.0141421, 0, 0.2911421],
+          [0.0111114, 0, 0.2936294],
+          [0.0076537, 0, 0.2954776],
+          [0.0039018, 0, 0.2966157],
+          [0.0, 0, 0.297],
+          [-0.0039018, 0, 0.2966157],
+          [-0.0076537, 0, 0.2954776],
+          [-0.0111114, 0, 0.2936294],
+          [-0.0141421, 0, 0.2911421],
+          [-0.0166294, 0, 0.2881114],
+          [-0.0184776, 0, 0.2846537],
+          [-0.0196157, 0, 0.2809018],
+          [-0.02, 0, 0.277],
+          [-0.0196157, 0, 0.2730982],
+          [-0.0184776, 0, 0.2693463],
+          [-0.0166294, 0, 0.2658886],
+          [-0.0141421, 0, 0.2628579],
+          [-0.0111114, 0, 0.2603706],
+          [-0.0076537, 0, 0.2585224],
+          [-0.0039018, 0, 0.2573843],
+          [-0.0, 0, 0.257],
+          [0.0039018, 0, 0.2573843],
+          [0.0076537, 0, 0.2585224],
+          [0.0111114, 0, 0.2603706],
+          [0.0141421, 0, 0.2628579],
+          [0.0166294, 0, 0.2658886],
+          [0.0184776, 0, 0.2693463],
+          [0.0196157, 0, 0.2730982],
+          [0.02, 0, 0.277]
+        ]
+      }
+    },
+    "frameNightLight": {
+      "assetId": "frame-night-light",
+      "reference": "reference-frame-night-light.png",
+      "sizeMetres": [0.148, 0.148, 0.3],
+      "dimensionBasis": "Reference silhouette ratios normalized to the existing 300 mm tabletop light height; physical dimensions are not supplied by the photograph.",
+      "angularIntervals": 64,
+      "regions": [
+        {
+          "id": "base",
+          "profile": [
+            [0, 0],
+            [0.059, 0],
+            [0.067, 0.004],
+            [0.071, 0.011],
+            [0.073, 0.014],
+            [0.074, 0.022],
+            [0.074, 0.023],
+            [0.0732, 0.0235],
+            [0.0732, 0.0245],
+            [0.074, 0.025],
+            [0.074, 0.033],
+            [0.074, 0.034],
+            [0.0732, 0.0345],
+            [0.0732, 0.0355],
+            [0.074, 0.036],
+            [0.074, 0.051],
+            [0.074, 0.052],
+            [0.0732, 0.0525],
+            [0.0732, 0.0535],
+            [0.074, 0.054],
+            [0.074, 0.061],
+            [0.071, 0.065],
+            [0.056, 0.065],
+            [0.05, 0.069],
+            [0, 0.069]
+          ],
+          "color": "#79684E",
+          "roughness": 0.18,
+          "opacity": 1,
+          "material": "metal",
+          "metalness": 0.85,
+          "environmentIntensity": 1
+        },
+        {
+          "id": "reflector",
+          "profile": [
+            [0.044, 0.065],
+            [0.052, 0.065],
+            [0.051, 0.069],
+            [0.048, 0.074],
+            [0.044, 0.076],
+            [0.041, 0.075],
+            [0.041, 0.07],
+            [0.044, 0.065]
+          ],
+          "color": "#B69850",
+          "roughness": 0.16,
+          "opacity": 1,
+          "material": "metal",
+          "metalness": 0.85,
+          "environmentIntensity": 1
+        },
+        {
+          "id": "light-core",
+          "profile": [
+            [0, 0.068],
+            [0.038, 0.068],
+            [0.042, 0.072],
+            [0.042, 0.077],
+            [0.037, 0.082],
+            [0.025, 0.087],
+            [0, 0.09]
+          ],
+          "color": "#FFDBA0",
+          "roughness": 0.5,
+          "opacity": 1,
+          "material": "plain",
+          "emissive": "#FFB35C",
+          "emissiveIntensity": 1.75,
+          "metalness": 0,
+          "environmentIntensity": 0
+        },
+        {
+          "id": "glass-cylinder",
+          "profile": [
+            [0.044, 0.076],
+            [0.046, 0.076],
+            [0.046, 0.244],
+            [0.0455, 0.246],
+            [0.044, 0.246],
+            [0.044, 0.076]
+          ],
+          "color": "#E6DED0",
+          "roughness": 0.12,
+          "opacity": 0.13,
+          "material": "plain",
+          "metalness": 0,
+          "environmentIntensity": 0
+        },
+        {
+          "id": "glass-top",
+          "profile": [
+            [0, 0.244],
+            [0.044, 0.244],
+            [0.0455, 0.245],
+            [0.044, 0.246],
+            [0, 0.246]
+          ],
+          "color": "#E6DED0",
+          "roughness": 0.12,
+          "opacity": 0.1,
+          "material": "plain",
+          "metalness": 0,
+          "environmentIntensity": 0
+        },
+        {
+          "id": "glass-rim",
+          "profile": [
+            [0.0435, 0.244],
+            [0.046, 0.244],
+            [0.046, 0.246],
+            [0.0435, 0.246],
+            [0.0435, 0.244]
+          ],
+          "color": "#CFBB87",
+          "roughness": 0.25,
+          "opacity": 0.36,
+          "material": "plain",
+          "metalness": 0,
+          "environmentIntensity": 0
+        }
+      ],
+      "frame": {
+        "color": "#79684E",
+        "roughness": 0.18,
+        "outerWidth": 0.12,
+        "bottom": 0.059,
+        "bandWidth": 0.009,
+        "depth": 0.007,
+        "cornerRadius": 0.014,
+        "cornerIntervals": 10,
+        "arches": [
+          {
+            "id": "width-frame",
+            "rotationDegrees": 0,
+            "top": 0.294
+          },
+          {
+            "id": "depth-frame",
+            "rotationDegrees": 90,
+            "top": 0.3
+          }
+        ],
+        "metalness": 0.85,
+        "environmentIntensity": 1
+      },
+      "appearance": "Two perpendicular rounded rectangular arch straps crossing at the top, four uprights, hollow clear cylinder, low bottom emitter and grooved bronze circular base. No full-height luminous diffuser, cap or top hanging loop. Region colors remain replaceable.",
+      "additionalReference": "reference-frame-night-light-second-angle.png"
+    },
+    "shelfSucculent": {
+      "size": [0.185, 0.185, 0.303],
+      "potProfile": [
+        [0, 0],
+        [0.074, 0],
+        [0.084, 0.005],
+        [0.089, 0.016],
+        [0.092, 0.185],
+        [0.0925, 0.197],
+        [0.083, 0.197],
+        [0.082, 0.025],
+        [0.072, 0.009],
+        [0, 0.009]
+      ],
+      "potColor": "#596B7A",
+      "rimProfile": [
+        [0.083, 0.197],
+        [0.0925, 0.197],
+        [0.0925, 0.202],
+        [0.09, 0.205],
+        [0.083, 0.205],
+        [0.083, 0.197]
+      ],
+      "rimColor": "#89654D",
+      "soilRadius": 0.081,
+      "soilTop": 0.197,
+      "leaves": [
+        {
+          "position": [0.03885, -0.0034, 0.213],
+          "rotation": [-7, -18, -5.0],
+          "radii": [0.033, 0.014, 0.0075],
+          "color": "#788244"
+        },
+        {
+          "position": [0.02432, 0.03049, 0.2145],
+          "rotation": [0, -23, 51.42857142857143],
+          "radii": [0.034, 0.014, 0.0075],
+          "color": "#929052"
+        },
+        {
+          "position": [-0.01196, 0.03712, 0.216],
+          "rotation": [7, -28, 107.85714285714286],
+          "radii": [0.035, 0.014, 0.0075],
+          "color": "#657842"
+        },
+        {
+          "position": [-0.03353, 0.01992, 0.213],
+          "rotation": [-7, -18, 149.28571428571428],
+          "radii": [0.033, 0.014, 0.0075],
+          "color": "#788244"
+        },
+        {
+          "position": [-0.03514, -0.01692, 0.2145],
+          "rotation": [0, -23, 205.71428571428572],
+          "radii": [0.034, 0.014, 0.0075],
+          "color": "#929052"
+        },
+        {
+          "position": [-0.00533, -0.03863, 0.216],
+          "rotation": [7, -28, 262.14285714285717],
+          "radii": [0.035, 0.014, 0.0075],
+          "color": "#657842"
+        },
+        {
+          "position": [0.02157, -0.03249, 0.213],
+          "rotation": [-7, -18, 303.57142857142856],
+          "radii": [0.033, 0.014, 0.0075],
+          "color": "#788244"
+        },
+        {
+          "position": [0.02067, 0.01008, 0.231],
+          "rotation": [-7, -34, 26.0],
+          "radii": [0.024, 0.012, 0.0085],
+          "color": "#788244"
+        },
+        {
+          "position": [-0.00517, 0.02241, 0.2325],
+          "rotation": [0, -39, 103.0],
+          "radii": [0.025, 0.012, 0.0085],
+          "color": "#929052"
+        },
+        {
+          "position": [-0.023, 0.0, 0.234],
+          "rotation": [7, -44, 180.0],
+          "radii": [0.026000000000000002, 0.012, 0.0085],
+          "color": "#657842"
+        },
+        {
+          "position": [-0.0108, -0.02031, 0.231],
+          "rotation": [-7, -34, 242.0],
+          "radii": [0.024, 0.012, 0.0085],
+          "color": "#788244"
+        },
+        {
+          "position": [0.01736, -0.01509, 0.2325],
+          "rotation": [0, -39, 319.0],
+          "radii": [0.025, 0.012, 0.0085],
+          "color": "#929052"
+        }
+      ],
+      "bud": {
+        "position": [0.024, 0.004, 0.277],
+        "rotation": [6, -18, 15],
+        "radii": [0.022, 0.016, 0.025],
+        "color": "#4D302C",
+        "stemPath": [
+          [0, 0, 0.194],
+          [0.013, 0.003, 0.237],
+          [0.024, 0.004, 0.277]
+        ],
+        "stemRadius": 0.0035,
+        "stemColor": "#727741"
+      }
+    },
+    "countertopReview": {
+      "reference": "reference-preparation-counter.png",
+      "authority": "Owner-approved top-view layout 2026-10-28 supersedes earlier corner and straight-row placements. Asset geometry remains source-based; scene/reference/pantry-layout.json owns approved scene placement. Preparation sink remains reusable but is not composed.",
+      "pitcher": {
+        "radius": 0.099,
+        "height": 0.255,
+        "wall": 0.005,
+        "base": 0.007,
+        "spoutReach": 0.018,
+        "handleReach": 0.055,
+        "handleRadius": 0.007,
+        "color": "#E8E4DF",
+        "baseRadiusRatio": 0.97,
+        "handleCornerRadius": 0.012,
+        "insertColor": "#B9B5BB",
+        "insertInset": 0.006,
+        "centerColor": "#716B76",
+        "centerRadius": 0.018
+      },
+      "tumbler": {
+        "radius": 0.034,
+        "height": 0.19,
+        "lidHeight": 0.019,
+        "color": "#E9E7E2"
+      },
+      "sinkCup": {
+        "uniformScale": 1.62,
+        "rotationDegrees": -90,
+        "color": "#E8E4DF"
+      },
+      "plants": {
+        "preparation": {
+          "scale": 1.35,
+          "seed": 611,
+          "color": "#675044",
+          "foliageWidth": 0.8,
+          "foliageRise": 0.7
+        },
+        "sink": {
+          "scale": 1.35,
+          "seed": 607,
+          "color": "#E8DBC3",
+          "foliageWidth": 1.08,
+          "foliageRise": 1.12
+        }
+      },
+      "placement": {
+        "sinkCup": [2.66, 0.32],
+        "sinkPlant": [2.805, 0.18]
+      },
+      "placementConvention": "Baseline main-sink accessory anchors: [world X, distance forward from inner rear wall]. Translate these together with the unchanged main sink. Countertop smallware and separate green bottle positions belong to the approved scene layout.",
+      "brush": {
+        "height": 0.215,
+        "shaftRadius": 0.003,
+        "headRadii": [0.009, 0.006, 0.02]
+      },
+      "appearance": "All colors and materials remain replaceable. No baked shadows. No unrelated soap pump is placed on the worktops.",
+      "preparationSink": {
+        "width": 0.48,
+        "depth": 0.25,
+        "drop": 0.09,
+        "rimRise": 0.01,
+        "rimWidth": 0.021,
+        "floorThickness": 0.013,
+        "faucetRadius": 0.006,
+        "faucetHeight": 0.17,
+        "color": "#AAAFA9"
+      },
+      "preparationPot": {
+        "radius": 0.104,
+        "baseRadius": 0.096,
+        "height": 0.21,
+        "soilHeight": 0.195,
+        "wall": 0.005
+      }
+    }
+  }
 }

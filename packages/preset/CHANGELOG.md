@@ -1,5 +1,33 @@
 # @asyra/preset
 
+## Pending - Office input and spatial materials
+
+```update-note
+{
+  "change": "office-input-and-spatial-materials",
+  "owner": "Framework - @asyra/preset",
+  "summary": "Add optional spatial emission, bloom and studio reflections; scale shadow receiver bias to the configured footprint to reduce self-shadow banding.",
+  "sources": [
+    "packages/preset/src/__tests__/emissive-bloom.test.ts",
+    "packages/preset/src/__tests__/reflection-environment.test.ts",
+    "packages/preset/src/__tests__/spatial-admission.test.ts",
+    "packages/preset/src/__tests__/spatial-engine.test.ts",
+    "packages/preset/src/__tests__/spatial-lighting.test.ts",
+    "packages/preset/src/index.ts",
+    "packages/preset/src/spatial/emissive-bloom.ts",
+    "packages/preset/src/spatial/lighting.ts",
+    "packages/preset/src/spatial/reflection-environment.ts",
+    "packages/preset/src/spatial/spatial-contract.ts",
+    "packages/preset/src/spatial/three-engine.ts"
+  ],
+  "impact": "integration",
+  "guides": [
+    "docs/public/updates/held-input-and-spatial-materials-r1.md"
+  ],
+  "reason": "Optional APIs require explicit consumer registration and preservation of app-owned policies; see the adoption guide."
+}
+```
+
 ## 0.5.8
 
 ### Patch Changes

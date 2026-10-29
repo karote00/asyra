@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="1008" viewBox="0 0 768 1008">
+  <title>Better Agents Happier People</title>
+  <desc>Crisp reconstruction of the discussion-room print, with four lines and a small ochre smile.</desc>
+  <rect width="768" height="1008" fill="#f2eadc"/>
+  <g fill="#493e34" font-family="Chalkboard SE, Comic Sans MS, cursive" font-size="104" font-weight="400">
+    <text x="154" y="285">Better</text>
+    <text x="154" y="431">Agents</text>
+    <text x="154" y="577">Happier</text>
+    <text x="154" y="723">People</text>
+  </g>
+  <g transform="translate(598 798) rotate(-12)" fill="none" stroke="#b58a4f" stroke-width="7" stroke-linecap="round">
+    <circle r="34"/>
+    <path d="M-12-9v5M12-9v5M-17 10Q0 29 17 10"/>
+  </g>
+</svg>

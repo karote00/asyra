@@ -1,10 +1,11 @@
 # Street Tree - Two-Level Branching
 
-Updated 2026-10-08. The user selected the fuller bare-tree picture and delegated
+Updated 2026-10-25. The user selected the fuller bare-tree picture and delegated
 remaining numeric construction decisions. The selected picture is unchanged.
 Use [TREE-CONSTRUCTION.md](TREE-CONSTRUCTION.md) for formulas and
 [tree-construction-spec.json](tree-construction-spec.json) for exact values.
-No model or rendered comparison has been produced by this document update.
+Revision 4 distributes the scaffold radially and adds seeded primary/secondary
+branches at varied heights, angles and lengths. The original appearance reference remains unchanged.
 
 ## Selected structure
 
@@ -12,8 +13,9 @@ No model or rendered comparison has been produced by this document update.
 current bare-tree appearance reference. The simplified two-level v2 and the
 all-primary draft are historical. The previous six-plus-six example is superseded.
 
-One level-0 trunk supports seven level-1 primary branches and thirteen level-2
-secondary branches. Level 2 is terminal. A parent continues beyond each child
+The core scaffold has seven primary and thirteen secondary branches. Revision 4
+adds 4..7 primaries plus 1..2 secondaries per primary, giving 35..55 branches in
+total. One level-0 trunk supports the resulting level-1/level-2 graph. Level 2 is terminal. A parent continues beyond each child
 attachment; multiple children on a primary are allowed. **B7 grows from B11**.
 The numeric layout is an authored interpretation of the selected fuller tree;
 hidden depth and exact coordinates are not measurements from the illustration.
@@ -22,11 +24,13 @@ The trunk is 2.55 m high, with 0.23 m base diameter and 0.024 m top diameter.
 It uses the seven centreline stations in JSON and cubic Hermite interpolation.
 Branch endpoints may be higher than the trunk. Their rounded caps extend past
 the listed centreline endpoints by the local radius. Whole-tree maximum bounds
-are 3.00 x 1.90 x 3.55 m; never stretch geometry to fill them.
+are 3.00 x 3.00 x 3.55 m before whole-unit scaling; never stretch geometry to fill them.
 
-## Branch table
+## Branch scaffold table
 
-Coordinates and attachment heights are metres. Secondary attachment t is the
+Scaffold coordinates and attachment heights are metres. These are not final
+model endpoints: apply the radial-growth transform in TREE-CONSTRUCTION.md to
+each primary subtree, then evaluate child roots on transformed parent curves. Secondary attachment t is the
 parent's quadratic Bezier parameter, not arc length. The construction guide fixes
 control-point lifts, tapered radii and local smooth-union junctions. Thus endpoint
 coordinates alone are not an instruction to create straight sticks.

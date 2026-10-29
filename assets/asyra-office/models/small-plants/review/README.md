@@ -1,5 +1,21 @@
 # Group 5A - Small Plant Review
 
+## Current room reference selection - 2026-10-29
+
+- [Work floor planter](work-floor-square-planter-owner-reference.png): square
+  terracotta pot and broad leaves.
+- [Work shelf botanical reference](work-shelf-botanical-reference.png): current
+  plant and pot shapes; mapping and preserved colors are in the
+  [room recipe index](../README.md#current-room-recipes---2026-10-29).
+- [Discussion conifer](discussion-conifer-owner-reference.png): current fine
+  branching/foliage type, with branch lengths adapted before leaf placement.
+- [Earlier shelf crop](work-shelf-plants-owner-reference.png): retained source
+  for placement/color history only; its straight pots are superseded.
+
+The original two design sheets below remain catalog references. Their historical
+"drawings only" status does not describe the later room implementation.
+
+
 Status: approved by the user for commit; drawings and documents only, with no model verification.
 
 1. [Leaf plant](01-potted-leaf-plant-v1.png): pale ceramic pot, visible soil and six broad leaves based on the central-office plant style.

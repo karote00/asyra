@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="1008" viewBox="0 0 768 1008">
+  <title>A Brighter Day</title>
+  <desc>Clear work-room print reconstructed from the approved reference: three lines and an ochre heart.</desc>
+  <rect width="768" height="1008" fill="#f2eadc"/>
+  <g fill="#493e34" font-family="Chalkboard SE, Comic Sans MS, cursive" font-size="125" font-weight="400">
+    <text x="190" y="285">A</text>
+    <text x="125" y="470">Brighter</text>
+    <text x="190" y="655">Day</text>
+  </g>
+  <path d="M548 750 C470 700 480 651 518 661 C538 665 547 680 548 688 C560 648 609 651 611 682 C614 708 580 738 548 750Z" fill="none" stroke="#b58a4f" stroke-width="8" stroke-linecap="round"/>
+</svg>

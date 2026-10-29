@@ -10,7 +10,13 @@ export interface SpatialLighting {
   fillIntensity?: number
   castShadows?: boolean
 }
+export interface SpatialBloom {
+  readonly strength: number
+  /** Gaussian support radius in CSS pixels, independent of device pixel ratio. */
+  readonly radius: number
+}
 export interface SpatialPresentationOptions {
+  readonly bloom?: SpatialBloom
   readonly lighting?: SpatialLighting
   readonly softwareShadowFallback?: boolean
 }
@@ -91,13 +97,19 @@ export function readSpatialPresentationOptions(
   const value = record(input)
   if (
     Object.keys(value).some(
-      (key) => key !== 'lighting' && key !== 'softwareShadowFallback'
+      (key) =>
+        key !== 'lighting' &&
+        key !== 'softwareShadowFallback' &&
+        key !== 'bloom'
     ) ||
     (value.softwareShadowFallback !== undefined &&
       typeof value.softwareShadowFallback !== 'boolean')
   )
     throw new Error('Invalid spatial presentation field')
   return Object.freeze({
+    ...(value.bloom === undefined
+      ? {}
+      : { bloom: readSpatialBloom(value.bloom) }),
     ...(value.lighting === undefined
       ? {}
       : { lighting: readSpatialLighting(value.lighting) }),
@@ -105,4 +117,19 @@ export function readSpatialPresentationOptions(
       ? {}
       : { softwareShadowFallback: value.softwareShadowFallback as boolean })
   })
+}
+
+export function readSpatialBloom(input: unknown): Readonly<SpatialBloom> {
+  const value = record(input)
+  if (
+    Object.keys(value).some((key) => key !== 'strength' && key !== 'radius') ||
+    !finite(value.strength) ||
+    value.strength < 0 ||
+    value.strength > 2 ||
+    !finite(value.radius) ||
+    value.radius <= 0 ||
+    value.radius > 64
+  )
+    throw new Error('Invalid spatial bloom settings')
+  return Object.freeze({ strength: value.strength, radius: value.radius })
 }

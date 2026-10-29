@@ -3464,14 +3464,11 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
         response,
         body: source.replace(
           marker,
-          `if (globalThis.__rejectDocumentPreparation) throw new Error('Injected preparation failure'); ${marker}`
+          `if (sessionStorage.getItem('document-preparation-fault') !== 'disabled') throw new Error('Injected preparation failure'); ${marker}`
         )
       })
     }
   )
-  await page.addInitScript(() => {
-    Object.assign(globalThis, { __rejectDocumentPreparation: true })
-  })
   const peerContext = await browser.newContext({
     baseURL: requireAppUrl(testInfo)
   })
@@ -3562,10 +3559,10 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     const peerIds = await getLayerIds(peer)
     expect(await getElementCount(page)).toBe(2)
     await page.evaluate(() => {
-      Object.assign(globalThis, { __rejectDocumentPreparation: false })
+      sessionStorage.setItem('document-preparation-fault', 'disabled')
     })
-    // The next page may prepare normally too.
-    await page.unroute('**/src/collaboration/factory-adapter.ts*')
+    // Keep the instrumented module across reloads so recovery does not depend
+    // on the browser discarding a previously fetched module.
     await recovery.getByRole('button', { name: 'Retry saving' }).click()
     await waitForAppReady(page)
     await waitForCollaboration(page)
@@ -3573,7 +3570,15 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     await expect.poll(() => getElementCount(peer)).toBe(3)
     const expectedIds = [...localIds, ...peerIds].sort()
     expect((await getLayerIds(page)).sort()).toEqual(expectedIds)
+    await capturePublicationOutcomes(page)
     await createRectangle(page, 0.5, 0.3)
+    await expect
+      .poll(() => getPublicationOutcomes(page))
+      .not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ status: 'send-failed' })
+        ])
+      )
     await expect.poll(() => getElementCount(peer)).toBe(4)
     const savedIds = (await getLayerIds(page)).sort()
     await page.evaluate(async () => {

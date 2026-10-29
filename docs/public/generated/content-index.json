@@ -1795,6 +1795,48 @@
       "wordCount": 1820
     },
     {
+      "contentSha256": "298f5243b08fb47c7f009bc00874accaefac6d85450ad8cbb9182e3e124a786c",
+      "description": "Integrate continuous keyboard controls and opt-in emissive, bloom and reflection effects while preserving app-owned behavior.",
+      "headings": [
+        {
+          "depth": 1,
+          "title": "Adopt held keyboard input and spatial material effects"
+        },
+        {
+          "depth": 2,
+          "title": "Scope and source boundary"
+        },
+        {
+          "depth": 2,
+          "title": "Contracts and adoption"
+        },
+        {
+          "depth": 2,
+          "title": "Preservation and verification"
+        },
+        {
+          "depth": 3,
+          "title": "Optical surfaces and authored normals"
+        },
+        {
+          "depth": 2,
+          "title": "Canonical sources"
+        }
+      ],
+      "id": "updates/held-input-and-spatial-materials-r1",
+      "markdownPath": "docs/public/updates/held-input-and-spatial-materials-r1.md",
+      "packages": [
+        "@asyra/input-system",
+        "@asyra/utils",
+        "@asyra/render-engine",
+        "@asyra/preset"
+      ],
+      "path": "updates/held-input-and-spatial-materials-r1.md",
+      "section": "Extend",
+      "title": "Adopt held keyboard input and spatial material effects",
+      "wordCount": 818
+    },
+    {
       "contentSha256": "96cafeaff7a82ba35e235b723b37618e5f73235ba675af8e8c04311552e4a103",
       "description": "Optional registry, schema, permission, and execution boundary for app-approved AI actions.",
       "headings": [
@@ -2161,7 +2203,7 @@
       "wordCount": 517
     },
     {
-      "contentSha256": "d4990de2edfd7ab0a66fa92c5c80581df004b98b4db2f15afe1e45d689b6ec08",
+      "contentSha256": "b9e7ff8e3337a63aaba2da4164cb56d8d82503f7223ce22c93736569a878aaa5",
       "description": "Environment-neutral semantic input registration and dispatch infrastructure.",
       "headings": [
         {
@@ -2187,6 +2229,10 @@
         {
           "depth": 2,
           "title": "Lifecycle, inputs, outputs, and failure"
+        },
+        {
+          "depth": 2,
+          "title": "Continuous keyboard controls"
         },
         {
           "depth": 2,
@@ -2217,7 +2263,7 @@
       "path": "reference/packages/input-system.md",
       "section": "Reference",
       "title": "@asyra/input-system",
-      "wordCount": 427
+      "wordCount": 617
     },
     {
       "contentSha256": "e81642b5d077d418f273319bdb3251976516e77591f69058c54f661abf2b8315",
@@ -2279,7 +2325,7 @@
       "wordCount": 372
     },
     {
-      "contentSha256": "8d34bcd55f2a76460dcb5c61285fb07f69858374f3c6121b2152cb78f1d8111f",
+      "contentSha256": "96d66df52c5f73e156dc28a7b7d354769452d56677ea23a34fb9a38796ab24ff",
       "description": "Optional official design-tool baseline with selectable defaults and replaceable providers.",
       "headings": [
         {
@@ -2333,6 +2379,34 @@
         {
           "depth": 2,
           "title": "Opt-in mesh definitions and pose presentation"
+        },
+        {
+          "depth": 2,
+          "title": "Self-emissive spatial materials"
+        },
+        {
+          "depth": 2,
+          "title": "Optional emissive bloom"
+        },
+        {
+          "depth": 2,
+          "title": "Optional spatial environment reflections"
+        },
+        {
+          "depth": 2,
+          "title": "Optional spatial optical materials"
+        },
+        {
+          "depth": 3,
+          "title": "Ordered transmission capture"
+        },
+        {
+          "depth": 2,
+          "title": "Authored triangle normals"
+        },
+        {
+          "depth": 3,
+          "title": "Same-flush opaque work in ordered optical rendering"
         }
       ],
       "id": "reference/packages/preset",
@@ -2343,7 +2417,7 @@
       "path": "reference/packages/preset.md",
       "section": "Reference",
       "title": "@asyra/preset",
-      "wordCount": 818
+      "wordCount": 1940
     },
     {
       "contentSha256": "28f044123e1b6f60c18a4f39910a2560f4301026e8850f1c4e91557fa5d5ac8e",
@@ -3268,7 +3342,8 @@
         "updates/text-official-fields-example-1-r2",
         "updates/text-official-fields-example-1-r3",
         "updates/text-spacing-example-2-r1",
-        "updates/text-spacing-example-2-r2"
+        "updates/text-spacing-example-2-r2",
+        "updates/held-input-and-spatial-materials-r1"
       ]
     },
     {

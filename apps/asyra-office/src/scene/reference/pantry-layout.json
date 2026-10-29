@@ -1,0 +1,77 @@
+{
+  "fridge": {
+    "x": 0.22769322070160586,
+    "y": 2.8201495177210143,
+    "w": 0.7020000000000001,
+    "d": 0.7519500000000001
+  },
+  "preparation": {
+    "x": 0.969693220701606,
+    "y": 2.997099517721014,
+    "w": 0.8378067792983939,
+    "d": 0.625,
+    "doorCount": 1,
+    "smallSink": "omitted-from-proposed-scene-reusable-asset-retained"
+  },
+  "mainSink": {
+    "x": 1.815,
+    "y": 2.997099517721014,
+    "w": 1.125,
+    "d": 0.625,
+    "assetScale": 1.25,
+    "basin": {
+      "x": 1.9775,
+      "y": 3.097099517721014,
+      "w": 0.65,
+      "d": 0.4125
+    }
+  },
+  "dispenser": {
+    "x": 0.18969322070160588,
+    "y": 1.816,
+    "w": 0.3439,
+    "d": 0.304
+  },
+  "shelf": {
+    "x": 0.969693220701606,
+    "y": 3.377099517721014,
+    "w": 1.05,
+    "d": 0.24,
+    "retainedEnvelopeWidths": [0.23837353491299512, 0.1, 0.18, 0.16, 0.185],
+    "gap": 0.03,
+    "endMargin": 0.033313232543502436
+  },
+  "counterObjects": {
+    "plant": {
+      "x": 0.999693220701606,
+      "y": 3.3000584242210143,
+      "w": 0.2959004494900211,
+      "d": 0.2920410935
+    },
+    "pitcher": {
+      "x": 1.3955936701916272,
+      "y": 3.344099517721014,
+      "w": 0.2750299900044341,
+      "d": 0.198
+    },
+    "tumbler": {
+      "x": 1.679693220701606,
+      "y": 3.1120995177210142,
+      "w": 0.07004,
+      "d": 0.07004
+    }
+  },
+  "fridgeDoor": {
+    "hinge": "right",
+    "angleDegrees": 90,
+    "envelopeRadius": 0.7520000000000001,
+    "dispenserClearance": 0.0524280932221155
+  },
+  "stored": [
+    "pantry-canister-1",
+    "pantry-canister-4",
+    "pantry-preparation-sink"
+  ],
+  "approval": "Owner approved 2026-10-28; full-size right sink, single-door preparation, staggered smallware. Layout units are metres. Owner-directed building expansion translates this complete layout +1.00 m Y; assets and gaps unchanged.",
+  "counterBottleCenter": [1.119693220701606, 3.147099517721014]
+}

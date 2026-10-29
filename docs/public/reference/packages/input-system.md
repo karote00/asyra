@@ -45,6 +45,28 @@ listeners and clears transient state, timers and input mappings. Every listener
 removal is attempted before cleanup failure is reported. Core uses this explicit
 boundary for complete runtime replacement; ordinary reset/dispose are unchanged.
 
+## Continuous keyboard controls
+
+Use Core's `registerInputKeyCombinations` and retain its unregister callback for
+scene disposal. For continuous controls, opt into `keyboardMode: 'held'` on a
+keyboard combination. Its `keys` list observes alternatives, such as W and arrow
+keys, rather than requiring every listed key at once.
+
+The callback receives `RawInputEvent.keys` containing all held non-modifier keys,
+live `modifiers`, and `keyboard` metadata (`phase`, `changedKey`, `target`,
+`repeat`, `isComposing`). Phases are `down`, `up`, and `cancel`. Modifier changes
+also notify while a tracked key is held. Held keys do not expire when native
+repeat is absent. The ordinary `modifiers` chord filter is not used in this mode:
+the callback must apply its modifier, editable-target and composition policy.
+Return `false` to reject an event before semantic dispatch; rejected held
+keydown leaves the native default intact.
+
+Release is delivered in capture phase even if an editor stops bubbling, without
+preventing editing. Blur, focus changes, composition start, hidden documents and
+host detach cancel held state. Keep animation timing and business policy in the
+consumer, and stop scheduled work when unregistering. Ordinary exact chords and
+pointer mappings keep their existing matching behavior.
+
 ## Relationships
 
 Reactive Events carries typed routes. Core visual startup attaches Input to the

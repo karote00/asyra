@@ -1,0 +1,60 @@
+{
+  "source": "lounge-proportion-source.png",
+  "imageSize": [
+    1828,
+    1268
+  ],
+  "pointConvention": "Approximate visible front-face crown corners in source pixels; 8 px picking uncertainty. The left-return foot is partly occluded and has 20 px uncertainty.",
+  "points": {
+    "rearLeft": [
+      700,
+      130
+    ],
+    "rearLeftEnd": [
+      1093,
+      291
+    ],
+    "rearMiddleStart": [
+      1093,
+      238
+    ],
+    "rearMiddleEnd": [
+      1250,
+      300
+    ],
+    "rearRightStart": [
+      1250,
+      251
+    ],
+    "rearRightEnd": [
+      1695,
+      443
+    ],
+    "leftHighRear": [
+      700,
+      76
+    ],
+    "leftHighFront": [
+      502,
+      170
+    ],
+    "leftStepLow": [
+      502,
+      412
+    ],
+    "leftLowFront": [
+      235,
+      543
+    ],
+    "leftHighFoot": [
+      502,
+      729
+    ],
+    "branchRear": [
+      1425,
+      168
+    ]
+  },
+  "method": "Local weak-perspective reconstruction. Estimate orthogonal horizontal axes from crown directions, use existing rear width as similarity datum, derive heights from the visible left-return foot. Do not fit an arbitrary percentage or assume screen y equals world height.",
+  "limits": "Crown picks have 8 px uncertainty; partly occluded left-return foot has 20 px uncertainty. Minor frontage notch at the low-wall end is excluded from the long-run length. Preserve a single floor and horizontal tops; disclose residuals."
+}

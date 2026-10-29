@@ -1,0 +1,17 @@
+{
+  "reference": "assets/asyra-office/models/architecture/review/approved-office-reference.jpg",
+  "imageSize": [1280, 800],
+  "eastFloorRun": {
+    "rear": [1000, 401],
+    "partition": [860, 503],
+    "front": [724, 573],
+    "contactUncertaintyPixels": 10
+  },
+  "rule": "Project partition-front along rear-front to estimate lower-room share; apply that share to the fixed shell interior depth. Translate both lower rear boundaries by the same amount, retaining their stagger. The occluded contacts are approximate; not a surveyed plan.",
+  "baseline": {
+    "frontInnerY": -2.33,
+    "rearInnerY": 2.622099517721014,
+    "loungeRearInnerY": -0.8864636351722608,
+    "workRearInnerY": -0.6870371312101217
+  }
+}

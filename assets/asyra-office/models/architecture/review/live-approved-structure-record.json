@@ -1,0 +1,17 @@
+{
+  "url": "http://127.0.0.1:5194/",
+  "viewport": {
+    "width": 1440,
+    "height": 960
+  },
+  "graphics": {
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)",
+    "vendor": "Google Inc. (Apple)",
+    "width": 964,
+    "height": 902,
+    "pixelRatio": 1
+  },
+  "closeView": "Overview followed by two normal Zoom in actions",
+  "scene": "Production structural composition; lighting unchanged",
+  "acceptance": "Backend and runtime checks only; inspect both images before any visual acceptance"
+}

@@ -59,105 +59,53 @@
       "moduleId": "writing-desk",
       "name": "Writing desk - single unit",
       "reviewDrawing": "review/01-desk-v1.png",
-      "size": [
-        1.2,
-        0.6,
-        0.65
-      ],
+      "size": [1.2, 0.6, 0.65],
       "components": [
         {
           "partId": "top",
           "primitive": "rounded-box",
-          "size": [
-            1.2,
-            0.6,
-            0.04
-          ],
-          "centre": [
-            0,
-            0,
-            0.63
-          ],
+          "size": [1.2, 0.6, 0.04],
+          "centre": [0, 0, 0.63],
           "radius": 0.008,
           "material": "oak"
         },
         {
           "partId": "front-apron",
           "primitive": "rounded-box",
-          "size": [
-            1.06,
-            0.025,
-            0.055
-          ],
-          "centre": [
-            0,
-            -0.238,
-            0.5825
-          ],
+          "size": [1.06, 0.025, 0.055],
+          "centre": [0, -0.238, 0.5825],
           "radius": 0.004,
           "material": "oak"
         },
         {
           "partId": "back-apron",
           "primitive": "rounded-box",
-          "size": [
-            1.06,
-            0.025,
-            0.055
-          ],
-          "centre": [
-            0,
-            0.238,
-            0.5825
-          ],
+          "size": [1.06, 0.025, 0.055],
+          "centre": [0, 0.238, 0.5825],
           "radius": 0.004,
           "material": "oak"
         },
         {
           "partId": "left-apron",
           "primitive": "rounded-box",
-          "size": [
-            0.025,
-            0.45,
-            0.055
-          ],
-          "centre": [
-            -0.538,
-            0,
-            0.5825
-          ],
+          "size": [0.025, 0.45, 0.055],
+          "centre": [-0.538, 0, 0.5825],
           "radius": 0.004,
           "material": "oak"
         },
         {
           "partId": "right-apron",
           "primitive": "rounded-box",
-          "size": [
-            0.025,
-            0.45,
-            0.055
-          ],
-          "centre": [
-            0.538,
-            0,
-            0.5825
-          ],
+          "size": [0.025, 0.45, 0.055],
+          "centre": [0.538, 0, 0.5825],
           "radius": 0.004,
           "material": "oak"
         },
         {
           "partId": "leg-1",
           "primitive": "tapered-square-leg",
-          "bottomCentre": [
-            -0.54,
-            -0.24,
-            0
-          ],
-          "topCentre": [
-            -0.54,
-            -0.24,
-            0.61
-          ],
+          "bottomCentre": [-0.54, -0.24, 0],
+          "topCentre": [-0.54, -0.24, 0.61],
           "bottomWidth": 0.032,
           "topWidth": 0.032,
           "radius": 0.002,
@@ -166,16 +114,8 @@
         {
           "partId": "leg-2",
           "primitive": "tapered-square-leg",
-          "bottomCentre": [
-            0.54,
-            -0.24,
-            0
-          ],
-          "topCentre": [
-            0.54,
-            -0.24,
-            0.61
-          ],
+          "bottomCentre": [0.54, -0.24, 0],
+          "topCentre": [0.54, -0.24, 0.61],
           "bottomWidth": 0.032,
           "topWidth": 0.032,
           "radius": 0.002,
@@ -184,16 +124,8 @@
         {
           "partId": "leg-3",
           "primitive": "tapered-square-leg",
-          "bottomCentre": [
-            -0.54,
-            0.24,
-            0
-          ],
-          "topCentre": [
-            -0.54,
-            0.24,
-            0.61
-          ],
+          "bottomCentre": [-0.54, 0.24, 0],
+          "topCentre": [-0.54, 0.24, 0.61],
           "bottomWidth": 0.032,
           "topWidth": 0.032,
           "radius": 0.002,
@@ -202,16 +134,8 @@
         {
           "partId": "leg-4",
           "primitive": "tapered-square-leg",
-          "bottomCentre": [
-            0.54,
-            0.24,
-            0
-          ],
-          "topCentre": [
-            0.54,
-            0.24,
-            0.61
-          ],
+          "bottomCentre": [0.54, 0.24, 0],
+          "topCentre": [0.54, 0.24, 0.61],
           "bottomWidth": 0.032,
           "topWidth": 0.032,
           "radius": 0.002,
@@ -220,11 +144,7 @@
       ],
       "surfaceHeight": 0.65,
       "source": "central office left laptop desk",
-      "hiddenDecisions": [
-        "four legs",
-        "plain apron",
-        "no drawers"
-      ],
+      "hiddenDecisions": ["four legs", "plain apron", "no drawers"],
       "unitCount": 1,
       "constructionReview": {
         "documentStatus": "approved-for-commit",
@@ -246,29 +166,17 @@
         "regions": [
           {
             "id": "tabletop",
-            "parts": [
-              "top"
-            ],
+            "parts": ["top"],
             "defaultMaterial": "oak"
           },
           {
             "id": "aprons",
-            "parts": [
-              "front-apron",
-              "back-apron",
-              "left-apron",
-              "right-apron"
-            ],
+            "parts": ["front-apron", "back-apron", "left-apron", "right-apron"],
             "defaultMaterial": "oak"
           },
           {
             "id": "legs",
-            "parts": [
-              "leg-1",
-              "leg-2",
-              "leg-3",
-              "leg-4"
-            ],
+            "parts": ["leg-1", "leg-2", "leg-3", "leg-4"],
             "defaultMaterial": "dark-frame"
           }
         ],
@@ -331,41 +239,21 @@
       "moduleId": "work-chair",
       "name": "Work chair - single unit",
       "reviewDrawing": "review/02-work-chair-v1.png",
-      "size": [
-        0.42,
-        0.46,
-        0.7
-      ],
+      "size": [0.42, 0.46, 0.7],
       "components": [
         {
           "partId": "seat",
           "primitive": "rounded-box",
-          "size": [
-            0.42,
-            0.4,
-            0.07
-          ],
-          "centre": [
-            0,
-            -0.02,
-            0.325
-          ],
+          "size": [0.42, 0.4, 0.07],
+          "centre": [0, -0.02, 0.325],
           "radius": 0.025,
           "material": "sage"
         },
         {
           "partId": "backrest",
           "primitive": "rounded-box",
-          "size": [
-            0.4,
-            0.075,
-            0.285
-          ],
-          "centre": [
-            0,
-            0.17,
-            0.554
-          ],
+          "size": [0.4, 0.075, 0.285],
+          "centre": [0, 0.17, 0.554],
           "radius": 0.033,
           "material": "sage",
           "rotationXDegrees": -7
@@ -373,16 +261,8 @@
         {
           "partId": "leg-1",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            -0.163,
-            -0.165,
-            0
-          ],
-          "topCentre": [
-            -0.163,
-            -0.165,
-            0.3
-          ],
+          "bottomCentre": [-0.163, -0.165, 0],
+          "topCentre": [-0.163, -0.165, 0.3],
           "bottomWidth": 0.025,
           "topWidth": 0.025,
           "radius": 0.002,
@@ -391,16 +271,8 @@
         {
           "partId": "leg-2",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.163,
-            -0.165,
-            0
-          ],
-          "topCentre": [
-            0.163,
-            -0.165,
-            0.3
-          ],
+          "bottomCentre": [0.163, -0.165, 0],
+          "topCentre": [0.163, -0.165, 0.3],
           "bottomWidth": 0.025,
           "topWidth": 0.025,
           "radius": 0.002,
@@ -409,16 +281,8 @@
         {
           "partId": "leg-3",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            -0.163,
-            0.15,
-            0
-          ],
-          "topCentre": [
-            -0.163,
-            0.15,
-            0.3
-          ],
+          "bottomCentre": [-0.163, 0.15, 0],
+          "topCentre": [-0.163, 0.15, 0.3],
           "bottomWidth": 0.025,
           "topWidth": 0.025,
           "radius": 0.002,
@@ -427,16 +291,8 @@
         {
           "partId": "leg-4",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.163,
-            0.15,
-            0
-          ],
-          "topCentre": [
-            0.163,
-            0.15,
-            0.3
-          ],
+          "bottomCentre": [0.163, 0.15, 0],
+          "topCentre": [0.163, 0.15, 0.3],
           "bottomWidth": 0.025,
           "topWidth": 0.025,
           "radius": 0.002,
@@ -445,16 +301,8 @@
         {
           "partId": "back-post--1",
           "primitive": "rounded-box",
-          "size": [
-            0.022,
-            0.022,
-            0.28361735458966025
-          ],
-          "centre": [
-            -0.14,
-            0.1734356579878017,
-            0.427981188860695
-          ],
+          "size": [0.022, 0.022, 0.28361735458966025],
+          "centre": [-0.14, 0.1734356579878017, 0.427981188860695],
           "radius": 0.003,
           "material": "dark-frame",
           "rotationXDegrees": -7
@@ -462,27 +310,15 @@
         {
           "partId": "back-post-1",
           "primitive": "rounded-box",
-          "size": [
-            0.022,
-            0.022,
-            0.28361735458966025
-          ],
-          "centre": [
-            0.14,
-            0.1734356579878017,
-            0.427981188860695
-          ],
+          "size": [0.022, 0.022, 0.28361735458966025],
+          "centre": [0.14, 0.1734356579878017, 0.427981188860695],
           "radius": 0.003,
           "material": "dark-frame",
           "rotationXDegrees": -7
         }
       ],
-      "seatDatum": [
-        0,
-        -0.02,
-        0.36
-      ],
-      "source": "partly hidden chair behind laptop worker",
+      "seatDatum": [0, -0.02, 0.36],
+      "source": "Standalone approved green work-chair sheet (review/02-work-chair-v1.png); not the dark chair behind the laptop worker in the full office reference.",
       "hiddenDecisions": [
         "four legs and two back posts",
         "no casters or arms",
@@ -492,11 +328,7 @@
       "normalizeBackAssembly": {
         "targetRearY": 0.24,
         "targetTopZ": 0.7,
-        "parts": [
-          "backrest",
-          "back-post--1",
-          "back-post-1"
-        ],
+        "parts": ["backrest", "back-post--1", "back-post-1"],
         "rule": "translate assembly after rotation so maxY=.24 and maxZ=.70"
       },
       "constructionReview": {
@@ -521,34 +353,22 @@
         "regions": [
           {
             "id": "seat",
-            "parts": [
-              "seat"
-            ],
+            "parts": ["seat"],
             "defaultMaterial": "sage"
           },
           {
             "id": "backrest",
-            "parts": [
-              "backrest"
-            ],
+            "parts": ["backrest"],
             "defaultMaterial": "sage"
           },
           {
             "id": "posts",
-            "parts": [
-              "back-post--1",
-              "back-post-1"
-            ],
+            "parts": ["back-post--1", "back-post-1"],
             "defaultMaterial": "dark-frame"
           },
           {
             "id": "legs",
-            "parts": [
-              "leg-1",
-              "leg-2",
-              "leg-3",
-              "leg-4"
-            ],
+            "parts": ["leg-1", "leg-2", "leg-3", "leg-4"],
             "defaultMaterial": "dark-frame"
           }
         ],
@@ -608,89 +428,45 @@
       "moduleId": "two-seat-sofa",
       "name": "Sofa - two seats",
       "reviewDrawing": "review/03-sofa-v1.png",
-      "size": [
-        1.35,
-        0.65,
-        0.7
-      ],
+      "size": [1.35, 0.65, 0.7],
       "components": [
         {
           "partId": "base",
           "primitive": "rounded-box",
-          "size": [
-            1.15,
-            0.55,
-            0.21
-          ],
-          "centre": [
-            0,
-            -0.05,
-            0.175
-          ],
+          "size": [1.15, 0.55, 0.21],
+          "centre": [0, -0.05, 0.175],
           "radius": 0.045,
           "material": "sage"
         },
         {
           "partId": "back-shell",
           "primitive": "rounded-box",
-          "size": [
-            1.21,
-            0.135,
-            0.52
-          ],
-          "centre": [
-            0,
-            0.2575,
-            0.34
-          ],
+          "size": [1.21, 0.135, 0.52],
+          "centre": [0, 0.2575, 0.34],
           "radius": 0.045,
           "material": "sage"
         },
         {
           "partId": "arm--1",
           "primitive": "rounded-box",
-          "size": [
-            0.12,
-            0.63,
-            0.47
-          ],
-          "centre": [
-            -0.615,
-            0,
-            0.295
-          ],
+          "size": [0.12, 0.63, 0.47],
+          "centre": [-0.615, 0, 0.295],
           "radius": 0.048,
           "material": "sage"
         },
         {
           "partId": "seat-cushion--1",
           "primitive": "rounded-box",
-          "size": [
-            0.545,
-            0.5,
-            0.09
-          ],
-          "centre": [
-            -0.278,
-            -0.075,
-            0.295
-          ],
+          "size": [0.545, 0.5, 0.09],
+          "centre": [-0.278, -0.075, 0.295],
           "radius": 0.035,
           "material": "sage"
         },
         {
           "partId": "back-cushion--1",
           "primitive": "rounded-box",
-          "size": [
-            0.545,
-            0.11,
-            0.385
-          ],
-          "centre": [
-            -0.278,
-            0.148,
-            0.5072120950006342
-          ],
+          "size": [0.545, 0.11, 0.385],
+          "centre": [-0.278, 0.148, 0.5072120950006342],
           "radius": 0.04,
           "material": "sage",
           "rotationXDegrees": -10
@@ -698,48 +474,24 @@
         {
           "partId": "arm-1",
           "primitive": "rounded-box",
-          "size": [
-            0.12,
-            0.63,
-            0.47
-          ],
-          "centre": [
-            0.615,
-            0,
-            0.295
-          ],
+          "size": [0.12, 0.63, 0.47],
+          "centre": [0.615, 0, 0.295],
           "radius": 0.048,
           "material": "sage"
         },
         {
           "partId": "seat-cushion-1",
           "primitive": "rounded-box",
-          "size": [
-            0.545,
-            0.5,
-            0.09
-          ],
-          "centre": [
-            0.278,
-            -0.075,
-            0.295
-          ],
+          "size": [0.545, 0.5, 0.09],
+          "centre": [0.278, -0.075, 0.295],
           "radius": 0.035,
           "material": "sage"
         },
         {
           "partId": "back-cushion-1",
           "primitive": "rounded-box",
-          "size": [
-            0.545,
-            0.11,
-            0.385
-          ],
-          "centre": [
-            0.278,
-            0.148,
-            0.5072120950006342
-          ],
+          "size": [0.545, 0.11, 0.385],
+          "centre": [0.278, 0.148, 0.5072120950006342],
           "radius": 0.04,
           "material": "sage",
           "rotationXDegrees": -10
@@ -747,16 +499,8 @@
         {
           "partId": "foot-1",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            -0.615,
-            -0.23,
-            0
-          ],
-          "topCentre": [
-            -0.615,
-            -0.23,
-            0.08
-          ],
+          "bottomCentre": [-0.615, -0.23, 0],
+          "topCentre": [-0.615, -0.23, 0.08],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
           "radius": 0.002,
@@ -765,16 +509,8 @@
         {
           "partId": "foot-2",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.615,
-            -0.23,
-            0
-          ],
-          "topCentre": [
-            0.615,
-            -0.23,
-            0.08
-          ],
+          "bottomCentre": [0.615, -0.23, 0],
+          "topCentre": [0.615, -0.23, 0.08],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
           "radius": 0.002,
@@ -783,16 +519,8 @@
         {
           "partId": "foot-3",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            -0.615,
-            0.23,
-            0
-          ],
-          "topCentre": [
-            -0.615,
-            0.23,
-            0.08
-          ],
+          "bottomCentre": [-0.615, 0.23, 0],
+          "topCentre": [-0.615, 0.23, 0.08],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
           "radius": 0.002,
@@ -801,16 +529,8 @@
         {
           "partId": "foot-4",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.615,
-            0.23,
-            0
-          ],
-          "topCentre": [
-            0.615,
-            0.23,
-            0.08
-          ],
+          "bottomCentre": [0.615, 0.23, 0],
+          "topCentre": [0.615, 0.23, 0.08],
           "bottomWidth": 0.045,
           "topWidth": 0.045,
           "radius": 0.002,
@@ -818,16 +538,8 @@
         }
       ],
       "seatDatums": [
-        [
-          -0.278,
-          -0.075,
-          0.34
-        ],
-        [
-          0.278,
-          -0.075,
-          0.34
-        ]
+        [-0.278, -0.075, 0.34],
+        [0.278, -0.075, 0.34]
       ],
       "source": "green sofa in lower-right office lounge",
       "hiddenDecisions": [
@@ -835,9 +547,7 @@
         "plain rear",
         "two fixed seat and back cushions"
       ],
-      "excluded": [
-        "yellow throw pillows"
-      ],
+      "excluded": ["yellow throw pillows"],
       "unitCount": 1,
       "constructionReview": {
         "documentStatus": "approved-for-commit",
@@ -858,86 +568,62 @@
         "regions": [
           {
             "id": "base",
-            "parts": [
-              "base"
-            ],
+            "parts": ["base"],
             "defaultMaterial": "sage"
           },
           {
             "id": "back-shell",
-            "parts": [
-              "back-shell"
-            ],
+            "parts": ["back-shell"],
             "defaultMaterial": "sage"
           },
           {
             "id": "arm--1",
-            "parts": [
-              "arm--1"
-            ],
+            "parts": ["arm--1"],
             "defaultMaterial": "sage"
           },
           {
             "id": "seat-cushion--1",
-            "parts": [
-              "seat-cushion--1"
-            ],
+            "parts": ["seat-cushion--1"],
             "defaultMaterial": "sage"
           },
           {
             "id": "back-cushion--1",
-            "parts": [
-              "back-cushion--1"
-            ],
+            "parts": ["back-cushion--1"],
             "defaultMaterial": "sage"
           },
           {
             "id": "arm-1",
-            "parts": [
-              "arm-1"
-            ],
+            "parts": ["arm-1"],
             "defaultMaterial": "sage"
           },
           {
             "id": "seat-cushion-1",
-            "parts": [
-              "seat-cushion-1"
-            ],
+            "parts": ["seat-cushion-1"],
             "defaultMaterial": "sage"
           },
           {
             "id": "back-cushion-1",
-            "parts": [
-              "back-cushion-1"
-            ],
+            "parts": ["back-cushion-1"],
             "defaultMaterial": "sage"
           },
           {
             "id": "foot-1",
-            "parts": [
-              "foot-1"
-            ],
+            "parts": ["foot-1"],
             "defaultMaterial": "dark-wood"
           },
           {
             "id": "foot-2",
-            "parts": [
-              "foot-2"
-            ],
+            "parts": ["foot-2"],
             "defaultMaterial": "dark-wood"
           },
           {
             "id": "foot-3",
-            "parts": [
-              "foot-3"
-            ],
+            "parts": ["foot-3"],
             "defaultMaterial": "dark-wood"
           },
           {
             "id": "foot-4",
-            "parts": [
-              "foot-4"
-            ],
+            "parts": ["foot-4"],
             "defaultMaterial": "dark-wood"
           }
         ],
@@ -988,180 +674,253 @@
       "moduleId": "lounge-armchair",
       "name": "Lounge armchair - single unit",
       "reviewDrawing": "source/side-source-reset/five-views-v3-wider.png",
-      "size": [
-        0.62,
-        0.61,
-        0.69
-      ],
+      "size": [0.713, 0.61, 0.69],
       "components": [
+        {
+          "partId": "left-arm",
+          "primitive": "upholstered-profile-panel",
+          "outlineControlYZ": [
+            [
+              [-0.275, 0.13],
+              [-0.295, 0.13],
+              [-0.305, 0.14],
+              [-0.305, 0.17]
+            ],
+            [
+              [-0.305, 0.17],
+              [-0.305, 0.24],
+              [-0.305, 0.34],
+              [-0.305, 0.38]
+            ],
+            [
+              [-0.305, 0.38],
+              [-0.305, 0.418],
+              [-0.285, 0.432],
+              [-0.25, 0.436]
+            ],
+            [
+              [-0.25, 0.436],
+              [-0.15, 0.443],
+              [-0.075, 0.443],
+              [-0.015, 0.475]
+            ],
+            [
+              [-0.015, 0.475],
+              [0.065, 0.515],
+              [0.12, 0.63],
+              [0.225, 0.676]
+            ],
+            [
+              [0.225, 0.676],
+              [0.27, 0.695],
+              [0.305, 0.69],
+              [0.305, 0.66]
+            ],
+            [
+              [0.305, 0.66],
+              [0.3, 0.52],
+              [0.26, 0.3],
+              [0.235, 0.17]
+            ],
+            [
+              [0.235, 0.17],
+              [0.23, 0.14],
+              [0.22, 0.13],
+              [0.19, 0.13]
+            ],
+            [
+              [0.19, 0.13],
+              [0.05, 0.13],
+              [-0.15, 0.13],
+              [-0.275, 0.13]
+            ]
+          ],
+          "centreX": -0.3165,
+          "thickness": 0.08,
+          "rounding": 0.027,
+          "taperStartZ": 0.4,
+          "taperEndZ": 0.69,
+          "taperX": 0.035,
+          "material": "orange"
+        },
+        {
+          "partId": "right-arm",
+          "primitive": "upholstered-profile-panel",
+          "outlineControlYZ": [
+            [
+              [-0.275, 0.13],
+              [-0.295, 0.13],
+              [-0.305, 0.14],
+              [-0.305, 0.17]
+            ],
+            [
+              [-0.305, 0.17],
+              [-0.305, 0.24],
+              [-0.305, 0.34],
+              [-0.305, 0.38]
+            ],
+            [
+              [-0.305, 0.38],
+              [-0.305, 0.418],
+              [-0.285, 0.432],
+              [-0.25, 0.436]
+            ],
+            [
+              [-0.25, 0.436],
+              [-0.15, 0.443],
+              [-0.075, 0.443],
+              [-0.015, 0.475]
+            ],
+            [
+              [-0.015, 0.475],
+              [0.065, 0.515],
+              [0.12, 0.63],
+              [0.225, 0.676]
+            ],
+            [
+              [0.225, 0.676],
+              [0.27, 0.695],
+              [0.305, 0.69],
+              [0.305, 0.66]
+            ],
+            [
+              [0.305, 0.66],
+              [0.3, 0.52],
+              [0.26, 0.3],
+              [0.235, 0.17]
+            ],
+            [
+              [0.235, 0.17],
+              [0.23, 0.14],
+              [0.22, 0.13],
+              [0.19, 0.13]
+            ],
+            [
+              [0.19, 0.13],
+              [0.05, 0.13],
+              [-0.15, 0.13],
+              [-0.275, 0.13]
+            ]
+          ],
+          "centreX": 0.3165,
+          "thickness": 0.08,
+          "rounding": 0.027,
+          "taperStartZ": 0.4,
+          "taperEndZ": 0.69,
+          "taperX": 0.035,
+          "material": "orange"
+        },
+        {
+          "partId": "backrest",
+          "primitive": "rounded-box",
+          "size": [0.612, 0.105, 0.54],
+          "centre": [0, 0.202, 0.42211589423975115],
+          "radius": 0.045,
+          "rotationXDegrees": -10,
+          "material": "orange"
+        },
         {
           "partId": "base",
           "primitive": "rounded-box",
-          "size": [
-            0.56,
-            0.55,
-            0.14
-          ],
-          "centre": [
-            0,
-            0,
-            0.215
-          ],
-          "radius": 0.04,
+          "size": [0.63, 0.535, 0.105],
+          "centre": [0, -0.025, 0.1825],
+          "radius": 0.028,
           "material": "orange"
         },
         {
           "partId": "seat-cushion",
           "primitive": "rounded-box",
-          "size": [
-            0.43,
-            0.43,
-            0.085
-          ],
-          "centre": [
-            0,
-            -0.045,
-            0.2975
-          ],
-          "radius": 0.035,
-          "material": "orange"
-        },
-        {
-          "partId": "wrap-shell",
-          "primitive": "variable-height-u-shell",
-          "outerHalfWidth": 0.31,
-          "outerFrontY": -0.305,
-          "outerBackY": 0.305,
-          "rearCornerRadius": 0.11,
-          "thickness": 0.075,
-          "bottomZ": 0.21,
-          "frontTopZ": 0.45,
-          "backTopZ": 0.69,
-          "edgeRadius": 0.022,
+          "size": [0.546, 0.455, 0.13],
+          "centre": [0, -0.066, 0.295],
+          "radius": 0.045,
           "material": "orange"
         },
         {
           "partId": "foot-1",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            -0.238,
-            -0.22,
-            0
-          ],
-          "topCentre": [
-            -0.208,
-            -0.19,
-            0.17
-          ],
-          "bottomWidth": 0.026,
-          "topWidth": 0.038,
-          "radius": 0.002,
+          "bottomCentre": [-0.3, -0.266, 0],
+          "topCentre": [-0.264, -0.225, 0.16],
+          "bottomWidth": 0.045,
+          "topWidth": 0.067,
+          "radius": 0.003,
           "material": "dark-wood"
         },
         {
           "partId": "foot-2",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.238,
-            -0.22,
-            0
-          ],
-          "topCentre": [
-            0.208,
-            -0.19,
-            0.17
-          ],
-          "bottomWidth": 0.026,
-          "topWidth": 0.038,
-          "radius": 0.002,
+          "bottomCentre": [0.3, -0.266, 0],
+          "topCentre": [0.264, -0.225, 0.16],
+          "bottomWidth": 0.045,
+          "topWidth": 0.067,
+          "radius": 0.003,
           "material": "dark-wood"
         },
         {
           "partId": "foot-3",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            -0.238,
-            0.22,
-            0
-          ],
-          "topCentre": [
-            -0.208,
-            0.19,
-            0.17
-          ],
-          "bottomWidth": 0.026,
-          "topWidth": 0.038,
-          "radius": 0.002,
+          "bottomCentre": [-0.3, 0.202, 0],
+          "topCentre": [-0.264, 0.161, 0.16],
+          "bottomWidth": 0.045,
+          "topWidth": 0.067,
+          "radius": 0.003,
           "material": "dark-wood"
         },
         {
           "partId": "foot-4",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.238,
-            0.22,
-            0
-          ],
-          "topCentre": [
-            0.208,
-            0.19,
-            0.17
-          ],
-          "bottomWidth": 0.026,
-          "topWidth": 0.038,
-          "radius": 0.002,
+          "bottomCentre": [0.3, 0.202, 0],
+          "topCentre": [0.264, 0.161, 0.16],
+          "bottomWidth": 0.045,
+          "topWidth": 0.067,
+          "radius": 0.003,
           "material": "dark-wood"
         }
       ],
-      "seatDatum": [
-        0,
-        -0.045,
-        0.34
-      ],
+      "seatDatum": [0, -0.066, 0.36],
       "source": "orange armchair beside lower-right green sofa",
       "hiddenDecisions": [
-        "continuous U-shaped shell",
-        "four splayed feet",
-        "plain rear"
+        "Independent upholstered side panels derived from the approved SIDE silhouette",
+        "Rear panel reclines ten degrees and reaches the existing 690 mm height",
+        "Four substantial outward-splayed tapered wooden feet",
+        "No transverse decorative groove across the backrest"
       ],
-      "unitCount": 1
+      "unitCount": 1,
+      "constructionReview": {
+        "documentStatus": "width-approved-2026-10-26",
+        "geometryRecipe": "ARMCHAIR-REFERENCE-RECONCILIATION.md",
+        "modelVerified": false,
+        "defaultWidthDecision": "User selected 15 percent width increase to 713 mm; preserve depth 610 mm and height 690 mm.",
+        "visualAuthority": "source/side-source-reset/five-views-v3-wider.png",
+        "footDimensionAuthority": {
+          "source": "source/side-source-reset/five-views-v3-wider.png",
+          "sideBodyPixelSpan": [494, 913],
+          "frontGroundCenterPixelX": 521,
+          "rearGroundCenterPixelX": 842,
+          "bodyDepthMetres": 0.61,
+          "rule": "Map side pixel X linearly onto Y=-0.305..0.305; round contacts to millimetres. Visible upper foot centers retain approximately 41 mm outward rake. Full-scene foot evidence separately determines instance pose and XYZ extents."
+        }
+      }
     },
     {
       "moduleId": "round-coffee-table",
       "name": "Round coffee table - single unit",
       "reviewDrawing": "review/05-coffee-table-v1.png",
-      "size": [
-        0.62,
-        0.62,
-        0.32
-      ],
+      "size": [0.62, 0.62, 0.32],
       "components": [
         {
           "partId": "top",
           "primitive": "beveled-cylinder",
           "radius": 0.31,
           "height": 0.035,
-          "centre": [
-            0,
-            0,
-            0.3025
-          ],
+          "centre": [0, 0, 0.3025],
           "edgeRadius": 0.006,
           "material": "oak"
         },
         {
           "partId": "leg-1",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.0,
-            -0.24,
-            0
-          ],
-          "topCentre": [
-            0.0,
-            -0.18,
-            0.295
-          ],
+          "bottomCentre": [0.0, -0.24, 0],
+          "topCentre": [0.0, -0.18, 0.295],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
           "radius": 0.002,
@@ -1170,16 +929,8 @@
         {
           "partId": "leg-2",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            0.207846096908265,
-            0.12,
-            0
-          ],
-          "topCentre": [
-            0.155884572681199,
-            0.09,
-            0.295
-          ],
+          "bottomCentre": [0.207846096908265, 0.12, 0],
+          "topCentre": [0.155884572681199, 0.09, 0.295],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
           "radius": 0.002,
@@ -1188,16 +939,8 @@
         {
           "partId": "leg-3",
           "primitive": "tapered-round-leg",
-          "bottomCentre": [
-            -0.207846096908265,
-            0.12,
-            0
-          ],
-          "topCentre": [
-            -0.155884572681199,
-            0.09,
-            0.295
-          ],
+          "bottomCentre": [-0.207846096908265, 0.12, 0],
+          "topCentre": [-0.155884572681199, 0.09, 0.295],
           "bottomWidth": 0.032,
           "topWidth": 0.044,
           "radius": 0.002,
@@ -1231,30 +974,22 @@
         "regions": [
           {
             "id": "top",
-            "parts": [
-              "top"
-            ],
+            "parts": ["top"],
             "defaultMaterial": "oak"
           },
           {
             "id": "leg-1",
-            "parts": [
-              "leg-1"
-            ],
+            "parts": ["leg-1"],
             "defaultMaterial": "dark-wood"
           },
           {
             "id": "leg-2",
-            "parts": [
-              "leg-2"
-            ],
+            "parts": ["leg-2"],
             "defaultMaterial": "dark-wood"
           },
           {
             "id": "leg-3",
-            "parts": [
-              "leg-3"
-            ],
+            "parts": ["leg-3"],
             "defaultMaterial": "dark-wood"
           }
         ],
@@ -1336,31 +1071,11 @@
     "status": "document criteria only, no model built",
     "dimensionTolerance": 0.002,
     "cameraDirections": {
-      "front": [
-        0,
-        -1,
-        0
-      ],
-      "right": [
-        1,
-        0,
-        0
-      ],
-      "back": [
-        0,
-        1,
-        0
-      ],
-      "top": [
-        0,
-        0,
-        1
-      ],
-      "three-quarter": [
-        1,
-        -1,
-        0.8
-      ]
+      "front": [0, -1, 0],
+      "right": [1, 0, 0],
+      "back": [0, 1, 0],
+      "top": [0, 0, 1],
+      "three-quarter": [1, -1, 0.8]
     },
     "orthographic": true,
     "mustInspect": [

@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "units": "metres",
+  "reference": "review/work-shelf-botanical-reference.png",
+  "authority": "Owner-approved reference mapping. Preserve existing vessel colors and scene anchors. Dimensions are reconstruction defaults; hidden surfaces are inferred.",
+  "colors": {
+    "ivory": "#EEE5D7",
+    "terracotta": "#9B6543"
+  },
+  "variants": {
+    "fittonia": {
+      "potProfileRZ": [
+        [0, 0],
+        [0.035, 0],
+        [0.045, 0.006],
+        [0.054, 0.022],
+        [0.062, 0.06],
+        [0.064, 0.105],
+        [0.062, 0.112],
+        [0.055, 0.112],
+        [0.054, 0.102],
+        [0.052, 0.061],
+        [0.045, 0.027],
+        [0.033, 0.012],
+        [0, 0.012]
+      ],
+      "soilZ": 0.098,
+      "soilRadius": 0.052,
+      "surface": "veined-leaf",
+      "relief": {
+        "count": 24,
+        "depth": 0.0013,
+        "pitch": 0.018
+      },
+      "leafRings": [
+        {
+          "count": 7,
+          "rootZ": 0.119,
+          "reach": 0.123,
+          "tipZ": 0.133,
+          "width": 0.064,
+          "arch": 0.045
+        },
+        {
+          "count": 6,
+          "rootZ": 0.128,
+          "reach": 0.092,
+          "tipZ": 0.175,
+          "width": 0.062,
+          "arch": 0.043
+        },
+        {
+          "count": 4,
+          "rootZ": 0.139,
+          "reach": 0.05,
+          "tipZ": 0.215,
+          "width": 0.05,
+          "arch": 0.02
+        }
+      ],
+      "leafThickness": 0.0007,
+      "foliageXY": [0.9, 1.0]
+    },
+    "snake": {
+      "potProfileRZ": [
+        [0, 0],
+        [0.032, 0],
+        [0.046, 0.006],
+        [0.056, 0.022],
+        [0.062, 0.05],
+        [0.064, 0.106],
+        [0.062, 0.115],
+        [0.056, 0.115],
+        [0.055, 0.105],
+        [0.052, 0.05],
+        [0.043, 0.02],
+        [0.03, 0.012],
+        [0, 0.012]
+      ],
+      "soilZ": 0.101,
+      "soilRadius": 0.052,
+      "surface": "snake-leaf",
+      "relief": {
+        "count": 32,
+        "depth": 0.0016,
+        "pitch": 0
+      },
+      "leafRings": [
+        {
+          "count": 3,
+          "rootZ": 0.106,
+          "reach": 0.062,
+          "tipZ": 0.29,
+          "width": 0.054599999999999996,
+          "arch": 0.01
+        },
+        {
+          "count": 2,
+          "rootZ": 0.108,
+          "reach": 0.025,
+          "tipZ": 0.355,
+          "width": 0.06019999999999999,
+          "arch": 0.006
+        }
+      ],
+      "leafThickness": 0.0015,
+      "foliageXY": [1, 1],
+      "pebbles": {
+        "count": 32,
+        "radius": 0.0055,
+        "color": "#EEE9D9"
+      }
+    },
+    "succulent": {
+      "potProfileRZ": [
+        [0, 0.004],
+        [0.031, 0.004],
+        [0.049, 0.009],
+        [0.062, 0.025],
+        [0.065, 0.049],
+        [0.061, 0.073],
+        [0.052, 0.091],
+        [0.046, 0.091],
+        [0.051, 0.073],
+        [0.055, 0.049],
+        [0.051, 0.028],
+        [0.032, 0.016],
+        [0, 0.016]
+      ],
+      "soilZ": 0.081,
+      "soilRadius": 0.047,
+      "surface": "leaf",
+      "relief": {
+        "count": 0,
+        "depth": 0,
+        "pitch": 0
+      },
+      "leafRings": [
+        {
+          "count": 9,
+          "rootZ": 0.086,
+          "reach": 0.083,
+          "tipZ": 0.111,
+          "width": 0.031,
+          "arch": 0.018
+        },
+        {
+          "count": 7,
+          "rootZ": 0.09,
+          "reach": 0.061,
+          "tipZ": 0.138,
+          "width": 0.029,
+          "arch": 0.019
+        },
+        {
+          "count": 5,
+          "rootZ": 0.096,
+          "reach": 0.034,
+          "tipZ": 0.16,
+          "width": 0.022,
+          "arch": 0.011
+        }
+      ],
+      "leafThickness": 0.009,
+      "foliageXY": [1, 1],
+      "cat": {
+        "earBaseZ": 0.075,
+        "earTipZ": 0.113,
+        "earSideOffset": 0.038,
+        "earFrontX": 0.04,
+        "earBaseRadii": [0.006, 0.018],
+        "feetZ": 0.006,
+        "feetSideOffset": 0.036,
+        "feetRadii": [0.022, 0.014, 0.006],
+        "eyeZ": 0.06,
+        "eyeSideOffset": 0.022,
+        "eyeRadius": 0.0022,
+        "noseZ": 0.05,
+        "lineRadius": 0.00055,
+        "faceColor": "#514D40"
+      }
+    }
+  },
+  "construction": {
+    "sectionRoundingRadius": 0.018,
+    "sectionRoundingSegments": 12,
+    "radialSegments": 128,
+    "note": "Radius is locally clamped to preserve the lip and cavity. Cat vessel body is raised 4 mm; feet contact the shelf.",
+    "sectionSampleSpacing": 0.0025
+  }
+}

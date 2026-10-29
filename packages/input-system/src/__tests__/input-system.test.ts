@@ -58,7 +58,7 @@ describe('InputSystem', () => {
 
     inputSystem.attachBrowserHost(window, canvas)
 
-    expect(addEventListenerSpy).toHaveBeenCalledTimes(3)
+    expect(addEventListenerSpy).toHaveBeenCalledTimes(6)
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       'keydown',
       expect.any(Function)
@@ -110,6 +110,7 @@ describe('InputSystem', () => {
     const firstRemoveSpy = vi.spyOn(first, 'removeEventListener')
     const nextWindowAdd = vi.fn()
     const nextWindow = {
+      document: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
       addEventListener: nextWindowAdd,
       removeEventListener: vi.fn()
     } as unknown as Window
@@ -125,8 +126,8 @@ describe('InputSystem', () => {
     inputSystem.switchWatchedElement(second)
 
     expect(firstRemoveSpy).toHaveBeenCalledTimes(5)
-    expect(removeEventListenerSpy).toHaveBeenCalledTimes(3)
-    expect(nextWindowAdd).toHaveBeenCalledTimes(3)
+    expect(removeEventListenerSpy).toHaveBeenCalledTimes(6)
+    expect(nextWindowAdd).toHaveBeenCalledTimes(6)
     expect(secondAdd).toHaveBeenCalledTimes(5)
   })
 
@@ -143,7 +144,7 @@ describe('InputSystem', () => {
 
     inputSystem.dispose()
 
-    expect(removeEventListenerSpy).toHaveBeenCalledTimes(3)
+    expect(removeEventListenerSpy).toHaveBeenCalledTimes(6)
     expect(removeEventListenerSpy).toHaveBeenCalledWith(
       'keyup',
       expect.any(Function),

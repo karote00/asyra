@@ -22,7 +22,7 @@ The ivory lid is a separate rotational solid from the JSON profile, maximum radi
 
 The canister's front/right/back share the same silhouette; top is a wooden disk. Cup top shows one oval opening toward -Y, front is aligned with that opening, and rear does not gain a second opening. The cup bottom is cream and the jar bottom sage, both flat and undecorated. Hidden surfaces are determined by the profiles.
 
-No models have been produced or verified. Future modeling acceptance: profile dimensions within 0.0005 m; correct closed assembled silhouettes, real hollow interiors and sip opening, separate bodies/lids, one continuous sleeve, no extra components and no baked lighting. Inspect all five views and the underside after separate modeling authorization. Drawings are design references, not a claim of calibrated orthographic accuracy.
+For the original standalone canister and takeaway cup, the following remains a modeling acceptance contract; it is not the implementation status of the scene-specific variants below. Modeling acceptance: profile dimensions within 0.0005 m; correct closed assembled silhouettes, real hollow interiors and sip opening, separate bodies/lids, one continuous sleeve, no extra components and no baked lighting. Inspect all five views and the underside after separate modeling authorization. Drawings are design references, not a claim of calibrated orthographic accuracy.
 
 ## Resizing, appearance and LoD - construction review
 
@@ -36,4 +36,288 @@ Cup extent is 80 x 80 x 120 mm. Sleeve follows the same outer taper as the paper
 
 Ceramic/wood or paper/lid/kraft remain replaceable regions. LoD preserves real mouths and sip opening, lid steps and sleeve separation; reduce angular sectors only and weld zero-radius endpoints. Never put a dark disk over either cavity.
 
-LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. These documents introduce no Blender export or app behavior.
+LoD rules here are construction constraints, not measured triangle counts or runtime performance claims. Keep the same origin and intended bounds across tiers; any reduced tessellation must preserve attachment interfaces and empty volumes. Production meshes, topology, screen-space transitions and visual fidelity still require separate implementation and review. This original modular contract introduces no Blender export. The scene-specific variants below are also consumed by the app and its asset preview.
+
+## Original pantry vessel variants
+
+`sourceVariants` in the JSON owns the scene-specific vessel profiles, colours,
+roughness, opacity and counter-bottle scale. The existing `pantry-canister`
+module remains the separately approved plain canister, not the geometry for
+every container. `pantryVessel` consumes each named source profile directly.
+
+All dimensions below are metres in X/Y/Z. Profiles are radius/Z and revolve
+around +Z, with bottom contact at Z=0. The original oblique pantry crop gives
+relative silhouettes; its hidden cavities and exact cross-sections are authored
+reconstruction, not physical measurements extracted uniquely from the image.
+
+| Variant | Maximum envelope (X/Y/Z) | Visible source distinction |
+| --- | --- | --- |
+| Refrigerator night-light | 0.136 / 0.136 / 0.300 | Dark base, clear shade, warm diffuser, pale cap and top loop |
+| Small shelf vessel | 0.100 / 0.100 / 0.120 | Brown plant pot, no lid; small foliage extends above this vessel envelope |
+| Ivory shelf jar | 0.207 / 0.207 / 0.340 | Clear glass; ivory contents; yellow paper label; pale shallow lid |
+| Ochre shelf jar | 0.182 / 0.182 / 0.285 | Clear glass; ochre contents; green paper label; gray lid |
+| Brown shelf jar | 0.161 / 0.161 / 0.215 | Clear glass; brown contents; wide mouth and inserted tapered cork |
+| Chili-style bottle | 0.061970588 / 0.061970588 / 0.1505 | Clear glass; ochre contents; shoulder, long narrow neck and small cap |
+| Shelf succulent | 0.185 / 0.185 / 0.303 | Opaque blue pot, brown rim, fleshy leaves and dark flower bud |
+| Blue-white floor jar | 0.128 / 0.128 / 0.200 | Rounded belly, blue neck/foot bands, knob |
+| Counter green bottle | 0.086 / 0.086 / 0.160 before 0.9 instance scale | Independent retained bottle profile, not the revised shelf object |
+
+The latest owner clarification identifies four transparent condiment containers
+followed by one succulent pot. `reference-shelf-condiments.png` owns their shelf
+order and relative appearance. For the third jar, the newer owner-supplied
+[real cork-jar photograph](reference-cork-jar.png) overrides the blurry shelf
+crop for the mouth, shoulder and stopper construction. The latest written owner
+clarifications govern the first two paper labels and the fifth succulent. The
+fifth-container assumption and the assertion that all green/yellow areas were
+food are superseded: the first two jars carry yellow and green paper.
+
+The first three glass bodies have a nominal 2 mm radial wall and a 6 mm bottom.
+The fourth bottle scales both thicknesses proportionally as specified below.
+Shoulders and rolled lips follow their explicit inner/outer JSON profiles rather
+than a uniform-thickness modifier. Their shared defaults are neutral #E8F0EE
+tint, alpha 0.16, roughness 0.10 and studio reflection intensity 0.30. Contents,
+paper and closures are separate regions with independent color overrides. Do not
+paint the glass to create ingredient color. Stable jar preview IDs retain their
+historical color names; the obsolete `shelf-herb-jar` preview is replaced by
+`shelf-succulent`, using the existing shelf-plant constructor family.
+
+| Preview ID | Owner-confirmed appearance | Fill top / glass top (mm) |
+| --- | --- | --- |
+| shelf-cream-jar | Ivory contents #E9DFC7; yellow paper #C9AF63 | 239 / 297 |
+| shelf-sage-jar | Ochre contents #B9A16A; green paper #7D8655 | 177 / 231 |
+| shelf-brown-jar | Brown contents #8A6341; cork #A47B55 | 135 / 190 |
+| shelf-amber-jar | Chili-style narrow-neck bottle; contents #C49346 | 90.3 / 139.286275 |
+
+Ingredient names are not confirmed. The owner confirms color and container form,
+not sugar, dried herbs or a specific spice. Papery labels are opaque closed curved
+shells at body radius +0.5 to +0.9 mm, not full-circumference bands. The first
+label spans Z=135-175 mm and angles -154 to -67 degrees. The second spans
+Z=55-151 mm and -146 to -52 degrees. Their radii are 102.5 and 90 mm before
+paper offset. These latest labels override previous no-label instructions for
+these source instances; do not invent lettering from unreadable source pixels.
+
+The third jar follows the owner-supplied `reference-cork-jar.png`. Keep the
+161 x 161 x 215 mm assembly envelope, but use a wide opening instead of a narrow
+bottleneck with a separate oversized disc. Body radius is 80 mm up to Z=145 mm;
+the rounded shoulder gently narrows to radius 70 mm at Z=177 mm. The rolled glass
+lip reaches radius 73 mm at Z=185-188 mm and ends at Z=190 mm. Its inner mouth
+radius grows from 68 mm at Z=177 mm to 69 mm at Z=190 mm.
+
+The cork is one continuously tapered stopper: bottom radius 66.5 mm at Z=176 mm,
+radius 67.5 mm at Z=182 mm, 68.5 mm at the mouth plane Z=190 mm, and 70.5 mm
+at Z=204 mm. Its rounded upper edge reaches radius 70.8 mm at Z=209 mm and
+transitions to a flat top of radius 64 mm at Z=215 mm. Thus 14 mm of the stopper
+sits inside the mouth, and 25 mm remains visible above it. The glass lip surrounds
+the inserted cork with 0.5 mm radial clearance at the mouth; there is no exposed
+thin stalk, wide ledge, detached cap, button or screw collar. The cork uses a
+replaceable neutral fleck surface and planar top UVs, never radial fan mapping.
+For this square cork texture, the UV extent is the maximum of the profile
+maximum Z coordinate, diameter and circumference; both charts stay inside [0,1]. This prevents the
+side texture from clamping into a blank band. The top and side use the same
+physical texture scale.
+Its brown contents remain unchanged in color; the lower fill radius has 1 mm
+clearance from the interpolated glass interior. Measurements are scene-scale
+construction dimensions derived from the photo silhouette, not product metadata.
+
+The fourth bottle's complete height, including its cap, is 70% of the third
+jar's 215 mm height: 150.5 mm. Uniformly scale its former 255 mm construction by
+150.5 / 255 = 0.5901960784313725 on all three axes, about the bottom center.
+This applies to the glass, contents, shoulder, neck, cap, wall and bottom
+thicknesses together, not just the bottle body or vertical axis. Its final
+maximum diameter is 61.970588 mm. The shelf contact and center remain unchanged;
+colors, opacity, material choice and normalized texture proportions are retained.
+
+The canonical JSON stores the final dimensions directly; do not apply this scale
+again in the scene or preview. The following rounded measurements describe them:
+body radius 30.985294 mm; shoulder Z=70.823529-106.235294 mm; neck radius
+12.394118 mm over Z=106.235294-135.745098 mm; lip radius 14.164706 mm over
+Z=136.925490-139.286275 mm. Cap radius is 15.345098 mm, spanning
+Z=138.696078-150.5 mm. Contents stop at Z=90.3 mm and remain inside the
+interpolated glass interior. Nominal wall and bottom thicknesses become
+1.180392 and 3.541176 mm. Do not retain a full-width jar lid or a solid fill
+that intersects the narrowed shoulder.
+
+Ingredient surfaces use neutral albedo variation only, without baked lighting.
+The 512 x 128 surface charts have aspect ratio 4; side and separate planar top
+UVs remain inside [0,1] and preserve physical proportions. Glass reflection uses
+the existing public Spatial API, without live refraction or scene capture.
+
+### Fifth shelf object - succulent pot
+
+`sourceVariants.shelfSucculent` owns the complete geometry. The opaque blue pot
+uses #596B7A, with a thin brown #89654D rim at Z=197-205 mm. Maximum radius is
+92.5 mm; soil radius is 81 mm at Z=197 mm. Twelve individually defined fleshy
+leaves form staggered rings of seven and five, with varied tilt, length and green
+colors. They reuse the existing rounded-petal geometry, not a solid leaf ball.
+A green stem starts in the soil and reaches the dark #4D302C bud centered at
+(24,4,277) mm. The bud uses radii (22,16,25) mm and a small tilt, staying within
+the 303 mm height envelope. There are no glass walls, stored ingredients or lid.
+The blue pot body ends at Z=197 mm, where the brown rim begins; the two
+regions do not duplicate the upper surface. All part colors and overall XYZ
+scale remain independently replaceable. The
+fifth shelf anchor is unchanged; the two original left-side plants are preserved.
+
+The blue-white floor jar keeps its replaceable `porcelain-floral` surface, a
+512 x 256 blue flower/vine repeat on ivory glaze. Body V follows Z/body height;
+U wraps once with matching seam pixels. The source motif is interpreted, not an
+exact recovered painting.
+
+The owner-confirmed refrigerator object is a night-light, superseding the jar
+interpretation. `reference-fridge-night-light.png` is the visual authority and
+`sourceVariants.nightLight` supplies inferred construction defaults in metres.
+Base Z is 0-75 mm; the clear shade spans 75-225 mm with a 3 mm radial wall.
+The warm diffuser spans 91-201 mm inside that enclosure. The lower ring spans
+72-83 mm and the cap 222-263 mm. A 3 mm radius tube forms a 20 mm radius loop
+centered at Z=277 mm, with its lower arc anchored inside the cap. Total height
+is 300 mm and base diameter 136 mm. There is no paper label, stored contents,
+pour spout or jar knob. Independent defaults: base #665447, glass #E2E5E2 at
+alpha 0.22/roughness 0.16, diffuser #FFDBA0, ring/loop #B5ABA1, cap #D8D1CC.
+All colors remain replaceable. The diffuser has emissive color #FFB35C and
+intensity 1.75 through the public Spatial material contract. Changing its region
+color also changes the emission color. The other regions remain non-emissive.
+Emission makes the core luminous independently of scene lights. Office opts into
+Preset emissive bloom at strength 0.315 and radius 8 CSS pixels for a soft halo.
+This does not cast light onto nearby surfaces. Geometry and placement are unchanged.
+
+Every region has independently replaceable appearance. Shelf profiles use
+64 angular intervals and local label arcs 32. Each complete vessel stays below 6,500 master
+triangles. All six shelf recipes retain `preserveFullDetail: true`: no independent
+region decimation may intersect a label and its body. Other recipe distant meshes
+remain as separately tested existing behavior. Performance gates never authorize
+substituting visible source detail.
+
+### Shelf flowering plant and small leafy plant
+
+`sourceVariants.shelfPlant` owns the low ochre pot profile, soil datum and tapered
+foliage transform. Pot diameter is 142 mm and height 108 mm. Soil top is 99 mm.
+Nine unequal sprigs retain individual leaf meshes. Relative to the source shrub's
+130 mm foliage datum, vertical distances scale by 1.25 from the new 100 mm datum;
+radial spread interpolates from 1.5 to 0.55 over 240 mm of source height. This
+creates a broad lower crown tapering upward. The owner confirmed this is a
+flowering plant: five separately oriented blooms at 230-290 mm above the pot
+bottom are distributed among the leaves. Petals default to pale yellow #EAD48C,
+centers to ochre #C19D5A, and stems to green #526C3C. Each bloom uses five thick
+rounded petals; exact species and petal count are construction inferences, not
+recoverable source facts. Stems connect to the soil and heads retain independently
+replaceable appearance. JSON owns individual positions, rotations and sizes.
+
+The second shelf item is also a plant. Keep its existing 100 x 100 x 120 mm
+brown vessel and add soil at 112 mm with radius 45 mm. A small stemmed plant
+uses XYZ foliage scale 0.32/0.32/0.40 from the 130 mm source datum to the new
+115 mm datum. It must remain shorter than the adjacent cream jar. The internal
+`shelf-spice-jar` key now identifies its retained pot geometry, not an empty
+spice container; the scene combines it with foliage.
+
+These changes affect these shelf instances only,
+not the refrigerator shrub or other plants. Scene support remains the shelf top.
+
+### Visual verification
+
+Geometry closure, support and size tests are engineering evidence. Production
+screenshots must additionally be compared item-by-item against the enlarged
+reference: silhouette, lid/shoulder, local label placement, relative size, spacing,
+leaf crown and capped jar tops. Low-resolution hidden details remain uncertain;
+do not claim exact recovered markings or full visual approval from passing tests.
+
+
+## Additional framed night-light
+
+The original night-light recipe and reference remain retained. The owner added
+a second asset, `frame-night-light`, and selected it for the refrigerator.
+See `FRAME-NIGHT-LIGHT.md` for its complete dimensions, two owner photographs,
+single-part five-view reference, replaceable appearance and bottom light source.
+The second photograph establishes perpendicular crossed arches, not parallel
+frames. Both assets are available through the existing asset review route.
+
+
+## Countertop group - owner clarification, 2026-10-28
+
+The owner identifies the preparation group as a brown potted plant, a white
+handled water pitcher and a small white insulated tumbler. The approved layout
+places the plant at the rear left beside the recessed fridge, the pitcher at
+the rear right and the tumbler at the front right. This supersedes the former
+two-wall corner and straight-row placement. The pitcher is not an enlarged mug.
+The approved pantry crop remains the asset appearance authority. `sourceVariants.countertopReview`
+is the executable construction recipe; its dimensions are inferred defaults for
+the accepted room, not physical measurements recovered from the raster image.
+
+The enlarged owner crop is preserved as `reference-preparation-counter.png`.
+It establishes the retained small-sink asset: the front silver object has a
+recessed bowl and a narrow right-side fitting. The approved layout omits this
+asset from the preparation counter and keeps its construction recipe for reuse.
+Hidden plumbing and legible markings are not recovered from this crop.
+
+All dimensions below are metres. The pitcher is 0.255 high with a 0.099 rim
+radius, 0.005 wall and 0.007 base. Base radius is 97% of rim radius, keeping the
+walls nearly vertical. Its lip extends 0.018 toward -X. The opposite handle has
+a straight outer section and 0.012-radius corners, 0.055 reach and 0.007 tube
+radius. A plain 0.004-thick gray insert has its center 0.006 below the lip;
+a flat dark central region has radius 0.018. This represents the visible top
+regions only, not an inferred button or opening mechanism. Defaults are body
+#E8E4DF, insert #B9B5BB and center #716B76. All remain independently recolorable.
+The white insulated tumbler is 0.190 high with a 0.034 body radius and separate
+fitted 0.019-high lid. It has no handle and defaults to #E9E7E2.
+
+The preparation basin is 0.480 wide and 0.250 deep. It extends 0.090 below
+counter contact Z=0 and 0.010 above it. The rim is 0.021 wide, and the metal
+floor is 0.013 thick, giving interior floor Z=-0.077. The outer edge radius is
+0.012; the cavity edge radius is 0.009. Remove the matching 0.462 by 0.232
+aperture from both the wooden worktop and the upper cabinet body, with cutter
+Z=-0.095..0.035 to clear the metal bottom. The basin must not overlay solid wood. External cabinet extents,
+fronts, handles and plinth are unchanged. The right fitting centerline starts
+at (0.2295,0.028,0.010), rises to 0.170 and bends 0.065 toward the bowl; tube
+radius is 0.006. Its base radius is 0.012. No broad divider or invented plates.
+Metal defaults to #AAAFA9 with roughness 0.48 (bowl) / 0.40 (fitting).
+
+The rear green bottle receives a pale #E0D5D0 curved label over local
+Z=0.035..0.104 and angles 220..320 degrees before its existing 0.9 uniform
+scale. Its label-inclusive unscaled envelope is 0.0878 by 0.0878 by 0.160.
+No legible label text is inferred.
+
+### Approved staggered placement - 2026-10-28
+
+The approved top-view configuration replaces the former corner and straight-row
+placements. Runtime layout is owned by
+`apps/asyra-office/src/scene/reference/pantry-layout.json`. The three original
+objects retain their complete mesh geometry and sizes. Plant sits at left rear,
+pitcher at right rear, tumbler at right front. Their full leaf/handle envelopes
+fit inside the 0.83781 by 0.625 preparation top without overlap. The prior fixed
+10/20 cm row rule is superseded by explicit owner approval to reposition them.
+The small green bottle moves to the clear left-front worktop area, using the
+layout's counterBottleCenter rather than its old pitcher-intersecting anchor.
+All bases remain at countertop Z=1.18. Build each parts array once, measure once
+and reuse it for placement. No render-time geometry construction is introduced.
+
+Remove only the preparation sink's scene instance. Preserve preparationSink,
+cutPreparationOpening, their specifications and geometry tests for reuse. The
+current worktop and cabinet are complete uncut solids, not a patched opening.
+The main sink and its supported cup, brush, plant and dark cup are translated
+together by +0.0375 in X; their geometry, scale and relative positions remain.
+The stored largest white shelf jar and tiny narrow-neck bottle likewise remain
+available from their factories and specifications.
+
+The preparation pot is nearly straight, maximum radius 0.104, base radius 0.096,
+height 0.210 and wall 0.005. Soil top is 0.195. Existing individual lanceolate
+leaves use seed 611 and source scale 1.35; foliage XY/Z factors are 0.80/0.70,
+relocated from the source soil datum to the new soil top. Default pot #675044.
+The main-sink plant is unchanged: seed 607, scale 1.35, foliage XY/Z factors
+1.08/1.12, default pot #E8DBC3. The main-sink cup uses the existing ceramic
+mug at scale 1.62, rotated -90 degrees, with one 0.215-high brush. Its support
+is outside the actual offset basin, not an assumed centered cutout.
+The unsupported soap dispenser and paired wooden utensils remain absent from
+the scene. The dark vessel left of the main sink is unchanged; the owner's
+clarification identified the preparation group, not that vessel.
+
+Colors, materials and overall XYZ dimensions remain replaceable. No shadow or
+lighting is baked into these parts. Formal geometry/support checks and actual
+hardware-rendered close-ups are separate evidence; neither grants owner approval.
+
+#### Placement after building expansion
+
+The owner-directed 2026-10-28 rear extension translates every pantry smallware
+anchor +1.00 m Y with its support. The preparation plant, pitcher, tumbler and
+green bottle retain the approved staggered relationship; shelf items keep their
+order, gaps and size. Main-sink accessories and floor jar also follow +1.00 m Y.
+All local geometry, X/Z coordinates, colors/materials and stored-asset status
+remain unchanged. Current placement comes from the scene layout and its wall
+datum, not from the earlier proposal's absolute world coordinates.

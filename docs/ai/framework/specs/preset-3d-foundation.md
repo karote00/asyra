@@ -471,3 +471,16 @@ progress, tolerance and reduced-motion choice govern position, quaternion and
 scale interpolation. Retarget replaces the target, cancel drops it, and dispose
 rejects future use. It owns no clock, canonical writes or draw loop and never
 modifies geometry. Singular/invalid input rejects before replacing accepted state.
+
+## Self-emissive spatial materials
+
+Mesh descriptors accept optional `emissive` (24-bit sRGB color) and
+`emissiveIntensity` (finite, nonnegative multiplier). Both default to zero,
+preserving non-emissive materials. Preset admission rejects malformed values;
+the official Three adapter applies emission on construction and appearance
+updates, retaining unchanged geometry/material resources and copying the same
+material to distant instances. Emission adds radiance independently of scene
+lights. It does not create a light source that illuminates other surfaces and
+does not enable bloom. App code supplies neutral values through public spatial
+descriptors, never renderer-specific material objects. Restricted GLB import
+continues to reject emissive materials; its import contract is unchanged.
