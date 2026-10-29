@@ -1,5 +1,23 @@
 # @asyra/asyra-design
 
+## Unreleased
+
+- Keep the preparation-failure E2E switch disabled across recovery reloads,
+  independent of whether the browser retains the instrumented module. Runtime
+  behavior and test deadlines are unchanged.
+
+```update-note
+{
+  "change": "recovery-fault-release-across-reloads",
+  "owner": "@asyra/asyra-design",
+  "summary": "Make recovery E2E fault release independent of module cache eviction.",
+  "reason": "The old page initialization re-enabled the injected fault after recovery when an instrumented module remained available.",
+  "impact": "no-action",
+  "sources": ["apps/asyra-design/e2e/collaboration.spec.ts"],
+  "guides": []
+}
+```
+
 ## 0.2.5
 
 ### Patch Changes
