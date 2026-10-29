@@ -1,5 +1,76 @@
 # @asyra/asyra-design
 
+## Pending model-visible result contracts
+
+```update-note
+{
+  "change": "model-visible-result-contracts",
+  "owner": "Design discovery and external delivery",
+  "summary": "Unify scoped and exact usage with the actual invocation parameters and complete model-visible result schemas, including truthful admission failures, closed metadata composition and partial receipts without replay. Remove redundant scoped parameter preparation and equivalent result alternatives; keep exploratory output navigation bounded while retaining complete exact contracts. Scope review results by their declared operation, preserve independent failure schemas, share common host outcome constraints, and remove unreachable same-instance input fields. Compare complete acquisition costs with the exact missing-result delta while retaining historical measurements and native limits. Restrict selected automatic follow-up receipts to their existing registered owner contracts and require successful registered values even when saving is partial. Keep browser integration tests in the existing browser-aware typecheck and honor template exclusions.",
+  "sources": [
+    "apps/asyra-design/flow-contracts.json",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/local-tool-host.ts",
+    "apps/asyra-design/server/local-tool-library-tools.ts",
+    "apps/asyra-design/src/ai/tool-contract.ts",
+    "apps/asyra-design/server/__tests__/batch-usage.integration.test.ts",
+    "apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json",
+    "create-app/asyra-design/template/server/local-operation-tools.ts",
+    "create-app/asyra-design/template/server/local-tool-host.ts",
+    "create-app/asyra-design/template/server/local-tool-library-tools.ts",
+    "create-app/asyra-design/template/src/ai/tool-contract.ts",
+    "create-app/asyra-design/template/server/__tests__/batch-usage.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/api-delivery-audit.integration.test.ts",
+    "create-app/asyra-design/template/test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json",
+    "docs/public/generated/content-index.json",
+    "docs/public/generated/source-map.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js",
+    "apps/asyra-design/server/local-tool-invocation.ts",
+    "apps/asyra-design/server/design-workflow-discovery.ts",
+    "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/review-usage.integration.test.ts",
+    "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts",
+    "create-app/asyra-design/template/server/local-tool-invocation.ts",
+    "create-app/asyra-design/template/server/design-workflow-discovery.ts",
+    "create-app/asyra-design/template/server/__tests__/discovery-delivery.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/review-usage.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/unified-tool-contracts.integration.test.ts",
+    "apps/asyra-design/server/__tests__/tool-contract-assertions.ts",
+    "create-app/asyra-design/template/server/__tests__/tool-contract-assertions.ts",
+    "apps/asyra-design/server/__tests__/face-boundary.test.ts",
+    "create-app/asyra-design/template/server/__tests__/face-boundary.test.ts",
+    "apps/asyra-design/server/__tests__/shared-motifs.test.ts",
+    "create-app/asyra-design/template/server/__tests__/shared-motifs.test.ts",
+    "apps/asyra-design/server/__tests__/local-operation-tools.test.ts",
+    "create-app/asyra-design/template/server/__tests__/local-operation-tools.test.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "create-app/asyra-design/template/server/local-design-review.ts",
+    "apps/asyra-design/server/local-design-workflow.ts",
+    "create-app/asyra-design/template/server/local-design-workflow.ts",
+    "apps/asyra-design/server/local-design-tools.ts",
+    "create-app/asyra-design/template/server/local-design-tools.ts",
+    "apps/asyra-design/server/design-construction-schema.ts",
+    "create-app/asyra-design/template/server/design-construction-schema.ts",
+    "apps/asyra-design/server/__tests__/design-review-stages.test.ts",
+    "create-app/asyra-design/template/server/__tests__/design-review-stages.test.ts",
+    "apps/asyra-design/server/__tests__/local-tool-operation-composition.test.ts",
+    "apps/asyra-design/tsconfig.ai-server.json",
+    "apps/asyra-design/tsconfig.flow-proof.json",
+    "create-app/asyra-design/template/server/__tests__/local-tool-operation-composition.test.ts",
+    "create-app/asyra-design/template/tsconfig.ai-server.json",
+    "create-app/asyra-design/template/tsconfig.flow-proof.json",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/complete-result-cost-20261029.json",
+    "create-app/asyra-design/template/server/__tests__/fixtures/recorded-101/complete-result-cost-20261029.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Corrects existing discovery output declarations while preserving canonical internal receipts, recipe bindings, retained readback and bounded model views. No new tool, stored format, cache or migration."
+}
+```
+
 ## Pending retained material recovery
 
 ```update-note

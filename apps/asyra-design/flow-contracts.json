@@ -55,7 +55,8 @@
         "test-data/knowledge-evaluation/quality.mjs",
         "test-data/knowledge-evaluation/architecture-protocol.mjs",
         "test-data/knowledge-evaluation/native-boundaries.mjs",
-        "test-data/knowledge-evaluation/public-activity.mjs"
+        "test-data/knowledge-evaluation/public-activity.mjs",
+        "test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json"
       ],
       "entry": null
     },
@@ -80,6 +81,18 @@
         "observe"
       ],
       "cases": [
+        {
+          "id": "compose.model-delivery",
+          "stepId": "compose",
+          "testName": "execution proof declares the saved model receipt without internal result fields",
+          "implementationPaths": [
+            "apps/asyra-design/server/local-operation-tools.ts",
+            "apps/asyra-design/server/local-tool-host.ts",
+            "apps/asyra-design/server/local-tool-library-tools.ts",
+            "apps/asyra-design/src/ai/tool-contract.ts",
+            "apps/asyra-design/test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json"
+          ]
+        },
         {
           "id": "compose.material-repair",
           "stepId": "compose",

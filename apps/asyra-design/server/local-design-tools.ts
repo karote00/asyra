@@ -104,9 +104,9 @@ const containerConditions = [
   { properties: { type: { const: 'frame' } }, required: ['width', 'height'] }
 ]
 const describeArtifactBudget = (expandedNodeLimit: number) =>
-  ` Source windows: ${limits.nodes} nodes/${limits.pathCommands} commands; indivisible primitives must fit. Artifact: ${expandedNodeLimit} expanded objects/${limits.expandedPathCommands} commands, depth ${limits.depth}. Count root and nested containers; windows/templates do not increase artifact capacity. Keep hierarchy/layout/keys/relations/detail.`
+  ` Source windows: ${limits.nodes} nodes/${limits.pathCommands} commands; indivisible primitives must fit. Artifact: ${expandedNodeLimit} expanded objects/${limits.expandedPathCommands} commands, depth ${limits.depth}, including root and nested containers. Windows/templates do not increase artifact capacity. Preserve hierarchy/layout/keys/relations/detail.`
 const describeDraftContract = (expandedNodeLimit: number) =>
-  'Root group derives bounds; no size/fill/layout. Frame has size, solid/gradient fill, one-time row/column/grid layout. Containers nest. Root target-map key is unique and draft-local; omitted=generated ID. Authored keys are not document IDs.' +
+  'Group: derived bounds, no size/fill/layout. Frame: size/fill, one-time row/column/grid layout. Nestable. Root key: unique, draft-local, generated if omitted; not a document ID.' +
   describeArtifactBudget(expandedNodeLimit)
 const draftSchema = {
   anyOf: containerConditions,

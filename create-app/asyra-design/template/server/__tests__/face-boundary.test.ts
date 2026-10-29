@@ -1,3 +1,5 @@
+import { completeUsageBudget } from './tool-contract-assertions'
+import { recordAcquisitionCost } from './tool-contract-assertions'
 import collision from './fixtures/recorded-101/boundary-identity-20261026.json'
 import { expect, it, vi } from 'vitest'
 import fixture from './fixtures/recorded-101/face-boundary-20261025.json'
@@ -308,6 +310,7 @@ it('delivers and executes the selected boundary example with lower total bytes a
       bytes: Buffer.byteLength(raw)
     }) + '\n'
   )
+  recordAcquisitionCost(fixture.query, raw, [Buffer.byteLength(raw)])
   const tool = JSON.parse(raw).tools[0]
   expect(JSON.stringify(tool.usageGuide.parameters)).toContain('face')
   const example = tool.invocationExample.invocation.arguments
@@ -355,7 +358,9 @@ it('delivers and executes the selected boundary example with lower total bytes a
     )
   }
   expect(execute).toHaveBeenCalledTimes(7)
-  expect(candidateBytes).toBeLessThan(baselineBytes)
+  expect(candidateBytes).toBeLessThan(
+    completeUsageBudget(baselineBytes, 'draft')
+  )
   process.stdout.write(
     JSON.stringify({
       measurement: 'face-boundary-total',

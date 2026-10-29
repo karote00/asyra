@@ -1,3 +1,6 @@
+import completeResultCost from './fixtures/recorded-101/complete-result-cost-20261029.json'
+import { appendFileSync, mkdirSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterAll, expect } from 'vitest'
 import {
   createAiToolContract,
@@ -183,19 +186,66 @@ export const withToolContractAssertions = <
   return owner
 }
 
+/** Optional test evidence: account for complete acquisition, never change delivery. */
+export const recordAcquisitionCost = (
+  input: unknown,
+  text: string,
+  pages: number[]
+) => {
+  if (process.env.TOOL_DELIVERY_COST_REPORT !== '1') return
+  const value = JSON.parse(text) as {
+    apis?: Record<string, unknown>[]
+    tools?: Record<string, unknown>[]
+  }
+  const entries = [...(value.apis ?? []), ...(value.tools ?? [])].map(
+    (entry) => {
+      const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
+      const sections = (value: Record<string, unknown>) =>
+        Object.fromEntries(
+          Object.entries(value).map(([key, child]) => [key, bytes(child)])
+        )
+      return {
+        name: entry.registeredName ?? entry.name,
+        bytes: bytes(entry),
+        sections: sections(entry),
+        ...(entry.usageGuide
+          ? { guide: sections(entry.usageGuide as Record<string, unknown>) }
+          : {})
+      }
+    }
+  )
+  if (!entries.length) return
+  const directory = resolve('tmp')
+  mkdirSync(directory, { recursive: true })
+  appendFileSync(
+    resolve(directory, 'tool-delivery-cost-attribution.jsonl'),
+    JSON.stringify({
+      test: expect.getState().currentTestName,
+      input,
+      bodyBytes: Buffer.byteLength(text),
+      wireBytes: pages.length ? pages.reduce((a, b) => a + b, 0) : null,
+      pages,
+      entries
+    }) + '\n'
+  )
+}
+
 /** A consumer follows published continuations before using the complete contract. */
 export const readCompleteInformation = async (
   call: (input: unknown) => Promise<string>,
   input: unknown
 ): Promise<string> => {
   let raw = await call(input)
+  const pages: number[] = []
   let text = ''
   let offset = 0
   let revision: string | undefined
   for (let count = 0; count < 256; count++) {
+    pages.push(Buffer.byteLength(raw))
     const page = JSON.parse(raw).contentDelivery
     if (!page) {
       expect(offset).toBe(0)
+      recordAcquisitionCost(input, raw, pages)
       return raw
     }
     expect(Buffer.byteLength(raw)).toBeLessThanOrEqual(24000)
@@ -209,9 +259,21 @@ export const readCompleteInformation = async (
       expect(offset).toBe(page.totalBytes)
       expect(page.next).toBeNull()
       JSON.parse(text)
+      recordAcquisitionCost(input, text, pages)
       return text
     }
     raw = await call(page.next.arguments)
   }
   throw new Error('Information continuation did not terminate')
 }
+
+/** Frozen result-contract delta; candidate growth cannot enlarge its own budget. */
+export const completeUsageBudget = (
+  historicalBytes: number,
+  reference: keyof typeof completeResultCost.entries,
+  fragmented = false
+) =>
+  historicalBytes +
+  completeResultCost.entries[reference].cost[
+    fragmented ? 'fragmented' : 'plain'
+  ]

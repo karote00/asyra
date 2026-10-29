@@ -7931,7 +7931,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   }
   const combined = await read({ names, inputScope: mixedScope, view: 'usage' })
   expect(counts).toHaveLength(1)
-  expect(counts[0]).toBeLessThanOrEqual(20148)
+  expect(counts[0]).toBeLessThanOrEqual(completeUsageBudget(20148, 'draft'))
   const invocation = combined.tools[0].invocationExample.invocation
   const combinedFull = await read({ names, inputScope: mixedScope })
   expect(
@@ -8947,7 +8947,7 @@ it('execution proof delivers layered repetition before parameters with canonical
   expect(replies.length).toBeLessThanOrEqual(2)
   expect(
     replies.reduce((sum, raw) => sum + Buffer.byteLength(raw), 0)
-  ).toBeLessThanOrEqual(27702)
+  ).toBeLessThanOrEqual(completeUsageBudget(27702, 'draft', true))
   const { invocation } = tool.invocationExample
   const definition = main.definitions.find(
     (item) => item.name === invocation.tool
@@ -9232,11 +9232,13 @@ it('execution proof delivers shared motifs through the main workflow without ext
     if (!page || page.lastPage) break
     budgetQuery = page.next.arguments
   }
-  expect(contractBytes).toBeLessThanOrEqual(fixture.baseline.guideWireBytes)
+  expect(contractBytes).toBeLessThanOrEqual(
+    completeUsageBudget(fixture.baseline.guideWireBytes, 'draft', true)
+  )
   expect(
     bytes + Buffer.byteLength(JSON.stringify(fixture.compact))
   ).toBeLessThan(
-    fixture.baseline.guideWireBytes +
+    completeUsageBudget(fixture.baseline.guideWireBytes, 'draft', true) +
       Buffer.byteLength(JSON.stringify(fixture.input))
   )
   const { invocation } = tool.invocationExample
@@ -10088,11 +10090,13 @@ it('execution proof delivers projected ovals through projection and canonical di
   expect(body).toContain('editable oval')
   expect(replies.length).toBeLessThanOrEqual(1)
   const bytes = replies.reduce((n, text) => n + Buffer.byteLength(text), 0)
-  expect(bytes).toBeLessThanOrEqual(fixture.source.selectedDeliveryBytes)
+  expect(bytes).toBeLessThanOrEqual(
+    completeUsageBudget(fixture.source.selectedDeliveryBytes, 'draft')
+  )
   expect(
     bytes + Buffer.byteLength(JSON.stringify(fixture.compact))
   ).toBeLessThan(
-    fixture.source.selectedDeliveryBytes +
+    completeUsageBudget(fixture.source.selectedDeliveryBytes, 'draft') +
       Buffer.byteLength(JSON.stringify(fixture.original))
   )
   const { invocation } = tool.invocationExample
@@ -11218,3 +11222,198 @@ it('execution proof follows saved material recovery without reinjecting resolved
     Buffer.byteLength(JSON.stringify(saved.input)) / 5
   )
 })
+
+it('execution proof declares the saved model receipt without internal result fields', async () => {
+  const hadWindow = 'window' in globalThis
+  if (!hadWindow) vi.stubGlobal('window', {})
+  try {
+    const saved = (
+      await import('../../test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json')
+    ).default
+    const { createBasicApiActions } =
+      await import('../../src/ai/basic-api-actions')
+    const { createAiToolContract } = await import('@asyra/ai-agent-runtime')
+    const actions = createBasicApiActions().map(createAiToolContract)
+    const execute = vi.fn(async () => {
+      throw new Error('Discovery must not execute')
+    })
+    const owner = createOperationOwner(
+      actions,
+      { modelActions: (v) => v, resolveBatch: (v) => v },
+      execute
+    )
+    const query = owner.definitions.find(
+      (d) => d.name === 'describe_design_apis'
+    )
+    if (!query) throw new Error('Missing discovery')
+    const reply = await invokeLocalTool(
+      owner,
+      query,
+      saved.query,
+      new AbortController().signal
+    )
+    const value = JSON.parse(reply.text)
+    expect(value.contentDelivery).toBeUndefined()
+    const guide = value.apis[0].usageGuide
+    // The saved incorrect navigation must fail the same actual-pointer oracle.
+    const exposesInternalView = (fields: string[]) =>
+      fields.some(
+        (path) =>
+          path === '/properties/modelResult' ||
+          path.startsWith('/properties/modelResult/')
+      )
+    expect(exposesInternalView(saved.baselineOutputFields)).toBe(true)
+    expect(exposesInternalView(value.apis[0].outputFields)).toBe(false)
+    expect(
+      operationInputIssue(
+        saved.output.actionResults[0].result,
+        saved.declaredOperation
+      )
+    ).toBeDefined()
+    expect(operationInputIssue(saved.output, guide.results)).toBeUndefined()
+    expect(Buffer.byteLength(reply.text)).toBeLessThan(saved.baselineReplyBytes)
+    expect(execute).not.toHaveBeenCalled()
+
+    // Exercise the same acquired contract through actual registered host stages.
+    const { toolSemantics } = await import('../../src/ai/tool-contract')
+    const workflowActions = [
+      ...actions,
+      { name: 'apply_prepared_design', description: 'Apply', inputSchema: {} }
+    ]
+    const designs = createLocalDesignTools(workflowActions)
+    const workflow = createLocalDesignWorkflow(
+      designs,
+      createOperationOwner(workflowActions, designs, execute)
+    )
+    const source = {
+      name: 'scoped_receipt',
+      description: 'Return a retained count through a scoped registered route.',
+      providerExposure: 'registry' as const,
+      inputSchema: workflow.definitions[0].inputSchema,
+      ...toolSemantics(
+        {
+          type: 'object',
+          properties: { toolOutcome: { type: 'object' } },
+          allOf: [
+            {
+              type: 'object',
+              properties: { count: { type: 'integer', minimum: 0 } },
+              required: ['count'],
+              additionalProperties: false
+            }
+          ]
+        },
+        'read',
+        []
+      ),
+      composition: 'allowed' as const
+    }
+    const leaf = vi.fn(async () => JSON.stringify({ count: 3 }))
+    const host = createLocalToolHost({
+      requestId: 'model-contract-proof',
+      signal: new AbortController().signal,
+      capacity: 32,
+      receiptCapacity: 16,
+      artifactCapacity: 32,
+      limits: {
+        steps: 16,
+        bindings: 64,
+        bindingDepth: 16,
+        bytes: 24000,
+        issues: 8
+      },
+      store: {
+        read: async () => undefined,
+        list: async () => [],
+        write: async () => {
+          throw new Error('No recipe write')
+        }
+      },
+      createGroups: () => [
+        {
+          name: 'design_operations',
+          description: 'Discovery',
+          owner: createOperationOwner(actions, designs, execute, {
+            getNativeTools: () => host.definitions()
+          })
+        },
+        {
+          name: 'fixture',
+          description: 'Retained result',
+          owner: { definitions: [source], call: leaf }
+        }
+      ]
+    })
+    try {
+      const acquired = JSON.parse(
+        await readCompleteInformation(
+          async (input) =>
+            (
+              await host.invoke({
+                name: 'design_operations.describe_design_apis',
+                input
+              })
+            ).text,
+          {
+            names: ['fixture.scoped_receipt'],
+            view: 'usage',
+            inputScope: { operation: 'draft', nodeTypes: ['pattern'] }
+          }
+        )
+      ).tools[0]
+      const example = acquired.invocationExample.invocation
+      expect(
+        operationInputIssue(example.arguments, acquired.usageGuide.parameters)
+      ).toBeUndefined()
+      const invocation = {
+        name: `${acquired.execution.namespace}.${example.tool}`,
+        input: example.arguments
+      }
+      const success = await host.invoke(invocation)
+      expect(success.success, success.text).toBe(true)
+      const completed = JSON.parse(success.text)
+      expect(completed.execution.value.count).toBe(3)
+      expect(
+        operationInputIssue(completed, acquired.usageGuide.results)
+      ).toBeUndefined()
+      expect(
+        operationInputIssue(
+          {
+            ...completed,
+            execution: {
+              ...completed.execution,
+              value: { ...completed.execution.value, count: -1 }
+            }
+          },
+          acquired.usageGuide.results
+        )
+      ).toBeDefined()
+      const rejected = await host.invoke({
+        ...invocation,
+        input: { ...example.arguments, revision: 0 }
+      })
+      expect(rejected.success).toBe(false)
+      expect(JSON.parse(rejected.text)).not.toHaveProperty('execution')
+      expect(
+        operationInputIssue(
+          JSON.parse(rejected.text),
+          acquired.usageGuide.results
+        )
+      ).toBeUndefined()
+      expect(leaf).toHaveBeenCalledTimes(1)
+      expect(execute).not.toHaveBeenCalled()
+    } finally {
+      await host.dispose()
+    }
+  } finally {
+    if (!hadWindow) vi.unstubAllGlobals()
+  }
+})
+
+/** Frozen draft result cost from complete-result-cost-20261029.json.
+ * Kept literal because this Inspector proof is independently compiled. */
+const completeUsageBudget = (
+  historicalBytes: number,
+  _reference: 'draft',
+  fragmented = false
+) => historicalBytes + (fragmented ? 3888 : 3314)

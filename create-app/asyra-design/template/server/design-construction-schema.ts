@@ -57,7 +57,7 @@ export const designConstructionSchema = {
     propertyNames: key,
     additionalProperties: { $ref: '#/$defs/surfaceMotifs' },
     description:
-      'Named motif arrays, shared across different grids via motifs:{template:key}, without overrides. Invalid definitions/references reject before writes.'
+      'Shared motifs via motifs:{template:key}, without overrides. Invalid definitions/references reject before writes.'
   },
   linearFields: {
     type: 'object',
@@ -123,7 +123,7 @@ export const designConstructionSchema = {
       }
     },
     description:
-      'Intent/viewpoint, actual sources, unverified assumptions. Numeric checks: final parent-local native boxes, explicit keys, pixel tolerances. No invented evidence or visual approval.'
+      'Intent/viewpoint, real sources, unverified assumptions. Numeric checks use final parent-local native boxes, explicit keys and pixel tolerances; no invented evidence/visual approval.'
   },
   relations: {
     type: 'array',
@@ -154,7 +154,7 @@ export const designConstructionSchema = {
       }
     },
     description:
-      'Native absolute-layout siblings only; no vectors. target.property=source.property*factor(default 1)+offset(default 0). $parent: zero-origin local box. x/y targetAnchor subtracts that fraction of target width/height (0=start,.5=center,1=end). Order-independent; cycles/duplicate assignments reject. Row/column/grid use layout. No live constraints.'
+      'Absolute native siblings only; no vectors. target.property=source.property*factor(default 1)+offset(default 0). $parent: zero-origin local box. For x/y, subtract targetAnchor*target size (0=start,.5=center,1=end). Order-independent; reject cycles/duplicate assignments. Use layout for row/column/grid. Not live.'
   },
   projection: {
     type: 'object',
@@ -229,7 +229,7 @@ const projectedFaceGeometrySchema = {
     }
   },
   description:
-    'Planar root child/member under shared projection; editable polygon/oval. Owner computes geometry/rotation. Signed offsets allowed; Group preserves workspace geometry, Frame reports overflow. Reject degenerate/nonplanar/excess geometry.'
+    'Planar child/member in shared projection; owner computes editable polygon/oval geometry/rotation. Signed offsets allowed; Group preserves geometry, Frame reports overflow. Reject degenerate/nonplanar/excess geometry.'
 }
 
 export const projectedFaceSchema = {
@@ -285,7 +285,7 @@ export const surfaceGridSchema = {
     }
   },
   description:
-    'Projected root child/member. Convex planar corners:(0,0),(1,0),(1,1),(0,1). Uniform cells, local u/v, world offset, bilinear vectors. fills overrides fill cyclically per row-major cell; irregular paint needs a list. cell-major=cells/motifs; motif-major=motifs/cells; cells row-major. Keys:gridKey-cellIndex-motifKey. Cost:rows*columns*resolved motifs + other nodes; budgets/windows apply. No clipping/lighting/hidden-face removal/approximation.'
+    'Projected root child/member: convex planar corners (0,0),(1,0),(1,1),(0,1); uniform bilinear cells, local u/v, world offset. fills overrides fill cyclically in row-major order; irregular paint needs a list. cell-major=cells/motifs; motif-major=motifs/cells. Keys:gridKey-cellIndex-motifKey. Cost:rows*columns*resolved motifs+other nodes; budgets/windows apply. No clipping/lighting/hidden-face removal/approximation.'
 }
 
 export const designPatternSchema = {
@@ -353,7 +353,7 @@ export const designPatternSchema = {
         ]
       },
       description:
-        'Flat face/grid members, unique keys, root projection; no nesting/parent. Order:instance/member/grid. Palettes restart; world fields translate per instance. Keys:patternKey-instanceIndex-memberOutputKey; keys/names <=160 chars.'
+        'Flat face/grid members with unique keys and root projection; no nesting/parent. instance/member/grid order; palettes restart, world fields translate per instance. Keys:patternKey-instanceIndex-memberOutputKey; keys/names <=160 chars.'
     },
     faces: {
       type: 'array',
@@ -374,5 +374,5 @@ export const designPatternSchema = {
     }
   },
   description:
-    'Absolute projected root: origin+axes translate, last axis fastest. Order:instance/member/grid. faces fills cycle by original index; other materials unchanged. No lighting/sorting/clipping/inference; irregulars explicit. Cost:root+selected instances*objects/points; omitted ranges=0. Primitive limits apply; automatic windows allow >1000 total.'
+    'Projected root: origin+axes translate, last axis fastest; instance/member/grid order. faces fills cycle by original index; other materials unchanged. No lighting/sorting/clipping/inference; explicit irregulars. Cost:root+selected instances*objects/points; absent ranges start at 0. Primitive limits apply; windows allow >1000 total.'
 }

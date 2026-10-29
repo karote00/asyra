@@ -18,7 +18,11 @@ import {
   formatOperationInputIssues,
   type OperationInputIssue
 } from './operation-input-schema'
-import { designActionOutcome } from '../src/ai/tool-contract'
+import {
+  designActionOutcome,
+  toolResultObject,
+  toolResultString
+} from '../src/ai/tool-contract'
 
 export interface LocalToolDefinition extends AiToolContractInput {
   /** Registry-only operations remain available to typed recipes without native function expansion. */
@@ -244,6 +248,25 @@ const hasAcknowledgedActions = (value: unknown): boolean => {
     )
   )
 }
+
+/** Boundary failures can precede execution; no synthetic receipt is required. */
+export const localToolFailureSchema = toolResultObject({
+  available: { const: false },
+  code: toolResultString,
+  message: toolResultString,
+  recoverable: { type: 'boolean' },
+  toolOutcome: toolResultObject({
+    status: { enum: ['failed', 'partial'] },
+    settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
+    issues: {
+      type: 'array',
+      items: toolResultObject({
+        code: toolResultString,
+        message: toolResultString
+      })
+    }
+  })
+})
 
 export const localToolFailureReply = (
   message: string,

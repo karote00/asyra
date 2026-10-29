@@ -1,3 +1,7 @@
+import {
+  completeUsageBudget,
+  recordAcquisitionCost
+} from './tool-contract-assertions'
 import { expect, it, vi } from 'vitest'
 import { AiActionNames } from '../../src/constants/ai-actions'
 import fixture from './fixtures/recorded-101/shared-motifs-20261023.json'
@@ -288,6 +292,7 @@ it('reduces complete selected delivery and saved invocation without another page
     }
   )
   const main = createLocalDesignWorkflow(designs, operations)
+  const pageBytes: number[] = []
   let args: unknown = fixture.query
   let bytes = 0,
     pages = 0,
@@ -298,6 +303,7 @@ it('reduces complete selected delivery and saved invocation without another page
       args,
       new AbortController().signal
     )
+    pageBytes.push(Buffer.byteLength(raw))
     bytes += Buffer.byteLength(raw)
     pages++
     expect(pages).toBeLessThanOrEqual(fixture.baseline.guideReplies)
@@ -313,6 +319,7 @@ it('reduces complete selected delivery and saved invocation without another page
     JSON.parse(text).tools[0].invocationExample.invocation.arguments.draft
       .motifTemplates
   ).toBeDefined()
+  recordAcquisitionCost(fixture.query, text, pageBytes)
   const { resultKey, ...contract } = JSON.parse(text)
   expect(resultKey).toEqual(expect.any(String))
   // Keep the original contract-only budget; the total below still includes the handle.
@@ -331,10 +338,15 @@ it('reduces complete selected delivery and saved invocation without another page
     if (!page || page.lastPage) break
     budgetQuery = page.next.arguments
   }
-  expect(contractBytes).toBeLessThanOrEqual(fixture.baseline.guideWireBytes)
+  expect(contractBytes).toBeLessThanOrEqual(
+    completeUsageBudget(fixture.baseline.guideWireBytes, 'draft', true)
+  )
   expect(
     bytes + Buffer.byteLength(JSON.stringify(fixture.compact))
-  ).toBeLessThan(fixture.baseline.guideWireBytes + fixture.baseline.inputBytes)
+  ).toBeLessThan(
+    completeUsageBudget(fixture.baseline.guideWireBytes, 'draft', true) +
+      fixture.baseline.inputBytes
+  )
 })
 
 it('keeps inline exceptions independent alongside shared definitions', () => {

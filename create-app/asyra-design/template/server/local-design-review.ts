@@ -607,20 +607,20 @@ export const reviewVisualSchema = {
 
 const reviewUsage = {
   instructions:
-    'Read-only review. phase=structure checks the declared structural subset; phase=visual judges current rendered evidence. Capture/bind do not record a verdict. Required criteria must exist before binding; first drawing needs no review. Select one operation for the current decision; never combine capture/bind with record. Each conclusion cites its exact necessary images, including overview plus detail when needed. Every image is an invalidation dependency; use only local images for independent local conclusions. Changed scopes require explicit supersession. Keep the separate whole-view criterion with its own whole image and canonical coverage; a regional overview cannot replace it. Required native detail and mechanical checks remain required. Do not omit obligations, resend unrelated passes or discard necessary evidence to recover a pass. factElementIds identify source associations, never edit targets.',
+    'Read-only. structure checks the planned structural subset; visual judges current rendered evidence. Criteria precede binding, not first drawing. Capture/bind never record; select one operation. Cite every necessary image per conclusion (overview+detail when needed); each is an invalidation dependency. Independent local conclusions use local images. Scope changes require supersession. Whole-view criteria require their own whole image and canonical coverage, not regional overviews. Preserve required native detail/mechanical checks, obligations, evidence and unrelated passes. factElementIds are source associations, not edit targets.',
   operations: {
     capture:
-      'Capture selected current targets with explicit criterionId/unitId checks. Use overview for composition and detail/region for native detail; workspace supports overview only. Follow next.requiredInputs when binding is still needed; otherwise view the images and add explicit judgments to next.arguments without recapturing.',
-    bind: 'Reuse retained inspectionIds for exact criterion/unit checks, including necessary overview plus detail. Binding produces next.arguments without capturing or judging. Preserve current multiscale dependencies.',
+      'Capture current targets with criterionId/unitId. overview shows composition; detail/region native detail; workspace only overview. Fill next.requiredInputs if binding is missing; otherwise inspect images and add judgments to next.arguments without recapture.',
+    bind: 'Bind retained inspectionIds to exact criterion/unit checks, preserving necessary multiscale dependencies. Returns next.arguments; no capture/judgment.',
     record:
       'Consume capture/bind next.arguments. Fill only observed status/evidence; retain exact image IDs and signed binding. There is no static record invocation: the executable example is the returned next invocation with its current binding. final=true attempts whole-request acceptance from current retained coverage.'
   },
   selection:
-    'inputScope.operation: capture for new current images; bind to reuse retained images for chosen checks; record to submit observed judgments using capture/bind next.arguments. Selecting this contract needs no nodeTypes or planning call. Full and field queries remain available; known current contracts need no lookup.',
+    'capture: new images; bind: reuse retained images; record: judgments in next.arguments. No nodeTypes/planning call needed. Full/field queries remain available; no lookup for known current contracts.',
   results:
-    'Read toolOutcome and reviewOperation. recordedChecks acknowledges exact local judgments; accepted is whole-request completion, never invocation success. Current local passes survive unrelated edits; missing, stale or failed obligations prevent acceptance. Capture/bind returns next with exact arguments; no judgment is inferred.',
+    'Read toolOutcome/reviewOperation. recordedChecks acknowledges local judgments; accepted means whole-request completion. Local passes survive unrelated edits; missing/stale/failed obligations block acceptance. Capture/bind returns next.arguments, never inferred judgments.',
   recovery:
-    'Never replay writes or successful captures for a review failure. Retain successful inspectionIds; retry only failedInspections using their inspection input. Rebind retained current images for missing bindings; recapture only stale/failed targets. Cancellation does not certify a pass. Invalid or tampered signatures require current binding, not invented tokens.'
+    'No replay of writes/successful captures. Keep inspectionIds; retry failedInspections with their inspection input. Rebind current images; recapture only stale/failed targets. Cancellation is not a pass. Invalid/tampered signatures need current binding, never invented tokens.'
 }
 const reviewUsageExamples = [
   {
@@ -711,6 +711,221 @@ const optionalPhaseSchema = <
 }
 const sourceEvidenceSchema = optionalPhaseSchema(reviewFactsSchema)
 
+// Result alternatives share the same operation identities as scoped input.
+const reviewPendingMeasurementNext = toolResultObject({
+  tool: { const: AiDesignToolIds.READ_DESIGN_CHECKS },
+  arguments: toolResultObject({ ids: toolResultIds }),
+  instruction: toolResultString
+})
+
+const reviewJudgmentNext = toolResultObject({
+  tool: { const: AiDesignToolIds.REVIEW_DRAWING },
+  arguments: toolResultObject(
+    {
+      phase: { enum: ['structure', 'visual'] },
+      final: { const: false },
+      inspectionIds: { ...toolResultIds, minItems: 1 },
+      checks: { type: 'array', items: reviewSubmissionSchema },
+      bindChecks: {
+        type: 'array',
+        minItems: 1,
+        items: {
+          ...reviewSelectionSchema,
+          properties: {
+            ...reviewSelectionSchema.properties,
+            supersedes: {
+              ...checkIdentityProperties.supersedes,
+              required: ['revision']
+            }
+          }
+        }
+      }
+    },
+    ['phase', 'inspectionIds']
+  ),
+  requiredInputs: {
+    type: 'array',
+    items: {
+      anyOf: [
+        {
+          enum: ['bindChecks', 'checks[].status', 'checks[].evidence']
+        },
+        {
+          type: 'string',
+          pattern: '^bindChecks\\[[0-9]+\\]\\.supersedes\\.reason$'
+        }
+      ]
+    },
+    minItems: 1
+  },
+  instruction: toolResultString
+})
+
+const reviewPlanNext = toolResultObject({
+  tool: { const: AiDesignToolIds.DEFINE_DESIGN_CRITERIA },
+  arguments: toolResultObject({ phase: { const: 'plan' } }),
+  requiredInputs: {
+    type: 'array',
+    items: { enum: reviewPlanRequiredInputs },
+    minItems: reviewPlanRequiredInputs.length,
+    maxItems: reviewPlanRequiredInputs.length,
+    uniqueItems: true
+  },
+  instruction: toolResultString
+})
+
+const reviewResultSchema = toolResultObject(
+  {
+    phase: { enum: ['structure', 'visual'] },
+    reviewOperation: {
+      enum: ['capture', 'bind', 'record'],
+      description:
+        'Requested review operation; toolOutcome reports settlement. Capture and binding record no judgments.'
+    },
+    recordedChecks: {
+      type: 'array',
+      description:
+        'Exact committed criterion/unit judgments from this call, including passes. Deferred-detail decisions retain their separate deferredChecks receipt. This acknowledgement is not whole-request acceptance.',
+      items: toolResultObject(
+        {
+          id: toolResultString,
+          criterionId: toolResultString,
+          unitId: toolResultString,
+          origin: { const: 'main-agent' },
+          status: { enum: ['pass', 'fail', 'unverified', 'stale'] },
+          revision: { type: 'integer', minimum: 1 }
+        },
+        ['id', 'criterionId', 'origin', 'status', 'revision']
+      )
+    },
+    structureAccepted: toolResultBoolean,
+    accepted: toolResultBoolean,
+    inspectionIds: toolResultIds,
+    results: designCheckDeliverySchema,
+    correction: toolResultObject(
+      {
+        diagnosticOnly: { const: true },
+        requiresFreshReview: toolResultBoolean,
+        revision: toolResultCount,
+        checks: {
+          type: 'array',
+          items: toolResultObject(
+            {
+              id: toolResultString,
+              criterionId: toolResultString,
+              unitId: toolResultString,
+              revision: { type: 'integer', minimum: 1 },
+              evidence: toolResultString,
+              reason: toolResultString,
+              status: {
+                enum: ['missing', 'unverified', 'stale', 'fail']
+              },
+              inspectionIds: toolResultIds,
+              factElementIds: toolResultIds
+            },
+            ['id', 'criterionId', 'status', 'inspectionIds', 'factElementIds']
+          )
+        },
+        inspections: {
+          type: 'array',
+          items: toolResultObject(
+            {
+              inspectionId: toolResultString,
+              elementId: toolResultString,
+              region: { type: 'object' },
+              coordinateSpace: { const: 'element-local' },
+              overview: toolResultBoolean,
+              detail: toolResultBoolean
+            },
+            ['inspectionId', 'elementId', 'overview', 'detail']
+          )
+        },
+        unavailableInspectionIds: toolResultIds,
+        discovery: toolResultObject({
+          tool: { const: AiDesignToolIds.DESCRIBE_DESIGN_APIS },
+          arguments: toolResultObject({ view: { const: 'full' } }),
+          requiredInputs: {
+            type: 'array',
+            items: { const: 'query' },
+            minItems: 1,
+            maxItems: 1
+          },
+          instruction: toolResultString
+        })
+      },
+      [
+        'diagnosticOnly',
+        'requiresFreshReview',
+        'revision',
+        'checks',
+        'inspections',
+        'unavailableInspectionIds'
+      ]
+    ),
+    acceptanceContext: toolResultObject({
+      method: toolResultString,
+      requirementRevision: toolResultCount,
+      checks: {
+        type: 'array',
+        items: toolResultObject(
+          {
+            criterionId: toolResultString,
+            unitId: toolResultString,
+            requirement: toolResultString,
+            description: toolResultString
+          },
+          ['criterionId', 'requirement', 'description']
+        )
+      }
+    }),
+    next: {
+      oneOf: [reviewPendingMeasurementNext, reviewJudgmentNext, reviewPlanNext]
+    },
+    coverage: toolResultObject({
+      required: { type: 'integer', minimum: 0 },
+      passed: { type: 'integer', minimum: 0 },
+      pending: {
+        type: 'array',
+        items: toolResultObject(
+          {
+            id: toolResultString,
+            criterionId: toolResultString,
+            unitId: toolResultString,
+            status: { enum: ['missing', 'unverified', 'stale', 'fail'] },
+            reason: toolResultString
+          },
+          ['id', 'criterionId', 'status']
+        )
+      }
+    })
+  },
+  ['phase', 'reviewOperation', 'recordedChecks', 'accepted', 'inspectionIds']
+)
+const reviewResultAlternatives = {
+  anyOf: ['capture', 'bind', 'record'].map((operation) => ({
+    ...reviewResultSchema,
+    'x-design-operation': operation,
+    properties: {
+      ...reviewResultSchema.properties,
+      reviewOperation: { const: operation },
+      next: {
+        oneOf:
+          operation === 'record'
+            ? [reviewPendingMeasurementNext]
+            : [reviewJudgmentNext, reviewPlanNext]
+      },
+      ...(operation === 'record'
+        ? {}
+        : {
+            results: false,
+            correction: false,
+            structureAccepted: false,
+            recordedChecks: { type: 'array', maxItems: 0 }
+          })
+    }
+  }))
+}
+
 export const designEvidenceDefinitions = [
   {
     type: 'function',
@@ -784,215 +999,10 @@ export const designEvidenceDefinitions = [
   },
   {
     type: 'function',
-    ...toolSemantics(
-      toolResultObject(
-        {
-          phase: { enum: ['structure', 'visual'] },
-          reviewOperation: {
-            enum: ['capture', 'bind', 'record'],
-            description:
-              'Requested review operation; toolOutcome reports settlement. Capture and binding record no judgments.'
-          },
-          recordedChecks: {
-            type: 'array',
-            description:
-              'Exact committed criterion/unit judgments from this call, including passes. Deferred-detail decisions retain their separate deferredChecks receipt. This acknowledgement is not whole-request acceptance.',
-            items: toolResultObject(
-              {
-                id: toolResultString,
-                criterionId: toolResultString,
-                unitId: toolResultString,
-                origin: { const: 'main-agent' },
-                status: { enum: ['pass', 'fail', 'unverified', 'stale'] },
-                revision: { type: 'integer', minimum: 1 }
-              },
-              ['id', 'criterionId', 'origin', 'status', 'revision']
-            )
-          },
-          structureAccepted: toolResultBoolean,
-          accepted: toolResultBoolean,
-          inspectionIds: toolResultIds,
-          results: designCheckDeliverySchema,
-          correction: toolResultObject(
-            {
-              diagnosticOnly: { const: true },
-              requiresFreshReview: toolResultBoolean,
-              revision: toolResultCount,
-              checks: {
-                type: 'array',
-                items: toolResultObject(
-                  {
-                    id: toolResultString,
-                    criterionId: toolResultString,
-                    unitId: toolResultString,
-                    revision: { type: 'integer', minimum: 1 },
-                    evidence: toolResultString,
-                    reason: toolResultString,
-                    status: {
-                      enum: ['missing', 'unverified', 'stale', 'fail']
-                    },
-                    inspectionIds: toolResultIds,
-                    factElementIds: toolResultIds
-                  },
-                  [
-                    'id',
-                    'criterionId',
-                    'status',
-                    'inspectionIds',
-                    'factElementIds'
-                  ]
-                )
-              },
-              inspections: {
-                type: 'array',
-                items: toolResultObject(
-                  {
-                    inspectionId: toolResultString,
-                    elementId: toolResultString,
-                    region: { type: 'object' },
-                    coordinateSpace: { const: 'element-local' },
-                    overview: toolResultBoolean,
-                    detail: toolResultBoolean
-                  },
-                  ['inspectionId', 'elementId', 'overview', 'detail']
-                )
-              },
-              unavailableInspectionIds: toolResultIds,
-              discovery: toolResultObject({
-                tool: { const: AiDesignToolIds.DESCRIBE_DESIGN_APIS },
-                arguments: toolResultObject({ view: { const: 'full' } }),
-                requiredInputs: {
-                  type: 'array',
-                  items: { const: 'query' },
-                  minItems: 1,
-                  maxItems: 1
-                },
-                instruction: toolResultString
-              })
-            },
-            [
-              'diagnosticOnly',
-              'requiresFreshReview',
-              'revision',
-              'checks',
-              'inspections',
-              'unavailableInspectionIds'
-            ]
-          ),
-          acceptanceContext: toolResultObject({
-            method: toolResultString,
-            requirementRevision: toolResultCount,
-            checks: {
-              type: 'array',
-              items: toolResultObject(
-                {
-                  criterionId: toolResultString,
-                  unitId: toolResultString,
-                  requirement: toolResultString,
-                  description: toolResultString
-                },
-                ['criterionId', 'requirement', 'description']
-              )
-            }
-          }),
-          next: {
-            oneOf: [
-              toolResultObject({
-                tool: { const: AiDesignToolIds.READ_DESIGN_CHECKS },
-                arguments: toolResultObject({ ids: toolResultIds }),
-                instruction: toolResultString
-              }),
-              toolResultObject({
-                tool: { const: AiDesignToolIds.REVIEW_DRAWING },
-                arguments: toolResultObject(
-                  {
-                    phase: { enum: ['structure', 'visual'] },
-                    final: { const: false },
-                    inspectionIds: { ...toolResultIds, minItems: 1 },
-                    checks: { type: 'array', items: reviewSubmissionSchema },
-                    bindChecks: {
-                      type: 'array',
-                      minItems: 1,
-                      items: {
-                        ...reviewSelectionSchema,
-                        properties: {
-                          ...reviewSelectionSchema.properties,
-                          supersedes: {
-                            ...checkIdentityProperties.supersedes,
-                            required: ['revision']
-                          }
-                        }
-                      }
-                    }
-                  },
-                  ['phase', 'inspectionIds']
-                ),
-                requiredInputs: {
-                  type: 'array',
-                  items: {
-                    anyOf: [
-                      {
-                        enum: [
-                          'bindChecks',
-                          'checks[].status',
-                          'checks[].evidence'
-                        ]
-                      },
-                      {
-                        type: 'string',
-                        pattern:
-                          '^bindChecks\\[[0-9]+\\]\\.supersedes\\.reason$'
-                      }
-                    ]
-                  },
-                  minItems: 1
-                },
-                instruction: toolResultString
-              }),
-              toolResultObject({
-                tool: { const: AiDesignToolIds.DEFINE_DESIGN_CRITERIA },
-                arguments: toolResultObject({ phase: { const: 'plan' } }),
-                requiredInputs: {
-                  type: 'array',
-                  items: { enum: reviewPlanRequiredInputs },
-                  minItems: reviewPlanRequiredInputs.length,
-                  maxItems: reviewPlanRequiredInputs.length,
-                  uniqueItems: true
-                },
-                instruction: toolResultString
-              })
-            ]
-          },
-          coverage: toolResultObject({
-            required: { type: 'integer', minimum: 0 },
-            passed: { type: 'integer', minimum: 0 },
-            pending: {
-              type: 'array',
-              items: toolResultObject(
-                {
-                  id: toolResultString,
-                  criterionId: toolResultString,
-                  unitId: toolResultString,
-                  status: { enum: ['missing', 'unverified', 'stale', 'fail'] },
-                  reason: toolResultString
-                },
-                ['id', 'criterionId', 'status']
-              )
-            }
-          })
-        },
-        [
-          'phase',
-          'reviewOperation',
-          'recordedChecks',
-          'accepted',
-          'inspectionIds'
-        ]
-      ),
-      'prepare',
-      ['request-artifacts']
-    ),
-    revision: 15,
+    ...toolSemantics(reviewResultAlternatives, 'prepare', [
+      'request-artifacts'
+    ]),
+    revision: 16,
     name: AiDesignToolIds.REVIEW_DRAWING,
     description:
       'For current review use describe_design_apis with this exact name, view=usage and inputScope.operation=capture, bind or record; no nodeTypes. Review the current drawing against retained criteria and selected references. Execution success is not visual approval. reviewOperation identifies capture/bind/record; recordedChecks acknowledges exactly the committed judgments (including local passes), while accepted reports whole-request completion. Counts are labeled with their request or selected scope. phase=structure checks the optional structural subset; phase=visual records valid supplied judgments across calls. final=true (default) additionally attempts completion from all retained current passes; pending coverage returns accepted=false without discarding valid local work. Submit criterionId plus declared unitId and exact inspectionIds for each regional or cross-region check. A conclusion may cite necessary overview and detail images of the same target. Every cited image is a dependency: broad evidence carries broad invalidation. Cite only necessary local images for independent local conclusions; never inherit the enclosing image list. A regional overview does not replace the separate whole-view judgment. Do not discard necessary evidence merely to recover a pass. Additional distinct scopes require explicit supersession. Do not resend unrelated passed checks. Coverage reports required/passed counts and pending IDs; omission cannot remove an obligation. A whole-view criterion requires its own whole image and canonical coverage. Requested native detail and mechanical checks remain required. First request inspections [{elementId,view?,region?,checks:[{criterionId,unitId?,supersedes?}]}] with explicit intended checks to receive actual images and bound submission descriptors. To reuse existing images, supply bindChecks [{criterionId,unitId?,inspectionIds,supersedes?}] instead. Neither capture nor binding records a judgment. Read acceptanceContext for the current method and selected criterion meaning; it is informational and must not be copied into arguments. After viewing those images, use next.arguments and record observed passes and failures before editing; fill status/evidence in the returned bound checks; preserve their binding and exact dependencies with current inspectionIds and no new capture targets. Captures may reuse prior IDs (24 total). This tool never invokes a model. Current workspace overview captures all roots together without regrouping; use its actual ID. Workspace detail/region is unsupported: select a concrete child for native detail. Unavailable images never approve a check. Capture targets use the inspect_drawing schema; regions are target-local and at most 1024 per side. Any failed capture returns successful images/inspectionIds and failedInspections without recording judgments. Retry with the successful IDs and corrected failed targets. A rejected binding after successful capture returns partial with those images and bindChecks recovery; read the affected current revisions and rebind without recapturing or replaying edits. Use correction.checks for each unresolved identity, status and evidence, with linked inspections and explicit unavailableInspectionIds. factElementIds are source-fact associations, not edit targets. Follow optional correction.discovery only for a missing edit or target-query contract; known edits need no lookup. Source facts, criteria and calculations use their own tools. Optional polish is advisory; do not invent tighter precision than requested. The optional whole-structure checkpoint does not block ready parts. Record deferredDetails with id, description and reason; resolve them with deferredChecks (id, status and evidence). Valid sparse decisions are retained with their submitted image dependencies; omit unchanged decisions in later calls. Defer the whole-view judgment until a final candidate is ready, while recording local results as they become available.',
@@ -1000,6 +1010,10 @@ export const designEvidenceDefinitions = [
       'x-design-input-scope': {
         operations: '/oneOf',
         operationGroups: '/oneOf',
+        resultOperations: {
+          outputSchema: '/anyOf',
+          partialOutputSchema: '/anyOf/0/anyOf'
+        },
         usage: reviewUsage,
         selection: reviewUsage.selection,
         queryExample: { operation: 'capture' }

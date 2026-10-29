@@ -65,6 +65,108 @@ const execution = toolResultObject({
   issues: { type: 'array', items: { type: 'string' } }
 })
 
+export const registeredToolInvocationInstructions =
+  'Invoke an exact available registered tool revision with fresh input. Primitive and reusable tools use the same secured leaf execution. The input must match its discovered contract. A composition stops on failed or partial prerequisites; inspect completed calls before any correction. Declared iteration stops on decision-required findings, unchanged progress, exhaustion or uncertain settlement. Execution success certifies only the declared mechanical work, not visual acceptance of the user request. Successful execution attempts saving independently. If storage is unsaved, use save_tool with receiptId, never repeat invocation to retry saving.'
+
+/** The same invocation envelope serves native admission and selected discovery. */
+export const registeredToolInvocationSchemas = (
+  selected: {
+    inputSchema?: unknown
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+  },
+  pinned?: { name: string; revision: number },
+  recovery?: unknown
+) => {
+  const output = (schema: unknown, requiredValue: boolean) =>
+    toolResultObject(
+      {
+        execution: {
+          ...execution,
+          properties: {
+            ...execution.properties,
+            status: pinned
+              ? {
+                  enum: requiredValue
+                    ? ['success']
+                    : [
+                        'failed',
+                        'partial',
+                        'unknown',
+                        ...(schema === undefined ? [] : ['success'])
+                      ]
+                }
+              : execution.properties.status,
+            ...(schema === undefined
+              ? { value: pinned ? false : true }
+              : {
+                  value: embedAiToolSchema(
+                    schema as AiJsonValue,
+                    '#/properties/execution/properties/value'
+                  )
+                }),
+            ...(recovery === undefined
+              ? {}
+              : {
+                  recovery: embedAiToolSchema(
+                    recovery as AiJsonValue,
+                    '#/properties/execution/properties/recovery'
+                  )
+                })
+          },
+          required: [
+            ...execution.required,
+            ...(requiredValue && schema !== undefined ? ['value'] : [])
+          ],
+          ...(pinned && !requiredValue && schema !== undefined
+            ? {
+                anyOf: [
+                  { properties: { status: { not: { const: 'success' } } } },
+                  { required: ['value'] }
+                ]
+              }
+            : {})
+        },
+        ...(pinned
+          ? {
+              toolOutcome: toolResultObject({
+                status: {
+                  enum: requiredValue
+                    ? ['success']
+                    : ['partial', 'failed', 'unknown']
+                },
+                settlement: execution.properties.settlement
+              })
+            }
+          : {}),
+        storage: saved,
+        receiptId: toolResultString
+      },
+      ['execution']
+    )
+  return {
+    inputSchema: object(
+      {
+        name: pinned ? { const: pinned.name } : identity.name,
+        revision: pinned ? { const: pinned.revision } : identity.revision,
+        input: embedAiToolSchema(
+          (selected.inputSchema ?? {}) as AiJsonValue,
+          '#/properties/input'
+        ),
+        message: { type: 'string', minLength: 1, maxLength: 240 }
+      },
+      ['name', 'revision', 'input']
+    ),
+    outputSchema: output(selected.outputSchema, true),
+    partialOutputSchema: output(
+      selected.partialOutputSchema ?? selected.outputSchema,
+      false
+    ),
+    recoveryOutputSchema: output(selected.recoveryOutputSchema, false)
+  }
+}
+
 /** Native controls carry data only; Runtime owns admission, execution and saving. */
 export const createLocalToolLibraryTools = (
   resolve: () => ReturnType<typeof createLocalToolLibrary>,
@@ -125,19 +227,9 @@ export const createLocalToolLibraryTools = (
     ),
     definition(
       AiDesignToolIds.INVOKE_TOOL,
-      'Invoke an exact available registered tool revision with fresh input. Primitive and reusable tools use the same secured leaf execution. The input must match its discovered contract. A composition stops on failed or partial prerequisites; inspect completed calls before any correction. Declared iteration stops on decision-required findings, unchanged progress, exhaustion or uncertain settlement. Execution success certifies only the declared mechanical work, not visual acceptance of the user request. Successful execution attempts saving independently. If storage is unsaved, use save_tool with receiptId, never repeat invocation to retry saving.',
-      object(
-        {
-          ...identity,
-          input: {},
-          message: { type: 'string', minLength: 1, maxLength: 240 }
-        },
-        ['name', 'revision', 'input']
-      ),
-      toolResultObject(
-        { execution, storage: saved, receiptId: toolResultString },
-        ['execution']
-      )
+      registeredToolInvocationInstructions,
+      registeredToolInvocationSchemas({}).inputSchema,
+      registeredToolInvocationSchemas({}).outputSchema
     ),
     definition(
       AiDesignToolIds.SAVE_TOOL,
@@ -191,42 +283,11 @@ export const createLocalToolLibraryTools = (
         return
       const selected = resolve().describe(input.name, input.revision)
       if (!selected) return
-      const recovery = embedAiToolSchema(
-        resolve().describeRecovery(input.name, input.revision),
-        '#/properties/execution/properties/recovery'
+      return registeredToolInvocationSchemas(
+        selected,
+        { name: input.name, revision: input.revision },
+        resolve().describeRecovery(input.name, input.revision)
       )
-      const output = (schema: unknown) => ({
-        type: 'object',
-        properties: {
-          execution: {
-            type: 'object',
-            properties: {
-              ...(schema === undefined
-                ? {}
-                : {
-                    value: embedAiToolSchema(
-                      schema as AiJsonValue,
-                      '#/properties/execution/properties/value'
-                    )
-                  }),
-              recovery
-            }
-          }
-        }
-      })
-      return {
-        inputSchema: {
-          type: 'object',
-          properties: {
-            input: embedAiToolSchema(selected.inputSchema, '#/properties/input')
-          }
-        },
-        outputSchema: output(selected.outputSchema),
-        partialOutputSchema: output(
-          selected.partialOutputSchema ?? selected.outputSchema
-        ),
-        recoveryOutputSchema: output(selected.recoveryOutputSchema)
-      }
     },
     resultOutcome(
       _name: string,

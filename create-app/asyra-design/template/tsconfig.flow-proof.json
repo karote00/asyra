@@ -2,18 +2,12 @@
   "extends": "./tsconfig.ai-server.json",
   "compilerOptions": {
     "allowJs": true,
-    "lib": [
-      "ES2022",
-      "ES2023.Array",
-      "DOM"
-    ],
-    "types": [
-      "node",
-      "vite/client"
-    ]
+    "lib": ["ES2022", "ES2023.Array", "DOM"],
+    "types": ["node", "vite/client"]
   },
   "include": [
     "server/__tests__/execution-flow-proof.test.ts",
-    "src/types.d.ts"
+    "src/types.d.ts",
+    "server/__tests__/local-ai-provider.test.ts"
   ]
 }

@@ -2740,7 +2740,7 @@ describe('declared regional acceptance', () => {
       designEvidenceDefinitions.find((tool) => tool.name === 'review_drawing')
     )
     expect(declaration.revision).toBe(5)
-    expect(inspection.revision).toBe(15)
+    expect(inspection.revision).toBe(16)
     const local = {
       phase: 'visual',
       inspectionIds: ['image'],

@@ -242,6 +242,150 @@ export const actionToolSemantics = (name: string, outputSchema: unknown) => {
   return toolSemantics(outputSchema, metadata.effect, metadata.resources)
 }
 
+/** Projection failure is a delivery result, never permission to retry a write. */
+const toolDeliveryFailureCode = 'TOOL_DELIVERY_INVALID'
+const toolDeliveryFailureSchema = toolResultObject({
+  available: { const: false },
+  recoverable: { const: true },
+  code: { const: toolDeliveryFailureCode },
+  message: toolResultString,
+  settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
+  toolOutcome: toolResultObject({
+    status: { const: 'partial' },
+    settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
+  })
+})
+
+/** Admit host metadata only at the result root; business objects stay closed. */
+const modelOutcomeSchema = (schema: unknown): unknown => {
+  const record = (value: unknown): value is Record<string, unknown> =>
+    !!value && typeof value === 'object' && !Array.isArray(value)
+  const outcome = toolResultObject({
+    status: { enum: ['success', 'partial', 'failed', 'unknown'] },
+    settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
+  })
+  const visit = (
+    value: unknown,
+    references: readonly string[] = [],
+    root = false
+  ): unknown => {
+    if (!record(value)) return value
+    const result = { ...value }
+    let referenced: unknown
+    if (
+      typeof value.$ref === 'string' &&
+      value.$ref.startsWith('#/') &&
+      !references.includes(value.$ref)
+    ) {
+      let target: unknown = schema
+      for (const part of value.$ref.slice(2).split('/')) {
+        const key = part.replace(/~1/g, '/').replace(/~0/g, '~')
+        target =
+          record(target) || Array.isArray(target)
+            ? (target as Record<string, unknown>)[key]
+            : undefined
+      }
+      if (target !== undefined) {
+        delete result.$ref
+        referenced = visit(target, [...references, value.$ref])
+      }
+    }
+    for (const key of ['allOf', 'anyOf', 'oneOf']) {
+      if (Array.isArray(result[key]))
+        result[key] = result[key].map((branch) => visit(branch, references))
+    }
+    if (Object.hasOwn(result, 'not')) result.not = visit(result.not, references)
+    const restricted =
+      result.additionalProperties !== undefined &&
+      result.additionalProperties !== true
+    const bounded =
+      typeof result.minProperties === 'number' ||
+      typeof result.maxProperties === 'number'
+    if (restricted || bounded || result.propertyNames !== undefined || root) {
+      result.properties = {
+        ...(record(result.properties) ? result.properties : {}),
+        toolOutcome:
+          record(result.properties) &&
+          result.properties.toolOutcome !== undefined
+            ? { allOf: [result.properties.toolOutcome, outcome] }
+            : outcome
+      }
+      if (result.propertyNames !== undefined)
+        result.propertyNames = {
+          anyOf: [result.propertyNames, { const: 'toolOutcome' }]
+        }
+      if (bounded) {
+        const without: Record<string, unknown> = {
+          not: { required: ['toolOutcome'] }
+        }
+        const withOutcome: Record<string, unknown> = {
+          required: ['toolOutcome']
+        }
+        for (const key of ['minProperties', 'maxProperties']) {
+          if (typeof result[key] === 'number') {
+            without[key] = result[key]
+            withOutcome[key] = result[key] + 1
+          }
+        }
+        delete result.minProperties
+        delete result.maxProperties
+        result.allOf = [
+          ...(Array.isArray(result.allOf) ? result.allOf : []),
+          { anyOf: [without, withOutcome] }
+        ]
+      }
+    }
+    if (referenced !== undefined)
+      result.allOf = [
+        referenced,
+        ...(Array.isArray(result.allOf) ? result.allOf : [])
+      ]
+    return result
+  }
+  return visit(schema, [], true)
+}
+
+/** Discovery uses the registered view; internal validation keeps the full contract. */
+export const modelToolResultSchemas = (
+  contract: {
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+    delivery?: AiToolContractInput['delivery']
+  },
+  includeUnprojectedPartial = false,
+  stage: 'owner' | 'host' = 'owner'
+) => {
+  const annotate =
+    stage === 'host' ? (schema: unknown) => schema : modelOutcomeSchema
+  return {
+    outputSchema: contract.delivery
+      ? modelOutcomeSchema(contract.delivery.outputSchema)
+      : annotate(contract.outputSchema),
+    partialOutputSchema: contract.delivery
+      ? {
+          anyOf: [
+            embedAiToolSchema(
+              modelOutcomeSchema(contract.delivery.outputSchema) as AiJsonValue,
+              '#/anyOf/0'
+            ),
+            toolDeliveryFailureSchema,
+            ...(includeUnprojectedPartial &&
+            contract.partialOutputSchema !== undefined
+              ? [
+                  embedAiToolSchema(
+                    annotate(contract.partialOutputSchema) as AiJsonValue,
+                    '#/anyOf/2'
+                  )
+                ]
+              : [])
+          ]
+        }
+      : annotate(contract.partialOutputSchema),
+    recoveryOutputSchema: annotate(contract.recoveryOutputSchema)
+  }
+}
+
 /** External delivery consumes an owner-authored view after complete internal handoff. */
 export const projectToolDelivery = (
   contract: Pick<AiToolContractInput, 'delivery'>,
@@ -269,7 +413,7 @@ export const projectToolDelivery = (
     return {
       available: false,
       recoverable: true,
-      code: 'TOOL_DELIVERY_INVALID',
+      code: toolDeliveryFailureCode,
       message: `${issue} Execution must not be replayed.`,
       settlement: outcome.settlement,
       toolOutcome: { status: 'partial', settlement: outcome.settlement }

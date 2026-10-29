@@ -1,0 +1,906 @@
+{
+  "version": 1,
+  "source": "Deterministic canonical owner delivery; no model execution.",
+  "sources": {
+    "server/design-workflow-discovery.ts": "e857891ccc77513be454dc63c422b3b731b2dfb8d9cf8baaf943395b1149cfd2",
+    "server/local-design-review.ts": "54ddafff066e3139cf0e56d934ec6d83219d437ea1bfd100591fc998ff0fa686",
+    "server/local-design-workflow.ts": "0fc9ec9cb503ebf9b2c1b5384fa2dd5004c2910e971aa737f67c9b80820d84b4",
+    "src/ai/tool-contract.ts": "84ef4348f6dd9af4ae71fdd49c952a8c65cf5a2b11446b2ecf90837b6e09814c"
+  },
+  "entries": {
+    "draft": {
+      "query": {
+        "names": ["prepare_and_apply_design"],
+        "view": "usage",
+        "inputScope": {
+          "operation": "draft",
+          "nodeTypes": ["rect"]
+        }
+      },
+      "resultSchema": {
+        "anyOf": [
+          {
+            "properties": {
+              "toolOutcome": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "enum": ["success", "partial", "failed", "unknown"]
+                  },
+                  "settlement": {
+                    "$ref": "#/$defs/1"
+                  }
+                },
+                "required": ["status", "settlement"]
+              }
+            },
+            "anyOf": [
+              {
+                "$ref": "#/$defs/i"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "const": "complete"
+                  },
+                  "parts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/$defs/i"
+                    }
+                  },
+                  "checks": {
+                    "$ref": "#/$defs/g"
+                  }
+                },
+                "required": ["status", "parts"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "available": {
+                    "const": false
+                  },
+                  "recoverable": {
+                    "const": true
+                  },
+                  "code": {
+                    "$ref": "#/$defs/f"
+                  },
+                  "message": {
+                    "$ref": "#/$defs/f"
+                  },
+                  "settlement": {
+                    "$ref": "#/$defs/1"
+                  },
+                  "executionResult": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "actionResults": {
+                            "type": "array",
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["actionResults"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "batches": {
+                            "type": "array",
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["batches"]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "available",
+                  "recoverable",
+                  "code",
+                  "message",
+                  "settlement",
+                  "executionResult"
+                ]
+              },
+              {
+                "$ref": "#/$defs/o"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "checks": {
+                    "$ref": "#/$defs/g"
+                  },
+                  "status": {
+                    "enum": ["partial", "failed", "unknown"]
+                  },
+                  "parts": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/i"
+                        },
+                        {
+                          "$ref": "#/$defs/o"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": ["status", "parts"]
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "available": {
+                "const": false
+              },
+              "code": {
+                "$ref": "#/$defs/f"
+              },
+              "message": {
+                "$ref": "#/$defs/f"
+              },
+              "recoverable": {
+                "type": "boolean"
+              },
+              "toolOutcome": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "enum": ["failed", "partial"]
+                  },
+                  "settlement": {
+                    "$ref": "#/$defs/1"
+                  },
+                  "issues": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "$ref": "#/$defs/f"
+                        },
+                        "message": {
+                          "$ref": "#/$defs/f"
+                        }
+                      },
+                      "required": ["code", "message"]
+                    }
+                  }
+                },
+                "required": ["status", "settlement", "issues"]
+              }
+            },
+            "required": [
+              "available",
+              "code",
+              "message",
+              "recoverable",
+              "toolOutcome"
+            ]
+          }
+        ],
+        "$defs": {
+          "1": {
+            "enum": ["not-started", "completed", "partial", "unknown"]
+          },
+          "3": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "x-runtime-value": "request-artifact"
+          },
+          "d": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "f": {
+            "type": "string",
+            "minLength": 1
+          },
+          "g": {
+            "type": "object",
+            "properties": {
+              "countsScope": {
+                "enum": ["request-checks", "selected-checks"],
+                "description": "The population counted, independent of detail pagination. Counts may include tool and main-agent evidence; they do not establish visual acceptance or document durability."
+              },
+              "counts": {
+                "type": "object",
+                "properties": {
+                  "pass": {
+                    "$ref": "#/$defs/d"
+                  },
+                  "fail": {
+                    "$ref": "#/$defs/d"
+                  },
+                  "unverified": {
+                    "$ref": "#/$defs/d"
+                  },
+                  "stale": {
+                    "$ref": "#/$defs/d"
+                  }
+                },
+                "required": ["pass", "fail", "unverified", "stale"]
+              },
+              "visitedResults": {
+                "$ref": "#/$defs/d"
+              },
+              "firstPendingId": {
+                "$ref": "#/$defs/f"
+              }
+            },
+            "required": ["countsScope", "counts", "visitedResults"]
+          },
+          "i": {
+            "allOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "available": {
+                    "const": true
+                  },
+                  "artifactId": {
+                    "$ref": "#/$defs/3"
+                  },
+                  "applicable": {
+                    "type": "boolean"
+                  },
+                  "elementCount": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "findings": {
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "available",
+                  "artifactId",
+                  "applicable",
+                  "elementCount",
+                  "findings"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "applicable": {
+                    "const": true
+                  },
+                  "actionResults": {
+                    "type": "array"
+                  },
+                  "completedSteps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "checks": {
+                    "$ref": "#/$defs/g"
+                  }
+                },
+                "required": ["applicable", "actionResults", "completedSteps"]
+              }
+            ]
+          },
+          "o": {
+            "type": "object",
+            "properties": {
+              "failedStep": {
+                "type": "string"
+              },
+              "completedSteps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "artifactId": {
+                "$ref": "#/$defs/3"
+              }
+            },
+            "required": ["failedStep", "completedSteps"]
+          }
+        }
+      },
+      "cost": {
+        "plain": 3314,
+        "fragmented": 3888
+      }
+    },
+    "capture": {
+      "query": {
+        "names": ["review_drawing"],
+        "view": "usage",
+        "inputScope": {
+          "operation": "capture"
+        }
+      },
+      "resultSchema": {
+        "anyOf": [
+          {
+            "properties": {
+              "toolOutcome": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "enum": ["success", "partial", "failed", "unknown"]
+                  },
+                  "settlement": {
+                    "$ref": "#/$defs/1"
+                  }
+                },
+                "required": ["status", "settlement"]
+              }
+            },
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "enum": ["structure", "visual"]
+                  },
+                  "reviewOperation": {
+                    "const": "capture"
+                  },
+                  "recordedChecks": {
+                    "type": "array",
+                    "maxItems": 0
+                  },
+                  "structureAccepted": false,
+                  "accepted": {
+                    "type": "boolean"
+                  },
+                  "inspectionIds": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/4"
+                    }
+                  },
+                  "results": false,
+                  "correction": false,
+                  "acceptanceContext": {
+                    "type": "object",
+                    "properties": {
+                      "method": {
+                        "$ref": "#/$defs/4"
+                      },
+                      "requirementRevision": {
+                        "$ref": "#/$defs/5"
+                      },
+                      "checks": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "criterionId": {
+                              "$ref": "#/$defs/4"
+                            },
+                            "unitId": {
+                              "$ref": "#/$defs/4"
+                            },
+                            "requirement": {
+                              "$ref": "#/$defs/4"
+                            },
+                            "description": {
+                              "$ref": "#/$defs/4"
+                            }
+                          },
+                          "required": [
+                            "criterionId",
+                            "requirement",
+                            "description"
+                          ]
+                        }
+                      }
+                    },
+                    "required": ["method", "requirementRevision", "checks"]
+                  },
+                  "next": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tool": {
+                            "const": "review_drawing"
+                          },
+                          "arguments": {
+                            "type": "object",
+                            "properties": {
+                              "phase": {
+                                "enum": ["structure", "visual"]
+                              },
+                              "final": {
+                                "const": false
+                              },
+                              "inspectionIds": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/$defs/4"
+                                },
+                                "minItems": 1
+                              },
+                              "checks": {
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "required": ["unitId"]
+                                    },
+                                    {
+                                      "properties": {
+                                        "supersedes": false
+                                      }
+                                    }
+                                  ],
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "criterionId",
+                                    "inspectionIds",
+                                    "binding"
+                                  ],
+                                  "properties": {
+                                    "referenceUses": {
+                                      "$ref": "#/$defs/b"
+                                    },
+                                    "criterionId": {
+                                      "$ref": "#/$defs/4"
+                                    },
+                                    "unitId": {
+                                      "$ref": "#/$defs/c"
+                                    },
+                                    "supersedes": {
+                                      "description": "Only with declared unitId: replace its scope using exact prior revision and redesign reason. Omit for whole-criterion checks and unchanged-scope fresh images.",
+                                      "type": "object",
+                                      "additionalProperties": false,
+                                      "required": ["revision", "reason"],
+                                      "properties": {
+                                        "revision": {
+                                          "$ref": "#/$defs/9"
+                                        },
+                                        "reason": {
+                                          "$ref": "#/$defs/8"
+                                        }
+                                      }
+                                    },
+                                    "inspectionIds": {
+                                      "$ref": "#/$defs/d"
+                                    },
+                                    "binding": {
+                                      "x-runtime-value": "request",
+                                      "type": "object",
+                                      "properties": {
+                                        "requestId": {
+                                          "$ref": "#/$defs/4"
+                                        },
+                                        "requirementRevision": {
+                                          "$ref": "#/$defs/5"
+                                        },
+                                        "checkRevision": {
+                                          "$ref": "#/$defs/5"
+                                        },
+                                        "signature": {
+                                          "$ref": "#/$defs/4"
+                                        },
+                                        "dependencies": {
+                                          "type": "array",
+                                          "minItems": 1,
+                                          "maxItems": 24,
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "inspectionId": {
+                                                "$ref": "#/$defs/4"
+                                              },
+                                              "elementId": {
+                                                "$ref": "#/$defs/4"
+                                              },
+                                              "scope": {
+                                                "$ref": "#/$defs/4"
+                                              },
+                                              "source": {
+                                                "type": "object",
+                                                "x-runtime-value": "request",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                  "sessionId",
+                                                  "revision"
+                                                ],
+                                                "properties": {
+                                                  "sessionId": {
+                                                    "$ref": "#/$defs/4"
+                                                  },
+                                                  "revision": {
+                                                    "$ref": "#/$defs/5"
+                                                  },
+                                                  "receiptId": {
+                                                    "$ref": "#/$defs/4"
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "required": [
+                                              "inspectionId",
+                                              "elementId",
+                                              "scope"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "requestId",
+                                        "requirementRevision",
+                                        "checkRevision",
+                                        "signature",
+                                        "dependencies"
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "bindChecks": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "required": ["unitId"]
+                                    },
+                                    {
+                                      "properties": {
+                                        "supersedes": false
+                                      }
+                                    }
+                                  ],
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": ["criterionId", "inspectionIds"],
+                                  "properties": {
+                                    "referenceUses": {
+                                      "$ref": "#/$defs/b"
+                                    },
+                                    "criterionId": {
+                                      "$ref": "#/$defs/4"
+                                    },
+                                    "unitId": {
+                                      "$ref": "#/$defs/c"
+                                    },
+                                    "supersedes": {
+                                      "description": "Only with declared unitId: replace its scope using exact prior revision and redesign reason. Omit for whole-criterion checks and unchanged-scope fresh images.",
+                                      "type": "object",
+                                      "additionalProperties": false,
+                                      "required": ["revision"],
+                                      "properties": {
+                                        "revision": {
+                                          "$ref": "#/$defs/9"
+                                        },
+                                        "reason": {
+                                          "$ref": "#/$defs/8"
+                                        }
+                                      }
+                                    },
+                                    "inspectionIds": {
+                                      "$ref": "#/$defs/d"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "required": ["phase", "inspectionIds"]
+                          },
+                          "requiredInputs": {
+                            "type": "array",
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "enum": [
+                                    "bindChecks",
+                                    "checks[].status",
+                                    "checks[].evidence"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^bindChecks\\[[0-9]+\\]\\.supersedes\\.reason$"
+                                }
+                              ]
+                            },
+                            "minItems": 1
+                          },
+                          "instruction": {
+                            "$ref": "#/$defs/4"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments",
+                          "requiredInputs",
+                          "instruction"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tool": {
+                            "const": "define_design_criteria"
+                          },
+                          "arguments": {
+                            "type": "object",
+                            "properties": {
+                              "phase": {
+                                "const": "plan"
+                              }
+                            },
+                            "required": ["phase"]
+                          },
+                          "requiredInputs": {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "method",
+                                "references",
+                                "criteria",
+                                "detailRequired"
+                              ]
+                            },
+                            "minItems": 4,
+                            "maxItems": 4,
+                            "uniqueItems": true
+                          },
+                          "instruction": {
+                            "$ref": "#/$defs/4"
+                          }
+                        },
+                        "required": [
+                          "tool",
+                          "arguments",
+                          "requiredInputs",
+                          "instruction"
+                        ]
+                      }
+                    ]
+                  },
+                  "coverage": {
+                    "type": "object",
+                    "properties": {
+                      "required": {
+                        "$ref": "#/$defs/5"
+                      },
+                      "passed": {
+                        "$ref": "#/$defs/5"
+                      },
+                      "pending": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "$ref": "#/$defs/4"
+                            },
+                            "criterionId": {
+                              "$ref": "#/$defs/4"
+                            },
+                            "unitId": {
+                              "$ref": "#/$defs/4"
+                            },
+                            "status": {
+                              "enum": ["missing", "unverified", "stale", "fail"]
+                            },
+                            "reason": {
+                              "$ref": "#/$defs/4"
+                            }
+                          },
+                          "required": ["id", "criterionId", "status"]
+                        }
+                      }
+                    },
+                    "required": ["required", "passed", "pending"]
+                  }
+                },
+                "required": [
+                  "phase",
+                  "reviewOperation",
+                  "recordedChecks",
+                  "accepted",
+                  "inspectionIds"
+                ],
+                "x-design-operation": "capture"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "available": {
+                    "const": false
+                  },
+                  "recoverable": {
+                    "const": true
+                  },
+                  "code": {
+                    "$ref": "#/$defs/4"
+                  },
+                  "message": {
+                    "$ref": "#/$defs/4"
+                  },
+                  "settlement": {
+                    "$ref": "#/$defs/1"
+                  },
+                  "executionResult": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "actionResults": {
+                            "type": "array",
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["actionResults"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "batches": {
+                            "type": "array",
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["batches"]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "available",
+                  "recoverable",
+                  "code",
+                  "message",
+                  "settlement",
+                  "executionResult"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "available": {
+                "const": false
+              },
+              "code": {
+                "$ref": "#/$defs/4"
+              },
+              "message": {
+                "$ref": "#/$defs/4"
+              },
+              "recoverable": {
+                "type": "boolean"
+              },
+              "toolOutcome": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "enum": ["failed", "partial"]
+                  },
+                  "settlement": {
+                    "$ref": "#/$defs/1"
+                  },
+                  "issues": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "$ref": "#/$defs/4"
+                        },
+                        "message": {
+                          "$ref": "#/$defs/4"
+                        }
+                      },
+                      "required": ["code", "message"]
+                    }
+                  }
+                },
+                "required": ["status", "settlement", "issues"]
+              }
+            },
+            "required": [
+              "available",
+              "code",
+              "message",
+              "recoverable",
+              "toolOutcome"
+            ]
+          }
+        ],
+        "$defs": {
+          "1": {
+            "enum": ["not-started", "completed", "partial", "unknown"]
+          },
+          "4": {
+            "type": "string",
+            "minLength": 1
+          },
+          "5": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "8": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "9": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "b": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "x-runtime-value": "request",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "requestId",
+                "referenceId",
+                "useId",
+                "revision",
+                "requirementRevision"
+              ],
+              "properties": {
+                "requestId": {
+                  "$ref": "#/$defs/8"
+                },
+                "referenceId": {
+                  "$ref": "#/$defs/8"
+                },
+                "useId": {
+                  "$ref": "#/$defs/8"
+                },
+                "revision": {
+                  "$ref": "#/$defs/9"
+                },
+                "requirementRevision": {
+                  "$ref": "#/$defs/9"
+                }
+              }
+            },
+            "description": "Exact current use receipts from select_design_references. Omit only for reference-free work; each receipt must match the consumer purpose and criterion/unit."
+          },
+          "c": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "d": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 24,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/4"
+            }
+          }
+        }
+      },
+      "cost": {
+        "plain": 6712,
+        "fragmented": 7794
+      }
+    }
+  }
+}

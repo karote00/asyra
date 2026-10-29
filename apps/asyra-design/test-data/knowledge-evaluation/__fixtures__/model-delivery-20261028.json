@@ -1,0 +1,308 @@
+{
+  "sourceRun": "1793178457558",
+  "provider": "46a3cb4c-f6e5-4904-87e6-39a9f5b180a3",
+  "payloads": [
+    {
+      "file": "294-input.json",
+      "sha256": "6b22760399870996c5768236d8f9e4c7a31d6e79d1db80a53fa37faffd86b6f4",
+      "bytes": 56
+    },
+    {
+      "file": "295-output.json",
+      "sha256": "5cdd674b5ed9193307b92fa9c170297bb95ad409bb05c34f74a0968cd1197e55",
+      "bytes": 16721
+    },
+    {
+      "file": "309-input.json",
+      "sha256": "8d443221f8a1fa176ff57ad3cab5728805609934db60f7877fb14942aab72fa1",
+      "bytes": 255
+    },
+    {
+      "file": "316-output.json",
+      "sha256": "9d5e4a4387d7d4011599fbf5be82a6e7ddfb2a9ebb88a0ea961d0dd4e21339fa",
+      "bytes": 719
+    }
+  ],
+  "query": {
+    "operations": [
+      "element.deleteElements"
+    ],
+    "view": "usage"
+  },
+  "baselineReplyBytes": 16721,
+  "declaredOperation": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "$ref": "#/$defs/1"
+      },
+      "value": {
+        "type": "object",
+        "properties": {
+          "removed": {
+            "type": "array"
+          }
+        },
+        "required": [
+          "removed"
+        ],
+        "additionalProperties": true
+      },
+      "mutationScope": {
+        "type": "object",
+        "properties": {
+          "complete": {
+            "type": "boolean"
+          },
+          "elementIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/3"
+            }
+          },
+          "removedElementIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/3"
+            }
+          }
+        },
+        "required": [
+          "complete",
+          "elementIds",
+          "removedElementIds"
+        ],
+        "additionalProperties": true
+      },
+      "modelResult": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/$defs/1"
+          },
+          "value": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "$ref": "#/$defs/6"
+              },
+              "groupId": {
+                "$ref": "#/$defs/3"
+              },
+              "removed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "count"
+            ],
+            "additionalProperties": true
+          },
+          "mutationScope": {
+            "type": "object",
+            "properties": {
+              "complete": {
+                "type": "boolean"
+              },
+              "elementCount": {
+                "$ref": "#/$defs/6"
+              },
+              "removedElementCount": {
+                "$ref": "#/$defs/6"
+              }
+            },
+            "required": [
+              "complete",
+              "elementCount",
+              "removedElementCount"
+            ],
+            "additionalProperties": true
+          },
+          "retained": {
+            "$ref": "#/$defs/a"
+          },
+          "delivery": {
+            "$ref": "#/$defs/d"
+          }
+        },
+        "required": [
+          "status",
+          "value",
+          "mutationScope"
+        ],
+        "additionalProperties": true
+      },
+      "retained": {
+        "$ref": "#/$defs/a"
+      },
+      "delivery": {
+        "$ref": "#/$defs/d"
+      }
+    },
+    "required": [
+      "status",
+      "value",
+      "mutationScope",
+      "retained"
+    ],
+    "additionalProperties": true,
+    "$defs": {
+      "1": {
+        "enum": [
+          "complete",
+          "no-change",
+          "partial",
+          "failed"
+        ]
+      },
+      "3": {
+        "type": "string",
+        "minLength": 1,
+        "x-runtime-value": "document"
+      },
+      "6": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "9": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "x-runtime-value": "request-artifact"
+      },
+      "a": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "snapshotId": {
+            "$ref": "#/$defs/9"
+          },
+          "leaseId": {
+            "$ref": "#/$defs/9"
+          },
+          "total": {
+            "$ref": "#/$defs/6"
+          }
+        },
+        "required": [
+          "snapshotId",
+          "leaseId",
+          "total"
+        ]
+      },
+      "d": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "const": "unavailable"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "message"
+        ],
+        "additionalProperties": true
+      }
+    }
+  },
+  "input": {
+    "message": "\u79fb\u9664\u9802\u51a0\u4e0d\u8cbc\u5408\u659c\u7246\u7684\u7a81\u51fa\u683c\u67f5",
+    "inspection": "defer",
+    "operations": [
+      {
+        "name": "api_element_deleteElements",
+        "arguments": {},
+        "target": {
+          "artifactId": "5bcf95ad-71ab-4851-94c4-b89b9bce2fb2",
+          "keyPrefix": "crownSlats-",
+          "field": "elementIds"
+        }
+      }
+    ]
+  },
+  "output": {
+    "actionResults": [
+      {
+        "actionId": "a9795e3b-2d32-4bc5-a3b8-262651a54e9a",
+        "actionName": "api_element_deleteElements",
+        "result": {
+          "status": "complete",
+          "value": {
+            "count": 16
+          },
+          "mutationScope": {
+            "complete": true,
+            "elementCount": 1,
+            "removedElementCount": 16
+          },
+          "retained": {
+            "snapshotId": "d3df0d3d-06e8-40b2-9226-7e5db3fee24b",
+            "leaseId": "e531201a-0b47-499b-9df3-f07e3867cae0",
+            "total": 0
+          },
+          "toolOutcome": {
+            "status": "success",
+            "settlement": "completed"
+          }
+        }
+      }
+    ],
+    "inspectionDeferred": true,
+    "measurementDeferred": false,
+    "checks": {
+      "countsScope": "selected-checks",
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "unverified": 0,
+        "stale": 0
+      },
+      "visitedResults": 1
+    },
+    "batchSummary": {
+      "operationCount": 1,
+      "actionCount": 1
+    },
+    "toolOutcome": {
+      "status": "success",
+      "settlement": "completed",
+      "issues": []
+    }
+  },
+  "baselineOutputFields": [
+    "/properties/status",
+    "/properties/value",
+    "/properties/value/properties/removed",
+    "/properties/mutationScope",
+    "/properties/mutationScope/properties/complete",
+    "/properties/mutationScope/properties/elementIds",
+    "/properties/mutationScope/properties/removedElementIds",
+    "/properties/modelResult",
+    "/properties/modelResult/properties/status",
+    "/properties/modelResult/properties/value",
+    "/properties/modelResult/properties/value/properties/count",
+    "/properties/modelResult/properties/value/properties/groupId",
+    "/properties/modelResult/properties/value/properties/removed",
+    "/properties/modelResult/properties/mutationScope",
+    "/properties/modelResult/properties/mutationScope/properties/complete",
+    "/properties/modelResult/properties/mutationScope/properties/elementCount",
+    "/properties/modelResult/properties/mutationScope/properties/removedElementCount",
+    "/properties/modelResult/properties/retained",
+    "/properties/modelResult/properties/retained/properties/snapshotId",
+    "/properties/modelResult/properties/retained/properties/leaseId",
+    "/properties/modelResult/properties/retained/properties/total",
+    "/properties/modelResult/properties/delivery",
+    "/properties/modelResult/properties/delivery/properties/status",
+    "/properties/modelResult/properties/delivery/properties/message",
+    "/properties/retained",
+    "/properties/retained/properties/snapshotId",
+    "/properties/retained/properties/leaseId",
+    "/properties/retained/properties/total",
+    "/properties/delivery",
+    "/properties/delivery/properties/status",
+    "/properties/delivery/properties/message"
+  ]
+}

@@ -34,7 +34,10 @@ import {
   operationInputIssue
 } from './operation-input-schema'
 import type { LocalToolOwnership } from './local-tool-leases'
-import { projectToolDelivery } from '../src/ai/tool-contract'
+import {
+  projectToolDelivery,
+  modelToolResultSchemas
+} from '../src/ai/tool-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
 export interface LocalToolGroup {
@@ -141,7 +144,12 @@ export const createLocalToolHost = (options: {
         access: source.executionAccess
       })
       registry.register({
-        ...definition,
+        ...createAiToolContract({
+          ...definition,
+          // Leaves validate the unchanged owner value before adding metadata.
+          // Runtime consumes that complete value plus the host outcome.
+          ...modelToolResultSchemas({ ...definition, delivery: undefined })
+        }),
         inputSchema: runtimeOperationSchema(definition.inputSchema),
         name,
         composition: source.composition ?? 'control-plane',
@@ -300,6 +308,20 @@ export const createLocalToolHost = (options: {
   function project(name: string, input: unknown, value: unknown): unknown {
     const binding = bindings.get(name)
     if (!binding) return value
+    // Both direct and registered invocation preserve failed owner receipts.
+    // Only an owner projector may transform acknowledged partial execution.
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const original = value as Record<string, unknown>
+      const outcome = original.toolOutcome as { status?: string } | undefined
+      if (
+        outcome &&
+        outcome.status !== 'success' &&
+        !original.actionResults &&
+        !original.execution &&
+        !(original.executionResult && binding.owner.projectModelResult)
+      )
+        return value
+    }
     return binding.owner.projectModelResult
       ? binding.owner.projectModelResult(binding.definition.name, input, value)
       : projectToolDelivery(binding.definition, value)
@@ -312,9 +334,6 @@ export const createLocalToolHost = (options: {
       })
       if (internal) return reply
       const original = JSON.parse(reply.text)
-      // Input/execution rejection has no successful owner view to project.
-      if (!reply.success && !original.actionResults && !original.execution)
-        return reply
       const value = project(call.name, call.input, original)
       if (value === original) return reply
       if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -341,6 +360,7 @@ export const createLocalToolHost = (options: {
         if (binding)
           return {
             ...definition,
+            resultStage: 'host' as const,
             name: binding.definition.name,
             registeredName: definition.name,
             namespace: definition.name.slice(

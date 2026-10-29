@@ -1,3 +1,4 @@
+import { recordAcquisitionCost } from './tool-contract-assertions'
 import recordedAcceptance from './fixtures/recorded-101/acceptance-context-20261020.json'
 import { operationInputIssue } from '../operation-input-schema'
 import recordedAcquisition from './fixtures/recorded-101/acquisition-recovery-20261019.json'
@@ -310,7 +311,7 @@ it('binds the native single-action receipt to the canonical browser success cont
       },
       definition.outputSchema
     )
-  ).toBeUndefined()
+  ).toBeDefined()
   expect(
     operationInputIssue(
       {
@@ -8838,6 +8839,7 @@ it('replays all recorded discovery selectors without losing exact contracts or d
       }
     }
     if (call.input.view === 'usage') {
+      recordAcquisitionCost(call.input, JSON.stringify(result), [])
       usageBytes = Buffer.byteLength(JSON.stringify(result))
       expect(usageBytes).toBeLessThan(call.outputBytes / 3)
     }

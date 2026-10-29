@@ -1,3 +1,4 @@
+import { completeUsageBudget } from './tool-contract-assertions'
 import * as workflowDiscovery from '../design-workflow-discovery'
 import usageAcquisition from './fixtures/recorded-101/usage-acquisition-20261028.json'
 import fieldRecovery from './fixtures/recorded-101/field-query-recovery-20261027.json'
@@ -788,7 +789,7 @@ it('retains actual writes when selected draft and parts follow-up is unavailable
         view: 'usage'
       })
     ).value.tools[0]
-    expect(guide.usageGuide.results).toContain(
+    expect(guide.usageGuide.instructions).toContain(
       'partial preserves completed work'
     )
     await run.call('describe_design_apis', guide.definition.recover.arguments)
@@ -1261,7 +1262,7 @@ it('selects complete next-part guides in two replies without unrelated catalog g
       )
       const guide = reply.value.tools[0]
       expect(guide.invocationExample.invocation).toBeDefined()
-      expect(guide.usageGuide.results).toContain(
+      expect(guide.usageGuide.instructions).toContain(
         'partial preserves completed work'
       )
       expect(guide.usageGuide.recovery).toContain(
@@ -2312,7 +2313,9 @@ it.each([false, true])(
       }) + '\n'
     )
     expect(run.deliveries).toHaveLength(1)
-    expect(run.deliveries[0]).toBeLessThanOrEqual(20148)
+    expect(run.deliveries[0]).toBeLessThanOrEqual(
+      completeUsageBudget(20148, 'draft')
+    )
     // Pre-edit same-dispatcher content guide (16297) plus combined guide (20146).
     expect(run.deliveries[0]).toBeLessThan(16297 + 20146)
     expect(source.linearFields).toBeDefined()
@@ -2975,7 +2978,7 @@ it.each([false, true])(
     )
     expect(
       Buffer.byteLength(JSON.stringify(response.value))
-    ).toBeLessThanOrEqual(25604)
+    ).toBeLessThanOrEqual(completeUsageBudget(25604, 'draft'))
     const invocation = tool.invocationExample.invocation
     const first = JSON.parse(run.replies[0].raw)
     const body = first.contentDelivery?.text ?? run.replies[0].raw
@@ -2985,7 +2988,7 @@ it.each([false, true])(
     )
     expect(run.deliveries.length).toBeLessThanOrEqual(plan ? 2 : 1)
     expect(run.deliveries.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(
-      plan ? 27702 : 20087
+      completeUsageBudget(plan ? 27702 : 20087, 'draft', plan)
     )
     const calls = run.replies.length
     const outcome = await run.call(invocation.tool, {
@@ -3143,7 +3146,7 @@ it('delivers and executes the projected oval example in one selected acquisition
   )
   expect(run.deliveries).toHaveLength(1)
   expect(run.deliveries.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(
-    sampledEllipse.source.selectedDeliveryBytes
+    completeUsageBudget(sampledEllipse.source.selectedDeliveryBytes, 'draft')
   )
   expect(
     run.deliveries.reduce((a, b) => a + b, 0) +
@@ -3155,7 +3158,7 @@ it('delivers and executes the projected oval example in one selected acquisition
         )
       )
   ).toBeLessThan(
-    sampledEllipse.source.selectedDeliveryBytes +
+    completeUsageBudget(sampledEllipse.source.selectedDeliveryBytes, 'draft') +
       sampledEllipse.source.inputBytes
   )
   const invocation = response.value.tools[0].invocationExample.invocation
@@ -3480,6 +3483,8 @@ it('keeps exploration separate from executable exact usage and preserves qualifi
   expect(menu.tools.length).toBeGreaterThan(0)
   for (const entry of menu.tools) {
     expect(entry.usageGuide).toBeUndefined()
+    for (const path of entry.outputFields ?? [])
+      expect(path.split('/properties/').length, path).toBeLessThanOrEqual(2)
     expect(['select-exact-tool', 'select-operation-scope']).toContain(
       entry.definition.nextAction
     )
@@ -3541,4 +3546,66 @@ it('derives usage scope navigation only for usage and reuses retained delivery w
   } finally {
     scopes.mockRestore()
   }
+})
+
+it('assembles selected input once at the final executable usage boundary', async () => {
+  const run = setup()
+  const definition = run.owners
+    .flatMap((owner) => owner.definitions)
+    .find((entry) => entry.name === 'prepare_and_apply_design')
+  if (!definition) throw new Error('Missing main workflow')
+  const scope = { operation: 'draft', nodeTypes: ['rect'] }
+  // Guidance owns explanations, not a second parameter preparation that the
+  // actual-route assembler would discard or rewrap.
+  const guidance = workflowDiscovery.workflowUsageGuide(
+    definition.inputSchema,
+    scope
+  )
+  expect(guidance).not.toHaveProperty('parameters')
+  const stringify = JSON.stringify
+  let preparedRoots = 0
+  JSON.stringify = new Proxy(stringify, {
+    apply(target, receiver, args) {
+      const schema = args[0]
+      if (
+        schema?.type === 'object' &&
+        schema.properties?.draft?.$ref === '#/$defs/readyDraft' &&
+        schema.properties?.parts === false
+      )
+        preparedRoots++
+      return Reflect.apply(target, receiver, args)
+    }
+  })
+  let response: Awaited<ReturnType<typeof run.call>>
+  try {
+    response = await run.call('describe_design_apis', {
+      names: [definition.name],
+      view: 'usage',
+      inputScope: scope
+    })
+  } finally {
+    JSON.stringify = stringify
+  }
+  expect(preparedRoots).toBe(1)
+  const tool = response.value.tools[0]
+  const invocation = tool.invocationExample.invocation
+  expect(
+    operationInputIssue(invocation.arguments, tool.usageGuide.parameters)
+  ).toBeUndefined()
+  const completed = await run.call(invocation.tool, invocation.arguments)
+  // This fixture has no mechanical review owner; drawing completion must not
+  // be promoted to whole-flow success.
+  expect(completed.success).toBe(false)
+  expect(completed.value.toolOutcome).toMatchObject({
+    status: 'partial',
+    settlement: 'completed'
+  })
+  expect(completed.value.completedSteps).toEqual([
+    'prepare_design',
+    'apply_prepared_design'
+  ])
+  expect(
+    operationInputIssue(completed.value, tool.usageGuide.results)
+  ).toBeUndefined()
+  expect(run.execute).toHaveBeenCalledTimes(1)
 })

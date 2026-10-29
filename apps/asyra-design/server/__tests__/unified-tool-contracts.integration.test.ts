@@ -1,9 +1,15 @@
+import completeResultCost from './fixtures/recorded-101/complete-result-cost-20261029.json'
+import { completeUsageBudget } from './tool-contract-assertions'
+import { modelToolResultSchemas } from '../../src/ai/tool-contract'
 import { expect, it, vi } from 'vitest'
 import {
   createAiAgentRuntime,
   createAiToolContract
 } from '@asyra/ai-agent-runtime'
-import { workflowUsageParameters } from '../design-workflow-discovery'
+import {
+  projectWorkflowResult,
+  workflowUsageParameters
+} from '../design-workflow-discovery'
 import { operationInputIssue } from '../operation-input-schema'
 import { createLocalDesignTools } from '../local-design-tools'
 import { invokeLocalTool } from '../local-tool-invocation'
@@ -926,3 +932,352 @@ it.each(['definition', 'property'])(
     )
   }
 )
+
+it('omits only default open-object keywords while retaining closed nested constraints', () => {
+  const canonical = {
+    type: 'object',
+    additionalProperties: true,
+    properties: {
+      open: { type: 'object', additionalProperties: true },
+      closed: {
+        type: 'object',
+        additionalProperties: false,
+        properties: { count: { type: 'integer', minimum: 0 } },
+        required: ['count']
+      }
+    },
+    required: ['closed']
+  }
+  const compact = workflowUsageParameters(canonical)
+  expect(JSON.stringify(compact)).not.toContain('"additionalProperties":true')
+  for (const value of [
+    { closed: { count: 0 }, extra: true },
+    { closed: { count: 0, extra: true } },
+    { closed: { count: -1 } },
+    {},
+    { closed: { count: 1 }, open: { extra: true } }
+  ])
+    expect(operationInputIssue(value, compact) === undefined).toBe(
+      operationInputIssue(value, canonical) === undefined
+    )
+})
+
+it('compacts repeated result alternatives without changing constraints or addressed branches', () => {
+  const complete = {
+    type: 'object',
+    properties: { count: { type: 'integer', minimum: 0 } },
+    required: ['count'],
+    additionalProperties: false
+  }
+  const failed = {
+    type: 'object',
+    properties: { code: { const: 'FAILED' } },
+    required: ['code'],
+    additionalProperties: false
+  }
+  const schema = {
+    anyOf: [
+      complete,
+      { anyOf: [complete, { anyOf: [failed, complete] }] },
+      failed
+    ]
+  }
+  const compact = workflowUsageParameters(schema)
+  expect(Buffer.byteLength(JSON.stringify(compact))).toBeLessThan(
+    Buffer.byteLength(
+      JSON.stringify(workflowUsageParameters({ anyOf: [complete, failed] }))
+    ) + 1
+  )
+  for (const value of [
+    { count: 0 },
+    { count: -1 },
+    { code: 'FAILED' },
+    {},
+    { count: 1, extra: 2 },
+    null
+  ]) {
+    expect(Boolean(operationInputIssue(value, compact))).toBe(
+      Boolean(operationInputIssue(value, schema))
+    )
+  }
+  // Identical oneOf branches intentionally reject a value matching twice.
+  const exclusive = { oneOf: [complete, complete] }
+  expect(
+    operationInputIssue({ count: 0 }, workflowUsageParameters(exclusive))
+  ).toBeDefined()
+  // A local pointer into a nested alternative must retain the exact target.
+  const addressed = {
+    $defs: { branches: { anyOf: [failed, { anyOf: [complete] }] } },
+    $ref: '#/$defs/branches/anyOf/1/anyOf/0'
+  }
+  const retained = workflowUsageParameters(addressed)
+  expect(operationInputIssue({ count: 0 }, retained)).toBeUndefined()
+  expect(operationInputIssue({ code: 'FAILED' }, retained)).toBeDefined()
+  const annotated = {
+    anyOf: [{ anyOf: [complete], description: 'Keep this decision guidance.' }]
+  }
+  expect(JSON.stringify(workflowUsageParameters(annotated))).toContain(
+    'Keep this decision guidance.'
+  )
+})
+
+it('declares common host outcome constraints once across open result alternatives', () => {
+  const schema = {
+    anyOf: [
+      {
+        type: 'object',
+        properties: {
+          kind: { const: 'count' },
+          count: { type: 'integer', minimum: 0 }
+        },
+        required: ['kind', 'count']
+      },
+      {
+        type: 'object',
+        properties: {
+          kind: { const: 'ids' },
+          ids: { type: 'array', items: { type: 'string' } }
+        },
+        required: ['kind', 'ids']
+      }
+    ]
+  }
+  const projected = modelToolResultSchemas({
+    outputSchema: schema
+  }).outputSchema
+  let annotations = 0
+  const visit = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return
+    if (
+      'properties' in value &&
+      value.properties &&
+      typeof value.properties === 'object' &&
+      'toolOutcome' in value.properties
+    )
+      annotations++
+    Object.values(value).forEach(visit)
+  }
+  visit(projected)
+  expect(annotations).toBe(1)
+  for (const value of [
+    { kind: 'count', count: 1 },
+    { kind: 'ids', ids: ['a'] }
+  ]) {
+    expect(
+      operationInputIssue(
+        {
+          ...value,
+          toolOutcome: { status: 'success', settlement: 'completed' }
+        },
+        projected
+      )
+    ).toBeUndefined()
+    expect(
+      operationInputIssue(
+        {
+          ...value,
+          toolOutcome: { status: 'invented', settlement: 'completed' }
+        },
+        projected
+      )
+    ).toBeDefined()
+  }
+  expect(
+    operationInputIssue(
+      {
+        kind: 'count',
+        count: -1,
+        toolOutcome: { status: 'success', settlement: 'completed' }
+      },
+      projected
+    )
+  ).toBeDefined()
+})
+
+it('preserves closed forbidden fields, singleton constraints and indexed references', () => {
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: { value: { type: 'string', enum: ['ready'] }, unused: false },
+    oneOf: [{ required: ['value'] }]
+  }
+  const compact = workflowUsageParameters(schema)
+  expect(JSON.stringify(compact).length).toBeLessThanOrEqual(
+    JSON.stringify(schema).length
+  )
+  for (const value of [
+    { value: 'ready' },
+    { value: 'wrong' },
+    { value: 'ready', unused: 0 },
+    {},
+    null,
+    []
+  ])
+    expect(Boolean(operationInputIssue(value, compact))).toBe(
+      Boolean(operationInputIssue(value, schema))
+    )
+  const contradiction = {
+    type: 'object',
+    additionalProperties: false,
+    properties: { blocked: false },
+    required: ['blocked']
+  }
+  expect(
+    operationInputIssue({}, workflowUsageParameters(contradiction))
+  ).toBeDefined()
+  expect(
+    operationInputIssue({ blocked: 1 }, workflowUsageParameters(contradiction))
+  ).toBeDefined()
+  const indexed = {
+    $defs: { choice: { oneOf: [{ const: 'value' }] } },
+    $ref: '#/$defs/choice/oneOf/0'
+  }
+  expect(
+    operationInputIssue('value', workflowUsageParameters(indexed))
+  ).toBeUndefined()
+})
+
+it('shares identical union context while retaining independent alternatives and annotations', () => {
+  const common = {
+    description: 'Every result preserves this guidance.',
+    properties: { status: { enum: ['success', 'partial'] } }
+  }
+  const a = {
+    type: 'object',
+    required: ['count'],
+    properties: { count: { type: 'integer', minimum: 0 } }
+  }
+  const b = {
+    type: 'object',
+    required: ['ids'],
+    properties: { ids: { type: 'array', minItems: 1 } }
+  }
+  const schema = {
+    anyOf: [
+      { ...common, anyOf: [a] },
+      { ...common, anyOf: [a, b] }
+    ]
+  }
+  const compact = workflowUsageParameters(schema)
+  expect(JSON.stringify(compact).length).toBeLessThan(
+    JSON.stringify(schema).length
+  )
+  for (const value of [
+    { count: 1 },
+    { ids: ['a'], status: 'partial' },
+    { count: -1 },
+    { ids: [] },
+    { count: 1, status: 'invalid' },
+    null
+  ])
+    expect(Boolean(operationInputIssue(value, compact))).toBe(
+      Boolean(operationInputIssue(value, schema))
+    )
+})
+
+it.each(['draft', 'capture'] as const)(
+  'freezes the complete acquisition reference for %s independently of candidate growth',
+  (reference) => {
+    const { resultSchema: results, cost } =
+      completeResultCost.entries[reference]
+    const instructions = 'Use the actual route.'
+    const prose =
+      'Acknowledgement is not visual approval; retain "partial" results.'
+    for (const fragmented of [false, true]) {
+      const size = (value: unknown) => {
+        const text = JSON.stringify(value)
+        return Buffer.byteLength(fragmented ? JSON.stringify(text) : text)
+      }
+      const before = { instructions, results: prose }
+      const after = { instructions: instructions + ' ' + prose, results }
+      expect(cost[fragmented ? 'fragmented' : 'plain']).toBe(
+        size(after) - size(before)
+      )
+      const budget = completeUsageBudget(size(before), reference, fragmented)
+      expect(budget).toBe(size(after))
+      const expanded = {
+        ...after,
+        results: { ...results, description: 'Unnecessary repeated context.' }
+      }
+      expect(size(expanded)).toBeGreaterThan(budget)
+      expect(completeUsageBudget(size(before), reference, fragmented)).toBe(
+        budget
+      )
+    }
+  }
+)
+
+it('scopes only declared result alternatives and keeps shared references, independent failures and the owner immutable', () => {
+  const input = {
+    'x-design-input-scope': {
+      operations: '/oneOf',
+      resultOperations: {
+        outputSchema: '/anyOf',
+        partialOutputSchema: '/anyOf/0/anyOf'
+      }
+    },
+    oneOf: [{ required: ['capture'] }, { required: ['record'] }],
+    properties: { capture: {}, record: {} }
+  }
+  const output = {
+    $defs: { count: { type: 'integer', minimum: 0 } },
+    anyOf: ['capture', 'record'].map((name) => ({
+      'x-design-operation': name,
+      type: 'object',
+      required: [name],
+      properties: { [name]: { $ref: '#/$defs/count' } }
+    }))
+  }
+  const before = structuredClone(output)
+  const selected = projectWorkflowResult(
+    input,
+    output,
+    { operation: 'record' },
+    'outputSchema'
+  )
+  expect(operationInputIssue({ record: 1 }, selected)).toBeUndefined()
+  expect(operationInputIssue({ record: -1 }, selected)).toBeDefined()
+  expect(operationInputIssue({ capture: 1 }, selected)).toBeDefined()
+  expect(output).toEqual(before)
+  const failure = {
+    type: 'object',
+    required: ['failure'],
+    properties: { failure: { const: true } }
+  }
+  const partial = {
+    anyOf: [{ anyOf: output.anyOf }, failure],
+    $defs: output.$defs
+  }
+  const scopedPartial = projectWorkflowResult(
+    input,
+    partial,
+    { operation: 'record' },
+    'partialOutputSchema'
+  )
+  expect(operationInputIssue({ failure: true }, scopedPartial)).toBeUndefined()
+  expect(operationInputIssue({ capture: 1 }, scopedPartial)).toBeDefined()
+  expect(
+    projectWorkflowResult(
+      input,
+      output,
+      { operation: 'invalid' },
+      'outputSchema'
+    )
+  ).toBe(output)
+  expect(() =>
+    projectWorkflowResult(
+      input,
+      { anyOf: [output.anyOf[0], output.anyOf[0]] },
+      { operation: 'record' },
+      'outputSchema'
+    )
+  ).toThrow('Invalid owner')
+  expect(() =>
+    projectWorkflowResult(
+      input,
+      { anyOf: [output.anyOf[0]] },
+      { operation: 'record' },
+      'outputSchema'
+    )
+  ).toThrow('Missing owner')
+})

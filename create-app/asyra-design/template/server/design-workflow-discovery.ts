@@ -8,7 +8,10 @@ const at = (schema: unknown, path: string): unknown =>
     .split('/')
     .slice(1)
     .reduce<unknown>(
-      (value, key) => (record(value) ? value[key] : undefined),
+      (value, key) =>
+        (record(value) || Array.isArray(value)) && Object.hasOwn(value, key)
+          ? (value as Record<string, unknown>)[key]
+          : undefined,
       schema
     )
 const branches = (schema: unknown, path: unknown) => {
@@ -272,6 +275,27 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
       )
     )
       schema.properties[key] = false
+  // Every composition branch validates this same instance. A parent-forbidden
+  // property is unreachable there too; child instances keep their own contracts.
+  const exclude = (value: unknown, inherited: readonly string[]): void => {
+    if (!record(value)) return
+    const properties = record(value.properties) ? value.properties : undefined
+    const prohibited = [
+      ...new Set([
+        ...inherited,
+        ...Object.entries(properties ?? {}).flatMap(([key, item]) =>
+          item === false ? [key] : []
+        )
+      ])
+    ]
+    if (properties)
+      for (const key of prohibited)
+        if (Object.hasOwn(properties, key)) properties[key] = false
+    for (const mode of ['oneOf', 'anyOf', 'allOf'])
+      if (Array.isArray(value[mode]))
+        value[mode].forEach((branch) => exclude(branch, prohibited))
+  }
+  exclude(schema, [])
   const repetition = projectRepetition(source, selectedTypes)
   if (source.declaration.nodes !== undefined)
     replace(source.declaration.nodes, [
@@ -381,6 +405,49 @@ export const projectWorkflowInput = (input: unknown, scope: unknown) => {
   return schema
 }
 
+/** Select only owner-declared success alternatives; failures keep their own contract. */
+export const projectWorkflowResult = (
+  input: unknown,
+  output: unknown,
+  scope: unknown,
+  stage: 'outputSchema' | 'partialOutputSchema' | 'recoveryOutputSchema'
+) => {
+  const source = structure(input)
+  const declaration = source?.declaration.resultOperations
+  if (declaration === undefined) return output
+  if (!record(declaration))
+    throw new Error('Invalid owner result operation declaration')
+  const path = declaration[stage]
+  if (path === undefined) return output
+  // Invalid caller selection belongs to input projection and its owner-issued
+  // corrective query. Result projection must not replace that recovery.
+  if (
+    !record(scope) ||
+    !source?.operations.some((branch) => operation(branch) === scope.operation)
+  )
+    return output
+  const alternatives = branches(output, path)
+  if (
+    typeof path !== 'string' ||
+    !record(output) ||
+    !record(scope) ||
+    typeof scope.operation !== 'string' ||
+    !alternatives?.length ||
+    alternatives.some((branch) => !operation(branch)) ||
+    new Set(alternatives.map(operation)).size !== alternatives.length
+  )
+    throw new Error('Invalid owner result operation declaration')
+  const selected = alternatives.filter(
+    (branch) => operation(branch) === scope.operation
+  )
+  if (selected.length !== 1) throw new Error('Missing owner result operation')
+  const result = structuredClone(output)
+  const parent = at(result, path.slice(0, path.lastIndexOf('/')))
+  if (!record(parent)) throw new Error('Invalid owner result operation path')
+  parent[path.slice(path.lastIndexOf('/') + 1)] = selected
+  return result
+}
+
 /** A lossless JSON Schema projection; no separate parameter grammar or validator. */
 export const workflowUsageParameters = (input: unknown) => {
   if (!record(input)) throw new Error('Missing canonical input')
@@ -410,6 +477,7 @@ export const workflowUsageParameters = (input: unknown) => {
     const result = { ...schema }
     // Examples are delivered once in the existing executable invocation field.
     delete result.examples
+    if (result.additionalProperties === true) delete result.additionalProperties
     for (const key of maps)
       if (record(result[key]))
         result[key] = Object.fromEntries(
@@ -424,15 +492,6 @@ export const workflowUsageParameters = (input: unknown) => {
       if (Object.hasOwn(result, key)) result[key] = visit(result[key])
     return result
   }
-  const counts = new Map<string, number>()
-  const normalize = (value: unknown): unknown => {
-    if (!record(value)) return value
-    const result = mapChildren(value, normalize)
-    const key = JSON.stringify(result)
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-    return result
-  }
-  const root = normalize(input) as Record<string, unknown>
   // A reference may address a descendant rather than an entire definition.
   // Replacing one of its ancestors with a ref would erase that JSON Pointer.
   const addressedAncestors = new WeakSet<object>()
@@ -443,7 +502,7 @@ export const workflowUsageParameters = (input: unknown) => {
     }
     if (!record(value)) return
     if (typeof value.$ref === 'string' && value.$ref.startsWith('#/')) {
-      let ancestor: unknown = root
+      let ancestor: unknown = input
       for (const part of value.$ref.slice(2).split('/')) {
         if (!record(ancestor) && !Array.isArray(ancestor)) break
         addressedAncestors.add(ancestor)
@@ -455,7 +514,81 @@ export const workflowUsageParameters = (input: unknown) => {
     }
     Object.values(value).forEach(preserveAddresses)
   }
-  preserveAddresses(root)
+  preserveAddresses(input)
+  const counts = new Map<string, number>()
+  const normalize = (value: unknown): unknown => {
+    if (!record(value)) return value
+    let source = value
+    if (!addressedAncestors.has(value)) {
+      if (Array.isArray(value.anyOf)) {
+        const groups = new Map<
+          string | symbol,
+          Record<string, unknown> | unknown
+        >()
+        for (const branch of value.anyOf) {
+          if (
+            !record(branch) ||
+            addressedAncestors.has(branch) ||
+            !Array.isArray(branch.anyOf)
+          ) {
+            groups.set(Symbol(), branch)
+            continue
+          }
+          const { anyOf, ...common } = branch
+          const key = JSON.stringify(common)
+          const previous = groups.get(key)
+          groups.set(key, {
+            ...common,
+            anyOf: [
+              ...(record(previous) && Array.isArray(previous.anyOf)
+                ? previous.anyOf
+                : []),
+              ...anyOf
+            ]
+          })
+        }
+        source = { ...value, anyOf: [...groups.values()] }
+      }
+    }
+    const result = mapChildren(source, normalize)
+    if (addressedAncestors.has(value)) {
+      addressedAncestors.add(result)
+    } else {
+      // Union/intersection are associative and idempotent. Exclusive unions
+      // are not; annotations and pointer-addressed branch positions stay intact.
+      for (const key of ['anyOf', 'allOf']) {
+        if (!Array.isArray(result[key])) continue
+        const alternatives = result[key].flatMap((branch) =>
+          record(branch) &&
+          !addressedAncestors.has(branch) &&
+          Object.keys(branch).length === 1 &&
+          Array.isArray(branch[key])
+            ? branch[key]
+            : [branch]
+        )
+        result[key] = [
+          ...new Map(
+            alternatives.map((branch) => [JSON.stringify(branch), branch])
+          ).values()
+        ]
+      }
+    }
+    return result
+  }
+  const root = normalize(input) as Record<string, unknown>
+  // Price the final normalized tree, not nodes removed or merged along the way.
+  const countNodes = (value: unknown): void => {
+    if (!record(value)) return
+    const key = JSON.stringify(value)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+    for (const name of maps)
+      if (record(value[name])) Object.values(value[name]).forEach(countNodes)
+    for (const name of lists)
+      if (Array.isArray(value[name])) value[name].forEach(countNodes)
+    for (const name of singles)
+      if (Object.hasOwn(value, name)) countNodes(value[name])
+  }
+  countNodes(root)
   const definitions = record(root.$defs) ? { ...root.$defs } : {}
   const references = new Map<string, string>()
   let sequence = 0
@@ -560,11 +693,7 @@ export const workflowUsageParameters = (input: unknown) => {
   return published
 }
 
-export const workflowUsageGuide = (
-  input: unknown,
-  scope: unknown,
-  selected: unknown
-) => {
+export const workflowUsageGuide = (input: unknown, scope: unknown) => {
   const source = structure(input)
   const usage = source?.declaration.usage
   if (
@@ -581,14 +710,12 @@ export const workflowUsageGuide = (
       'The owner does not publish a selected usage guide; request the full contract.'
     )
   return {
-    instructions: `${usage.instructions} ${usage.operations[scope.operation]}`,
+    instructions: `${usage.instructions} ${usage.operations[scope.operation]} ${usage.results}`,
     optionalInputs: source?.declaration.optionalInputs ?? [],
     selection:
       typeof usage.selection === 'string'
         ? usage.selection
         : 'Selection does not require sending optionalInputs. Omit plan without rereading.',
-    parameters: workflowUsageParameters(selected),
-    results: usage.results,
     recovery: usage.recovery
   }
 }

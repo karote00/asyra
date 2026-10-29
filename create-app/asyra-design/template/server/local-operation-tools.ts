@@ -1,6 +1,11 @@
+import {
+  registeredToolInvocationSchemas,
+  registeredToolInvocationInstructions
+} from './local-tool-library-tools'
 import { reviewSupersessionRecovery } from './local-design-review'
 import {
   workflowUsageGuide,
+  projectWorkflowResult,
   workflowUsageParameters,
   workflowInputScopes,
   workflowQueryGuidance,
@@ -44,6 +49,7 @@ import { BrowserBatchExecutionError } from './batch-exchange'
 import type { LocalToolOwnership } from './local-tool-leases'
 import {
   projectToolDelivery,
+  modelToolResultSchemas,
   toolResultCount,
   toolResultObject,
   toolResultString,
@@ -61,6 +67,7 @@ import {
   LocalToolInputError,
   localToolOutcome,
   localToolFailureReply,
+  localToolFailureSchema,
   localToolErrorMessage,
   observeLocalToolExecution,
   type LocalToolObservation,
@@ -144,6 +151,31 @@ const partialResultResources = (results: unknown) =>
 const batchFailureRecovery =
   'Inspect the retained write receipt and check diagnostics before continuing; do not replay acknowledged mutations.'
 
+/** Embed alternatives once so local references keep their original meaning. */
+const resultAlternatives = (schemas: readonly unknown[]) => ({
+  anyOf: schemas
+    .filter((schema) => schema !== undefined)
+    .map((schema, index) =>
+      embedAiToolSchema(schema as RuntimeJsonValue, `#/anyOf/${index}`)
+    )
+})
+const usageResults = (
+  schemas: {
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+  },
+  boundary: unknown = localToolFailureSchema
+) =>
+  workflowUsageParameters(
+    resultAlternatives([
+      schemas.outputSchema,
+      schemas.partialOutputSchema,
+      schemas.recoveryOutputSchema,
+      boundary
+    ])
+  )
+
 const batchResultSchema = (resources: unknown) =>
   toolResultObject(
     {
@@ -165,30 +197,37 @@ const batchToolSemantics = (outputSchema: unknown, resources: unknown) => {
 }
 
 /** Browser success is the first receipt; automatic inspection is a separate tail. */
-const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
+const singleActionSemantics = (
+  action: AiProviderInput['actions'][number],
+  followups: unknown
+) => {
   const receipt = (result: unknown, primary = false) =>
     toolResultObject({
       actionId: toolResultString,
       actionName: primary ? { const: action.name } : toolResultString,
       result
     })
+  const actionResults = (result: unknown, minItems = 1) => ({
+    type: 'array',
+    minItems,
+    prefixItems: [
+      receipt(
+        embedAiToolSchema(
+          result as RuntimeJsonValue,
+          '#/properties/actionResults/prefixItems/0/properties/result'
+        ),
+        true
+      )
+    ],
+    items: embedAiToolSchema(
+      followups as RuntimeJsonValue,
+      '#/properties/actionResults/items'
+    )
+  })
   const envelope = (result: unknown) =>
     toolResultObject(
       {
-        actionResults: {
-          type: 'array',
-          minItems: 1,
-          prefixItems: [
-            receipt(
-              embedAiToolSchema(
-                result as RuntimeJsonValue,
-                '#/properties/actionResults/prefixItems/0/properties/result'
-              ),
-              true
-            )
-          ],
-          items: receipt(true)
-        },
+        actionResults: actionResults(result),
         checks: designCheckSummarySchema,
         ...(action.name === AiActionNames.REVIEW_DESIGN
           ? { mechanicalSelection: designCheckInputSchema }
@@ -216,6 +255,19 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
       composition: 'control-plane' as const
     }
   const outputSchema = envelope(action.outputSchema)
+  const partialReceipt = toolResultObject(
+    {
+      actionResults: actionResults(
+        resultAlternatives([
+          action.outputSchema,
+          action.partialOutputSchema,
+          action.recoveryOutputSchema
+        ]),
+        0
+      )
+    },
+    []
+  )
   const semantics = toolSemantics(
     outputSchema,
     action.effect,
@@ -249,7 +301,15 @@ const singleActionSemantics = (action: AiProviderInput['actions'][number]) => {
           recoveryOutputSchema: envelope(action.recoveryOutputSchema)
         }),
     partialOutputSchema: {
-      ...partialResultResources(actionResultResources([action])),
+      ...toolResultObject(
+        {
+          executionResult: embedAiToolSchema(
+            partialReceipt as RuntimeJsonValue,
+            '#/properties/executionResult'
+          )
+        },
+        []
+      ),
       anyOf: [
         embedAiToolSchema(
           semantics.partialOutputSchema as RuntimeJsonValue,
@@ -613,6 +673,18 @@ const usageInvocation = (descriptor: Record<string, unknown>) => {
         }
       }
     }
+  if (execution.kind === 'registered-tool')
+    return {
+      illustrative: true,
+      invocation: {
+        namespace: execution.namespace,
+        tool: execution.tool,
+        arguments: {
+          ...(isRecord(execution.arguments) ? execution.arguments : {}),
+          input: example
+        }
+      }
+    }
   if (execution.kind === 'native-tool')
     return {
       illustrative: true,
@@ -858,6 +930,37 @@ export const createLocalOperationTools = (
   )
   const batchResultResources = actionResultResources(batchActions)
   const batchActionNames = new Set(batchActions.map((action) => action.name))
+  // The existing batch partition owns which actions may run as automatic tails.
+  const followups = registered.filter(
+    (action) => !batchActionNames.has(action.name)
+  )
+  const followupResults: unknown = followups.length
+    ? {
+        anyOf: followups.map((action, index) => {
+          const result =
+            'outputSchema' in action
+              ? modelToolResultSchemas(action)
+              : {
+                  outputSchema: true,
+                  partialOutputSchema: undefined,
+                  recoveryOutputSchema: undefined
+                }
+          return toolResultObject({
+            actionId: toolResultString,
+            actionName: { const: action.name },
+            result: embedAiToolSchema(
+              resultAlternatives([
+                result.outputSchema,
+                result.partialOutputSchema,
+                result.recoveryOutputSchema
+              ]) as RuntimeJsonValue,
+              `#/anyOf/${index}/properties/result`
+            )
+          })
+        })
+      }
+    : false
+
   // Request-local indexes are derived from admitted actions; no model call or stale schema copy.
   const admittedApisByName = new Map(
     [...registered, ...finalActions.values()].map((api) => [api.name, api])
@@ -1142,7 +1245,7 @@ export const createLocalOperationTools = (
           enum: ['compact', 'full'],
           default: 'compact',
           description:
-            'Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Use full at initial invocation for every original acknowledgement. Uncertain receipts retain their evidence without implying completed application.'
+            'Compact preserves ordered owner receipts and their application, settlement and mutation-scope evidence. Structural group/ungroup/move/deletion receipts return retained snapshot/lease/count references. Pass a retained reference directly into a declared elementIds argument; no model-side expansion. Read its full immutable receipt with read_design_context scope=snapshot delivery=receipt; never replay a mutation for readback. Full preserves workflow diagnostics but never bypasses a registered bounded owner view; use retained receipt readback for original acknowledgements. Uncertain receipts retain their evidence without implying completed application.'
         },
         message: { type: 'string', minLength: 1, maxLength: 1000 }
       }
@@ -1157,6 +1260,81 @@ export const createLocalOperationTools = (
     selector: { operations: string[] } | { names: string[] }
   ) => {
     const { inputSchema } = descriptor
+    let contract = descriptor as Parameters<typeof modelToolResultSchemas>[0]
+    if (args.view === 'usage' && args.inputScope !== undefined) {
+      try {
+        contract = {
+          ...contract,
+          ...Object.fromEntries(
+            (
+              [
+                'outputSchema',
+                'partialOutputSchema',
+                'recoveryOutputSchema'
+              ] as const
+            ).map((stage) => [
+              stage,
+              projectWorkflowResult(
+                inputSchema,
+                contract[stage],
+                args.inputScope,
+                stage
+              )
+            ])
+          )
+        }
+      } catch (error) {
+        throw new LocalOperationPreparationError(
+          error instanceof Error ? error.message : 'Invalid owner result scope'
+        )
+      }
+    }
+    const admittedAction = admittedApisByName.get(String(descriptor.name))
+    // Registered native wrappers expose an envelope; recipe validation still
+    // consumes their original complete output schema.
+    let modelResults: Omit<
+      Parameters<typeof modelToolResultSchemas>[0],
+      'delivery'
+    > = contract
+    if (args.view === 'usage') {
+      modelResults =
+        admittedAction &&
+        'delivery' in admittedAction &&
+        admittedAction.delivery &&
+        descriptor.namespace === localOperationNamespace
+          ? singleActionSemantics(
+              {
+                ...admittedAction,
+                ...modelToolResultSchemas(admittedAction),
+                delivery: undefined
+              },
+              followupResults
+            )
+          : modelToolResultSchemas(
+              contract,
+              typeof descriptor.namespace === 'string',
+              descriptor.resultStage === 'host' ? 'host' : 'owner'
+            )
+    }
+    const route = descriptor.execution
+    const ownerModelResults = modelResults
+    const registeredSelection =
+      args.view === 'usage' &&
+      isRecord(route) &&
+      route.kind === 'registered-tool' &&
+      isRecord(route.arguments) &&
+      typeof route.arguments.name === 'string' &&
+      typeof route.arguments.revision === 'number'
+        ? { name: route.arguments.name, revision: route.arguments.revision }
+        : undefined
+    const registeredUsage =
+      registeredSelection && args.inputScope === undefined
+        ? registeredToolInvocationSchemas(
+            { ...modelResults, inputSchema },
+            registeredSelection
+          )
+        : undefined
+    if (registeredUsage) modelResults = registeredUsage
     // Selection determines whether usage is navigation or an executable contract.
     const usage = Object.fromEntries(
       [
@@ -1175,10 +1353,13 @@ export const createLocalOperationTools = (
         'execution',
         'recipeDependency'
       ]
-        .filter((key) => Object.hasOwn(descriptor, key))
+        .filter(
+          (key) =>
+            Object.hasOwn(descriptor, key) &&
+            !(key === 'result' && contract.delivery)
+        )
         .map((key) => [key, descriptor[key]])
     )
-    const admittedAction = admittedApisByName.get(String(descriptor.name))
     const queryIdentity =
       typeof args.query === 'string' ? args.query.trim() : undefined
     const exactSelection =
@@ -1201,7 +1382,29 @@ export const createLocalOperationTools = (
         ? admittedAction
         : undefined
     const selectedResources = selectedBatch
-      ? actionResultResources([selectedBatch])
+      ? {
+          type: 'array',
+          items: {
+            anyOf: [
+              toolResultObject({
+                actionId: toolResultString,
+                actionName: { const: selectedBatch.name },
+                result: embedAiToolSchema(
+                  resultAlternatives([
+                    ownerModelResults.outputSchema,
+                    ownerModelResults.partialOutputSchema,
+                    ownerModelResults.recoveryOutputSchema
+                  ]) as RuntimeJsonValue,
+                  '#/items/anyOf/0/properties/result'
+                )
+              }),
+              embedAiToolSchema(
+                followupResults as RuntimeJsonValue,
+                '#/items/anyOf/1'
+              )
+            ]
+          }
+        }
       : undefined
     const selectedBatchInput = selectedBatch
       ? {
@@ -1325,7 +1528,11 @@ export const createLocalOperationTools = (
             inputFields: usageInputPaths(inputSchema),
             ...(inputScopes?.selection
               ? {}
-              : { outputFields: inputFieldPaths(descriptor.outputSchema) }),
+              : {
+                  outputFields: (exactSelection
+                    ? inputFieldPaths
+                    : usageInputPaths)(modelResults.outputSchema)
+                }),
             elementBindings: schemaSlots(inputSchema).flatMap(
               ({ path, schema }) =>
                 ['all', 'each', 'one'].includes(
@@ -1341,7 +1548,14 @@ export const createLocalOperationTools = (
             )
           }
         : {}
-    let projection = descriptor
+    let projection = contract.delivery
+      ? {
+          ...descriptor,
+          resultScope: 'internal-composition',
+          resultDelivery:
+            'Canonical output schemas are for internal recipe bindings. The registered delivery schema describes the bounded model view; use retained receipt readback for complete acknowledgements.'
+        }
+      : descriptor
     if (args.inputScope !== undefined) {
       try {
         projection = {
@@ -1360,83 +1574,93 @@ export const createLocalOperationTools = (
         )
       }
     }
-    if (args.view === 'usage' && args.inputScope !== undefined) {
+    if (
+      args.view === 'usage' &&
+      (args.inputScope !== undefined ||
+        selectedBatch ||
+        (exactSelection && !inputScopes))
+    ) {
       const selected = projection.inputSchema
-      let guide
-      try {
-        guide = workflowUsageGuide(inputSchema, args.inputScope, selected)
-      } catch (error) {
-        throw new LocalOperationPreparationError(
-          error instanceof Error ? error.message : 'Invalid selected usage'
-        )
+      let guidance: Record<string, unknown> = {}
+      if (args.inputScope !== undefined) {
+        try {
+          guidance = workflowUsageGuide(inputSchema, args.inputScope)
+        } catch (error) {
+          throw new LocalOperationPreparationError(
+            error instanceof Error ? error.message : 'Invalid selected usage'
+          )
+        }
+        coverage = 'scoped-usage'
       }
-      coverage = 'scoped-usage'
+      // Selection happens before wrapping. Every executable guide then uses the
+      // same route and whole-reply assembly, including admission failures.
+      const scopedRegistered =
+        registeredUsage ??
+        (registeredSelection
+          ? registeredToolInvocationSchemas(
+              { ...ownerModelResults, inputSchema: selected },
+              registeredSelection
+            )
+          : undefined)
+      const results = selectedBatchResults
+        ? modelToolResultSchemas(selectedBatchResults, true)
+        : (scopedRegistered ?? ownerModelResults)
+      const failure = selectedResources
+        ? {
+            ...localToolFailureSchema,
+            properties: {
+              ...localToolFailureSchema.properties,
+              executionResult: {
+                anyOf: [
+                  { type: 'null' },
+                  embedAiToolSchema(
+                    partialResultResources(selectedResources).properties
+                      .executionResult as RuntimeJsonValue,
+                    '#/properties/executionResult/anyOf/1'
+                  )
+                ]
+              }
+            }
+          }
+        : localToolFailureSchema
       projection = {
         ...usage,
-        description:
-          'Selected operation usage. Follow the included guide and registered execution route.',
+        ...usageNavigation,
+        ...(args.inputScope !== undefined
+          ? {
+              description: 'Executable usage.'
+            }
+          : {}),
         invocationExample: usageInvocation({
           ...descriptor,
           inputSchema: selected
         }),
-        usageGuide: guide
-      }
-    } else if (selectedBatch && selectedBatchResults) {
-      projection = {
-        ...usage,
-        ...usageNavigation,
-        invocationExample: usageInvocation(descriptor),
         usageGuide: {
-          instructions: batchDefinition.description,
-          parameters: workflowUsageParameters(selectedBatchInput),
-          operationParameters: workflowUsageParameters(inputSchema),
-          results: {
-            batch: workflowUsageParameters(selectedBatchResults.outputSchema),
-            partialBatch: workflowUsageParameters(
-              selectedBatchResults.partialOutputSchema
-            ),
-            ...(descriptor.outputSchema === undefined
-              ? {}
-              : {
-                  operation: workflowUsageParameters(descriptor.outputSchema)
-                }),
-            ...(descriptor.partialOutputSchema === undefined
-              ? {}
-              : {
-                  partialOperation: workflowUsageParameters(
-                    descriptor.partialOutputSchema
-                  )
-                })
-          },
-          recovery:
-            batchDefinition.inputSchema.properties.response.description +
-            ' ' +
-            batchFailureRecovery
-        }
-      }
-    } else if (args.view === 'usage' && exactSelection && !inputScopes) {
-      projection = {
-        ...usage,
-        ...usageNavigation,
-        invocationExample: usageInvocation(descriptor),
-        usageGuide: {
-          parameters: workflowUsageParameters(inputSchema),
-          results: Object.fromEntries(
-            [
-              ['success', descriptor.outputSchema],
-              ['partial', descriptor.partialOutputSchema],
-              ['recovery', descriptor.recoveryOutputSchema]
-            ]
-              .filter(([, schema]) => schema !== undefined)
-              .map(([kind, schema]) => [
-                kind,
-                typeof schema === 'boolean'
-                  ? schema
-                  : workflowUsageParameters(schema)
-              ])
+          ...guidance,
+          ...(selectedBatch
+            ? {
+                instructions: batchDefinition.description,
+                operationParameters: workflowUsageParameters(inputSchema)
+              }
+            : {}),
+          parameters: workflowUsageParameters(
+            selectedBatchInput ?? scopedRegistered?.inputSchema ?? selected
           ),
-          recovery:
-            'Interpret the owner outcome and settlement separately. Follow owner-issued recovery only; never replay acknowledged operations. Refresh restores this contract without executing it.'
+          results: usageResults(results, failure),
+          recovery: [
+            guidance.recovery,
+            selectedBatch
+              ? batchDefinition.inputSchema.properties.response.description +
+                ' ' +
+                batchFailureRecovery
+              : undefined,
+            scopedRegistered ? registeredToolInvocationInstructions : undefined,
+            !guidance.recovery && !selectedBatch && !scopedRegistered
+              ? 'Interpret the owner outcome and settlement separately. Follow owner-issued recovery only; never replay acknowledged operations. Refresh restores this contract without executing it.'
+              : undefined
+          ]
+            .filter(Boolean)
+            .join(' ')
         }
       }
     } else if (args.view === 'usage') {
@@ -2950,7 +3174,7 @@ export const createLocalOperationTools = (
         )
         .map((action) => ({
           type: 'function',
-          ...singleActionSemantics(action),
+          ...singleActionSemantics(action, followupResults),
           ...(getBasicApiContract(action.name) ||
           AiBatchOnlyActionNames.includes(action.name)
             ? { providerExposure: 'registry' as const }

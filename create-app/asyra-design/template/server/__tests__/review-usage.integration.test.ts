@@ -1,3 +1,5 @@
+import { completeUsageBudget } from './tool-contract-assertions'
+import { recordAcquisitionCost } from './tool-contract-assertions'
 import sharp from 'sharp'
 import { createLocalImageTools } from '../local-image-tools'
 import { expect, it, vi } from 'vitest'
@@ -127,6 +129,7 @@ async function verifySelectedReviewFlow() {
   let bytes = 0
   let reads = 0
   let queryBytes = 0
+  const resultContracts = new Map<string, unknown>()
   const call = async (
     name: string,
     input: unknown,
@@ -142,7 +145,12 @@ async function verifySelectedReviewFlow() {
       queryBytes +=
         Buffer.byteLength(JSON.stringify(input)) + Buffer.byteLength(reply.text)
     }
-    return JSON.parse(reply.text)
+    const value = JSON.parse(reply.text)
+    if (name === 'review_drawing' && value.reviewOperation) {
+      const contract = resultContracts.get(value.reviewOperation)
+      if (contract) expect(operationInputIssue(value, contract)).toBeUndefined()
+    }
+    return value
   }
   const guideReplyBytes: Record<string, number> = {}
   const guide = async (operation: string) => {
@@ -154,11 +162,63 @@ async function verifySelectedReviewFlow() {
     expect(result.toolOutcome?.status, JSON.stringify(result)).toBe('success')
     expect(result.contentDelivery).toBeUndefined()
     guideReplyBytes[operation] = Buffer.byteLength(JSON.stringify(result))
+    recordAcquisitionCost(
+      { names: ['review_drawing'], view: 'usage', inputScope: { operation } },
+      JSON.stringify(result),
+      [guideReplyBytes[operation]]
+    )
     const selected = result.tools[0]
+    resultContracts.set(operation, selected.usageGuide.results)
+    const resultProperties: Record<string, unknown>[] = []
+    const inspect = (value: unknown): void => {
+      if (!value || typeof value !== 'object') return
+      if ('properties' in value)
+        resultProperties.push(value.properties as Record<string, unknown>)
+      Object.values(value).forEach(inspect)
+    }
+    const inspectInput = (value: Record<string, unknown>): void => {
+      if (value.properties)
+        resultProperties.push(value.properties as Record<string, unknown>)
+      if (typeof value.$ref === 'string') {
+        const target = value.$ref
+          .slice(2)
+          .split('/')
+          .reduce(
+            (parent: Record<string, unknown>, key: string) =>
+              parent[key] as Record<string, unknown>,
+            selected.usageGuide.parameters
+          )
+        inspectInput(target)
+      }
+      for (const mode of ['oneOf', 'anyOf', 'allOf'])
+        if (Array.isArray(value[mode])) value[mode].forEach(inspectInput)
+    }
+    inspectInput(selected.usageGuide.parameters)
+    if (operation === 'capture') {
+      for (const field of ['checks', 'bindChecks'])
+        expect(
+          resultProperties.some(
+            (properties) =>
+              Object.hasOwn(properties, field) && properties[field] !== false
+          ),
+          `capture input ${field}`
+        ).toBe(false)
+    }
+    resultProperties.length = 0
+    inspect(selected.usageGuide.results)
+    for (const field of ['results', 'correction', 'structureAccepted']) {
+      expect(
+        resultProperties.some(
+          (properties) =>
+            Object.hasOwn(properties, field) && properties[field] !== false
+        ),
+        `${operation} result field ${field}`
+      ).toBe(operation === 'record')
+    }
     if (operation !== 'record')
       expect(selected.invocationExample.invocation).toBeDefined()
     else expect(selected.usageGuide.instructions).toContain('next.arguments')
-    expect(selected.usageGuide.results).toContain('accepted')
+    expect(selected.usageGuide.instructions).toContain('accepted')
     expect(selected.usageGuide.recovery).toMatch(/replay/i)
     return selected
   }
@@ -268,6 +328,23 @@ async function verifySelectedReviewFlow() {
     ]
     const first = await call(invocation.tool, captureArgs)
     expect(first.next.arguments.checks[0].referenceUses).toEqual([referenceUse])
+    expect(
+      operationInputIssue(
+        {
+          ...first,
+          recordedChecks: [
+            {
+              id: 'fabricated',
+              criterionId: 'appearance',
+              origin: 'main-agent',
+              status: 'pass',
+              revision: 1
+            }
+          ]
+        },
+        captureGuide.usageGuide.results
+      )
+    ).toBeDefined()
     expect(first.reviewOperation).toBe('capture')
     expect(first.accepted).toBe(false)
     expect(first.inspectionIds, JSON.stringify(first)).toHaveLength(1)
@@ -682,7 +759,9 @@ async function verifySelectedReviewFlow() {
       recordedRecovery.captureUsageReplyBytes +
       recordedRecovery.bindLookupReplyBytes +
       retryBytes
-    expect(recoveryDeliveryBytes).toBeLessThan(recordedRecoveryLowerBoundBytes)
+    expect(recoveryDeliveryBytes).toBeLessThan(
+      completeUsageBudget(recordedRecoveryLowerBoundBytes, 'capture')
+    )
     const afterScopeChange = await call('read_design_checks', {
       view: 'details',
       includePassed: true

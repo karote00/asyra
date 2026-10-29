@@ -1,3 +1,4 @@
+import { readCompleteInformation } from './tool-contract-assertions'
 import { expect, it, vi } from 'vitest'
 import {
   createAiToolContract,
@@ -246,9 +247,15 @@ it('composes actual canonical basic operations and hands creation identities thr
         arguments: { names: [proposal.steps[0].tool] }
       }
     })
-    const lookup = await app.invoke('design_operations.describe_design_apis', {
-      names: [proposal.steps[0].tool]
-    })
+    const lookup = JSON.parse(
+      await readCompleteInformation(
+        async (input) =>
+          JSON.stringify(
+            await app.invoke('design_operations.describe_design_apis', input)
+          ),
+        { names: [proposal.steps[0].tool] }
+      )
+    )
     expect(lookup.tools[0]).toMatchObject({
       registeredName: proposal.steps[0].tool,
       revision: 8,

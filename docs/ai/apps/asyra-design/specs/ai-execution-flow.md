@@ -4289,6 +4289,82 @@ recovery without replay. Count total request/response bytes and continuation cal
 for the saved acquisition and unrelated-catalog growth; improve the complete path,
 not merely a single reply. No new state, cache, tools or higher byte budget.
 
+### Model-visible result contracts
+
+Executable usage describes the result after the registered App delivery view is
+applied, including operation results inside batch/native envelopes and partial
+execution. Internal mutation receipts and resource schemas are not substitutes
+for this model-facing contract. Derive the declaration from the same registered
+owner schemas used by projection; never infer it from field names or tool lists.
+Delivery failure remains distinguishable from operation failure and retains its
+settlement and no-replay instruction. No-delivery tools keep their owner schema.
+
+Full registered dependency definitions preserve complete internal result schemas
+for recipe bindings and explicitly distinguish their bounded model delivery.
+Compact usage does not duplicate those internal schemas. Full response cannot
+bypass registered delivery; use the existing retained receipt readback for original
+acknowledgements. Preserve input constraints, no-op, partial/cancelled/stale recovery,
+refresh, fields and paging without another prerequisite lookup or mutation replay.
+
+Discovery consumes host.definitions(), including registered-tool execution routes.
+For a registered route, executable usage describes invoke_tool identity/revision,
+the selected owner input under input, and its projected value under execution.value
+alongside execution status, calls, issues, storage and receipt recovery. Its example
+uses that same route. The library invocation owner defines these envelopes; do not
+invent another wrapper or expose canonical recipe values as external results.
+
+Host outcome metadata is part of external delivery. Closed business schemas remain
+closed to unrelated fields and preserve constraints and local references, while
+admitting the host's structured toolOutcome. Nested business objects remain closed.
+Do not change the result shape or weaken canonical validation to fix discovery.
+Negative navigation tests use actual schema pointers and preserved incorrect output,
+not a top-level field-name approximation. Run delivered examples through the real
+host and invoke_tool, validating the complete result with the acquired contract.
+
+Compact representation may remove identical alternatives and flatten bare nested
+anyOf/allOf only when local reference targets retain their meaning. Preserve oneOf
+multiplicity, annotations, closed schemas and every business restriction. Guidance
+selection contributes explanations; final route assembly prepares each parameter
+contract once. Cost evidence separately accounts for body sections and continuation
+wire overhead; a larger correct contract does not waive existing acceptance budgets.
+
+An owner may associate its existing input-scope operation with canonical successful
+result alternatives. Selected usage includes only that declared operation's result;
+unscoped/full reads retain every alternative. This is a declaration projection,
+not a different execution path. Capture/bind preserve context, evidence coverage
+and exact next-step restrictions; record owns recorded-result correction details.
+Partial execution, admission rejection and retained recovery remain complete for
+every scope. Reject malformed scope declarations rather than guessing fields.
+
+Executable usage uses one standard JSON Schema in usageGuide.results for the
+complete external reply, including execution-boundary rejection without an
+execution receipt. Selected scopes, direct routes, registered routes and selected
+batches follow the same assembly contract. Preserve owner result explanations in
+instructions; do not publish result prose or separately shaped result maps in that
+schema slot. Scope selection cannot change the actual invocation envelope.
+
+Raw owner values, host-annotated receipts and projected model replies are distinct
+contract stages. Each boundary derives its contract from its authoritative input,
+not from the presence of a metadata field. The invocation owner declares its own
+failure envelope; discovery cannot invent execution or completion for rejected
+input. Preserve closed composition branches and original business validation.
+
+Per-registration tests must select published operation scopes, execute advertised
+routes and validate complete external replies. Cover outer admission rejection,
+inner rejection, successful/no-op/partial results and remaining-only recovery.
+Malformed business values cannot pass via a generic failure branch. Selected
+operation receipts admit only the selected operation and the existing registered
+automatic inspection follow-ups, each with its own result constraints. Preserve
+empty no-op batches and acknowledged partial prefixes. A registered execution
+reported as successful retains its required value even when outer delivery or
+saving reports partial completion; failed/not-started executions may omit it. Preserve
+complete acquisition budgets, paging and refresh without additional prerequisite
+calls or new storage.
+
+Validate acquired usage against actual host output from real owners, plus saved
+regressions and delivery-bearing registration enumeration. Prove fewer complete
+acquisition bytes without extra calls and retain full internal receipt consumers.
+
 ### Retained material preparation recovery
 
 The preparation owner publishes executable repair arguments for the exact
@@ -4306,3 +4382,12 @@ no geometry resend, cosmetic rename, new cache or replay is required. Foreign or
 expired source and cancellation retain ordinary owner failures without writes.
 Formal saved-input tests must cover both retention stages, direct preparation,
 main workflow and ordered parts, and compare corrected output to direct preparation.
+
+### Complete usage cost comparison
+
+Compare total acquisition cost for equally complete input, result and recovery
+contracts. Historical prose-only result budgets remain evidence; supplement them
+only by the exact serialized size delta of the required result schema (including
+JSON escaping when fragmented), without percentage slack. Preserve native page
+limits, real examples, full failure contracts and no-replay recovery. Report the
+actual total and continuation count separately from this adjusted comparator.

@@ -1,6 +1,6 @@
 # Composable Domain Knowledge V1
 
-Status: **Task 3 - retained material preparation recovery closed on local verification; one authorized observation complete.**
+Status: **Task 3 - model-visible result contract correction in progress; closure requires final gates.**
 
 Previous checkpoint: **Issue 1 deterministic delivery work complete and verified at Inspector revision 38. Issues 2 and 3 are complete within the bounded contracts. Inspector revision 42 and one recorded 101 run passed.**
 The checkpoint is `c187aaf19`. Subsequent implementation remains local and is the
@@ -38,7 +38,7 @@ changes are admitted; historical test results do not admit a new proposal.
 - Branch: `codex/design-knowledge-evaluation`.
 - Selected main: `eaddcdba2c1705dca6646a730cd87818ae214d56` (integrated for the authorized convergence push).
 - Task association: **Task 3 - Asyra Design integration**.
-- Current scope: retained material preparation recovery, fixed D1-D6 below, then the single explicitly authorized 12-minute observation. No CI inspection, push or Knowledge content changes.
+- Current scope: model-visible result contracts, fixed D1-D6 below. No model run, CI inspection, push or Knowledge content changes.
 - Complete one issue's owner slices, direct-consumer integration and full bounded
   review before advancing. Do not create an older broad goal or automation.
 - No Asyra Skill, extra model calls/reviewers, monitoring, subagents or completed-plan
@@ -96,6 +96,654 @@ inputs and values in project-owned fixtures, with minimal unrelated content and
 explicit derivation, rather than depending on ignored local `tmp/` at test time.
 
 ## Task 3 - Asyra Design integration
+
+### Active slice - Model-visible result contracts
+
+Baseline: cd3dd52d00d0ed1e73fa7013523b2401d30d9afe. Saved run
+1793178457558, provider 46a3cb4c-f6e5-4904-87e6-39a9f5b180a3,
+payloads 294/295 and 309/316: selected deletion usage requires removed IDs,
+while successful model delivery contains counts and a retained receipt instead.
+The deletion succeeded. No additional lookup caused by this mismatch was
+observed. Prior usage tests validated internal invocation, missing the final
+projection boundary; this slice addresses that incomplete contract rather than changing
+the compact receipt or the underlying mutation. Further review below found
+three remaining defects; local closure is withdrawn for this slice only.
+
+Step Execution Card - compose / model-visible result contracts:
+- Product contract: Unified usage acquisition / Model-visible result contracts.
+  Inspector compose consumes registered definitions and execution receipts and
+  emits the tool program; the existing App discovery and delivery owners define
+  the boundary. Failure owner: compose.
+- Inputs: exact names/operations/query, registered delivery schemas, actual
+  owner results, optional full/field/refresh and request-local retained reads.
+- Outputs: executable usage describes the model-visible success and partial
+  envelopes, projection failure and retained readback. Full dependency contracts
+  remain explicitly internal composition contracts where bounded delivery is
+  declared; recipe bindings still consume complete values.
+- Preserve canonical business schemas, including closed objects and local references; model contracts also account for host outcome metadata. General search stays
+  navigation. Full response never bypasses an owner-declared bounded view.
+- Allowed contributors: registered schemas and canonical projection owner.
+  Forbidden: tool-name exception lists, inferred result fields, duplicated
+  registries, caches, larger limits, new acquisition calls or replay.
+- Mutation boundary: App local-operation-tools.ts, local-tool-host.ts, local-tool-library-tools.ts, local-tool-invocation.ts, design-workflow-discovery.ts, src/ai/tool-contract.ts,
+  directly affected server tests and saved fixture, existing execution proof,
+  this plan/spec/Inspector/mapping, generated workspace/CLI template/docs and
+  required change note. No mutation, persistence, Knowledge or Runtime policy
+  changes. Preserve host/library internal contracts. The new real-host partial regression
+  also proves that executionResult was incorrectly bypassing external projection;
+  correct that same compose boundary without changing retained internal results.
+- Discovery is bounded to these owners, registered entry enumeration and saved
+  payloads. Stop and replan for a required new owner or repeated failed design.
+
+Fixed DoD:
+1. D1: retain the saved mismatch as a permanent fixture and fail a formal test
+   against actual external host delivery before implementation; then validate
+   that output using the acquired usage, not a separately invented schema.
+2. D2: cover exact operation/name/query, registered native wrappers, non-delivery
+   tools, full dependency contracts, field reads, paging and refresh. Enumerate
+   actual delivery-bearing registrations, not a fixed structural tool list.
+3. D3: preserve success, legitimate no-op, invalid input, cancellation, partial
+   execution, missing/invalid delivery, stale retained source and remaining-only
+   recovery; completed writes must not be dispatched again.
+4. D4: preserve complete internal receipts, canonical validation, leases and
+   recipe bindings; retained receipt readback, Undo/Redo and save/load must still
+   work. Do not expose large internal receipts to repair the declaration.
+5. D5: the saved exact acquisition uses fewer total bytes and no more calls;
+   unrelated catalog growth does not enlarge it. Preserve complete constraints
+   and local schema references. Do not claim live resource savings or AI adoption.
+6. D6: admission, focused real-owner/direct-consumer tests, source-bound proof,
+   naming, scoped lint, production/server/proof types, existing execution-flow
+   integration gate, generated artifact consistency and bounded self-review pass
+   on the final source. No model/101, CI or push.
+
+Sequence: admit the contract; prove D1 red; implement the shared declaration
+boundary; review every direct consumer and failure route; run the frozen gates
+and report achieved scope and unobserved live behavior separately.
+
+Review correction - compose / actual host route and closed output:
+- Prior local checks passed but did not establish closure: discovery tests rebuilt
+  native descriptors instead of consuming host.definitions(), missed registered
+  invoke_tool envelopes, and used open fixtures that hid host outcome metadata.
+  The negative output-field check used /modelResult rather than the actual schema
+  navigation /properties/modelResult. Preserve the saved failure fixture.
+- Reuse the library invocation owner's input/result envelope construction for
+  selected registered usage and its executable examples. Keep canonical recipe
+  values and validation separate from the external projected value.
+- The canonical closed-output regression additionally proves Runtime can reject
+  an already completed leaf after host metadata is appended. Preserve original
+  leaf validation; register the complete host result contract for internal
+  consumers and use the same metadata composition for external discovery.
+- Compose host outcome metadata with closed result schemas without permitting
+  unrelated fields, relaxing business constraints, losing local references or
+  changing successful/partial runtime result shapes. Preserve nested closure.
+- Replace reconstructed native discovery fixtures with host.definitions(). Run
+  acquired examples through invoke_tool, then validate the whole returned envelope
+  against acquired usage. Cover direct tools as well as registered primitives,
+  recovery, no-op, invalid input, cancellation, delivery failure and no replay.
+- Correct the navigation oracle using saved pre-fix outputFields and actual schema
+  pointers. Prove the historical result is rejected, and current usage fields
+  resolve in the delivered model contract. This oracle correction is test-only;
+  the other two defects must fail formal tests before production edits.
+- Fixed D1-D6 remain unchanged. Admission precedes red tests and implementation.
+  Finish focused suites, final execution-flow gate, types, naming, lint, generated
+  copies/docs and bounded self-review before declaring local closure. No model,
+  101, CI or push. Earlier passing counts are baseline evidence only.
+
+Previous validation evidence - insufficient for closure:
+- Admission: revision 169, candidate 3ca7d9f2-d805-4d56-98f9-d24500279535;
+  accepted review f03adf1ff75eec923f4499a2701483432b1c1e8300d6c8fb377a500f858df406.
+- D1-D3: formal red tests reproduced the real registered input mismatch, missing
+  executable example and closed result rejection. The additional canonical closed
+  receipt test reproduced a completed leaf being reported failed by Runtime.
+  Real host discovery and invoke_tool now pass alongside direct invocation;
+  original interruption evidence, invalid input, cancellation, stale revision,
+  missing/invalid projection, no-op, refresh and remaining-only recovery remain.
+  Preserved pre-fix navigation fails the corrected actual-pointer oracle.
+- D4: original owner validation remains before host metadata; Runtime receives the
+  complete host receipt contract. Recipes consume full values, retained receipt
+  readback stays immutable, and real Core Undo/Redo/save/load regressions pass.
+  No mutation or result-store owner changed. Closed objects, nested closure,
+  references, union/intersection, property names and property counts remain tested.
+- D5: the saved exact query is 16,066 bytes versus 16,721 baseline (655 fewer),
+  still one page. Adding 10,000 unrelated descriptors does not change it. This
+  comparison does not claim fewer live AI calls or improved model adoption.
+- D6: focused owner/registration/structural suites: 987 passed. Final execution-flow
+  gate: Runtime 459, Preset 37, App 2,806 passed; Inspector attempt
+  dd829a6d-da37-497b-bf44-cea8fa1e08d0 passed on source
+  57c12780ac83723acad4ddf7b22bc05a3f653739f9fbc011659c8868cb87a234.
+  Production/server/proof types and naming passed; scoped lint has no errors and
+  retains the pre-existing proof-file console warning. Seven generated App/template
+  copies are byte-identical; public docs/update guidance and diff checks pass.
+  All 897 captured source inputs remain unchanged after final generation.
+- Two unrelated opt-in cases remain skipped: installed native protocol
+  registration (LOCAL_AI_PROTOCOL_EXECUTABLE unset) and large saved-document
+  bootstrap measurement (E2E_LARGE_DOCUMENT unset). Neither is a passing result.
+  No model, 101, CI or push was performed; live AI behavior remains unobserved.
+
+Revised plan - complete external usage contracts:
+
+Status: implementation authorized. Audit every actual App action and native
+registration through its declared route and owner; fix violations at the owning
+boundary. Candidate classes are input/example/route consistency, complete result
+declarations and safe failure/recovery. Discovery uses actual registration
+enumeration and direct source reads, never regex inference. The same fixed D1-D6
+and compose boundary apply; no mutation or persistence policy redesign. Earlier passing
+checks establish only their tested cases, not completion of D1-D6. Preserve the
+original saved failure fixture and all historical run artifacts.
+
+Confirmed defects and first incorrect boundaries:
+1. Metadata composition: modelOutcomeSchema treats a root toolOutcome property
+   as proof that the whole schema has already been composed. A valid count result
+   with a closed allOf branch is rejected after host annotation. A real-host
+   registered read fixture executed once yet returned failed/completed. This
+   proves inconsistent receipt validation, not observed replay of a mutation.
+2. Scoped acquisition: inputScope usage bypasses registeredUsage/modelResults.
+   The actual drawing owner publishes a result prose string, while other usage
+   paths publish schemas. A registered fixture using the real workflow input
+   schema publishes bare parameters but an invoke_tool-wrapped example; that
+   example executes successfully yet fails its acquired parameter schema.
+3. Admission failures: localToolFailureReply can reject outer arguments before
+   execution with available/code/message/toolOutcome and no executionResult.
+   Direct invalid input and registered invalid revision both return truthful
+   failed/not-started with zero owner calls, but fail the acquired result schemas
+   that require executionResult or execution. Inner registered input rejection
+   has an execution receipt and is a different case; both must be covered.
+
+Common cause: discovery and registration do not explicitly distinguish raw owner
+schemas, complete host receipts and externally projected replies. Composition
+uses a property-name idempotence heuristic; acquisition branches assemble
+contracts separately; failure declarations do not follow the invocation boundary
+that actually produces them. Existing tests miss combinations of route, scope,
+closed composition and failure stage. Passing separate feature tests cannot prove
+these combinations. These are App/framework handoff defects, not evidence of an
+AI decision failure.
+
+Target contract and ownership:
+- Preserve raw owner validation before host annotation. Derive raw, host and model
+  contracts at their existing boundaries with explicit stage ownership; do not
+  infer a processed stage from the presence of toolOutcome. Avoid repeated schema
+  composition and do not merely delete the shortcut while double-adjusting
+  property counts. Keep full internal receipts and recipe bindings unchanged.
+- Scope selection selects owner inputs and guidance only. A shared final usage
+  assembly path then applies the actual direct/registered route, invocation
+  example, parameter schema and external result schema. Apply it to scoped,
+  unscoped and selected-batch acquisition, preserving independent field/full reads
+  and genuine exploratory menus. Do not preload unrelated branches.
+- usageGuide.results becomes one executable standard JSON Schema for the complete
+  external reply. Use existing anyOf, local references and schema embedding/
+  compaction to express real success, partial, recovery and admission outcomes.
+  Remove the superseded string-versus-success/partial/recovery-map distinction
+  from executable usage and its direct consumers; do not retain a compatibility
+  branch. Preserve owner result explanations in existing guidance/instructions.
+  This changes discovery metadata, not actual tool reply or invocation shapes.
+- Derive registered envelopes from the library owner. Selected-batch schemas must
+  retain selected business constraints, action identity/order and legitimate
+  automatic inspection results, not merely accept arbitrary resource objects.
+  No outcome may validate through a permissive catch-all failure alternative.
+- Own the boundary-failure schema alongside localToolFailureReply and reuse it in
+  server delivery/discovery. Keep the client-side tool-contract module independent
+  of server imports. Represent absent execution receipts truthfully; do not add
+  fabricated execution, acknowledgement or completion to satisfy a schema.
+- Preserve root references, unions/intersections, negation, nested closure,
+  property names/counts and business requirements. Metadata composition must not
+  admit unrelated fields or change the meaning of owner validation. Keep canonical
+  dependency contracts separate from the model-facing reply declaration.
+
+Implementation sequence and admission:
+1. Update the existing product contract and compose Inspector route with these
+   ownership boundaries and executable product cases. Review exact inputs,
+   outputs, contributors, failures and implementation allowlist; complete fresh
+   admission before changing tests or production behavior. Previous revision 169
+   admission does not admit this revised design.
+2. Add permanent red cases for all three defects using host.definitions(), emitted
+   examples, direct dispatch and invoke_tool. Preserve the original saved mismatch.
+   Validate whole external replies using the acquired contract, not a parallel
+   oracle schema. Observe raw validation and actual owner call counts separately.
+3. Correct stage ownership and the invocation-owned failure declarations first.
+   Then unify scoped/unscoped/batch usage assembly and update every direct consumer
+   of results, including generated App templates and source-bound proof. No new
+   registry, cache, validator, dispatcher, result store or compatibility layer.
+4. Run the fixed D1-D6 gates on the final source; review the diff, direct consumers,
+   failure paths and generated consistency. Re-read compose before each segment.
+   Report local correctness and unobserved model behavior separately. No model,
+   101, CI or push is authorized in this slice.
+
+Required extensions to existing D1-D6 (no weakened or replaced criteria):
+- D1/D2: exercise the real scoped drawing owner and registered scoped equivalent,
+  non-scoped native/registered owners, selected batches, exact selectors, field
+  navigation and full dependency consumers. Each executable example must validate
+  against its own acquired parameters and execute through its advertised route.
+- D3/D4: distinguish outer admission rejection from inner owner-input rejection,
+  unknown/stale identity, no-op, cancellation before and after acknowledged work,
+  partial execution, projection failure and retained recovery. Assert truthful
+  status/settlement and zero dispatch before admission. Validate full reply shapes
+  against the same acquired result schema. Prove completed changes execute once
+  and only remaining work is recovered; retain affected save/load and Undo/Redo
+  coverage rather than replacing it with mock success.
+- D2/D4: combine already-declared metadata with closed allOf/$ref branches and
+  property counts; retain existing union/negation and nested-object tests. Reject
+  malformed business fields, unrelated fields and fabricated success as negative
+  oracles. A result matching some permissive anyOf branch is not sufficient.
+- D5: measure complete acquisition bytes, page count and required calls, plus
+  schema traversal/composition work through the real assembly. Preserve the saved
+  deletion baseline (16,721 bytes), unrelated-catalog-growth test and existing
+  information-delivery budget. Previously single-page affected fixtures must not
+  acquire an extra page or prerequisite lookup. Large legitimate selections keep
+  paging/refresh; do not promise every possible query fits one page.
+- D6: extend the existing per-registration audit to select published scopes and
+  execute them rather than stopping at scope menus. Include direct failure schema
+  checks and real registered outer-argument rejection. Wire these cases into the
+  existing execution-flow mapping; no separate assertion registry or closure packet.
+
+Cost feasibility evidence (offline sizing, not final acceptance):
+- A minimal host using the actual main workflow schema, selected draft/pattern,
+  currently emits 17,792 bytes with only 524 bytes of result prose. The delivery
+  budget is 23,000 bytes. This incomplete guide is not a complete-contract baseline.
+- Replacing that prose with three separately compacted result schemas estimates
+  23,742 bytes; removing default additionalProperties:true alone still estimates
+  23,154 bytes before adding admission failure. Do not use this approach or raise
+  the budget to accommodate it.
+- Combining those branches with a candidate admission shape through existing
+  schema embedding/compaction estimates 20,864 bytes before restoring the owner
+  prose, approximately 21.4 KB with it. This establishes feasibility for that
+  fixture only; the candidate failure schema is not yet an admitted implementation.
+  Full production registrations, all selected constraints and actual complete
+  acquisition must pass D5. No latency or model-adoption improvement is established.
+
+Plan self-review and stop conditions:
+- Discovery consumers must migrate together to the single result schema; raw and
+  retained internal outputs must not migrate. Result prose remains available.
+- Spec/Inspector admission precedes regression and implementation. Per-entry
+  audit coverage must include selected scopes and boundary failure replies, not
+  just malformed-input rejection or the presence of a menu.
+- If complete constraints cannot meet the fixed cost criteria, revise this bounded
+  design before implementation; do not silently omit restrictions or increase limits.
+  A required change to mutation/persistence/Runtime policy, actual reply shapes,
+  new state or extra acquisition is outside this plan and requires scope review.
+
+Cost follow-up - authorized 2026-10-29:
+- The user accepted per-failure attribution and correction of proven waste, not
+  higher byte limits, additional pages or weaker D1-D6 assertions. Preserve every
+  failed cost test and the original baseline. Compare current selected parameters,
+  outcome schemas, instructions, invocation examples, navigation and continuation
+  envelopes before proposing a changed acceptance budget.
+- Step Execution Card: compose / executable usage assembly; product section
+  Model-visible result contracts and the existing compose Inspector contract.
+  Inputs are selected canonical schemas and actual host routes; outputs remain
+  complete standard-schema usage and existing continuations. Preserve all business
+  constraints, explanations, boundary failures and no-replay behavior. Existing
+  discovery/assembly owners are the only contributors; no owner-name exceptions,
+  cache, added acquisition, output-limit change or AI invocation.
+- Mutation boundary remains the existing six owner files, direct integration tests,
+  this active plan and generated copies. Do not edit unrelated construction owners
+  to shrink their contracts. Read-only profiling can inspect direct contributors.
+- The recorded general-purpose query also repeats full output leaf navigation
+  across ten candidates. Reuse the existing branch-root navigation for exploration;
+  keep exact executable usage and full dependency contracts complete. This follows
+  the existing search-as-navigation contract and does not remove any selected
+  input/result constraint or add a lookup. Preserve the existing mixed-query test
+  and execute exact acquisition after its menu.
+- Lossless compaction may flatten bare nested anyOf/allOf and remove duplicate
+  alternatives; never alter oneOf multiplicity or indexed local reference targets.
+  Prove positive/negative equivalence and pointer preservation before changing the
+  existing compaction owner. Do not infer or prune result modes by tool names.
+- Measure all 15 failures before changing budgets. Reuse the permanent information
+  reader in direct-consumer tests for optional bounded byte attribution. Confirm
+  and remove redundant parameter preparation overwritten by final usage assembly;
+  independently retain complete result contracts. If lossless representation cannot
+  meet a case's existing gate, report its measured necessary remainder instead of
+  weakening that assertion or deleting guidance.
+- Focused tests must execute actual emitted examples and validate acquired input
+  and complete external output. Check preparation work independently of bytes;
+  rerun affected cost cases after a bounded correction, then run broader gates only
+  when their known blockers are resolved. Stop for an unproven semantic reduction
+  or a necessary new owner. No model, 101, CI, push or limit increase.
+
+Cost completion - authorized 2026-10-29:
+- Complete the remaining 14 cost cases now; do not stop at attribution.
+  This replaces the representation-only stop boundary for the necessary owners.
+- Step Execution Card: compose / selected executable usage, using the same product
+  section and Inspector route. Inputs: canonical selected input, owner-declared
+  result alternatives, actual registered routes and failure receipts. Output:
+  complete executable usage within the approved equal-information acquisition budgets; native page limits stay unchanged.
+  Owner opt-in scopes may narrow successful result alternatives only; unscoped
+  reads, boundary rejection, partial and recovery contracts remain complete.
+- Extend the mutation family to local-design-review.ts and directly contributing
+  preparation schema/example owners when measured selected input waste requires
+  correction. Keep real mutation, persistence, image, result-store and scheduler
+  behavior unchanged. Reuse existing scope metadata, schema projection/compaction,
+  registration, information delivery and permanent consumer tests. No second
+  registry, cache, optional-field guessing or tool-name pruning.
+- First declare review success alternatives at the review owner, selecting by the
+  same operation identity already used for inputScope. Capture/bind retain context,
+  coverage, next-step restrictions and truthful receipts; only record advertises
+  its result/correction/structure acceptance fields. Full reads retain all modes.
+- For shared representation, investigate repeated constraints across semantic
+  annotation wrappers and reference placement; only lossless standard-schema
+  factoring is allowed. Test positive/negative values, pointer targets, annotation
+  preservation and actual acquired examples before implementation. Canonical
+  explanatory text may be consolidated only at its owner with every necessary
+  restriction preserved in both full/field and selected usage.
+- Preserve original 14 red cost cases. Add real direct/registered scoped review
+  regressions, including unavailable criteria, bind conflict after capture, local
+  passes, record correction and no replay. Validate complete external replies
+  against the acquired schema; full owner validation remains unchanged in meaning.
+- Admission precedes implementation. Run focused consumer suites, per-entry audit,
+  types/lint/naming, then the complete existing local execution-flow gate. Generate
+  template/docs only after source corrections, compare copies, and perform one
+  bounded direct-consumer self-review. No models, 101, CI inspection or push.
+- Plan self-review: inputs/results are separate projections of the same operation;
+  selecting a result does not infer execution success or remove failure branches.
+  Schema sharing must preserve closed-object validation and native/registered
+  envelopes. D1-D6 retain complete contracts, real execution and no replay. Apply the user-approved equal-information cost comparison described below.
+
+Cost completion refinement after focused review evidence:
+- Canonical toolSemantics embeds successful values inside its partial contract.
+  Scope declarations must identify both success and embedded success alternatives;
+  preserve every independent failure alternative. Indexed schema paths must resolve
+  arrays, and invalid input scopes must retain the existing corrective-query owner.
+- Review input projection sets checks/bindChecks to false at the root but still
+  retains their full schemas inside both phase alternatives. Propagate an explicit
+  parent prohibition through same-instance composition branches before reference
+  closure. Never propagate through child-object properties or array items. This
+  removes unreachable restrictions, not legal inputs, and needs positive/negative
+  equivalence plus the existing actual capture/bind/record flow.
+- Successful capture/bind record no judgments. Their owner result declaration may
+  specify the empty recordedChecks array and only their real next-step routes;
+  full record results and failure recovery remain separately declared. Prove true
+  owner replies rather than narrowing based on a saved example.
+- The first result-scope correction reduced capture delivery by 2,980 bytes but
+  left the complete recovery exchange at 30,947 versus the unchanged 25,523 gate.
+  Continue inside these owners; no contract omission or arbitrary budget padding.
+
+- Continue cost correction at the host annotation owner: open composition branches
+  currently repeat the same toolOutcome restriction. Declare that restriction once
+  at the same-instance root, retaining per-branch accommodation wherever closure,
+  propertyNames or property counts require it. Preserve business-owned constraints,
+  negation/reference semantics, and actual real-host/runtime validation. Existing
+  src/ai/tool-contract.ts owns this work; no change to actual receipts.
+
+- Cost completion iteration review: singleton/schema intersection normalization
+  increased selected input bytes and broke structural preservation oracles without
+  reducing original acquisition costs. Remove that transformation; retain its new
+  negative cases as preservation checks. Keep all fourteen original cost cases and their recorded historical costs.
+  Continue with explicit result scopes, identical union-context sharing and concise
+  owner guidance. Do not introduce a second normalization pipeline or weaken limits.
+
+Cost baseline correction - existing user approval applies:
+- The user accepted comparing the total cost of equally complete information. The
+  old usage result was a prose string (HEAD workflowUsageGuide), whereas executable
+  usage now includes a complete external result schema and keeps that prose in
+  instructions. Preserve historical byte values in tests and evidence; do not call
+  those incomplete replies an equally complete baseline.
+- Add only the exact serialization delta of the required result schema to the
+  historical budget. A prose result moved into instructions costs schemaBytes - 1;
+  when the body is JSON-escaped inside existing fragments, price the escaped delta.
+  No percentage allowance, opaque slack, changed native limit or ignored bytes.
+  Count actual acquisition bytes including all envelopes and every continuation.
+- For page/call comparisons, retain one-reply requirements where complete content
+  fits the existing budget. For already-paged complete contracts compare the real
+  complete exchange; never remove original execution, invalid-input, failure or
+  no-replay assertions just because an earlier cost assertion blocks them.
+- Freeze the approved serialization deltas in the formal
+  `complete-result-cost-20261029.json` fixture, including the canonical schemas,
+  query inputs and source hashes. Tests recompute plain and fragment-escaped costs
+  from that fixed reference, never from candidate results. Draft deltas are 3,314
+  and 3,888 bytes; capture deltas are 6,712 and 7,794 bytes. Larger future candidates
+  cannot automatically enlarge their own budgets. The independently compiled
+  Inspector proof retains the same fixed draft deltas.
+- Step remains compose, same owners/consumers, tests and exclusions. Self-review:
+  this corrects the approved comparator, not production transport or valid values.
+
+Whole unification review - 2026-10-29:
+- Review all current delivery/routing owners and direct consumers, not only the
+  fourteen cost cases. Discovery is frozen to actual App/native registrations,
+  current source and the existing D1-D6 gates. No model, CI, push or new mechanism.
+- Compose Step Execution Card: selected action and registered invocation outputs
+  must reject unrelated receipts and missing successful values. Inputs remain the
+  admitted action contracts, existing automatic inspection ownership and actual
+  invocation envelopes. Canonical mutation and persistence behavior are unchanged.
+- Confirmed candidates: selected batch results admit arbitrary other action names;
+  registered partial envelopes allow successful execution without its required
+  value. Add negative cases around actual host examples first. Preserve valid
+  automatic inspection receipts, empty no-op batches, partial prefixes, outer and
+  inner rejection, storage failure and no replay. D1-D6 remain fixed.
+- Repair only local-operation-tools.ts and local-tool-library-tools.ts plus direct
+  tests, active contract and generated copies. Automatic follow-up scope comes from
+  the existing review/capture partition; do not add a parallel tool registry.
+  Use complete registered owner result constraints for permitted follow-ups.
+- Template consistency follows release-configs/asyra-design.json, including its
+  explicit exclusions. Remove the accidentally copied excluded proof file; do not
+  change generator ownership or silently package repository-only verification.
+- The ai-server type gate includes a real browser-integration test which imports
+  browser owners. Keep the Node production environment unchanged; move that test's
+  typecheck inclusion to the existing browser-aware flow-proof configuration.
+  Preserve test inclusion across the two mandatory gates; no new config or relaxed
+  source validation. The current 40 diagnostics are the formal red evidence.
+- After complete local validation, the user authorized one 900,000 ms 101 run on
+  6-astra / medium, without video, with optional Knowledge and complete I/O,
+  report and screenshot evidence. No source edits during the run; preserve the
+  independent report deadline, first-frame timeline and unobserved-case limits.
+
+Whole-review correction evidence:
+- A final cross-route negative case reproduced the same permissive partial-prefix
+  defect in native single-action wrappers. Constrain executionResult.actionResults
+  using the existing primary owner result alternatives and permitted follow-ups;
+  preserve absent/empty acknowledged prefixes and all actual failure envelopes.
+  Four affected suites then passed: 1,417 tests. Do not infer native parity from
+  the selected batch test alone.
+- Before repair, 23 original host/batch cases passed; strengthened actual-host
+  cases failed in 12 scenarios (unrelated batch receipt plus 11 registered shapes
+  missing successful values). The final owner corrections pass all 23, including
+  real Core movement followed by the real mechanical reviewer and inspection
+  action (pixel producer substituted). Invalid secondary values remain rejected.
+- The selected deletion acquisition with both inspection owners registered is
+  16,018 bytes, one reply, below the unchanged 16,721-byte gate; 10,000 unrelated
+  registrations do not change it. Legitimate no-op, partial prefixes, retained
+  readback, Undo/Redo and save/load remain in the same executed integration case.
+- Broader verification exposed 19 structural-oracle failures from nested union
+  normalization, one outdated unregistered-tail expectation and one complete-read
+  consumer that ignored pagination. Normalize nested union context without losing
+  constraints; compare idempotent anyOf membership, retain exact oneOf counts and
+  business negative oracles. Use the existing complete-information reader for the
+  legitimate full read. All three suites then passed (1,394 tests).
+- The canonical generator check independently rejected the extra excluded proof
+  file. Regeneration removed it. Node, browser-aware proof and production type
+  checks now pass after preserving the browser integration test in the proper
+  existing configuration. No new type config or suppressed diagnostics.
+
+Final whole-review validation and authorized observation - 2026-10-29:
+- Final server harness: 3,031 passed and two explicitly unverified opt-in skips.
+  The final type-safe receipt assembly then passed all 1,417 affected tests;
+  App action suites passed 783 tests. All three App type configurations, scoped
+  lint, naming, diff whitespace, public documentation and canonical template
+  synchronization passed. Inspector verification 4eb42819-d512-4c2f-9066-dc8d494549f1
+  passed against source 92de3feb1164d73c02bf42b9d788ae526e82f54ad7b368626b3b90f4c683e285.
+- Authorized observation knowledge-quality-knowledge-taipei-101-1793217112769
+  used gpt-6-astra / medium, 900,000 ms work plus separate 60,000 ms reporting,
+  no video and production 10,000-node artifact limits. No source edits occurred
+  during capture. First observed content: 136.299 s, with 3,089 created elements.
+- All 34 App calls have paired input/output; 33 operation successes and one
+  truthful pre-write NONPLANAR_FACE rejection. A retained repair replaced two
+  vertex arrays in 557 input bytes instead of resending the 8,036-byte draft;
+  application then succeeded. No discovery rejection or mutation replay observed.
+- The document retains 17,969 design elements plus its workspace. UI partial is
+  incomplete artwork acceptance: ornament correction, final material acceptance
+  and post-correction verification remain unfinished. The last public activity
+  at 650.354 s has no subsequent event until the 900.003 s deadline; cause is
+  unavailable. Do not treat interrupted provider activity as complete.
+- Reporting, checkpoint, final/reload screenshots and source verification passed;
+  roots and durable sequence match at 573. Snapshot checks do not compare every
+  property. Ten inspection-image submissions have nine unique retained images.
+  All 851 physical evidence references resolve with matching hashes. Three
+  recorded output instruction fields are redacted by the existing recorder;
+  retain that completeness limitation. Full trace, derived call timeline and
+  capture verification remain under the run directory. AI use of injected invalid
+  partial-receipt scenarios is unobserved; formal local tests cover those cases.
+
+Cost completion local validation - 2026-10-29:
+- All fourteen original red cost cases now pass under the approved equal-information
+  comparator; original historical costs and page/call assertions remain. Do not
+  describe baseline correction as a production performance improvement.
+- Real current acquisition: vector 18,005 bytes (previous complete-contract version
+  18,984); mixed group/face/pattern 22,984 bytes in one reply (previously two);
+  menu plus mixed acquisition two replies (previously three). Root material guides
+  21,360/21,662 bytes versus 22,385/22,686; layered guides 21,722/31,221 versus
+  22,746/32,369; oval 21,562 versus 22,588. Counts include continuation envelopes.
+- Complete App local harness: 3,031 passed, two pre-existing opt-in skips; all 1,144
+  per-registration audit cases passed. Runtime 459 and Preset typography 37 passed.
+  After freezing the comparison reference, all six affected suites passed again
+  (236 tests), including independently compiled execution-flow proof.
+- Inspector run 74d25cdb-1860-438c-adfe-0b4051febf9b passed on the production source;
+  rerun its source-bound verification after the final test/reference sync.
+- Production and execution-flow proof types passed; scoped lint has no errors.
+  The standalone ai-server type configuration still has 40 diagnostics. A compiler
+  host overlay of HEAD source reproduces the same file/code/message multiset:
+  zero new diagnostics. Do not claim that standalone configuration passes.
+- Skips are native installed-binary registration (LOCAL_AI_PROTOCOL_EXECUTABLE) and
+  the large checkpoint encoding case (E2E_LARGE_DOCUMENT). Neither is counted as
+  verified. This slice used no model, 101, CI inspection or remote operation.
+- Bounded self-review covered result scope/partial embeddings, closed schemas,
+  canonical operation metadata, direct consumers, emitted invocation examples,
+  cancellation/stale recovery and no replay. Removed the unsuccessful singleton
+  rewrite; no fallback schema or increased delivery limit remains. The fixed cost
+  fixture prevents candidate growth from silently weakening its own comparator.
+  Independently report actual byte changes from the start of this repair so the
+  extra required contract cannot hide a regression or be called a saving.
+
+Cost follow-up findings and bounded correction:
+- Admission accepted review 4accc8ceccc77c982c20f4fefee63e367f3743d44f83112a21f6ff2f28e78111
+  from candidate 4ec038c6-e310-476d-8f4e-09072c6f559c. The candidate retained
+  the four known source-proof cost failures; acceptance did not waive them.
+- Preserve complete delivery. The shared compactor now removes only duplicate
+  anyOf/allOf alternatives and flattens bare associative branches. Tests retain
+  oneOf multiplicity, indexed local reference targets, annotations and negative
+  business cases. The guidance owner no longer constructs parameters discarded
+  by final route assembly. No cache or response-limit change.
+- General search now reuses existing branch-root output navigation rather than
+  walking and listing every candidate's output leaves. Exact execution contracts
+  keep full results and navigation; ordinary search still requires the same exact
+  selection. The saved update-fill menu falls from 27,259 to 24,486 body bytes
+  (30,185 to 27,308 wire bytes), passing its original one-third baseline gate.
+- Registered route assembly also rebuilt the same wrapper contract twice per
+  acquisition. Real host tests reproduced two constructions in all 11 registered
+  shape/scope cases. Reuse the existing same-call result for unscoped usage and
+  defer scoped wrapping until selection; require exactly one construction, with
+  no new cache, changed reply, extra acquisition or replay.
+- The main workflow result schema falls from 4,256 to 4,113 bytes. Its artifact
+  identity, operation receipts, automatic parts, partial/failure and check-count
+  contracts remain. All affected main-query input parameters and explanatory text
+  remain intact. Explicit optional plan adds about 5.2 KB of input constraints;
+  it was selected by these cases and cannot be called unrelated content.
+- Correct threshold attribution: the information owner uses 23,000 body bytes,
+  reserving headroom beneath the 24,000 native budget. The mixed-node query was
+  24,085 body / 27,980 wire bytes; it is now 23,942 / 27,809 and still two pages.
+  Do not claim that crossing below 24,000 removes paging or change either limit.
+- Review capture, bind and record each receive the same 10,517-byte result schema
+  after compaction. Owner inspection confirms capture/bind plus judgmentHandoff
+  do not emit record-only results/correction/structureAccepted; however coverage,
+  acceptanceContext, next.arguments binding/submission restrictions and retained
+  failure recovery remain necessary. This is a concrete result-scope gap, not
+  permission to strip fields heuristically or classify every added byte as needed.
+  Fixing it requires an owner-declared scoped result contract beyond this bounded
+  representation correction; preserve the failure until that design is admitted.
+- Existing per-entry assertions incorrectly assumed the first anyOf branch was
+  the complete success union. They now require every resolved canonical alternative
+  with every nested constraint, independent of associative union nesting. Full
+  real-host positive/negative and no-replay cases remain mandatory.
+
+All original cost failures, unchanged thresholds (bytes unless stated):
+
+| Existing case | Before | After bounded correction | Existing threshold / result |
+| --- | ---: | ---: | --- |
+| Mixed group/face/pattern usage | 2 pages | 2 pages | 1 page - unresolved |
+| Menu then complete next-part acquisition | 3 replies | 3 replies | 2 replies - unresolved |
+| Root materials, implicit pattern | 22,528 | 22,385 | 20,148 - unresolved |
+| Root materials, explicit pattern | 22,829 | 22,686 | 20,148 - unresolved |
+| Layered order without plan | 22,889 | 22,746 | 20,087 - unresolved |
+| Layered order with plan, body | 28,052 | 27,909 | 25,604 - unresolved |
+| Projected oval guide | 22,731 | 22,588 | 19,948 - unresolved |
+| Inspector selected operation | 22,584 | 22,441 | 20,148 - unresolved |
+| Inspector layered repetition, wire | 32,396 | 32,225 | 27,702 - unresolved |
+| Inspector shared motifs, contract wire | 31,984 | 31,813 | 27,021 - unresolved |
+| Inspector projected oval | 22,659 | 22,516 | 19,948 - unresolved |
+| Face-boundary complete exchange | 40,613 | 40,470 | less than 38,309 - unresolved |
+| Recorded general search, body | 27,259 | 24,486 | less than 26,748.33 - passed |
+| Review capture through recovery exchange | 33,989 | 33,928 | less than 25,523 - unresolved |
+| Shared motifs, contract wire | 31,984 | 31,813 | 27,021 - unresolved |
+
+Validation of the bounded cost corrections:
+- Before the final same-call registered-wrapper reuse, the complete App harness
+  has 3,011 passing tests, 14 unchanged cost failures and two existing opt-in skips.
+  The general-search regression now passes its original byte threshold. After that
+  wrapper correction, all 1,236 tests across the four directly affected real-host,
+  batch, registration and recipe suites pass; the 11 registered cases each require
+  one wrapper construction. That correction changes work counts, not reply bytes.
+  No remaining cost failure was reclassified as success, and the complete harness
+  was not rerun after the wrapper-only correction.
+- All 1,144 actual registration/admission cases pass after the union oracle is
+  corrected to check every canonical alternative. Real recipe composition and
+  selected batch projection/cancel/recovery integration pass. The added selected
+  query regression measures one parameter-root normalization and executes its
+  delivered example without replay; the fixture truthfully remains partial when
+  its independent mechanical-review owner is unavailable.
+- Server/proof types, naming and scoped lint pass, with server types and affected
+  lint rerun after the final wrapper correction. Official template generation is
+  complete; all 16 changed generated source/test/fixture copies are byte-identical
+  to their App owners. Public documentation generation/check, update guidance and
+  whitespace checks pass. Source-proof cost failures remain blockers; no final
+  Inspector closure or live AI adoption claim is made.
+- Optional per-section attribution writes beneath the tested App's own tmp folder,
+  including standalone generated products. It is test-only, disabled normally,
+  and does not change product replies or add runtime observation/cache mechanisms.
+
+The 15 assertions are not 15 independent tool bugs: four are source-proof
+counterparts of the consumer cases. Formal measurements are opt-in through the
+existing information-reader test helper and actual owner tests; body sections,
+page wire overhead and complete exchanges are kept distinct. Cost records with
+unobserved wire sizes use null, never zero. No model, 101, CI or push.
+
+Current implementation evidence - closure pending:
+- Compose admission accepted review
+  bc49cdd63e5bcd46b4e35b19d1aafc424167cac1b0b3a0bd80635c6eb8aa5161
+  from candidate 4ccccd04-36d3-4af8-aa8b-5d4e03dad827 before the new regressions.
+- Formal red cases reproduced the three boundary defects. Explicit raw/host
+  staging replaces metadata-name inference; all executable usage paths now use
+  the actual invocation parameters and one complete reply schema. Invocation
+  failures remain truthful, with no fabricated execution receipt.
+- Per-entry audit enumerates 182 App actions, 156 basic API declarations and all
+  210 actual host registrations, including four host-added library controls.
+  1,144 declaration/admission cases pass. This does not replace each semantic
+  owner's successful and partial-execution integration coverage.
+- Real host, recipe composition, selected batch, cancellation, retained recovery
+  and no-replay focused integration passed. Source proof now exercises the emitted
+  scoped example through actual invoke_tool, closed metadata composition and an
+  outer revision rejection with exactly one completed leaf call. Its isolated
+  run passes; full source-bound verification is not yet claimed.
+- The full App server harness has 3,008 passing, 15 failing and two opt-in skipped
+  cases. All 15 failures are unchanged complete-delivery byte/page assertions.
+  Closed recipe composition, business validation and external receipt failures
+  reproduced earlier are now passing. Skips remain installed native protocol
+  and large-document bootstrap; neither counts as verification.
+- The saved deletion acquisition is 14,179 bytes against the preserved 16,721-byte
+  baseline, one page, unchanged by 10,000 unrelated descriptors. Other scoped
+  acquisitions now include formerly missing machine-readable result contracts:
+  some cross the existing one-page or historical byte thresholds. Required
+  information is not removed and no budget assertion is weakened.
+- A root-allOf compaction experiment was rejected by real Runtime recipe proof
+  and removed. Keep the supported schema shape. Only removal of the standard
+  additionalProperties:true default remains, covered by strict nested/open-object
+  equivalence cases.
+- Production, server and proof types pass; naming passes; scoped lint has zero
+  errors and the existing proof-file console warning. Runtime 459 and Preset 37
+  tests pass. Official template/public-doc/Inspector-workspace generation is
+  complete; all 11 changed template source/test copies are byte-identical to
+  their App owners. Update-guidance and whitespace checks pass. The full
+  execution-flow gate and final Inspector proof remain unclosed because the
+  direct-consumer delivery-cost assertions still fail; earlier accepted-source
+  results are not reused as final evidence. The user was asked whether equivalent complete-information
+  cost is the accepted comparison. No answer is presumed. No model, 101, CI or
+  push was performed.
 
 ### Closed slice - Retained material preparation recovery
 
