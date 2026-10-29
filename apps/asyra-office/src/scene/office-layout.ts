@@ -31,6 +31,7 @@ export const OFFICE_WALLS = structure.walls
     base: w.base,
     alongY: w.alongY,
     ends: w.ends as WallEndPlanes,
+    capHeight: 'capHeight' in w ? w.capHeight : undefined,
     endTop: w.endTop
   }))
 // Source-space artwork still uses its original camera, never the review camera.

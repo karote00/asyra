@@ -18,6 +18,8 @@ export interface MaterialOverride {
 export interface WallOptions {
   /** Authored local X width, Y thickness, Z height, in metres. */
   size?: SpatialVector
+  /** Physical cap height after sizing; omitted keeps the approved whole-unit scale. */
+  capHeight?: number
   color?: number
   material?: MaterialOverride
   regions?: Partial<
@@ -134,6 +136,15 @@ function buildPart(
 
 export function createWall(options: WallOptions = {}): readonly WallPart[] {
   const scale = readScale(options.size ?? WALL_DEFAULT_SIZE)
+  const totalHeight = (options.size ?? WALL_DEFAULT_SIZE)[2]
+  const capHeight = options.capHeight
+  if (
+    capHeight !== undefined &&
+    (!Number.isFinite(capHeight) ||
+      capHeight <= WALL_EDGE_RADIUS * scale[2] ||
+      totalHeight - capHeight <= WALL_EDGE_RADIUS * scale[2])
+  )
+    throw new Error('Wall cap must leave positive beveled body and cap regions')
   return Object.freeze(
     WALL_REGION_IDS.map((id) => {
       const component = specification.components.find(
@@ -149,17 +160,23 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
         options.color ??
         material?.color ??
         Number.parseInt(defaults.baseColorSRGB.slice(1), 16)
-      const [width, depth, height] = component.sizeMetres
+      const [width, depth, sourceHeight] = component.sizeMetres
+      const height =
+        capHeight === undefined
+          ? sourceHeight
+          : (id === 'top-cap' ? capHeight : totalHeight - capHeight) / scale[2]
+      const centre = component.centreMetres.map((n, i) => n * scale[i])
+      if (capHeight !== undefined)
+        centre[2] =
+          id === 'top-cap'
+            ? totalHeight - capHeight / 2
+            : (totalHeight - capHeight) / 2
       const descriptor = readSpatialDescriptor({
         kind: 'mesh',
         instances: [
           { id: WALL_ASSET_ID, position: [0, 0, 0], rotation: [0, 0, 0, 1] }
         ],
-        position: toRender(
-          component.centreMetres.map(
-            (n, i) => n * scale[i]
-          ) as unknown as SpatialVector
-        ),
+        position: toRender(centre as unknown as SpatialVector),
         rotation: [0, 0, 0, 1],
         shape: buildPart(width, depth, height, scale),
         distant: {
@@ -185,9 +202,10 @@ export function createWall(options: WallOptions = {}): readonly WallPart[] {
 
 /** Use the same validated wall in the office's author-coordinate assembly. */
 export function wallAsset(
-  size: SpatialVector
+  size: SpatialVector,
+  capHeight?: number
 ): import('./catalog').AssetPart[] {
-  return createWall({ size }).map(({ id, descriptor }) => {
+  return createWall({ size, capHeight }).map(({ id, descriptor }) => {
     const convert = (shape: typeof descriptor.shape) => {
       if (shape.kind !== 'triangles')
         throw new Error('Expected authored wall triangles')

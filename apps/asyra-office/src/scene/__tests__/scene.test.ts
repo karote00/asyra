@@ -1,11 +1,19 @@
 import { requiredSpecValue } from '../../assets/specification'
 import { OFFICE_STRUCTURE } from '../office-layout'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { createReferenceScene, buildSpatialMeshes } from '../reference-scene'
 import { createSceneController } from '../controller'
+
+// All geometry assertions below read the same immutable-input scene.
+// Construction/lifecycle behavior has its own dedicated tests.
+let referenceScene: ReturnType<typeof createReferenceScene>
+beforeAll(() => {
+  referenceScene = createReferenceScene()
+})
+
 describe('current reference composition', () => {
   it('constructs all visible reference zones as finite real geometry with stable identities', () => {
-    const scene = createReferenceScene(),
+    const scene = referenceScene,
       ids = new Set(scene.assemblies.map((a) => a.id))
     for (const id of [
       'office-slab',
@@ -43,7 +51,7 @@ describe('current reference composition', () => {
   })
 })
 it('preserves the approved installation clearance beside the complete door', () => {
-  const scene = createReferenceScene()
+  const scene = referenceScene
   const bounds = (id: string) => {
     let offset = 0
     for (const assembly of scene.assemblies) {
@@ -82,7 +90,7 @@ it('keeps the work-view centre ray above the selected head rather than aiming th
 })
 
 it('does not retain rejected animal placeholders in the office', () => {
-  const scene = createReferenceScene()
+  const scene = referenceScene
   expect(
     scene.assemblies.filter((a) =>
       ['sleeping-orange-cat', 'standing-corgi'].includes(a.asset)
@@ -127,7 +135,7 @@ it('moves camera and target together on the ground plane relative to the current
 })
 
 it('places recognizably tall and short trees rather than two nearly equal copies', () => {
-  const trees = createReferenceScene().parts.filter((p) => p.id === 'trunk')
+  const trees = referenceScene.parts.filter((p) => p.id === 'trunk')
   const heights = trees.map((p) => {
     const z = p.mesh.positions.filter((_, i) => i % 3 === 2)
     return Math.max(...z) - Math.min(...z)
@@ -141,7 +149,7 @@ it('places recognizably tall and short trees rather than two nearly equal copies
 })
 
 it('uses distinct tree branch proportions in the rendered scene', () => {
-  const parts = createReferenceScene().parts,
+  const parts = referenceScene.parts,
     trunks = parts.filter((p) => p.id === 'trunk'),
     first = parts.filter((p) => p.id === 'B1'),
     second = parts.filter((p) => p.id === 'B5')
@@ -156,7 +164,7 @@ it('uses distinct tree branch proportions in the rendered scene', () => {
 })
 
 it('gives each actual scene planter a distinct normalized foliage layout', () => {
-  const scene = createReferenceScene()
+  const scene = referenceScene
   let offset = 0
   const signatures: string[] = [],
     counts: number[] = []
@@ -165,11 +173,13 @@ it('gives each actual scene planter a distinct normalized foliage layout', () =>
     offset += assembly.parts.length
     if (assembly.asset !== 'planter') continue
     const leaves = parts.filter((p) => p.id.startsWith('leaf-'))
-    const stem = requiredSpecValue(
-      parts.find((p) => p.id === 'stem'),
-      'plant stem'
+    expect(leaves.length, assembly.id).toBeGreaterThan(0)
+    // Normalize by the vessel shared by stemmed plants and soil-rooted rosettes.
+    const pot = requiredSpecValue(
+      parts.find((p) => p.id === 'pot'),
+      'plant pot'
     )
-    const z = stem.mesh.positions.filter((_, i) => i % 3 === 2)
+    const z = pot.mesh.positions.filter((_, i) => i % 3 === 2)
     const height = Math.max(...z) - Math.min(...z)
     counts.push(leaves.length)
     signatures.push(
@@ -191,7 +201,7 @@ it('gives each actual scene planter a distinct normalized foliage layout', () =>
 })
 
 it('keeps rotated wall-cap ends flush while overhanging across thickness only', () => {
-  const scene = createReferenceScene()
+  const scene = referenceScene
   const extent = (id: string, axis: number) => {
     let offset = 0
     for (const a of scene.assemblies) {
@@ -209,7 +219,7 @@ it('keeps rotated wall-cap ends flush while overhanging across thickness only', 
   expect(extent('left-wall-cap', 0)).toBeGreaterThan(extent('left-wall', 0))
 })
 it('keeps road markings clear of the cover', () => {
-  const scene = createReferenceScene()
+  const scene = referenceScene
   const cover = requiredSpecValue(
     scene.assemblies.find((a) => a.id === 'manhole'),
     'cover'
@@ -235,7 +245,7 @@ it('keeps equal-sized furniture within fifteen percent projected scale across th
   controller.dispose()
 })
 it('uses outdoor-sized pots rather than desktop-sized vessels along the terrace', () => {
-  const s = createReferenceScene()
+  const s = referenceScene
   let offset = 0
   for (const a of s.assemblies) {
     const pieces = s.parts.slice(offset, offset + a.parts.length)

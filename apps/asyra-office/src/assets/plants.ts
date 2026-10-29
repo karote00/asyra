@@ -3,7 +3,12 @@ import { requiredSpecValue } from './specification'
 import spec from '../../../../assets/asyra-office/models/small-plants/small-plants-model-spec.json'
 import { emptyMesh, tube, type Vec } from './geometry'
 import { part, placeParts, type AssetPart } from './catalog'
-import { roundedProfile, revolveProfile, clippedSoil } from './plant-vessels'
+import {
+  roundedProfile,
+  revolveProfile,
+  squareProfile,
+  clippedSoil
+} from './plant-vessels'
 
 const source = spec.modules[0]
 const pot = requiredSpecValue(
@@ -34,16 +39,23 @@ const petioles = requiredSpecValue(
   'plant petioles'
 )
 
+type PlantVariant = NonNullable<typeof source.growthVariants>[keyof NonNullable<
+  typeof source.growthVariants
+>] & {
+  leafColorsSRGB?: readonly string[]
+  foliageScale?: readonly number[]
+}
+
 /** Seeded foliage retains the approved closed folded blade and vessel construction. */
 export function planter(
   scale = 1,
   color = 0xe8dbc3,
   seed = requiredSpecValue(source.growth, 'plant growth recipe').defaultSeed,
-  form: 'stemmed' | 'rosette' | 'shrub' | 'lanceolate' = 'stemmed'
+  form: 'stemmed' | keyof NonNullable<typeof source.growthVariants> = 'stemmed'
 ): AssetPart[] {
   if (!Number.isFinite(scale) || scale <= 0)
     throw new Error('Invalid plant scale')
-  const variant =
+  const variant: PlantVariant | undefined =
     form !== 'stemmed'
       ? requiredSpecValue(source.growthVariants, 'plant growth variants')[form]
       : undefined
@@ -62,35 +74,74 @@ export function planter(
     variant?.growth ?? requiredSpecValue(source.growth, 'plant growth recipe')
   )
   const sprigs = crown ? createShrubSprigs(leaves) : undefined
+  const vessel =
+    form === 'broadleaf-square'
+      ? requiredSpecValue(source.growthVariants, 'plant variants')[
+          'broadleaf-square'
+        ].vessel
+      : undefined
+  const vessels = requiredSpecValue(source.vessels, 'vessel profiles')
+  const roundVessel =
+    variant && 'vesselId' in variant
+      ? requiredSpecValue(
+          vessels[variant.vesselId as keyof typeof vessels],
+          'round vessel recipe'
+        )
+      : undefined
   const profile = roundedProfile(
-    requiredSpecValue(pot.profileRZ, 'pot profile'),
-    requiredSpecValue(pot.edgeBevel, 'pot bevel'),
+    vessel?.profileHalfWidthZ ??
+      roundVessel?.profileRZ ??
+      requiredSpecValue(pot.profileRZ, 'pot profile'),
+    vessel?.sectionBevel ??
+      roundVessel?.sectionBevel ??
+      requiredSpecValue(pot.edgeBevel, 'pot bevel'),
     requiredSpecValue(pot.bevelSegments, 'pot bevel segments')
   )
+  const vesselSoilTop = vessel?.soilTop ?? roundVessel?.soilTop
+  const stemBottom =
+    vesselSoilTop === undefined
+      ? requiredSpecValue(stem.zMin, 'stem bottom')
+      : vesselSoilTop - 0.004
   const parts: AssetPart[] = [
     part(
       'pot',
-      revolveProfile(
-        profile,
-        crown?.radialSegments ??
-          requiredSpecValue(pot.radialSegments, 'pot segments')
-      ),
+      vessel
+        ? squareProfile(profile, vessel.cornerRadius)
+        : revolveProfile(
+            profile,
+            roundVessel?.radialSegments ??
+              crown?.radialSegments ??
+              requiredSpecValue(pot.radialSegments, 'pot segments')
+          ),
       color,
       'ceramic',
       spec.materials.ceramic.roughness
     ),
     part(
       'soil',
-      revolveProfile(
-        clippedSoil(
-          profile,
-          requiredSpecValue(soil.radius, 'soil radius'),
-          requiredSpecValue(soil.zMin, 'soil bottom'),
-          requiredSpecValue(soil.zMax, 'soil top')
-        ),
-        crown?.radialSegments ??
-          requiredSpecValue(soil.radialSegments, 'soil segments')
-      ),
+      vessel
+        ? squareProfile(
+            clippedSoil(
+              profile,
+              vessel.soilHalfWidth,
+              vessel.soilBottom,
+              vessel.soilTop
+            ),
+            vessel.cornerRadius
+          )
+        : revolveProfile(
+            clippedSoil(
+              profile,
+              roundVessel?.soilRadius ??
+                requiredSpecValue(soil.radius, 'soil radius'),
+              roundVessel?.soilBottom ??
+                requiredSpecValue(soil.zMin, 'soil bottom'),
+              roundVessel?.soilTop ?? requiredSpecValue(soil.zMax, 'soil top')
+            ),
+            roundVessel?.radialSegments ??
+              crown?.radialSegments ??
+              requiredSpecValue(soil.radialSegments, 'soil segments')
+          ),
       0x554432,
       'plain',
       spec.materials.soil.roughness
@@ -99,7 +150,7 @@ export function planter(
       'stem',
       tube(
         [
-          [0, 0, requiredSpecValue(stem.zMin, 'stem bottom')],
+          [0, 0, stemBottom],
           [0, 0, variant?.stemTop ?? requiredSpecValue(stem.zMax, 'stem top')]
         ],
         [
@@ -256,6 +307,8 @@ export function planter(
       mesh.indices.push(a, a + 1, b + 1, a, b + 1, b)
     }
     let leafColor = variant ? variant.leafColorSRGB : '#718752'
+    if (variant?.leafColorsSRGB)
+      leafColor = variant.leafColorsSRGB[index % variant.leafColorsSRGB.length]
     if (crown)
       leafColor = crown.leafColorsSRGB[index % crown.leafColorsSRGB.length]
     parts.push(
@@ -290,5 +343,17 @@ export function planter(
       )
     )
   })
-  return placeParts(parts, [0, 0, 0], 0, [scale, scale, scale])
+  const foliageScale = variant?.foliageScale
+  const shaped = foliageScale
+    ? parts.map((p) =>
+        p.id === 'pot' || p.id === 'soil'
+          ? p
+          : placeParts([p], [0, 0, 0], 0, [
+              foliageScale[0],
+              foliageScale[1],
+              foliageScale[2]
+            ])[0]
+      )
+    : parts
+  return placeParts(shaped, [0, 0, 0], 0, [scale, scale, scale])
 }

@@ -1,5 +1,18 @@
 # Small Plants - Geometry Supplement
 
+## Active variant precedence
+
+This supplement describes the generic and pantry foliage recipes below.
+For the work-room square planter, use `broadleaf-square` in
+[small-plants-model-spec.json](small-plants-model-spec.json). For the five shelf
+plants, use [shelf-botanical-model-spec.json](shelf-botanical-model-spec.json),
+which owns their hollow vessel sections, relief, cat features, blade thickness,
+leaf tiers and pigment patterns. The generic six-to-nine-leaf scaffold is not
+applicable to those three botanical forms. The [current room recipe index](README.md#current-room-recipes---2026-10-29)
+links their selected references and the independently sized discussion conifers.
+Original drawing-only validation statements below refer to their original batch.
+
+
 ## Coordinates and assembly
 
 Metres, +Z up, -Y front; pot bottom centre is the origin. Plant azimuth is measured from +X toward +Y. Front view sees negative X on the left. Pot, soil, plant stems/leaves and cactus branches remain separate named parts inside one placeable unit. Concealed overlap at roots or branch attachments is intentional. Do not add outside roots or separate saucers.

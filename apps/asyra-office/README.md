@@ -26,16 +26,20 @@ yarn start:asyra-office
 The workbench uses the URL in `.env` (default port 5194). Preserve an existing
 `.env`; use `.env.example` only when one is absent.
 
-The default route assembles the accepted single-floor structure, complete
-entrance, planted sidewalks, street, outdoor seating, canal and neighboring
-facades. The tables-and-chairs stage adds a writing desk, a tea
-table and a lounge coffee table, using uniform scales that preserve their
-approved proportions. The two wraparound tea chairs and lounge armchair are
-omitted pending reviewed Blender assets. The standalone green work chair also
-remains absent because it is not the dark chair in the original office image. Other indoor
-furnishings and occupants remain deferred. The explicit structure composition
-retains the accepted unfurnished checkpoint. These are real meshes through Core and the official
-Preset 3D profile, not a reference image projected over the scene.
+The default route assembles the accepted single-floor structure and current
+procedural room furnishings, pantry, planted sidewalks, street, outdoor seating,
+canal and neighboring facades. The owner requested a partial merge checkpoint
+for the shell, upper-left discussion room, lower-left work room and pantry;
+see the [current progress](../../docs/ai/apps/asyra-office/plans/office-rebuild-plan.md#merge-checkpoint---2026-10-29)
+and [construction specifications](../../docs/ai/apps/asyra-office/implementation.md).
+The expanded four rooms each gain 0.50 m depth. The temporary rear streetscape
+is shifted 2.00 m. Current indoor content includes tables, shelves, posters,
+calendar, plants, pantry appliances/containers and separate drink/sugar parts.
+The two wraparound tea chairs, lounge armchair and rejected dark desk-chair
+stand-in remain absent pending reviewed assets; the standalone catalog green
+chair is not substituted. People and animals remain deferred. The explicit
+structure composition retains the unfurnished checkpoint. These are real meshes
+through Core and the official Preset 3D profile, not projected reference artwork.
 
 Places focus the camera. Agents and assigned tasks select a rear-follow view;
 selecting a task opens no details. Tasks support status filtering, and search
@@ -77,10 +81,10 @@ full catalog surface recipes and final five-view asset fidelity remain unverifie
 Character sitting is a static construction pose, not a rig or animation system.
 Rejected cat/corgi meshes and their generator have been removed. Approved source
 images and specifications remain for later Blender modeling, rigging and animation.
-Permanent regression tests prohibit reintroducing the rejected placeholders. Potted plants use the approved broad
-folded leaves; street-leaf rim normals are isolated from both skins. Complete
-planting composition remains under review. The pot now follows the 96-segment
-profile, bounded 0.8 mm rim rounding and clipped soil cavity.
+Permanent regression tests prohibit reintroducing the rejected placeholders. Potted plants use scoped stemmed, rosette, shrub, lanceolate, conifer and
+owner-selected shelf-botanical recipes; street-leaf rim normals are isolated from both skins. The generic pot retains its 96-segment profile, bounded 0.8 mm rim rounding
+and clipped soil cavity. Square and relief/cat vessels have separate numeric
+recipes; do not apply the generic pot recipe to every scene plant.
 Background shops are contextual procedural architecture. Basic lighting remains
 separate from materials; no baked shadows, AO or cinematic filter stack is added.
 The owner limited current comparison to implemented objects; optional full-scene

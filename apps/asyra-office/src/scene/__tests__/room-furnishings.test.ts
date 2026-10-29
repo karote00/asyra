@@ -129,14 +129,19 @@ it('grounds shelf objects and keeps source printed artwork bounded to real frame
   for (const level of ['middle', 'upper']) {
     const top = bounds('work-shelf-' + level)[2][1]
     for (const suffix of ['', '-right'])
-      expect(
-        bounds('work-shelf-plant-' + level + suffix, 'pot')[2][0]
-      ).toBeCloseTo(top, 5)
+      expect(bounds('work-shelf-plant-' + level + suffix)[2][0]).toBeCloseTo(
+        top,
+        5
+      )
   }
   for (const label of scene.labels.filter((l) => l.artwork)) {
     const discussionPrint = label.text === 'Better\nAgents\nHappier\nPeople'
     expect(label.width).toBeLessThan(discussionPrint ? 1.15 : 0.6)
-    expect(label.height).toBeLessThan(discussionPrint ? 1.5 : 0.6)
+    const workPrint = label.text === 'A\nBrighter\nDay'
+    let frameHeight = 0.6
+    if (discussionPrint) frameHeight = 1.5
+    if (workPrint) frameHeight = 0.74
+    expect(label.height).toBeLessThan(frameHeight)
     expect(requiredSpecValue(label.artwork, 'artwork').corners).toHaveLength(4)
   }
 })
@@ -391,4 +396,128 @@ it('supports the staggered plant, pitcher and tumbler on the shortened counterto
 it('omits the stored preparation basin and unsupported tray from the current scene', () => {
   expect(parts.has('pantry-preparation-sink')).toBe(false)
   expect(parts.has('pantry-dish-tray')).toBe(false)
+})
+
+it('confines the green divider white finish to a 20 mm top with a continuous green body', () => {
+  const body = bounds('work-divider'),
+    cap = bounds('work-divider-cap')
+  expect(cap[2][1] - cap[2][0]).toBeCloseTo(0.02, 6)
+  expect(body[2][1]).toBeCloseTo(cap[2][0], 6)
+  expect(
+    parts.get('work-divider')?.every((part) => part.color === 0x8d9c83)
+  ).toBe(true)
+})
+it('matches the work shelf inventory: two upper plants, three middle plants and varied books', () => {
+  for (const [level, count] of [
+    ['upper', 2],
+    ['middle', 3]
+  ] as const) {
+    const plants = [...parts.keys()].filter((id) =>
+      id.startsWith('work-shelf-plant-' + level)
+    )
+    expect(plants).toHaveLength(count)
+    const shelf = bounds('work-shelf-' + level)
+    for (const id of plants) {
+      const pot = bounds(id, 'pot')
+      expect(bounds(id)[2][0]).toBeCloseTo(shelf[2][1], 5)
+      for (const axis of [0, 1]) {
+        expect(pot[axis][0]).toBeGreaterThan(shelf[axis][0])
+        expect(pot[axis][1]).toBeLessThan(shelf[axis][1])
+      }
+    }
+  }
+  const heights = [0, 1, 2, 3, 4].map((i) => {
+    const book = bounds('work-book-' + i)
+    return (book[2][1] - book[2][0]).toFixed(3)
+  })
+  expect(new Set(heights).size).toBeGreaterThanOrEqual(4)
+  const colors = [...parts.entries()]
+    .filter(([id]) => id.startsWith('work-shelf-plant-'))
+    .map(([, items]) => items.find((p) => p.id === 'pot')?.color)
+  expect(new Set(colors).size).toBeGreaterThanOrEqual(2)
+})
+it('provides a clear work poster and a rear desk surface for the notebook instead of filling the plant table', () => {
+  const label = scene.labels.find((l) => l.text === 'A\nBrighter\nDay')
+  expect(label?.artwork?.resolution).toBe(512)
+  const notebook = bounds('work-notebook'),
+    top = bounds('work-return-top')
+  expect(notebook[2][0]).toBeCloseTo(top[2][1], 5)
+  expect(parts.has('work-side-book')).toBe(false)
+  for (const axis of [0, 1]) {
+    expect(notebook[axis][0]).toBeGreaterThan(top[axis][0])
+    expect(notebook[axis][1]).toBeLessThan(top[axis][1])
+  }
+})
+
+it('keeps work shelf foliage below the next shelf and outside the wall', () => {
+  const wallFace = bounds('left-wall')[0][1]
+  for (const id of [...parts.keys()].filter((id) =>
+    id.startsWith('work-shelf-plant-')
+  )) {
+    const plant = bounds(id)
+    expect(plant[0][0], id).toBeGreaterThanOrEqual(wallFace)
+    if (id.startsWith('work-shelf-plant-middle'))
+      expect(plant[2][1], id).toBeLessThan(bounds('work-shelf-upper')[2][0])
+  }
+})
+
+it('uses the owner-referenced square terracotta floor pot with tall broad foliage', () => {
+  const p = requiredSpecValue(parts.get('work-floor-plant'), 'floor plant')
+  const pot = bounds('work-floor-plant', 'pot')
+  expect(pot[0][1] - pot[0][0]).toBeCloseTo(0.32, 3)
+  expect(pot[1][1] - pot[1][0]).toBeCloseTo(0.32, 3)
+  expect(pot[2][1] - pot[2][0]).toBeCloseTo(0.25, 3)
+  const vessel = requiredSpecValue(
+    p.find((v) => v.id === 'pot'),
+    'square pot'
+  )
+  const corner = vessel.mesh.positions.some(
+    (x, i, all) =>
+      i % 3 === 0 && x > pot[0][1] - 0.012 && all[i + 1] > pot[1][1] - 0.012
+  )
+  expect(corner, 'a round vessel cannot occupy a square corner').toBe(true)
+  const whole = bounds('work-floor-plant')
+  expect(whole[2][1] - whole[2][0]).toBeGreaterThan(0.75)
+  expect(whole[2][1] - whole[2][0]).toBeLessThan(0.95)
+  expect(whole[0][0], 'leaves must clear the west wall').toBeGreaterThan(-2.94)
+  expect(bounds('work-floor-plant', 'soil')[2][1]).toBeLessThan(pot[2][1])
+})
+
+it('uses reference botanical shelf plants at the accepted anchors and exact color groups', () => {
+  for (const [id, y, z, color] of [
+    ['work-shelf-plant-upper', -0.1, 2.0827, 0xeee5d7],
+    ['work-shelf-plant-upper-right', 0.25, 2.0827, 0x9b6543],
+    ['work-shelf-plant-middle', -0.14, 1.8027, 0xeee5d7],
+    ['work-shelf-plant-middle-centre', 0.09, 1.8027, 0x9b6543],
+    ['work-shelf-plant-middle-right', 0.31, 1.8027, 0xeee5d7]
+  ] as const) {
+    const assembly = requiredSpecValue(
+      scene.assemblies.find((a) => a.id === id),
+      id
+    )
+    expect(assembly.position).toEqual([-2.79, y, z])
+    const p = requiredSpecValue(
+      parts.get(id)?.find((p) => p.id === 'pot'),
+      id
+    )
+    expect(p.color).toBe(color)
+    const items = parts.get(id) ?? []
+    if (id.includes('middle')) {
+      expect(
+        items.some((p) => p.id === 'cat-ears'),
+        id
+      ).toBe(true)
+      expect(
+        items.some((p) => p.id === 'cat-face'),
+        id
+      ).toBe(true)
+      expect(bounds(id)[2][1] - z).toBeLessThan(0.25)
+    } else {
+      const surface = id.endsWith('right') ? 'snake-leaf' : 'veined-leaf'
+      expect(
+        items.some((p) => p.material === surface),
+        id
+      ).toBe(true)
+    }
+  }
 })

@@ -1,5 +1,27 @@
 # Asyra Office - Asset Reference Catalog
 
+## Current runtime additions - 2026-10-29
+
+The counts and drawing-only verification statements in the original inventory
+below describe that historical handoff. They are not a current runtime count or
+a claim that the subsequent procedural implementation is absent. The owner's
+partial room checkpoint and remaining work are recorded in the
+[active plan](../../../docs/ai/apps/asyra-office/plans/office-rebuild-plan.md#merge-checkpoint---2026-10-29).
+
+| Implemented family | Current construction and placement documents |
+| --- | --- |
+| Shell, stepped walls, entrance and expanded floor | [Technical proposal](../../../docs/ai/apps/asyra-office/implementation.md#four-room-depth-expansion---2026-10-28), [live structure specification](../../../apps/asyra-office/src/scene/reference/office-structure.json) |
+| Pantry appliances and approved layout | [Pantry](pantry/README.md), [current layout](../../../apps/asyra-office/src/scene/reference/pantry-layout.json) |
+| Pantry vessels, countertop accessories and two night lights | [Smallware](pantry-smallware/README.md), [framed light](pantry-smallware/FRAME-NIGHT-LIGHT.md) |
+| Discussion conifers, side-table/basket/vessel, console/perfume and clear artwork | [Room construction](../../../docs/ai/apps/asyra-office/implementation.md#discussion-room-reference-furnishings---2026-10-28) |
+| Coffee, ice, sugar jar/lid/cubes/spoon and handleless cup | [Desk and tableware handoff](desk-items/README.md#discussion-tableware-additions---2026-10-29) |
+| Work-room square planter and five new shelf plants | [Small plants](small-plants/README.md#current-room-recipes---2026-10-29), [botanical specification](small-plants/shelf-botanical-model-spec.json) |
+
+These additions extend existing families. They do not imply full-catalog mesh,
+Blender, rigging or animation completion. Preserved old drawings remain design
+history where explicit later owner corrections replace their appearance.
+
+
 Inventory date: 2026-10-05. Source baseline: `fee6019cab9d88fed76d2047fe7c1056186cb3ea`.
 
 This catalog covers **56 approved reference batches, 121 current drawing sheets and 56 numeric specification files**. A sheet is not necessarily a single unit: the street pavement/curb sheet covers multiple independent components, and transparent markings use planar views. Counts exclude source images, historical revisions and prompt records.

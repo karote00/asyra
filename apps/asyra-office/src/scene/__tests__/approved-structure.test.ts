@@ -130,6 +130,11 @@ describe('owner-approved building construction', () => {
               revisedVertices(name, expected.vertices).flat(),
               axis
             )
+            if (name === 'B - green divider' && axis === 2) {
+              const top = approved.parameters.greenTop
+              if (cap) wanted[0] = top - 0.02
+              else wanted[1] = top - 0.02
+            }
             expect(bounds[0]).toBeCloseTo(wanted[0], 6)
             expect(bounds[1]).toBeCloseTo(wanted[1], 6)
           }

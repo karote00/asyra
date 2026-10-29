@@ -36,6 +36,8 @@ export type SurfaceKind =
   | 'metal'
   | 'ceramic'
   | 'leaf'
+  | 'veined-leaf'
+  | 'snake-leaf'
   | 'stone'
   | 'water'
   | 'plain'

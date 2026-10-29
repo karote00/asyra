@@ -210,11 +210,12 @@ export function composeOfficeInterior(composer: OfficeComposer) {
     pos: readonly number[],
     alongY = false,
     ends: WallEndPlanes = {},
-    endTop = top
+    endTop = top,
+    capHeight?: number
   ) => {
     const pieces = joinWallEnds(
       fitWallTopProfile(
-        wallAsset([length, (thickness * 0.27) / 0.24, top - base]),
+        wallAsset([length, (thickness * 0.27) / 0.24, top - base], capHeight),
         length,
         top - base,
         endTop - base
@@ -243,7 +244,8 @@ export function composeOfficeInterior(composer: OfficeComposer) {
       w.center,
       w.alongY,
       w.ends,
-      w.endTop
+      w.endTop,
+      w.capHeight
     )
   const shell = OFFICE_SHELL
   const doorScale = OFFICE_STRUCTURE.doorScale

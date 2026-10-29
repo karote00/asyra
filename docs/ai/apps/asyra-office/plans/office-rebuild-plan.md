@@ -8,7 +8,50 @@ asset specifications are construction inputs subordinate to the approved visual
 reference and later explicit owner corrections. No new dependencies are authorized.
 Product slug: `asyra-office`; display name: `Asyra Office`.
 
+
+## Merge checkpoint - 2026-10-29
+
+This is a partial progress checkpoint for PR #361, **not formal plan closeout**.
+The owner confirmed the building structure, upper-left discussion room,
+lower-left work room and pantry as the scope to consolidate for merge. Their
+current implemented visual revisions may close at this checkpoint. This does
+not certify every reference object, all future behavior or photographic identity.
+
+| Scope | Checkpoint disposition | Current authority |
+| --- | --- | --- |
+| Building structure | Accepted current shell; close this revision | `scene/reference/office-structure.json`; four-room expansion in the technical proposal. All rooms share one floor; each gains 0.50 m depth, rear shell moves 1.00 m and rear streetscape 2.00 m. |
+| Upper-left discussion room | Close current implemented furnishings revision | Technical proposal: discussion-room furnishings and tableware. Branch-first conifers, open side table/basket, clear poster/calendar, console plants/perfume, iced coffee, open sugar jar/leaning lid/loose cubes/silver spoon and handleless cup. |
+| Lower-left work room | Close current implemented furnishings revision | Technical proposal: lower-left work room and five reference botanical planters. Thin 20 mm green-wall cap, clear poster, books/rear surface, square floor planter and five owner-selected shelf plants with retained colors/anchors. |
+| Pantry | Close current implemented layout and assets revision | `scene/reference/pantry-layout.json`; pantry and pantry-smallware specifications. Small upper freezer, 70%-capacity jug, rotated fridge, single-door preparation cabinet, full-size sink, shortened shelf and corrected contents. Both night lights and stored small basin/large jar/tiny bottle remain reusable. |
+| Lower-right lounge and exterior | Remain open for later visual refinement | Preserve current content and temporary rear-neighborhood relocation. No new acceptance is inferred. |
+| Deferred complex assets | Remain open | Reviewed Blender chairs, upholstered seating, people, animals, rigs and animation; rejected stand-ins stay absent. |
+| Product/game systems | Remain open | Live multi-provider agents, durable tasks/logs, economy, individual/global achievements, autonomous life, editable/expandable rooms, clothing and persistence. Current UI data is synthetic. |
+| Performance and full asset LoD | Remain open | Existing focused reuse/budget tests are evidence for their contracts only; large-viewport navigation, device budgets and whole-catalog LoD still require validation. |
+| Historical references | Deferred required review | Revisit the historical reference folders after all parts have been confirmed; do not delete or treat historical drawings as current instructions. |
+
+Current documentation entrypoints are the app README, technical proposal and
+asset catalog. The catalog's original drawing totals are a dated design inventory,
+not the current runtime asset count. Owner corrections and later active recipe
+sections supersede earlier dated reconstructions; retained source images are
+never silently rewritten to imply they were correct.
+
+Bounded consolidation task: audit this PR's changed Office implementation and
+its direct specifications/reference indexes; repair stale status, missing links
+and conflicting current summaries; validate and publish the existing work.
+Correct validation assumptions invalidated by the pending plant changes, without
+weakening assertions or timeouts. Do not redesign rooms, alter runtime behavior,
+complete deferred assets, move the
+plan to completed, invoke formal closeout or merge the PR. Reuse existing
+construct-asset and compose-office contracts; no Inspector semantics change.
+Validation covers the current Office tests, lint/build, affected visual checks,
+reference/JSON links, repository document/naming/Inspector checks and committed
+head admission. Stop after the validated source is pushed and remote status is
+reported. The owner retains whole-product acceptance and merge authority.
+
+
 ## Rebuild planning task
+
+Historical initial scope; superseded by the later implementation authorization.
 
 This revision replaces the earlier concept-first delivery proposal. The owner
 requested a fresh App after clearing `apps/asyra-office/src` in commit
@@ -4377,3 +4420,146 @@ scoped ESLint, naming, Inspector and document checks pass. Refresh generated
 public indexes and the Inspector workspace bundle; include the pending optical
 and authored-normal adoption guidance and package Changeset. The app server
 remains running. Commit-dependent checks and remote status follow publication.
+
+### Work room reference correction - 2026-10-29
+
+Bounded task: review the lower-left room against the owner-provided crop,
+correct its thin green-divider cap and regular furnishings, and update the
+room contract. Preserve the approved envelope, other rooms, exterior, camera,
+render settings and deferred Blender occupants/upholstery. No push. Discovery
+is limited to this room, its direct asset factories, specs and formal tests.
+
+Step card - construct-asset (Inspector step 1): approved dimensions and
+appearance enter the wall factory; named body/cap geometry leaves it. Add an
+explicit physical cap-height option with full-height body/cap continuity and
+matching near/distant geometry. Only Office assets contribute; no renderer
+writes, patch overlays or caches. Boundary: assets/wall.ts and its test.
+Failure owner: construct-asset; spec: implementation.md, Asset construction
+boundary. Gate: fail-first cap-height/continuity tests, existing wall tests,
+naming and type checks. Stop if another asset's default would change.
+
+Next segment - compose-office (Inspector step 11): consume completed assets
+and owner-approved room layout. Only room furnishings, green-wall cap input,
+room reference data and tests may change. Preserve unrelated assembly output.
+Cases: white confined to a thin top, two upper/three middle shelf plants, varied
+book spines, desk/side-table reference relationships, grounded pots and stool.
+Gates: focused geometry/furnishing tests, lint/build, hardware work-room E2E,
+and inspection of overall and detail screenshots. Tests alone do not establish
+visual acceptance. Stop at the bounded room review; report deferred assets.
+
+Validation outcome: the initial cap and shelf inventory/poster assertions failed
+on the original implementation. Wall construction now passes 11 tests and
+approved structure passes 18. The room suite passes 33 after a microscope
+review found middle-shelf foliage crossing the upper shelf: a failing clearance
+oracle was added first, then the room selected shorter plants and moved pot
+centres outward within the shelf footprint. The scene budget/preservation suite
+passed 13 tests; naming passed 15. Work-room hardware E2E passed and its
+1800 x 1200, DPR 2 canvas/close-up outputs were inspected. The green cap has a
+continuous seam; the five shelf plants clear the wall and upper shelf. This
+does not claim full reference equivalence: actor, cat and desk chair remain
+deferred, and the low-resolution source leaves hidden geometry uncertain.
+
+### Work-room square floor planter - 2026-10-29
+
+Bounded correction: only the west-wall floor plant, its reusable asset recipe,
+room assembly and direct tests/docs. The owner's enlarged crop supersedes the
+round generic pot: square tapered terracotta vessel, open soil surface, broad
+long leaves with upright inner growth and outward-arching outer growth.
+Preserve its location, all other plants, furnishings, structures and rendering.
+The obscured pot bottom and exact leaf count are reconstruction assumptions.
+No push. Stop after focused geometry, scene-budget, lint/build and actual-app
+close-up inspection; do not claim approval on the owner's behalf.
+
+Step card - construct-asset: Inspector step 1 consumes the plant specification,
+seed and appearance; emits named pot/soil/stem/leaves through the existing Office
+plant geometry owner. Reuse the closed-leaf builder and vessel topology, add a
+rounded-square vessel section and a distinct growth recipe. No renderer writes,
+external dependencies or new per-frame work. First prove the current scene's
+pot fails a square-corner/dimension oracle; then validate cavity and leaf form.
+Step card - compose-office: Inspector step 11 selects this recipe only for
+work-floor-plant at its existing floor position. Validate wall clearance and
+preserve other assembly output. Specs and visual evidence accompany this slice.
+
+Validation: the original 0.182 m round vessel failed the new 0.32 m square-pot
+oracle. The corrected plant passes the square-corner, cavity, broad-blade tier,
+wall-clearance and nondegenerate-triangle checks. Plant and furnishing suites
+passed all 48 assertions; the combined 61-test run also passed its assertions
+but reported a Vitest worker RPC timeout, so it is not recorded as a clean full
+run. A bounded rerun of the three affected geometry/composition/budget cases
+passed without worker errors. Build, lint and naming passed; the build retains
+its existing large-chunk warning. Hardware E2E on APP_URL port 5194 passed;
+its overhead, oblique and native-resolution plant crop were inspected. The
+square vessel and tall/arching foliage are visible in production lighting.
+This is a review candidate, not a claim of pixel-identical source reconstruction.
+
+### Five work-shelf plants - 2026-10-29
+
+Bounded task: preserve all five accepted shelf anchors and shelf geometry;
+correct only their vessels and foliage against the owner's enlarged crop.
+Three ivory vessels (upper left, middle left/right) and two identically colored
+terracotta vessels (upper right, middle centre) must have smooth straight
+cylindrical walls, rounded lips/bases and real open cavities. Upper-left broad
+upright foliage, taller arching upper-right foliage, low middle-left rosette,
+and small upright middle-centre/right growth are distinct recipes. Exact hidden
+leaf counts and metric dimensions are reconstruction assumptions.
+
+Step card - construct-asset: Inspector step 1 consumes the plant recipe and
+appearance, emits named closed meshes. Extend the existing plant recipe owner
+and reuse the closed blade and rounded hollow-vessel builders. No renderer,
+lighting, performance-policy or unrelated asset changes. First prove a formal
+cylinder-wall oracle fails on current tapered pots; then test smooth contours,
+cavity, distinct foliage and valid geometry. Boundary: plant asset/spec/tests.
+Step card - compose-office: Inspector step 11 selects those recipes at the
+accepted five anchors; preserve all other room/exterior assemblies. Gates:
+focused plant/room tests, scene mesh budget, naming, lint/type/build, live
+work-shelf E2E and magnified image inspection. No push; stop at this review
+candidate and report uncertainty rather than claiming identical hidden geometry.
+
+Validation outcome: the original upper-left pot failed the sidewall oracle
+with a 7.76 mm radius difference between quarter and three-quarter height.
+All five replacement pots now pass that oracle, exact color grouping and anchor
+preservation. All 50 plant/room tests pass, including real cavities, broad-leaf
+tiers, nondegenerate geometry, wall and upper-shelf clearance. The focused scene
+mesh-budget case passes below its unchanged 160-mesh ceiling. Build, typecheck,
+lint and naming pass; build retains its existing large-chunk warning. Hardware
+E2E on APP_URL port 5194 passed; normal-camera detail and lower-angle views were
+inspected so the lower foliage is not judged only through shelf occlusion.
+Reference and numeric defaults are retained in the small-plants spec. No push.
+
+### Reference shelf plant redesign - 2026-10-29
+
+The owner replaces the previous cylindrical-vessel contract with three complete
+plant-and-pot designs from work-shelf-botanical-reference.png: upper-left
+white-veined fittonia in a rounded embossed vessel; upper-right yellow-edged
+snake plant in a fluted rounded vessel; all three lower positions use fleshy
+rosette succulents in cat-face vessels. Preserve all five positions, uniform
+assembly scales and the accepted three ivory/two terracotta colors. The new
+reference overrides the previous shelf reference only. Exact hidden surfaces
+and metric construction values remain authored reconstruction defaults.
+
+Step card - construct-asset (Inspector step 1): consume the new botanical
+specification, scale, seed and existing pot color; output named hollow vessels,
+soil, leaves and details. Reuse existing Office mesh/profile helpers and Preset
+surface contract. Geometry and botanical surface recipes live under assets/;
+no renderer writes, additional dependencies, per-frame generation or changes to
+other plant recipes. Formal cases cover cavity, flutes, embossed profile, paired
+cat ears/feet/face, thick succulent leaves, patterned leaves and finite meshes.
+Step card - compose-office (Inspector step 11, after asset validation): select
+these assets at the accepted five anchors; register their completed surfaces in
+the existing surface table. Keep shelves, structures, exterior and lighting
+unchanged. Formal anchor/color and clearance cases precede implementation.
+Gates: focused asset/room/surface tests, naming, lint/type/build, unchanged scene
+mesh ceiling, same-live-app shelf E2E and enlarged screenshot review. No push.
+Stop at the review candidate without claiming owner acceptance.
+
+Validation: the original shelf composition failed the new botanical-material
+oracle before replacement. Final asset and room suites pass 41 tests; surface
+suite passes seven, and the existing scene mesh ceiling passes unchanged.
+Build, lint, typecheck and 15 naming checks pass (existing large bundle warning
+remains). Hardware E2E passes on APP_URL port 5194; full shelf context and the
+native-resolution close-up were inspected. Review corrected faceted belly
+contours and overly conical cat ears before the final capture. Color/anchor,
+cavity, support-foot, shelf/wall clearance and closed-leaf checks pass. Botanical
+identity, selected pot forms and pigment details are implemented; exact hidden
+geometry remains reconstructed rather than claimed as photographically measured.
+This is the owner review candidate. No commit or push was performed.

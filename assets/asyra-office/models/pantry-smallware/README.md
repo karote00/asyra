@@ -1,6 +1,26 @@
 # Asyra Office - Group 4L - Pantry Canister and Takeaway Cup
 
-Status: approved for commit by the user. Drawings and specifications only; no model verification.
+## Current pantry variants
+
+`sourceVariants` in the [numeric specification](pantry-smallware-model-spec.json)
+and the [geometry supplement](GEOMETRY-SUPPLEMENT.md) own the four clear
+containers, inserted cork closure, narrow-neck bottle, flowering/leafy shelf
+plants, blue/brown succulent pot, white pitcher, insulated tumbler and brush cup.
+The large ivory-content jar and tiny narrow-neck bottle remain reusable assets
+but are stored off the current shortened shelf. The cork enters the glass mouth;
+it is not a loose disk resting on top. Exact ingredient identity is unresolved.
+
+Both the original lantern and the new [framed night light](FRAME-NIGHT-LIGHT.md)
+remain separate assets; the fridge uses the framed light. Its two owner photos
+and single-unit reference are retained beside that specification. The
+[current layout](../../../../apps/asyra-office/src/scene/reference/pantry-layout.json)
+and [technical proposal](../../../../docs/ai/apps/asyra-office/implementation.md#countertop-group-and-approved-pantry-layout---2026-10-28)
+own placement, support, shortened shelf contents and cabinet clearances.
+
+
+Status: original design sheets approved; the subsequent procedural pantry
+variants and current layout are included in the 2026-10-29 partial room checkpoint.
+The original batch below is not the complete runtime smallware inventory.
 
 | One placeable unit | Reference | X x Y x Z (m) | Sheet |
 | --- | --- | --- | --- |

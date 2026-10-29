@@ -125,3 +125,30 @@ export function clippedSoil(
     })
   return [[0, bottom], ...outline, [0, top]]
 }
+
+/** Sweep the same hollow section over four straight sides with rounded corners. */
+export function squareProfile(
+  profile: readonly Point[],
+  cornerRadius: number
+): Mesh {
+  const mesh = revolveProfile(profile, 32)
+  for (let i = 0; i < mesh.positions.length; i += 3) {
+    const x = mesh.positions[i],
+      y = mesh.positions[i + 1]
+    const r = Math.hypot(x, y)
+    if (r === 0) continue
+    const index =
+      Math.round(
+        (((Math.atan2(y, x) + 2 * Math.PI) % (2 * Math.PI)) * 32) /
+          (2 * Math.PI)
+      ) % 32
+    const corner = Math.floor(index / 8)
+    const angle = (corner * Math.PI) / 2 + ((index % 8) * Math.PI) / 14
+    const bevel = Math.min(cornerRadius, r * 0.2)
+    const sx = corner === 0 || corner === 3 ? 1 : -1
+    const sy = corner < 2 ? 1 : -1
+    mesh.positions[i] = sx * (r - bevel) + bevel * Math.cos(angle)
+    mesh.positions[i + 1] = sy * (r - bevel) + bevel * Math.sin(angle)
+  }
+  return mesh
+}

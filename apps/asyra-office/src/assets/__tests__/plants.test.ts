@@ -195,3 +195,103 @@ it('grows shrub leaves along connected sprigs with short petioles rather than lo
     ).toBeLessThan(0.015)
   }
 })
+
+it('builds a hollow square pot with rooted broad blades and an arched outer tier', () => {
+  const parts = planter(1, 0xa4714e, 606, 'broadleaf-square')
+  const leaves = parts.filter((p) => p.id.startsWith('leaf-'))
+  expect(leaves.length).toBeGreaterThanOrEqual(10)
+  const heights = leaves.map((p) =>
+    Math.max(...p.mesh.positions.filter((_, i) => i % 3 === 2))
+  )
+  expect(Math.max(...heights)).toBeGreaterThan(0.75)
+  expect(Math.min(...heights)).toBeLessThan(0.5)
+  for (const leaf of leaves) {
+    const p = leaf.mesh.positions
+    const middle = 1 + 11 * 9
+    expect(
+      Math.hypot(
+        ...p
+          .slice(middle * 3, middle * 3 + 3)
+          .map((n, i) => n - p[(middle + 8) * 3 + i])
+      )
+    ).toBeGreaterThan(0.095)
+    expect(p[2]).toBeGreaterThan(0.224)
+    expect(p[2]).toBeLessThan(0.27)
+  }
+  const vessel = requiredSpecValue(
+    parts.find((p) => p.id === 'pot'),
+    'square vessel'
+  )
+  // There is no lid spanning the opening. Rim vertices retain both inside and outside contours.
+  const rim = vessel.mesh.positions.flatMap((v, i, all) =>
+    i % 3 === 0 && all[i + 2] > 0.248
+      ? [Math.max(Math.abs(v), Math.abs(all[i + 1]))]
+      : []
+  )
+  expect(Math.min(...rim)).toBeGreaterThan(0.14)
+  expect(Math.min(...rim)).toBeLessThan(0.15)
+  expect(Math.max(...rim)).toBeGreaterThan(0.158)
+  for (const part of parts) {
+    expect(part.mesh.positions.every(Number.isFinite)).toBe(true)
+    for (let i = 0; i < part.mesh.indices.length; i += 3) {
+      const [a, b, c] = part.mesh.indices
+        .slice(i, i + 3)
+        .map((id) => part.mesh.positions.slice(id * 3, id * 3 + 3))
+      const u = b.map((v, k) => v - a[k]),
+        v = c.map((v, k) => v - a[k])
+      expect(
+        Math.hypot(
+          u[1] * v[2] - u[2] * v[1],
+          u[2] * v[0] - u[0] * v[2],
+          u[0] * v[1] - u[1] * v[0]
+        )
+      ).toBeGreaterThan(1e-14)
+    }
+  }
+})
+
+it('differentiates the shelf foliage tiers while retaining a smooth open cylinder', () => {
+  const configurations = [
+    ['cylindrical-upright', 701, 0.27, 0.34],
+    ['cylindrical-arching', 702, 0.34, 0.4],
+    ['cylindrical-rosette', 703, 0.16, 0.19],
+    ['cylindrical-sprout', 704, 0.19, 0.23],
+    ['cylindrical-sprout', 705, 0.19, 0.23]
+  ] as const
+  for (const [form, seed, minHeight, maxHeight] of configurations) {
+    const parts = planter(1, 0xeee5d7, seed, form)
+    const leaves = parts.filter((p) => p.id.startsWith('leaf-'))
+    const height = Math.max(
+      ...leaves.flatMap((p) => p.mesh.positions.filter((_, i) => i % 3 === 2))
+    )
+    expect(height, form).toBeGreaterThan(minHeight)
+    expect(height, form).toBeLessThan(maxHeight)
+    const pot = requiredSpecValue(
+      parts.find((p) => p.id === 'pot'),
+      'cylinder'
+    )
+    const rim = pot.mesh.positions.flatMap((v, i, p) =>
+      i % 3 === 0 && p[i + 2] > 0.112 ? [Math.hypot(v, p[i + 1])] : []
+    )
+    expect(Math.min(...rim), 'open inner rim').toBeGreaterThan(0.057)
+    expect(Math.min(...rim)).toBeLessThan(0.061)
+    expect(Math.max(...rim)).toBeCloseTo(0.065, 3)
+    for (const part of parts) {
+      expect(part.mesh.positions.every(Number.isFinite)).toBe(true)
+      for (let i = 0; i < part.mesh.indices.length; i += 3) {
+        const [a, b, c] = part.mesh.indices
+          .slice(i, i + 3)
+          .map((index) => part.mesh.positions.slice(index * 3, index * 3 + 3))
+        const u = b.map((v, k) => v - a[k]),
+          v = c.map((n, k) => n - a[k])
+        expect(
+          Math.hypot(
+            u[1] * v[2] - u[2] * v[1],
+            u[2] * v[0] - u[0] * v[2],
+            u[0] * v[1] - u[1] * v[0]
+          )
+        ).toBeGreaterThan(1e-14)
+      }
+    }
+  }
+})

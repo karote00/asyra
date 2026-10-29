@@ -1,6 +1,22 @@
 # Asyra Office - Group 4B - Pantry Equipment
 
-Status: **The user approved committing four multiview sheets and documents; models have not been verified.**
+## Current scene precedence
+
+The current [numeric layout](../../../../apps/asyra-office/src/scene/reference/pantry-layout.json)
+and [expanded-room placement](../../../../docs/ai/apps/asyra-office/implementation.md#four-room-depth-expansion---2026-10-28)
+supersede the earlier illustration's arrangement. The fridge has a small upper
+freezer and large lower refrigerator, faces the aisle after a 90-degree turn,
+and keeps its original scale. The dispenser's inverted photo-shaped bottle has
+static water at 70% of cavity volume. The preparation cabinet is single-door
+with an uncut top; its small basin remains an available asset but is not placed.
+The independent full-size main sink stays on the right with equal worktop depth.
+The generic coffee machine is not placed. Use
+[smallware](../pantry-smallware/README.md) for current countertop/shelf objects
+and the new light. Original sheets below do not override these owner corrections.
+
+
+Status: **Original design sheets approved; the current procedural pantry revision
+is included in the owner-requested 2026-10-29 partial merge checkpoint.**
 
 ## Units in this batch
 
@@ -25,9 +41,9 @@ Fridge notes/magnets and countertop cups, jars, and plants remain separate objec
 
 Recognizable source colours, contours, and layout guide appearance. Faucet details, coffee-machine outlet/buttons, hidden backs, and recess depths are explicit completions. The coffee machine is the smallest and partly obscured source item; this design is not a precisely identified source structure.
 
-## Scope
+## Original drawing-batch scope
 
-Images/documents only. No Blender, GLB, or feature implementation. These are static closed exteriors with visible recesses only, excluding fridge/cabinet interiors, plumbing, and appliance mechanisms. Future app requirements determine door opening, pouring, and coffee effects. Snack cabinet and other pantry objects remain a later batch.
+The original batch contained images/documents only. No Blender, GLB, or feature implementation. These are static closed exteriors with visible recesses only, excluding fridge/cabinet interiors, plumbing, and appliance mechanisms. Future app requirements determine door opening, pouring, and coffee effects. Snack cabinet and other pantry objects remain a later batch.
 
 Generated images are not calibrated projections. Slight view-tone/position differences must not become materials or separate geometry. Future actual models need comparison; complete documentation does not establish 100% reconstruction.
 

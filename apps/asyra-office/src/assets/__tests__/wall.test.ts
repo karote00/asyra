@@ -15,6 +15,31 @@ const extents = (part: ReturnType<typeof createWall>[number]) => {
 }
 
 describe('approved wall geometry', () => {
+  it('keeps a requested thin cap at its physical height while preserving the wall envelope', () => {
+    const parts = createWall({ size: [1.2, 0.1575, 1.8], capHeight: 0.02 })
+    const [body, cap] = parts.map(extents)
+    expect(cap[1][1] - cap[1][0]).toBeCloseTo(0.02, 10)
+    expect(body[1][0]).toBe(0)
+    expect(body[1][1]).toBeCloseTo(cap[1][0], 10)
+    expect(cap[1][1]).toBeCloseTo(1.8, 10)
+    expect(body[0]).toEqual(cap[0])
+    for (const part of parts) {
+      const far = part.descriptor.distant
+      if (!far) throw new Error('Missing distant wall geometry')
+      const distant = extents({
+        ...part,
+        descriptor: { ...part.descriptor, shape: far.shape }
+      })
+      expect(distant).toEqual(extents(part))
+    }
+  })
+  it('rejects caps that leave no body or cannot contain the authored bevel', () => {
+    for (const capHeight of [0, -0.01, 0.001, 1.8, Infinity, NaN])
+      expect(() =>
+        createWall({ size: [1.2, 0.1575, 1.8], capHeight })
+      ).toThrow()
+  })
+
   it('keeps both X ends flush and overhangs only thickness by 15 mm per side', () => {
     const [body, cap] = createWall().map(extents)
     expect(body).toEqual([

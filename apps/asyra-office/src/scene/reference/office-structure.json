@@ -151,6 +151,7 @@
       "top": 2.1435541213707063,
       "endTop": 2.1435541213707063,
       "thickness": 0.14,
+      "capHeight": 0.02,
       "alongY": false,
       "ends": {}
     },

@@ -580,6 +580,555 @@
             }
           ],
           "bladeArchMetres": 0.04
+        },
+        "broadleaf-square": {
+          "source": "review/work-floor-square-planter-owner-reference.png - owner crop, 2026-10-29",
+          "authority": "Square terracotta planter and broad upright/arching leaves are visible. Exact metric extents, hidden rear leaves and cavity depth are authored reconstruction, not measurements recoverable from the crop.",
+          "stemTop": 0.27,
+          "leafColorSRGB": "#647336",
+          "growth": {
+            "revision": 1,
+            "defaultSeed": 606,
+            "leafCount": [
+              10,
+              12
+            ],
+            "attachmentHeight": [
+              0.222,
+              0.252
+            ],
+            "stratumJitter": [
+              0.2,
+              0.8
+            ],
+            "azimuthStepDegrees": 137.507764,
+            "azimuthJitterDegrees": 28,
+            "reachScale": [
+              0.94,
+              1.03
+            ],
+            "widthScale": [
+              0.96,
+              1.06
+            ],
+            "riseScale": [
+              0.98,
+              1.03
+            ],
+            "archScale": [
+              0.85,
+              1.15
+            ],
+            "rollDegrees": [
+              -13,
+              13
+            ],
+            "lateralBend": [
+              -0.008,
+              0.008
+            ],
+            "rule": "Reuse the deterministic growth recipe with soil-rooted leaves; outer blades spread, younger inner blades rise. No tall central stalk."
+          },
+          "scaffold": [
+            {
+              "tipRadius": 0.235,
+              "width": 0.13,
+              "tipZ": 0.4,
+              "attachZ": 0.225
+            },
+            {
+              "tipRadius": 0.23,
+              "width": 0.12,
+              "tipZ": 0.43,
+              "attachZ": 0.225
+            },
+            {
+              "tipRadius": 0.2,
+              "width": 0.115,
+              "tipZ": 0.64,
+              "attachZ": 0.24
+            },
+            {
+              "tipRadius": 0.18,
+              "width": 0.12,
+              "tipZ": 0.66,
+              "attachZ": 0.24
+            },
+            {
+              "tipRadius": 0.055,
+              "width": 0.11,
+              "tipZ": 0.86,
+              "attachZ": 0.25
+            },
+            {
+              "tipRadius": 0.07,
+              "width": 0.105,
+              "tipZ": 0.84,
+              "attachZ": 0.25
+            }
+          ],
+          "bladeArchMetres": 0.085,
+          "vessel": {
+            "profileHalfWidthZ": [
+              [
+                0,
+                0
+              ],
+              [
+                0.12,
+                0
+              ],
+              [
+                0.16,
+                0.24
+              ],
+              [
+                0.16,
+                0.25
+              ],
+              [
+                0.144,
+                0.25
+              ],
+              [
+                0.106,
+                0.018
+              ],
+              [
+                0,
+                0.018
+              ]
+            ],
+            "cornerRadius": 0.006,
+            "sectionBevel": 0.002,
+            "soilHalfWidth": 0.137,
+            "soilBottom": 0.205,
+            "soilTop": 0.224,
+            "defaultColorSRGB": "#A4714E",
+            "appearance": "Color and material remain replaceable. Uniform or three-axis sizing is applied by the asset transform; the square tapered cavity stays real."
+          }
+        },
+        "cylindrical-upright": {
+          "source": "review/work-shelf-plants-owner-reference.png - owner crop, 2026-10-29",
+          "authority": "Straight smooth cylinders and color groups are owner-defined. Leaf silhouettes are inferred from the visible crop; exact hidden leaf counts and metric defaults are authored reconstruction.",
+          "stemTop": 0.123,
+          "leafColorSRGB": "#637C3D",
+          "growth": {
+            "revision": 1,
+            "defaultSeed": 606,
+            "leafCount": [
+              6,
+              8
+            ],
+            "attachmentHeight": [
+              0.102,
+              0.119
+            ],
+            "stratumJitter": [
+              0.2,
+              0.8
+            ],
+            "azimuthStepDegrees": 137.507764,
+            "azimuthJitterDegrees": 28,
+            "reachScale": [
+              0.94,
+              1.02
+            ],
+            "widthScale": [
+              0.96,
+              1.06
+            ],
+            "riseScale": [
+              0.98,
+              1.02
+            ],
+            "archScale": [
+              0.9,
+              1.1
+            ],
+            "rollDegrees": [
+              -18,
+              18
+            ],
+            "lateralBend": [
+              -0.004,
+              0.004
+            ],
+            "rule": "Reuse the deterministic growth recipe with soil-rooted leaves; outer blades spread, younger inner blades rise. No tall central stalk."
+          },
+          "scaffold": [
+            {
+              "tipRadius": 0.13,
+              "width": 0.075,
+              "tipZ": 0.15,
+              "attachZ": 0.102
+            },
+            {
+              "tipRadius": 0.12,
+              "width": 0.075,
+              "tipZ": 0.16,
+              "attachZ": 0.1054
+            },
+            {
+              "tipRadius": 0.08,
+              "width": 0.075,
+              "tipZ": 0.23,
+              "attachZ": 0.1088
+            },
+            {
+              "tipRadius": 0.08,
+              "width": 0.07,
+              "tipZ": 0.24,
+              "attachZ": 0.1122
+            },
+            {
+              "tipRadius": 0.04,
+              "width": 0.055,
+              "tipZ": 0.31,
+              "attachZ": 0.1156
+            },
+            {
+              "tipRadius": 0.03,
+              "width": 0.055,
+              "tipZ": 0.3,
+              "attachZ": 0.119
+            }
+          ],
+          "bladeArchMetres": 0.032,
+          "vesselId": "cylindrical",
+          "leafColorsSRGB": [
+            "#637C3D",
+            "#788D48",
+            "#4F6934"
+          ],
+          "foliageScale": [
+            0.8,
+            1.4,
+            1
+          ]
+        },
+        "cylindrical-arching": {
+          "source": "review/work-shelf-plants-owner-reference.png - owner crop, 2026-10-29",
+          "authority": "Straight smooth cylinders and color groups are owner-defined. Leaf silhouettes are inferred from the visible crop; exact hidden leaf counts and metric defaults are authored reconstruction.",
+          "stemTop": 0.134,
+          "leafColorSRGB": "#637C3D",
+          "growth": {
+            "revision": 1,
+            "defaultSeed": 606,
+            "leafCount": [
+              9,
+              11
+            ],
+            "attachmentHeight": [
+              0.102,
+              0.13
+            ],
+            "stratumJitter": [
+              0.2,
+              0.8
+            ],
+            "azimuthStepDegrees": 137.507764,
+            "azimuthJitterDegrees": 28,
+            "reachScale": [
+              0.94,
+              1.02
+            ],
+            "widthScale": [
+              0.96,
+              1.06
+            ],
+            "riseScale": [
+              0.98,
+              1.02
+            ],
+            "archScale": [
+              0.9,
+              1.1
+            ],
+            "rollDegrees": [
+              -18,
+              18
+            ],
+            "lateralBend": [
+              -0.004,
+              0.004
+            ],
+            "rule": "Reuse the deterministic growth recipe with soil-rooted leaves; outer blades spread, younger inner blades rise. No tall central stalk."
+          },
+          "scaffold": [
+            {
+              "tipRadius": 0.12,
+              "width": 0.08125,
+              "tipZ": 0.16,
+              "attachZ": 0.102
+            },
+            {
+              "tipRadius": 0.12,
+              "width": 0.0825,
+              "tipZ": 0.175,
+              "attachZ": 0.1076
+            },
+            {
+              "tipRadius": 0.1,
+              "width": 0.0775,
+              "tipZ": 0.29,
+              "attachZ": 0.1132
+            },
+            {
+              "tipRadius": 0.095,
+              "width": 0.075,
+              "tipZ": 0.305,
+              "attachZ": 0.1188
+            },
+            {
+              "tipRadius": 0.04,
+              "width": 0.0625,
+              "tipZ": 0.385,
+              "attachZ": 0.12440000000000001
+            },
+            {
+              "tipRadius": 0.045,
+              "width": 0.06875,
+              "tipZ": 0.37,
+              "attachZ": 0.13
+            }
+          ],
+          "bladeArchMetres": 0.05,
+          "vesselId": "cylindrical",
+          "leafColorsSRGB": [
+            "#637C3D",
+            "#788D48",
+            "#4F6934"
+          ],
+          "foliageScale": [
+            0.8,
+            1.7,
+            1
+          ]
+        },
+        "cylindrical-rosette": {
+          "source": "review/work-shelf-plants-owner-reference.png - owner crop, 2026-10-29",
+          "authority": "Straight smooth cylinders and color groups are owner-defined. Leaf silhouettes are inferred from the visible crop; exact hidden leaf counts and metric defaults are authored reconstruction.",
+          "stemTop": 0.112,
+          "leafColorSRGB": "#637C3D",
+          "growth": {
+            "revision": 1,
+            "defaultSeed": 606,
+            "leafCount": [
+              8,
+              10
+            ],
+            "attachmentHeight": [
+              0.101,
+              0.108
+            ],
+            "stratumJitter": [
+              0.2,
+              0.8
+            ],
+            "azimuthStepDegrees": 137.507764,
+            "azimuthJitterDegrees": 28,
+            "reachScale": [
+              0.94,
+              1.02
+            ],
+            "widthScale": [
+              0.96,
+              1.06
+            ],
+            "riseScale": [
+              0.98,
+              1.02
+            ],
+            "archScale": [
+              0.9,
+              1.1
+            ],
+            "rollDegrees": [
+              -18,
+              18
+            ],
+            "lateralBend": [
+              -0.004,
+              0.004
+            ],
+            "rule": "Reuse the deterministic growth recipe with soil-rooted leaves; outer blades spread, younger inner blades rise. No tall central stalk."
+          },
+          "scaffold": [
+            {
+              "tipRadius": 0.063,
+              "width": 0.042,
+              "tipZ": 0.13,
+              "attachZ": 0.101
+            },
+            {
+              "tipRadius": 0.065,
+              "width": 0.045,
+              "tipZ": 0.13,
+              "attachZ": 0.1024
+            },
+            {
+              "tipRadius": 0.05,
+              "width": 0.04,
+              "tipZ": 0.15,
+              "attachZ": 0.1038
+            },
+            {
+              "tipRadius": 0.048,
+              "width": 0.042,
+              "tipZ": 0.15,
+              "attachZ": 0.1052
+            },
+            {
+              "tipRadius": 0.023,
+              "width": 0.032,
+              "tipZ": 0.18,
+              "attachZ": 0.1066
+            },
+            {
+              "tipRadius": 0.022,
+              "width": 0.032,
+              "tipZ": 0.175,
+              "attachZ": 0.108
+            }
+          ],
+          "bladeArchMetres": 0.014,
+          "vesselId": "cylindrical",
+          "leafColorsSRGB": [
+            "#637C3D",
+            "#788D48",
+            "#4F6934"
+          ]
+        },
+        "cylindrical-sprout": {
+          "source": "review/work-shelf-plants-owner-reference.png - owner crop, 2026-10-29",
+          "authority": "Straight smooth cylinders and color groups are owner-defined. Leaf silhouettes are inferred from the visible crop; exact hidden leaf counts and metric defaults are authored reconstruction.",
+          "stemTop": 0.116,
+          "leafColorSRGB": "#637C3D",
+          "growth": {
+            "revision": 1,
+            "defaultSeed": 606,
+            "leafCount": [
+              6,
+              8
+            ],
+            "attachmentHeight": [
+              0.102,
+              0.112
+            ],
+            "stratumJitter": [
+              0.2,
+              0.8
+            ],
+            "azimuthStepDegrees": 137.507764,
+            "azimuthJitterDegrees": 28,
+            "reachScale": [
+              0.94,
+              1.02
+            ],
+            "widthScale": [
+              0.96,
+              1.06
+            ],
+            "riseScale": [
+              0.98,
+              1.02
+            ],
+            "archScale": [
+              0.9,
+              1.1
+            ],
+            "rollDegrees": [
+              -18,
+              18
+            ],
+            "lateralBend": [
+              -0.004,
+              0.004
+            ],
+            "rule": "Reuse the deterministic growth recipe with soil-rooted leaves; outer blades spread, younger inner blades rise. No tall central stalk."
+          },
+          "scaffold": [
+            {
+              "tipRadius": 0.065,
+              "width": 0.034,
+              "tipZ": 0.145,
+              "attachZ": 0.102
+            },
+            {
+              "tipRadius": 0.06,
+              "width": 0.037,
+              "tipZ": 0.15,
+              "attachZ": 0.104
+            },
+            {
+              "tipRadius": 0.045,
+              "width": 0.035,
+              "tipZ": 0.185,
+              "attachZ": 0.106
+            },
+            {
+              "tipRadius": 0.047,
+              "width": 0.037,
+              "tipZ": 0.18,
+              "attachZ": 0.108
+            },
+            {
+              "tipRadius": 0.018,
+              "width": 0.027,
+              "tipZ": 0.22,
+              "attachZ": 0.11
+            },
+            {
+              "tipRadius": 0.018,
+              "width": 0.03,
+              "tipZ": 0.215,
+              "attachZ": 0.112
+            }
+          ],
+          "bladeArchMetres": 0.015,
+          "vesselId": "cylindrical",
+          "leafColorsSRGB": [
+            "#637C3D",
+            "#788D48",
+            "#4F6934"
+          ]
+        }
+      },
+      "vessels": {
+        "cylindrical": {
+          "profileRZ": [
+            [
+              0,
+              0
+            ],
+            [
+              0.065,
+              0
+            ],
+            [
+              0.065,
+              0.115
+            ],
+            [
+              0.058,
+              0.115
+            ],
+            [
+              0.058,
+              0.009
+            ],
+            [
+              0,
+              0.009
+            ]
+          ],
+          "sectionBevel": 0.003,
+          "radialSegments": 64,
+          "soilRadius": 0.0575,
+          "soilBottom": 0.092,
+          "soilTop": 0.102,
+          "description": "Straight cylindrical ceramic sides, 7 mm walls, 9 mm base, rounded top and bottom edges. No tapered body or projecting rim band."
         }
       }
     },

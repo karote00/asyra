@@ -1,11 +1,18 @@
 # Office rebuild - Technical proposal
 
-Status: rebuild implementation authorized on 2026-10-25; complete reference-scene slice authorized. The [product plan](plans/office-rebuild-plan.md)
-owns intended experience and acceptance. This replaces claims about the deleted
-Office implementation. The first procedural wall and its asset harness are now
-implemented using existing shared Preset capabilities. No complete Office runtime,
-provider connector or user-accepted rebuild baseline is claimed. The source reset
-preceded this slice; deleted behaviour is not restored.
+Status: the procedural reference-scene preview is implemented. On 2026-10-29 the
+owner requested consolidation of the current building shell, discussion room,
+work room and pantry for PR #361. See the [partial merge checkpoint](plans/office-rebuild-plan.md#merge-checkpoint---2026-10-29).
+The complete Office product remains open; this is not formal plan closeout.
+Provider data remains synthetic, complex deferred assets remain absent and
+navigation performance is not universally certified.
+
+Read the later named correction sections below as the current recipe for their
+scope. Earlier stage descriptions record superseded construction work, not
+alternative current layouts. In particular, the approved pantry layout and
+four-room expansion supersede the earlier west-wall/contact and small-basin
+arrangements. New tabletop recipes supersede generic mug/pitcher interpretations.
+
 
 ## Persistent visual acceptance
 
@@ -1425,7 +1432,7 @@ Lighting banding, filters, exterior refinement and live agent integration are
 outside this furnishing slice. Visual acceptance requires inspection of the
 actual app's overview, room views and enlarged details in addition to tests.
 
-### Pantry source correction
+### Pantry source correction - historical pre-layout revision
 
 The pantry furnishing owner compares the original crop left to right. It uses the
 revised dispenser height split, refrigerator-top shrub/jar, six individually sized
@@ -1486,7 +1493,7 @@ and its two clearance cuts, drain and faucet move 60 mm left together. Local
 placement remains supported and within the approved pantry. Shadow acne is
 corrected by the Preset shadow provider, not scene geometry or a filter.
 
-### Pantry contact with the west wall
+### Pantry contact with the west wall - superseded by approved layout
 
 The shelf and preparation worktop start at the accepted west-wall inside face
 (X=0.1776932207). The shelf ends at X=2.0 and redistributes its supported
@@ -2007,3 +2014,125 @@ because their shadow/pass inputs cannot use this prepass contract. Renderer
 state and source material visibility are restored even on failure. The replay
 mesh is removed before bloom and overlays. This does not alter asset geometry,
 materials, physical resolution or camera integration.
+
+### Lower-left work room - reference review
+
+The owner's 2026-10-29 room crop is the visual authority for this correction.
+The approved expanded room envelope, desk transform and exterior remain intact.
+The green divider keeps its accepted total height and thickness. Its separate
+white top region is now **0.020 m high**, with the green body extending to the
+cap underside; no white overlay or white side panel is introduced. This is a
+construction estimate from the visible thin rim, not an exact measurement from
+the low-resolution source. The previous proportional cap was 0.0564 m high.
+`reference/office-structure.json` owns this instance's cap height. `createWall`
+accepts optional physical `capHeight` after whole-unit sizing; omission keeps
+the catalog default. Validate finite positive heights and bevel clearance for
+both regions. Near and distant meshes share the same outer extents and seam.
+
+Room inventory and placement:
+
+- Three wooden wall shelves remain. The upper shelf holds two plants (white
+  and terracotta pots); the middle holds three (white, terracotta, white).
+  Their pot bases rest on the actual shelf top; the pots remain inside its
+  footprint. Foliage must clear the wall and the underside of the next shelf.
+  Use distinct plant forms and stable variation identities.
+- The lower shelf has seven individually sized book spines. The source supports
+  different heights and colors; the exact count is a reconstruction of the
+  visible spines, not a readable title/count guarantee. Heights range from
+  0.19 to 0.28 m; widths range from 0.035 to 0.070 m.
+- Keep the silver laptop, dark cup and mouse on the main desk, the terracotta
+  floor plant under the poster, the green oval rug and the orange low stool.
+- Restore the rear wooden work surface between the west wall and the separate
+  plant table. It follows the main desk's top elevation, with 0.32 m depth,
+  0.032 m top thickness and four dark supports. A small terracotta plant sits
+  below the shelves. The pale notebook belongs on this rear surface toward
+  its right end, not on the separate small plant table. The inferred surface
+  is kept separate from the accepted main desk asset.
+- The side table retains its white potted plant. The work poster uses a clear
+  768 x 1008 SVG with the reference's three text lines and ochre heart; the
+  renderer samples it at 512 pixels, without baking the reference blur.
+
+All appearance remains replaceable. Geometry is independent of lighting.
+The source actor, sleeping cat and rejected desk chair remain missing by prior
+owner instruction, pending reviewed Blender assets; do not count these as
+completed or insert procedural stand-ins. This review does not certify pixel
+equivalence to the reference or resolve the separate navigation-performance
+issue.
+
+### West-wall floor planter
+
+The owner crop `small-plants/review/work-floor-square-planter-owner-reference.png`
+is the shape authority for `work-floor-plant`. It is not the generic round pot.
+`small-plants-model-spec.json`, variant `broadleaf-square`, supplies the actual
+construction recipe: a 0.32 m square mouth, 0.24 m square base, 0.25 m height,
+16 mm rim wall, 18 mm bottom, 6 mm rounded plan corners and 2 mm section bevel.
+Soil ends at 0.224 m, below the open rim. These metric defaults reconstruct the
+visible proportions; the photograph does not provide absolute measurements.
+
+Ten to twelve broad, tapered, closed blades grow from a short soil-rooted stem:
+outer blades reach outward and arch before their tips; inner blades stand
+higher. The fixed scene seed is 606, the floor anchor stays (-2.68, -1.11, 0.38),
+and foliage must clear the west wall. Leaf widths are 0.105-0.13 m before bounded
+variation; the highest inner tips are approximately 0.84-0.86 m above the base.
+The section and growth spec define hidden geometry explicitly instead of
+interpreting foreground occlusion as a missing portion of the planter.
+
+Terracotta defaults to #A4714E and foliage to #647336. Appearance remains
+replaceable through existing asset appearance/scene transforms; other variants
+and all other scene plants retain their original outputs. Construction reuses
+the existing closed-leaf builder and section topology and runs only at scene
+creation, with no camera-dependent vegetation work. Source-space tests verify
+square corners, actual cavity, blade tiers, finite nondegenerate triangles,
+floor support and wall clearance. Work-room hardware E2E records the live
+scene's overview and a normal-control close-up for visual inspection.
+
+### Five reference botanical work-shelf planters
+
+The latest owner reference is
+`small-plants/review/work-shelf-botanical-reference.png`. It supersedes the
+previous straight-cylinder shelf-plant appearance, but preserves each pot's
+color, anchor and uniform instance scale. The upper-left reference plant maps
+to the scene's upper-right position; the reference's lower-left plant maps to
+scene upper-left; the reference's lower-right cat planter maps to all three
+middle-shelf positions. The hanging plant in the reference is not included.
+
+| Position | Preserved anchor (m) | Pot default | Botanical recipe | Uniform scale / seed |
+| --- | --- | --- | --- | --- |
+| Upper left | (-2.79, -0.10, 2.0827) | Ivory #EEE5D7 | fittonia | 1.00 / 701 |
+| Upper right | (-2.79, 0.25, 2.0827) | Terracotta #9B6543 | snake | 1.10 / 702 |
+| Middle left | (-2.79, -0.14, 1.8027) | Ivory #EEE5D7 | succulent | 1.00 / 703 |
+| Middle centre | (-2.79, 0.09, 1.8027) | Terracotta #9B6543 | succulent | 0.95 / 704 |
+| Middle right | (-2.79, 0.31, 1.8027) | Ivory #EEE5D7 | succulent | 1.05 / 705 |
+
+`shelf-botanical-model-spec.json` owns the hollow radial vessel sections, soil
+height, relief, leaf-ring counts and dimensions, fleshy blade thickness, cat
+features and pebble settings. These metric values reconstruct the selected
+appearance at the existing shelf scale; they are not absolute measurements
+recoverable from the photograph. `shelf-botanical.ts` constructs the assets;
+no renderer-specific geometry or per-frame growth is involved.
+
+- Fittonia: 0.128 m nominal upper diameter, 0.112 m vessel height, rounded
+  narrowing base with shallow chevron relief; 17 broad curved leaves in three
+  overlapping tiers, dark green pigment with white branching veins.
+- Snake plant: 0.128 m nominal upper diameter, 0.115 m vessel height, 32 shallow
+  vertical flutes and rounded lower body; five upright pointed sword leaves,
+  irregular green bands, yellow margins and 32 small pale stones. The scene
+  applies its retained 1.10 uniform scale to the entire asset.
+- Succulent: 0.130 m belly diameter, 0.091 m body height, 0.113 m ear-tip height;
+  rounded open cat vessel, two tapered ears, two support feet and a dark face
+  directed into the room (+X). The body begins 4 mm above its local origin;
+  the feet, rather than the belly, contact the shelf. Twenty-one thick pointed
+  leaves form three staggered rosette tiers. Different seeds vary azimuth and
+  small leaf dimensions without changing the vessel or the accepted anchors.
+
+Relief is geometry, not painted light. `botanical-surface.ts` creates replaceable
+512 x 256 leaf pigmentation with neutral normal maps through the existing
+Preset spatial-surface contract. The scene registers each completed surface
+once through its existing surface table. Pot colors remain caller parameters;
+all three shapes support uniform scale and the existing assembly transforms.
+All five pots retain real cavities, recessed soil and closed leaves. Formal
+checks cover nondegenerate triangles, feet-to-shelf contact, wall clearance,
+upper-shelf clearance, exact color/anchor preservation and the existing mesh
+budget. Hardware E2E captures the same live app at normal and enlarged views.
+Other plants, books, shelves, room structure, lighting and exterior remain
+unchanged.

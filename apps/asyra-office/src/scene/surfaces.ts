@@ -1,3 +1,4 @@
+import { botanicalSurface } from '../assets/botanical-surface'
 import { ingredientSurface } from './ingredient-surface'
 import { porcelainSurface } from './porcelain-surface'
 import {
@@ -53,6 +54,8 @@ export function createSurfaces(): Partial<Record<SurfaceKind, SpatialSurface>> {
       normals
     })
   }
+  result['veined-leaf'] = botanicalSurface('veined-leaf')
+  result['snake-leaf'] = botanicalSurface('snake-leaf')
   result['porcelain-floral'] = porcelainSurface()
   for (const kind of [
     'granulated',

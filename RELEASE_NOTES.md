@@ -1,5 +1,44 @@
 # Asyra Release Notes
 
+## Pending - Office room checkpoint
+
+```update-note
+{
+  "change": "office-work-room-reference-checkpoint",
+  "owner": "Asyra Office",
+  "summary": "Complete the owner-selected work-room shelf botanicals, square floor planter, clear poster and thin divider cap. Synchronize construction specifications and record a partial merge checkpoint for the shell, discussion room, work room and pantry. Reuse a read-only scene fixture in geometry assertions without changing runtime behavior or test deadlines.",
+  "sources": [
+    "apps/asyra-office/e2e/work-room.spec.ts",
+    "apps/asyra-office/src/assets/__tests__/plants.test.ts",
+    "apps/asyra-office/src/assets/__tests__/shelf-botanical.test.ts",
+    "apps/asyra-office/src/assets/__tests__/wall.test.ts",
+    "apps/asyra-office/src/assets/botanical-surface.ts",
+    "apps/asyra-office/src/assets/catalog.ts",
+    "apps/asyra-office/src/assets/plant-vessels.ts",
+    "apps/asyra-office/src/assets/plants.ts",
+    "apps/asyra-office/src/assets/shelf-botanical.ts",
+    "apps/asyra-office/src/assets/wall.ts",
+    "apps/asyra-office/src/scene/__tests__/approved-structure.test.ts",
+    "apps/asyra-office/src/scene/__tests__/room-furnishings.test.ts",
+    "apps/asyra-office/src/scene/__tests__/scene.test.ts",
+    "apps/asyra-office/src/scene/office-interior.ts",
+    "apps/asyra-office/src/scene/office-layout.ts",
+    "apps/asyra-office/src/scene/reference/office-structure.json",
+    "apps/asyra-office/src/scene/reference/work-poster.svg",
+    "apps/asyra-office/src/scene/room-furnishings.ts",
+    "apps/asyra-office/src/scene/surfaces.ts",
+    "assets/asyra-office/models/small-plants/review/work-floor-square-planter-owner-reference.png",
+    "assets/asyra-office/models/small-plants/review/work-shelf-botanical-reference.png",
+    "assets/asyra-office/models/small-plants/review/work-shelf-plants-owner-reference.png",
+    "assets/asyra-office/models/small-plants/shelf-botanical-model-spec.json",
+    "assets/asyra-office/models/small-plants/small-plants-model-spec.json"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Private preview assets and documentation only; no consumer migration or public API change. The complete product plan, remaining room/asset work and broad navigation-performance acceptance remain open."
+}
+```
+
 ## Pending - Held input consumer fixture
 
 ```update-note

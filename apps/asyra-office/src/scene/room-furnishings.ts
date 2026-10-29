@@ -1,3 +1,4 @@
+import workPosterUrl from './reference/work-poster.svg?url'
 import { requiredSpecValue } from '../assets/specification'
 import { addLoungeFurnishings } from './lounge-furnishings'
 import { addPantryFurnishings } from './pantry-furnishings'
@@ -6,6 +7,8 @@ import { addDiscussionFurnishings } from './discussion-furnishings'
 import { addPrint, addRug, meshBounds } from './room-furnishing-helpers'
 import { ellipsoid, type Vec } from '../assets/geometry'
 import { catalogAsset, part } from '../assets/catalog'
+import { planter } from '../assets/plants'
+import { shelfBotanical } from '../assets/shelf-botanical'
 import { laptop, mug } from '../assets/desk-items'
 import type { OfficeComposer } from './office-interior'
 import { OFFICE_FLOORS, OFFICE_SHELL } from './office-layout'
@@ -52,10 +55,12 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     0,
     [1.15, 1.15, 1.15]
   )
-  plant('work-floor-plant', [-2.68, -1.11, floor], 1.3, {
-    color: 0x956a48,
-    form: 'rosette'
-  })
+  add(
+    'work-floor-plant',
+    'planter',
+    planter(1, 0xa4714e, 606, 'broadleaf-square'),
+    [-2.68, -1.11, floor]
+  )
   const wallX = OFFICE_SHELL.westX + OFFICE_SHELL.exteriorThickness / 2
   addPrint(
     c,
@@ -65,6 +70,16 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
     [wallX + 0.017, -1.31, 2.05],
     90
   )
+  c.labels[c.labels.length - 1].artwork = {
+    source: workPosterUrl,
+    resolution: 512,
+    corners: [
+      [0, 0],
+      [767, 0],
+      [767, 1007],
+      [0, 1007]
+    ]
+  }
   for (const [level, z] of [
     ['lower', 1.43],
     ['middle', 1.76],
@@ -79,22 +94,82 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
       [1.22, 1.22, 1.22]
     )
     if (level === 'lower') {
-      for (let i = 0; i < 5; i++)
+      // The reference row has independently sized spines, not repeated blocks.
+      const books = [
+        [0.06, 0.24, 0x456e86],
+        [0.035, 0.22, 0xe6d5b9],
+        [0.06, 0.25, 0x315579],
+        [0.07, 0.19, 0xb6aa96],
+        [0.045, 0.23, 0x6b797e],
+        [0.05, 0.28, 0x243a38],
+        [0.07, 0.26, 0x395c53]
+      ]
+      let edge = -0.19
+      books.forEach(([width, height, color], i) => {
         block(
           'work-book-' + i,
-          [0.14, 0.038, 0.19],
-          [wallX + 0.1, -0.14 + i * 0.045, z + 0.0427 + 0.095],
-          [0x365b72, 0x77999c, 0xe9d9b5, 0x927257, 0x42675c][i],
+          [0.14, width, height],
+          [wallX + 0.1, edge + width / 2, z + 0.0427 + height / 2],
+          color,
           'plain',
           0.001
         )
+        edge += width + 0.012
+      })
     } else {
-      plant('work-shelf-plant-' + level, [wallX + 0.11, -0.09, z + 0.0427], 1.0)
-      plant(
-        'work-shelf-plant-' + level + '-right',
-        [wallX + 0.11, 0.27, z + 0.0427],
-        0.85
-      )
+      const upper = level === 'upper'
+      const pots = upper
+        ? ([
+            {
+              suffix: '',
+              y: -0.1,
+              scale: 1,
+              color: 0xeee5d7,
+              seed: 701,
+              form: 'fittonia'
+            },
+            {
+              suffix: '-right',
+              y: 0.25,
+              scale: 1.1,
+              color: 0x9b6543,
+              seed: 702,
+              form: 'snake'
+            }
+          ] as const)
+        : ([
+            {
+              suffix: '',
+              y: -0.14,
+              scale: 1,
+              color: 0xeee5d7,
+              seed: 703,
+              form: 'succulent'
+            },
+            {
+              suffix: '-centre',
+              y: 0.09,
+              scale: 0.95,
+              color: 0x9b6543,
+              seed: 704,
+              form: 'succulent'
+            },
+            {
+              suffix: '-right',
+              y: 0.31,
+              scale: 1.05,
+              color: 0xeee5d7,
+              seed: 705,
+              form: 'succulent'
+            }
+          ] as const)
+      for (const pot of pots)
+        add(
+          'work-shelf-plant-' + level + pot.suffix,
+          'planter',
+          shelfBotanical(pot.form, pot.color, pot.scale, pot.seed),
+          [wallX + 0.15, pot.y, z + 0.0427]
+        )
     }
   }
   const tableZ = floor + 0.57
@@ -116,11 +191,49 @@ export function addWorkFurnishings(c: OfficeComposer, deskTop: number) {
         'wood',
         0.003
       )
-  plant('work-side-plant', [-0.82, 0.46, tableZ + 0.016], 1.25)
+  plant('work-side-plant', [-0.82, 0.46, tableZ + 0.016], 1.25, {
+    color: 0xeee5d7,
+    form: 'stemmed'
+  })
+  // The notebook belongs to the rear work surface, left of the small plant table.
+  const returnLeft = wallX + 0.025,
+    returnRight = -0.87 - 0.45 / 2 - 0.025,
+    returnWidth = returnRight - returnLeft,
+    returnX = (returnLeft + returnRight) / 2,
+    returnY = 0.46,
+    returnDepth = 0.32,
+    returnThickness = 0.032,
+    legHeight = deskTop - floor - returnThickness
   block(
-    'work-side-book',
-    [0.19, 0.13, 0.023],
-    [-1, 0.4, tableZ + 0.0275],
+    'work-return-top',
+    [returnWidth, returnDepth, returnThickness],
+    [returnX, returnY, deskTop - returnThickness / 2],
+    0xbb946b,
+    'wood',
+    0.007
+  )
+  for (const x of [-1, 1])
+    for (const y of [-1, 1])
+      block(
+        `work-return-leg-${x}-${y}`,
+        [0.032, 0.032, legHeight],
+        [
+          returnX + x * (returnWidth / 2 - 0.04),
+          returnY + y * (returnDepth / 2 - 0.04),
+          floor + legHeight / 2
+        ],
+        0x393831,
+        'plain',
+        0.003
+      )
+  plant('work-return-plant', [returnLeft + 0.14, returnY, deskTop], 0.8, {
+    color: 0x8d6849,
+    form: 'rosette'
+  })
+  block(
+    'work-notebook',
+    [0.24, 0.16, 0.023],
+    [returnRight - 0.18, returnY - 0.025, deskTop + 0.0115],
     0xe3d5b9,
     'plain',
     0.002
