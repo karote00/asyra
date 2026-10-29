@@ -5,13 +5,15 @@ import {
   createAiInvoker,
   createAiToolContract,
   selectAiToolResultSchema,
+  embedAiToolSchema,
   type AiInvocation,
   type AiInvocationContext,
   type AiInvocationEvent,
   type AiRecipeInvocationEvent,
   type AiRecipeLimits,
   type AiToolStore,
-  type AiJsonValue
+  type AiJsonValue,
+  type AiToolOutcome
 } from '@asyra/ai-agent-runtime'
 import { createLocalToolLeases } from './local-tool-leases'
 import { createLocalToolLibrary } from './local-tool-library'
@@ -23,6 +25,7 @@ import {
 import {
   invokeLocalTool,
   localToolFailureReply,
+  localToolFailureSchema,
   localToolErrorMessage,
   localToolResultSchema,
   localToolOutcome,
@@ -36,7 +39,10 @@ import {
 import type { LocalToolOwnership } from './local-tool-leases'
 import {
   projectToolDelivery,
-  modelToolResultSchemas
+  toolDeliveryFailure,
+  projectToolResultFields,
+  modelToolResultSchemas,
+  hostToolResultSchema
 } from '../src/ai/tool-contract'
 import { AiDesignToolIds } from '../src/constants/ai-design'
 
@@ -148,7 +154,18 @@ export const createLocalToolHost = (options: {
           ...definition,
           // Leaves validate the unchanged owner value before adding metadata.
           // Runtime consumes that complete value plus the host outcome.
-          ...modelToolResultSchemas({ ...definition, delivery: undefined })
+          ...Object.fromEntries(
+            ['outputSchema', 'partialOutputSchema', 'recoveryOutputSchema'].map(
+              (key) => [
+                key,
+                runtimeOperationSchema(
+                  hostToolResultSchema(
+                    definition[key as keyof typeof definition]
+                  )
+                )
+              ]
+            )
+          )
         }),
         inputSchema: runtimeOperationSchema(definition.inputSchema),
         name,
@@ -307,25 +324,139 @@ export const createLocalToolHost = (options: {
   }
   function project(name: string, input: unknown, value: unknown): unknown {
     const binding = bindings.get(name)
-    if (!binding) return value
-    // Both direct and registered invocation preserve failed owner receipts.
-    // Only an owner projector may transform acknowledged partial execution.
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      const original = value as Record<string, unknown>
-      const outcome = original.toolOutcome as { status?: string } | undefined
-      if (
-        outcome &&
-        outcome.status !== 'success' &&
-        !original.actionResults &&
-        !original.execution &&
-        !(original.executionResult && binding.owner.projectModelResult)
+    const contract = binding?.definition ?? library.describe(name)
+    try {
+      if (!binding) {
+        return contract ? projectToolDelivery(contract, value) : value
+      }
+      // Owners project resource-backed values first. Every external exit then selects
+      // the same declared envelope, including failures and custom owner projectors.
+      // Selected leaves are projected by their owner before an invocation envelope.
+      // The envelope's declared value slot preserves that already projected result.
+      if (!contract) throw new Error('Missing registered result contract')
+      const schemas = modelToolResultSchemas(contract)
+      const projectionSchema = {
+        anyOf: [
+          schemas.outputSchema,
+          schemas.partialOutputSchema,
+          schemas.recoveryOutputSchema,
+          localToolFailureSchema
+        ]
+          .filter((schema) => schema !== undefined)
+          .map((schema, index) =>
+            embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
+          )
+      }
+      const boundaryFailure = !operationContractIssue(
+        value,
+        localToolFailureSchema,
+        { stage: 'output' }
       )
-        return value
+      let receipt = value
+      if (boundaryFailure && value && typeof value === 'object') {
+        const failure = value as Record<string, unknown>
+        if (
+          failure.executionResult &&
+          typeof failure.executionResult === 'object'
+        ) {
+          const ownerResults = {
+            anyOf: [
+              contract.outputSchema,
+              contract.partialOutputSchema,
+              contract.recoveryOutputSchema
+            ]
+              .filter((schema) => schema !== undefined)
+              .map((schema, index) =>
+                embedAiToolSchema(
+                  hostToolResultSchema(schema) as AiJsonValue,
+                  `#/anyOf/${index}`
+                )
+              )
+          }
+          // Cleanup can fail after a valid owner result was retained. Project that
+          // result through its own contract, preserving the cleanup failure outside.
+          // Invalid/transport evidence remains with its existing failure owner.
+          if (
+            !operationContractIssue(failure.executionResult, ownerResults, {
+              stage: 'output'
+            })
+          )
+            receipt = {
+              ...failure,
+              executionResult: project(name, input, failure.executionResult)
+            }
+        }
+      }
+      let view = receipt
+      if (binding.owner.projectModelResult)
+        view = binding.owner.projectModelResult(
+          binding.definition.name,
+          input,
+          receipt
+        )
+      else if (contract.delivery && !boundaryFailure)
+        view = projectToolDelivery(contract, receipt)
+      const acknowledged =
+        value && typeof value === 'object' && 'toolOutcome' in value
+          ? (value.toolOutcome as AiToolOutcome)
+          : undefined
+      if (
+        acknowledged &&
+        view &&
+        typeof view === 'object' &&
+        !Array.isArray(view)
+      ) {
+        const report =
+          'toolOutcome' in view
+            ? (view.toolOutcome as AiToolOutcome)
+            : acknowledged
+        if (
+          report.settlement !== acknowledged.settlement ||
+          (acknowledged.status !== 'success' && report.status === 'success')
+        )
+          return toolDeliveryFailure(
+            value,
+            'Model projection changed the acknowledged execution outcome.',
+            contract
+          )
+        view = { ...view, toolOutcome: report }
+      }
+      // Match validated owner fields before removing internal-only fields. A closed
+      // model schema cannot match the complete owner value until those are removed.
+      const selectionSchema = {
+        anyOf: [
+          projectionSchema,
+          ...[
+            contract.outputSchema,
+            contract.partialOutputSchema,
+            contract.recoveryOutputSchema
+          ]
+            .filter((schema) => schema !== undefined)
+            .map(hostToolResultSchema)
+        ].map((schema, index) =>
+          embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
+        )
+      }
+      const projected = projectToolResultFields(view, selectionSchema)
+      const deliveredStatus =
+        projected && typeof projected === 'object' && 'toolOutcome' in projected
+          ? (projected.toolOutcome as AiToolOutcome).status
+          : acknowledged?.status
+      const applicableSchema =
+        deliveredStatus === 'success' ? schemas.outputSchema : projectionSchema
+      const issue = operationContractIssue(projected, applicableSchema, {
+        stage: 'output'
+      })
+      return issue ? toolDeliveryFailure(value, issue, contract) : projected
+    } catch (error) {
+      return toolDeliveryFailure(
+        value,
+        localToolErrorMessage(error),
+        contract ?? {}
+      )
     }
-    return binding.owner.projectModelResult
-      ? binding.owner.projectModelResult(binding.definition.name, input, value)
-      : projectToolDelivery(binding.definition, value)
   }
+
   function invoke(call: AiInvocation, internal = false): Promise<Reply> {
     return track(async () => {
       const reply = await native.invoke({
@@ -360,6 +491,18 @@ export const createLocalToolHost = (options: {
         if (binding)
           return {
             ...definition,
+            ...Object.fromEntries(
+              [
+                'outputSchema',
+                'partialOutputSchema',
+                'recoveryOutputSchema'
+              ].map((key) => [
+                key,
+                hostToolResultSchema(
+                  binding.definition[key as keyof typeof binding.definition]
+                )
+              ])
+            ),
             resultStage: 'host' as const,
             name: binding.definition.name,
             registeredName: definition.name,

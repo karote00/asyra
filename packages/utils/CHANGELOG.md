@@ -6,7 +6,7 @@
 {
   "change": "registered-identity-allocation",
   "owner": "Utils ID counter",
-  "summary": "Reserve immutable ordered IDs atomically from existing counters, rejecting invalid types, ambiguous prefixes and exhaustion before consumption.",
+  "summary": "Reserve immutable ordered IDs atomically from existing counters, rejecting invalid types, ambiguous prefixes and exhaustion before consumption. Keep the allocation regression compatible with the package ES2020 compiler target without changing its assertions.",
   "sources": [
     "packages/utils/src/sid/idCounter.ts",
     "packages/utils/src/sid/__tests__/idCounter.test.ts"

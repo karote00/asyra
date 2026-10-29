@@ -17,6 +17,10 @@ export const informationDeliverySchema = {
   required: ['contentDelivery'],
   additionalProperties: true,
   properties: {
+    status: { type: 'string' },
+    settlement: { type: 'string' },
+    code: { type: 'string' },
+    message: { type: 'string' },
     contentDelivery: {
       type: 'object',
       additionalProperties: false,

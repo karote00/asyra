@@ -1,5 +1,6 @@
 import { isReservedDraftRepairKey } from './design-draft-repair'
 import {
+  toolInternalResult,
   toolResultBoolean,
   toolResultIds,
   toolResultObject,
@@ -348,30 +349,77 @@ export const createLocalDesignTools = (
       }
     }
   }
-  const preparedOutputSchema = toolResultObject({
-    available: { const: true },
+  const preparedOutputSchema = toolResultObject(
+    {
+      available: { const: true },
+      artifactId: toolRequestReference,
+      applicable: toolResultBoolean,
+      elementCount: { type: 'integer', minimum: 1 },
+      findings: { type: 'array' },
+      review: { type: 'object' },
+      sharedFillIds: {
+        type: 'object',
+        additionalProperties: { type: 'string' }
+      },
+      preparationInput: toolResultObject(
+        {
+          kind: { enum: ['source', 'retained-repair'] },
+          draftId: { type: 'string', minLength: 1 },
+          revision: { type: 'string' },
+          partitions: { type: 'array' },
+          partitionLimitation: { type: 'object' },
+          sourceBytes: toolInternalResult({ type: 'integer' }),
+          replacementCount: toolInternalResult({ type: 'integer' })
+        },
+        ['kind']
+      ),
+      reuse: toolInternalResult({ type: 'object' }),
+      sourceWork: toolInternalResult({ type: 'object' })
+    },
+    ['available', 'artifactId', 'applicable', 'elementCount', 'findings']
+  )
+  const recoveryFields = {
+    preparationInput: preparedOutputSchema.properties.preparationInput,
+    available: { type: 'boolean' },
+    applicable: { type: 'boolean' },
     artifactId: toolRequestReference,
-    applicable: toolResultBoolean,
-    elementCount: { type: 'integer', minimum: 1 },
-    findings: { type: 'array' }
-  })
+    elementCount: { type: 'integer', minimum: 0 },
+    findings: { type: 'array' },
+    review: { type: 'object' },
+    message: { type: 'string' },
+    code: { type: 'string' },
+    settlement: { type: 'string' },
+    recovery: { type: 'string' },
+    draftId: { type: 'string', minLength: 1 },
+    retainedDraft: { type: 'object' },
+    retention: { type: 'string' },
+    nextStep: { type: 'string' },
+    repairGuide: { type: 'object' },
+    budget: { type: 'object' },
+    geometryIssue: { type: 'object' },
+    conflicts: { type: 'array' }
+  }
   const capacityOutputSchema = {
     anyOf: [
       preparedOutputSchema,
-      toolResultObject({
-        available: { const: true },
-        draftId: toolRequestReference,
-        retainedDraft: toolResultObject({
+      toolResultObject(
+        {
+          available: { const: true },
           draftId: toolRequestReference,
-          partitions: {
-            type: 'array',
-            minItems: 2,
-            maxItems: limits.recoveryParts,
-            items: { type: 'object' }
-          }
-        }),
-        budget: { type: 'object' }
-      })
+          retainedDraft: toolResultObject({
+            draftId: toolRequestReference,
+            partitions: {
+              type: 'array',
+              minItems: 2,
+              maxItems: limits.recoveryParts,
+              items: { type: 'object' }
+            }
+          }),
+          budget: { type: 'object' },
+          nextStep: { type: 'string' }
+        },
+        ['available', 'draftId', 'retainedDraft', 'budget']
+      )
     ]
   }
   const enabled = actions.some(
@@ -484,6 +532,7 @@ export const createLocalDesignTools = (
   return {
     expandedNodeLimit,
     capacityOutputSchema,
+    recoveryFields,
     checkResults: session.checkResults,
     resolveRecipe: session.recipe,
     rejectInput: (
@@ -666,7 +715,10 @@ export const createLocalDesignTools = (
             recoveryOutputSchema: {
               anyOf: [
                 preparedOutputSchema,
-                toolResultObject({ available: { const: false } })
+                toolResultObject(
+                  { ...recoveryFields, available: { const: false } },
+                  ['available']
+                )
               ]
             },
             name: AiDesignToolIds.PREPARE_DESIGN,

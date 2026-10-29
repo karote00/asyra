@@ -1965,7 +1965,7 @@ it.each([
       )
       expect(reply.success).toBe(false)
       const result = JSON.parse(reply.text)
-      expect(result.toolOutcome.settlement).toBe(settlement)
+      expect(result.toolOutcome.settlement, result.message).toBe(settlement)
       expect(reply.text).toContain('ACTION_FAILED')
       if (failCheck && settlement !== 'unknown')
         expect(reply.text).toContain('Measurement transport failed')

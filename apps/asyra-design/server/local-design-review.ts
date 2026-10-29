@@ -776,6 +776,21 @@ const reviewPlanNext = toolResultObject({
 
 const reviewResultSchema = toolResultObject(
   {
+    settlement: toolResultString,
+    available: toolResultBoolean,
+    status: toolResultString,
+    revision: toolResultCount,
+    final: toolResultBoolean,
+    message: toolResultString,
+    actionResults: { type: 'array' },
+    checks: { type: 'array' },
+    facts: { type: 'array' },
+    deferredChecks: { type: 'array' },
+    deferredDetails: { type: 'array' },
+    pendingDetails: { type: 'array' },
+    regressions: { type: 'array' },
+    failedInspections: { type: 'array' },
+    evidenceValidation: { type: 'object' },
     phase: { enum: ['structure', 'visual'] },
     reviewOperation: {
       enum: ['capture', 'bind', 'record'],
@@ -804,6 +819,8 @@ const reviewResultSchema = toolResultObject(
     results: designCheckDeliverySchema,
     correction: toolResultObject(
       {
+        coverage: { type: 'object' },
+        referenceDecisions: { type: 'array' },
         diagnosticOnly: { const: true },
         requiresFreshReview: toolResultBoolean,
         revision: toolResultCount,
@@ -930,11 +947,17 @@ export const designEvidenceDefinitions = [
   {
     type: 'function',
     ...toolSemantics(
-      toolResultObject({
-        phase: { const: 'plan' },
-        recorded: { const: true },
-        criterionIds: toolResultIds
-      }),
+      toolResultObject(
+        {
+          phase: { const: 'plan' },
+          recorded: { const: true },
+          criterionIds: toolResultIds,
+          deferredDetailIds: toolResultIds,
+          requirementRevision: toolResultCount,
+          facts: { type: 'array' }
+        },
+        ['phase', 'recorded', 'criterionIds']
+      ),
       'prepare',
       ['request-artifacts']
     ),
@@ -951,7 +974,15 @@ export const designEvidenceDefinitions = [
   {
     type: 'function',
     ...toolSemantics(
-      toolResultObject({ phase: { const: 'facts' }, facts: { type: 'array' } }),
+      toolResultObject(
+        {
+          phase: { const: 'facts' },
+          facts: { type: 'array' },
+          factBindings: { type: 'array' },
+          review: { type: 'object' }
+        },
+        ['phase', 'facts']
+      ),
       'prepare',
       ['request-artifacts']
     ),
@@ -965,7 +996,10 @@ export const designEvidenceDefinitions = [
   {
     type: 'function',
     ...toolSemantics(
-      toolResultObject({ calculations: { type: 'array' } }),
+      toolResultObject(
+        { calculations: { type: 'array' }, diagnosticOnly: toolResultBoolean },
+        ['calculations']
+      ),
       'prepare',
       ['request-artifacts']
     ),
@@ -977,10 +1011,16 @@ export const designEvidenceDefinitions = [
   {
     type: 'function',
     ...toolSemantics(
-      toolResultObject({
-        referenceImageIndexes: { type: 'array', items: toolResultCount },
-        referenceDecisions: { type: 'array' }
-      }),
+      toolResultObject(
+        {
+          referenceImageIndexes: { type: 'array', items: toolResultCount },
+          referenceDecisions: { type: 'array' },
+          changed: toolResultBoolean,
+          requirementRevision: toolResultCount,
+          review: { type: 'object' }
+        },
+        ['referenceImageIndexes', 'referenceDecisions']
+      ),
       'prepare',
       ['request-artifacts']
     ),

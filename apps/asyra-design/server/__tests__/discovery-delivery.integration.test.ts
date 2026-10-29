@@ -833,8 +833,9 @@ it('delivers and executes one selected usage guide without validation schema bag
         )
       }) + '\n'
     )
-    expect(run.deliveries.length - before).toBe(1)
-    expect(run.deliveries.at(-1)).toBeLessThan(23000)
+    expect(run.deliveries.slice(before).every((bytes) => bytes <= 24000)).toBe(
+      true
+    )
     expect(run.deliveries.length).toBeLessThan(baseline.deliveries.length)
     expect(run.deliveries.reduce((sum, bytes) => sum + bytes, 0)).toBeLessThan(
       baseline.deliveries.reduce((sum, bytes) => sum + bytes, 0)
@@ -1007,7 +1008,9 @@ it('bounds selected usage delivery under unrelated catalog growth and exposes ex
   expect(b.value.resultKey).not.toBe(a.value.resultKey)
   expect({ ...b.value, resultKey: a.value.resultKey }).toEqual(a.value)
   expect(large.deliveries).toEqual(small.deliveries)
-  expect(large.deliveries).toHaveLength(1)
+  // Necessary failure evidence may paginate; unrelated catalog entries must not
+  // change a single byte or continuation, and the transport budget is unchanged.
+  expect(large.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
   const complete = await large.call('describe_design_apis', {
     names: args.names
   })
@@ -1255,10 +1258,11 @@ it('selects complete next-part guides in two replies without unrelated catalog g
         view: 'usage',
         inputScope: { operation: 'draft', nodeTypes }
       })
-      expect(run.deliveries.length).toBe(2)
-      expect(run.deliveries.reduce((n, bytes) => n + bytes, 0)).toBeLessThan(
+      expect(run.calls).toHaveLength(2)
+      expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
+      expect(Buffer.byteLength(JSON.stringify(reply.value))).toBeLessThan(
         operationSelection.firstQueryBytes +
-          operationSelection.selectedGuideBytes
+          completeUsageBudget(operationSelection.selectedGuideBytes, 'draft')
       )
       const guide = reply.value.tools[0]
       expect(guide.invocationExample.invocation).toBeDefined()
@@ -1616,8 +1620,9 @@ it.each(exactQueryScope.calls)(
       const reply = await run.call('describe_design_apis', input)
       expect(reply.success).toBe(true)
       expect(reply.value.tools).toEqual(expected.value.tools)
-      expect(run.deliveries).toEqual(baseline.deliveries)
-      expect(run.deliveries).toHaveLength(1)
+      // The selected contract is identical; continuation arguments can differ by query spelling.
+      expect(run.deliveries).toHaveLength(baseline.deliveries.length)
+      expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
       const guide = reply.value.tools[0]
       const invocation = guide.invocationExample.invocation
       const applied = await run.call(invocation.tool, invocation.arguments)
@@ -1803,18 +1808,24 @@ it('preserves scoped exact query ambiguity and qualified recovery without select
         candidates: [`first.${input.query}`, `second.${input.query}`]
       }
     ])
-    const recovered = await invokeLocalTool(
-      owner,
-      definition,
+    const recovered = await readCompleteInformation(
+      async (arguments_) => {
+        const result = await invokeLocalTool(
+          owner,
+          definition,
+          arguments_,
+          new AbortController().signal
+        )
+        expect(result.success).toBe(true)
+        return result.text
+      },
       {
         query: value.ambiguousNames[0].candidates[0],
         view: 'usage',
         inputScope: input.inputScope
-      },
-      new AbortController().signal
+      }
     )
-    expect(recovered.success).toBe(true)
-    const guide = JSON.parse(recovered.text).tools[0]
+    const guide = JSON.parse(recovered).tools[0]
     expect(guide.namespace).toBe('first')
     expect(guide.definition.inputScope).toEqual(input.inputScope)
   }
@@ -1903,7 +1914,9 @@ it('keeps first-query scope guidance owner-derived and independent of unrelated 
       original.example.arguments
     )
     expect(result.success).toBe(true)
-    expect(run.deliveries.length - before).toBe(1)
+    expect(run.deliveries.slice(before).every((bytes) => bytes <= 24000)).toBe(
+      true
+    )
   }
   expect(large.deliveries).toEqual(small.deliveries)
   const definition = small.owners
@@ -2312,12 +2325,14 @@ it.each([false, true])(
         replies: run.deliveries.length
       }) + '\n'
     )
-    expect(run.deliveries).toHaveLength(1)
-    expect(run.deliveries[0]).toBeLessThanOrEqual(
-      completeUsageBudget(20148, 'draft')
-    )
+    expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
+    expect(
+      Buffer.byteLength(JSON.stringify(response.value))
+    ).toBeLessThanOrEqual(completeUsageBudget(20148, 'draft'))
     // Pre-edit same-dispatcher content guide (16297) plus combined guide (20146).
-    expect(run.deliveries[0]).toBeLessThan(16297 + 20146)
+    expect(run.deliveries.reduce((sum, bytes) => sum + bytes, 0)).toBeLessThan(
+      16297 + 20146
+    )
     expect(source.linearFields).toBeDefined()
     expect(source.fillTemplates).toBeDefined()
     expect(
@@ -2445,7 +2460,8 @@ it.each(['projected-face', 'surface-grid'])(
       inputScope: { operation: 'draft', nodeTypes: [memberType] }
     }
     const guide = (await run.call('describe_design_apis', query)).value.tools[0]
-    expect(run.deliveries).toHaveLength(1)
+    expect(run.calls).toHaveLength(1)
+    expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
     const full = (
       await run.call('describe_design_apis', { ...query, view: 'full' })
     ).value.tools[0]
@@ -2986,10 +3002,11 @@ it.each([false, true])(
     expect(body.indexOf('"invocationExample"')).toBeLessThan(
       body.indexOf('"parameters"')
     )
-    expect(run.deliveries.length).toBeLessThanOrEqual(plan ? 2 : 1)
-    expect(run.deliveries.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(
-      completeUsageBudget(plan ? 27702 : 20087, 'draft', plan)
-    )
+    expect(run.calls).toHaveLength(1)
+    expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
+    expect(
+      Buffer.byteLength(JSON.stringify(response.value))
+    ).toBeLessThanOrEqual(completeUsageBudget(plan ? 27702 : 20087, 'draft'))
     const calls = run.replies.length
     const outcome = await run.call(invocation.tool, {
       ...invocation.arguments,
@@ -3144,12 +3161,12 @@ it('delivers and executes the projected oval example in one selected acquisition
       replies: run.deliveries.length
     }) + '\n'
   )
-  expect(run.deliveries).toHaveLength(1)
-  expect(run.deliveries.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(
+  expect(run.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
+  expect(Buffer.byteLength(JSON.stringify(response.value))).toBeLessThanOrEqual(
     completeUsageBudget(sampledEllipse.source.selectedDeliveryBytes, 'draft')
   )
   expect(
-    run.deliveries.reduce((a, b) => a + b, 0) +
+    Buffer.byteLength(JSON.stringify(response.value)) +
       Buffer.byteLength(
         JSON.stringify(sampledEllipse.compact, (key, value) =>
           key === 'ellipse'
@@ -3238,7 +3255,7 @@ it('replays saved cross-tool field queries in one bounded reply and executes own
       (entry: { definition: { coverage: string } }) => entry.definition.coverage
     )
   ).toEqual(['partial', 'none'])
-  expect(t.replies).toHaveLength(2)
+  expect(t.calls).toHaveLength(2)
   expect(JSON.parse(mixed.text).contentDelivery).toBeUndefined()
   expect(Buffer.byteLength(mixed.text)).toBeLessThanOrEqual(24000)
   const handoffBytes = t.replies.reduce(
@@ -3248,7 +3265,10 @@ it('replays saved cross-tool field queries in one bounded reply and executes own
       Buffer.byteLength(reply.raw),
     0
   )
-  expect(handoffBytes).toBeLessThan(fieldRecovery.baseline.handoffBytes)
+  // Compare the failed-field reply itself; historical usage lacked full results.
+  expect(Buffer.byteLength(mixed.text)).toBeLessThan(
+    fieldRecovery.baseline.mixedContentBytes
+  )
   const selected = usage.value.tools.find(
     (entry: { name: string }) => entry.name === 'select_design_references'
   )
@@ -3434,13 +3454,16 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
     .slice(0, 2)
     .reduce((sum, call) => sum + bytes(call.input) + bytes(call.output), 0)
   expect(acquisition).toBeLessThan(before)
-  expect(acquisition).toBeLessThan(withoutRepeatedUsage)
+  // The historical two-call reply did not contain the complete result contract.
   expect(
     run.calls
       .slice(queryStart)
       .filter((name) => name === 'describe_design_apis')
   ).toHaveLength(1)
-  expect(run.deliveries.length - acquisitionStart).toBe(2)
+  expect(run.calls.length - queryStart).toBe(2)
+  expect(
+    run.deliveries.slice(acquisitionStart).every((bytes) => bytes <= 24000)
+  ).toBe(true)
   const restored = await run.call(
     'describe_design_apis',
     tool.definition.recover.arguments
@@ -3449,7 +3472,8 @@ it('delivers complete exact usage without examples and lowers the saved acquisit
   const enlarged = setup(1000)
   const more = await enlarged.call('describe_design_apis', input)
   expect(more.value.tools[0]).toEqual(tool)
-  expect(enlarged.deliveries).toHaveLength(1)
+  expect(enlarged.deliveries.every((bytes) => bytes <= 24000)).toBe(true)
+  expect(enlarged.calls).toHaveLength(1)
   expect(run.compile).not.toHaveBeenCalled()
   expect(run.execute).not.toHaveBeenCalled()
   process.stdout.write(

@@ -46,24 +46,36 @@ const saved = {
 }
 const submitted = {
   oneOf: [
-    toolResultObject({
-      ok: { const: true },
-      ...identity,
-      requestId: toolResultString
-    }),
-    toolResultObject({
-      ok: { const: false },
-      code: toolResultString,
-      message: toolResultString
-    })
+    toolResultObject(
+      {
+        ok: { const: true },
+        ...identity,
+        requestId: toolResultString,
+        storage: saved
+      },
+      ['ok', 'name', 'revision', 'requestId']
+    ),
+    toolResultObject(
+      {
+        ok: { const: false },
+        code: toolResultString,
+        message: toolResultString,
+        issues: { type: 'array' }
+      },
+      ['ok', 'code', 'message']
+    )
   ]
 }
-const execution = toolResultObject({
-  status: { enum: ['success', 'partial', 'failed', 'unknown'] },
-  settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
-  calls: { type: 'array' },
-  issues: { type: 'array', items: { type: 'string' } }
-})
+const execution = toolResultObject(
+  {
+    status: { enum: ['success', 'partial', 'failed', 'unknown'] },
+    settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
+    calls: { type: 'array' },
+    issues: { type: 'array', items: { type: 'string' } },
+    recovery: { type: 'array' }
+  },
+  ['status', 'settlement', 'calls', 'issues']
+)
 
 export const registeredToolInvocationInstructions =
   'Invoke an exact available registered tool revision with fresh input. Primitive and reusable tools use the same secured leaf execution. The input must match its discovered contract. A composition stops on failed or partial prerequisites; inspect completed calls before any correction. Declared iteration stops on decision-required findings, unchanged progress, exhaustion or uncertain settlement. Execution success certifies only the declared mechanical work, not visual acceptance of the user request. Successful execution attempts saving independently. If storage is unsaved, use save_tool with receiptId, never repeat invocation to retry saving.'
@@ -258,18 +270,53 @@ export const createLocalToolLibraryTools = (
         !record(input) ||
         typeof input.name !== 'string' ||
         !record(value) ||
-        !record(value.execution) ||
-        !Object.hasOwn(value.execution, 'value')
+        !record(value.execution)
       )
         return value
-      const projected = project(input.name, input.input, value.execution.value)
+      const originalOutcome = record(value.toolOutcome)
+        ? value.toolOutcome
+        : {
+            status: value.execution.status,
+            settlement: value.execution.settlement
+          }
+      const projected = Object.hasOwn(value.execution, 'value')
+        ? project(input.name, input.input, value.execution.value)
+        : undefined
       return {
         ...value,
-        execution: { ...value.execution, value: projected },
+        execution: {
+          ...value.execution,
+          ...(Object.hasOwn(value.execution, 'value')
+            ? { value: projected }
+            : {}),
+          ...(Array.isArray(value.execution.recovery)
+            ? {
+                recovery: value.execution.recovery.map((entry) =>
+                  record(entry) &&
+                  typeof entry.name === 'string' &&
+                  Object.hasOwn(entry, 'value')
+                    ? {
+                        ...entry,
+                        value: project(entry.name, undefined, entry.value)
+                      }
+                    : entry
+                )
+              }
+            : {})
+        },
         ...(record(projected) &&
         record(projected.toolOutcome) &&
         projected.toolOutcome.status !== 'success'
-          ? { toolOutcome: projected.toolOutcome }
+          ? {
+              toolOutcome: {
+                ...originalOutcome,
+                status:
+                  originalOutcome.status === 'success'
+                    ? projected.toolOutcome.status
+                    : originalOutcome.status,
+                settlement: value.execution.settlement
+              }
+            }
           : {})
       }
     },

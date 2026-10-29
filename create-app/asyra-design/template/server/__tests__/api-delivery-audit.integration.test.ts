@@ -1,3 +1,5 @@
+import { setImmediate } from 'node:timers/promises'
+import { modelToolResultSchemas } from '../../src/ai/tool-contract'
 import { createLocalToolHost } from '../local-tool-host'
 import {
   workflowInputScopes,
@@ -9,7 +11,7 @@ import { readCompleteInformation } from './tool-contract-assertions'
 import { createLocalToolLibraryTools } from '../local-tool-library-tools'
 import { createLocalReferenceTools } from '../local-reference-tools'
 import { createLocalKnowledgeTools } from '../local-knowledge'
-import { afterAll, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, expect, it, vi } from 'vitest'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { createAiRuntimeInput } from '../../src/ai/runtime-input'
 import { basicApiContracts } from '../../src/ai/basic-api-catalog'
@@ -24,6 +26,10 @@ import {
 } from '../operation-input-schema'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
+// Let progress RPC acknowledgements drain between the synchronous contract cases.
+// Keep the runner timeout and every contract/work-count assertion unchanged.
+afterEach(() => setImmediate())
 
 const runtime = createAiRuntimeInput({
   permissionRules: {},
@@ -208,6 +214,7 @@ const unionAlternatives = (schema: unknown): unknown[] => {
     const value = nativeToolInputSchema(schema) as Record<string, unknown>
     if (Object.keys(value).length === 1 && Array.isArray(value.anyOf))
       return value.anyOf.flatMap(unionAlternatives)
+    return [value]
   }
   return [schema]
 }
@@ -388,7 +395,10 @@ it.each(native)(
       )
       const canonical = resolvedSchema(
         workflowUsageParameters(
-          definition.delivery?.outputSchema ?? definition.outputSchema
+          modelToolResultSchemas(
+            definition,
+            definition.resultStage === 'host' ? 'host' : 'owner'
+          ).outputSchema
         )
       )
       for (const alternative of unionAlternatives(canonical))

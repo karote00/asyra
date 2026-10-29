@@ -49,7 +49,9 @@ import { BrowserBatchExecutionError } from './batch-exchange'
 import type { LocalToolOwnership } from './local-tool-leases'
 import {
   projectToolDelivery,
+  projectToolResultFields,
   modelToolResultSchemas,
+  toolInternalResult,
   toolResultCount,
   toolResultObject,
   toolResultString,
@@ -66,8 +68,12 @@ import sharp from 'sharp'
 import {
   LocalToolInputError,
   localToolOutcome,
+  localToolDeliveryResult,
   localToolFailureReply,
   localToolFailureSchema,
+  localReceiptFailureSchema,
+  localExecutionReceiptSchema,
+  localBatchFailureSchema,
   localToolErrorMessage,
   observeLocalToolExecution,
   type LocalToolObservation,
@@ -172,15 +178,33 @@ const usageResults = (
       schemas.outputSchema,
       schemas.partialOutputSchema,
       schemas.recoveryOutputSchema,
-      boundary
+      modelToolResultSchemas({ outputSchema: boundary }, 'host').outputSchema
     ])
   )
 
+const followupResultFields = {
+  batchId: { type: 'string' },
+  context: toolInternalResult({}),
+  failure: localReceiptFailureSchema,
+  inspectionDeferred: { type: 'boolean' },
+  measurementDeferred: { type: 'boolean' },
+  measurementIssues: { type: 'array' },
+  inspectionIssues: { type: 'array' }
+}
 const batchResultSchema = (resources: unknown) =>
   toolResultObject(
     {
+      ...followupResultFields,
       actionResults: resources,
-      batchSummary: toolResultObject({ actionCount: toolResultCount }),
+      batchSummary: toolResultObject(
+        {
+          actionCount: toolResultCount,
+          operationCount: toolResultCount,
+          followupActionCount: toolResultCount,
+          targetCount: toolResultCount
+        },
+        ['actionCount']
+      ),
       checks: designCheckSummarySchema
     },
     ['actionResults', 'batchSummary']
@@ -227,6 +251,7 @@ const singleActionSemantics = (
   const envelope = (result: unknown) =>
     toolResultObject(
       {
+        ...followupResultFields,
         actionResults: actionResults(result),
         checks: designCheckSummarySchema,
         ...(action.name === AiActionNames.REVIEW_DESIGN
@@ -246,6 +271,8 @@ const singleActionSemantics = (
         action.name,
         toolResultObject(
           {
+            ...followupResultFields,
+            mechanicalSelection: designCheckInputSchema,
             actionResults: { type: 'array', items: receipt(true) },
             checks: designCheckSummarySchema
           },
@@ -257,6 +284,8 @@ const singleActionSemantics = (
   const outputSchema = envelope(action.outputSchema)
   const partialReceipt = toolResultObject(
     {
+      ...followupResultFields,
+      checks: designCheckSummarySchema,
       actionResults: actionResults(
         resultAlternatives([
           action.outputSchema,
@@ -320,7 +349,17 @@ const singleActionSemantics = (
             action.partialOutputSchema ?? action.outputSchema
           ) as RuntimeJsonValue,
           '#/anyOf/1'
-        )
+        ),
+        ...(action.delivery
+          ? [
+              embedAiToolSchema(
+                envelope(
+                  modelToolResultSchemas(action).partialOutputSchema
+                ) as RuntimeJsonValue,
+                '#/anyOf/2'
+              )
+            ]
+          : [])
       ]
     }
   }
@@ -757,10 +796,14 @@ const repairChecksSchema = {
     }
   }
 }
-const repairChecksResultSchema = toolResultObject({
-  ...designCheckInputSchema.properties,
-  actionResults: { type: 'array' }
-})
+const repairChecksResultSchema = toolResultObject(
+  {
+    ...followupResultFields,
+    ...designCheckInputSchema.properties,
+    actionResults: { type: 'array' }
+  },
+  [...designCheckInputSchema.required, 'actionResults']
+)
 const repairChecksRecoverySchema = toolResultObject({
   ...designCheckInputSchema.properties
 })
@@ -1302,17 +1345,18 @@ export const createLocalOperationTools = (
         'delivery' in admittedAction &&
         admittedAction.delivery &&
         descriptor.namespace === localOperationNamespace
-          ? singleActionSemantics(
-              {
-                ...admittedAction,
-                ...modelToolResultSchemas(admittedAction),
-                delivery: undefined
-              },
-              followupResults
+          ? modelToolResultSchemas(
+              singleActionSemantics(
+                {
+                  ...admittedAction,
+                  ...modelToolResultSchemas(admittedAction),
+                  delivery: undefined
+                },
+                followupResults
+              )
             )
           : modelToolResultSchemas(
               contract,
-              typeof descriptor.namespace === 'string',
               descriptor.resultStage === 'host' ? 'host' : 'owner'
             )
     }
@@ -1603,7 +1647,7 @@ export const createLocalOperationTools = (
             )
           : undefined)
       const results = selectedBatchResults
-        ? modelToolResultSchemas(selectedBatchResults, true)
+        ? modelToolResultSchemas(selectedBatchResults)
         : (scopedRegistered ?? ownerModelResults)
       const failure = selectedResources
         ? {
@@ -2872,41 +2916,63 @@ export const createLocalOperationTools = (
   const owner = {
     projectModelResult(name: string, args: unknown, value: unknown): unknown {
       if (!isRecord(value)) return value
-      if (isRecord(value.executionResult))
-        return {
-          ...value,
-          executionResult: owner.projectModelResult(
-            name,
-            args,
-            value.executionResult
-          )
-        }
-      if (!Array.isArray(value.actionResults)) return value
+      const nested: Record<string, unknown> = {
+        ...value,
+        ...(isRecord(value.batchFailure)
+          ? {
+              batchFailure: projectToolResultFields(
+                value.batchFailure,
+                localBatchFailureSchema
+              )
+            }
+          : {}),
+        ...(isRecord(value.failure)
+          ? {
+              failure: projectToolResultFields(
+                value.failure,
+                localReceiptFailureSchema
+              )
+            }
+          : {}),
+        ...(isRecord(value.executionResult)
+          ? {
+              executionResult: projectToolResultFields(
+                owner.projectModelResult(name, args, value.executionResult),
+                localExecutionReceiptSchema
+              )
+            }
+          : {}),
+        ...(Array.isArray(value.batches)
+          ? {
+              batches: value.batches.map((batch) =>
+                projectToolResultFields(
+                  owner.projectModelResult(name, args, batch),
+                  localExecutionReceiptSchema
+                )
+              )
+            }
+          : {})
+      }
+      if (!Array.isArray(value.actionResults))
+        return localToolDeliveryResult(value, nested)
       const entries = value.actionResults.map((entry) => {
         if (!isRecord(entry) || typeof entry.actionName !== 'string')
           return entry
-        const definition = registered.find(
-          (action) => action.name === entry.actionName
-        )
+        const definition = admittedApisByName.get(entry.actionName)
         return {
           ...entry,
           result:
-            definition && 'delivery' in definition && definition.delivery
+            definition && 'outputSchema' in definition
               ? projectToolDelivery(definition, entry.result)
               : entry.result
         }
       })
-      const { modelResult: _modelResult, ...source } = value
+      const { modelResult: _modelResult, ...source } = nested
       const projected = {
         ...source,
         actionResults: entries
       }
-      return {
-        ...projected,
-        ...(value.toolOutcome
-          ? { toolOutcome: localToolOutcome(projected) }
-          : {})
-      }
+      return localToolDeliveryResult(value, projected)
     },
     callInternal(
       name: string,
@@ -3046,9 +3112,34 @@ export const createLocalOperationTools = (
               type: 'function',
               ...toolSemantics(
                 {
+                  ...toolResultObject(
+                    {
+                      apis: { type: 'array' },
+                      tools: { type: 'array' },
+                      candidates: { type: 'array' },
+                      missingNames: { type: 'array' },
+                      missingOperations: { type: 'array' },
+                      category: { type: 'string' },
+                      catalogSize: toolResultCount,
+                      count: toolResultCount,
+                      offset: toolResultCount,
+                      complete: { type: 'boolean' },
+                      status: { type: 'string' },
+                      code: { type: 'string' },
+                      message: { type: 'string' },
+                      guidance: { type: 'object' },
+                      settlement: { type: 'string' },
+                      recovery: { type: 'object' },
+                      next: { type: 'object' },
+                      resultKey: { type: 'string' },
+                      categories: { type: 'array' }
+                    },
+                    []
+                  ),
                   anyOf: [
-                    toolResultObject({ apis: { type: 'array' } }),
-                    toolResultObject({ categories: { type: 'array' } })
+                    { required: ['apis'] },
+                    { required: ['tools'] },
+                    { required: ['categories'] }
                   ]
                 },
                 'read',

@@ -1,4 +1,5 @@
 import {
+  toolInternalResult,
   toolResultBoolean,
   toolResultCount,
   toolResultObject,
@@ -185,7 +186,17 @@ export const createDocumentContextAction = (
           nextOffset: { type: ['integer', 'null'], minimum: 0 },
           text: { type: 'string' }
         }),
-        current: { type: 'boolean' }
+        current: { type: 'boolean' },
+        scope: { type: 'string' },
+        parentId: { type: ['string', 'null'] },
+        offset: toolResultCount,
+        limit: toolResultCount,
+        nextOffset: { type: ['integer', 'null'], minimum: 0 },
+        revision: toolResultCount,
+        delivery: { enum: ['reference', 'page', 'columns', 'receipt'] },
+        columns: { type: 'array', items: { type: 'object' } },
+        missingCount: toolResultCount,
+        observation: toolInternalResult({ type: 'object' })
       },
       [
         'available',

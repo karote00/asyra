@@ -1,4 +1,5 @@
 import {
+  toolInternalResult,
   toolResultObject,
   toolResultString,
   toolResultCount,
@@ -45,7 +46,7 @@ export const designCheckResultsSchema = toolResultObject({
       ['id', 'origin', 'status', 'evidence', 'dependencies', 'revision']
     )
   },
-  visitedResults: toolResultCount
+  visitedResults: toolInternalResult(toolResultCount)
 })
 
 export interface DesignCheckResult {
@@ -67,7 +68,7 @@ export const designCheckSummarySchema = toolResultObject(
   {
     countsScope: countsScopeSchema,
     counts: designCheckResultsSchema.properties.counts,
-    visitedResults: toolResultCount,
+    visitedResults: toolInternalResult(toolResultCount),
     firstPendingId: toolResultString
   },
   ['countsScope', 'counts', 'visitedResults']

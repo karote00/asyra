@@ -947,6 +947,15 @@
   ],
   "routes": [
     {
+      "id": "route-property-intent-result-terminal",
+      "from": "prepare-one-composition-request",
+      "kind": "terminal",
+      "predicate": "A property target read or intent returns its public target view, locally accepted owner IDs or recoverable failure; acceptance does not confirm durable save.",
+      "producedArtifacts": [
+        "artifact:property-intent-result"
+      ]
+    },
+    {
       "id": "route-local-composition-to-core",
       "from": "prepare-one-composition-request",
       "to": "coordinate-canonical-owner-preparations",

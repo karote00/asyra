@@ -1475,7 +1475,14 @@ it('continues discovery through a rejected library submission when the actual ca
       'design_operations.describe_design_apis',
       first.next.arguments
     )
-    expect(next.toolOutcome).toMatchObject({ status: 'success' })
+    expect(
+      next.toolOutcome,
+      JSON.stringify({
+        code: next.code,
+        message: next.message,
+        outcome: next.toolOutcome
+      })
+    ).toMatchObject({ status: 'success' })
     expect(next.offset).toBe(first.apis.length + first.tools.length)
     expect(next.count).toBe(first.count)
     expect(app.create).not.toHaveBeenCalled()

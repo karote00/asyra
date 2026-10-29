@@ -1,3 +1,4 @@
+import { readCompleteInformation } from './tool-contract-assertions'
 import { completeUsageBudget } from './tool-contract-assertions'
 import { recordAcquisitionCost } from './tool-contract-assertions'
 import collision from './fixtures/recorded-101/boundary-identity-20261026.json'
@@ -299,18 +300,19 @@ it('delivers and executes the selected boundary example with lower total bytes a
   })
   const main = createLocalDesignWorkflow(designs, operations)
   const signal = new AbortController().signal
-  const raw = await operations.call(
-    'describe_design_apis',
-    fixture.query,
-    signal
-  )
+  const pages: number[] = []
+  const raw = await readCompleteInformation(async (input) => {
+    const text = await operations.call('describe_design_apis', input, signal)
+    pages.push(Buffer.byteLength(text))
+    return text
+  }, fixture.query)
   process.stdout.write(
     JSON.stringify({
       measurement: 'face-boundary-guide',
       bytes: Buffer.byteLength(raw)
     }) + '\n'
   )
-  recordAcquisitionCost(fixture.query, raw, [Buffer.byteLength(raw)])
+  recordAcquisitionCost(fixture.query, raw, pages)
   const tool = JSON.parse(raw).tools[0]
   expect(JSON.stringify(tool.usageGuide.parameters)).toContain('face')
   const example = tool.invocationExample.invocation.arguments
@@ -364,7 +366,8 @@ it('delivers and executes the selected boundary example with lower total bytes a
   process.stdout.write(
     JSON.stringify({
       measurement: 'face-boundary-total',
-      baselineBytes,
+      historicalBytes: baselineBytes,
+      equivalentCompleteBudget: completeUsageBudget(baselineBytes, 'draft'),
       candidateBytes,
       callsPerSequence: 4
     }) + '\n'

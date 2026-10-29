@@ -245,7 +245,7 @@ export const prepareOperationBatch = (
   return actions
 }
 
-/** Remove only App binding annotations for Runtime recipe type proofs.
+/** Remove only App binding and model-visibility annotations for Runtime recipe type proofs.
  * Binding expansion remains owned by the App; all JSON Schema constraints stay intact.
  */
 export const runtimeOperationSchema = <T>(schema: T): T => {
@@ -253,6 +253,7 @@ export const runtimeOperationSchema = <T>(schema: T): T => {
     if (!record(value)) return value
     const result = { ...value }
     delete result['x-design-element-binding']
+    delete result['x-model-visibility']
     for (const key of [
       'properties',
       'patternProperties',

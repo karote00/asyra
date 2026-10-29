@@ -1,6 +1,7 @@
 import { designRepresentationGuidance } from './design-preparation-examples'
 import type { AiInvocationMiddleware } from '@asyra/ai-agent-runtime'
 import {
+  toolInternalResult,
   toolSemantics,
   toolResultObject,
   toolRequestReference
@@ -9,6 +10,7 @@ import {
   invokeLocalTool,
   observeLocalToolExecution,
   localToolOutcome,
+  localToolDeliveryResult,
   type LocalToolObservation
 } from './local-tool-invocation'
 import { designCheckSummarySchema } from './design-check-results'
@@ -215,9 +217,42 @@ export const createLocalDesignWorkflow = (
   }
   // The wrapper exports child resources as well as their execution receipts.
   // Keep the preparation contract intact so call cleanup can transfer ownership.
+  const followupFields = {
+    inspectionDeferred: { type: 'boolean' },
+    measurementDeferred: { type: 'boolean' },
+    measurementIssues: { type: 'array', items: { type: 'object' } },
+    inspectionIssues: { type: 'array', items: { type: 'object' } },
+    visualReview: { type: 'object' },
+    batchFailure: { type: 'object' },
+    executionResult: toolResultObject(
+      {
+        actionResults: { type: 'array' },
+        batches: { type: 'array' },
+        context: toolInternalResult({}),
+        failure: { type: 'object' },
+        checks: designCheckSummarySchema,
+        inspectionDeferred: { type: 'boolean' },
+        measurementDeferred: { type: 'boolean' },
+        measurementIssues: { type: 'array' },
+        inspectionIssues: { type: 'array' }
+      },
+      []
+    ),
+    key: { type: 'string' },
+    recoverable: { type: 'boolean' },
+    stage: { type: 'string' },
+    receiptScope: { enum: ['compact', 'full'] },
+    context: toolInternalResult({}),
+    status: { type: 'string' },
+    settlement: { type: 'string' },
+    complete: { type: 'boolean' },
+    toolOutcome: { type: 'object' }
+  }
+  const followupSchema = toolResultObject(followupFields, [])
   const partOutputSchema = {
     allOf: [
       artifactPreparation?.outputSchema ?? false,
+      followupSchema,
       toolResultObject(
         {
           applicable: { const: true },
@@ -229,20 +264,34 @@ export const createLocalDesignWorkflow = (
       )
     ]
   }
-  const stoppedPartSchema = toolResultObject(
-    {
-      failedStep: { type: 'string' },
-      completedSteps: { type: 'array', items: { type: 'string' } },
-      artifactId: toolRequestReference
-    },
-    ['failedStep', 'completedSteps']
-  )
+  const stoppedPartSchema = {
+    allOf: [
+      toolResultObject(designs.recoveryFields, []),
+      followupSchema,
+      toolResultObject(
+        {
+          actionResults: { type: 'array' },
+          checks: designCheckSummarySchema,
+          failedStep: { type: 'string' },
+          completedSteps: { type: 'array', items: { type: 'string' } },
+          artifactId: toolRequestReference
+        },
+        ['failedStep', 'completedSteps']
+      )
+    ]
+  }
   const stoppedOutputSchema = {
+    allOf: [followupSchema],
     anyOf: [
       stoppedPartSchema,
       toolResultObject(
         {
           checks: designCheckSummarySchema,
+          actionResults: { type: 'array' },
+          failedPart: { type: 'string' },
+          message: { type: 'string' },
+          remainingParts: { type: 'array' },
+          recoveryInvocation: { type: 'object' },
           status: { enum: ['partial', 'failed', 'unknown'] },
           parts: {
             type: 'array',
@@ -255,10 +304,12 @@ export const createLocalDesignWorkflow = (
   }
   const semantics = toolSemantics(
     {
+      allOf: [followupSchema],
       anyOf: [
         partOutputSchema,
         toolResultObject(
           {
+            actionResults: { type: 'array' },
             status: { const: 'complete' },
             parts: { type: 'array', minItems: 1, items: partOutputSchema },
             checks: designCheckSummarySchema
@@ -272,6 +323,26 @@ export const createLocalDesignWorkflow = (
     'request-artifact'
   )
   const single = {
+    projectModelResult(name: string, args: unknown, value: unknown): unknown {
+      if (!value || typeof value !== 'object' || Array.isArray(value))
+        return value
+      const source = value as Record<string, unknown>
+      const projected = operations.projectModelResult(
+        name,
+        args,
+        source
+      ) as Record<string, unknown>
+      return localToolDeliveryResult(source, {
+        ...projected,
+        ...(Array.isArray(source.parts)
+          ? {
+              parts: source.parts.map((part) =>
+                single.projectModelResult(name, args, part)
+              )
+            }
+          : {})
+      })
+    },
     rejectInput: (
       name: string,
       args: unknown,

@@ -630,6 +630,29 @@ values before model projection. Explicit full response cannot bypass a declared
 bounded view. Immutable historical receipts remain available through bounded
 readback; missing delivery cannot authorize a dependent operation or replay.
 
+Every native, registered and batch model exit selects its declared result fields,
+including successful, partial and failed outcomes. Undeclared owner extensions
+and host-only observations are not model data. Diagnostic counters and context
+refresh snapshots remain available to internal consumers and recordings. Explicit
+domain maps and requested values retain their keys and restrictions. Small and
+field-selected reads remain direct; bounded references do not create a mandatory
+extra read. Preserve necessary findings, stale evidence, acknowledged targets and
+actionable recovery, including automatic-check failures. Projection cannot change
+execution settlement, mutate canonical receipts, rerun an owner or replay writes.
+Model delivery failure preserves the acknowledged semantic owner result under
+existing executionResult when its declaration can validate that evidence, plus
+explicit delivery failure and no-replay guidance. Child delivery failures must
+make the enclosing model acknowledgement incomplete without changing canonical
+execution settlement. Owner partial/failed evidence without a successful delivery
+view remains described by the acquired partial contract. Reusable and recovery
+results use their exact invoked revisions, not the latest same-name declaration.
+Cost comparisons require equally complete decision and recovery information.
+Existing bounded pagination may carry necessary contracts; historical one-page
+counts are not a reason to omit restrictions. Missing information must not cause
+additional discovery, and pure diagnostics must not inflate model delivery.
+Published model result schemas describe these same views, not the complete host
+envelope. Measure acquisition plus results and recovery, not isolated payloads.
+
 Structural direct delivery retains group/ungroup child identities and acknowledged
 move identities in the existing request-owned context store. The immutable full
 receipt is stored with that membership at synchronous mutation settlement, after canonical publication and before yielding. A later document change invalidates the reference instead of recertifying old output. Compact output returns `retained` with

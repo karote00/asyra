@@ -179,8 +179,8 @@ test('Inspector exposes twelve exact single-owner runtime steps', () => {
     })
   })
 
-  assert.match(plan(), /Contract and admission/);
-  assert.match(plan(), /History and durability integration/);
+  assert.match(plan(), /### Contract admission - canonical shared-property layers/)
+  assert.match(plan(), /### History, concurrency, publication and failure recovery/)
   const preparation = step('prepare-document-publication')
   assert.deepEqual(preparation.inputs, ['artifact:shared-publication'])
   assert.deepEqual(preparation.outputs, ['artifact:document-publication', 'artifact:document-preparation-failure'])
@@ -228,7 +228,10 @@ test('Inspector exposes twelve exact single-owner runtime steps', () => {
   ].forEach((filePath) => assert.ok(computedBoundary.includes(filePath)))
 
   assert.match(contractText(step('project-render-state')), /Render/i)
-  assert.match(plan(), /No computed-data or App-only replacement implementation/)
+  assert.match(
+    plan(),
+    /Do not place canonical overrides in computed data, an App side table, a new store\s+or a parallel registry/
+  )
 
   assert.match(
     contractText(step('derive-local-computed-projection')),
@@ -1012,9 +1015,10 @@ test('scope and pre-release removal stay bounded', () => {
   const text = plan()
 
   assert.match(text, /No automatic\s+N-field detachment threshold/)
-  assert.match(text, /No new registry, scheduler, evidence ledger/)
-  assert.match(text, /No new UI workflows or monitoring/)
-  assert.match(text, /Completed\/archived plans are read-only/)
+  assert.match(text, /no second native-tool registry or mandatory Knowledge acknowledgment/)
+  assert.match(text, /no new session, history queue or scheduler/)
+  assert.match(text, /does not schedule another shared-property implementation/)
+  assert.match(text, /do not add full-scene scans,\s+computed mirrors or unprofiled caches/)
   assert.ok(data.steps.every((item) => item.cacheDimensions.length === 0))
 })
 

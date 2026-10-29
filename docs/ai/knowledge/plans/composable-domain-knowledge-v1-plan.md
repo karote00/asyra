@@ -495,6 +495,196 @@ Cost baseline correction - existing user approval applies:
 - Step remains compose, same owners/consumers, tests and exclusions. Self-review:
   this corrects the approved comparator, not production transport or valid values.
 
+CI merge preparation - 2026-10-30:
+- Scope: restore the existing Utils ES2020 build and declare the existing App
+  integration-test dependencies. Keep all runtime contracts, test assertions,
+  compiler targets, dependency versions and Inspector semantics unchanged.
+- Evidence: published head 2c49467a4cd231ba812c101c8f8764249a3b51a2 fails
+  Utils compilation at idCounter.test.ts:73 and shared dependency validation for
+  scene-tree and props-manager. Both existing gates reproduced locally before edits.
+- Correction: use ES2020 array indexing in the unchanged allocation assertion;
+  declare the two already-owned internal test packages as App devDependencies
+  and synchronize the lockfile. No third-party addition or runtime dependency.
+- Gates: Utils build/tests/lint, dependency validation, immutable install,
+  affected dependency builds, App production types/build and commit-bound
+  documentation/Changeset checks. Preserve earlier model-delivery evidence where
+  its source is unchanged; refresh affected source-bound Inspector evidence.
+- Canonical Inspector correction: the existing prepare-one-composition-request
+  owner declares property-intent-result as terminal, with public target views,
+  accepted owner IDs or recoverable failure and no durability claim. Its terminal
+  route was omitted. The unchanged formal viewer-entry structure test fails.
+  Restore that route in the existing target and regenerate the workspace bundle;
+  no runtime implementation, new consumer, altered result semantics or relaxed
+  assertion. Owner-step card: consume only the declared completed property intent;
+  emit its existing terminal artifact; preserve all no-change/invalid-target paths
+  from the preserved canonical shared-property contract. Scope is the target data,
+  existing regression, generated bundle and update note. Static contract tests and
+  the complete Inspector package suite gate this correction before advancement.
+  Direct contract tests still referenced retired implementation-stage headings
+  and task-checklist wording. Bind those assertions to the existing preserved
+  contract sections and their current prohibitions on duplicate registries,
+  schedulers, computed mirrors and unprofiled caches; keep every owner, route,
+  geometry, publication and no-change assertion. Do not reintroduce retired plan
+  stages merely to satisfy a textual test. The App dev-dependency additions also
+  require regeneration of the existing Turbo dependency graph, with no new task.
+- create-app packaging, generation and standalone release readiness are excluded
+  by explicit user instruction. They are not CI or merge blockers for this task.
+  Preserve existing template edits without adding packaging fixes. No model or 101.
+- Local closure: Utils production build and all 105 tests pass; dependency
+  validation and immutable install pass; the regenerated Turbo graph passes its
+  consistency check and all 20 App/dependency build tasks complete without cache.
+  All 15 canonical Inspector contract tests and the complete Inspector package
+  command pass, including its installed-tool consumer test. App production/server/
+  proof types, scoped lint and public documentation pass. Design Inspector candidate
+  3435c800-7e5a-4573-bc92-721fe16e0182 passes all 85 cases at mapping revision 178;
+  all 897 source files match digest
+  e0d977200b6c1b0a078db7ed53092fdf3af629a03ad3139d467f6db7b96848fe.
+  Preserve CI run 40818639090 and local red logs; remote green remains pending
+  the next published head. These are build/verification corrections, not changes
+  to model behavior or a new live evaluation.
+
+Model delivery boundary - 2026-10-29:
+- Objective: deliver only declared decision/recovery results through every native,
+  registered and browser-batch model exit, retaining complete internal owner values.
+  Baseline is 2c49467a4cd231ba812c101c8f8764249a3b51a2 and saved run
+  knowledge-quality-knowledge-taipei-101-1793217112769. No live model, 101, CI or push.
+- Compose Step Execution Card: consume registered canonical contracts, completed
+  owner receipts and existing retained references; produce model views matching
+  their published result schemas. Internal validation, recipe bindings, resource
+  handoff and recording consume complete values before projection. The existing
+  native host and action delivery owners own failures; no projection failure may
+  replay a mutation or erase acknowledged partial work.
+- Allowed contributors/boundary: existing App tool-contract/basic-api result and
+  action owners, runtime observation adapter, local-tool host/invocation/library,
+  operation, preparation, workflow, Knowledge, image and reference owners; their
+  direct formal tests, current spec/Inspector/mapping, update notes and generated
+  template. No Framework redesign, new registry/cache/tool, UI change or model call.
+- Discovery is frozen to actual host definitions and App registrations, each
+  owner's result declaration/projector, direct consumers and the saved payloads.
+  Inspect declarations and execution, not a name-based diagnostic deletion list.
+- Model envelopes select declared fields. Explicit domain maps and requested
+  values retain their schema and keys; do not indiscriminately close user data.
+  Small/selected reads stay direct. Existing bounded references and full readback
+  remain valid. Remove host counters/context only at their declared owning paths.
+  Keep negative/stale findings, evidence, per-target outcomes and check recovery;
+  do not suppress checks merely because they were automatic.
+- Test first: real host definitions/direct invocation/invoke_tool and browser
+  batch paths must reproduce undeclared fields and diagnostic forwarding. Exercise
+  success, no-op, partial, cancellation, invalid input/output, failed delivery,
+  retained readback, stale/released handles and recovery without repeated writes.
+- Fixed DoD: unchanged tool identities/routes; all model exits project declared
+  fields; complete immutable internal evidence; sufficient next-operation inputs;
+  lower nonessential serialized contract/result/continuation bytes on fixed saved
+  cases with equivalent complete information; no acquisition caused by missing
+  required information, owner reads, geometry recomputation or replay. Necessary
+  complete contracts may use existing bounded pagination; historical byte/page
+  ceilings from incomplete contracts are not correctness requirements.
+  Cover dynamic maps, union/ref constraints and legitimate full/field reads.
+- Gates: affected host/operation/discovery/usage/invocation suites, App owner and
+  continuity tests, complete server harness, production/server/proof types, scoped
+  lint, naming, generated-template/docs checks and current-source Inspector proof.
+  Self-review stays within changed owners, direct consumers and these fixed gates.
+  Stop/replan if projection cannot preserve a declared recovery requirement; never
+  enlarge a budget or weaken an oracle to obtain a passing result.
+
+
+- Owner declaration revision after formal regression: the initial projection
+  exposed incomplete open result declarations (261 owner fixture failures), not
+  permission to discard undeclared recovery/image fields. Complete existing owner
+  envelope declarations first, with explicit internal annotations for diagnostics.
+  Use the existing owner fixture harness to compare every actual receipt against
+  its declaration before projection. Keep domain values and requested maps open
+  only at their declared value paths. Then enforce the same projection through
+  direct, registered, batch, nested workflow and failure paths. Preserve the red
+  host and declaration cases; do not replace their meaning with smaller outputs.
+  This remains the compose step, existing scope and fixed DoD. Self-review:
+  preparation repair metadata, image delivery, context columns and follow-up
+  failure recovery are required consumers; all must survive before cost closure.
+
+- Cost clarification accepted by the user: sufficient actionable information is
+  primary. Keep transport limits and complete continuation; measure whether
+  diagnostics or duplicated information are unnecessary, rather than forcing a
+  historical one-page threshold. Freeze complete-information comparisons and
+  retain execution/recovery assertions. Do not omit fields, enlarge a transport
+  limit, or introduce a lookup to satisfy a byte target. Existing representation
+  tests still compare geometry/input savings independently of result completeness.
+- Cost-test revision: historical complete-guide byte/page assertions that assumed
+  missing result fields are superseded. Preserve exact scope, executable examples,
+  unrelated-catalog invariance, input/geometry savings and all per-page transport
+  limits. The permanent paired owner-schema test compares equally complete
+  declarations with/without internal fields, and saved receipt cases measure
+  input plus result bytes and owner calls. Keep actual total acquisition accounting;
+  do not claim every necessary contract became smaller than the historical run.
+  This changes the incompatible cost oracle, not completeness or recovery gates.
+- Self-review resolved declared partial failures, closed internal-only fields,
+  recipe bindings, nested cleanup evidence, and throwing model projectors through
+  the existing failure boundary. The region-removal proof now uses canonical
+  result declarations rather than an incomplete fixture-only delivery contract.
+- Second review - compose step: trace every registered owner and native/batch/
+  workflow/library exit against its actual consumer, including failed fixtures.
+  Verify that partial recovery is described by the acquired model contract, that
+  projection failures carry already-acknowledged semantic results, and that child
+  delivery failure cannot leave an enclosing model acknowledgement successful.
+  Preserve the original execution settlement and never promote partial work.
+  Recovery and reusable result projection must use the exact invoked revision.
+  Reuse current declarations, executionResult, outcomes and registry lookup; no
+  cache, new result store, model execution or mutation replay. Keep the same
+  bounded owners/gates; establish formal red cases before correcting behavior.
+  Earlier closure counts below describe the preceding source, not this review.
+- Review correction after broad regressions: keep successful delivery schemas
+  unchanged and place child delivery failures in partial alternatives. Recompute
+  model acknowledgement only when projection loses delivery, retaining canonical
+  settlement and unchanged successful envelopes. Failed-owner coverage exposed
+  preparationInput missing from recoveryFields; reuse the preparation owner's
+  declaration. Registry admission rejects simultaneous conflicting same-name
+  revisions, so no version-routing change is justified. Recheck complete-information
+  costs after the necessary failure-evidence contract is published. Scope and DoD
+  are unchanged; no provider or execution-policy changes.
+- Formal second-review regressions confirmed missing acknowledged results, missing
+  closed/bare partial recovery, child failures hidden by successful aggregate
+  metadata, and custom projection promoting partial work. Preserve executionResult
+  through canonical declarations, include failure alternatives in partial schemas,
+  and guard outcome/settlement at final host egress. Successful schema branches
+  remain unchanged. Failed owner fixtures now verify every declared result field.
+  Preparation recovery reuses preparationInput from its canonical owner.
+- Review tests also preserve successful catalog continuation. The cleanup proof
+  starts its existing deterministic 700 ms work clock at the scripted first turn,
+  excluding cold contract setup while retaining cutoff, release, report timeout
+  and durable-write assertions. No production deadlines change. Vector usage
+  now has a paired complete-information cost proof, including both continuations;
+  the historical one-page assertion cannot replace complete recovery information.
+- Gate isolation reproduced a runner progress RPC timeout with all 1,144 API
+  audit cases passing in the single-file run. The synchronous/microtask-only
+  case sequence prevents progress acknowledgements from draining for over the
+  runner's existing 60-second RPC limit. Yield one event-loop turn after each
+  audit case using the standard Node timer promise; preserve all cases, assertions,
+  work counts and timeouts. Confirm clean runner exit before whole-harness closure.
+- Second-review closure: the complete server command exited successfully with
+  3,061 passed and two existing opt-in tests skipped; the 1,144 per-entry audit
+  cases are included in that count. All 783 App owner tests passed. Production,
+  server and proof types, naming, scoped lint (two unchanged console warnings),
+  generated-template consistency, public docs and update guidance passed.
+  Inspector candidate dc8f27bf-3746-410d-af7b-2695311a63ef passed all 85 cases at
+  source 1b8c5f8b90d23c60b0582e92386173500ee09b0af2463c077fdf91b1ce24f368
+  and admitted mapping revision 178. Preserve the earlier failed gate logs; only
+  the final command with no runner errors closes the server gate.
+  Saved native/registered request-plus-result costs remain 2,959 to 1,950 and
+  1,964 to 1,373 bytes with unchanged owner calls. Current equally complete
+  draft/capture/vector acquisition costs are 22,532 to 22,144, 17,980 to 17,760,
+  and 27,652 to 27,198 bytes; page counts remain 1/1, 1/1 and 2/2 respectively.
+  This closes the bounded local model-delivery review, not AI adoption or task
+  quality. No live model, 101, CI, push, new storage or owner replay.
+- Earlier closure evidence: 3,052 server tests passed (two existing opt-in cases excluded),
+  783 App owner tests passed, production/server/proof types and scoped lint passed
+  (two unchanged console warnings). Naming and generated-template consistency
+  passed. Inspector candidate 1e855c5f-5fa5-4471-9b59-e073b597839b passed all 85
+  cases and its contract review was accepted. Saved native/registered request plus
+  result bytes fell from 2,959/1,964 to 1,950/1,373 with unchanged owner calls.
+  Equivalent complete draft/capture acquisition fell from 22,206/17,901 to
+  21,818/17,681 bytes with one page each. No live model, 101, CI or push; no claim
+  about AI adoption, design quality or end-to-end model latency.
+
+
 Whole unification review - 2026-10-29:
 - Review all current delivery/routing owners and direct consumers, not only the
   fourteen cost cases. Discovery is frozen to actual App/native registrations,

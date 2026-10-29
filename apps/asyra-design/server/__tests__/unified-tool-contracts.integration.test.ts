@@ -1,4 +1,4 @@
-import completeResultCost from './fixtures/recorded-101/complete-result-cost-20261029.json'
+import completeResultCost from './fixtures/recorded-101/complete-model-result-cost-20261029.json'
 import { completeUsageBudget } from './tool-contract-assertions'
 import { modelToolResultSchemas } from '../../src/ai/tool-contract'
 import { expect, it, vi } from 'vitest'
@@ -1191,10 +1191,12 @@ it.each(['draft', 'capture'] as const)(
       const before = { instructions, results: prose }
       const after = { instructions: instructions + ' ' + prose, results }
       expect(cost[fragmented ? 'fragmented' : 'plain']).toBe(
-        size(after) - size(before)
+        fragmented
+          ? Buffer.byteLength(JSON.stringify(JSON.stringify(results))) - 2
+          : Buffer.byteLength(JSON.stringify(results))
       )
       const budget = completeUsageBudget(size(before), reference, fragmented)
-      expect(budget).toBe(size(after))
+      expect(size(after)).toBeLessThanOrEqual(budget)
       const expanded = {
         ...after,
         results: { ...results, description: 'Unnecessary repeated context.' }

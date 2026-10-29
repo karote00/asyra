@@ -1,4 +1,5 @@
 import {
+  toolResultBoolean,
   toolResultCount,
   toolResultObject,
   toolResultString,
@@ -334,6 +335,18 @@ export const createLocalImageTools = (
       throw error
     }
   }
+  const vectorSummaryFields = {
+    imageArtifactId: toolRequestReference,
+    width: toolResultCount,
+    height: toolResultCount,
+    paths: { type: 'array' },
+    componentTargets: { type: 'object' },
+    sourceBounds: { type: 'object' },
+    sourceRegion: { type: 'object' },
+    representationPlan: { type: 'object' },
+    background: { type: 'object' },
+    separation: { type: 'object' }
+  }
   const definitions = [
     {
       type: 'function',
@@ -345,9 +358,20 @@ export const createLocalImageTools = (
             items: toolResultObject({
               referenceId: toolResultString,
               attachmentIndex: toolResultCount,
-              validation: toolResultObject({
-                validity: { enum: ['decoded', 'invalid'] }
-              })
+              sha256: toolResultString,
+              bytes: toolResultCount,
+              reused: toolResultBoolean,
+              validation: toolResultObject(
+                {
+                  validity: { enum: ['decoded', 'invalid'] },
+                  width: toolResultCount,
+                  height: toolResultCount,
+                  encoding: toolResultString,
+                  suitability: toolResultString,
+                  reason: toolResultString
+                },
+                ['validity']
+              )
             })
           }
         }),
@@ -377,11 +401,21 @@ export const createLocalImageTools = (
     {
       type: 'function',
       ...toolSemantics(
-        toolResultObject({
-          reviewId: toolRequestReference,
-          imageArtifactId: toolRequestReference,
-          proposals: { type: 'array' }
-        }),
+        toolResultObject(
+          {
+            reviewId: toolRequestReference,
+            imageArtifactId: toolRequestReference,
+            proposals: { type: 'array' },
+            paths: { type: 'array' },
+            quality: { type: 'object' },
+            omittedProposals: toolResultCount,
+            policyExcludedProposals: toolResultCount,
+            limitation: { type: ['string', 'null'] },
+            units: { type: 'string' },
+            requiresVisualReview: toolResultBoolean
+          },
+          ['reviewId', 'imageArtifactId', 'proposals']
+        ),
         'prepare',
         ['request-artifacts'],
         'request-artifact'
@@ -411,10 +445,17 @@ export const createLocalImageTools = (
     {
       type: 'function',
       ...toolSemantics(
-        toolResultObject({
-          imageArtifactId: toolRequestReference,
-          changes: { type: 'array' }
-        }),
+        toolResultObject(
+          {
+            ...vectorSummaryFields,
+            changes: { type: 'array' },
+            maxDisplacementPx: { type: 'number' },
+            maxDisplacementOutputPx: { type: 'number' },
+            quality: { type: 'object' },
+            requiresVisualReview: toolResultBoolean
+          },
+          ['imageArtifactId', 'changes']
+        ),
         'prepare',
         ['request-artifacts'],
         'request-artifact'
@@ -442,7 +483,7 @@ export const createLocalImageTools = (
     {
       type: 'function',
       ...toolSemantics(
-        toolResultObject({ imageArtifactId: toolRequestReference }),
+        toolResultObject(vectorSummaryFields, ['imageArtifactId']),
         'prepare',
         ['request-artifacts'],
         'request-artifact'
@@ -456,7 +497,7 @@ export const createLocalImageTools = (
     {
       type: 'function',
       ...toolSemantics(
-        toolResultObject({ imageArtifactId: toolRequestReference }),
+        toolResultObject(vectorSummaryFields, ['imageArtifactId']),
         'prepare',
         ['request-artifacts'],
         'request-artifact'
@@ -515,11 +556,17 @@ export const createLocalImageTools = (
     {
       type: 'function',
       ...toolSemantics(
-        toolResultObject({
-          analysisId: toolRequestReference,
-          imageArtifactId: toolRequestReference,
-          paths: { type: 'array' }
-        }),
+        toolResultObject(
+          {
+            analysisId: toolRequestReference,
+            imageArtifactId: toolRequestReference,
+            paths: { type: 'array' },
+            units: { type: 'string' },
+            limits: { type: 'object' },
+            requiresVisualReview: toolResultBoolean
+          },
+          ['analysisId', 'imageArtifactId', 'paths']
+        ),
         'prepare',
         ['request-artifacts'],
         'request-artifact'

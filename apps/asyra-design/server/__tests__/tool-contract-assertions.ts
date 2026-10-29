@@ -1,10 +1,12 @@
-import completeResultCost from './fixtures/recorded-101/complete-result-cost-20261029.json'
+import completeResultCost from './fixtures/recorded-101/complete-model-result-cost-20261029.json'
+import { projectToolResultFields } from '../../src/ai/tool-contract'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterAll, expect } from 'vitest'
 import {
   createAiToolContract,
-  inspectAiToolResult
+  inspectAiToolResult,
+  selectAiToolResultSchema
 } from '@asyra/ai-agent-runtime'
 import { AiDesignToolIds } from '../../src/constants/ai-design'
 import { AiImageToolIds, AiReferenceToolIds } from '../ai-domain-prompt'
@@ -147,7 +149,7 @@ export const withToolContractAssertions = <
     const value = JSON.parse(original)
     const outcome =
       owner.resultOutcome?.(name, value) ?? localToolOutcome(value)
-    if (outcome.status === 'success' || outcome.status === 'partial') {
+    if (['success', 'partial', 'failed', 'unknown'].includes(outcome.status)) {
       const contract = createAiToolContract(definition)
       const inspected = inspectAiToolResult(contract, value, {
         outcome,
@@ -157,6 +159,39 @@ export const withToolContractAssertions = <
         inspected.status === 'invalid' ? inspected.issue : undefined,
         `${name} output`
       ).toBeUndefined()
+      // Every actual owner field must be classified before model projection can
+      // discard extensions. This includes declared failed owner recovery fixtures.
+      const declaration = selectAiToolResultSchema(contract, outcome.status)
+      if (declaration) {
+        const internal = JSON.parse(JSON.stringify(declaration), (key, item) =>
+          key === 'x-model-visibility' ? undefined : item
+        )
+        const projected = projectToolResultFields(value, internal)
+        const missing: string[] = []
+        const compare = (
+          original: unknown,
+          selected: unknown,
+          path: string
+        ) => {
+          if (!original || typeof original !== 'object') return
+          for (const [key, child] of Object.entries(original)) {
+            const next = `${path}/${Array.isArray(original) ? '*' : key}`
+            if (
+              !selected ||
+              typeof selected !== 'object' ||
+              !Object.hasOwn(selected, key)
+            ) {
+              if (!missing.includes(next)) missing.push(next)
+            } else
+              compare(child, (selected as Record<string, unknown>)[key], next)
+          }
+        }
+        compare(value, projected, '')
+        expect(
+          projected,
+          `${name} undeclared result paths: ${missing.join(', ')}`
+        ).toEqual(value)
+      }
       expect(
         JSON.parse(reply.text).toolOutcome.status,
         `${name} public result`
@@ -209,7 +244,13 @@ export const recordAcquisitionCost = (
         bytes: bytes(entry),
         sections: sections(entry),
         ...(entry.usageGuide
-          ? { guide: sections(entry.usageGuide as Record<string, unknown>) }
+          ? {
+              guide: sections(entry.usageGuide as Record<string, unknown>),
+              resultSchema: (entry.usageGuide as Record<string, unknown>)
+                .results,
+              parameters: (entry.usageGuide as Record<string, unknown>)
+                .parameters
+            }
           : {})
       }
     }

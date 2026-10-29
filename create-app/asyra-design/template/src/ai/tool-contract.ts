@@ -1,5 +1,5 @@
 import { AiToolContractError, embedAiToolSchema } from '@asyra/ai-agent-runtime'
-import { operationContractIssue } from './tool-schema'
+import { operationContractIssue, operationInputIssues } from './tool-schema'
 import { AiActionNames } from '../constants/ai-actions'
 import type {
   AiJsonValue,
@@ -24,6 +24,11 @@ export const toolDocumentReferences = {
 export const toolResultIds = { type: 'array', items: toolResultString }
 export const toolResultCount = { type: 'integer', minimum: 0 }
 export const toolResultBoolean = { type: 'boolean' }
+/** The declaring owner retains this field for validation/recording, not model decisions. */
+export const toolInternalResult = (schema: Record<string, unknown>) => ({
+  ...schema,
+  'x-model-visibility': 'internal'
+})
 export const toolResultStatus = {
   enum: ['complete', 'no-change', 'partial', 'failed']
 }
@@ -244,26 +249,45 @@ export const actionToolSemantics = (name: string, outputSchema: unknown) => {
 
 /** Projection failure is a delivery result, never permission to retry a write. */
 const toolDeliveryFailureCode = 'TOOL_DELIVERY_INVALID'
-const toolDeliveryFailureSchema = toolResultObject({
-  available: { const: false },
-  recoverable: { const: true },
-  code: { const: toolDeliveryFailureCode },
-  message: toolResultString,
-  settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
-  toolOutcome: toolResultObject({
-    status: { const: 'partial' },
-    settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
-  })
-})
+const toolDeliveryFailureSchema = (executionResult: unknown) =>
+  toolResultObject(
+    {
+      available: { const: false },
+      recoverable: { const: true },
+      code: { const: toolDeliveryFailureCode },
+      message: toolResultString,
+      settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
+      toolOutcome: toolResultObject({
+        status: { const: 'partial' },
+        settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
+      }),
+      executionResult
+    },
+    ['available', 'recoverable', 'code', 'message', 'settlement', 'toolOutcome']
+  )
 
 /** Admit host metadata only at the result root; business objects stay closed. */
-const modelOutcomeSchema = (schema: unknown): unknown => {
+export const hostToolResultSchema = (schema: unknown): unknown => {
   const record = (value: unknown): value is Record<string, unknown> =>
     !!value && typeof value === 'object' && !Array.isArray(value)
-  const outcome = toolResultObject({
-    status: { enum: ['success', 'partial', 'failed', 'unknown'] },
-    settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] }
-  })
+  const outcome = toolResultObject(
+    {
+      status: { enum: ['success', 'partial', 'failed', 'unknown'] },
+      settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
+      issues: {
+        type: 'array',
+        items: toolResultObject(
+          {
+            actionName: toolResultString,
+            code: toolResultString,
+            message: toolResultString
+          },
+          ['code', 'message']
+        )
+      }
+    },
+    ['status', 'settlement']
+  )
   const visit = (
     value: unknown,
     references: readonly string[] = [],
@@ -345,7 +369,32 @@ const modelOutcomeSchema = (schema: unknown): unknown => {
   return visit(schema, [], true)
 }
 
-/** Discovery uses the registered view; internal validation keeps the full contract. */
+/** Canonical result alternatives also own acknowledged delivery-failure evidence. */
+const declaredToolResults = (
+  contract: {
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+  },
+  stage: 'owner' | 'host' = 'owner'
+) => ({
+  anyOf: [
+    contract.outputSchema,
+    contract.partialOutputSchema,
+    contract.recoveryOutputSchema
+  ]
+    .filter((schema) => schema !== undefined)
+    .map((schema, index) =>
+      embedAiToolSchema(
+        (stage === 'host'
+          ? schema
+          : hostToolResultSchema(schema)) as AiJsonValue,
+        `#/anyOf/${index}`
+      )
+    )
+})
+
+/** Discovery and final egress publish the same complete partial-result contract. */
 export const modelToolResultSchemas = (
   contract: {
     outputSchema?: unknown
@@ -353,45 +402,232 @@ export const modelToolResultSchemas = (
     recoveryOutputSchema?: unknown
     delivery?: AiToolContractInput['delivery']
   },
-  includeUnprojectedPartial = false,
   stage: 'owner' | 'host' = 'owner'
 ) => {
-  const annotate =
-    stage === 'host' ? (schema: unknown) => schema : modelOutcomeSchema
+  const annotate = (schema: unknown) =>
+    modelResultSchema(stage === 'host' ? schema : hostToolResultSchema(schema))
+  const failure = toolDeliveryFailureSchema(
+    modelResultSchema(declaredToolResults(contract, stage))
+  )
   return {
     outputSchema: contract.delivery
-      ? modelOutcomeSchema(contract.delivery.outputSchema)
+      ? modelResultSchema(hostToolResultSchema(contract.delivery.outputSchema))
       : annotate(contract.outputSchema),
-    partialOutputSchema: contract.delivery
-      ? {
-          anyOf: [
-            embedAiToolSchema(
-              modelOutcomeSchema(contract.delivery.outputSchema) as AiJsonValue,
-              '#/anyOf/0'
-            ),
-            toolDeliveryFailureSchema,
-            ...(includeUnprojectedPartial &&
-            contract.partialOutputSchema !== undefined
-              ? [
-                  embedAiToolSchema(
-                    annotate(contract.partialOutputSchema) as AiJsonValue,
-                    '#/anyOf/2'
-                  )
-                ]
-              : [])
-          ]
-        }
-      : annotate(contract.partialOutputSchema),
+    partialOutputSchema: {
+      anyOf: [
+        ...(contract.delivery
+          ? [
+              modelResultSchema(
+                hostToolResultSchema(contract.delivery.outputSchema)
+              )
+            ]
+          : []),
+        ...(contract.partialOutputSchema === undefined
+          ? []
+          : [annotate(contract.partialOutputSchema)]),
+        ...(contract.delivery && contract.recoveryOutputSchema !== undefined
+          ? [annotate(contract.recoveryOutputSchema)]
+          : []),
+        failure
+      ].map((schema, index) =>
+        embedAiToolSchema(schema as AiJsonValue, `#/anyOf/${index}`)
+      )
+    },
     recoveryOutputSchema: annotate(contract.recoveryOutputSchema)
   }
 }
 
+/** Preserve the owner's schema vocabulary while removing declared internal fields. */
+const modelResultSchema = (schema: unknown): unknown => {
+  if (!schema || typeof schema !== 'object') return schema
+  if (Array.isArray(schema)) return schema.map(modelResultSchema)
+  const source = schema as Record<string, unknown>
+  const result = { ...source }
+  const properties = source.properties as Record<string, unknown> | undefined
+  const omitted = new Set<string>()
+  if (properties) {
+    result.properties = Object.fromEntries(
+      Object.entries(properties).flatMap(([key, child]) => {
+        if (
+          child &&
+          typeof child === 'object' &&
+          (child as Record<string, unknown>)['x-model-visibility'] ===
+            'internal'
+        ) {
+          omitted.add(key)
+          return []
+        }
+        return [[key, modelResultSchema(child)]]
+      })
+    )
+    if (Array.isArray(source.required))
+      result.required = source.required.filter((key) => !omitted.has(key))
+  }
+  for (const key of [
+    '$defs',
+    'definitions',
+    'patternProperties',
+    'dependentSchemas'
+  ]) {
+    const children = source[key]
+    if (children && typeof children === 'object' && !Array.isArray(children))
+      result[key] = Object.fromEntries(
+        Object.entries(children).map(([name, child]) => [
+          name,
+          modelResultSchema(child)
+        ])
+      )
+  }
+  for (const key of [
+    'anyOf',
+    'oneOf',
+    'allOf',
+    'prefixItems',
+    'items',
+    'additionalProperties',
+    'not',
+    'if',
+    'then',
+    'else'
+  ])
+    if (source[key] !== undefined) result[key] = modelResultSchema(source[key])
+  return result
+}
+
+/** Select declared envelope fields; explicitly open domain values retain their keys.
+ * This is a pure projection of an already validated result, never owner execution.
+ */
+export const projectToolResultFields = (
+  value: unknown,
+  schema: unknown
+): unknown => {
+  const record = (item: unknown): item is Record<string, unknown> =>
+    !!item && typeof item === 'object' && !Array.isArray(item)
+  const project = (
+    item: unknown,
+    sources: readonly unknown[],
+    depth: number
+  ): unknown => {
+    if (depth > 64)
+      throw new Error('Model result projection exceeds schema depth')
+    const fields = new Map<string, unknown[]>()
+    const parts: Record<string, unknown>[] = []
+    let opaque = false
+    let envelope = false
+    const internal = new Set<string>()
+    const patterns: [RegExp, unknown][] = []
+    const visited = new Set<unknown>()
+    const visit = (source: unknown) => {
+      if (source === true) {
+        opaque = true
+        return
+      }
+      if (!record(source) || visited.has(source)) return
+      visited.add(source)
+      parts.push(source)
+      if (typeof source.$ref === 'string' && source.$ref.startsWith('#/')) {
+        let target: unknown = schema
+        for (const token of source.$ref.slice(2).split('/')) {
+          const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
+          target =
+            record(target) || Array.isArray(target)
+              ? (target as Record<string, unknown>)[key]
+              : undefined
+        }
+        visit(target)
+      }
+      if (record(source.properties)) {
+        envelope = true
+        for (const [key, child] of Object.entries(source.properties)) {
+          if (record(child) && child['x-model-visibility'] === 'internal')
+            internal.add(key)
+          else fields.set(key, [...(fields.get(key) ?? []), child])
+        }
+      }
+      if (record(source.patternProperties))
+        for (const [pattern, child] of Object.entries(source.patternProperties))
+          patterns.push([new RegExp(pattern), child])
+      if (source.if !== undefined) {
+        const matches = !operationInputIssues(item, source.if, schema, 'output')
+        visit(matches ? source.then : source.else)
+      }
+      if (record(item) && record(source.dependentSchemas))
+        for (const [key, child] of Object.entries(source.dependentSchemas))
+          if (Object.hasOwn(item, key)) visit(child)
+      if (Array.isArray(source.allOf)) source.allOf.forEach(visit)
+      for (const key of ['anyOf', 'oneOf'])
+        if (Array.isArray(source[key]))
+          for (const branch of source[key])
+            if (!operationInputIssues(item, branch, schema, 'output'))
+              visit(branch)
+    }
+    sources.forEach(visit)
+    if (opaque) return item
+    if (Array.isArray(item)) {
+      return item.map((entry, index) =>
+        project(
+          entry,
+          parts.flatMap((part) => {
+            if (
+              Array.isArray(part.prefixItems) &&
+              index < part.prefixItems.length
+            )
+              return [part.prefixItems[index]]
+            return part.items === undefined ? [] : [part.items]
+          }),
+          depth + 1
+        )
+      )
+    }
+    if (!record(item)) return item
+    const dynamic = parts.flatMap((part) =>
+      record(part.additionalProperties) ? [part.additionalProperties] : []
+    )
+    // An unconstrained value is explicitly opaque. Typed maps still project each
+    // value, including maps with no fixed properties and user-authored key names.
+    if (!envelope && !patterns.length && !dynamic.length) return item
+    const entries: [string, unknown][] = []
+    for (const [key, value] of Object.entries(item)) {
+      if (internal.has(key)) continue
+      const named = fields.get(key) ?? []
+      const patterned = patterns
+        .filter(([pattern]) => pattern.test(key))
+        .map(([, child]) => child)
+      const children = [...named, ...patterned]
+      if (!children.length) children.push(...dynamic)
+      if (children.length)
+        entries.push([key, project(value, children, depth + 1)])
+    }
+    return Object.fromEntries(entries)
+  }
+  return project(value, [schema], 0)
+}
+
 /** External delivery consumes an owner-authored view after complete internal handoff. */
 export const projectToolDelivery = (
-  contract: Pick<AiToolContractInput, 'delivery'>,
+  contract: Pick<AiToolContractInput, 'delivery'> & {
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+  },
   value: unknown
 ): unknown => {
-  if (!contract.delivery) return value
+  if (!contract.delivery) {
+    return projectToolResultFields(value, {
+      anyOf: [
+        contract.outputSchema,
+        contract.partialOutputSchema,
+        contract.recoveryOutputSchema
+      ]
+        .filter((entry) => entry !== undefined)
+        .map((entry, index) =>
+          embedAiToolSchema(
+            hostToolResultSchema(entry) as AiJsonValue,
+            `#/anyOf/${index}`
+          )
+        )
+    })
+  }
   let view: unknown = value
   for (const token of contract.delivery.path.slice(1).split('/')) {
     const key = token.replace(/~1/g, '/').replace(/~0/g, '~')
@@ -399,6 +635,33 @@ export const projectToolDelivery = (
       view && typeof view === 'object' && Object.hasOwn(view, key)
         ? (view as Record<string, unknown>)[key]
         : undefined
+  }
+  // A settled owner failure has no successful delivery view to publish. Select
+  // its declared recovery envelope, preserving the failure instead of replacing
+  // it with a missing-view error or replaying the successful prefix.
+  const originalValue =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : undefined
+  const reported = designActionOutcome(originalValue?.toolOutcome ?? value)
+  if (view === undefined && reported.status !== 'success') {
+    const recovery = [
+      contract.partialOutputSchema,
+      contract.recoveryOutputSchema
+    ].filter((schema) => schema !== undefined)
+    const declared = {
+      anyOf: recovery.map((schema, index) =>
+        embedAiToolSchema(
+          hostToolResultSchema(schema) as AiJsonValue,
+          `#/anyOf/${index}`
+        )
+      )
+    }
+    if (
+      recovery.length &&
+      !operationContractIssue(value, declared, { stage: 'output' })
+    )
+      return projectToolResultFields(value, declared)
   }
   const issue =
     view === undefined
@@ -408,19 +671,43 @@ export const projectToolDelivery = (
         })
   const original =
     value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
-  const outcome = designActionOutcome(original.toolOutcome ?? original)
-  if (issue)
-    return {
-      available: false,
-      recoverable: true,
-      code: toolDeliveryFailureCode,
-      message: `${issue} Execution must not be replayed.`,
-      settlement: outcome.settlement,
-      toolOutcome: { status: 'partial', settlement: outcome.settlement }
-    }
+  if (issue) return toolDeliveryFailure(value, issue, contract)
   if (!view || typeof view !== 'object' || Array.isArray(view)) return view
   return {
-    ...(view as Record<string, unknown>),
+    ...(projectToolResultFields(view, contract.delivery.outputSchema) as Record<
+      string,
+      unknown
+    >),
     ...(original.toolOutcome ? { toolOutcome: original.toolOutcome } : {})
+  }
+}
+
+/** One delivery failure policy for declared views and the final native boundary. */
+export const toolDeliveryFailure = (
+  value: unknown,
+  issue: string,
+  contract: {
+    outputSchema?: unknown
+    partialOutputSchema?: unknown
+    recoveryOutputSchema?: unknown
+  }
+) => {
+  const original =
+    value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  const outcome = designActionOutcome(original.toolOutcome ?? original)
+  const declared = declaredToolResults(contract)
+  const acknowledged = !operationContractIssue(value, declared, {
+    stage: 'output'
+  })
+    ? projectToolResultFields(value, declared)
+    : undefined
+  return {
+    available: false,
+    recoverable: true,
+    code: toolDeliveryFailureCode,
+    message: `${issue} Execution must not be replayed.`,
+    settlement: outcome.settlement,
+    toolOutcome: { status: 'partial', settlement: outcome.settlement },
+    ...(acknowledged === undefined ? {} : { executionResult: acknowledged })
   }
 }

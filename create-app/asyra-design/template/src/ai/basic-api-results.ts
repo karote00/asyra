@@ -354,6 +354,11 @@ export const basicApiResultSchema = (
     fields.application = { const: kind === 'value' ? 'read-only' : 'transient' }
   }
   const required = Object.keys(fields)
+  fields.code = { type: 'string' }
+  fields.message = { type: 'string' }
+  fields.settlement = {
+    enum: ['not-started', 'completed', 'partial', 'unknown']
+  }
   if (['grouped', 'ungrouped', 'moves', 'removed'].includes(kind)) {
     fields.value = valueSchema
     fields.mutationScope = toolMutationScope

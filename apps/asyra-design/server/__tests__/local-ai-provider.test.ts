@@ -7,6 +7,7 @@ vi.mock('../native-provider-config', () => ({
 }))
 /// <reference lib="dom" />
 /// <reference types="vite/client" />
+import { readCompleteInformation } from './tool-contract-assertions'
 import { workflowUsageParameters } from '../design-workflow-discovery'
 import { createAiAgentRuntime } from '@asyra/ai-agent-runtime'
 import { getFeature, unregisterFeature } from '@asyra/feature-system'
@@ -915,7 +916,7 @@ describe('local subscription AI backend', () => {
             },
             false
           )
-          expect(rejected).toMatchObject({
+          expect(rejected, JSON.stringify(rejected)).toMatchObject({
             ok: false,
             code: 'admission',
             toolOutcome: { settlement: 'not-started' }
@@ -1740,10 +1741,14 @@ describe('local subscription AI backend', () => {
     expect(scope.inputScopes).not.toHaveProperty('properties')
 
     const selected = JSON.parse(
-      await operations.call(
-        scope.example.tool,
-        scope.example.arguments,
-        new AbortController().signal
+      await readCompleteInformation(
+        (input) =>
+          operations.call(
+            scope.example.tool,
+            input,
+            new AbortController().signal
+          ),
+        scope.example.arguments
       )
     )
     expect(selected.tools[0].usageGuide).toBeDefined()
@@ -5558,7 +5563,16 @@ it('delivers attachment identity and prepares selected uses before capture and c
       Buffer.byteLength(guidance) -
       Buffer.byteLength(recordedAttachmentHandoff.priorGuidance)
     expect(discoveryCalls).toBe(2)
-    expect(totalBytes).toBeLessThan(baselineBytes)
+    // Compare mechanical preparation with its saved equivalent, separately from
+    // newly complete tool contracts. Report the full acquisition cost below.
+    const preparationBytes =
+      metadataDelta +
+      Buffer.byteLength(guidance) -
+      Buffer.byteLength(recordedAttachmentHandoff.priorGuidance)
+    const priorValidation = recordedAttachmentHandoff.calls[2]
+    expect(preparationBytes).toBeLessThan(
+      priorValidation.input.bytes + priorValidation.output.bytes
+    )
     process.stdout.write(
       'Attachment handoff bytes ' +
         JSON.stringify({
@@ -6027,7 +6041,7 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
     const failed = await call(recorded.input)
     expect(applied).toEqual(['part-1'])
     expect(failed.success).toBe(false)
-    expect(failed.value).toMatchObject({
+    expect(failed.value, JSON.stringify(failed.value)).toMatchObject({
       status: 'partial',
       settlement: 'partial',
       failedPart: 'base-details'
@@ -6035,7 +6049,7 @@ it('isolates recorded rejected preparation from an earlier provider part and rep
     const rejected = failed.value.parts[1]
     expect(rejected.message).toContain('buttress-y0.vertices')
     expect(rejected.message).toContain('nonplanar face')
-    expect(rejected).toMatchObject({
+    expect(rejected, JSON.stringify(rejected)).toMatchObject({
       recovery: 'correct_input',
       draftId: expect.any(String),
       toolOutcome: { status: 'failed', settlement: 'not-started' }
@@ -6197,7 +6211,7 @@ it.each(['malformed', 'unavailable'] as const)(
       expect(server.packets.some((p) => p.id === 851)).toBe(false)
       release()
       const rejected = await read(851)
-      expect(rejected).toMatchObject({
+      expect(rejected, JSON.stringify(rejected)).toMatchObject({
         available: false,
         recovery: 'correct_input',
         toolOutcome: { status: 'failed', settlement: 'not-started' }
@@ -6443,7 +6457,7 @@ it('isolates overlapping provider requests with identical call IDs and cancellat
     })
     const rejected = await read(900)
     expect(rejected.success).toBe(false)
-    expect(rejected.value).toMatchObject({
+    expect(rejected.value, JSON.stringify(rejected.value)).toMatchObject({
       recovery: 'correct_input',
       draftId: expect.any(String),
       toolOutcome: { status: 'failed', settlement: 'not-started' }

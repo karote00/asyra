@@ -1,0 +1,205 @@
+{
+  "source": {
+    "run": "knowledge-quality-knowledge-taipei-101-1793217112769",
+    "requestId": "597a8715-9cd8-48ec-8c07-ee04b1139d53"
+  },
+  "cases": [
+    {
+      "callId": "call_wI85V5lutjTpGuIOt9g36vDP",
+      "input": {
+        "arguments": {
+          "materialRevisionId": "74446961-36fb-4de7-a263-5d559643eca1"
+        },
+        "inspection": "defer",
+        "message": "調整陰面連續玻璃反射，保留窗框與幾何。"
+      },
+      "inputSource": {
+        "sequence": 700,
+        "path": "597a8715-9cd8-48ec-8c07-ee04b1139d53.payloads/158-input.json",
+        "bytes": 166,
+        "sha256": "0b9e68f8b04689d88aa411a3c52723ee715dc7f7a2a3b13c53e5876887727e5c"
+      },
+      "tool": "apply_prepared_material",
+      "output": {
+        "actionResults": [
+          {
+            "actionId": "89af92ef-2dec-476a-a022-9d296eb1878a",
+            "actionName": "apply_prepared_material",
+            "result": {
+              "value": null,
+              "acceptedIds": [
+                "design-62e291f7-fc6f-46a5-a93e-84aafe99384b-1",
+                "design-62e291f7-fc6f-46a5-a93e-84aafe99384b-1545"
+              ],
+              "unavailableIds": [],
+              "changed": true,
+              "status": "complete",
+              "settlement": "completed",
+              "appliedCount": 2,
+              "appliedElementIds": [
+                "design-62e291f7-fc6f-46a5-a93e-84aafe99384b-1",
+                "design-62e291f7-fc6f-46a5-a93e-84aafe99384b-1545"
+              ],
+              "materialProvenance": {
+                "status": "available",
+                "unavailableElementIds": []
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              }
+            }
+          }
+        ],
+        "context": {
+          "workspaceId": "workspace",
+          "primaryTool": "select",
+          "systemMode": "design",
+          "elementCount": 3089,
+          "selectedElementCount": 1,
+          "selectedElements": [
+            {
+              "id": "design-62e291f7-fc6f-46a5-a93e-84aafe99384b-0",
+              "type": "frame",
+              "visible": true,
+              "locked": false,
+              "bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 30000,
+                "height": 60000
+              }
+            }
+          ]
+        },
+        "inspectionDeferred": true,
+        "measurementDeferred": false,
+        "checks": {
+          "countsScope": "selected-checks",
+          "counts": {
+            "pass": 2,
+            "fail": 0,
+            "unverified": 0,
+            "stale": 0
+          },
+          "visitedResults": 2
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      },
+      "outputSource": {
+        "sequence": 717,
+        "path": "597a8715-9cd8-48ec-8c07-ee04b1139d53.payloads/165-output.json",
+        "bytes": 1141,
+        "sha256": "599c5158ce8e9d671ab95bc8dc11df85aa0d06483d4a97604f92cd3827801ab4"
+      }
+    },
+    {
+      "callId": "call_vhSF0c9RVOYCjUaQEeGlmWkG",
+      "input": {
+        "arguments": {
+          "scope": "ids",
+          "elementIds": [
+            "design-76479eb2-198d-43be-99ff-f743fef818fe-0",
+            "design-47a11dde-00b5-4df2-968c-3f2eee26a707-0"
+          ],
+          "fields": ["x", "y"],
+          "delivery": "columns"
+        },
+        "message": "讀取塔冠與飾件群組座標，保持新增修補位置一致。"
+      },
+      "inputSource": {
+        "sequence": 1673,
+        "path": "597a8715-9cd8-48ec-8c07-ee04b1139d53.payloads/462-input.json",
+        "bytes": 262,
+        "sha256": "df54b625dac47aaee611fc039392fd0a3e5d874146bf9d306b6c5c1d0eb5d9e7"
+      },
+      "tool": "read_design_context",
+      "output": {
+        "actionResults": [
+          {
+            "actionId": "cff834fa-1463-45e2-a1e2-cfd4a9c8c94e",
+            "actionName": "read_design_context",
+            "result": {
+              "available": true,
+              "scope": "ids",
+              "parentId": null,
+              "offset": 0,
+              "limit": 2,
+              "total": 2,
+              "nextOffset": null,
+              "elements": [],
+              "missingIds": [],
+              "snapshotId": "173f829d-4c89-4a04-9d3f-acfb7eadaf8f",
+              "leaseId": "4018679c-4b9c-4190-8332-0e8d74e2bcf5",
+              "revision": 0,
+              "coordinateSpace": "parent-local",
+              "delivery": "columns",
+              "columns": [
+                {
+                  "id": "design-76479eb2-198d-43be-99ff-f743fef818fe-0",
+                  "x": 11657.45164646391,
+                  "y": 2957.6962932802344
+                },
+                {
+                  "id": "design-47a11dde-00b5-4df2-968c-3f2eee26a707-0",
+                  "x": 11546.80661861283,
+                  "y": 13748.271888117186
+                }
+              ],
+              "observation": {
+                "candidateCount": 2,
+                "metadataReadCount": 2,
+                "computedReadCount": 2,
+                "matchedCount": 2,
+                "reused": false,
+                "selectionExecutions": 1,
+                "retainedRows": 2,
+                "fields": ["x", "y"]
+              },
+              "toolOutcome": {
+                "status": "success",
+                "settlement": "completed"
+              }
+            }
+          }
+        ],
+        "context": {
+          "workspaceId": "workspace",
+          "primaryTool": "select",
+          "systemMode": "design",
+          "elementCount": 17962,
+          "selectedElementCount": 1,
+          "selectedElements": [
+            {
+              "id": "design-47a11dde-00b5-4df2-968c-3f2eee26a707-0",
+              "type": "group",
+              "visible": true,
+              "locked": false,
+              "bounds": {
+                "x": 11546.80661861283,
+                "y": 13748.271888117186,
+                "width": 7019.351542425786,
+                "height": 27622.940498033084
+              }
+            }
+          ]
+        },
+        "toolOutcome": {
+          "status": "success",
+          "settlement": "completed",
+          "issues": []
+        }
+      },
+      "outputSource": {
+        "sequence": 1682,
+        "path": "597a8715-9cd8-48ec-8c07-ee04b1139d53.payloads/465-output.json",
+        "bytes": 1286,
+        "sha256": "86d9dc07c3b2007d5de09669da041f90111d11c17b7480812a8c935de64ae146"
+      }
+    }
+  ]
+}

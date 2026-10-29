@@ -1,5 +1,109 @@
 # @asyra/asyra-design
 
+## Pending CI dependency and contract closure
+
+```update-note
+{
+  "change": "ci-dependency-and-contract-closure",
+  "owner": "Design integration verification",
+  "summary": "Declare existing scene-tree and props-manager test dependencies and restore the canonical Inspector terminal route for the already-declared property intent result. Keep runtime behavior, result semantics and strict validation unchanged.",
+  "sources": [
+    "apps/asyra-design/package.json",
+    "yarn.lock",
+    "turbo.json",
+    "tools/flow-inspector/inspectors/__tests__/canonical-projection-and-collaboration-contract-flow-inspector.contract.test.cjs",
+    "tools/flow-inspector/inspectors/canonical-projection-and-collaboration-contract-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Build and verification metadata corrections only; no runtime migration or consumer behavior change."
+}
+```
+
+## Pending model result delivery boundary
+
+```update-note
+{
+  "change": "model-result-delivery-boundary",
+  "owner": "Design tool result delivery",
+  "summary": "Select declared model-facing result fields after complete internal validation, recording and resource handoff. Retain actionable failures, partial work, checks, retained references and recovery across native tools, registered invocation, batches and workflows. Remove owner-declared diagnostics only; preserve closed contracts and explicit domain maps. Preserve validated executionResult on delivery failure, reject promoted partial outcomes, and propagate child delivery failures without changing settlement. Compare complete-information acquisition and saved results without adding owner reads or replay.",
+  "sources": [
+    "apps/asyra-design/package.json",
+    "apps/asyra-design/server/__tests__/api-delivery-audit.integration.test.ts",
+    "apps/asyra-design/server/__tests__/batch-usage.integration.test.ts",
+    "apps/asyra-design/server/__tests__/discovery-delivery.integration.test.ts",
+    "apps/asyra-design/server/__tests__/execution-flow-proof.test.ts",
+    "apps/asyra-design/server/__tests__/face-boundary.test.ts",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/complete-model-result-cost-20261029.json",
+    "apps/asyra-design/server/__tests__/fixtures/recorded-101/model-delivery-boundary-20261029.json",
+    "apps/asyra-design/server/__tests__/local-ai-provider.test.ts",
+    "apps/asyra-design/server/__tests__/local-design-workflow.test.ts",
+    "apps/asyra-design/server/__tests__/local-tool-host.test.ts",
+    "apps/asyra-design/server/__tests__/local-tool-operation-composition.test.ts",
+    "apps/asyra-design/server/__tests__/model-delivery-boundary.integration.test.ts",
+    "apps/asyra-design/server/__tests__/model-delivery-cost.test.ts",
+    "apps/asyra-design/server/__tests__/model-result-projection.test.ts",
+    "apps/asyra-design/server/__tests__/tool-contract-assertions.ts",
+    "apps/asyra-design/server/__tests__/unified-tool-contracts.integration.test.ts",
+    "apps/asyra-design/server/design-check-results.ts",
+    "apps/asyra-design/server/local-design-review.ts",
+    "apps/asyra-design/server/local-design-tools.ts",
+    "apps/asyra-design/server/local-design-workflow.ts",
+    "apps/asyra-design/server/local-image-tools.ts",
+    "apps/asyra-design/server/local-information-delivery.ts",
+    "apps/asyra-design/server/local-operation-batch.ts",
+    "apps/asyra-design/server/local-operation-tools.ts",
+    "apps/asyra-design/server/local-prepared-design-review.ts",
+    "apps/asyra-design/server/local-reference-tools.ts",
+    "apps/asyra-design/server/local-tool-host.ts",
+    "apps/asyra-design/server/local-tool-invocation.ts",
+    "apps/asyra-design/server/local-tool-library-tools.ts",
+    "apps/asyra-design/src/ai/basic-api-results.ts",
+    "apps/asyra-design/src/ai/context-action.ts",
+    "apps/asyra-design/src/ai/tool-contract.ts",
+    "create-app/asyra-design/template/package.json",
+    "create-app/asyra-design/template/server/__tests__/api-delivery-audit.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/batch-usage.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/discovery-delivery.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/face-boundary.test.ts",
+    "create-app/asyra-design/template/server/__tests__/fixtures/recorded-101/complete-model-result-cost-20261029.json",
+    "create-app/asyra-design/template/server/__tests__/fixtures/recorded-101/model-delivery-boundary-20261029.json",
+    "create-app/asyra-design/template/server/__tests__/local-ai-provider.test.ts",
+    "create-app/asyra-design/template/server/__tests__/local-design-workflow.test.ts",
+    "create-app/asyra-design/template/server/__tests__/local-tool-host.test.ts",
+    "create-app/asyra-design/template/server/__tests__/local-tool-operation-composition.test.ts",
+    "create-app/asyra-design/template/server/__tests__/model-delivery-boundary.integration.test.ts",
+    "create-app/asyra-design/template/server/__tests__/model-delivery-cost.test.ts",
+    "create-app/asyra-design/template/server/__tests__/model-result-projection.test.ts",
+    "create-app/asyra-design/template/server/__tests__/tool-contract-assertions.ts",
+    "create-app/asyra-design/template/server/__tests__/unified-tool-contracts.integration.test.ts",
+    "create-app/asyra-design/template/server/design-check-results.ts",
+    "create-app/asyra-design/template/server/local-design-review.ts",
+    "create-app/asyra-design/template/server/local-design-tools.ts",
+    "create-app/asyra-design/template/server/local-design-workflow.ts",
+    "create-app/asyra-design/template/server/local-image-tools.ts",
+    "create-app/asyra-design/template/server/local-information-delivery.ts",
+    "create-app/asyra-design/template/server/local-operation-batch.ts",
+    "create-app/asyra-design/template/server/local-operation-tools.ts",
+    "create-app/asyra-design/template/server/local-prepared-design-review.ts",
+    "create-app/asyra-design/template/server/local-reference-tools.ts",
+    "create-app/asyra-design/template/server/local-tool-host.ts",
+    "create-app/asyra-design/template/server/local-tool-invocation.ts",
+    "create-app/asyra-design/template/server/local-tool-library-tools.ts",
+    "create-app/asyra-design/template/src/ai/basic-api-results.ts",
+    "create-app/asyra-design/template/src/ai/context-action.ts",
+    "create-app/asyra-design/template/src/ai/tool-contract.ts",
+    "docs/public/generated/source-map.json",
+    "tools/flow-inspector/inspectors/ai-execution-flow-inspector.data.cjs",
+    "tools/flow-inspector/workspace/workspace-bundle.data.js"
+  ],
+  "impact": "no-action",
+  "guides": [],
+  "reason": "Corrects existing model delivery boundaries without changing tool inputs, identities, persistence or canonical operation results. Complete internal evidence and resource contracts remain available to existing owners; no consumer migration is required."
+}
+```
+
 ## Pending model-visible result contracts
 
 ```update-note

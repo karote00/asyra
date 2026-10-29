@@ -70,7 +70,7 @@ describe('idCounter', () => {
       )
       expect(new Set(results.flat()).size).toBe(24)
       expect(results[0]).toEqual(['shape-1', 'el-1'])
-      expect(results.at(-1)).toEqual(['shape-12', 'el-12'])
+      expect(results[results.length - 1]).toEqual(['shape-12', 'el-12'])
       const before = { ...idCounter.counter }
       expect(() => idCounter.allocate(null as never)).toThrow()
       expect(() => idCounter.allocate([IDTypes.ELEMENT, 1] as never)).toThrow()

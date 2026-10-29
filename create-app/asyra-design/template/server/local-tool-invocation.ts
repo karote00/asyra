@@ -1,5 +1,6 @@
 import {
   AiActionExecutionError,
+  embedAiToolSchema,
   AiExecutionError,
   createAiInvoker,
   createAiToolContract,
@@ -12,6 +13,7 @@ import {
 } from '@asyra/ai-agent-runtime'
 import { serializeToolPayload } from '@asyra/ai-agent-runtime/node'
 import { BrowserBatchExecutionError } from './batch-exchange'
+import { designCheckSummarySchema } from './design-check-results'
 import {
   operationContractIssue,
   operationInputIssues,
@@ -20,6 +22,7 @@ import {
 } from './operation-input-schema'
 import {
   designActionOutcome,
+  toolInternalResult,
   toolResultObject,
   toolResultString
 } from '../src/ai/tool-contract'
@@ -39,6 +42,31 @@ export const localToolResultSchema = (reply: {
 }): AiJsonValue | undefined => {
   const validated = validatedOutputSchemas.get(reply)
   return validated?.text === reply.text ? validated.schema : undefined
+}
+
+/** Delivery can make acknowledgement incomplete, never change execution settlement. */
+export const localToolDeliveryResult = (
+  original: Record<string, unknown>,
+  projected: Record<string, unknown>
+): Record<string, unknown> => {
+  const previous = localToolOutcome(original)
+  const execution = record(original.toolOutcome)
+    ? original.toolOutcome
+    : previous
+  const delivered = localToolOutcome(projected)
+  // Owner-specific successful page/finding semantics remain valid when projection
+  // did not introduce a new incomplete child acknowledgement.
+  if (
+    execution.status !== 'success' ||
+    delivered.status === 'success' ||
+    (delivered.status === previous.status &&
+      JSON.stringify(delivered.issues) === JSON.stringify(previous.issues))
+  )
+    return projected
+  return {
+    ...projected,
+    toolOutcome: { ...execution, status: 'partial', issues: delivered.issues }
+  }
 }
 
 /** All owners share the same invocation and failure policy. */
@@ -249,24 +277,106 @@ const hasAcknowledgedActions = (value: unknown): boolean => {
   )
 }
 
-/** Boundary failures can precede execution; no synthetic receipt is required. */
-export const localToolFailureSchema = toolResultObject({
-  available: { const: false },
-  code: toolResultString,
-  message: toolResultString,
-  recoverable: { type: 'boolean' },
-  toolOutcome: toolResultObject({
-    status: { enum: ['failed', 'partial'] },
+/** Browser transport and execution receipts keep decisions separate from profiling. */
+export const localBatchFailureSchema = toolResultObject(
+  {
+    batchId: toolResultString,
+    actionName: { type: ['string', 'null'] },
+    code: toolResultString,
+    message: toolResultString,
+    handlerMs: toolInternalResult({ type: ['number', 'null'] }),
+    executionMs: toolInternalResult({ type: 'number' })
+  },
+  ['batchId', 'actionName', 'code', 'message']
+)
+export const localReceiptFailureSchema = toolResultObject(
+  {
+    code: toolResultString,
+    message: toolResultString,
+    stage: toolResultString,
+    actionName: { type: ['string', 'null'] },
+    actionId: { type: ['string', 'null'] },
+    actionExecutionMs: toolInternalResult({ type: ['number', 'null'] }),
     settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
-    issues: {
-      type: 'array',
-      items: toolResultObject({
-        code: toolResultString,
-        message: toolResultString
-      })
+    contractStage: { enum: ['registration', 'input', 'output'] },
+    observedResult: true,
+    contextFresh: toolInternalResult({ type: 'boolean' })
+  },
+  ['code', 'message', 'stage', 'actionName', 'actionId', 'settlement']
+)
+export const localExecutionReceiptSchema: Record<string, unknown> = {
+  anyOf: [
+    {
+      $ref: '#/$defs/receipt',
+      anyOf: [{ required: ['actionResults'] }, { required: ['batches'] }]
+    },
+    {
+      type: 'object',
+      not: {
+        anyOf: [{ required: ['actionResults'] }, { required: ['batches'] }]
+      }
     }
-  })
-})
+  ],
+  $defs: {
+    receipt: toolResultObject(
+      {
+        actionResults: {
+          type: 'array',
+          items: toolResultObject({
+            actionId: toolResultString,
+            actionName: toolResultString,
+            result: true
+          })
+        },
+        batches: { type: 'array', items: { $ref: '#/$defs/receipt' } },
+        context: toolInternalResult({}),
+        failure: localReceiptFailureSchema,
+        checks: designCheckSummarySchema,
+        inspectionDeferred: { type: 'boolean' },
+        measurementDeferred: { type: 'boolean' },
+        inspectionIssues: { type: 'array' },
+        measurementIssues: { type: 'array' },
+        toolOutcome: { type: 'object' }
+      },
+      []
+    )
+  }
+}
+
+/** Boundary failures can precede execution; no synthetic receipt is required. */
+export const localToolFailureSchema = toolResultObject(
+  {
+    available: { const: false },
+    code: toolResultString,
+    message: toolResultString,
+    recoverable: { type: 'boolean' },
+    stage: toolResultString,
+    settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
+    recovery: { type: ['string', 'object'] },
+    executionResult: {
+      anyOf: [
+        { type: 'null' },
+        embedAiToolSchema(
+          localExecutionReceiptSchema as AiJsonValue,
+          '#/properties/executionResult/anyOf/1'
+        )
+      ]
+    },
+    batchFailure: localBatchFailureSchema,
+    toolOutcome: toolResultObject({
+      status: { enum: ['failed', 'partial'] },
+      settlement: { enum: ['not-started', 'completed', 'partial', 'unknown'] },
+      issues: {
+        type: 'array',
+        items: toolResultObject({
+          code: toolResultString,
+          message: toolResultString
+        })
+      }
+    })
+  },
+  ['available', 'code', 'message', 'recoverable', 'toolOutcome']
+)
 
 export const localToolFailureReply = (
   message: string,

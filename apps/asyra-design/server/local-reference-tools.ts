@@ -522,6 +522,40 @@ export const createLocalReferenceTools = (
       'Import or reuse one original reference; preserve source-local failure and attachment identity'
     )
 
+  const referenceResultFields = {
+    available: toolResultBoolean,
+    referenceId: toolResultString,
+    attachmentIndex: toolResultCount,
+    sha256: toolResultString,
+    image: toolResultObject(
+      {
+        width: { type: 'number', exclusiveMinimum: 0 },
+        height: { type: 'number', exclusiveMinimum: 0 },
+        mediaType: toolResultString
+      },
+      ['width', 'height']
+    ),
+    source: toolResultObject(
+      {
+        url: toolResultString,
+        title: toolResultString,
+        license: toolResultString
+      },
+      ['url']
+    ),
+    imageUrl: toolResultString,
+    acquisition: { enum: ['downloaded', 'reused'] },
+    acquisitionAttempts: toolResultCount,
+    delivery: { enum: ['image', 'reference'] },
+    nextStep: toolResultString,
+    sourceResolution: toolResultString,
+    pageAcquisition: { type: 'object' },
+    actionResults: { type: 'array' },
+    recoverable: toolResultBoolean,
+    code: toolResultString,
+    message: toolResultString,
+    failure: { type: 'object' }
+  }
   return {
     resultIssue: (_name: string, value: unknown): string | undefined => {
       if (!isRecord(value)) return 'Reference import returned no result object'
@@ -559,24 +593,30 @@ export const createLocalReferenceTools = (
         ...toolSemantics(
           {
             anyOf: [
-              toolResultObject({
-                references: {
-                  type: 'array',
-                  minItems: 1,
-                  items: toolResultObject({ available: toolResultBoolean })
-                }
-              }),
-              toolResultObject({
-                available: toolResultBoolean,
-                referenceId: toolResultString,
-                attachmentIndex: toolResultCount,
-                sha256: toolResultString,
-                image: toolResultObject({
-                  width: { type: 'number', exclusiveMinimum: 0 },
-                  height: { type: 'number', exclusiveMinimum: 0 }
-                }),
-                source: toolResultObject({ url: toolResultString })
-              })
+              toolResultObject(
+                {
+                  available: toolResultBoolean,
+                  status: { enum: ['complete', 'partial', 'unavailable'] },
+                  recoverable: toolResultBoolean,
+                  actionResults: { type: 'array' },
+                  references: {
+                    type: 'array',
+                    minItems: 1,
+                    items: toolResultObject(referenceResultFields, [
+                      'available'
+                    ])
+                  }
+                },
+                ['references']
+              ),
+              toolResultObject(referenceResultFields, [
+                'available',
+                'referenceId',
+                'attachmentIndex',
+                'sha256',
+                'image',
+                'source'
+              ])
             ]
           },
           'external',

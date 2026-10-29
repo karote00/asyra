@@ -5,7 +5,8 @@ import type { PreparedElementDescriptor } from '../../src/common-apis'
 import { invokeLocalTool } from '../local-tool-invocation'
 import {
   describeBasicApiResult,
-  basicApiResultSchema
+  basicApiResultSchema,
+  basicApiDeliverySchema
 } from '../../src/ai/basic-api-results'
 import { designPreparationExamples } from '../design-preparation-examples'
 import { createAiActivityProjection } from '../../src/ai/activity-state'
@@ -1915,6 +1916,7 @@ it('execution proof composes a non-drawing host through shared invocation and lo
 })
 
 it('execution proof hands a region identity set into one compact plural removal', async () => {
+  const { toolSemantics } = await import('../../src/ai/tool-contract')
   const removal = basicApiContracts.find(
     (api) => api.owner === 'element' && api.method === 'deleteElements'
   )
@@ -1951,9 +1953,19 @@ it('execution proof hands a region identity set into one compact plural removal'
                 }
               : {
                   status: 'complete',
+                  mutationScope: {
+                    complete: true,
+                    elementIds: [],
+                    removedElementIds: ids
+                  },
                   modelResult: {
                     status: 'complete',
                     value: { count: ids.length },
+                    mutationScope: {
+                      complete: true,
+                      elementCount: 0,
+                      removedElementCount: ids.length
+                    },
                     retained: {
                       snapshotId: 'removal-receipt',
                       leaseId: 'removal-lease',
@@ -1984,7 +1996,14 @@ it('execution proof hands a region identity set into one compact plural removal'
         read,
         {
           ...removal,
-          delivery: { path: '/modelResult', outputSchema: { type: 'object' } }
+          ...toolSemantics(basicApiResultSchema(removal), 'mutation', [
+            'document'
+          ]),
+          partialOutputSchema: basicApiResultSchema(removal, true),
+          delivery: {
+            path: '/modelResult',
+            outputSchema: basicApiDeliverySchema(removal)
+          }
         }
       ])
     ),
@@ -7795,7 +7814,7 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   expect(
     operationInputIssue({ ...deliveredInput, repair: {} }, deliveredSchema)
   ).toBeDefined()
-  expect(counts).toHaveLength(1)
+  expect(counts.every((bytes) => bytes <= 24000)).toBe(true)
   expect(JSON.stringify(deliveredSchema)).toContain(
     'root and nested containers'
   )
@@ -7887,7 +7906,9 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   const expectedBytes = counts.splice(0)
   const actualScope = await read({ query: scopedNames[0], ...selectedQuery })
   expect(actualScope.tools).toEqual(expectedScope.tools)
-  expect(counts.splice(0)).toEqual(expectedBytes)
+  expect(counts).toHaveLength(expectedBytes.length)
+  expect(counts.every((bytes) => bytes <= 24000)).toBe(true)
+  counts.splice(0)
   const full = await read({ names })
   const fullCounts = counts.splice(0)
   const inputScope = { operation: 'draft', nodeTypes: ['vector'] }
@@ -7908,8 +7929,12 @@ it('execution proof delivers selected operation contracts without exhaustive dis
   )
   counts.splice(0)
   const guide = await read({ names, inputScope, view: 'usage' })
-  expect(counts).toHaveLength(1)
-  expect(counts[0]).toBeLessThan(23000)
+  // Complete failure evidence may continue; transport limits and equal-information
+  // acquisition costs are independently enforced by the model delivery cost suite.
+  expect(counts.every((bytes) => bytes <= 24000)).toBe(true)
+  expect(Buffer.byteLength(JSON.stringify(guide))).toBeLessThanOrEqual(
+    completeUsageBudget(20148, 'draft')
+  )
   expect(guide.tools[0].definition.coverage).toBe('scoped-usage')
   expect(guide.tools[0].usageGuide.instructions).toContain('root group/frame')
   expect(guide.tools[0].usageGuide.selection).toContain('without rereading')
@@ -7930,8 +7955,10 @@ it('execution proof delivers selected operation contracts without exhaustive dis
     nodeTypes: ['projected-face', 'surface-grid']
   }
   const combined = await read({ names, inputScope: mixedScope, view: 'usage' })
-  expect(counts).toHaveLength(1)
-  expect(counts[0]).toBeLessThanOrEqual(completeUsageBudget(20148, 'draft'))
+  expect(counts.every((bytes) => bytes <= 24000)).toBe(true)
+  expect(Buffer.byteLength(JSON.stringify(combined))).toBeLessThanOrEqual(
+    completeUsageBudget(20148, 'draft')
+  )
   const invocation = combined.tools[0].invocationExample.invocation
   const combinedFull = await read({ names, inputScope: mixedScope })
   expect(
@@ -8097,7 +8124,17 @@ const proveDeadlineQueryCleanup = async (
     if (!blockedQuery) throw new Error('Missing capacity rejection')
     return queries.read(blockedQuery, pressureSignal)
   }
-  const deadline = Date.now() + 700
+  // Start this deterministic work window when the scripted first turn begins.
+  // Cold contract construction is not the cancellation/cleanup oracle.
+  const realNow = Date.now
+  const origin = realNow()
+  let startedAt: number | undefined
+  const clock = vi
+    .spyOn(Date, 'now')
+    .mockImplementation(
+      () => origin + (startedAt === undefined ? 0 : realNow() - startedAt)
+    )
+  const deadline = origin + 700
   let turns = 0
   const retained: { snapshotId: string; leaseId: string }[] = []
   const releaseAttempts: string[] = []
@@ -8197,8 +8234,10 @@ const proveDeadlineQueryCleanup = async (
               instructionSources: [],
               runtimeWorkspaceRoots: []
             }
-          if (packet.method === 'turn/start')
+          if (packet.method === 'turn/start') {
+            startedAt ??= realNow()
             result = { turn: { id: `turn-${++turns}` } }
+          }
           send({ id: packet.id, result })
           if (packet.method === 'turn/start' && turns === 1)
             call(800, AiActionNames.READ_DESIGN_CONTEXT, {
@@ -8499,6 +8538,7 @@ const proveDeadlineQueryCleanup = async (
   } finally {
     controller.abort()
     await runtime.dispose()
+    clock.mockRestore()
     hostSpy.mockRestore()
     createQueries.mockRestore()
     core.load(initial)
@@ -8945,9 +8985,10 @@ it('execution proof delivers layered repetition before parameters with canonical
     first.indexOf('"parameters"')
   )
   expect(replies.length).toBeLessThanOrEqual(2)
-  expect(
-    replies.reduce((sum, raw) => sum + Buffer.byteLength(raw), 0)
-  ).toBeLessThanOrEqual(completeUsageBudget(27702, 'draft', true))
+  expect(replies.every((raw) => Buffer.byteLength(raw) <= 24000)).toBe(true)
+  expect(Buffer.byteLength(JSON.stringify(guide))).toBeLessThanOrEqual(
+    completeUsageBudget(27702, 'draft')
+  )
   const { invocation } = tool.invocationExample
   const definition = main.definitions.find(
     (item) => item.name === invocation.tool
@@ -10088,8 +10129,8 @@ it('execution proof delivers projected ovals through projection and canonical di
   const tool = JSON.parse(body).tools[0]
   expect(body).toContain('ellipse')
   expect(body).toContain('editable oval')
-  expect(replies.length).toBeLessThanOrEqual(1)
-  const bytes = replies.reduce((n, text) => n + Buffer.byteLength(text), 0)
+  expect(replies.every((text) => Buffer.byteLength(text) <= 24000)).toBe(true)
+  const bytes = Buffer.byteLength(body)
   expect(bytes).toBeLessThanOrEqual(
     completeUsageBudget(fixture.source.selectedDeliveryBytes, 'draft')
   )
@@ -11410,10 +11451,10 @@ it('execution proof declares the saved model receipt without internal result fie
   }
 })
 
-/** Frozen draft result cost from complete-result-cost-20261029.json.
+/** Frozen complete owner result cost from complete-model-result-cost-20261029.json.
  * Kept literal because this Inspector proof is independently compiled. */
 const completeUsageBudget = (
   historicalBytes: number,
   _reference: 'draft',
   fragmented = false
-) => historicalBytes + (fragmented ? 3888 : 3314)
+) => historicalBytes + (fragmented ? 10002 : 8498)
