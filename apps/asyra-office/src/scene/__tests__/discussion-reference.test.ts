@@ -1,5 +1,6 @@
 import { useReferenceSceneFixture } from './fixtures/reference-scene'
-import { beforeAll, expect, it } from 'vitest'
+import { beforeAll, beforeEach, afterEach, expect, it } from 'vitest'
+import { clearImmediate, setImmediate } from 'node:timers'
 import { readSpatialDescriptor } from '@asyra/preset/spatial-contract'
 import { createReferenceScene, buildSpatialMeshes } from '../reference-scene'
 import { meshBounds } from '../room-furnishing-helpers'
@@ -51,6 +52,22 @@ function expanded(source: AssetPart[]): AssetPart[] {
 
 const parts = new Map<string, AssetPart[]>()
 let labels: ReturnType<typeof createReferenceScene>['labels']
+// Register the assertion before the fixture cleanup so its host yield runs first.
+let hostTurnObserved = false
+let pendingHostTurn: ReturnType<typeof setImmediate>
+beforeEach(() => {
+  hostTurnObserved = false
+  pendingHostTurn = setImmediate(() => {
+    hostTurnObserved = true
+  })
+})
+afterEach(() => {
+  clearImmediate(pendingHostTurn)
+  expect(
+    hostTurnObserved,
+    'The worker must service host messages between geometry cases'
+  ).toBe(true)
+})
 const referenceSceneFixture = useReferenceSceneFixture()
 beforeAll(() => {
   const scene = referenceSceneFixture()

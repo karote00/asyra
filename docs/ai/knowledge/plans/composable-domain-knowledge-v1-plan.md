@@ -729,6 +729,30 @@ Rebased CI repair - 2026-10-30:
   seconds). Production types, naming, formatting and scoped lint pass; lint
   retains diagnostic console warnings. No timeout, fixture or equality oracle
   was relaxed. Self-review confirms the count is never an acceptance result.
+- Office CI follow-up, bounded to the existing reference-scene test fixture and
+  its discussion regression: attempts 1 and 2 of run 40966483503 pass all 351
+  product assertions but fail the Vitest worker `onTaskUpdate` RPC at its unchanged
+  60-second deadline. The synchronous discussion file takes 68.510 seconds in
+  attempt 2; the identical complete local suite passes. The existing fixture
+  registers synchronous setup and provides no host turn between CPU-heavy cases.
+  Verify host progress in that actual suite by scheduling a Node immediate before
+  a case and requiring it to run before the case cleanup completes. Prove the
+  current fixture fails this regression before adding one host yield in its
+  existing afterEach lifecycle. Preserve all 351 geometric assertions, fixture
+  fidelity, per-case timeout, RPC timeout and worker limits. Do not change Office
+  production code, geometry, dependencies, or runner error handling. Run the
+  complete Office test:ci suite, scoped lint, naming, formatting, update guidance
+  and commit-bound gates. This is a test-scheduling boundary; no governed product
+  flow or Inspector step changes. Original RPC failures remain retained and
+  exact-head CI must confirm the worker exchange completes without error.
+- Office scheduling proof: the actual dated-calendar case fails the host-turn
+  assertion on the original fixture (one failed, 32 filtered cases). With the
+  fixture yield, the full unchanged test:ci command passes 60 files and all 351
+  cases without unhandled errors in 139.10 seconds. Every discussion case checks
+  host progress. Office TypeScript and direct ESLint pass. The eight fixture
+  consumers retain real scene construction and isolated geometry; no production
+  code, runner timeout, or assertion is removed. Remote RPC causality remains
+  unconfirmed until exact-head CI verifies the corrected scheduling path.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.

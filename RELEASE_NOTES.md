@@ -6,7 +6,7 @@
 {
   "change": "rebased-ci-consumer-and-proof-repair",
   "owner": "App consumers and repository verification",
-  "summary": "Preserve Starter accepted target IDs, Sim property retirement, Design capture identities and original transaction failures. Compare exact durable JSON values across binary transport and checkpoint storage. Synchronize browser delivery fixtures and Inspector case coverage without weakening geometry, history, persistence or timeout checks. Keep offline evidence fixtures inside their checkout and retain original peer Undo publication diagnostics. Compute strict document digests before browser transport and use completed collaboration activation for construction reload checks. Skip expensive convergence snapshots while canonical counts cannot match, then retain the full digest assertion; retain bounded prepared-delivery owner-phase timings.",
+  "summary": "Preserve Starter accepted target IDs, Sim property retirement, Design capture identities and original transaction failures. Compare exact durable JSON values across binary transport and checkpoint storage. Synchronize browser delivery fixtures and Inspector case coverage without weakening geometry, history, persistence or timeout checks. Keep offline evidence fixtures inside their checkout and retain original peer Undo publication diagnostics. Compute strict document digests before browser transport and use completed collaboration activation for construction reload checks. Skip expensive convergence snapshots while canonical counts cannot match, then retain the full digest assertion; retain bounded prepared-delivery owner-phase timings. Yield between synchronous Office reference-scene test cases so the worker can service host messages, without weakening geometry assertions or RPC deadlines.",
   "reason": "Core receipt changes and proof-input moves left direct consumers and CI assumptions out of sync. Retain complete geometry, recovery assertions and existing timeout guards while removing test-only quadratic lookup and separating timing phases.",
   "impact": "no-action",
   "sources": [
@@ -52,6 +52,8 @@
     "apps/asyra-design/test-data/knowledge-evaluation/__tests__/analysis.test.mjs",
     "apps/asyra-design/test-data/knowledge-evaluation/__tests__/native-boundaries.test.mjs",
     "apps/asyra-design/test-data/knowledge-evaluation/__tests__/public-activity.test.mjs",
+    "apps/asyra-office/src/scene/__tests__/discussion-reference.test.ts",
+    "apps/asyra-office/src/scene/__tests__/fixtures/reference-scene.ts",
     "apps/asyra-sim/src/storage/__tests__/publication-repository.test.ts",
     "apps/asyra-sim/src/storage/publication-journal.ts",
     "apps/starter-app/src/common-apis/items.ts",
