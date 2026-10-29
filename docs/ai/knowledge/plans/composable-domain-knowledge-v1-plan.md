@@ -628,6 +628,64 @@ Rebased CI repair - 2026-10-30:
   by this timing observation.
   Focused local reproduction passes in 66.62 seconds; its five retained original
   runner logs remain available for attribution. This is not a timing-cause fix.
+- Current-head follow-up: run 40953072014 repeats both server timeouts and the
+  peer Undo failure. The retained diagnostic proves local publication 79 and the
+  empty durable checkpoint were accepted while the connected peer completed only
+  78 publications, without a reported failure. It does not identify whether the
+  last publication is queued, applying, or awaiting projection. Extend the same
+  construction case with the existing opt-in performance profile, reset at the
+  Undo boundary and retain its owner phases with page visibility on both success
+  and failure. Preserve the exact digest and five-second convergence assertion.
+  Inspect only this case's remote apply/projection and transport owners; do not
+  change scheduling or timeouts without a reproducing owner-level regression.
+  The server follow-up remains bounded to the two failing formal tests and their
+  measured work; retain complete saved-fixture and recovery oracles.
+- Digest observation correction: the existing convergence helper transfers the
+  complete saved document over Playwright on every poll before hashing in Node.
+  Keep the same recursively sorted JSON, UTF-8 byte length and SHA-256 oracle,
+  but calculate the digest in the browser and transfer only that identity.
+  Boundary: the existing E2E digest helper and construction case. First assert
+  the actual evaluate result equals the returned digest (red on full-document
+  transfer); compare browser output against
+  the independent existing Node digest and retain corruption detection, complete
+  history/reload/peer assertions and the unchanged convergence guard. This removes
+  confirmed observation work; remote timeout causality remains unconfirmed until
+  exact-head CI verifies the correction.
+- The initial full construction attempt passed eight cases, including the transport
+  regression and peer Undo, but the layered-pattern reload digest differs after
+  an exact durable checkpoint match. Preserve that failure and capture the
+  durable/reloaded documents in the same formal case before diagnosing the load
+  boundary. Do not weaken the immediate exact reload assertion or infer that
+  the new digest calculation caused or fixed this mismatch.
+- The direct-consumer gate reproduces the layered reload mismatch again: the
+  durable document contains 1,444 nodes and 28,844 properties, while the observed
+  browser snapshot has only the contiguous first 834 nodes and 16,644 properties;
+  all surviving property values are identical. Core attaches its canvas before
+  loading the checkpoint and applying the collaboration tail. The generic helper
+  currently waits for that canvas plus 500 ms, whereas the existing observed
+  collaboration helper waits for the handle published after tail activation.
+  Use that existing readiness owner for the construction suite, whose cases all
+  require the document backend. Keep the immediate exact reload digest assertion,
+  the existing five-second handle guard, the full geometry/history proofs and
+  failure snapshots. No persistence, replay, rendering or timeout change.
+  Verify the complete construction file before resuming the 24 direct consumers.
+- Bounded verification: the transport regression fails on the old helper with
+  a 16,762,246-byte document instead of a digest. Browser hashing preserves the
+  independent Node durable-digest oracle. The final construction suite passes all
+  nine cases in 152.7 seconds after using existing collaboration readiness.
+  The broader run had already passed 69 cases outside construction on the same
+  unchanged helper source; retain those results and resume only the 15 untouched
+  remaining files (122 cases). Five opt-in profiling/saved-replay cases remain
+  skips, not passes. Original remote Undo/server timeout causes and remote
+  verification remain open; no passing retry is a causal repair claim.
+- Remaining direct consumers: 121 passed and one explicit large-document
+  profiling case skipped in 485.2 seconds. Combined valid coverage is 199 passed
+  and six opt-in skips across the 24 files; skips are not successes. Direct lint,
+  naming and update-guidance checks pass. Preserve the failed reports and their
+  complete document snapshots. Review confirms that only test transport and
+  readiness changed; production owners and all strict equality guards remain
+  unchanged. This bounded correction does not resolve the two server timeout
+  observations, which remain a separate CI follow-up.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.

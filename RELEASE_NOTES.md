@@ -6,7 +6,7 @@
 {
   "change": "rebased-ci-consumer-and-proof-repair",
   "owner": "App consumers and repository verification",
-  "summary": "Preserve Starter accepted target IDs, Sim property retirement, Design capture identities and original transaction failures. Compare exact durable JSON values across binary transport and checkpoint storage. Synchronize browser delivery fixtures and Inspector case coverage without weakening geometry, history, persistence or timeout checks. Keep offline evidence fixtures inside their checkout and retain original peer Undo publication diagnostics.",
+  "summary": "Preserve Starter accepted target IDs, Sim property retirement, Design capture identities and original transaction failures. Compare exact durable JSON values across binary transport and checkpoint storage. Synchronize browser delivery fixtures and Inspector case coverage without weakening geometry, history, persistence or timeout checks. Keep offline evidence fixtures inside their checkout and retain original peer Undo publication diagnostics. Compute strict document digests before browser transport and use completed collaboration activation for construction reload checks.",
   "reason": "Core receipt changes and proof-input moves left direct consumers and CI assumptions out of sync. Retain complete geometry, recovery assertions and existing timeout guards while removing test-only quadratic lookup and separating timing phases.",
   "impact": "no-action",
   "sources": [
@@ -27,6 +27,7 @@
     "apps/asyra-design/e2e/fixtures/receipt-provider.mjs",
     "apps/asyra-design/e2e/indexed-design-query.spec.ts",
     "apps/asyra-design/e2e/local-ai-provider.spec.ts",
+    "apps/asyra-design/e2e/test-utils.ts",
     "apps/asyra-design/e2e/undo-redo.spec.ts",
     "apps/asyra-design/e2e/vector-gradient-fill.spec.ts",
     "apps/asyra-design/e2e/vector-render-invariants.spec.ts",

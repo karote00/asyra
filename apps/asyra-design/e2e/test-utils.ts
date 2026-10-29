@@ -255,17 +255,42 @@ const createDocumentDigest = (documentState: unknown): DocumentDigest => {
 export async function getCoreDocumentDigest(
   page: Page
 ): Promise<DocumentDigest> {
-  const documentState = await page.evaluate(async () => {
+  return page.evaluate(async () => {
     const data = await (
       await import('../src/testing/runtime-access')
     ).core.save()
+    // Keep the browser oracle independent of the Node persistence digest.
+    // Only the digest crosses the automation bridge, never the full document.
+    const sortValue = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(sortValue)
+      if (typeof value !== 'object' || value === null) return value
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>)
+          .sort(([left], [right]) => {
+            if (left < right) return -1
+            if (left > right) return 1
+            return 0
+          })
+          .map(([key, item]) => [key, sortValue(item)])
+      )
+    }
+    const bytes = new TextEncoder().encode(
+      JSON.stringify(
+        sortValue({
+          version: data.version,
+          sceneTree: data.sceneTree,
+          props: data.props
+        })
+      )
+    )
+    const hash = await crypto.subtle.digest('SHA-256', bytes)
     return {
-      version: data.version,
-      sceneTree: data.sceneTree,
-      props: data.props
+      byteLength: bytes.byteLength,
+      sha256: Array.from(new Uint8Array(hash), (value) =>
+        value.toString(16).padStart(2, '0')
+      ).join('')
     }
   })
-  return createDocumentDigest(documentState)
 }
 
 export async function getPersistedDocumentCheckpoint(

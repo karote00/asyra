@@ -1,4 +1,5 @@
 import { createServer } from 'node:http'
+import { waitForObservedAppReady as waitForAppReady } from './collaboration-observation'
 import { createBatchExchange } from '../server/batch-exchange'
 import { createLocalOperationTools } from '../server/local-operation-tools'
 import { createLocalDesignWorkflow } from '../server/local-design-workflow'
@@ -63,7 +64,6 @@ import { AiActionNames } from '../src/constants/ai-actions'
 import type { PreparedDesign } from '../src/ai/prepared-design'
 import {
   createTestDocumentIdentity,
-  waitForAppReady,
   getCoreDocumentDigest,
   getUndoHistoryDepth,
   undo,
@@ -879,7 +879,9 @@ for (const scenario of [
       await page.route('**/api/ai/action-batch', (route) =>
         route.continue({ url: `http://127.0.0.1:${address.port}/action-batch` })
       )
-      const document = createTestDocumentIdentity()
+      const document = createTestDocumentIdentity(
+        referenced ? 'aiPerformance=profile' : ''
+      )
       await page.goto(document.url)
       await waitForAppReady(page)
       const fileId = new URL(page.url()).searchParams.get('fileId')
@@ -963,7 +965,21 @@ for (const scenario of [
         return core.getElementData(id)?.children
       }, root.id)
       expect(order).toEqual(members.map((entry) => entry.descriptor.id))
-      const after = await getCoreDocumentDigest(page)
+      let digestTransport: unknown
+      const digestPage = new Proxy(page, {
+        get(target, property, receiver) {
+          if (property !== 'evaluate')
+            return Reflect.get(target, property, receiver)
+          return async (...args: Parameters<typeof page.evaluate>) => {
+            const result = await page.evaluate(...args)
+            digestTransport = result
+            return result
+          }
+        }
+      })
+      const after = await getCoreDocumentDigest(digestPage)
+      expect(Object.keys(digestTransport as object)).toEqual(Object.keys(after))
+      expect(digestTransport).toEqual(after)
       if (peer)
         await expect
           .poll(() =>
@@ -971,6 +987,12 @@ for (const scenario of [
           )
           .toEqual(after)
       await page.getByRole('button', { name: 'Close Agent panel' }).click()
+      if (peer)
+        await peer.evaluate(async () => {
+          const { getActiveAiDrawingPerformanceProfile } =
+            await import('../src/testing/runtime-access')
+          getActiveAiDrawingPerformanceProfile()?.reset()
+        })
       await page.evaluate(async () => {
         const { historyApis } = await import('../src/common-apis/history')
         await historyApis.undo()
@@ -1013,6 +1035,29 @@ for (const scenario of [
             })
           }
           throw error
+        } finally {
+          try {
+            const evidence = await peer.evaluate(async () => {
+              const { getActiveAiDrawingPerformanceProfile } =
+                await import('../src/testing/runtime-access')
+              const profile = getActiveAiDrawingPerformanceProfile()
+              if (!profile) throw new Error('Missing peer Undo profile')
+              return {
+                visibility: document.visibilityState,
+                sample: profile.snapshot(),
+                runtime: profile.getRuntimeEvidence()
+              }
+            })
+            await test.info().attach('construction-peer-undo-profile', {
+              contentType: 'application/json',
+              body: JSON.stringify(evidence)
+            })
+          } catch (diagnosticError) {
+            test.info().annotations.push({
+              type: 'diagnostic-capture-failed',
+              description: String(diagnosticError)
+            })
+          }
         }
       }
       await page.evaluate(async () => {
@@ -1031,7 +1076,26 @@ for (const scenario of [
         .toEqual(after)
       await page.reload()
       await waitForAppReady(page)
-      expect(await getCoreDocumentDigest(page)).toEqual(after)
+      try {
+        expect(await getCoreDocumentDigest(page)).toEqual(after)
+      } catch (error) {
+        try {
+          const checkpoint = await getPersistedDocumentCheckpoint(fileId)
+          const reloaded = await page.evaluate(async () =>
+            (await import('../src/testing/runtime-access')).core.save()
+          )
+          await test.info().attach('construction-reload-documents', {
+            contentType: 'application/json',
+            body: JSON.stringify({ expected: after, checkpoint, reloaded })
+          })
+        } catch (diagnosticError) {
+          test.info().annotations.push({
+            type: 'diagnostic-capture-failed',
+            description: String(diagnosticError)
+          })
+        }
+        throw error
+      }
     } finally {
       await peerContext?.close()
       controller.abort()
