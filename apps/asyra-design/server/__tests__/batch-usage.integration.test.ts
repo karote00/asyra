@@ -7,22 +7,59 @@ import type { LocalToolOwnership } from '../local-tool-leases'
 import { createLocalToolHost } from '../local-tool-host'
 import { operationInputIssue } from '../operation-input-schema'
 import modelDelivery from '../../test-data/knowledge-evaluation/__fixtures__/model-delivery-20261028.json'
-import { expect, it, vi } from 'vitest'
+import { beforeAll, expect, it, vi } from 'vitest'
 import { createAiToolContract } from '@asyra/ai-agent-runtime'
 import { createLocalOperationTools } from '../local-operation-tools'
 import { requireBatchSuccess } from '../batch-exchange'
 import { readCompleteInformation } from './tool-contract-assertions'
 import recorded from './fixtures/recorded-101/batch-usage-20261026.json'
 
-it('delivers selected batch usage independent of unrelated inventory and executes its real owner example', async () => {
-  const hadWindow = 'window' in globalThis
-  if (!hadWindow) vi.stubGlobal('window', {})
+// Module transformation belongs to bounded setup; timed behavior still uses real owners.
+const loadBatchRuntime = async () => {
   const { default: core } = await import('../../src/contexts')
   const { applyPreset, PresetProfiles, PresetDefaults } =
     await import('@asyra/preset')
   const { createBasicApiActions } =
     await import('../../src/ai/basic-api-actions')
   const { observeAiAction } = await import('../../src/ai/runtime-input')
+  return {
+    core,
+    applyPreset,
+    PresetProfiles,
+    PresetDefaults,
+    createBasicApiActions,
+    observeAiAction
+  }
+}
+let batchRuntime: Awaited<ReturnType<typeof loadBatchRuntime>>
+beforeAll(async () => {
+  const startedAt = performance.now()
+  const hadWindow = 'window' in globalThis
+  if (!hadWindow) vi.stubGlobal('window', {})
+  try {
+    batchRuntime = await loadBatchRuntime()
+  } finally {
+    if (!hadWindow) vi.unstubAllGlobals()
+    console.info(
+      JSON.stringify({
+        measurement: 'batch-usage-module-initialization',
+        durationMs: performance.now() - startedAt
+      })
+    )
+  }
+})
+
+it('delivers selected batch usage independent of unrelated inventory and executes its real owner example', async () => {
+  const hadWindow = 'window' in globalThis
+  if (!hadWindow) vi.stubGlobal('window', {})
+  const {
+    core,
+    applyPreset,
+    PresetProfiles,
+    PresetDefaults,
+    createBasicApiActions,
+    observeAiAction
+  } = batchRuntime
   applyPreset(core, {
     profile: PresetProfiles.CUSTOM,
     defaults: [PresetDefaults.BASIC_SHAPES, PresetDefaults.CONTAINERS]

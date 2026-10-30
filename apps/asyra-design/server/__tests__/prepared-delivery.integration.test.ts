@@ -1,3 +1,5 @@
+import { deepStrictEqual } from 'node:assert/strict'
+import { isDeepStrictEqual } from 'node:util'
 import nonplanar from './fixtures/recorded-101/nonplanar-recovery-20261026.json'
 import { createLocalDesignWorkflow } from '../local-design-workflow'
 import { readFileSync } from 'node:fs'
@@ -568,21 +570,41 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     }
     for (const [parent, ids] of children)
       expect(created.sceneTree.elements[parent].children).toEqual(ids)
+    // Exercise the exact comparison used below on real persisted records.
+    const root = created.sceneTree.elements[fixture.prepared.design.rootId]
+    const reordered = { ...root, children: [...root.children].reverse() }
+    expect(root.children.length).toBeGreaterThan(1)
+    expect(isDeepStrictEqual(reordered, root)).toBe(false)
+    for (const property of ['position', 'fills'] as const) {
+      const id = root.props[property]
+      expect(id).toBeDefined()
+      const value = created.props[id]
+      expect(value).toBeDefined()
+      // Keep every other record identical while corrupting geometry/material.
+      expect(
+        isDeepStrictEqual({ ...created.props, [id]: null }, created.props)
+      ).toBe(false)
+    }
+    const propertyId = Object.keys(created.props)[0]
+    const omitted = Object.fromEntries(
+      Object.entries(created.props).filter(([id]) => id !== propertyId)
+    )
+    expect(isDeepStrictEqual(omitted, created.props)).toBe(false)
     recordPhase('geometry-and-receipts')
     expect(factory.getUndoHistoryDepth()).toBe(1)
     factory.undo()
-    expect((await core.save()).sceneTree).toEqual(initial.sceneTree)
+    deepStrictEqual((await core.save()).sceneTree, initial.sceneTree)
     factory.redo()
     const restored = await core.save()
-    expect(restored.props).toEqual(created.props)
-    expect(restored.sceneTree).toEqual(created.sceneTree)
+    deepStrictEqual(restored.props, created.props)
+    deepStrictEqual(restored.sceneTree, created.sceneTree)
     recordPhase('undo-redo')
     core.load(created)
     const reloaded = await core.save()
-    expect(reloaded.props).toEqual(created.props)
-    expect(reloaded.sceneTree).toEqual(created.sceneTree)
+    deepStrictEqual(reloaded.props, created.props)
+    deepStrictEqual(reloaded.sceneTree, created.sceneTree)
     expect(core.getUIProperty('flattenedElementIds')).toEqual(expectedIds)
-    expect(uiSnapshots).toEqual(savedSnapshots)
+    deepStrictEqual(uiSnapshots, savedSnapshots)
     recordPhase('reload')
     const recoveryDesigns = createLocalDesignTools(definitions)
     const recoveryOperations = createLocalOperationTools(
@@ -612,7 +634,7 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     )
     expect(rejected.settlement).toBe('not-started')
     expect(dispatch).toHaveBeenCalledTimes(1)
-    expect(await core.save()).toEqual(reloaded)
+    deepStrictEqual(await core.save(), reloaded)
     recordPhase('rejected-recovery')
     const request = { ...rejected.repairGuide.arguments, inspection: 'defer' }
     request.repair.replacements[0].value = nonplanar.replacement
@@ -628,17 +650,18 @@ it('executes resolver delivery through the dispatcher and real Core with full re
     expect(dispatch).toHaveBeenCalledTimes(2)
     const withFin = await core.save()
     for (const id of expectedIds)
-      expect(withFin.sceneTree.elements[id]).toEqual(
+      deepStrictEqual(
+        withFin.sceneTree.elements[id],
         reloaded.sceneTree.elements[id]
       )
     for (const [id, value] of Object.entries(reloaded.props))
-      expect(withFin.props[id]).toEqual(value)
+      deepStrictEqual(withFin.props[id], value)
     factory.undo()
-    expect(await core.save()).toEqual(reloaded)
+    deepStrictEqual(await core.save(), reloaded)
     factory.redo()
-    expect(await core.save()).toEqual(withFin)
+    deepStrictEqual(await core.save(), withFin)
     core.load(withFin)
-    expect(await core.save()).toEqual(withFin)
+    deepStrictEqual(await core.save(), withFin)
     recordPhase('repaired-history-and-reload')
   } finally {
     uiSubscription?.unsubscribe()

@@ -753,6 +753,45 @@ Rebased CI repair - 2026-10-30:
   consumers retain real scene construction and isolated geometry; no production
   code, runner timeout, or assertion is removed. Remote RPC causality remains
   unconfirmed until exact-head CI verifies the corrected scheduling path.
+- Design timeout iteration - run 40974148972 repeats two existing integration
+  deadlines after the unrelated Office correction. Retain both original failures
+  and the unchanged five/30-second guards. The new remote phase evidence places
+  11.309 seconds in initial history and 9.604 seconds in repaired history/reload;
+  all phases finish, but their combined duration exceeds the guard. Exact local
+  files pass 58 cases; a native CPU profile shows substantial snapshot cloning
+  and matcher work. This does not justify changing production persistence.
+  Bound the next correction to these two integration files and their existing
+  test setup/assertions: separate test-module initialization from timed behavior
+  where necessary, use Node's strict structural comparison for complete saved
+  values instead of repeated generic matcher traversal, and retain all owner
+  operations, complete saved input, history/reload comparisons and recovery.
+  Prove exact comparison rejects changed geometry, material, child order and
+  missing property records using the actual saved document. Preserve the native
+  API's stricter distinction for missing keys and numeric types; no digest-only
+  acceptance or JSON normalization. Measure phases before/after, including
+  initialization and assertion costs. Do not increase deadlines, shrink fixtures,
+  remove cases, alter production owners, or claim local speed proves remote
+  cause. This is test-oracle/setup correction, not a changed product contract;
+  governed prepare/execute/history behavior and Inspector remain unchanged.
+  Run both complete files, the server harness, applicable types, scoped lint,
+  naming, formatting, and commit-bound gates before push. Self-review only the
+  changed oracles, direct setup consumers and retained failure paths.
+- Design oracle/setup validation: unchanged production source, full 4,114-entry
+  fixture, all history/reload operations and original deadlines are retained.
+  Complete server harness: 76 files / 3,066 tests pass, 14 existing opt-in cases
+  skipped, 214.84 seconds. Real-owner usage takes 2.188 seconds and its bounded
+  module initialization is separately visible at 0.166 seconds. Full large
+  creation/history/reload takes 12.095 seconds. Original local profiling measured
+  that case at 13.626 seconds; this is local evidence, not a remote guarantee.
+  Native strict structural comparison now checks every complete saved value;
+  real saved-data negative cases reject reordered children, altered position or
+  fill records, and missing properties. No production save, replay, validator,
+  receipt, fixture, sample count or timeout was changed. Types, scoped lint,
+  naming and source formatting pass; diagnostic console warnings remain.
+  Self-review confirms the test titles and governed cases are unchanged and
+  temporary window setup is restored even if module initialization fails.
+  Retain original CI diagnostics and native CPU profiles under
+  tmp/ci-monitor-design-40974148972*. Exact-head CI remains required.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.
