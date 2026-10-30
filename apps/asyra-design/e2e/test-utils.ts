@@ -159,15 +159,19 @@ export async function dragOnCanvas(
 }
 
 /**
- * Wait for the app to be fully initialized
+ * Wait for the editable shell and a browser paint opportunity.
+ * Persistence and collaboration convergence require their separate owner checks.
  */
 export async function waitForAppReady(page: Page) {
-  await page.waitForLoadState('networkidle')
   await page.waitForSelector('#viewport-anchor')
   await page.waitForSelector('[data-testid="toolbar"]')
-  // Extra wait for canvas to be ready
   await page.waitForSelector('canvas')
-  await page.waitForTimeout(500) // Allow rendering to complete
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
 }
 
 /**

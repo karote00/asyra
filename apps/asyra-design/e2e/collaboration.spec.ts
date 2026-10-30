@@ -3593,7 +3593,11 @@ test('recovers real edits and Undo Redo after preparation failure, reload and re
     })
     // Keep the instrumented module across reloads so recovery does not depend
     // on the browser discarding a previously fetched module.
+    const resumedDocument = page.waitForNavigation({
+      waitUntil: 'domcontentloaded'
+    })
     await recovery.getByRole('button', { name: 'Retry saving' }).click()
+    await resumedDocument
     await waitForAppReady(page)
     await waitForCollaboration(page)
     await expect.poll(() => getElementCount(page)).toBe(3)
@@ -3806,7 +3810,11 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     await page.evaluate(() => {
       Object.assign(globalThis, { __rejectPublicationDelete: false })
     })
+    const cleanupRecoveredDocument = page.waitForNavigation({
+      waitUntil: 'domcontentloaded'
+    })
     await recovery.getByRole('button', { name: 'Retry saving' }).click()
+    await cleanupRecoveredDocument
     await waitForAppReady(page)
     await waitForCollaboration(page)
     await expect
@@ -3829,7 +3837,11 @@ test('recovers accepted-source cleanup failure and preserves live rejection hist
     await page.evaluate(() => {
       Object.assign(globalThis, { __rejectLivePublication: false })
     })
+    const liveRecoveredDocument = page.waitForNavigation({
+      waitUntil: 'domcontentloaded'
+    })
     await recovery.getByRole('button', { name: 'Retry saving' }).click()
+    await liveRecoveredDocument
     await waitForAppReady(page)
     await waitForCollaboration(page)
     await expect

@@ -33,6 +33,47 @@ test.describe('Asyra Design Tool', () => {
     // Check that the root element is present
     const rootElement = page.locator('#root')
     await expect(rootElement).toBeAttached()
+
+    await page.locator('canvas').waitFor({ state: 'visible' })
+    let release: (() => void) | undefined
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let received = false
+    await page.route('**/readiness-pending', async (route) => {
+      received = true
+      await held
+      await route.fulfill({ body: 'complete' })
+    })
+    await page.evaluate(() => {
+      void fetch('/readiness-pending')
+    })
+    await expect.poll(() => received).toBe(true)
+    const waits: number[] = []
+    const waitForTimeout = page.waitForTimeout.bind(page)
+    page.waitForTimeout = async (milliseconds) => {
+      waits.push(milliseconds)
+      return waitForTimeout(milliseconds)
+    }
+    let ready = false
+    const readiness = waitForAppReady(page).then(() => {
+      ready = true
+    })
+    try {
+      await expect.poll(() => ready).toBe(true)
+      expect(waits).toEqual([])
+      const before = await getElementCount(page)
+      await page.keyboard.press('r')
+      await page.mouse.move(400, 200)
+      await page.mouse.down()
+      await page.mouse.move(480, 260, { steps: 4 })
+      await page.mouse.up()
+      await expect.poll(() => getElementCount(page)).toBe(before + 1)
+    } finally {
+      release?.()
+      await readiness
+      page.waitForTimeout = waitForTimeout
+    }
   })
 
   test('should render the main app layout', async ({ page }) => {
@@ -41,6 +82,40 @@ test.describe('Asyra Design Tool', () => {
     // Check that the canvas container is present (RenderApp component)
     const canvas = page.locator('canvas')
     await expect(canvas.first()).toBeVisible()
+
+    const surfaces = ['#viewport-anchor', '[data-testid="toolbar"]', 'canvas']
+    for (const selector of surfaces) {
+      await page.locator(selector).evaluate((element) => {
+        element.style.visibility = 'hidden'
+      })
+    }
+    let ready = false
+    const readiness = waitForAppReady(page).then(() => {
+      ready = true
+    })
+    try {
+      for (const selector of surfaces) {
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => resolve())
+            )
+        )
+        expect(ready).toBe(false)
+        await page.locator(selector).evaluate((element) => {
+          element.style.visibility = 'visible'
+        })
+      }
+      await readiness
+      expect(ready).toBe(true)
+    } finally {
+      for (const selector of surfaces) {
+        await page.locator(selector).evaluate((element) => {
+          element.style.removeProperty('visibility')
+        })
+      }
+      await readiness
+    }
   })
 
   test('should render toolbar with controls', async ({ page }) => {

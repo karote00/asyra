@@ -856,6 +856,75 @@ Rebased CI repair - 2026-10-30:
   construction payloads and original failure handling remain intact, participant
   identity attachments remain inline, and no reader/storage budget changed.
   Remote aggregate verification remains outstanding on the new pushed head.
+- CI serial-readiness iteration - run 40989448665 reaches case 518 of 520
+  before the unchanged 45-minute job guard cancels functional execution. No
+  completed functional report or Design bundle exists; the forwarders and
+  aggregate correctly fail. Preserve the original log and artifacts. The shared
+  test readiness helper still waits for network idle and another fixed 500 ms on
+  every use, independent of visible application readiness. Bound this correction
+  to e2e/test-utils.ts, the existing App loading/layout cases in app.spec.ts
+  and these repair notes.
+  First prove a usable real App cannot finish readiness while an unrelated
+  request remains pending. Require visible viewport, toolbar and canvas, then
+  browser rendering opportunities rather than a fixed sleep; preserve rejection
+  for missing surfaces. Do not infer document durability or collaboration
+  convergence from this UI barrier; their existing assertions remain mandatory.
+  Keep one worker, all test identities/assertions, per-test deadlines, the job
+  guard and evidence retention. Verify the new red/green browser case, the full
+  functional suite and isolated status test, exact discovery, types, scoped
+  lint/naming, formatting and commit-bound gates. No runtime/Inspector semantics,
+  workflow selection, timeout, dependency or retry changes. Self-review: this
+  removes proven readiness overhead; remote total-time closure still requires CI.
+- Direct-consumer follow-up: the complete collaboration suite reports a destroyed
+  execution context after Retry saving in the retained preparation-failure case.
+  This caller initiates a planned reload but immediately checks the old shell;
+  the removed sleeps had masked that ordering dependency. Before the retry click,
+  subscribe to its navigation and await DOM content readiness before inspecting
+  the replacement shell. Bound the change to that existing case in
+  collaboration.spec.ts; retain every recovery, peer, identity, history and
+  durable reload assertion and its existing deadline. The full-suite failure is
+  the regression evidence. Verify the focused case and full collaboration suite
+  after correction. Do not catch navigation errors in the shared helper, retry
+  product actions, or infer readiness from elapsed time. Other helper consumers
+  already pass the full functional, isolated status and render suites unchanged.
+- Planned-navigation iteration: the corrected full collaboration run exposes the
+  same destroyed-context failure in accepted-source cleanup recovery at its
+  second successful Retry saving action. Re-audit all five Retry saving calls
+  in collaboration.spec.ts against DocumentRecoveryControls.retry and the App's
+  reopen callback before editing again. Two intentionally failed retries must
+  remain in the same document and assert their alerts. Three successful retries
+  invoke window.location.reload after durable recovery; each caller must subscribe
+  before clicking and await DOMContentLoaded before shell/connected-owner checks.
+  The preparation-failure success already does so; correct both success calls in
+  the accepted-source cleanup case. Keep the shared helper unchanged and retain
+  all peer IDs, Undo/Redo, replay, persistence and deadline assertions. The original
+  collaboration-consumer and collaboration-final reports remain failure evidence.
+  Verify all three recovery cases together, then the complete collaboration suite.
+  Unchanged helper inputs retain the completed functional/status/render evidence.
+  Re-run scoped lint, naming, formatting, types and commit-bound gates. Review
+  scope is these five calls and their direct recovery owner, not a new global audit.
+  Self-review confirms start-editor still owns shell readiness, recovery owns
+  durability/reopen, and caller navigation ownership needs no runtime or Inspector
+  contract change. Do not add catch/retry behavior or replay the recovery action.
+- Serial-readiness validation: the complete ordinary functional runner passes
+  504 cases with 16 unchanged opt-in skips in 1,222.986 seconds; isolated status
+  passes in 10.8 seconds. Its native report is 2,360,987 bytes, retains five
+  file-backed construction attachments, and has no observation issues or
+  execution failures. Endpoint-free production startup separately passes both
+  local-only/storage-free opt-ins in 3.3 seconds; render consumers pass three
+  cases in 22.4 seconds. The complete collaboration suite initially exposed two
+  callers' planned-reload races; retain both original failure reports. After
+  checking all five Retry saving calls, all three recovery cases pass in 41.5
+  seconds and the complete collaboration suite passes 19 cases with three
+  unchanged opt-in skips in 3.1 minutes. Skips are not passes. Every action,
+  history, replay, peer and durability assertion remains; only navigation waits
+  were added before inspecting the replacement document. Types, scoped lint,
+  naming, formatting and exact functional discovery pass. Self-review covers
+  the helper, all changed tests and their direct consumers; source stayed frozen
+  during each verification. No production owner, timeout, worker or Inspector
+  acceptance changed. Original setup/configuration failures remain retained and
+  are not product regressions. Exact-head CI must still prove remote deadline
+  and aggregate closure; local duration alone is not that evidence.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.
