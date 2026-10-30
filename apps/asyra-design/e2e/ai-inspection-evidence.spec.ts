@@ -3002,7 +3002,9 @@ for (const rootType of ['frame', 'group'] as const) {
     async ({ page, context }, testInfo) => {
       const document = createTestDocumentIdentity()
       await page.goto(document.url)
-      await waitForAppReady(page)
+      await page.waitForSelector('#viewport-anchor')
+      await page.waitForSelector('[data-testid="toolbar"]')
+      await page.waitForSelector('canvas')
       await waitForCollaboration(page)
       const peer = await context.newPage()
       const evidence = await createExecutionEvidence({
@@ -3186,7 +3188,9 @@ for (const rootType of ['frame', 'group'] as const) {
           .toEqual(edited)
         await evidence.reload('peer', async () => {
           await peer.goto(document.url)
-          await waitForAppReady(peer)
+          await peer.waitForSelector('#viewport-anchor')
+          await peer.waitForSelector('[data-testid="toolbar"]')
+          await peer.waitForSelector('canvas')
           await waitForCollaboration(peer)
         })
         await expect.poll(() => getCoreDocumentDigest(peer)).toEqual(edited)
@@ -3316,7 +3320,9 @@ for (const rootType of ['frame', 'group'] as const) {
         await test.step('planned reload - editor', () =>
           evidence.reload('editor', async () => {
             await page.reload()
-            await waitForAppReady(page)
+            await page.waitForSelector('#viewport-anchor')
+            await page.waitForSelector('[data-testid="toolbar"]')
+            await page.waitForSelector('canvas')
             await waitForCollaboration(page)
           }))
         await expect.poll(() => getCoreDocumentDigest(page)).toEqual(edited)
@@ -3369,7 +3375,9 @@ for (const rootType of ['frame', 'group'] as const) {
         await test.step('planned reload - editor', () =>
           evidence.reload('editor', async () => {
             await page.reload()
-            await waitForAppReady(page)
+            await page.waitForSelector('#viewport-anchor')
+            await page.waitForSelector('[data-testid="toolbar"]')
+            await page.waitForSelector('canvas')
             await waitForCollaboration(page)
           }))
         await expect.poll(() => getCoreDocumentDigest(page)).toEqual(subsequent)

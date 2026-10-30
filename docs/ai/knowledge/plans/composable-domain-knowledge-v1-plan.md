@@ -792,6 +792,36 @@ Rebased CI repair - 2026-10-30:
   temporary window setup is restored even if module initialization fails.
   Retain original CI diagnostics and native CPU profiles under
   tmp/ci-monitor-design-40974148972*. Exact-head CI remains required.
+- Browser readiness iteration - run 40977301073 passes Design server, Office and
+  Inspector checks, but the Frame reconciliation browser case reaches its
+  unchanged 30-second deadline during the second planned reload's fixed 500 ms
+  rendering delay. The retained trace shows successful earlier persistence
+  convergence and four readiness calls that each wait for network quiet and a
+  rendering delay before checking the actual collaboration state. The identical
+  Frame and Group cases pass locally before correction; this is not remote
+  root-cause closure. Preserve the failed trace and its strict assertions.
+  Bound the correction to the two reconciliation scenarios in
+  ai-inspection-evidence.spec.ts: wait for the existing viewport, toolbar, canvas
+  and connected collaboration owner directly instead of elapsed-time readiness.
+  Keep every full document digest, persistence poll, keyboard Undo/Redo, visual
+  evidence binding, local invalidation and planned navigation assertion. Do not
+  alter shared visual helpers, production owners, autosave, deadlines or retries.
+  The existing failing CI case is the formal regression. Gate the correction on
+  both complete scenarios, the full inspection-evidence file, production types,
+  scoped lint, naming, formatting and commit-bound checks. Review the local diff
+  against the unchanged inspection/reconciliation product contract; no Inspector
+  route, case identity, acceptance semantics or runtime implementation changes.
+  Local passing establishes preserved assertions only; exact-head CI must still
+  verify the remote result.
+- Browser readiness validation: both corrected Frame/Group scenarios pass, then
+  the complete inspection-evidence file passes 22 cases in 3.8 minutes with two
+  unchanged opt-in skips. Skips are not passes. Both reconciliation evidence
+  attachments retain identical source fingerprints and no continuity violations.
+  The diff contains only four readiness replacements; every other test statement
+  and all strict assertions are unchanged. Production types, direct ESLint,
+  source/release formatting and naming pass. Test-owned servers have exited.
+  No source was changed during either browser verification. Exact-head remote
+  verification remains outstanding; preserve the original failed trace.
 - Exclude create-app entirely, live models, 101, unrelated cleanup and user-owned
   reference notes/images. Preserve existing work and do not claim remote success
   from local checks alone.
