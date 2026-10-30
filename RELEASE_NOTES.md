@@ -17,6 +17,7 @@
     "apps/asyra-design/e2e/ai-retained-anchor.spec.ts",
     "apps/asyra-design/e2e/collaboration.spec.ts",
     "apps/asyra-design/e2e/design-construction.spec.ts",
+    "tools/flow-inspector/control-plane/__tests__/playwright-results.test.cjs",
     "apps/asyra-design/e2e/design-containers.spec.ts",
     "apps/asyra-design/e2e/design-organization.spec.ts",
     "apps/asyra-design/e2e/drawing-inspection.spec.ts",
